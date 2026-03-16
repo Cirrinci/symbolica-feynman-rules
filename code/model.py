@@ -1,4 +1,5 @@
 from itertools import permutations
+from math import factorial
 
 from symbolica import S
 from symbolica.community.spenso import Representation
@@ -28,6 +29,9 @@ gamma = N.gamma()
 
 # Undefined indexed tensors
 delx = N("del")
+
+# Momentum tensor head (symbolic): p(p_label, mu)
+mom = N("p")
 
 # Scalar symbol for the imaginary unit
 I = S("I")
@@ -119,17 +123,24 @@ class OperatorFactor:
         self.derivative_indices = tuple(derivative_indices) if derivative_indices else ()
         self.conjugated = conjugated
 
-    def expr(self):
-        base = self.field.conjugate(*self.indices) if self.conjugated else self.field(*self.indices)
+    def base_expr(self):
+        return self.field.conjugate(*self.indices) if self.conjugated else self.field(*self.indices)
 
-        # For now we keep derivatives as metadata only.
-        # Later this can be turned into an actual symbolic derivative structure.
-        if self.derivative_indices:
-            out = base
-            for dind in self.derivative_indices:
-                out = delx(dind) * out
-            return out
-        return base
+    def expr(self):
+        """
+        Symbolic expression for inspection/debugging.
+
+        We represent derivatives as nested applications:
+            del(phi, mu)
+            del(del(phi, nu), mu)  for derivative_indices=(mu, nu)
+
+        Note: Spenso's `TensorName` canonicalizes argument order, so we call
+        `delx(out, mu)` (not `delx(mu, out)`).
+        """
+        out = self.base_expr()
+        for dind in reversed(self.derivative_indices):
+            out = delx(out, dind)
+        return out
 
     def short_name(self):
         if self.conjugated and not self.field.self_conjugate:
@@ -159,7 +170,7 @@ class ExternalLeg:
 
     def __init__(self, field, momentum, indices=None, conjugated=False):
         self.field = field
-        self.momentum = momentum
+        self.momentum = S(momentum) if isinstance(momentum, str) else momentum
         self.indices = tuple(indices) if indices else ()
         self.conjugated = conjugated
 
@@ -211,7 +222,7 @@ class Lagrangian:
 
     def total(self):
         if not self.terms:
-            return S("0")
+            return 0
         out = self.terms[0].expr
         for term in self.terms[1:]:
             out = out + term.expr
@@ -249,6 +260,7 @@ def factor_matches_leg(factor, leg):
     return (
         factor.field.name == leg.field.name
         and factor.conjugated == leg.conjugated
+        and len(factor.indices) == len(leg.indices)
     )
 
 
@@ -278,19 +290,76 @@ def valid_contractions(term, external_legs):
     return out
 
 
-def contraction_weight(term, contraction, external_legs):
+def derivative_factor_for_leg(factor, leg):
     """
-    Weight of one contraction.
+    Convert derivatives acting on a field into momentum factors.
 
-    For the first scalar prototype:
-    - each valid contraction contributes 1
-    - no derivative momenta yet
-    - no fermion minus signs yet
+    Convention (Fourier with exp(-i p x)):
+        d_mu phi  ->  (-I) p_mu
+        d_mu d_nu phi -> (-I)^2 p_mu p_nu
+    """
+    if not factor.derivative_indices:
+        return 1
 
-    This is intentionally the place where the real FeynRules-like complexity
-    will be added later.
+    out = 1
+    for dind in factor.derivative_indices:
+        out = out * (-I) * mom(leg.momentum, dind)
+    return out
+
+
+class ContractedTerm:
+    """
+    One fully contracted contribution from a term for one permutation of legs.
+    """
+
+    def __init__(self, coefficient, permutation, sign, momentum_factor, index_factor=None):
+        self.coefficient = coefficient
+        self.permutation = permutation
+        self.sign = sign
+        self.momentum_factor = momentum_factor
+        self.index_factor = index_factor if index_factor is not None else 1
+
+    def expr(self):
+        return self.sign * self.coefficient * self.momentum_factor * self.index_factor
+
+    def __repr__(self):
+        return (
+            f"ContractedTerm(permutation={self.permutation}, sign={self.sign}, "
+            f"momentum_factor={self.momentum_factor}, index_factor={self.index_factor})"
+        )
+
+
+def fermion_reordering_sign(term, contraction, external_legs):
+    """
+    Placeholder for future Grassmann-sign logic.
     """
     return 1
+
+
+def contracted_term(term, contraction, external_legs):
+    """
+    Build the symbolic contribution of one valid contraction.
+    """
+    sign = fermion_reordering_sign(term, contraction, external_legs)
+
+    momentum_factor = 1
+    index_factor = 1
+
+    for i_factor, i_leg in enumerate(contraction):
+        factor = term.factors[i_factor]
+        leg = external_legs[i_leg]
+
+        momentum_factor = momentum_factor * derivative_factor_for_leg(factor, leg)
+        # Later:
+        # - index_factor *= explicit index deltas / polarization structures / gamma chains
+
+    return ContractedTerm(
+        coefficient=term.coefficient,
+        permutation=contraction,
+        sign=sign,
+        momentum_factor=momentum_factor,
+        index_factor=index_factor,
+    )
 
 
 def canonical_vertex(term, external_legs):
@@ -307,11 +376,17 @@ def canonical_vertex(term, external_legs):
     if not contractions:
         return None
 
-    total_weight = 0
+    total = 0
     for c in contractions:
-        total_weight = total_weight + contraction_weight(term, c, external_legs)
+        ct = contracted_term(term, c, external_legs)
+        total = total + ct.expr()
 
-    return I * term.coefficient * total_weight
+    return I * total
+
+
+def canonical_vertex_debug(term, external_legs):
+    contractions = valid_contractions(term, external_legs)
+    return [contracted_term(term, c, external_legs) for c in contractions]
 
 
 def canonical_vertices_from_lagrangian(L, external_legs):
@@ -321,4 +396,132 @@ def canonical_vertices_from_lagrangian(L, external_legs):
         if v is not None:
             out.append((term.name, v))
     return out
+
+
+# -----------------------------------------------------------------------------
+# 6) Faster bosonic vertex extraction (no n! permutations)
+# -----------------------------------------------------------------------------
+
+
+def _factor_signature(factor: OperatorFactor):
+    """
+    Signature used to group identical bosonic operator factors.
+
+    This is the level of identity relevant for the current prototype:
+    - same field species
+    - same conjugation
+    - same number of explicit indices
+    - same derivative multi-index
+    """
+    return (
+        factor.field.name,
+        factor.conjugated,
+        len(factor.indices),
+        factor.derivative_indices,
+    )
+
+
+def _choose_k(seq, k):
+    """
+    Yield all k-element combinations from seq as tuples.
+    Minimal helper to avoid importing itertools.combinations in the core file.
+    """
+    if k == 0:
+        yield ()
+        return
+    if k > len(seq):
+        return
+    if k == 1:
+        for x in seq:
+            yield (x,)
+        return
+    first, rest = seq[0], seq[1:]
+    for comb in _choose_k(rest, k - 1):
+        yield (first,) + comb
+    for comb in _choose_k(rest, k):
+        yield comb
+
+
+def fast_bosonic_vertex(term: LagrangianTerm, external_legs):
+    """
+    Faster vertex extraction for purely bosonic terms.
+
+    Compared to `canonical_vertex`, this avoids enumerating n! permutations by:
+    - grouping identical operator factors (same signature)
+    - summing only over distinct assignments between *different* signatures
+      (e.g. derivative vs non-derivative factors of the same field)
+    - multiplying by prod_s factorial(count_s) for identical factors
+
+    This matches the normalization implicit in your current `canonical_vertex`
+    for the scalar prototypes.
+
+    Limitations (by design for now):
+    - does not handle fermionic Grassmann signs
+    - does not yet build index factors beyond momentum from derivatives
+    """
+    if not term.has_canonical_data():
+        return None
+
+    if term.n_factors() != len(external_legs):
+        return None
+
+    # Only handle bosonic factors for now.
+    for fac in term.factors:
+        if getattr(fac.field, "kind", None) == "fermion":
+            raise NotImplementedError("fast_bosonic_vertex does not handle fermions yet.")
+
+    # Build groups of identical factor signatures.
+    sig_to_count = {}
+    sig_to_proto = {}
+    for fac in term.factors:
+        sig = _factor_signature(fac)
+        sig_to_count[sig] = sig_to_count.get(sig, 0) + 1
+        sig_to_proto.setdefault(sig, fac)
+
+    signatures = list(sig_to_count.keys())
+
+    # For each signature, precompute eligible leg indices.
+    eligible = {}
+    for sig in signatures:
+        proto = sig_to_proto[sig]
+        eligible[sig] = [
+            idx for idx, leg in enumerate(external_legs) if factor_matches_leg(proto, leg)
+        ]
+        if len(eligible[sig]) < sig_to_count[sig]:
+            return None
+
+    # Factorial combinatorics for truly identical factors.
+    identical_factor_multiplier = 1
+    for sig, cnt in sig_to_count.items():
+        identical_factor_multiplier *= factorial(cnt)
+
+    # Recursively assign disjoint subsets of legs to each signature.
+    def rec(sig_idx, remaining_legs_set, picked_map):
+        if sig_idx == len(signatures):
+            yield picked_map
+            return
+
+        sig = signatures[sig_idx]
+        cnt = sig_to_count[sig]
+        candidates = [i for i in eligible[sig] if i in remaining_legs_set]
+
+        for chosen in _choose_k(candidates, cnt):
+            new_remaining = set(remaining_legs_set)
+            for c in chosen:
+                new_remaining.remove(c)
+            new_map = dict(picked_map)
+            new_map[sig] = chosen
+            yield from rec(sig_idx + 1, new_remaining, new_map)
+
+    total = 0
+    all_legs = set(range(len(external_legs)))
+    for assignment in rec(0, all_legs, {}):
+        mom_factor = 1
+        for sig, chosen_legs in assignment.items():
+            proto = sig_to_proto[sig]
+            for leg_idx in chosen_legs:
+                mom_factor *= derivative_factor_for_leg(proto, external_legs[leg_idx])
+        total += mom_factor
+
+    return I * term.coefficient * identical_factor_multiplier * total
 

@@ -8,12 +8,14 @@ from model import (
     gamma,
     mu,
     delx,
+    mom,
     i,
     j,
     f,
     I,
     valid_contractions,
     canonical_vertex,
+    fast_bosonic_vertex,
 )
 # -----------------------------------------------------------------------------
 # 6) Model objects
@@ -146,6 +148,21 @@ L_fermion_kin = LagrangianTerm(
     ],
 )
 
+# derivative quartic prototype:  -g (d_mu phi) phi (d^mu chi) chi
+# This exists to benchmark momentum factors from derivative metadata.
+L_dphi_phi_dchi_chi = LagrangianTerm(
+    "dphi_phi_dchi_chi",
+    -(gpar.symbol) * delx(Phi(), mu) * Phi() * delx(Chi(), mu) * Chi(),
+    fields=("phi", "phi", "chi", "chi"),
+    coefficient=-(gpar.symbol),
+    factors=[
+        OperatorFactor(Phi, derivative_indices=(mu,)),
+        OperatorFactor(Phi),
+        OperatorFactor(Chi, derivative_indices=(mu,)),
+        OperatorFactor(Chi),
+    ],
+)
+
 
 # -----------------------------------------------------------------------------
 # 8) Full Lagrangian
@@ -160,6 +177,7 @@ L = Lagrangian([
     L_fermion_mass,
     L_yukawa,
     L_fermion_kin,
+    L_dphi_phi_dchi_chi,
 ])
 
 
@@ -171,7 +189,7 @@ L = Lagrangian([
 def _run_tests():
     total = L.total()
     assert total is not None
-    assert len(L.terms) == 8
+    assert len(L.terms) == 9
     assert str(Phi()) == "phi"
     assert Psi(i, f) is not None
     assert gamma(i, j, mu) is not None
@@ -186,6 +204,7 @@ def _run_tests():
     assert L_phi4.has_canonical_data()
     assert L_yukawa.has_canonical_data()
     assert L_phi6.has_canonical_data()
+    assert L_dphi_phi_dchi_chi.has_canonical_data()
 
     # combinatorial benchmarks (using current normalizations)
     legs_phi4 = [
@@ -200,6 +219,10 @@ def _run_tests():
 
     v4 = canonical_vertex(L_phi4, legs_phi4)
     assert v4 == -24 * I * lampar.symbol
+    assert (
+        fast_bosonic_vertex(L_phi4, legs_phi4).expand().to_canonical_string()
+        == v4.expand().to_canonical_string()
+    )
 
     legs_phi2chi2 = [
         ExternalLeg(Phi, "p1"),
@@ -213,6 +236,20 @@ def _run_tests():
 
     v = canonical_vertex(L_phi2chi2, legs_phi2chi2)
     assert v == -4 * I * gpar.symbol
+    assert (
+        fast_bosonic_vertex(L_phi2chi2, legs_phi2chi2).expand().to_canonical_string()
+        == v.expand().to_canonical_string()
+    )
+
+    # derivative vertex should contain explicit p(...) factors
+    v_der = canonical_vertex(L_dphi_phi_dchi_chi, legs_phi2chi2)
+    v_der_str = str(v_der)
+    assert "p(" in v_der_str
+    assert "gpar" in v_der_str
+    assert (
+        fast_bosonic_vertex(L_dphi_phi_dchi_chi, legs_phi2chi2).expand().to_canonical_string()
+        == v_der.expand().to_canonical_string()
+    )
 
     legs_phi6 = [
         ExternalLeg(Phi, "p1"),
@@ -282,6 +319,10 @@ if __name__ == "__main__":
     print("valid contractions =", len(contractions))
 
     vertex = canonical_vertex(L_phi2chi2, legs_phi2chi2)
+    print("vertex =", vertex)
+
+    print("\n=== dphi*phi*dchi*chi benchmark (momentum factors) ===")
+    vertex = canonical_vertex(L_dphi_phi_dchi_chi, legs_phi2chi2)
     print("vertex =", vertex)
 
     legs_phi6 = [
