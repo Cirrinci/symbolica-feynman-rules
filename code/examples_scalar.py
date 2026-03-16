@@ -1,4 +1,20 @@
-from LagrangainArchitecture import *
+from model import (
+    Field,
+    Parameter,
+    OperatorFactor,
+    ExternalLeg,
+    LagrangianTerm,
+    Lagrangian,
+    gamma,
+    mu,
+    delx,
+    i,
+    j,
+    f,
+    I,
+    valid_contractions,
+    canonical_vertex,
+)
 # -----------------------------------------------------------------------------
 # 6) Model objects
 # -----------------------------------------------------------------------------
@@ -6,10 +22,14 @@ from LagrangainArchitecture import *
 Phi = Field("phi", kind="scalar", indexed=False, self_conjugate=True, mass="mphi")
 Psi = Field("psi", kind="fermion", indexed=True, self_conjugate=False, mass="mpsi")
 Chi = Field("chi", kind="scalar", indexed=False, self_conjugate=True)
+Phi_i = Field("phi_i", kind="scalar", indexed=False, self_conjugate=True)
+Phi_j = Field("phi_j", kind="scalar", indexed=False, self_conjugate=True)
+Phi_k = Field("phi_k", kind="scalar", indexed=False, self_conjugate=True)
 gpar = Parameter("gpar")
 mpar = Parameter("m")
 ypar = Parameter("y")
 lampar = Parameter("lam")
+gijk = Parameter("gijk")
 
 
 # -----------------------------------------------------------------------------
@@ -72,6 +92,22 @@ L_phi6 = LagrangianTerm(
     ],
 )
 
+# scalar sextic with three species: -gijk phi_i^2 phi_j^2 phi_k^2
+L_phi_i2_phi_j2_phi_k2 = LagrangianTerm(
+    "phi_i2_phi_j2_phi_k2",
+    -gijk.symbol * Phi_i() * Phi_i() * Phi_j() * Phi_j() * Phi_k() * Phi_k(),
+    fields=("phi_i", "phi_i", "phi_j", "phi_j", "phi_k", "phi_k"),
+    coefficient=-gijk.symbol,
+    factors=[
+        OperatorFactor(Phi_i),
+        OperatorFactor(Phi_i),
+        OperatorFactor(Phi_j),
+        OperatorFactor(Phi_j),
+        OperatorFactor(Phi_k),
+        OperatorFactor(Phi_k),
+    ],
+)
+
 # fermion mass: -m psibar psi
 L_fermion_mass = LagrangianTerm(
     "fermion_mass",
@@ -120,6 +156,7 @@ L = Lagrangian([
     L_phi2chi2,
     L_phi4,
     L_phi6,
+    L_phi_i2_phi_j2_phi_k2,
     L_fermion_mass,
     L_yukawa,
     L_fermion_kin,
@@ -134,7 +171,7 @@ L = Lagrangian([
 def _run_tests():
     total = L.total()
     assert total is not None
-    assert len(L.terms) == 7
+    assert len(L.terms) == 8
     assert str(Phi()) == "phi"
     assert Psi(i, f) is not None
     assert gamma(i, j, mu) is not None
@@ -187,6 +224,21 @@ def _run_tests():
     ]
     contractions = valid_contractions(L_phi6, legs_phi6)
     assert len(contractions) == 720
+
+    # phi_i^2 phi_j^2 phi_k^2: expect 6! / (2! 2! 2!) = 90 contractions
+    legs_phi_i2_j2_k2 = [
+        ExternalLeg(Phi_i, "p1"),
+        ExternalLeg(Phi_i, "p2"),
+        ExternalLeg(Phi_j, "p3"),
+        ExternalLeg(Phi_j, "p4"),
+        ExternalLeg(Phi_k, "p5"),
+        ExternalLeg(Phi_k, "p6"),
+    ]
+    contractions = valid_contractions(L_phi_i2_phi_j2_phi_k2, legs_phi_i2_j2_k2)
+    assert len(contractions) == 8
+
+    v_ijk = canonical_vertex(L_phi_i2_phi_j2_phi_k2, legs_phi_i2_j2_k2)
+    assert v_ijk == -8 * I * gijk.symbol
     print("All basic scalar tests passed.")
 
 
@@ -248,5 +300,21 @@ if __name__ == "__main__":
     vertex = canonical_vertex(L_phi6, legs_phi6)
     print("vertex =", vertex)
 
+    print("\n=== phi_i^2 phi_j^2 phi_k^2 benchmark ===")
+    legs_phi_i2_j2_k2 = [
+        ExternalLeg(Phi_i, "p1"),
+        ExternalLeg(Phi_i, "p2"),
+        ExternalLeg(Phi_j, "p3"),
+        ExternalLeg(Phi_j, "p4"),
+        ExternalLeg(Phi_k, "p5"),
+        ExternalLeg(Phi_k, "p6"),
+    ]
+    contractions = valid_contractions(L_phi_i2_phi_j2_phi_k2, legs_phi_i2_j2_k2)
+    print("valid contractions =", len(contractions))
+    vertex = canonical_vertex(L_phi_i2_phi_j2_phi_k2, legs_phi_i2_j2_k2)
+    print("vertex =", vertex)
+
+
     print("\n=== Running tests ===")
     _run_tests()
+    
