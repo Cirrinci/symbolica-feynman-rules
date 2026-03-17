@@ -111,7 +111,6 @@ class OperatorFactor:
 
     derivative_indices:
         optional tuple of derivative Lorentz indices.
-        For phi^4 this is empty, but later d_mu(phi) can be represented.
 
     conjugated:
         whether this is the conjugate field
@@ -124,6 +123,9 @@ class OperatorFactor:
         self.conjugated = conjugated
 
     def base_expr(self):
+        # base_expr: “the field itself, without derivatives.”
+        # e.g. Phi() → phi, Psi(i,f) → psi(i,f).
+        # e.g. Psi.conjugate(i,f) → psibar(i,f).
         return self.field.conjugate(*self.indices) if self.conjugated else self.field(*self.indices)
 
     def expr(self):
@@ -245,7 +247,7 @@ class Lagrangian:
 
 
 # -----------------------------------------------------------------------------
-# 5) Canonical-quantization-style helper functions (vertex extraction)
+# 5) helper functions for vertex extraction
 # -----------------------------------------------------------------------------
 
 
@@ -328,7 +330,7 @@ class ContractedTerm:
             f"momentum_factor={self.momentum_factor}, index_factor={self.index_factor})"
         )
 
-
+#provvisorio per futuro fermion sign
 def fermion_reordering_sign(term, contraction, external_legs):
     """
     Placeholder for future Grassmann-sign logic.
@@ -350,7 +352,7 @@ def contracted_term(term, contraction, external_legs):
         leg = external_legs[i_leg]
 
         momentum_factor = momentum_factor * derivative_factor_for_leg(factor, leg)
-        # Later:
+        # provvisorio....:
         # - index_factor *= explicit index deltas / polarization structures / gamma chains
 
     return ContractedTerm(
@@ -364,8 +366,6 @@ def contracted_term(term, contraction, external_legs):
 
 def canonical_vertex(term, external_legs):
     """
-    Canonical-style vertex extraction for the current prototype.
-
     Steps:
     1. find all valid complete contractions
     2. sum their weights
@@ -399,7 +399,7 @@ def canonical_vertices_from_lagrangian(L, external_legs):
 
 
 # -----------------------------------------------------------------------------
-# 6) Faster bosonic vertex extraction (no n! permutations)
+# 6) Faster bosonic vertex extraction (no n! permutations)... workj in progress
 # -----------------------------------------------------------------------------
 
 
@@ -470,15 +470,15 @@ def fast_bosonic_vertex(term: LagrangianTerm, external_legs):
         if getattr(fac.field, "kind", None) == "fermion":
             raise NotImplementedError("fast_bosonic_vertex does not handle fermions yet.")
 
-    # Build groups of identical factor signatures.
-    sig_to_count = {}
-    sig_to_proto = {}
+    # Build groups of identical factor signatures (e.g. phi^4 -> one signature with count=4).
+    sig_to_count = {}  # maps signature -> multiplicity (phi^4 gives {sig_phi: 4})
+    sig_to_proto = {}  # maps signature -> one representative OperatorFactor
     for fac in term.factors:
         sig = _factor_signature(fac)
         sig_to_count[sig] = sig_to_count.get(sig, 0) + 1
         sig_to_proto.setdefault(sig, fac)
 
-    signatures = list(sig_to_count.keys())
+    signatures = list(sig_to_count.keys())  # list of distinct signatures (phi^4 -> length 1)
 
     # For each signature, precompute eligible leg indices.
     eligible = {}
