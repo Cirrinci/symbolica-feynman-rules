@@ -9,7 +9,7 @@ Current scope:
     - bosonic polynomial interaction terms
     - permutation-summed Wick contractions
     - derivative interactions via momentum factors
-    - optional fermionic permutation signs (prototype level)
+    - fermionic permutation signs and role-aware contractions
 
 Pipeline:
     1. Select an interaction monomial
@@ -33,6 +33,9 @@ from symbolica import S, Expression
 
 phi, psi, adag = S("phi", "psi", "adag")
 U = S("U")
+UF = S("UF")
+UbarF = S("UbarF")
+gamma = S("gamma")
 delta = S("delta")
 Delta = S("Delta")
 Dot = S("Dot")
@@ -46,9 +49,9 @@ pi = Expression.PI
 '''
 !!!NOTE!!!
 ----
-For statistics="fermion", the current implementation includes only the
-permutation sign. It does not yet provide a full treatment of spinor
-structures, barred/unbarred fields, or general fermionic operator ordering.
+For statistics="fermion", this implementation includes Grassmann permutation
+signs and role-aware contractions, with external wavefunctions UF/UbarF.
+It does not yet build full gamma/index chains automatically from a Lagrangian.
 '''
 Statistics = Literal["boson", "fermion"]
 
@@ -66,6 +69,82 @@ def plane_wave(p, x):
 def contraction_rule(alpha, beta, p, x):
     """[phi_alpha(x), a^dag_beta(p)] = delta(alpha,beta) U(beta,p) exp(-i p.x)"""
     return delta(alpha, beta) * U(beta, p) * plane_wave(p, x)
+
+
+def fermion_contraction_rule(alpha, beta, p, x, *, role, spin, spinor_index):
+    """Fermionic contraction building block with explicit spinor wf.
+
+    role="psi"    -> UF(beta,p,spin,spinor_index)
+    role="psibar" -> UbarF(beta,p,spin,spinor_index)
+    """
+    if role == "psi":
+        wf = UF(beta, p, spin, spinor_index)
+    elif role == "psibar":
+        wf = UbarF(beta, p, spin, spinor_index)
+    else:
+        raise ValueError(f"Unknown fermion role '{role}'")
+    return delta(alpha, beta) * wf * plane_wave(p, x)
+
+# ---------------------------------------------------------------------------
+# Fermion list position
+# ---------------------------------------------------------------------------
+
+def factor_leg_compatible(i, j, alphas, betas, field_roles=None, leg_roles=None):
+    """Compatibility check for matching factor i with external leg j.
+
+    Species compatibility is intentionally left symbolic via delta(alphas[i], betas[j]).
+    This helper enforces only optional role-level constraints (e.g. psi vs psibar).
+    """
+    if field_roles is not None and leg_roles is not None:
+        return field_roles[i] == leg_roles[j]
+    return True
+
+
+def fermion_contraction_sign(perm, field_roles=None):
+    """Sign of a fermion contraction permutation.
+
+    Parameters
+    ----------
+    perm : list of integers
+    field_roles : list of strings
+    """
+    if field_roles is None:
+        return 1
+
+    inv = 0
+    fslots = [k for k,r in enumerate(field_roles) if r in ("psi","psibar")]
+    if len(fslots) <= 1:
+        return 1
+
+    assigned = [perm[k] for k in fslots]
+    for i in range(len(assigned)):
+        for j in range(i + 1, len(assigned)):
+            if assigned[i] > assigned[j]:
+                inv += 1
+    return (-1) ** inv
+
+
+def _default_spin_symbol(leg_position: int):
+    return S(f"s{leg_position + 1}")
+
+
+def _external_factor_for_contraction(
+    *,
+    role,
+    alpha,
+    beta,
+    p,
+    x,
+    spin,
+    spinor_index,
+):
+    if role == "psi":
+        return delta(alpha, beta) * UF(beta, p, spin, spinor_index)
+    if role == "psibar":
+        return delta(alpha, beta) * UbarF(beta, p, spin, spinor_index)
+    return delta(alpha, beta) * U(beta, p)
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -92,6 +171,10 @@ def contract_to_full_expression(
     derivative_indices=(),
     derivative_targets: Optional[Sequence[int]] = None,
     statistics: Statistics = "boson",
+    field_roles= None,
+    leg_roles= None,
+    field_spinor_indices: Optional[Sequence] = None,
+    leg_spins: Optional[Sequence] = None,
 ):
     """Sum over all Wick contractions to build the full vacuum matrix element.
 
@@ -119,13 +202,43 @@ def contract_to_full_expression(
         if tgt < 0 or tgt >= n:
             raise ValueError(f"Nope! derivative target index {tgt} out of range for {n} fields... this is not gonna work...")
 
+    if field_roles is not None and len(field_roles) != n:
+        raise ValueError("field_roles must have the same length as alphas")
+    if leg_roles is not None and len(leg_roles) != n:
+        raise ValueError("leg_roles must have the same length as betas")
+    if (field_roles is None) != (leg_roles is None):
+        raise ValueError("Provide both field_roles and leg_roles, or neither")
+    if field_spinor_indices is not None and len(field_spinor_indices) != n:
+        raise ValueError("field_spinor_indices must have the same length as alphas")
+    if leg_spins is not None and len(leg_spins) != n:
+        raise ValueError("leg_spins must have the same length as ps")
+
     #now we can start the actual computation
     total = Expression.num(0)
     for perm in permutations(range(n)):
         term = Expression.num(1)
 
-        if statistics == "fermion" and permutation_parity(perm) == 1:
-            term *= Expression.num(-1)
+        # Skip incompatible role assignments early (species stays symbolic via deltas).
+        valid = True
+        for i, j in enumerate(perm):
+            if not factor_leg_compatible(
+                i,
+                j,
+                alphas,
+                betas,
+                field_roles=field_roles,
+                leg_roles=leg_roles,
+            ):
+                valid = False
+                break
+        if not valid:
+            continue
+
+        if statistics == "fermion":
+            if field_roles is not None:
+                term *= Expression.num(fermion_contraction_sign(perm, field_roles))
+            elif permutation_parity(perm) == 1:
+                term *= Expression.num(-1)
 
         #first we evaluate the derivative momentum factors with the momentum assigned by this permutation
         for mu, tgt in zip(derivative_indices, derivative_targets):
@@ -134,7 +247,22 @@ def contract_to_full_expression(
         #now we evaluate the delta and U factors
         p_sum = Expression.num(0)
         for i, j in enumerate(perm):
-            term *= delta(alphas[i], betas[j]) * U(betas[j], ps[j])
+            role = field_roles[i] if field_roles is not None else None
+            spin = leg_spins[j] if leg_spins is not None else _default_spin_symbol(j)
+            spinor_index = (
+                field_spinor_indices[i]
+                if field_spinor_indices is not None
+                else S(f"si{i + 1}")
+            )
+            term *= _external_factor_for_contraction(
+                role=role,
+                alpha=alphas[i],
+                beta=betas[j],
+                p=ps[j],
+                x=x,
+                spin=spin,
+                spinor_index=spinor_index,
+            )
             p_sum += ps[j]
 
         term *= plane_wave(p_sum, x)
@@ -185,6 +313,10 @@ def vertex_factor(
     derivative_indices=(),
     derivative_targets=None,
     statistics: Statistics = "boson",
+    field_roles=None,
+    leg_roles=None,
+    field_spinor_indices: Optional[Sequence] = None,
+    leg_spins: Optional[Sequence] = None,
     strip_externals: bool = True,
     include_delta: bool = True,
     d=None,
@@ -221,6 +353,10 @@ def vertex_factor(
         derivative_indices=derivative_indices,
         derivative_targets=derivative_targets,
         statistics=statistics,
+        field_roles=field_roles,
+        leg_roles=leg_roles,
+        field_spinor_indices=field_spinor_indices,
+        leg_spins=leg_spins,
     )
     full = coupling * contracted
 
@@ -235,6 +371,9 @@ def vertex_factor(
     if strip_externals:
         beta_, p_ = S("beta_", "p_")
         full = full.replace(U(beta_, p_), 1)
+        spin_, si_ = S("spin_", "si_")
+        full = full.replace(UF(beta_, p_, spin_, si_), 1)
+        full = full.replace(UbarF(beta_, p_, spin_, si_), 1)
         q_, x_ = S("q_", "x_")
         full = full.replace(Expression.EXP(-I * Dot(q_, x_)), 1)
 
