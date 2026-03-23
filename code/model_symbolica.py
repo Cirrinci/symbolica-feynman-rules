@@ -37,6 +37,7 @@ UF = S("UF")
 UbarF = S("UbarF")
 gamma = S("gamma")
 delta = S("delta")
+delta_s = S("delta_s")   # spinor Kronecker delta  δ_s(i,j)
 Delta = S("Delta")
 Dot = S("Dot")
 pcomp = S("pcomp")
@@ -162,6 +163,50 @@ def permutation_parity(perm) -> int:
     return inv % 2
 
 
+def _infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices):
+    """Infer simple fermion chains with ordered endpoints.
+
+    For now we only support delta_s-only spinor structure:
+      each chain corresponds to one bilinear with exactly two fermion slots:
+        (psibar endpoint, psi endpoint)
+
+    The endpoints are inferred by matching equal non-None spinor index symbols
+    and requiring one slot to be "psibar" and the other to be "psi".
+    """
+    if field_roles is None:
+        raise ValueError("field_roles must be provided to infer fermion chains")
+    if field_spinor_indices is None:
+        raise ValueError("field_spinor_indices must be provided to infer fermion chains")
+    if len(field_roles) != len(field_spinor_indices):
+        raise ValueError("field_roles and field_spinor_indices must have the same length")
+
+    groups = {}
+    for i, si in enumerate(field_spinor_indices):
+        if si is None:
+            continue
+        groups.setdefault(str(si), []).append(i)
+
+    chains = []
+    for spinor_label, slots in groups.items():
+        if len(slots) != 2:
+            raise ValueError(
+                "Each non-None spinor index must appear exactly twice in "
+                "leg_spinor_indices mode, got "
+                f"{len(slots)} occurrences for index '{spinor_label}'."
+            )
+        a, b = slots
+        if field_roles[a] == "psibar" and field_roles[b] == "psi":
+            chains.append((a, b))
+        elif field_roles[a] == "psi" and field_roles[b] == "psibar":
+            chains.append((b, a))
+        else:
+            raise ValueError(
+                "Invalid fermion chain endpoints: expected one 'psibar' and one 'psi' "
+                f"for the same spinor index, got roles ({field_roles[a]}, {field_roles[b]})"
+            )
+    return chains
+
+
 def contract_to_full_expression(
     *,
     alphas: Sequence,
@@ -171,10 +216,11 @@ def contract_to_full_expression(
     derivative_indices=(),
     derivative_targets: Optional[Sequence[int]] = None,
     statistics: Statistics = "boson",
-    field_roles= None,
-    leg_roles= None,
+    field_roles=None,
+    leg_roles=None,
     field_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
+    leg_spinor_indices: Optional[Sequence] = None,
 ):
     """Sum over all Wick contractions to build the full vacuum matrix element.
 
@@ -185,6 +231,11 @@ def contract_to_full_expression(
     evaluated per permutation, i.e. the derivative acting on field k picks the
     momentum of the external leg that field k contracts with in that
     permutation... this caused many errors when I was trying to use it in the vertex_factor function :(
+
+    When leg_spinor_indices is provided, fermion external factors are replaced
+    by delta_s(leg_spinor_a, leg_spinor_b) connecting legs whose fields share
+    a bilinear spinor contraction (inferred from field_spinor_indices).
+    Bosonic fields still produce U(beta, p) as usual.
     """
 
     #first check if the lengths of the sequences are the same
@@ -212,6 +263,25 @@ def contract_to_full_expression(
         raise ValueError("field_spinor_indices must have the same length as alphas")
     if leg_spins is not None and len(leg_spins) != n:
         raise ValueError("leg_spins must have the same length as ps")
+    if leg_spinor_indices is not None and len(leg_spinor_indices) != n:
+        raise ValueError("leg_spinor_indices must have the same length as ps")
+
+    use_spinor_deltas = leg_spinor_indices is not None
+    fermion_chains = []
+    if use_spinor_deltas:
+        if field_roles is None:
+            raise ValueError("field_roles required when leg_spinor_indices is given")
+        if field_spinor_indices is None:
+            raise ValueError("field_spinor_indices required when leg_spinor_indices is given")
+        for i, role in enumerate(field_roles):
+            if role in ("psi", "psibar") and field_spinor_indices[i] is None:
+                raise ValueError(
+                    "Fermion slots must carry a spinor index when "
+                    "leg_spinor_indices is provided"
+                )
+        # Fermion chain abstraction for delta_s-only case:
+        # infer ordered endpoints (psibar_slot, psi_slot).
+        fermion_chains = _infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices)
 
     #now we can start the actual computation
     total = Expression.num(0)
@@ -248,22 +318,33 @@ def contract_to_full_expression(
         p_sum = Expression.num(0)
         for i, j in enumerate(perm):
             role = field_roles[i] if field_roles is not None else None
-            spin = leg_spins[j] if leg_spins is not None else _default_spin_symbol(j)
-            spinor_index = (
-                field_spinor_indices[i]
-                if field_spinor_indices is not None
-                else S(f"si{i + 1}")
-            )
-            term *= _external_factor_for_contraction(
-                role=role,
-                alpha=alphas[i],
-                beta=betas[j],
-                p=ps[j],
-                x=x,
-                spin=spin,
-                spinor_index=spinor_index,
-            )
+
+            if use_spinor_deltas and role in ("psi", "psibar"):
+                term *= delta(alphas[i], betas[j])
+            else:
+                spin = leg_spins[j] if leg_spins is not None else _default_spin_symbol(j)
+                spinor_index = (
+                    field_spinor_indices[i]
+                    if field_spinor_indices is not None
+                    else S(f"si{i + 1}")
+                )
+                term *= _external_factor_for_contraction(
+                    role=role,
+                    alpha=alphas[i],
+                    beta=betas[j],
+                    p=ps[j],
+                    x=x,
+                    spin=spin,
+                    spinor_index=spinor_index,
+                )
             p_sum += ps[j]
+
+        if use_spinor_deltas:
+            for psibar_slot, psi_slot in fermion_chains:
+                term *= delta_s(
+                    leg_spinor_indices[perm[psibar_slot]],
+                    leg_spinor_indices[perm[psi_slot]],
+                )
 
         term *= plane_wave(p_sum, x)
         total += term
@@ -317,6 +398,7 @@ def vertex_factor(
     leg_roles=None,
     field_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
+    leg_spinor_indices: Optional[Sequence] = None,
     strip_externals: bool = True,
     include_delta: bool = True,
     d=None,
@@ -344,6 +426,10 @@ def vertex_factor(
     strip_externals : remove U(...) factors and leftover plane waves
     include_delta : replace the x-integral with momentum delta
     d : spacetime dimension symbol (defaults to S('d'))
+    leg_spinor_indices : per-leg spinor index; when provided, fermion
+        external factors become delta_s connecting legs whose Lagrangian
+        fields share a bilinear contraction (inferred from
+        field_spinor_indices). Bosonic factors are stripped normally.
     """
     contracted = contract_to_full_expression(
         alphas=alphas,
@@ -357,6 +443,7 @@ def vertex_factor(
         leg_roles=leg_roles,
         field_spinor_indices=field_spinor_indices,
         leg_spins=leg_spins,
+        leg_spinor_indices=leg_spinor_indices,
     )
     full = coupling * contracted
 
@@ -371,9 +458,10 @@ def vertex_factor(
     if strip_externals:
         beta_, p_ = S("beta_", "p_")
         full = full.replace(U(beta_, p_), 1)
-        spin_, si_ = S("spin_", "si_")
-        full = full.replace(UF(beta_, p_, spin_, si_), 1)
-        full = full.replace(UbarF(beta_, p_, spin_, si_), 1)
+        if leg_spinor_indices is None:
+            spin_, si_ = S("spin_", "si_")
+            full = full.replace(UF(beta_, p_, spin_, si_), 1)
+            full = full.replace(UbarF(beta_, p_, spin_, si_), 1)
         q_, x_ = S("q_", "x_")
         full = full.replace(Expression.EXP(-I * Dot(q_, x_)), 1)
 
