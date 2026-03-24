@@ -518,9 +518,12 @@ def simplify_deltas(expr, species_map=None):
 
     if species_map is not None:
         for beta_sym, species_sym in species_map.items():
-            expr = expr.replace(delta(species_sym, beta_sym), Expression.num(1))
             other_ = S("other_")
+            # Handle both argument orders of Kronecker deltas.
+            expr = expr.replace(delta(species_sym, beta_sym), Expression.num(1))
+            expr = expr.replace(delta(beta_sym, species_sym), Expression.num(1))
             expr = expr.replace(delta(other_, beta_sym), Expression.num(0))
+            expr = expr.replace(delta(beta_sym, other_), Expression.num(0))
 
     expr = expr.replace(delta(a_, a_), Expression.num(1))
     return expr
