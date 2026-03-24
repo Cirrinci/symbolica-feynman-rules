@@ -459,7 +459,10 @@ def simplify_deltas(expr, species_map=None):
     Uses a three-step pipeline:
       1. Substitute each beta symbol with its assigned species value.
       2. Collapse delta(x, x) -> 1 for matching arguments.
-      3. Kill delta(x, y) -> 0 for remaining cross-species deltas.
+      3. Kill delta(s_i, s_j) -> 0 only for pairs of *distinct known species*.
+
+    Step 3 is restricted to species that actually appear in the map values,
+    so symbolic deltas like delta(i, j) from coupling tensors survive.
 
     Parameters
     ----------
@@ -470,13 +473,23 @@ def simplify_deltas(expr, species_map=None):
         same-species deltas collapse to 1 and cross-species deltas to 0.
         If None, only delta(a, a) -> 1 is applied.
     """
-    a_, b_ = S("a_", "b_")
+    a_ = S("a_")
 
     if species_map is not None:
         for beta_sym, species_sym in species_map.items():
             expr = expr.replace(beta_sym, species_sym)
         expr = expr.replace(delta(a_, a_), Expression.num(1))
-        expr = expr.replace(delta(a_, b_), Expression.num(0))
+
+        known_species = sorted(
+            set(species_map.values()),
+            key=lambda s: _species_key(s),
+        )
+        for i in range(len(known_species)):
+            for j in range(i + 1, len(known_species)):
+                expr = expr.replace(
+                    delta(known_species[i], known_species[j]),
+                    Expression.num(0),
+                )
     else:
         expr = expr.replace(delta(a_, a_), Expression.num(1))
 
