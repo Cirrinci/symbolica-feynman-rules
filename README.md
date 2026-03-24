@@ -1,102 +1,76 @@
-## Symbolica-based Feynman Rule Prototype
+## Symbolica Feynman Rule Prototype
 
-This repository contains a prototype implementation of a FeynRules-like
-workflow in Python, built on top of **Symbolica** and **Spenso**.
-The current focus is on **scalar field theories** and **derivative
-interactions**, with a clear path to extend to fermions and gauge fields.
+This repository focuses on deriving Feynman vertices directly with Symbolica,
+using canonical quantization plus Wick-contraction sums.
 
-### Current capabilities
+Main code path:
 
-- **Field and parameter metadata**
-  - `Field`: scalar vs fermion, indexed vs non-indexed, conjugation, mass.
-  - `Parameter`: couplings and masses as Symbolica symbols.
+- `code/model_symbolica.py` is the primary implementation.
+- `code/examples_symbolica.py` contains runnable examples/tests for this implementation.
+- `symbolica_interaction_term.ipynb` is the interactive notebook walkthrough.
 
-- **Lagrangian terms**
-  - `LagrangianTerm` objects store:
-    - the raw Symbolica expression `expr`,
-    - an explicit `coefficient`,
-    - a list of `OperatorFactor`s describing each field insertion,
-      including derivative indices.
-  - `Lagrangian` collects terms and builds the total Lagrangian.
+Legacy prototype files have been archived outside this repository path.
 
-- **Bosonic interaction vertices**
-  - Support for several scalar interactions:
-    - mass term, `phi^4`, `phi^6`,
-    - mixed `phi^2 chi^2`,
-    - multi-species sextic `phi_i^2 phi_j^2 phi_k^2`.
-  - **Derivative interactions**:
-    - e.g. `-(g) (∂_μ φ) φ (∂^μ χ) χ` with correct momentum factors.
-    - Derivatives on a factor are encoded as `OperatorFactor(..., derivative_indices=(mu,))`.
-  - Two vertex extractors:
-    - `canonical_vertex`: brute-force sum over all valid contractions (n!),
-    - `fast_bosonic_vertex`: grouped/combinatorial version that avoids n! and
-      has been tested to agree with `canonical_vertex` (after expansion) for
-      the current scalar benchmarks.
+### Current scope
 
-- **Kinetic + mass term sanity checks**
-  - The quadratic kernel from the kinetic term alone is proportional to `i p^2`
-    (once momentum conservation is used, e.g. `p2 = -p1` for a 2-point function).
-  - Including the mass term gives a kernel proportional to `i (p^2 - m^2)` up
-    to overall sign conventions for `L_int` vs `H_int`.
+- Bosonic polynomial interactions.
+- Permutation-summed Wick contractions.
+- Derivative interactions via momentum factors.
+- Fermionic role-aware contractions with permutation signs.
+- Optional spinor-index handling through Spenso bispinor metrics.
 
-- **CAS-assisted parsing (optional / experimental)**
-  - `code/cas_vertex.py` provides:
-    - a `FieldRegistry` to recognize field occurrences in a Symbolica
-      expression,
-    - `split_coefficient_and_factors` to reconstruct `OperatorFactor`s from
-      a monomial,
-    - `lagrangian_terms_from_expr` and `cas_vertex_bosonic` to go directly
-      from a raw Lagrangian expression `L_expr` to vertices, by reusing
-      `fast_bosonic_vertex`.
-  - This layer is **optional**: the core vertex algorithm lives in
-    `code/model.py` and works independently.
+### Core pipeline
+
+The function `vertex_factor(...)` in `model_symbolica.py` performs:
+
+1. Contraction sum over external legs.
+2. Derivative momentum factors per contraction.
+3. Plane-wave replacement by momentum conservation delta.
+4. External wavefunction stripping (optional).
+5. Final multiplication by `i`.
+
+Related helpers in `model_symbolica.py`:
+
+- `contract_to_full_expression`
+- `infer_derivative_targets`
+- `simplify_deltas`
+- `simplify_spinor_indices`
+- `simplify_vertex`
+- `compact_vertex_sum_form`
+- `compact_sum_notation`
 
 ### File overview
 
-- `code/model.py`
-  - Core data structures:
-    - `Field`, `Parameter`, `OperatorFactor`, `ExternalLeg`,
-      `LagrangianTerm`, `Lagrangian`.
-  - Vertex extraction:
-    - `valid_contractions`, `derivative_factor_for_leg`,
-      `ContractedTerm`, `canonical_vertex`, `fast_bosonic_vertex`.
+- `code/model_symbolica.py`
+  - Main symbolic engine and simplification helpers.
+  - Supports both bosonic and fermionic workflows in the current scope.
 
-- `code/examples_scalar.py`
-  - Concrete scalar fields (`Phi`, `Chi`, `Phi_i`, …) and parameters.
-  - Example Lagrangian terms: mass, `phi^4`, `phi^6`, `phi^2 chi^2`,
-    multi-species sextic, Yukawa-like terms, derivative interaction.
-  - Benchmarks and assertions for:
-    - combinatorics (number of contractions),
-    - expected vertex prefactors,
-    - agreement between `canonical_vertex` and `fast_bosonic_vertex`.
+- `code/examples_symbolica.py`
+  - Scripted examples for scalar, derivative, and fermion-structure checks.
+  - Good quick validation target after edits.
 
-- `code/cas_vertex.py` (experimental)
-  - CAS-driven utilities to parse Symbolica expressions into
-    `LagrangianTerm`s and call the existing vertex machinery.
+- `symbolica_interaction_term.ipynb`
+  - Step-by-step notebook using the same API as `model_symbolica.py`.
 
-- `Notebooks/test_phi4.ipynb`
-  - Interactive notebook to:
-    - visualize the total scalar Lagrangian,
-    - inspect specific vertices (`phi^4`, `phi^2 chi^2`, derivative term),
-    - check 2-point kernels for the kinetic + mass term,
-    - compare manual vs CAS-based vertex extraction on a derivative example.
+### Usage
+
+Recommended run commands from repository root:
+
+- `./.venv/bin/python code/examples_symbolica.py`
+
+For notebooks, ensure the kernel uses the repository virtual environment:
+
+- `.venv/bin/python`
 
 ### Roadmap
+
 Short term:
 
-- Fermions and ghosts
-
-  - Implement fermion_reordering_sign to correctly account for Grassmann minus signs in canonical_vertex and fast_bosonic_vertex.
-Add simple fermionic benchmarks (e.g. Yukawa vertex) with sign-sensitive permutations.
-
-- Vector / gauge fields
-
-  - Introduce vector fields with Lorentz indices.
-Extend index_factor in ContractedTerm to build tensor structures: metrics, epsilon tensors, gamma chains, color tensors, etc.
-Derive propagators by inverting the quadratic kernel in field space (not via the interaction vertex combinatorics).
+- Improve fermion-chain automation for gamma/index structures.
+- Add more regression tests for mixed scalar-fermion permutations.
+- Expand compact-sum formulas for broader derivative patterns.
 
 Medium term:
 
-- More CAS automation
-
-  - Make lagrangian_terms_from_expr robust for larger models so that most users only need to write a Symbolica Lagrangian, not explicit factors lists.
+- Extend tensor/index handling toward gauge-field interactions.
+- Add stronger notebook-to-script parity tests.
