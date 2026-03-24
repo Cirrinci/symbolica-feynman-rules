@@ -260,6 +260,12 @@ def contract_to_full_expression(
                     "Fermion slots must carry a spinor index when "
                     "leg_spinor_indices is provided"
                 )
+        for j, role in enumerate(leg_roles):
+            if role in ("psi", "psibar") and leg_spinor_indices[j] is None:
+                raise ValueError(
+                    "Fermion legs must carry a spinor index when "
+                    "leg_spinor_indices is provided"
+                )
         # Fermion chain abstraction for bispinor-metric case:
         # infer ordered endpoints (psibar_slot, psi_slot).
         fermion_chains = _infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices)

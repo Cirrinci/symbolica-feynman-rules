@@ -11,7 +11,6 @@ from model_symbolica import (
     pi,
     UF,
     UbarF,
-    gamma,
     delta,
     bis,
     Delta,
@@ -22,6 +21,12 @@ from model_symbolica import (
     infer_derivative_targets,
     compact_vertex_sum_form,
     compact_sum_notation,
+)
+from spenso_structures import (
+    gamma_matrix,
+    gamma5_matrix,
+    hep_tensor_result,
+    hep_tensor_scalar,
 )
 
 # ---------------------------------------------------------------------------
@@ -215,7 +220,19 @@ L_yukawa = dict(
 
 # 8) Vector current: gV * psibar gamma^mu psi A_mu
 L_vec_current = dict(
-    coupling=gV * gamma(mu, i_psi_bar, i_psi),
+    coupling=gV * gamma_matrix(i_psi_bar, i_psi, mu),
+    alphas=[psibar0, psi0, A0],
+    betas=[b1, b2, b3],
+    ps=[p1, p2, p3],
+    statistics="fermion",
+    field_roles=["psibar", "psi", "scalar"],
+    leg_roles=["psibar", "psi", "scalar"],
+    field_spinor_indices=[i_psi_bar, i_psi, None],
+    leg_spins=[s1, s2, s3],
+)
+
+L_axial_current = dict(
+    coupling=gV * gamma_matrix(i_psi_bar, alpha_s, mu) * gamma5_matrix(alpha_s, i_psi),
     alphas=[psibar0, psi0, A0],
     betas=[b1, b2, b3],
     ps=[p1, p2, p3],
@@ -379,7 +396,15 @@ def _run_fermion_tests():
 
     V = simplify_deltas(vertex_factor(**L_vec_current, x=x, d=d),
                         species_map={b1: psibar0, b2: psi0, b3: A0})
-    _check(V, I * gV * gamma(mu, i_psi_bar, i_psi) * D3, "Vector current")
+    _check(V, I * gV * gamma_matrix(i_psi_bar, i_psi, mu) * D3, "Vector current")
+
+    V = simplify_deltas(vertex_factor(**L_axial_current, x=x, d=d),
+                        species_map={b1: psibar0, b2: psi0, b3: A0})
+    _check(
+        V,
+        I * gV * gamma_matrix(i_psi_bar, alpha_s, mu) * gamma5_matrix(alpha_s, i_psi) * D3,
+        "Axial current",
+    )
 
     V = simplify_deltas(vertex_factor(**L_4fermion, x=x, d=d),
                         species_map={b1: psi0, b2: psibar0, b3: psi0, b4: psibar0})
@@ -407,7 +432,38 @@ def _run_fermion_tests():
     )
     _check(V_sp, expected_sp, "(psibar psi)^2 spinor deltas")
 
+    invalid_spinor_legs = dict(L_psibar_psi_sq_spinor)
+    invalid_spinor_legs["leg_spinor_indices"] = [i1, None, i3, i4]
+    try:
+        vertex_factor(
+            **invalid_spinor_legs,
+            x=x,
+            d=d,
+        )
+        raise AssertionError("Expected ValueError for missing fermion leg spinor index")
+    except ValueError as exc:
+        assert "Fermion legs must carry a spinor index" in str(exc), exc
+    print("  Missing fermion leg spinor index -> ValueError: PASS")
+
     print("\n  Fermion tests passed.\n")
+
+
+def _run_spenso_tensor_tests():
+    trace_gg = gamma_matrix("si", "sj", "mu") * gamma_matrix("sj", "si", "mu")
+    trace_g5g5 = gamma5_matrix("si", "sj") * gamma5_matrix("sj", "si")
+
+    assert str(hep_tensor_scalar(trace_gg)) == "16.0000000000000", "Spenso trace(gamma^mu gamma_mu) FAILED"
+    print("  Spenso matrix trace gamma^mu gamma_mu = 16: PASS")
+
+    assert str(hep_tensor_scalar(trace_g5g5)) == "4.00000000000000", "Spenso trace(gamma5^2) FAILED"
+    print("  Spenso matrix trace gamma5^2 = 4: PASS")
+
+    gamma_tensor = hep_tensor_result(gamma_matrix("si", "sj", "mu"))
+    gamma_tensor_str = str(gamma_tensor)
+    assert "(1+0i)" in gamma_tensor_str or "(-1+0i)" in gamma_tensor_str, "Spenso gamma tensor evaluation FAILED"
+    print("  Spenso gamma tensor evaluation: PASS")
+
+    print("\n  Spenso tensor tests passed.\n")
 
 
 def _run_fermion_derivative_mixed_tests():
@@ -492,6 +548,8 @@ def _run_suite_tests(suite: str):
     if suite in ("fermion", "all"):
         _run_fermion_tests()
         _run_fermion_derivative_mixed_tests()
+    if suite in ("spenso", "all"):
+        _run_spenso_tensor_tests()
     print("All selected tests passed.")
 
 
@@ -541,6 +599,10 @@ def _run_fermion_demo():
     show_vertex("gV * psibar gamma^mu psi A_mu", **L_vec_current,
                 species_map={b1: psibar0, b2: psi0, b3: A0})
 
+    print("\n=== fermion: axial current ===")
+    show_vertex("gV * psibar gamma^mu gamma5 psi A_mu", **L_axial_current,
+                species_map={b1: psibar0, b2: psi0, b3: A0})
+
     print("\n=== fermion: four-fermion ===")
     show_vertex("g4F * psi * psibar * psi * psibar", **L_4fermion,
                 species_map={b1: psi0, b2: psibar0, b3: psi0, b4: psibar0})
@@ -580,16 +642,31 @@ def _run_fermion_demo():
     )
 
 
+def _run_spenso_tensor_demo():
+    print("\n=== spenso: matrix-backed gamma traces ===")
+    trace_gg = gamma_matrix("si", "sj", "mu") * gamma_matrix("sj", "si", "mu")
+    trace_g5g5 = gamma5_matrix("si", "sj") * gamma5_matrix("sj", "si")
+
+    print("Tr(gamma^mu gamma_mu) =", hep_tensor_scalar(trace_gg))
+    print("Tr(gamma5 gamma5)     =", hep_tensor_scalar(trace_g5g5))
+    print()
+    print("Gamma tensor realization:")
+    print(hep_tensor_result(gamma_matrix("si", "sj", "mu")))
+    print()
+
+
 def _run_suite_demo(suite: str):
     if suite in ("scalar", "all"):
         _run_scalar_demo()
     if suite in ("fermion", "all"):
         _run_fermion_demo()
+    if suite in ("spenso", "all"):
+        _run_spenso_tensor_demo()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Symbolica vertex examples.")
-    parser.add_argument("--suite", choices=("scalar", "fermion", "all"), default="all")
+    parser.add_argument("--suite", choices=("scalar", "fermion", "spenso", "all"), default="all")
     parser.add_argument("--skip-tests", action="store_true")
     args = parser.parse_args()
 
