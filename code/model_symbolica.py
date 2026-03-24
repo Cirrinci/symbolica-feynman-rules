@@ -26,9 +26,11 @@ from math import factorial
 from typing import Literal, Optional, Sequence
 
 from symbolica import S, Expression
+from symbolica.community.spenso import Representation
+from symbolica.community.idenso import simplify_metrics
 
 # ---------------------------------------------------------------------------
-# Module-level Symbolica symbols... then spenso and more indices here and gamma etc....
+# Module-level Symbolica symbols + Spenso bispinor representation
 # ---------------------------------------------------------------------------
 
 phi, psi, adag = S("phi", "psi", "adag")
@@ -36,8 +38,9 @@ U = S("U")
 UF = S("UF")
 UbarF = S("UbarF")
 gamma = S("gamma")
-delta = S("delta")
-delta_s = S("delta_s")   # spinor Kronecker delta  δ_s(i,j)
+delta = S("delta", is_symmetric=True)
+bis = Representation.bis(4)   # 4D Dirac bispinor representation
+mink = Representation.mink(4)  # 4D Minkowski (Lorentz) representation
 Delta = S("Delta")
 Dot = S("Dot")
 pcomp = S("pcomp")
@@ -73,22 +76,8 @@ def contraction_rule(alpha, beta, p, x):
     return delta(alpha, beta) * U(beta, p) * plane_wave(p, x)
 
 
-def fermion_contraction_rule(alpha, beta, p, x, *, role, spin, spinor_index):
-    """Fermionic contraction building block with explicit spinor wf.
-
-    role="psi"    -> UF(beta,p,spin,spinor_index)
-    role="psibar" -> UbarF(beta,p,spin,spinor_index)
-    """
-    if role == "psi":
-        wf = UF(beta, p, spin, spinor_index)
-    elif role == "psibar":
-        wf = UbarF(beta, p, spin, spinor_index)
-    else:
-        raise ValueError(f"Unknown fermion role '{role}'")
-    return delta(alpha, beta) * wf * plane_wave(p, x)
-
 # ---------------------------------------------------------------------------
-# Fermion list position
+# Fermion helpers
 # ---------------------------------------------------------------------------
 
 def factor_leg_compatible(i, j, alphas, betas, field_roles=None, leg_roles=None):
@@ -100,30 +89,6 @@ def factor_leg_compatible(i, j, alphas, betas, field_roles=None, leg_roles=None)
     if field_roles is not None and leg_roles is not None:
         return field_roles[i] == leg_roles[j]
     return True
-
-
-def fermion_contraction_sign(perm, field_roles=None):
-    """Sign of a fermion contraction permutation.
-
-    Parameters
-    ----------
-    perm : list of integers
-    field_roles : list of strings
-    """
-    if field_roles is None:
-        return 1
-
-    inv = 0
-    fslots = [k for k,r in enumerate(field_roles) if r in ("psi","psibar")]
-    if len(fslots) <= 1:
-        return 1
-
-    assigned = [perm[k] for k in fslots]
-    for i in range(len(assigned)):
-        for j in range(i + 1, len(assigned)):
-            if assigned[i] > assigned[j]:
-                inv += 1
-    return (-1) ** inv
 
 
 def _fermion_slots_from_roles(field_roles):
@@ -155,7 +120,6 @@ def _external_factor_for_contraction(
     alpha,
     beta,
     p,
-    x,
     spin,
     spinor_index,
 ):
@@ -173,20 +137,10 @@ def _external_factor_for_contraction(
 # ---------------------------------------------------------------------------
 
 
-def permutation_parity(perm) -> int:
-    """Parity of a permutation: 0 for even, 1 for odd."""
-    inv = 0
-    for i in range(len(perm)):
-        for j in range(i + 1, len(perm)):
-            if perm[i] > perm[j]:
-                inv += 1
-    return inv % 2
-
-
 def _infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices):
     """Infer simple fermion chains with ordered endpoints.
 
-    For now we only support delta_s-only spinor structure:
+    For now we only support bispinor-metric spinor structure:
       each chain corresponds to one bilinear with exactly two fermion slots:
         (psibar endpoint, psi endpoint)
 
@@ -253,9 +207,9 @@ def contract_to_full_expression(
     permutation... this caused many errors when I was trying to use it in the vertex_factor function :(
 
     When leg_spinor_indices is provided, fermion external factors are replaced
-    by delta_s(leg_spinor_a, leg_spinor_b) connecting legs whose fields share
-    a bilinear spinor contraction (inferred from field_spinor_indices).
-    Bosonic fields still produce U(beta, p) as usual.
+    by Spenso bispinor metrics g(bis(4,a), bis(4,b)) connecting legs whose
+    fields share a bilinear spinor contraction (inferred from
+    field_spinor_indices).  Bosonic fields still produce U(beta, p) as usual.
     """
 
     #first check if the lengths of the sequences are the same
@@ -306,11 +260,15 @@ def contract_to_full_expression(
                     "Fermion slots must carry a spinor index when "
                     "leg_spinor_indices is provided"
                 )
-        # Fermion chain abstraction for delta_s-only case:
+        # Fermion chain abstraction for bispinor-metric case:
         # infer ordered endpoints (psibar_slot, psi_slot).
         fermion_chains = _infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices)
 
-    #now we can start the actual computation
+    fermion_slots = (
+        _fermion_slots_from_roles(field_roles)
+        if statistics == "fermion" else []
+    )
+
     total = Expression.num(0)
     for perm in permutations(range(n)):
         term = Expression.num(1)
@@ -331,8 +289,7 @@ def contract_to_full_expression(
         if not valid:
             continue
 
-        if statistics == "fermion":
-            fermion_slots = _fermion_slots_from_roles(field_roles)
+        if fermion_slots:
             term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
 
         #first we evaluate the derivative momentum factors with the momentum assigned by this permutation
@@ -358,7 +315,6 @@ def contract_to_full_expression(
                     alpha=alphas[i],
                     beta=betas[j],
                     p=ps[j],
-                    x=x,
                     spin=spin,
                     spinor_index=spinor_index,
                 )
@@ -366,10 +322,10 @@ def contract_to_full_expression(
 
         if use_spinor_deltas:
             for psibar_slot, psi_slot in fermion_chains:
-                term *= delta_s(
+                term *= bis.g(
                     leg_spinor_indices[perm[psibar_slot]],
                     leg_spinor_indices[perm[psi_slot]],
-                )
+                ).to_expression()
 
         term *= plane_wave(p_sum, x)
         total += term
@@ -452,9 +408,9 @@ def vertex_factor(
     include_delta : replace the x-integral with momentum delta
     d : spacetime dimension symbol (defaults to S('d'))
     leg_spinor_indices : per-leg spinor index; when provided, fermion
-        external factors become delta_s connecting legs whose Lagrangian
-        fields share a bilinear contraction (inferred from
-        field_spinor_indices). Bosonic factors are stripped normally.
+        external factors become Spenso bispinor metrics connecting legs
+        whose Lagrangian fields share a bilinear contraction (inferred
+        from field_spinor_indices). Bosonic factors are stripped normally.
     """
     contracted = contract_to_full_expression(
         alphas=alphas,
@@ -494,44 +450,64 @@ def vertex_factor(
 
 
 # ---------------------------------------------------------------------------
-# Helpers... worst part of the code... if you know a better way to do this, please let me know...  
-# maybe better solutions with more advanced Symbolica features...or other tools...
+# Simplification helpers (species deltas + Spenso spinor metrics)
 # ---------------------------------------------------------------------------
 
-# Provvisorio arghhh
 def simplify_deltas(expr, species_map=None):
-    """Lightweight delta simplification helper for controlled example cases.
+    """Simplify species Kronecker deltas via direct substitution.
 
-    This routine is intended mainly for demo/test post-processing where the species
-    assignment of external legs is already known. It is not a complete symbolic
-    delta simplifier.
+    Uses a three-step pipeline:
+      1. Substitute each beta symbol with its assigned species value.
+      2. Collapse delta(x, x) -> 1 for matching arguments.
+      3. Kill delta(x, y) -> 0 for remaining cross-species deltas.
 
     Parameters
     ----------
     expr : Symbolica expression
     species_map : dict mapping beta_symbol -> species_symbol.
-        When provided, delta(species, beta) is replaced by 1 for matching
-        pairs, and all remaining deltas involving those betas become 0.
+        When provided, every occurrence of beta_symbol in the expression
+        is replaced by species_symbol (not just inside deltas). Then
+        same-species deltas collapse to 1 and cross-species deltas to 0.
         If None, only delta(a, a) -> 1 is applied.
     """
     a_, b_ = S("a_", "b_")
 
     if species_map is not None:
         for beta_sym, species_sym in species_map.items():
-            other_ = S("other_")
-            # Handle both argument orders of Kronecker deltas.
-            expr = expr.replace(delta(species_sym, beta_sym), Expression.num(1))
-            expr = expr.replace(delta(beta_sym, species_sym), Expression.num(1))
-            expr = expr.replace(delta(other_, beta_sym), Expression.num(0))
-            expr = expr.replace(delta(beta_sym, other_), Expression.num(0))
+            expr = expr.replace(beta_sym, species_sym)
+        expr = expr.replace(delta(a_, a_), Expression.num(1))
+        expr = expr.replace(delta(a_, b_), Expression.num(0))
+    else:
+        expr = expr.replace(delta(a_, a_), Expression.num(1))
 
-    expr = expr.replace(delta(a_, a_), Expression.num(1))
     return expr
 
 
+def simplify_spinor_indices(expr):
+    """Contract repeated bispinor indices using Spenso's metric simplification.
+
+    Spinor deltas produced by the vertex factor are Spenso bispinor metrics
+    ``g(bis(4,i),bis(4,j))``.  When two such metrics share a repeated index
+    (e.g. from a gamma-matrix chain), ``simplify_metrics`` contracts them
+    automatically: ``g(i,j)*g(j,k)`` -> ``g(i,k)``.
+    """
+    return simplify_metrics(expr)
+
+
+def simplify_vertex(expr, species_map=None):
+    """Simplify a vertex factor expression in one call.
+
+    Chains species-delta simplification and spinor-index contraction:
+      1. ``simplify_deltas`` -- resolve species Kronecker deltas
+      2. ``simplify_spinor_indices`` -- contract repeated bispinor metrics
+    """
+    expr = simplify_deltas(expr, species_map=species_map)
+    expr = simplify_spinor_indices(expr)
+    return expr
+
 
 def _species_key(x):
-    return str(x)
+    return x.to_canonical_string() if hasattr(x, 'to_canonical_string') else str(x)
 
 
 def derivative_momentum_sum_expression(

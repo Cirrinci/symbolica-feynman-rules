@@ -14,11 +14,12 @@ from model_symbolica import (
     UbarF,
     gamma,
     delta,
-    delta_s,
+    bis,
     Delta,
     pcomp,
     vertex_factor,
     simplify_deltas,
+    simplify_spinor_indices,
     infer_derivative_targets,
     compact_vertex_sum_form,
     compact_sum_notation,
@@ -544,18 +545,20 @@ def _run_fermion_tests():
     )
     print("(psibar psi)^2 unstripped: PASS  (non-zero Fierz structure)")
 
-    # Spinor-delta form: should give -ig * (2pi)^d * Delta * [δ_s(i1,i2)δ_s(i3,i4) - δ_s(i1,i4)δ_s(i3,i2)]
+    # Spinor-delta form: should give -ig * (2pi)^d * Delta * [g(i1,i2)g(i3,i4) - g(i1,i4)g(i3,i2)]
+    # where g(...) is the Spenso bispinor metric bis.g(...)
     V_sp = vertex_factor(**L_psibar_psi_sq_spinor, x=x, d=d)
     V_sp = simplify_deltas(V_sp, species_map=sm4)
     expected_sp = (
         -I * g_psi4 * (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
-        * (delta_s(i1, i2) * delta_s(i3, i4) - delta_s(i1, i4) * delta_s(i3, i2))
+        * (bis.g(i1, i2).to_expression() * bis.g(i3, i4).to_expression()
+           - bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
     )
     assert (
         V_sp.expand().to_canonical_string()
         == expected_sp.expand().to_canonical_string()
     ), f"(psibar psi)^2 spinor-delta form failed:\n  got:      {V_sp}\n  expected: {expected_sp}"
-    print("(psibar psi)^2 spinor deltas: PASS  (-ig)[δ₁₂δ₃₄ - δ₁₄δ₃₂]")
+    print("(psibar psi)^2 spinor deltas: PASS  (-ig)[g₁₂g₃₄ - g₁₄g₃₂]")
 
     print("\nFermion tests passed.")
 
@@ -758,7 +761,7 @@ def _run_fermion_demo():
     V_spinor = vertex_factor(**L_psibar_psi_sq_spinor, x=x, d=d)
     V_spinor = simplify_deltas(V_spinor, species_map=sm4)
     print("=" * 80)
-    print("  -(g/2)(psibar psi)(psibar psi)  →  V = (-ig)[delta_s(i1,i2)*delta_s(i3,i4) - ...]")
+    print("  -(g/2)(psibar psi)(psibar psi)  →  V = (-ig)[g(i1,i2)*g(i3,i4) - ...]")
     print(f"\n  Result:\n  {V_spinor}")
     print()
     _run_swap_diagnostics()
