@@ -55,6 +55,7 @@ signs and role-aware contractions, with external wavefunctions UF/UbarF.
 It does not yet build full gamma/index chains automatically from a Lagrangian.
 '''
 Statistics = Literal["boson", "fermion"]
+FERMION_ROLES = ("psi", "psibar")
 
 
 # ---------------------------------------------------------------------------
@@ -118,6 +119,25 @@ def fermion_contraction_sign(perm, field_roles=None):
         return 1
 
     assigned = [perm[k] for k in fslots]
+    for i in range(len(assigned)):
+        for j in range(i + 1, len(assigned)):
+            if assigned[i] > assigned[j]:
+                inv += 1
+    return (-1) ** inv
+
+
+def _fermion_slots_from_roles(field_roles):
+    """Return positions of fermionic fields in the interaction ordering."""
+    return [i for i, role in enumerate(field_roles) if role in FERMION_ROLES]
+
+
+def _fermion_sign_from_slots(perm, fermion_slots):
+    """Compute Grassmann sign from permutation restricted to fermion slots."""
+    if len(fermion_slots) <= 1:
+        return 1
+
+    assigned = [perm[k] for k in fermion_slots]
+    inv = 0
     for i in range(len(assigned)):
         for j in range(i + 1, len(assigned)):
             if assigned[i] > assigned[j]:
@@ -266,6 +286,13 @@ def contract_to_full_expression(
     if leg_spinor_indices is not None and len(leg_spinor_indices) != n:
         raise ValueError("leg_spinor_indices must have the same length as ps")
 
+    if statistics == "fermion":
+        if field_roles is None or leg_roles is None:
+            raise ValueError(
+                "statistics='fermion' requires both field_roles and leg_roles "
+                "to avoid ambiguous Grassmann signs and incompatible contractions"
+            )
+
     use_spinor_deltas = leg_spinor_indices is not None
     fermion_chains = []
     if use_spinor_deltas:
@@ -305,10 +332,8 @@ def contract_to_full_expression(
             continue
 
         if statistics == "fermion":
-            if field_roles is not None:
-                term *= Expression.num(fermion_contraction_sign(perm, field_roles))
-            elif permutation_parity(perm) == 1:
-                term *= Expression.num(-1)
+            fermion_slots = _fermion_slots_from_roles(field_roles)
+            term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
 
         #first we evaluate the derivative momentum factors with the momentum assigned by this permutation
         for mu, tgt in zip(derivative_indices, derivative_targets):
