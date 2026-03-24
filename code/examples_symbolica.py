@@ -57,6 +57,8 @@ g_sym = S("g")
 gD = S("gD")
 gD2 = S("gD2")
 gijk = S("gijk")
+g1 = S("g1")
+g2 = S("g2")
 
 
 # ---------------------------------------------------------------------------
@@ -282,6 +284,32 @@ L_mix_5pt = dict(
     leg_spins=[s1, s2, s3, s4, s1],
 )
 
+# 15-16) Double-derivative scalars with fermion bilinear
+# L1 = g1 * psibar * psi * (d^2 phi) * chi   [d^2 modeled as d_mu d_mu on the phi slot]
+deriv_indices_l1, deriv_targets_l1 = infer_derivative_targets([(2, [mu, mu])])
+L_double_deriv_phi_chi = dict(
+    **_MIX_BASE,
+    coupling=g1,
+    derivative_indices=deriv_indices_l1,
+    derivative_targets=deriv_targets_l1,
+)
+
+# L2 = g2 * psibar * psi * (d_mu d_nu phi)(d_mu d_nu phi)
+deriv_indices_l2, deriv_targets_l2 = infer_derivative_targets([(2, [mu, nu]), (3, [mu, nu])])
+L_double_deriv_phi_phi = dict(
+    coupling=g2,
+    alphas=[psibar0, psi0, phi0, phi0],
+    betas=[b1, b2, b3, b4],
+    ps=[p1, p2, p3, p4],
+    derivative_indices=deriv_indices_l2,
+    derivative_targets=deriv_targets_l2,
+    statistics="fermion",
+    field_roles=["psibar", "psi", "scalar", "scalar"],
+    leg_roles=["psibar", "psi", "scalar", "scalar"],
+    field_spinor_indices=[i_psi_bar, i_psi, None, None],
+    leg_spins=[s1, s2, s3, s4],
+)
+
 # Pre-built compact forms for derivative tests
 COMPACT_DERIV = compact_vertex_sum_form(
     coupling=gD, ps=[p1, p2, p3, p4],
@@ -399,6 +427,24 @@ def _run_fermion_derivative_mixed_tests():
     sm5 = {b1: psibar0, b2: psi0, b3: phi0, b4: phi0, b5: chi0}
     V = simplify_deltas(vertex_factor(**L_mix_5pt, x=x, d=d), species_map=sm5)
     _check(V, -2 * I * g_sym * pcomp(p1, mu) * pcomp(p2, nu) * D5, "5pt mixed")
+
+    V = simplify_deltas(vertex_factor(**L_double_deriv_phi_chi, x=x, d=d), species_map=sm4)
+    _check(V, -I * g1 * D4 * pcomp(p3, mu) * pcomp(p3, mu), "g1 * psibar psi (d^2 phi) chi")
+
+    sm_phi2 = {b1: psibar0, b2: psi0, b3: phi0, b4: phi0}
+    V = simplify_deltas(vertex_factor(**L_double_deriv_phi_phi, x=x, d=d), species_map=sm_phi2)
+    _check(
+        V,
+        2
+        * I
+        * g2
+        * D4
+        * pcomp(p3, mu)
+        * pcomp(p3, nu)
+        * pcomp(p4, mu)
+        * pcomp(p4, nu),
+        "g2 * psibar psi (d_mu d_nu phi)^2",
+    )
 
     print("\n  Mixed fermion+scalar derivative tests passed.\n")
 
@@ -526,6 +572,12 @@ def _run_fermion_demo():
     show_vertex("yF * psibar * psi * (d_mu phi) * (d_nu chi)", **L_mix_dphi_dchi, species_map=sm_mix)
     show_vertex("g * (d_mu psibar)(d_nu psi) phi phi chi", **L_mix_5pt,
                 species_map={b1: psibar0, b2: psi0, b3: phi0, b4: phi0, b5: chi0})
+    show_vertex("g1 * psibar * psi * (d^2 phi) * chi", **L_double_deriv_phi_chi, species_map=sm_mix)
+    show_vertex(
+        "g2 * psibar * psi * (d_mu d_nu phi)(d_mu d_nu phi)",
+        **L_double_deriv_phi_phi,
+        species_map={b1: psibar0, b2: psi0, b3: phi0, b4: phi0},
+    )
 
 
 def _run_suite_demo(suite: str):
