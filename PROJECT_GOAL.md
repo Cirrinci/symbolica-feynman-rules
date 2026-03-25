@@ -37,3 +37,39 @@ definition and derives Feynman interaction vertices in Python, using:
 When continuing this project, optimize for turning the current prototype into a
 clean, tested, extensible "FeynRules with Symbolica + Spenso" library in
 Python, not just isolated notebook demos.
+
+### Session handoff
+
+This section is the short reminder for the next session so nobody has to
+reconstruct the current state from the code again.
+
+What we now believe is the correct physics direction:
+
+- final fermion vertices should be amputated open-index objects
+- matrix elements with `UF/UbarF` kept explicitly are useful diagnostics, but
+  they are not the final Feynman rules
+- multi-fermion operators need explicit spinor-contraction information; a bare
+  product like `psi * psibar * psi * psibar` is underspecified
+
+What was fixed in the current cleanup:
+
+- scalar fermion bilinears now amputate to open spinor metrics instead of being
+  stripped to scalars
+- `-(g/2)(psibar psi)^2` now gives the expected direct-minus-exchange
+  four-fermion structure
+- underspecified four-fermion products are rejected instead of misleadingly
+  returning `0`
+
+What is still missing before the fermion engine feels truly solid:
+
+- explicit spinor labels that already live inside the coupling tensor must be
+  remapped to the external leg spinor indices
+- this matters for structures like `gamma(mu,i,j)` and especially for general
+  four-fermion current-current operators
+
+Concrete first target for the next session:
+
+- implement coupling-level spinor-index substitution tied to each contraction
+  permutation
+- then add regression tests for `psibar gamma^mu psi A_mu` and one
+  gamma-current four-fermion operator
