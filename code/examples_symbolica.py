@@ -23,10 +23,9 @@ from model_symbolica import (
     compact_sum_notation,
 )
 from spenso_structures import (
+    gamma_lowered_matrix,
     gamma_matrix,
     gamma5_matrix,
-    hep_tensor_result,
-    hep_tensor_scalar,
 )
 
 # ---------------------------------------------------------------------------
@@ -52,6 +51,7 @@ A0 = S("A0")
 gV = S("gV")
 g4F = S("g4F")
 g_psi4 = S("g_psi4")
+gJJ = S("gJJ")
 alpha_s, beta_s = S("alpha_s", "beta_s")
 i1, i2, i3, i4 = S("i1", "i2", "i3", "i4")
 idx_i, idx_j, idx_k = S("i", "j", "k")
@@ -272,6 +272,20 @@ L_psibar_psi_sq_spinor = dict(
     leg_spinor_indices=[i1, i2, i3, i4],
 )
 
+# 10b) Current-current four-fermion operator:
+#     gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)
+L_current_current = dict(
+    coupling=gJJ * gamma_matrix(alpha_s, alpha_s, mu) * gamma_lowered_matrix(beta_s, beta_s, mu),
+    alphas=[psibar0, psi0, psibar0, psi0],
+    betas=[b1, b2, b3, b4],
+    ps=[p1, p2, p3, p4],
+    statistics="fermion",
+    field_roles=["psibar", "psi", "psibar", "psi"],
+    leg_roles=["psibar", "psi", "psibar", "psi"],
+    field_spinor_indices=[alpha_s, alpha_s, beta_s, beta_s],
+    leg_spins=[s1, s2, s3, s4],
+)
+
 # 11-14) Mixed derivative fermion+scalar interactions
 _MIX_BASE = dict(
     alphas=[psibar0, psi0, phi0, chi0],
@@ -432,6 +446,19 @@ def _run_fermion_tests():
     )
     _check(V_sp, expected_sp, "(psibar psi)^2 spinor deltas")
 
+    # Current-current stripped -> 0 for the present stripped setup
+    V = simplify_deltas(vertex_factor(**L_current_current, x=x, d=d), species_map=sm4)
+    _check(V, Expression.num(0), "Current-current stripped -> 0")
+
+    # Current-current unstripped -> non-zero; contraction topologies are still distinguishable
+    V_full = simplify_deltas(
+        vertex_factor(**L_current_current, x=x, d=d, strip_externals=False), species_map=sm4
+    )
+    s = V_full.to_canonical_string()
+    assert s != Expression.num(0).to_canonical_string(), "Current-current unstripped should be non-zero"
+    assert "UbarF" in s and "UF" in s, f"Current-current unstripped missing UF/UbarF: {V_full}"
+    print("  Current-current unstripped (non-zero): PASS")
+
     invalid_spinor_legs = dict(L_psibar_psi_sq_spinor)
     invalid_spinor_legs["leg_spinor_indices"] = [i1, None, i3, i4]
     try:
@@ -446,24 +473,6 @@ def _run_fermion_tests():
     print("  Missing fermion leg spinor index -> ValueError: PASS")
 
     print("\n  Fermion tests passed.\n")
-
-
-def _run_spenso_tensor_tests():
-    trace_gg = gamma_matrix("si", "sj", "mu") * gamma_matrix("sj", "si", "mu")
-    trace_g5g5 = gamma5_matrix("si", "sj") * gamma5_matrix("sj", "si")
-
-    assert str(hep_tensor_scalar(trace_gg)) == "16.0000000000000", "Spenso trace(gamma^mu gamma_mu) FAILED"
-    print("  Spenso matrix trace gamma^mu gamma_mu = 16: PASS")
-
-    assert str(hep_tensor_scalar(trace_g5g5)) == "4.00000000000000", "Spenso trace(gamma5^2) FAILED"
-    print("  Spenso matrix trace gamma5^2 = 4: PASS")
-
-    gamma_tensor = hep_tensor_result(gamma_matrix("si", "sj", "mu"))
-    gamma_tensor_str = str(gamma_tensor)
-    assert "(1+0i)" in gamma_tensor_str or "(-1+0i)" in gamma_tensor_str, "Spenso gamma tensor evaluation FAILED"
-    print("  Spenso gamma tensor evaluation: PASS")
-
-    print("\n  Spenso tensor tests passed.\n")
 
 
 def _run_fermion_derivative_mixed_tests():
@@ -548,8 +557,6 @@ def _run_suite_tests(suite: str):
     if suite in ("fermion", "all"):
         _run_fermion_tests()
         _run_fermion_derivative_mixed_tests()
-    if suite in ("spenso", "all"):
-        _run_spenso_tensor_tests()
     print("All selected tests passed.")
 
 
@@ -623,6 +630,17 @@ def _run_fermion_demo():
     )
     print()
 
+    print("\n=== fermion: current-current operator ===")
+    show_vertex("gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)  [stripped]", **L_current_current, species_map=sm4)
+    show_vertex(
+        "gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)  [unstripped]",
+        **L_current_current,
+        strip_externals=False,
+        species_map=sm4,
+    )
+    print("  Interpretation: stripped mode cancels contraction topologies; unstripped mode keeps them visible.")
+    print()
+
     print("\n=== fermion: operator-order diagnostics (psibar psi)^2 ===")
     _run_swap_diagnostics()
     print()
@@ -642,31 +660,16 @@ def _run_fermion_demo():
     )
 
 
-def _run_spenso_tensor_demo():
-    print("\n=== spenso: matrix-backed gamma traces ===")
-    trace_gg = gamma_matrix("si", "sj", "mu") * gamma_matrix("sj", "si", "mu")
-    trace_g5g5 = gamma5_matrix("si", "sj") * gamma5_matrix("sj", "si")
-
-    print("Tr(gamma^mu gamma_mu) =", hep_tensor_scalar(trace_gg))
-    print("Tr(gamma5 gamma5)     =", hep_tensor_scalar(trace_g5g5))
-    print()
-    print("Gamma tensor realization:")
-    print(hep_tensor_result(gamma_matrix("si", "sj", "mu")))
-    print()
-
-
 def _run_suite_demo(suite: str):
     if suite in ("scalar", "all"):
         _run_scalar_demo()
     if suite in ("fermion", "all"):
         _run_fermion_demo()
-    if suite in ("spenso", "all"):
-        _run_spenso_tensor_demo()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Symbolica vertex examples.")
-    parser.add_argument("--suite", choices=("scalar", "fermion", "spenso", "all"), default="all")
+    parser.add_argument("--suite", choices=("scalar", "fermion", "all"), default="all")
     parser.add_argument("--skip-tests", action="store_true")
     args = parser.parse_args()
 

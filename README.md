@@ -7,6 +7,7 @@ Main code path:
 
 - `code/model_symbolica.py` is the primary implementation.
 - `code/examples_symbolica.py` contains runnable examples/tests for this implementation.
+- `code/spenso_gamma_checks.py` contains focused Spenso/gamma-matrix experiments and checks.
 - `symbolica_interaction_term.ipynb` is the interactive notebook walkthrough.
 
 Legacy prototype files have been archived outside this repository path.
@@ -49,6 +50,10 @@ Related helpers in `model_symbolica.py`:
   - Scripted examples for scalar, derivative, and fermion-structure checks.
   - Good quick validation target after edits.
 
+- `code/spenso_gamma_checks.py`
+  - Focused gamma/gamma5/Clifford-identity sandbox.
+  - Good place to extend spinor/Lorentz tensor experiments before adding gauge fields.
+
 - `symbolica_interaction_term.ipynb`
   - Step-by-step notebook using the same API as `model_symbolica.py`.
 
@@ -57,6 +62,7 @@ Related helpers in `model_symbolica.py`:
 Recommended run commands from repository root:
 
 - `./.venv/bin/python code/examples_symbolica.py`
+- `./.venv/bin/python code/spenso_gamma_checks.py`
 
 For notebooks, ensure the kernel uses the repository virtual environment:
 
