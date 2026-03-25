@@ -11,7 +11,7 @@ Already working in the repository:
 - multi-species scalar interactions
 - derivative interactions with permutation-aware momentum assignment
 - fermion permutation signs
-- stripped and unstripped external fermion factors
+- amputated open-index and unamputated external fermion factors
 - spinor-delta output using Spenso bispinor metrics
 - hand-supplied vector-current structures such as `gamma(mu, i, j)`
 
@@ -19,6 +19,40 @@ Current implementation entry points:
 
 - [code/model_symbolica.py](/Users/rems/Library/CloudStorage/OneDrive-ETHZurich/ETHz/ETHz_FS26/MScThesis/thesis-code/code/model_symbolica.py)
 - [code/examples_symbolica.py](/Users/rems/Library/CloudStorage/OneDrive-ETHZurich/ETHz/ETHz_FS26/MScThesis/thesis-code/code/examples_symbolica.py)
+
+### Current handoff
+
+This is the most important status snapshot to keep in mind for the next
+session.
+
+Physics conclusions reached in the current cleanup:
+
+- `-(g/2)(psibar psi)^2` should not vanish after amputation
+- the correct amputated vertex is the open-index object
+  `-i g [g(i1,i2)g(i3,i4) - g(i1,i4)g(i3,i2)]`
+- the unstripped result with `UF/UbarF` is only a matrix-element diagnostic
+- a bare product like `psi * psibar * psi * psibar` is not a well-defined
+  four-fermion scalar operator unless its spinor contractions are specified
+
+Current support boundary in the code:
+
+- supported:
+  - scalar interactions
+  - derivative interactions
+  - fermion bilinears encoded by repeated dummy labels in
+    `field_spinor_indices`
+  - scalar-bilinear four-fermion terms like
+    `field_spinor_indices=[alpha, alpha, beta, beta]`
+- not yet supported in a general way:
+  - operators whose spinor structure sits in the coupling tensor and must be
+    remapped to the external leg indices
+  - general four-fermion gamma-current operators
+
+Most important technical limitation right now:
+
+- if the coupling already contains open spinor labels, e.g. `gamma(mu,i,j)`,
+  the current engine does not yet systematically remap those labels to the
+  actual external leg spinor indices. This is the next major task.
 
 ### What is still missing
 
@@ -175,12 +209,29 @@ Deliverables:
 
 These are the next concrete tasks I recommend doing in the codebase:
 
-1. Extract gamma and spinor tensor definitions into a dedicated module.
-2. Add tests for `psibar gamma^mu psi`, `psibar gamma^mu gamma5 psi`, and one
-   tensor-current example.
-3. Introduce an `InteractionTerm` object so examples stop passing parallel lists.
-4. Introduce gauge-field metadata and an abelian vector-field example.
-5. Add a non-abelian generator tensor `T(a,i,j)` and test a simple color current.
+1. Implement permutation-aware remapping from field spinor slots to external
+   leg spinor indices and apply that map to the coupling tensor.
+2. Add regression tests for explicit open-index propagation in:
+   - `psibar gamma^mu psi A_mu`
+   - `(psibar gamma^mu psi)(psibar gamma_mu psi)`
+3. After step 1 is stable, widen supported multi-fermion structures beyond
+   repeated-dummy scalar bilinears.
+4. Extract gamma and spinor tensor definitions into a dedicated module.
+5. Introduce an `InteractionTerm` object so examples stop passing parallel lists.
+6. Introduce gauge-field metadata and an abelian vector-field example.
+7. Add a non-abelian generator tensor `T(a,i,j)` and test a simple color current.
+
+### Tomorrow plan
+
+If we resume tomorrow, the suggested order is:
+
+1. Read `README.md` and this section only.
+2. Run `./.venv/bin/python code/examples_symbolica.py --suite fermion`.
+3. Inspect how `vertex_factor(...)` currently handles `coupling` after the
+   contraction sum.
+4. Add a coupling-substitution layer so explicit tensor spinor labels follow
+   the same leg assignment as the contracted fields.
+5. Lock that behavior down with tests before touching the model-layer work.
 
 ### Nice rule of thumb
 

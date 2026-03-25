@@ -214,7 +214,7 @@ L_yukawa = dict(
     statistics="fermion",
     field_roles=["psibar", "psi", "scalar"],
     leg_roles=["psibar", "psi", "scalar"],
-    field_spinor_indices=[i_psi_bar, i_psi, None],
+    field_spinor_indices=[alpha_s, alpha_s, None],
     leg_spins=[s1, s2, s3],
 )
 
@@ -243,7 +243,7 @@ L_axial_current = dict(
     leg_spins=[s1, s2, s3],
 )
 
-# 9) Four-fermion: g4F * psi psibar psi psibar
+# 9) Underspecified multi-fermion product kept as a validation diagnostic
 L_4fermion = dict(
     coupling=g4F,
     alphas=[psi0, psibar0, psi0, psibar0],
@@ -254,7 +254,7 @@ L_4fermion = dict(
     leg_roles=["psi", "psibar", "psi", "psibar"],
 )
 
-# 10) -(g/2)(psibar psi)^2  (stripped / unstripped / spinor-delta modes)
+# 10) -(g/2)(psibar psi)^2  (amputated / matrix-element / explicit-spinor modes)
 L_psibar_psi_sq = dict(
     coupling=-g_psi4 / Expression.num(2),
     alphas=[psibar0, psi0, psibar0, psi0],
@@ -294,7 +294,7 @@ _MIX_BASE = dict(
     statistics="fermion",
     field_roles=["psibar", "psi", "scalar", "scalar"],
     leg_roles=["psibar", "psi", "scalar", "scalar"],
-    field_spinor_indices=[i_psi_bar, i_psi, None, None],
+    field_spinor_indices=[alpha_s, alpha_s, None, None],
     leg_spins=[s1, s2, s3, s4],
 )
 
@@ -311,7 +311,7 @@ L_mix_5pt = dict(
     statistics="fermion",
     field_roles=["psibar", "psi", "scalar", "scalar", "scalar"],
     leg_roles=["psibar", "psi", "scalar", "scalar", "scalar"],
-    field_spinor_indices=[i_psi_bar, i_psi, None, None, None],
+    field_spinor_indices=[alpha_s, alpha_s, None, None, None],
     leg_spins=[s1, s2, s3, s4, s1],
 )
 
@@ -337,7 +337,7 @@ L_double_deriv_phi_phi = dict(
     statistics="fermion",
     field_roles=["psibar", "psi", "scalar", "scalar"],
     leg_roles=["psibar", "psi", "scalar", "scalar"],
-    field_spinor_indices=[i_psi_bar, i_psi, None, None],
+    field_spinor_indices=[alpha_s, alpha_s, None, None],
     leg_spins=[s1, s2, s3, s4],
 )
 
@@ -397,9 +397,10 @@ def _run_fermion_tests():
     sm4 = {b1: psibar0, b2: psi0, b3: psibar0, b4: psi0}
     D3 = (2 * pi) ** d * Delta(p1 + p2 + p3)
     D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
+    G12 = bis.g(i1, i2).to_expression()
 
     V = simplify_deltas(vertex_factor(**L_yukawa, x=x, d=d), species_map=sm3)
-    _check(V, I * yF * D3, "Yukawa (stripped)")
+    _check(V, I * yF * G12 * D3, "Yukawa (amputated)")
 
     V_full = simplify_deltas(
         vertex_factor(**L_yukawa, x=x, d=d, strip_externals=False), species_map=sm3
@@ -420,13 +421,22 @@ def _run_fermion_tests():
         "Axial current",
     )
 
-    V = simplify_deltas(vertex_factor(**L_4fermion, x=x, d=d),
-                        species_map={b1: psi0, b2: psibar0, b3: psi0, b4: psibar0})
-    _check(V, Expression.num(0), "4-fermion sign cancellation -> 0")
+    try:
+        vertex_factor(**L_4fermion, x=x, d=d)
+    except ValueError as exc:
+        assert "Multi-fermion operators require explicit spinor-contraction data" in str(exc)
+        print("  underspecified multi-fermion operator rejected: PASS")
+    else:
+        raise AssertionError("Bare psi*psibar*psi*psibar should be rejected as underspecified")
 
-    # (psibar psi)^2 stripped -> 0
+    # (psibar psi)^2 amputated -> open spinor structure
     V = simplify_deltas(vertex_factor(**L_psibar_psi_sq, x=x, d=d), species_map=sm4)
-    _check(V, Expression.num(0), "(psibar psi)^2 stripped -> 0")
+    expected_sp = (
+        -I * g_psi4 * D4
+        * (bis.g(i1, i2).to_expression() * bis.g(i3, i4).to_expression()
+           - bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
+    )
+    _check(V, expected_sp, "(psibar psi)^2 amputated")
 
     # (psibar psi)^2 unstripped -> non-zero with UF/UbarF
     V_full = simplify_deltas(
@@ -435,15 +445,10 @@ def _run_fermion_tests():
     s = V_full.to_canonical_string()
     assert s != Expression.num(0).to_canonical_string(), "(psibar psi)^2 unstripped should be non-zero"
     assert "UbarF" in s and "UF" in s, f"Missing UF/UbarF: {V_full}"
-    print("  (psibar psi)^2 unstripped (non-zero Fierz): PASS")
+    print("  (psibar psi)^2 matrix element (non-zero direct/exchange): PASS")
 
     # Spinor-delta form: -ig * D4 * [g(i1,i2)g(i3,i4) - g(i1,i4)g(i3,i2)]
     V_sp = simplify_deltas(vertex_factor(**L_psibar_psi_sq_spinor, x=x, d=d), species_map=sm4)
-    expected_sp = (
-        -I * g_psi4 * D4
-        * (bis.g(i1, i2).to_expression() * bis.g(i3, i4).to_expression()
-           - bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
-    )
     _check(V_sp, expected_sp, "(psibar psi)^2 spinor deltas")
 
     # Current-current stripped -> 0 for the present stripped setup
@@ -479,22 +484,23 @@ def _run_fermion_derivative_mixed_tests():
     sm4 = {b1: psibar0, b2: psi0, b3: phi0, b4: chi0}
     D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
     D5 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4 + p5)
+    G12 = bis.g(i1, i2).to_expression()
 
     V = simplify_deltas(vertex_factor(**L_mix_dpsibar, x=x, d=d), species_map=sm4)
-    _check(V, yF * pcomp(p1, mu) * D4, "d_mu psibar")
+    _check(V, yF * pcomp(p1, mu) * G12 * D4, "d_mu psibar")
 
     V = simplify_deltas(vertex_factor(**L_mix_dpsi, x=x, d=d), species_map=sm4)
-    _check(V, yF * pcomp(p2, nu) * D4, "d_nu psi")
+    _check(V, yF * pcomp(p2, nu) * G12 * D4, "d_nu psi")
 
     V = simplify_deltas(vertex_factor(**L_mix_dphi_dchi, x=x, d=d), species_map=sm4)
-    _check(V, -I * yF * pcomp(p3, mu) * pcomp(p4, nu) * D4, "(d_mu phi)(d_nu chi)")
+    _check(V, -I * yF * pcomp(p3, mu) * pcomp(p4, nu) * G12 * D4, "(d_mu phi)(d_nu chi)")
 
     sm5 = {b1: psibar0, b2: psi0, b3: phi0, b4: phi0, b5: chi0}
     V = simplify_deltas(vertex_factor(**L_mix_5pt, x=x, d=d), species_map=sm5)
-    _check(V, -2 * I * g_sym * pcomp(p1, mu) * pcomp(p2, nu) * D5, "5pt mixed")
+    _check(V, -2 * I * g_sym * pcomp(p1, mu) * pcomp(p2, nu) * G12 * D5, "5pt mixed")
 
     V = simplify_deltas(vertex_factor(**L_double_deriv_phi_chi, x=x, d=d), species_map=sm4)
-    _check(V, -I * g1 * D4 * pcomp(p3, mu) * pcomp(p3, mu), "g1 * psibar psi (d^2 phi) chi")
+    _check(V, -I * g1 * G12 * D4 * pcomp(p3, mu) * pcomp(p3, mu), "g1 * psibar psi (d^2 phi) chi")
 
     sm_phi2 = {b1: psibar0, b2: psi0, b3: phi0, b4: phi0}
     V = simplify_deltas(vertex_factor(**L_double_deriv_phi_phi, x=x, d=d), species_map=sm_phi2)
@@ -503,6 +509,7 @@ def _run_fermion_derivative_mixed_tests():
         2
         * I
         * g2
+        * G12
         * D4
         * pcomp(p3, mu)
         * pcomp(p3, nu)
@@ -595,11 +602,11 @@ def _run_fermion_demo():
     sm3 = {b1: psibar0, b2: psi0, b3: phi0}
     sm4 = {b1: psibar0, b2: psi0, b3: psibar0, b4: psi0}
 
-    print("\n=== fermion: Yukawa ===")
+    print("\n=== fermion: Yukawa [amputated] ===")
     show_vertex("yF * psibar * psi * phi", **L_yukawa, species_map=sm3)
 
-    print("\n=== fermion: Yukawa (unstripped) ===")
-    show_vertex("yF * psibar * psi * phi  [unstripped]", **L_yukawa,
+    print("\n=== fermion: Yukawa [matrix element] ===")
+    show_vertex("yF * psibar * psi * phi  [matrix element]", **L_yukawa,
                 strip_externals=False, species_map=sm3)
 
     print("\n=== fermion: vector current ===")
@@ -610,18 +617,19 @@ def _run_fermion_demo():
     show_vertex("gV * psibar gamma^mu gamma5 psi A_mu", **L_axial_current,
                 species_map={b1: psibar0, b2: psi0, b3: A0})
 
-    print("\n=== fermion: four-fermion ===")
-    show_vertex("g4F * psi * psibar * psi * psibar", **L_4fermion,
-                species_map={b1: psi0, b2: psibar0, b3: psi0, b4: psibar0})
+    print("\n=== fermion: underspecified product diagnostic ===")
+    print("=" * 80)
+    print("  g4F * psi * psibar * psi * psibar  [no spinor contractions]")
+    print("  rejected: multi-fermion operators need explicit spinor contractions")
 
-    print("\n=== fermion: -(g/2)(psibar psi)^2  [stripped] ===")
-    show_vertex("-(g/2)(psibar psi)^2  [stripped]", **L_psibar_psi_sq, species_map=sm4)
+    print("\n=== fermion: -(g/2)(psibar psi)^2  [amputated] ===")
+    show_vertex("-(g/2)(psibar psi)^2  [amputated]", **L_psibar_psi_sq, species_map=sm4)
 
-    print("\n=== fermion: -(g/2)(psibar psi)^2  [unstripped] ===")
-    show_vertex("-(g/2)(psibar psi)^2  [unstripped]", **L_psibar_psi_sq,
+    print("\n=== fermion: -(g/2)(psibar psi)^2  [matrix element] ===")
+    show_vertex("-(g/2)(psibar psi)^2  [matrix element]", **L_psibar_psi_sq,
                 strip_externals=False, species_map=sm4)
 
-    print("\n=== fermion: -(g/2)(psibar psi)^2  [spinor delta form] ===")
+    print("\n=== fermion: -(g/2)(psibar psi)^2  [explicit spinor labels] ===")
     show_vertex("-(g/2)(psibar psi)^2  [spinor delta]", **L_psibar_psi_sq_spinor, species_map=sm4)
     print("=" * 80)
     print(
