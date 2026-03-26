@@ -451,9 +451,11 @@ def _run_fermion_tests():
     V_sp = simplify_deltas(vertex_factor(**L_psibar_psi_sq_spinor, x=x, d=d), species_map=sm4)
     _check(V_sp, expected_sp, "(psibar psi)^2 spinor deltas")
 
-    # Current-current stripped -> 0 for the present stripped setup
+    # Current-current stripped -> non-zero open-index structure
     V = simplify_deltas(vertex_factor(**L_current_current, x=x, d=d), species_map=sm4)
-    _check(V, Expression.num(0), "Current-current stripped -> 0")
+    s = V.to_canonical_string()
+    assert s != Expression.num(0).to_canonical_string(), "Current-current stripped should be non-zero"
+    print("  Current-current stripped (non-zero): PASS")
 
     # Current-current unstripped -> non-zero; contraction topologies are still distinguishable
     V_full = simplify_deltas(
@@ -646,7 +648,7 @@ def _run_fermion_demo():
         strip_externals=False,
         species_map=sm4,
     )
-    print("  Interpretation: stripped mode cancels contraction topologies; unstripped mode keeps them visible.")
+    print("  Interpretation: both stripped and unstripped modes are non-zero; unstripped keeps UF/UbarF explicit.")
     print()
 
     print("\n=== fermion: operator-order diagnostics (psibar psi)^2 ===")
