@@ -11,7 +11,6 @@ from model_symbolica import (
     pi,
     UF,
     UbarF,
-    gamma,
     delta,
     bis,
     Delta,
@@ -22,6 +21,12 @@ from model_symbolica import (
     infer_derivative_targets,
     compact_vertex_sum_form,
     compact_sum_notation,
+)
+from spenso_structures import (
+    gamma_lowered_matrix,
+    gamma_matrix,
+    gamma5_matrix,
+    simplify_gamma_chain,
 )
 
 # ---------------------------------------------------------------------------
@@ -47,7 +52,9 @@ A0 = S("A0")
 gV = S("gV")
 g4F = S("g4F")
 g_psi4 = S("g_psi4")
+gJJ = S("gJJ")
 alpha_s, beta_s = S("alpha_s", "beta_s")
+a_bar, a_psi, b_bar, b_psi = S("a_bar", "a_psi", "b_bar", "b_psi")
 i1, i2, i3, i4 = S("i1", "i2", "i3", "i4")
 idx_i, idx_j, idx_k = S("i", "j", "k")
 
@@ -215,7 +222,19 @@ L_yukawa = dict(
 
 # 8) Vector current: gV * psibar gamma^mu psi A_mu
 L_vec_current = dict(
-    coupling=gV * gamma(mu, i_psi_bar, i_psi),
+    coupling=gV * gamma_matrix(i_psi_bar, i_psi, mu),
+    alphas=[psibar0, psi0, A0],
+    betas=[b1, b2, b3],
+    ps=[p1, p2, p3],
+    statistics="fermion",
+    field_roles=["psibar", "psi", "scalar"],
+    leg_roles=["psibar", "psi", "scalar"],
+    field_spinor_indices=[i_psi_bar, i_psi, None],
+    leg_spins=[s1, s2, s3],
+)
+
+L_axial_current = dict(
+    coupling=gV * gamma_matrix(i_psi_bar, alpha_s, mu) * gamma5_matrix(alpha_s, i_psi),
     alphas=[psibar0, psi0, A0],
     betas=[b1, b2, b3],
     ps=[p1, p2, p3],
@@ -253,6 +272,23 @@ L_psibar_psi_sq = dict(
 L_psibar_psi_sq_spinor = dict(
     **L_psibar_psi_sq,
     leg_spinor_indices=[i1, i2, i3, i4],
+)
+
+# 10b) Current-current four-fermion operator:
+#     gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)
+# Use distinct open endpoint labels for the explicit gamma chains.
+# Repeating a label across psibar/psi slots is reserved for inferred scalar
+# bilinears such as (psibar psi), not tensor structures with explicit gammas.
+L_current_current = dict(
+    coupling=gJJ * gamma_matrix(a_bar, a_psi, mu) * gamma_lowered_matrix(b_bar, b_psi, mu),
+    alphas=[psibar0, psi0, psibar0, psi0],
+    betas=[b1, b2, b3, b4],
+    ps=[p1, p2, p3, p4],
+    statistics="fermion",
+    field_roles=["psibar", "psi", "psibar", "psi"],
+    leg_roles=["psibar", "psi", "psibar", "psi"],
+    field_spinor_indices=[a_bar, a_psi, b_bar, b_psi],
+    leg_spins=[s1, s2, s3, s4],
 )
 
 # 11-14) Mixed derivative fermion+scalar interactions
@@ -380,7 +416,15 @@ def _run_fermion_tests():
 
     V = simplify_deltas(vertex_factor(**L_vec_current, x=x, d=d),
                         species_map={b1: psibar0, b2: psi0, b3: A0})
-    _check(V, I * gV * gamma(mu, i_psi_bar, i_psi) * D3, "Vector current")
+    _check(V, I * gV * gamma_matrix(i1, i2, mu) * D3, "Vector current")
+
+    V = simplify_deltas(vertex_factor(**L_axial_current, x=x, d=d),
+                        species_map={b1: psibar0, b2: psi0, b3: A0})
+    _check(
+        V,
+        I * gV * gamma_matrix(i1, alpha_s, mu) * gamma5_matrix(alpha_s, i2) * D3,
+        "Axial current",
+    )
 
     try:
         vertex_factor(**L_4fermion, x=x, d=d)
@@ -411,6 +455,43 @@ def _run_fermion_tests():
     # Spinor-delta form: -ig * D4 * [g(i1,i2)g(i3,i4) - g(i1,i4)g(i3,i2)]
     V_sp = simplify_deltas(vertex_factor(**L_psibar_psi_sq_spinor, x=x, d=d), species_map=sm4)
     _check(V_sp, expected_sp, "(psibar psi)^2 spinor deltas")
+
+    # Current-current stripped -> direct minus exchange open-index structure
+    V = simplify_deltas(vertex_factor(**L_current_current, x=x, d=d), species_map=sm4)
+    expected_jj = (
+        2 * I * gJJ * D4
+        * (
+            gamma_matrix(i1, i2, mu) * gamma_matrix(i3, i4, mu)
+            - gamma_matrix(i1, i4, mu) * gamma_matrix(i3, i2, mu)
+        )
+    )
+    _check(
+        simplify_gamma_chain(V),
+        expected_jj,
+        "Current-current stripped",
+    )
+
+    # Current-current unstripped -> non-zero; contraction topologies are still distinguishable
+    V_full = simplify_deltas(
+        vertex_factor(**L_current_current, x=x, d=d, strip_externals=False), species_map=sm4
+    )
+    s = V_full.to_canonical_string()
+    assert s != Expression.num(0).to_canonical_string(), "Current-current unstripped should be non-zero"
+    assert "UbarF" in s and "UF" in s, f"Current-current unstripped missing UF/UbarF: {V_full}"
+    print("  Current-current unstripped (non-zero): PASS")
+
+    invalid_spinor_legs = dict(L_psibar_psi_sq_spinor)
+    invalid_spinor_legs["leg_spinor_indices"] = [i1, None, i3, i4]
+    try:
+        vertex_factor(
+            **invalid_spinor_legs,
+            x=x,
+            d=d,
+        )
+        raise AssertionError("Expected ValueError for missing fermion leg spinor index")
+    except ValueError as exc:
+        assert "Fermion legs must carry a spinor index" in str(exc), exc
+    print("  Missing fermion leg spinor index -> ValueError: PASS")
 
     print("\n  Fermion tests passed.\n")
 
@@ -548,6 +629,10 @@ def _run_fermion_demo():
     show_vertex("gV * psibar gamma^mu psi A_mu", **L_vec_current,
                 species_map={b1: psibar0, b2: psi0, b3: A0})
 
+    print("\n=== fermion: axial current ===")
+    show_vertex("gV * psibar gamma^mu gamma5 psi A_mu", **L_axial_current,
+                species_map={b1: psibar0, b2: psi0, b3: A0})
+
     print("\n=== fermion: underspecified product diagnostic ===")
     print("=" * 80)
     print("  g4F * psi * psibar * psi * psibar  [no spinor contractions]")
@@ -567,6 +652,17 @@ def _run_fermion_demo():
         "  -(g/2)(psibar psi)(psibar psi)  →  "
         "V = (-ig)[g(i1,i2)*g(i3,i4) - g(i1,i4)*g(i3,i2)] * (2*pi)^d * Delta(Σp)"
     )
+    print()
+
+    print("\n=== fermion: current-current operator ===")
+    V_jj = simplify_deltas(vertex_factor(**L_current_current, x=x, d=d), species_map=sm4)
+    show_vertex(
+        "gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)  [stripped]",
+        **L_current_current,
+        species_map=sm4,
+        compact_override=simplify_gamma_chain(V_jj),
+    )
+    print("  Interpretation: stripped output keeps the direct minus exchange gamma structure visible.")
     print()
 
     print("\n=== fermion: operator-order diagnostics (psibar psi)^2 ===")

@@ -14,6 +14,9 @@ Already working in the repository:
 - amputated open-index and unamputated external fermion factors
 - spinor-delta output using Spenso bispinor metrics
 - hand-supplied vector-current structures such as `gamma(mu, i, j)`
+- explicit remapping of open spinor labels inside coupling tensors to external
+  leg spinor slots for the currently exercised fermion patterns
+- current-current four-fermion operators with gamma matrices in the coupling
 
 Current implementation entry points:
 
@@ -43,16 +46,20 @@ Current support boundary in the code:
     `field_spinor_indices`
   - scalar-bilinear four-fermion terms like
     `field_spinor_indices=[alpha, alpha, beta, beta]`
+- explicit coupling tensors with open spinor labels for the currently covered
+  examples, including vector currents and a current-current four-fermion
+  operator
 - not yet supported in a general way:
-  - operators whose spinor structure sits in the coupling tensor and must be
-    remapped to the external leg indices
-  - general four-fermion gamma-current operators
+  - arbitrary multi-fermion tensor structures beyond the currently exercised
+    bilinear/current-current patterns
+  - automatic extraction of those tensor structures from a higher-level model
+    declaration
 
 Most important technical limitation right now:
 
-- if the coupling already contains open spinor labels, e.g. `gamma(mu,i,j)`,
-  the current engine does not yet systematically remap those labels to the
-  actual external leg spinor indices. This is the next major task.
+- the engine can now remap explicit open spinor labels in the coupling for the
+  current patterns, but normalization choices and ambiguous encodings are still
+  not centralized or guarded strongly enough.
 
 ### What is still missing
 
@@ -209,13 +216,12 @@ Deliverables:
 
 These are the next concrete tasks I recommend doing in the codebase:
 
-1. Implement permutation-aware remapping from field spinor slots to external
-   leg spinor indices and apply that map to the coupling tensor.
-2. Add regression tests for explicit open-index propagation in:
-   - `psibar gamma^mu psi A_mu`
-   - `(psibar gamma^mu psi)(psibar gamma_mu psi)`
-3. After step 1 is stable, widen supported multi-fermion structures beyond
-   repeated-dummy scalar bilinears.
+1. Centralize normalization and symmetry-factor conventions for fermion
+   operators, especially four-fermion terms.
+2. Add validation against ambiguous fermion encodings, especially repeated
+   field spinor labels combined with explicit tensor endpoints in the coupling.
+3. Widen supported multi-fermion structures beyond the current
+   bilinear/current-current patterns.
 4. Extract gamma and spinor tensor definitions into a dedicated module.
 5. Introduce an `InteractionTerm` object so examples stop passing parallel lists.
 6. Introduce gauge-field metadata and an abelian vector-field example.

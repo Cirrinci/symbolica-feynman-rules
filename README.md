@@ -7,6 +7,7 @@ Main code path:
 
 - `code/model_symbolica.py` is the primary implementation.
 - `code/examples_symbolica.py` contains runnable examples/tests for this implementation.
+- `code/spenso_gamma_checks.py` contains focused Spenso/gamma-matrix experiments and checks.
 - `Notebooks/symbolica_interaction_term.ipynb` is the interactive notebook walkthrough.
 
 Legacy prototype files have been archived outside this repository path.
@@ -18,8 +19,8 @@ Legacy prototype files have been archived outside this repository path.
 - Derivative interactions via momentum factors.
 - Fermionic role-aware contractions with permutation signs.
 - Optional spinor-index handling through Spenso bispinor metrics.
-- Amputated fermion vertices with open spinor indices when bilinear
-  contractions are inferable from the Lagrangian.
+- Amputated fermion vertices with open spinor indices for both repeated-dummy
+  bilinears and explicit coupling tensors such as `gamma(mu, i_bar, i_psi)`.
 
 ### Current status
 
@@ -31,9 +32,13 @@ What is solid right now:
 - scalar polynomial and derivative vertices
 - fermion bilinears encoded by repeated dummy spinor labels, e.g.
   `field_spinor_indices=[alpha, alpha, None]` for `psibar psi phi`
+- open-spinor remapping inside explicit coupling tensors such as
+  `gamma(mu, i_bar, i_psi)`
 - amputated open-index output for scalar fermion bilinears, e.g.
   `i y g(i1,i2)` for Yukawa and
   `-i g [g(i1,i2)g(i3,i4) - g(i1,i4)g(i3,i2)]` for `-(g/2)(psibar psi)^2`
+- amputated open-index output for a current-current operator such as
+  `gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)`
 - unamputated matrix-element output with `UF/UbarF` kept explicitly
 - rejection of underspecified multi-fermion products such as bare
   `psi * psibar * psi * psibar` with no spinor-contraction data
@@ -41,10 +46,10 @@ What is solid right now:
 What is not solid yet:
 
 - general multi-fermion operators whose spinor structure lives in the coupling
-  tensor rather than in repeated dummy labels on the fields
-- automatic remapping of open spinor labels inside the coupling to the external
-  leg indices
+  tensor beyond the currently exercised bilinear/current-current patterns
 - general gamma-chain extraction from a Lagrangian
+- normalization and symmetry-factor conventions are still script-level choices
+  rather than a single centralized policy
 
 Physics convention to keep in mind:
 
@@ -75,21 +80,23 @@ Related helpers in `model_symbolica.py`:
 
 ### Current session checklist (2026-03-26)
 
-Start here in this order:
+Recently completed:
 
-1. Unify the fermion open-index story for couplings that already carry spinor
-   labels, such as `gamma(mu,i,j)`.
-2. The key missing feature is: map field spinor slots to external leg spinor
-   labels and substitute that map into `coupling` for each compatible
-   contraction, instead of only adding `g(i,j)` metrics for repeated dummy
-   bilinears.
-3. After that, add regression tests showing that explicit
-   `leg_spinor_indices=[i1,i2,...]` propagate into the coupling for:
+1. Explicit open-spinor labels in the coupling are remapped to external leg
+   spinor slots during compatible fermion contractions.
+2. Runnable regressions now cover explicit gamma-current examples, including:
    - `psibar gamma^mu psi A_mu`
-   - a four-fermion current-current operator such as
-     `(psibar gamma^mu psi)(psibar gamma_mu psi)`
-4. Only after those tests pass should we broaden the allowed multi-fermion
-   validation beyond repeated-dummy scalar bilinears.
+   - `gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)`
+3. Focused gamma checks now display the simplified current-current structures
+   clearly enough to inspect direct and exchange terms.
+
+Next:
+
+1. Centralize normalization and symmetry-factor conventions for fermion
+   operators.
+2. Add validation for ambiguous encodings, especially repeated field spinor
+   labels combined with explicit tensor endpoints in the coupling.
+3. Move the script-level checks toward a dedicated test harness.
 
 Recommended first command:
 
@@ -104,6 +111,10 @@ Recommended first command:
 - `code/examples_symbolica.py`
   - Scripted examples for scalar, derivative, and fermion-structure checks.
   - Good quick validation target after edits.
+
+- `code/spenso_gamma_checks.py`
+  - Focused gamma/gamma5/Clifford-identity sandbox.
+  - Good place to extend spinor/Lorentz tensor experiments before adding gauge fields.
 
 - `Notebooks/symbolica_interaction_term.ipynb`
   - Step-by-step notebook using the same API as `model_symbolica.py`.
@@ -121,6 +132,7 @@ This installs dependencies from `requirements.txt` into `.venv`.
 Recommended run commands from repository root:
 
 - `./.venv/bin/python code/examples_symbolica.py`
+- `./.venv/bin/python code/spenso_gamma_checks.py`
 - `./.venv/bin/python code/examples_symbolica.py --suite scalar`
 - `./.venv/bin/python code/examples_symbolica.py --suite fermion`
 
@@ -132,9 +144,10 @@ For notebooks, ensure the kernel uses the repository virtual environment:
 
 Short term:
 
-- Improve fermion-chain automation for gamma/index structures.
+- Centralize normalization/symmetry-factor conventions for fermion operators.
 - Add more regression tests for mixed scalar-fermion permutations.
 - Expand compact-sum formulas for broader derivative patterns.
+- Add guardrails for ambiguous fermion spinor-label encodings.
 
 Medium term:
 
