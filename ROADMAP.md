@@ -221,9 +221,9 @@ These are the next concrete tasks I recommend doing in the codebase:
 6. Introduce gauge-field metadata and an abelian vector-field example.
 7. Add a non-abelian generator tensor `T(a,i,j)` and test a simple color current.
 
-### Tomorrow plan
+### Current session plan (2026-03-26)
 
-If we resume tomorrow, the suggested order is:
+For this session, use the following order:
 
 1. Read `README.md` and this section only.
 2. Run `./.venv/bin/python code/examples_symbolica.py --suite fermion`.

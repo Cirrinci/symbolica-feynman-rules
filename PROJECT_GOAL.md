@@ -67,7 +67,7 @@ What is still missing before the fermion engine feels truly solid:
 - this matters for structures like `gamma(mu,i,j)` and especially for general
   four-fermion current-current operators
 
-Concrete first target for the next session:
+Concrete first target for the current session:
 
 - implement coupling-level spinor-index substitution tied to each contraction
   permutation

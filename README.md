@@ -74,9 +74,9 @@ Related helpers in `model_symbolica.py`:
 - `compact_vertex_sum_form`
 - `compact_sum_notation`
 
-### Tomorrow
+### Current session checklist (2026-03-26)
 
-If resuming work tomorrow, start here:
+Start here in this order:
 
 1. Unify the fermion open-index story for couplings that already carry spinor
    labels, such as `gamma(mu,i,j)`.
@@ -92,7 +92,7 @@ If resuming work tomorrow, start here:
 4. Only after those tests pass should we broaden the allowed multi-fermion
    validation beyond repeated-dummy scalar bilinears.
 
-Recommended first command tomorrow:
+Recommended first command:
 
 - `./.venv/bin/python code/examples_symbolica.py --suite fermion`
 
