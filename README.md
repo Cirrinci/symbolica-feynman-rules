@@ -8,30 +8,29 @@ Main code path:
 - `code/model_symbolica.py` is the primary implementation.
 - `code/examples_symbolica.py` contains runnable examples/tests for this implementation.
 - `code/spenso_gamma_checks.py` contains focused Spenso/gamma-matrix experiments and checks.
-- `Notebooks/symbolica_interaction_term.ipynb` is the interactive notebook walkthrough.
+
 
 Legacy prototype files have been archived outside this repository path.
 
-### Current scope
+### Current scope -- Lagrangian intewraction with
 
-- Bosonic polynomial interactions.
-- Permutation-summed Wick contractions.
-- Derivative interactions via momentum factors.
-- Fermionic role-aware contractions with permutation signs.
-- Optional spinor-index handling through Spenso bispinor metrics.
+- Scakar fields.
+- derivatives.
+- Fermions.
+- Mix.
+- spinor-index handling through Spenso bispinor metrics.
 - Amputated fermion vertices with open spinor indices for both repeated-dummy
   bilinears and explicit coupling tensors such as `gamma(mu, i_bar, i_psi)`.
 
 ### Current status
 
-The code is in a good state for the currently covered examples, but it is not
+not
 yet a general FeynRules-like fermion engine.
 
 What is solid right now:
 
 - scalar polynomial and derivative vertices
-- fermion bilinears encoded by repeated dummy spinor labels, e.g.
-  `field_spinor_indices=[alpha, alpha, None]` for `psibar psi phi`
+- fermion bilinears 
 - open-spinor remapping inside explicit coupling tensors such as
   `gamma(mu, i_bar, i_psi)`
 - amputated open-index output for scalar fermion bilinears, e.g.
@@ -40,23 +39,17 @@ What is solid right now:
 - amputated open-index output for a current-current operator such as
   `gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)`
 - unamputated matrix-element output with `UF/UbarF` kept explicitly
-- rejection of underspecified multi-fermion products such as bare
-  `psi * psibar * psi * psibar` with no spinor-contraction data
 
 What is not solid yet:
 
-- general multi-fermion operators whose spinor structure lives in the coupling
-  tensor beyond the currently exercised bilinear/current-current patterns
-- general gamma-chain extraction from a Lagrangian
-- normalization and symmetry-factor conventions are still script-level choices
-  rather than a single centralized policy
+- indices generalization
+- Gauge boson
 
 Physics convention to keep in mind:
 
 - the physically correct fermion vertex is the amputated open-index object
 - the unstripped output is a matrix element diagnostic, not the final vertex
-- a four-fermion term should not become `0` just because the external spinors
-  were stripped; if it does, the spinor structure was erased too early
+
 
 ### Core pipeline
 
@@ -92,11 +85,7 @@ Recently completed:
 
 Next:
 
-1. Centralize normalization and symmetry-factor conventions for fermion
-   operators.
-2. Add validation for ambiguous encodings, especially repeated field spinor
-   labels combined with explicit tensor endpoints in the coupling.
-3. Move the script-level checks toward a dedicated test harness.
+1. Gauge fields and indices....
 
 Recommended first command:
 
@@ -116,8 +105,7 @@ Recommended first command:
   - Focused gamma/gamma5/Clifford-identity sandbox.
   - Good place to extend spinor/Lorentz tensor experiments before adding gauge fields.
 
-- `Notebooks/symbolica_interaction_term.ipynb`
-  - Step-by-step notebook using the same API as `model_symbolica.py`.
+
 
 ### Setup
 
@@ -144,7 +132,6 @@ For notebooks, ensure the kernel uses the repository virtual environment:
 
 Short term:
 
-- Centralize normalization/symmetry-factor conventions for fermion operators.
 - Add more regression tests for mixed scalar-fermion permutations.
 - Expand compact-sum formulas for broader derivative patterns.
 - Add guardrails for ambiguous fermion spinor-label encodings.
