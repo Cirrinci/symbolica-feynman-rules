@@ -6,6 +6,8 @@ matrices, gauge generators, and metrics are represented as native Spenso
 tensors with typed index slots.
 """
 
+from itertools import count
+
 from symbolica import Expression
 from symbolica.community.idenso import simplify_gamma, simplify_metrics
 from symbolica.community.spenso import (
@@ -25,6 +27,7 @@ COLOR_ADJ = Representation.coad(8)
 _HEP_LIBRARY = TensorLibrary.hep_lib()
 _ONE = Expression.num(1)
 _TWO = Expression.num(2)
+_GAMMA_LOWERED_COUNTER = count()
 
 
 def _slot(rep, index):
@@ -49,6 +52,10 @@ def color_adj_index(index):
     return _slot(COLOR_ADJ, index)
 
 
+def _fresh_index_name(prefix):
+    return f"{prefix}_{next(_GAMMA_LOWERED_COUNTER)}"
+
+
 def gamma_matrix(left_spinor, right_spinor, lorentz):
     return TensorName.gamma()(
         bispinor_index(left_spinor),
@@ -57,7 +64,14 @@ def gamma_matrix(left_spinor, right_spinor, lorentz):
     ).to_expression()
 
 
-def gamma_lowered_matrix(left_spinor, right_spinor, lowered_lorentz, summed_lorentz="rho_gamma_tmp"):
+def gamma_lowered_matrix(
+    left_spinor,
+    right_spinor,
+    lowered_lorentz,
+    summed_lorentz=None,
+):
+    if summed_lorentz is None:
+        summed_lorentz = _fresh_index_name("rho_gamma_tmp")
     return (
         lorentz_metric(summed_lorentz, lowered_lorentz)
         * gamma_matrix(left_spinor, right_spinor, summed_lorentz)

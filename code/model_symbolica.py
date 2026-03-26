@@ -106,6 +106,45 @@ def _group_spinor_slots(field_spinor_indices):
     return groups
 
 
+def _open_spinor_slot_labels(field_roles, field_spinor_indices):
+    """Return (slot, label) pairs for fermion spinor labels that appear once.
+
+    Labels appearing exactly once across fermion slots are treated as open slots
+    carried by coupling tensors (e.g. gamma(mu, i_bar, i_psi)) and can be
+    remapped to external leg spinor indices per contraction permutation.
+    """
+    if field_roles is None or field_spinor_indices is None:
+        return []
+
+    if len(field_roles) != len(field_spinor_indices):
+        raise ValueError("field_roles and field_spinor_indices must have the same length")
+
+    fermion_slots = [
+        i for i, role in enumerate(field_roles)
+        if role in FERMION_ROLES and field_spinor_indices[i] is not None
+    ]
+    counts = Counter(str(field_spinor_indices[i]) for i in fermion_slots)
+
+    return [
+        (i, field_spinor_indices[i])
+        for i in fermion_slots
+        if counts[str(field_spinor_indices[i])] == 1
+    ]
+
+
+def _all_fermion_slots_labeled(field_roles, field_spinor_indices):
+    """Whether every fermion slot has an explicit spinor label."""
+    if field_roles is None or field_spinor_indices is None:
+        return False
+    if len(field_roles) != len(field_spinor_indices):
+        return False
+
+    for i, role in enumerate(field_roles):
+        if role in FERMION_ROLES and field_spinor_indices[i] is None:
+            return False
+    return True
+
+
 def _fermion_sign_from_slots(perm, fermion_slots):
     """Compute Grassmann sign from permutation restricted to fermion slots."""
     if len(fermion_slots) <= 1:
@@ -202,7 +241,7 @@ def _has_inferred_fermion_chains(field_roles, field_spinor_indices):
     return len(_infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices)) > 0
 
 
-def _validate_supported_fermion_structure(field_roles, field_spinor_indices):
+def _validate_supported_fermion_structure(field_roles, field_spinor_indices, coupling=None):
     """Reject underspecified multi-fermion operators.
 
     The current engine can infer scalar fermion bilinears from repeated dummy
@@ -225,13 +264,41 @@ def _validate_supported_fermion_structure(field_roles, field_spinor_indices):
             "[alpha, alpha, beta, beta] for (psibar psi)(psibar psi)."
         )
 
-    if not _has_inferred_fermion_chains(field_roles, field_spinor_indices):
-        raise ValueError(
-            "Unsupported multi-fermion operator: no inferable fermion bilinears "
-            "found in field_spinor_indices. The current engine supports repeated "
-            "dummy spinor labels for bilinear contractions, not bare products like "
-            "psi*psibar*psi*psibar without contraction data."
-        )
+    if _has_inferred_fermion_chains(field_roles, field_spinor_indices):
+        return
+
+    # Allow fully open-slot encodings where every fermion slot carries a unique
+    # spinor label and the coupling tensor is expected to provide the explicit
+    # chain structure (e.g. gamma(i1,i2)*gamma(i3,i4)).
+    fermion_slots = _fermion_slots_from_roles(field_roles)
+    labels = [str(field_spinor_indices[i]) for i in fermion_slots]
+    if all(field_spinor_indices[i] is not None for i in fermion_slots) and len(set(labels)) == len(labels):
+        if coupling is None:
+            raise ValueError(
+                "Explicit open-slot multi-fermion encoding requires coupling to "
+                "contain those spinor labels, but coupling was not provided."
+            )
+
+        coupling_text = coupling.to_canonical_string()
+        missing = [
+            str(field_spinor_indices[i])
+            for i in fermion_slots
+            if str(field_spinor_indices[i]) not in coupling_text
+        ]
+        if missing:
+            raise ValueError(
+                "Unsupported multi-fermion operator: explicit open-slot labels "
+                "must appear in the coupling tensor. Missing labels: "
+                + ", ".join(missing)
+            )
+        return
+
+    raise ValueError(
+        "Unsupported multi-fermion operator: provide either inferable bilinear "
+        "contractions via repeated dummy labels (e.g. [alpha,alpha,beta,beta]) "
+        "or a fully explicit open-slot encoding where each fermion slot has a "
+        "distinct spinor label tied to the coupling tensor."
+    )
 
 
 def contract_to_full_expression(
@@ -248,6 +315,7 @@ def contract_to_full_expression(
     field_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
+    coupling=None,
 ):
     """Sum over all Wick contractions to build the full vacuum matrix element.
 
@@ -299,7 +367,7 @@ def contract_to_full_expression(
                 "statistics='fermion' requires both field_roles and leg_roles "
                 "to avoid ambiguous Grassmann signs and incompatible contractions"
             )
-        _validate_supported_fermion_structure(field_roles, field_spinor_indices)
+        _validate_supported_fermion_structure(field_roles, field_spinor_indices, coupling=coupling)
 
     use_spinor_deltas = leg_spinor_indices is not None
     fermion_chains = []
@@ -330,8 +398,21 @@ def contract_to_full_expression(
     )
 
     total = Expression.num(0)
+    open_spinor_slots = []
+    if coupling is not None and leg_spinor_indices is not None:
+        open_spinor_slots = _open_spinor_slot_labels(field_roles, field_spinor_indices)
+
     for perm in permutations(range(n)):
         term = Expression.num(1)
+
+        coupling_term = coupling if coupling is not None else Expression.num(1)
+        if open_spinor_slots:
+            for slot, spinor_label in open_spinor_slots:
+                coupling_term = coupling_term.replace(
+                    spinor_label,
+                    leg_spinor_indices[perm[slot]],
+                )
+        term *= coupling_term
 
         # Skip incompatible role assignments early (species stays symbolic via deltas).
         valid = True
@@ -482,7 +563,7 @@ def vertex_factor(
         strip_externals
         and effective_leg_spinor_indices is None
         and statistics == "fermion"
-        and _has_inferred_fermion_chains(field_roles, field_spinor_indices)
+        and _all_fermion_slots_labeled(field_roles, field_spinor_indices)
     ):
         effective_leg_spinor_indices = _default_leg_spinor_indices(len(ps))
 
@@ -499,8 +580,9 @@ def vertex_factor(
         field_spinor_indices=field_spinor_indices,
         leg_spins=leg_spins,
         leg_spinor_indices=effective_leg_spinor_indices,
+        coupling=coupling,
     )
-    full = coupling * contracted
+    full = contracted
 
     if include_delta:
         if d is None:

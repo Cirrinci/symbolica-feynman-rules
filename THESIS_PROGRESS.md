@@ -42,6 +42,8 @@ The current prototype already supports:
 - spinor-delta structures using Spenso bispinor metrics
 - first Spenso-backed gamma-matrix structures
 - first axial-current structures using `gamma` and `gamma5`
+- explicit open-spinor remapping inside coupling tensors for current examples
+- first current-current four-fermion structures with gamma matrices
 - matrix-backed consistency checks through the Spenso HEP tensor library
 
 ### Current implementation structure
@@ -74,6 +76,7 @@ Reasonable summary of progress:
 - derivative sector: working
 - fermion combinatorics: working at prototype level
 - spinor/Lorentz tensor structures: started and already functional
+- explicit gamma-current and current-current examples: working in the covered patterns
 - gauge-field support: not yet implemented
 - full model-definition interface: not yet implemented
 
@@ -94,6 +97,8 @@ Main missing parts:
 
 - gauge representations and gauge-field interactions
 - automatic generation of richer Lorentz/spinor chains from model terms
+- broader multi-fermion tensor support beyond the currently exercised patterns
+- centralized normalization and symmetry-factor conventions
 - a clean model-definition API
 - broader simplification for nontrivial gamma and gauge tensor structures
 - export layer for final rule sets
