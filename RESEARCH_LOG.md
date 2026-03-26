@@ -5,11 +5,11 @@ Symbolica/Spenso FeynRules-style prototype.
 
 ### Current status snapshot
 
-As of 2026-03-25:
+As of 2026-03-26:
 
-- current branch: `gamma_matrix-from-fermions`
+- current branch: `better-deltas-from-fermions`
 - working tree: clean
-- branch position relative to `main`: 12 commits ahead, 0 behind
+- branch position relative to `main`: 23 commits ahead, 0 behind
 - long-term goal: implement a Python analogue of FeynRules using Symbolica for
   symbolic rewriting and Spenso for tensor/index structures
 
@@ -184,6 +184,33 @@ Concrete repository state:
   [PROJECT_GOAL.md](/Users/rems/Library/CloudStorage/OneDrive-ETHZurich/ETHz/ETHz_FS26/MScThesis/thesis-code/PROJECT_GOAL.md)
 - forward plan:
   [ROADMAP.md](/Users/rems/Library/CloudStorage/OneDrive-ETHZurich/ETHz/ETHz_FS26/MScThesis/thesis-code/ROADMAP.md)
+
+### 2026-03-26: coupling-level spinor remapping and gamma regressions
+
+Relevant commits:
+
+- `a412d6c` test: align current-current expectations after branch sync
+- `1f1497e` Clean fermion gamma example scripts
+- `fc059c1` fully working gamma and spinor labels
+- `52faf51` Merge gamma fermion support into better deltas
+
+What happened:
+
+- explicit open spinor labels inside coupling tensors were tied to the
+  contraction permutation and remapped to the external leg spinor slots
+- fermion example coverage was extended to vector currents and current-current
+  four-fermion operators with gamma matrices
+- the focused Spenso gamma check script was cleaned up so the direct/exchange
+  structure is easier to inspect
+
+What this achieved:
+
+- the code now handles the currently exercised explicit gamma-current patterns
+  as amputated open-index vertices rather than only as unstripped diagnostics
+- the documented session target for `psibar gamma^mu psi A_mu` and the
+  current-current operator is complete
+- the next bottleneck is no longer the basic remapping logic; it is hardening
+  conventions, validation, and test structure
 
 ### Where we are in the overall progress
 

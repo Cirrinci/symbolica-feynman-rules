@@ -222,22 +222,30 @@ These are the next concrete tasks I recommend doing in the codebase:
    field spinor labels combined with explicit tensor endpoints in the coupling.
 3. Widen supported multi-fermion structures beyond the current
    bilinear/current-current patterns.
-4. Extract gamma and spinor tensor definitions into a dedicated module.
+4. Broaden `code/spenso_structures.py` from a wrapper collection into the
+   central tensor vocabulary used by the engine.
 5. Introduce an `InteractionTerm` object so examples stop passing parallel lists.
 6. Introduce gauge-field metadata and an abelian vector-field example.
 7. Add a non-abelian generator tensor `T(a,i,j)` and test a simple color current.
 
-### Current session plan (2026-03-26)
+### Session outcome (2026-03-26)
 
-For this session, use the following order:
+Completed in this session:
 
-1. Read `README.md` and this section only.
-2. Run `./.venv/bin/python code/examples_symbolica.py --suite fermion`.
-3. Inspect how `vertex_factor(...)` currently handles `coupling` after the
-   contraction sum.
-4. Add a coupling-substitution layer so explicit tensor spinor labels follow
-   the same leg assignment as the contracted fields.
-5. Lock that behavior down with tests before touching the model-layer work.
+1. Ran `./.venv/bin/python code/examples_symbolica.py --suite fermion` as the
+   primary regression check.
+2. Verified that `vertex_factor(...)` now remaps explicit coupling spinor
+   labels per contraction permutation.
+3. Locked that behavior down with runnable checks for
+   `psibar gamma^mu psi A_mu` and
+   `gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)`.
+
+Recommended starting point for the next session:
+
+1. Centralize normalization and symmetry-factor conventions.
+2. Add stronger validation for ambiguous encodings that mix repeated dummy
+   labels with explicit coupling endpoints.
+3. Move the runnable asserts toward a dedicated test harness.
 
 ### Nice rule of thumb
 

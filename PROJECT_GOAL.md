@@ -57,19 +57,25 @@ What was fixed in the current cleanup:
   stripped to scalars
 - `-(g/2)(psibar psi)^2` now gives the expected direct-minus-exchange
   four-fermion structure
+- explicit open spinor labels carried inside coupling tensors now follow the
+  contraction permutation and remap to the external leg spinor indices
+- runnable regressions now cover `psibar gamma^mu psi A_mu` and a gamma-current
+  four-fermion operator
 - underspecified four-fermion products are rejected instead of misleadingly
   returning `0`
 
 What is still missing before the fermion engine feels truly solid:
 
-- explicit spinor labels that already live inside the coupling tensor must be
-  remapped to the external leg spinor indices
-- this matters for structures like `gamma(mu,i,j)` and especially for general
-  four-fermion current-current operators
+- normalization and symmetry-factor conventions for fermion operators are not
+  centralized yet
+- ambiguous encodings that mix repeated dummy spinor labels with explicit
+  tensor endpoints need stronger validation
+- support is still limited to the currently exercised bilinear/current-current
+  patterns, not general multi-fermion tensor structures
 
-Concrete first target for the current session:
+Recommended first target for the next session:
 
-- implement coupling-level spinor-index substitution tied to each contraction
-  permutation
-- then add regression tests for `psibar gamma^mu psi A_mu` and one
-  gamma-current four-fermion operator
+- centralize normalization and symmetry-factor conventions for fermion
+  operators
+- then add stronger validation for ambiguous fermion encodings before widening
+  the supported operator classes
