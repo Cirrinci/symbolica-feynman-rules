@@ -8,12 +8,10 @@ from model_symbolica import (
     S,
     Expression,
     I,
-    pi,
     UF,
     UbarF,
     delta,
     bis,
-    Delta,
     pcomp,
     vertex_factor,
     simplify_deltas,
@@ -23,10 +21,12 @@ from model_symbolica import (
     compact_sum_notation,
 )
 from spenso_structures import (
+    gauge_generator,
     gamma_lowered_matrix,
     gamma_matrix,
     gamma5_matrix,
     simplify_gamma_chain,
+    slot_labels,
 )
 
 # ---------------------------------------------------------------------------
@@ -49,13 +49,19 @@ psibar0, psi0 = S("psibar0", "psi0")
 i_psi_bar, i_psi = S("i_psi_bar", "i_psi")
 s1, s2, s3, s4 = S("s1", "s2", "s3", "s4")
 A0 = S("A0")
+G0 = S("G0")
 gV = S("gV")
+gS = S("gS")
 g4F = S("g4F")
 g_psi4 = S("g_psi4")
 gJJ = S("gJJ")
 alpha_s, beta_s = S("alpha_s", "beta_s")
 a_bar, a_psi, b_bar, b_psi = S("a_bar", "a_psi", "b_bar", "b_psi")
+i_bar_q, i_psi_q = S("i_bar_q", "i_psi_q")
+c_bar_q, c_psi_q, a_g = S("c_bar_q", "c_psi_q", "a_g")
 i1, i2, i3, i4 = S("i1", "i2", "i3", "i4")
+c1, c2, c3, a1, a2, a3 = S("c1", "c2", "c3", "a1", "a2", "a3")
+mu1, mu2, mu3 = S("mu1", "mu2", "mu3")
 idx_i, idx_j, idx_k = S("i", "j", "k")
 
 lam4 = S("lam4")
@@ -94,8 +100,10 @@ def show_vertex(
     field_roles=None,
     leg_roles=None,
     field_spinor_indices=None,
+    field_slot_labels=None,
     leg_spins=None,
     leg_spinor_indices=None,
+    leg_slot_labels=None,
     strip_externals=True,
     species_map=None,
     compact_override=None,
@@ -113,8 +121,10 @@ def show_vertex(
         field_roles=field_roles,
         leg_roles=leg_roles,
         field_spinor_indices=field_spinor_indices,
+        field_slot_labels=field_slot_labels,
         leg_spins=leg_spins,
         leg_spinor_indices=leg_spinor_indices,
+        leg_slot_labels=leg_slot_labels,
         strip_externals=strip_externals,
         include_delta=True,
         d=d,
@@ -291,6 +301,25 @@ L_current_current = dict(
     leg_spins=[s1, s2, s3, s4],
 )
 
+# 10c) Gauge-ready current with spinor + Lorentz + color slot labels:
+#      gS * psibar gamma^mu T^a psi G^a_mu
+L_quark_gluon = dict(
+    coupling=gS * gamma_matrix(i_bar_q, i_psi_q, mu) * gauge_generator(a_g, c_bar_q, c_psi_q),
+    alphas=[psibar0, psi0, G0],
+    betas=[b1, b2, b3],
+    ps=[p1, p2, p3],
+    statistics="fermion",
+    field_roles=["psibar", "psi", "scalar"],
+    leg_roles=["psibar", "psi", "scalar"],
+    field_spinor_indices=[i_bar_q, i_psi_q, None],
+    field_slot_labels=[
+        slot_labels(spinor=i_bar_q, color_fund=c_bar_q),
+        slot_labels(spinor=i_psi_q, color_fund=c_psi_q),
+        slot_labels(lorentz=mu, color_adj=a_g),
+    ],
+    leg_spins=[s1, s2, s3],
+)
+
 # 11-14) Mixed derivative fermion+scalar interactions
 _MIX_BASE = dict(
     alphas=[psibar0, psi0, phi0, chi0],
@@ -351,11 +380,13 @@ COMPACT_DERIV = compact_vertex_sum_form(
     coupling=gD, ps=[p1, p2, p3, p4],
     derivative_indices=deriv_indices, derivative_targets=deriv_targets, d=d,
     field_species=[phi0] * 4, leg_species=[phi0] * 4,
+    include_delta=False,
 )
 COMPACT_DERIV2 = compact_vertex_sum_form(
     coupling=gD2, ps=[p1, p2, p3, p4],
     derivative_indices=deriv_indices2, derivative_targets=deriv_targets2, d=d,
     field_species=[phi0] * 4, leg_species=[phi0] * 4,
+    include_delta=False,
 )
 
 
@@ -365,7 +396,7 @@ COMPACT_DERIV2 = compact_vertex_sum_form(
 
 def _run_scalar_tests():
     sm_phi = {b1: phi0, b2: phi0, b3: phi0, b4: phi0}
-    D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
+    D4 = Expression.num(1)
 
     V = simplify_deltas(vertex_factor(**L_phi4, x=x, d=d), species_map=sm_phi)
     _check(V, 24 * I * lam4 * D4, "phi^4")
@@ -381,7 +412,7 @@ def _run_scalar_tests():
     _check(V, COMPACT_DERIV2, "Derivative (mu,mu)")
 
     # Multi-species: gijk * phi_i^2 phi_j^2 phi_k^2
-    D6 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4 + p5 + p6)
+    D6 = Expression.num(1)
     V_multi = vertex_factor(**L_multi, x=x, d=d)
     expected_multi = 8 * I * gijk(idx_i, idx_j, idx_k) * D6
 
@@ -400,8 +431,8 @@ def _run_scalar_tests():
 def _run_fermion_tests():
     sm3 = {b1: psibar0, b2: psi0, b3: phi0}
     sm4 = {b1: psibar0, b2: psi0, b3: psibar0, b4: psi0}
-    D3 = (2 * pi) ** d * Delta(p1 + p2 + p3)
-    D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
+    D3 = Expression.num(1)
+    D4 = Expression.num(1)
     G12 = bis.g(i1, i2).to_expression()
 
     V = simplify_deltas(vertex_factor(**L_yukawa, x=x, d=d), species_map=sm3)
@@ -498,8 +529,8 @@ def _run_fermion_tests():
 
 def _run_fermion_derivative_mixed_tests():
     sm4 = {b1: psibar0, b2: psi0, b3: phi0, b4: chi0}
-    D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
-    D5 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4 + p5)
+    D4 = Expression.num(1)
+    D5 = Expression.num(1)
     G12 = bis.g(i1, i2).to_expression()
 
     V = simplify_deltas(vertex_factor(**L_mix_dpsibar, x=x, d=d), species_map=sm4)
@@ -535,6 +566,17 @@ def _run_fermion_derivative_mixed_tests():
     )
 
     print("\n  Mixed fermion+scalar derivative tests passed.\n")
+
+
+def _run_gauge_ready_tests():
+    sm3 = {b1: psibar0, b2: psi0, b3: G0}
+    D3 = Expression.num(1)
+
+    V = simplify_deltas(vertex_factor(**L_quark_gluon, x=x, d=d), species_map=sm3)
+    expected = I * gS * gamma_matrix(i1, i2, mu3) * gauge_generator(a3, c1, c2) * D3
+    _check(V, expected, "Gauge-ready quark-gluon current")
+
+    print("\n  Gauge-ready tests passed.\n")
 
 
 def _relation_to_original(candidate, original):
@@ -580,6 +622,8 @@ def _run_suite_tests(suite: str):
     if suite in ("fermion", "all"):
         _run_fermion_tests()
         _run_fermion_derivative_mixed_tests()
+    if suite in ("gauge", "all"):
+        _run_gauge_ready_tests()
     print("All selected tests passed.")
 
 
@@ -650,7 +694,7 @@ def _run_fermion_demo():
     print("=" * 80)
     print(
         "  -(g/2)(psibar psi)(psibar psi)  →  "
-        "V = (-ig)[g(i1,i2)*g(i3,i4) - g(i1,i4)*g(i3,i2)] * (2*pi)^d * Delta(Σp)"
+        "V = (-ig)[g(i1,i2)*g(i3,i4) - g(i1,i4)*g(i3,i2)]"
     )
     print()
 
@@ -684,16 +728,29 @@ def _run_fermion_demo():
     )
 
 
+def _run_gauge_demo():
+    print("\n=== gauge-ready: non-abelian fermion current ===")
+    show_vertex(
+        "gS * psibar gamma^mu T^a psi G^a_mu",
+        **L_quark_gluon,
+        species_map={b1: psibar0, b2: psi0, b3: G0},
+    )
+    print("  Interpretation: the coupling now remaps spinor, Lorentz, and color labels through one slot-label path.")
+    print()
+
+
 def _run_suite_demo(suite: str):
     if suite in ("scalar", "all"):
         _run_scalar_demo()
     if suite in ("fermion", "all"):
         _run_fermion_demo()
+    if suite in ("gauge", "all"):
+        _run_gauge_demo()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Symbolica vertex examples.")
-    parser.add_argument("--suite", choices=("scalar", "fermion", "all"), default="all")
+    parser.add_argument("--suite", choices=("scalar", "fermion", "gauge", "all"), default="all")
     parser.add_argument("--skip-tests", action="store_true")
     args = parser.parse_args()
 

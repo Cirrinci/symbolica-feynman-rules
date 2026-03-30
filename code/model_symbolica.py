@@ -28,6 +28,7 @@ from typing import Literal, Optional, Sequence
 from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 from symbolica.community.idenso import simplify_metrics
+from spenso_structures import SPINOR_KIND, default_leg_slot_labels
 
 # ---------------------------------------------------------------------------
 # Module-level Symbolica symbols + Spenso bispinor representation
@@ -125,6 +126,120 @@ def _open_spinor_slot_labels(field_roles, field_spinor_indices):
         for i in fermion_slots
         if counts[str(field_spinor_indices[i])] == 1
     ]
+
+
+def _normalize_slot_label_entry(entry):
+    if entry is None:
+        return None
+
+    normalized = {}
+    for kind, labels in entry.items():
+        if labels is None:
+            continue
+        if isinstance(labels, tuple):
+            values = tuple(label for label in labels if label is not None)
+        elif isinstance(labels, list):
+            values = tuple(label for label in labels if label is not None)
+        else:
+            values = (labels,)
+        if values:
+            normalized[kind] = values
+    return normalized or None
+
+
+def _coerce_slot_label_structure(slot_labels, *, expected_length, label_name):
+    if slot_labels is None:
+        return None
+    if len(slot_labels) != expected_length:
+        raise ValueError(f"{label_name} must have the same length as alphas/ps")
+    return [
+        _normalize_slot_label_entry(entry)
+        for entry in slot_labels
+    ]
+
+
+def _merge_slot_label_structures(
+    base_slot_labels,
+    spinor_indices,
+    roles,
+    *,
+    expected_length,
+    label_name,
+):
+    merged = _coerce_slot_label_structure(
+        base_slot_labels,
+        expected_length=expected_length,
+        label_name=label_name,
+    )
+    if merged is None:
+        merged = [None] * expected_length
+
+    if spinor_indices is None:
+        return merged if any(entry is not None for entry in merged) else None
+
+    if len(spinor_indices) != expected_length:
+        raise ValueError(f"{label_name} spinor indices must have the same length as alphas/ps")
+
+    for i, spinor_index in enumerate(spinor_indices):
+        if spinor_index is None:
+            continue
+        if roles is not None and roles[i] not in FERMION_ROLES:
+            continue
+
+        entry = dict(merged[i] or {})
+        existing = entry.get(SPINOR_KIND)
+        if existing is not None and existing != (spinor_index,):
+            raise ValueError(
+                f"Conflicting spinor label specification at slot {i}: "
+                f"{existing} vs {(spinor_index,)}"
+            )
+        entry[SPINOR_KIND] = (spinor_index,)
+        merged[i] = entry
+
+    return merged if any(entry is not None for entry in merged) else None
+
+
+def _primary_slot_labels(slot_labels, kind):
+    if slot_labels is None:
+        return None
+    labels = []
+    found = False
+    for entry in slot_labels:
+        if entry is not None and kind in entry and entry[kind]:
+            labels.append(entry[kind][0])
+            found = True
+        else:
+            labels.append(None)
+    return labels if found else None
+
+
+def _slot_labels_have_kind(slot_labels, kind):
+    if slot_labels is None:
+        return False
+    return any(entry is not None and kind in entry and entry[kind] for entry in slot_labels)
+
+
+def _open_slot_labels(slot_labels):
+    if slot_labels is None:
+        return []
+
+    counts = Counter()
+    for entry in slot_labels:
+        if entry is None:
+            continue
+        for kind, labels in entry.items():
+            for label in labels:
+                counts[(kind, str(label))] += 1
+
+    open_labels = []
+    for slot, entry in enumerate(slot_labels):
+        if entry is None:
+            continue
+        for kind, labels in entry.items():
+            for position, label in enumerate(labels):
+                if counts[(kind, str(label))] == 1:
+                    open_labels.append((slot, kind, position, label))
+    return open_labels
 
 
 def _all_fermion_slots_labeled(field_roles, field_spinor_indices):
@@ -308,8 +423,10 @@ def contract_to_full_expression(
     field_roles=None,
     leg_roles=None,
     field_spinor_indices: Optional[Sequence] = None,
+    field_slot_labels=None,
     leg_spins: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
+    leg_slot_labels=None,
     coupling=None,
 ):
     """Sum over all Wick contractions to build the full vacuum matrix element.
@@ -322,10 +439,13 @@ def contract_to_full_expression(
     momentum of the external leg that field k contracts with in that
     permutation... this caused many errors when I was trying to use it in the vertex_factor function :(
 
-    When leg_spinor_indices is provided, fermion external factors are replaced
+    When spinor leg labels are available, fermion external factors are replaced
     by Spenso bispinor metrics g(bis(4,a), bis(4,b)) connecting legs whose
     fields share a bilinear spinor contraction (inferred from
-    field_spinor_indices).  Bosonic fields still produce U(beta, p) as usual.
+    field_spinor_indices). Coupling-level open labels are remapped through the
+    generic slot-label machinery, so spinor, Lorentz, and gauge labels can all
+    follow the contraction permutation. Bosonic fields still produce U(beta, p)
+    as usual.
     """
 
     #first check if the lengths of the sequences are the same
@@ -356,36 +476,64 @@ def contract_to_full_expression(
     if leg_spinor_indices is not None and len(leg_spinor_indices) != n:
         raise ValueError("leg_spinor_indices must have the same length as ps")
 
+    effective_field_slot_labels = _merge_slot_label_structures(
+        field_slot_labels,
+        field_spinor_indices,
+        field_roles,
+        expected_length=n,
+        label_name="field_slot_labels",
+    )
+    effective_leg_slot_labels = _merge_slot_label_structures(
+        leg_slot_labels,
+        leg_spinor_indices,
+        leg_roles,
+        expected_length=n,
+        label_name="leg_slot_labels",
+    )
+    effective_field_spinor_indices = _primary_slot_labels(effective_field_slot_labels, SPINOR_KIND)
+    if effective_field_spinor_indices is None:
+        effective_field_spinor_indices = field_spinor_indices
+    effective_leg_spinor_indices = _primary_slot_labels(effective_leg_slot_labels, SPINOR_KIND)
+    if effective_leg_spinor_indices is None:
+        effective_leg_spinor_indices = leg_spinor_indices
+
     if statistics == "fermion":
         if field_roles is None or leg_roles is None:
             raise ValueError(
                 "statistics='fermion' requires both field_roles and leg_roles "
                 "to avoid ambiguous Grassmann signs and incompatible contractions"
             )
-        _validate_supported_fermion_structure(field_roles, field_spinor_indices, coupling=coupling)
+        _validate_supported_fermion_structure(
+            field_roles,
+            effective_field_spinor_indices,
+            coupling=coupling,
+        )
 
-    use_spinor_deltas = leg_spinor_indices is not None
+    use_spinor_deltas = _slot_labels_have_kind(effective_leg_slot_labels, SPINOR_KIND)
     fermion_chains = []
     if use_spinor_deltas:
         if field_roles is None:
-            raise ValueError("field_roles required when leg_spinor_indices is given")
-        if field_spinor_indices is None:
-            raise ValueError("field_spinor_indices required when leg_spinor_indices is given")
+            raise ValueError("field_roles required when spinor leg labels are given")
+        if effective_field_spinor_indices is None:
+            raise ValueError("field_spinor_indices or field_slot_labels required when spinor leg labels are given")
         for i, role in enumerate(field_roles):
-            if role in ("psi", "psibar") and field_spinor_indices[i] is None:
+            if role in ("psi", "psibar") and effective_field_spinor_indices[i] is None:
                 raise ValueError(
                     "Fermion slots must carry a spinor index when "
-                    "leg_spinor_indices is provided"
+                    "spinor leg labels are provided"
                 )
         for j, role in enumerate(leg_roles):
-            if role in ("psi", "psibar") and leg_spinor_indices[j] is None:
+            if role in ("psi", "psibar") and effective_leg_spinor_indices[j] is None:
                 raise ValueError(
                     "Fermion legs must carry a spinor index when "
-                    "leg_spinor_indices is provided"
+                    "spinor leg labels are provided"
                 )
         # Fermion chain abstraction for bispinor-metric case:
         # infer ordered endpoints (psibar_slot, psi_slot).
-        fermion_chains = _infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices)
+        fermion_chains = _infer_fermion_chains_from_endpoints(
+            field_roles,
+            effective_field_spinor_indices,
+        )
 
     fermion_slots = (
         _fermion_slots_from_roles(field_roles)
@@ -393,21 +541,12 @@ def contract_to_full_expression(
     )
 
     total = Expression.num(0)
-    open_spinor_slots = []
-    if coupling is not None and leg_spinor_indices is not None:
-        open_spinor_slots = _open_spinor_slot_labels(field_roles, field_spinor_indices)
+    open_slot_labels = []
+    if coupling is not None and effective_field_slot_labels is not None and effective_leg_slot_labels is not None:
+        open_slot_labels = _open_slot_labels(effective_field_slot_labels)
 
     for perm in permutations(range(n)):
         term = Expression.num(1)
-
-        coupling_term = coupling if coupling is not None else Expression.num(1)
-        if open_spinor_slots:
-            for slot, spinor_label in open_spinor_slots:
-                coupling_term = coupling_term.replace(
-                    spinor_label,
-                    leg_spinor_indices[perm[slot]],
-                )
-        term *= coupling_term
 
         # Skip incompatible role assignments early (species stays symbolic via deltas).
         valid = True
@@ -424,6 +563,24 @@ def contract_to_full_expression(
                 break
         if not valid:
             continue
+
+        coupling_term = coupling if coupling is not None else Expression.num(1)
+        if open_slot_labels:
+            for slot, kind, position, label in open_slot_labels:
+                target_entry = effective_leg_slot_labels[perm[slot]]
+                if (
+                    target_entry is None
+                    or kind not in target_entry
+                    or len(target_entry[kind]) <= position
+                ):
+                    raise ValueError(
+                        f"Missing leg slot label for kind '{kind}' at slot {perm[slot]}"
+                    )
+                coupling_term = coupling_term.replace(
+                    label,
+                    target_entry[kind][position],
+                )
+        term *= coupling_term
 
         if fermion_slots:
             term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
@@ -442,8 +599,8 @@ def contract_to_full_expression(
             else:
                 spin = leg_spins[j] if leg_spins is not None else _default_spin_symbol(j)
                 spinor_index = (
-                    field_spinor_indices[i]
-                    if field_spinor_indices is not None
+                    effective_field_spinor_indices[i]
+                    if effective_field_spinor_indices is not None
                     else S(f"si{i + 1}")
                 )
                 term *= _external_factor_for_contraction(
@@ -459,8 +616,8 @@ def contract_to_full_expression(
         if use_spinor_deltas:
             for psibar_slot, psi_slot in fermion_chains:
                 term *= bis.g(
-                    leg_spinor_indices[perm[psibar_slot]],
-                    leg_spinor_indices[perm[psi_slot]],
+                    effective_leg_spinor_indices[perm[psibar_slot]],
+                    effective_leg_spinor_indices[perm[psi_slot]],
                 ).to_expression()
 
         term *= plane_wave(p_sum, x)
@@ -514,8 +671,10 @@ def vertex_factor(
     field_roles=None,
     leg_roles=None,
     field_spinor_indices: Optional[Sequence] = None,
+    field_slot_labels=None,
     leg_spins: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
+    leg_slot_labels=None,
     strip_externals: bool = True,
     include_delta: bool = True,
     d=None,
@@ -546,21 +705,38 @@ def vertex_factor(
         the amputated vertex.
     include_delta : replace the x-integral with momentum delta
     d : spacetime dimension symbol (defaults to S('d'))
-    leg_spinor_indices : per-leg spinor index; when provided, fermion
-        external factors become Spenso bispinor metrics connecting legs
-        whose Lagrangian fields share a bilinear contraction (inferred
-        from field_spinor_indices). Bosonic factors are stripped normally.
-        If omitted, stripped fermion vertices auto-generate leg spinor labels
-        whenever such bilinear contractions can be inferred.
+    field_slot_labels / leg_slot_labels : generic per-slot index-label
+        mappings, e.g. spinor, Lorentz, or gauge labels carried by each
+        field/external leg. These are used to remap open tensor slots inside
+        the coupling according to the contraction permutation.
+    leg_spinor_indices : legacy convenience argument for spinor labels on
+        external legs. If omitted, stripped vertices auto-generate default
+        leg labels from the available field-slot labels.
     """
-    effective_leg_spinor_indices = leg_spinor_indices
+    effective_field_slot_labels = _merge_slot_label_structures(
+        field_slot_labels,
+        field_spinor_indices,
+        field_roles,
+        expected_length=len(ps),
+        label_name="field_slot_labels",
+    )
+    effective_leg_slot_labels = _merge_slot_label_structures(
+        leg_slot_labels,
+        leg_spinor_indices,
+        leg_roles,
+        expected_length=len(ps),
+        label_name="leg_slot_labels",
+    )
     if (
         strip_externals
-        and effective_leg_spinor_indices is None
-        and statistics == "fermion"
-        and _all_fermion_slots_labeled(field_roles, field_spinor_indices)
+        and effective_leg_slot_labels is None
+        and effective_field_slot_labels is not None
     ):
-        effective_leg_spinor_indices = _default_leg_spinor_indices(len(ps))
+        effective_leg_slot_labels = default_leg_slot_labels(effective_field_slot_labels)
+
+    effective_leg_spinor_indices = _primary_slot_labels(effective_leg_slot_labels, SPINOR_KIND)
+    if effective_leg_spinor_indices is None:
+        effective_leg_spinor_indices = leg_spinor_indices
 
     contracted = contract_to_full_expression(
         alphas=alphas,
@@ -573,8 +749,10 @@ def vertex_factor(
         field_roles=field_roles,
         leg_roles=leg_roles,
         field_spinor_indices=field_spinor_indices,
+        field_slot_labels=effective_field_slot_labels,
         leg_spins=leg_spins,
         leg_spinor_indices=effective_leg_spinor_indices,
+        leg_slot_labels=effective_leg_slot_labels,
         coupling=coupling,
     )
     full = contracted
@@ -585,7 +763,7 @@ def vertex_factor(
         p_sum = Expression.num(0)
         for p in ps:
             p_sum += p
-        full = full.replace(plane_wave(p_sum, x), (2 * pi) ** d * Delta(p_sum))
+        full = full.replace(plane_wave(p_sum, x), 1)#(2 * pi) ** d * Delta(p_sum))
 
     if strip_externals:
         beta_, p_ = S("beta_", "p_")
@@ -772,11 +950,12 @@ def compact_vertex_sum_form(
     d=None,
     field_species: Optional[Sequence] = None,
     leg_species: Optional[Sequence] = None,
+    include_delta: bool = True,
 ):
     """Compact sum-form vertex for general derivative-target patterns.
 
     This returns the compact expression:
-      i * coupling * (-i)^m * (2*pi)^d * Delta(sum p) * S_momentum
+      i * coupling * (-i)^m * delta_factor * S_momentum
     where S_momentum is built by derivative_momentum_sum_expression(...).
     """
     if d is None:
@@ -796,7 +975,8 @@ def compact_vertex_sum_form(
         leg_species=leg_species,
     )
 
-    return phase * coupling * (2 * pi) ** d * Delta(p_sum) * mom_sum
+    delta_factor = (2 * pi) ** d * Delta(p_sum) if include_delta else Expression.num(1)
+    return phase * coupling * delta_factor * mom_sum
 
 
 def compact_sum_notation(
