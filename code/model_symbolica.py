@@ -70,11 +70,6 @@ def plane_wave(p, x):
     """exp(-i p.x)"""
     return Expression.EXP(-I * Dot(p, x))
 
-#only for dimonstration purposes... see step 1 in notebook
-def contraction_rule(alpha, beta, p, x):
-    """[phi_alpha(x), a^dag_beta(p)] = delta(alpha,beta) U(beta,p) exp(-i p.x)"""
-    return delta(alpha, beta) * U(beta, p) * plane_wave(p, x)
-
 
 # ---------------------------------------------------------------------------
 # Fermion helpers
