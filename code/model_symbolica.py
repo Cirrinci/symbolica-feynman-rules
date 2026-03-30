@@ -242,6 +242,34 @@ def _open_slot_labels(slot_labels):
     return open_labels
 
 
+def _slot_label_replacements_for_permutation(open_slot_labels, leg_slot_labels, perm):
+    """Build concrete label replacements for one contraction permutation."""
+    replacements = []
+    for slot, kind, position, label in open_slot_labels:
+        target_entry = leg_slot_labels[perm[slot]]
+        if (
+            target_entry is None
+            or kind not in target_entry
+            or len(target_entry[kind]) <= position
+        ):
+            raise ValueError(
+                f"Missing leg slot label for kind '{kind}' at slot {perm[slot]}"
+            )
+        replacements.append((label, target_entry[kind][position]))
+    return replacements
+
+
+def _apply_label_replacements(expr, replacements):
+    """Apply a list of symbolic label replacements to an expression-like object."""
+    result = expr
+    for source, target in replacements:
+        if hasattr(result, "replace"):
+            result = result.replace(source, target)
+        elif result == source:
+            result = target
+    return result
+
+
 def _all_fermion_slots_labeled(field_roles, field_spinor_indices):
     """Whether every fermion slot has an explicit spinor label."""
     if field_roles is None or field_spinor_indices is None:
@@ -564,22 +592,18 @@ def contract_to_full_expression(
         if not valid:
             continue
 
-        coupling_term = coupling if coupling is not None else Expression.num(1)
+        label_replacements = []
         if open_slot_labels:
-            for slot, kind, position, label in open_slot_labels:
-                target_entry = effective_leg_slot_labels[perm[slot]]
-                if (
-                    target_entry is None
-                    or kind not in target_entry
-                    or len(target_entry[kind]) <= position
-                ):
-                    raise ValueError(
-                        f"Missing leg slot label for kind '{kind}' at slot {perm[slot]}"
-                    )
-                coupling_term = coupling_term.replace(
-                    label,
-                    target_entry[kind][position],
-                )
+            label_replacements = _slot_label_replacements_for_permutation(
+                open_slot_labels,
+                effective_leg_slot_labels,
+                perm,
+            )
+
+        coupling_term = _apply_label_replacements(
+            coupling if coupling is not None else Expression.num(1),
+            label_replacements,
+        )
         term *= coupling_term
 
         if fermion_slots:
@@ -587,7 +611,8 @@ def contract_to_full_expression(
 
         #first we evaluate the derivative momentum factors with the momentum assigned by this permutation
         for mu, tgt in zip(derivative_indices, derivative_targets):
-            term *= (-I) * pcomp(ps[perm[tgt]], mu)
+            mapped_mu = _apply_label_replacements(mu, label_replacements)
+            term *= (-I) * pcomp(ps[perm[tgt]], mapped_mu)
 
         #now we evaluate the delta and U factors
         p_sum = Expression.num(0)

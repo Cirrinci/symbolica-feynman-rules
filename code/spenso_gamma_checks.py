@@ -1,5 +1,5 @@
 """
-Focused gamma-matrix checks for the Symbolica/Spenso prototype.
+Focused gamma-matrix and tensor-slot checks for the Symbolica/Spenso prototype.
 
 Currently covered here:
 - Clifford anticommutator
@@ -7,6 +7,7 @@ Currently covered here:
 - gamma^mu gamma^nu vs gamma^nu gamma^mu ordering
 - longer gamma chains and projected currents
 - stripped current-current operator
+- complex-scalar gauge structures
 
 Note:
 This script follows the current local convention in model_symbolica.py where
@@ -15,7 +16,7 @@ the plane-wave factor is replaced by 1 rather than by (2*pi)^d Delta(sum p).
 
 from symbolica import Expression
 
-from model_symbolica import I, S, simplify_deltas, vertex_factor
+from model_symbolica import I, S, pcomp, simplify_deltas, vertex_factor
 from spenso_structures import (
     chiral_projector_left,
     chiral_projector_right,
@@ -27,6 +28,7 @@ from spenso_structures import (
     lorentz_metric,
     sigma_tensor,
     simplify_gamma_chain,
+    slot_labels,
     spinor_metric,
 )
 
@@ -35,15 +37,23 @@ d = S("d")
 
 psi0 = S("psi0")
 psibar0 = S("psibar0")
+phiC0 = S("phiC0")
+phiCdag0 = S("phiCdag0")
+A0 = S("A0")
 
 b1, b2, b3, b4 = S("b1", "b2", "b3", "b4")
 p1, p2, p3, p4 = S("p1", "p2", "p3", "p4")
 
 g_bilin = S("gBilin")
+lamC = S("lamC")
+gPhiA = S("gPhiA")
+gPhiAA = S("gPhiAA")
 
 mu = S("mu")
 nu = S("nu")
 rho = S("rho")
+mu3 = S("mu3")
+mu4 = S("mu4")
 i_bar = S("i_bar")
 i_psi = S("i_psi")
 alpha = S("alpha")
@@ -79,6 +89,12 @@ def _show(title, expr):
     print()
 
 
+def _show_expr(title, expr):
+    print(title)
+    print(_display_expr(expr).expand())
+    print()
+
+
 def _show_raw_and_simplified(title, expr):
     print(title)
     print("raw:")
@@ -100,6 +116,38 @@ def _vertex(coupling, *, strip_externals=True, alphas, betas, ps, field_roles, l
             leg_roles=leg_roles,
             field_spinor_indices=field_spinor_indices,
             strip_externals=strip_externals,
+            x=x,
+            d=d,
+        ),
+        species_map={beta_: species for beta_, species in zip(betas, alphas)},
+    )
+
+
+def _boson_vertex(
+    coupling,
+    *,
+    alphas,
+    betas,
+    ps,
+    derivative_indices=(),
+    derivative_targets=None,
+    field_roles=None,
+    leg_roles=None,
+    field_slot_labels=None,
+):
+    return simplify_deltas(
+        vertex_factor(
+            coupling=coupling,
+            alphas=alphas,
+            betas=betas,
+            ps=ps,
+            derivative_indices=derivative_indices,
+            derivative_targets=derivative_targets,
+            statistics="boson",
+            field_roles=field_roles,
+            leg_roles=leg_roles,
+            field_slot_labels=field_slot_labels,
+            strip_externals=True,
             x=x,
             d=d,
         ),
@@ -318,6 +366,61 @@ if __name__ == "__main__":
         left_projected_current_current,
     )
 
+    print(f"\n{'='*80}")
+    print("  Complex Scalar Structures")
+    print(f"{'='*80}\n")
+
+    complex_scalar_pair = _boson_vertex(
+        lamC,
+        alphas=[phiCdag0, phiC0],
+        betas=[b1, b2],
+        ps=[p1, p2],
+        field_roles=["scalar_dag", "scalar"],
+        leg_roles=["scalar_dag", "scalar"],
+    )
+    _show_expr("lamC * phi^dagger phi", complex_scalar_pair)
+
+    complex_scalar_current_phi = _boson_vertex(
+        gPhiA,
+        alphas=[phiCdag0, phiC0, A0],
+        betas=[b1, b2, b3],
+        ps=[p1, p2, p3],
+        derivative_indices=[mu],
+        derivative_targets=[1],
+        field_roles=["scalar_dag", "scalar", "vector"],
+        leg_roles=["scalar_dag", "scalar", "vector"],
+        field_slot_labels=[None, None, slot_labels(lorentz=mu)],
+    )
+    complex_scalar_current_phidag = _boson_vertex(
+        -gPhiA,
+        alphas=[phiCdag0, phiC0, A0],
+        betas=[b1, b2, b3],
+        ps=[p1, p2, p3],
+        derivative_indices=[mu],
+        derivative_targets=[0],
+        field_roles=["scalar_dag", "scalar", "vector"],
+        leg_roles=["scalar_dag", "scalar", "vector"],
+        field_slot_labels=[None, None, slot_labels(lorentz=mu)],
+    )
+    complex_scalar_current = (complex_scalar_current_phi + complex_scalar_current_phidag).expand()
+    _show_expr("gPhiA * A_mu * phi^dagger <-> d^mu phi", complex_scalar_current)
+
+    complex_scalar_contact = _boson_vertex(
+        gPhiAA * lorentz_metric(mu, nu),
+        alphas=[phiCdag0, phiC0, A0, A0],
+        betas=[b1, b2, b3, b4],
+        ps=[p1, p2, p3, p4],
+        field_roles=["scalar_dag", "scalar", "vector", "vector"],
+        leg_roles=["scalar_dag", "scalar", "vector", "vector"],
+        field_slot_labels=[
+            None,
+            None,
+            slot_labels(lorentz=mu),
+            slot_labels(lorentz=nu),
+        ],
+    )
+    _show_expr("gPhiAA * A_mu A^mu phi^dagger phi", complex_scalar_contact)
+
     print("== tests ==")
     i1_sym, i2_sym, i3_sym, i4_sym = S("i1", "i2", "i3", "i4")
 
@@ -441,6 +544,21 @@ if __name__ == "__main__":
         * gamma_matrix(alpha, beta, nu)
         * gamma5_matrix(beta, i2_sym),
         "psibar gamma^mu gamma^nu gamma5 psi",
+    )
+    _check(
+        complex_scalar_pair,
+        I * lamC,
+        "phi^dagger phi",
+    )
+    _check(
+        complex_scalar_current,
+        gPhiA * (pcomp(p2, mu3) - pcomp(p1, mu3)),
+        "complex scalar gauge current",
+    )
+    _check(
+        complex_scalar_contact,
+        2 * I * gPhiAA * lorentz_metric(mu3, mu4),
+        "complex scalar gauge contact",
     )
 
     print("\nAll selected tests passed.")

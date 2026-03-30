@@ -25,6 +25,7 @@ from spenso_structures import (
     gamma_lowered_matrix,
     gamma_matrix,
     gamma5_matrix,
+    lorentz_metric,
     simplify_gamma_chain,
     slot_labels,
 )
@@ -41,6 +42,8 @@ b1, b2, b3, b4, b5, b6 = S("b1", "b2", "b3", "b4", "b5", "b6")
 
 phi0 = S("phi0")
 chi0 = S("chi0")
+phiC0 = S("phiC0")
+phiCdag0 = S("phiCdag0")
 
 mu, nu = S("mu", "nu")
 
@@ -52,6 +55,8 @@ A0 = S("A0")
 G0 = S("G0")
 gV = S("gV")
 gS = S("gS")
+gPhiA = S("gPhiA")
+gPhiAA = S("gPhiAA")
 g4F = S("g4F")
 g_psi4 = S("g_psi4")
 gJJ = S("gJJ")
@@ -61,11 +66,12 @@ i_bar_q, i_psi_q = S("i_bar_q", "i_psi_q")
 c_bar_q, c_psi_q, a_g = S("c_bar_q", "c_psi_q", "a_g")
 i1, i2, i3, i4 = S("i1", "i2", "i3", "i4")
 c1, c2, c3, a1, a2, a3 = S("c1", "c2", "c3", "a1", "a2", "a3")
-mu1, mu2, mu3 = S("mu1", "mu2", "mu3")
+mu1, mu2, mu3, mu4 = S("mu1", "mu2", "mu3", "mu4")
 idx_i, idx_j, idx_k = S("i", "j", "k")
 
 lam4 = S("lam4")
 lam6 = S("lam6")
+lamC = S("lamC")
 g_sym = S("g")
 gD = S("gD")
 gD2 = S("gD2")
@@ -159,6 +165,19 @@ def show_vertex(
     return V, compact
 
 
+def show_expression(title, *, expr, alphas, betas, ps):
+    print("=" * 80)
+    print(f"  {title}")
+    print(f"  alphas = {alphas}")
+    print(f"  betas  = {betas}")
+    print(f"  ps     = {ps}")
+    print()
+    print("  Vertex:")
+    print(f"  {expr}")
+    print()
+    return expr
+
+
 # ---------------------------------------------------------------------------
 # Interaction definitions
 # ---------------------------------------------------------------------------
@@ -185,6 +204,17 @@ L_phi2chi2 = dict(
     alphas=[phi0, phi0, chi0, chi0],
     betas=[b1, b2, b3, b4],
     ps=[p1, p2, p3, p4],
+)
+
+# 3b) complex scalar bilinear
+L_phiCdag_phiC = dict(
+    coupling=lamC,
+    alphas=[phiCdag0, phiC0],
+    betas=[b1, b2],
+    ps=[p1, p2],
+    statistics="boson",
+    field_roles=["scalar_dag", "scalar"],
+    leg_roles=["scalar_dag", "scalar"],
 )
 
 # 4) gD * (d_mu phi)(d_nu phi) phi phi
@@ -320,6 +350,49 @@ L_quark_gluon = dict(
     leg_spins=[s1, s2, s3],
 )
 
+# 10d) Complex scalar gauge structures:
+#      gPhiA * A_mu * phi^dagger <-> d^mu phi
+#      gPhiAA * A_mu A^mu phi^dagger phi
+_COMPLEX_SCALAR_GAUGE_BASE = dict(
+    alphas=[phiCdag0, phiC0, A0],
+    betas=[b1, b2, b3],
+    ps=[p1, p2, p3],
+    statistics="boson",
+    field_roles=["scalar_dag", "scalar", "vector"],
+    leg_roles=["scalar_dag", "scalar", "vector"],
+    field_slot_labels=[None, None, slot_labels(lorentz=mu)],
+)
+
+L_complex_scalar_current_phi = dict(
+    **_COMPLEX_SCALAR_GAUGE_BASE,
+    coupling=gPhiA,
+    derivative_indices=[mu],
+    derivative_targets=[1],
+)
+
+L_complex_scalar_current_phidag = dict(
+    **_COMPLEX_SCALAR_GAUGE_BASE,
+    coupling=-gPhiA,
+    derivative_indices=[mu],
+    derivative_targets=[0],
+)
+
+L_complex_scalar_contact = dict(
+    coupling=gPhiAA * lorentz_metric(mu, nu),
+    alphas=[phiCdag0, phiC0, A0, A0],
+    betas=[b1, b2, b3, b4],
+    ps=[p1, p2, p3, p4],
+    statistics="boson",
+    field_roles=["scalar_dag", "scalar", "vector", "vector"],
+    leg_roles=["scalar_dag", "scalar", "vector", "vector"],
+    field_slot_labels=[
+        None,
+        None,
+        slot_labels(lorentz=mu),
+        slot_labels(lorentz=nu),
+    ],
+)
+
 # 11-14) Mixed derivative fermion+scalar interactions
 _MIX_BASE = dict(
     alphas=[psibar0, psi0, phi0, chi0],
@@ -404,6 +477,12 @@ def _run_scalar_tests():
     V = simplify_deltas(vertex_factor(**L_phi2chi2, x=x, d=d),
                         species_map={b1: phi0, b2: phi0, b3: chi0, b4: chi0})
     _check(V, 4 * I * g_sym * D4, "phi^2 chi^2")
+
+    V = simplify_deltas(
+        vertex_factor(**L_phiCdag_phiC, x=x, d=d),
+        species_map={b1: phiCdag0, b2: phiC0},
+    )
+    _check(V, I * lamC, "phi^dagger phi")
 
     V = simplify_deltas(vertex_factor(**L_deriv, x=x, d=d), species_map=sm_phi)
     _check(V, COMPACT_DERIV, "Derivative (mu,nu)")
@@ -576,6 +655,28 @@ def _run_gauge_ready_tests():
     expected = I * gS * gamma_matrix(i1, i2, mu3) * gauge_generator(a3, c1, c2) * D3
     _check(V, expected, "Gauge-ready quark-gluon current")
 
+    sm_scalar = {b1: phiCdag0, b2: phiC0, b3: A0}
+    V_scalar_current = simplify_deltas(
+        vertex_factor(**L_complex_scalar_current_phi, x=x, d=d)
+        + vertex_factor(**L_complex_scalar_current_phidag, x=x, d=d),
+        species_map=sm_scalar,
+    )
+    _check(
+        V_scalar_current,
+        gPhiA * (pcomp(p2, mu3) - pcomp(p1, mu3)),
+        "Complex scalar gauge current",
+    )
+
+    V_scalar_contact = simplify_deltas(
+        vertex_factor(**L_complex_scalar_contact, x=x, d=d),
+        species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+    )
+    _check(
+        V_scalar_contact,
+        2 * I * gPhiAA * lorentz_metric(mu3, mu4),
+        "Complex scalar gauge contact",
+    )
+
     print("\n  Gauge-ready tests passed.\n")
 
 
@@ -644,6 +745,13 @@ def _run_scalar_demo():
     print("\n=== scalar: phi^2 chi^2 ===")
     show_vertex("g * phi^2 * chi^2", **L_phi2chi2,
                 species_map={b1: phi0, b2: phi0, b3: chi0, b4: chi0})
+
+    print("\n=== scalar: complex scalar bilinear ===")
+    show_vertex(
+        "lamC * phi^dagger * phi",
+        **L_phiCdag_phiC,
+        species_map={b1: phiCdag0, b2: phiC0},
+    )
 
     print("\n=== scalar: derivative (mu,nu) * phi^4 ===")
     show_vertex("gD * (d_mu phi)(d_nu phi) phi phi", **L_deriv,
@@ -736,6 +844,31 @@ def _run_gauge_demo():
         species_map={b1: psibar0, b2: psi0, b3: G0},
     )
     print("  Interpretation: the coupling now remaps spinor, Lorentz, and color labels through one slot-label path.")
+    print()
+
+    V_scalar_current = simplify_deltas(
+        vertex_factor(**L_complex_scalar_current_phi, x=x, d=d)
+        + vertex_factor(**L_complex_scalar_current_phidag, x=x, d=d),
+        species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+    )
+    print("\n=== gauge-ready: complex scalar current ===")
+    show_expression(
+        "gPhiA * A_mu * phi^dagger <-> d^mu phi",
+        expr=V_scalar_current,
+        alphas=L_complex_scalar_current_phi["alphas"],
+        betas=L_complex_scalar_current_phi["betas"],
+        ps=L_complex_scalar_current_phi["ps"],
+    )
+    print("  Interpretation: the gauge-field Lorentz slot now remaps into the derivative index as well.")
+    print()
+
+    print("\n=== gauge-ready: complex scalar contact ===")
+    show_vertex(
+        "gPhiAA * A_mu A^mu phi^dagger phi",
+        **L_complex_scalar_contact,
+        species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+    )
+    print("  Interpretation: repeated gauge legs stay bosonic, while distinct scalar/scalar_dag roles keep the matter flow explicit.")
     print()
 
 
