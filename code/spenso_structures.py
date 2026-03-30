@@ -1,8 +1,8 @@
 """
 Thin wrappers for Spenso HEP tensor objects used by the Symbolica prototype.
 
-These helpers keep the rest of the code readable while ensuring that gamma
-matrices, gauge generators, and metrics are represented as native Spenso
+These helpers ensures that gamma
+matrices, and metrics are represented as native Spenso
 tensors with typed index slots.
 """
 

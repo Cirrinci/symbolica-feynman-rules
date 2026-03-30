@@ -1,12 +1,8 @@
 """
 Focused gamma-matrix checks for the Symbolica/Spenso prototype.
 
-This file is intentionally simple: each example is written out directly,
-printed directly, and then checked directly.
-
 Currently covered here:
 - Clifford anticommutator
-- raised vs lowered gamma bilinears
 - gamma^mu gamma^nu vs gamma^nu gamma^mu ordering
 - stripped current-current operator
 """
