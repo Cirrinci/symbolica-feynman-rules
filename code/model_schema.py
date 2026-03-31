@@ -778,83 +778,18 @@ class InteractionTerm:
     def __post_init__(self):
         object.__setattr__(self, "fields", tuple(self.fields))
         object.__setattr__(self, "derivatives", tuple(self.derivatives))
+        inferred = "fermion" if any(
+            field_occurrence.field.statistics == "fermion"
+            for field_occurrence in self.fields
+        ) else "boson"
         if self.statistics is None:
-            inferred = "fermion" if any(
-                field_occurrence.field.statistics == "fermion"
-                for field_occurrence in self.fields
-            ) else "boson"
             object.__setattr__(self, "statistics", inferred)
-
-
-def _validate_supported_grassmann_roles(roles, *, context: str):
-    unsupported = []
-    for role, statistics in roles:
-        role_obj = normalize_role(role)
-        role_name = role_obj.name if role_obj is not None else None
-        if statistics == "fermion" and role_name not in {"psi", "psibar"}:
-            unsupported.append(role_name)
-    if unsupported:
-        raise NotImplementedError(
-            f"{context} contains Grassmann-odd roles {unsupported}, but the current "
-            "contraction engine only supports Dirac-style 'psi'/'psibar' fields. "
-            "The metadata layer is ready for ghosts and other Grassmann fields, "
-            "but the combinatorics engine still needs their dedicated sign rules."
-        )
-
-
-def interaction_term_to_legacy(term: InteractionTerm) -> dict:
-    _validate_supported_grassmann_roles(
-        [(occ.role, occ.field.statistics) for occ in term.fields],
-        context="InteractionTerm",
-    )
-
-    derivative_indices = []
-    derivative_targets = []
-    for action in term.derivatives:
-        for index in action.indices:
-            derivative_indices.append(index)
-            derivative_targets.append(action.target)
-
-    field_slot_labels = [occ.slot_labels for occ in term.fields]
-    if not any(entry is not None for entry in field_slot_labels):
-        field_slot_labels = None
-
-    return dict(
-        coupling=term.coupling,
-        alphas=[occ.species for occ in term.fields],
-        derivative_indices=tuple(derivative_indices),
-        derivative_targets=tuple(derivative_targets),
-        statistics=term.statistics,
-        field_roles=[occ.role.name for occ in term.fields],
-        field_slot_labels=field_slot_labels,
-        field_spinor_indices=[occ.primary_index_label(SPINOR_KIND) for occ in term.fields],
-        field_index_slots=[occ.index_slots for occ in term.fields],
-    )
-
-
-def external_legs_to_legacy(external_legs: Sequence[ExternalLeg]) -> dict:
-    _validate_supported_grassmann_roles(
-        [(leg.role, leg.field.statistics) for leg in external_legs],
-        context="External legs",
-    )
-
-    leg_slot_labels = [leg.slot_labels for leg in external_legs]
-    if not any(entry is not None for entry in leg_slot_labels):
-        leg_slot_labels = None
-
-    leg_spins = [leg.spin for leg in external_legs]
-    if not any(spin is not None for spin in leg_spins):
-        leg_spins = None
-
-    return dict(
-        betas=[leg.species for leg in external_legs],
-        ps=[leg.momentum for leg in external_legs],
-        leg_roles=[leg.role.name for leg in external_legs],
-        leg_slot_labels=leg_slot_labels,
-        leg_spinor_indices=[leg.primary_index_label(SPINOR_KIND) for leg in external_legs],
-        leg_spins=leg_spins,
-        leg_index_slots=[leg.index_slots for leg in external_legs],
-    )
+        elif self.statistics != inferred:
+            raise ValueError(
+                "Interaction statistics are inconsistent with the declared fields: "
+                f"got statistics='{self.statistics}', but the fields imply "
+                f"statistics='{inferred}'."
+            )
 
 
 def default_external_legs_for_interaction(

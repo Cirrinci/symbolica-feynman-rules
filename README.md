@@ -61,6 +61,13 @@ The function `vertex_factor(...)` in `model_symbolica.py` performs:
 4. External wavefunction amputation to an open-index vertex (optional).
 5. Final multiplication by `i`.
 
+Project convention:
+
+- `vertex_factor(...)` returns the reduced vertex by default, with the
+  universal overall factor `(2*pi)^d Delta(sum p)` stripped.
+- Pass `include_delta=True` only when you explicitly want that overall factor
+  kept in the output.
+
 Related helpers in `model_symbolica.py`:
 
 - `contract_to_full_expression`

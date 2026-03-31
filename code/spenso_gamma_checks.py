@@ -10,13 +10,14 @@ Currently covered here:
 - complex-scalar gauge structures
 
 Note:
-This script follows the current local convention in model_symbolica.py where
-the plane-wave factor is replaced by 1 rather than by (2*pi)^d Delta(sum p).
+This script follows the reduced-vertex convention used by
+``model_symbolica.py`` by default, so the universal overall
+``(2*pi)^d Delta(sum p)`` factor is stripped from the displayed output.
 """
 
 from symbolica import Expression
 
-from model_symbolica import I, S, pcomp, simplify_deltas, vertex_factor
+from model_legacy import I, S, pcomp, simplify_deltas, vertex_factor
 from spenso_structures import (
     chiral_projector_left,
     chiral_projector_right,
