@@ -1,0 +1,2 @@
+from symbolica import *
+SYMBOLICA_LICENSE=7a7713ba#6b6040d8#17ecd1d3-8e21-5850-82d1-c265228933c8
