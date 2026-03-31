@@ -3,7 +3,21 @@ Vertex-factor examples and tests using model_symbolica.py.
 """
 
 import argparse
+from fractions import Fraction
 
+from model_schema import (
+    COLOR_ADJ_INDEX,
+    COLOR_FUND_INDEX,
+    ConcreteIndexSlot,
+    IndexType,
+    LORENTZ_INDEX,
+    SPINOR_INDEX,
+    DerivativeAction,
+    Field,
+    InteractionTerm,
+    bind_indices,
+    default_external_legs_for_interaction,
+)
 from model_symbolica import (
     S,
     Expression,
@@ -79,6 +93,49 @@ gijk = S("gijk")
 g1 = S("g1")
 g2 = S("g2")
 
+PsiField = Field(
+    "Psi",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    kind="fermion",
+    symbol=psi0,
+    conjugate_symbol=psibar0,
+    indices=(SPINOR_INDEX,),
+)
+PhiCField = Field(
+    "PhiC",
+    spin=0,
+    self_conjugate=False,
+    kind="scalar",
+    symbol=phiC0,
+    conjugate_symbol=phiCdag0,
+)
+GaugeField = Field(
+    "A",
+    spin=1,
+    self_conjugate=True,
+    kind="vector",
+    symbol=A0,
+    indices=(LORENTZ_INDEX,),
+)
+QuarkField = Field(
+    "q",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    kind="fermion",
+    symbol=psi0,
+    conjugate_symbol=psibar0,
+    indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+)
+GluonField = Field(
+    "G",
+    spin=1,
+    self_conjugate=True,
+    kind="vector",
+    symbol=G0,
+    indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -93,13 +150,31 @@ def _check(got, expected, label):
     print(f"  {label}: PASS")
 
 
+def _display_vertex_inputs(*, interaction, external_legs, alphas, betas, ps):
+    if interaction is None:
+        return alphas, betas, ps
+
+    shown_alphas = [occ.species for occ in interaction.fields]
+    if external_legs is None:
+        external_legs = default_external_legs_for_interaction(
+            interaction,
+            momenta=ps if ps is not None else None,
+        )
+
+    shown_betas = [leg.species for leg in external_legs]
+    shown_ps = [leg.momentum for leg in external_legs]
+    return shown_alphas, shown_betas, shown_ps
+
+
 def show_vertex(
     title,
     *,
-    coupling,
-    alphas,
-    betas,
-    ps,
+    interaction=None,
+    external_legs=None,
+    coupling=None,
+    alphas=None,
+    betas=None,
+    ps=None,
     derivative_indices=(),
     derivative_targets=None,
     statistics="boson",
@@ -116,6 +191,8 @@ def show_vertex(
     show_sum_notation=False,
 ):
     V = vertex_factor(
+        interaction=interaction,
+        external_legs=external_legs,
         coupling=coupling,
         alphas=alphas,
         betas=betas,
@@ -143,11 +220,19 @@ def show_vertex(
         compact = simplify_deltas(V, species_map=species_map)
         result_label = "Vertex"
 
+    shown_alphas, shown_betas, shown_ps = _display_vertex_inputs(
+        interaction=interaction,
+        external_legs=external_legs,
+        alphas=alphas,
+        betas=betas,
+        ps=ps,
+    )
+
     print("=" * 80)
     print(f"  {title}")
-    print(f"  alphas = {alphas}")
-    print(f"  betas  = {betas}")
-    print(f"  ps     = {ps}")
+    print(f"  alphas = {shown_alphas}")
+    print(f"  betas  = {shown_betas}")
+    print(f"  ps     = {shown_ps}")
     print()
     print(f"  {result_label}:")
     print(f"  {compact}")
@@ -158,7 +243,7 @@ def show_vertex(
             compact_sum_notation(
                 derivative_indices=derivative_indices,
                 derivative_targets=derivative_targets,
-                n_legs=len(ps),
+                n_legs=len(shown_ps),
             ),
         )
     print()
@@ -393,6 +478,76 @@ L_complex_scalar_contact = dict(
     ],
 )
 
+# Metadata-layer versions of representative interactions. These are the
+# FeynRules-style declarations we ultimately want to scale out.
+TERM_meta_phiCdag_phiC = InteractionTerm(
+    coupling=lamC,
+    fields=(
+        PhiCField.occurrence(conjugated=True),
+        PhiCField.occurrence(),
+    ),
+    label="lamC * phi^dagger * phi",
+)
+
+TERM_meta_quark_gluon = InteractionTerm(
+    coupling=gS * gamma_matrix(i_bar_q, i_psi_q, mu) * gauge_generator(a_g, c_bar_q, c_psi_q),
+    fields=(
+        QuarkField.occurrence(
+            conjugated=True,
+            slot_labels=bind_indices(
+                (SPINOR_INDEX, i_bar_q),
+                (COLOR_FUND_INDEX, c_bar_q),
+            ),
+        ),
+        QuarkField.occurrence(
+            slot_labels=bind_indices(
+                (SPINOR_INDEX, i_psi_q),
+                (COLOR_FUND_INDEX, c_psi_q),
+            ),
+        ),
+        GluonField.occurrence(
+            slot_labels=bind_indices(
+                (LORENTZ_INDEX, mu),
+                (COLOR_ADJ_INDEX, a_g),
+            ),
+        ),
+    ),
+    label="gS * psibar gamma^mu T^a psi G^a_mu",
+)
+
+TERM_meta_complex_scalar_current_phi = InteractionTerm(
+    coupling=gPhiA,
+    fields=(
+        PhiCField.occurrence(conjugated=True),
+        PhiCField.occurrence(),
+        GaugeField.occurrence(slot_labels=bind_indices((LORENTZ_INDEX, mu))),
+    ),
+    derivatives=(DerivativeAction(target=1, indices=(mu,)),),
+    label="gPhiA * A_mu * phi^dagger * d^mu phi",
+)
+
+TERM_meta_complex_scalar_current_phidag = InteractionTerm(
+    coupling=-gPhiA,
+    fields=(
+        PhiCField.occurrence(conjugated=True),
+        PhiCField.occurrence(),
+        GaugeField.occurrence(slot_labels=bind_indices((LORENTZ_INDEX, mu))),
+    ),
+    derivatives=(DerivativeAction(target=0, indices=(mu,)),),
+    label="-gPhiA * A_mu * d^mu phi^dagger * phi",
+)
+
+TERM_meta_complex_scalar_contact = InteractionTerm(
+    coupling=gPhiAA * lorentz_metric(mu, nu),
+    fields=(
+        PhiCField.occurrence(conjugated=True),
+        PhiCField.occurrence(),
+        GaugeField.occurrence(slot_labels=bind_indices((LORENTZ_INDEX, mu))),
+        GaugeField.occurrence(slot_labels=bind_indices((LORENTZ_INDEX, nu))),
+    ),
+    label="gPhiAA * A_mu A^mu phi^dagger phi",
+)
+
 # 11-14) Mixed derivative fermion+scalar interactions
 _MIX_BASE = dict(
     alphas=[psibar0, psi0, phi0, chi0],
@@ -483,6 +638,9 @@ def _run_scalar_tests():
         species_map={b1: phiCdag0, b2: phiC0},
     )
     _check(V, I * lamC, "phi^dagger phi")
+
+    V_meta = simplify_deltas(vertex_factor(interaction=TERM_meta_phiCdag_phiC, x=x, d=d))
+    _check(V_meta, I * lamC, "phi^dagger phi [metadata]")
 
     V = simplify_deltas(vertex_factor(**L_deriv, x=x, d=d), species_map=sm_phi)
     _check(V, COMPACT_DERIV, "Derivative (mu,nu)")
@@ -655,6 +813,9 @@ def _run_gauge_ready_tests():
     expected = I * gS * gamma_matrix(i1, i2, mu3) * gauge_generator(a3, c1, c2) * D3
     _check(V, expected, "Gauge-ready quark-gluon current")
 
+    V_meta = simplify_deltas(vertex_factor(interaction=TERM_meta_quark_gluon, x=x, d=d))
+    _check(V_meta, expected, "Gauge-ready quark-gluon current [metadata]")
+
     sm_scalar = {b1: phiCdag0, b2: phiC0, b3: A0}
     V_scalar_current = simplify_deltas(
         vertex_factor(**L_complex_scalar_current_phi, x=x, d=d)
@@ -667,6 +828,16 @@ def _run_gauge_ready_tests():
         "Complex scalar gauge current",
     )
 
+    V_scalar_current_meta = simplify_deltas(
+        vertex_factor(interaction=TERM_meta_complex_scalar_current_phi, x=x, d=d)
+        + vertex_factor(interaction=TERM_meta_complex_scalar_current_phidag, x=x, d=d)
+    )
+    _check(
+        V_scalar_current_meta,
+        gPhiA * (pcomp(p2, mu3) - pcomp(p1, mu3)),
+        "Complex scalar gauge current [metadata]",
+    )
+
     V_scalar_contact = simplify_deltas(
         vertex_factor(**L_complex_scalar_contact, x=x, d=d),
         species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
@@ -676,6 +847,123 @@ def _run_gauge_ready_tests():
         2 * I * gPhiAA * lorentz_metric(mu3, mu4),
         "Complex scalar gauge contact",
     )
+
+    V_scalar_contact_meta = simplify_deltas(
+        vertex_factor(interaction=TERM_meta_complex_scalar_contact, x=x, d=d)
+    )
+    _check(
+        V_scalar_contact_meta,
+        2 * I * gPhiAA * lorentz_metric(mu3, mu4),
+        "Complex scalar gauge contact [metadata]",
+    )
+
+    V_index_slots = simplify_deltas(
+        vertex_factor(
+            coupling=L_quark_gluon["coupling"],
+            alphas=L_quark_gluon["alphas"],
+            betas=L_quark_gluon["betas"],
+            ps=L_quark_gluon["ps"],
+            x=x,
+            d=d,
+            statistics=L_quark_gluon["statistics"],
+            field_roles=L_quark_gluon["field_roles"],
+            leg_roles=L_quark_gluon["leg_roles"],
+            field_index_slots=[
+                QuarkField.bound_index_slots(
+                    bind_indices((SPINOR_INDEX, i_bar_q), (COLOR_FUND_INDEX, c_bar_q)),
+                    conjugated=True,
+                ),
+                QuarkField.bound_index_slots(
+                    bind_indices((SPINOR_INDEX, i_psi_q), (COLOR_FUND_INDEX, c_psi_q)),
+                ),
+                GluonField.bound_index_slots(
+                    bind_indices((LORENTZ_INDEX, mu), (COLOR_ADJ_INDEX, a_g)),
+                ),
+            ],
+            leg_index_slots=[
+                QuarkField.bound_index_slots(
+                    bind_indices((SPINOR_INDEX, i1), (COLOR_FUND_INDEX, c1)),
+                    conjugated=True,
+                ),
+                QuarkField.bound_index_slots(
+                    bind_indices((SPINOR_INDEX, i2), (COLOR_FUND_INDEX, c2)),
+                ),
+                GluonField.bound_index_slots(
+                    bind_indices((LORENTZ_INDEX, mu3), (COLOR_ADJ_INDEX, a3)),
+                ),
+            ],
+        ),
+        species_map=sm3,
+    )
+    _check(V_index_slots, expected, "Gauge-ready quark-gluon current [concrete slots]")
+
+    OrderedIndexField = Field(
+        name="OrderedIndexField",
+        spin=0,
+        self_conjugate=True,
+        kind="scalar",
+        indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX, LORENTZ_INDEX),
+    )
+    ordered_occurrence = OrderedIndexField.occurrence(
+        slot_labels=bind_indices(
+            (LORENTZ_INDEX, (mu, nu)),
+            (COLOR_ADJ_INDEX, a3),
+        )
+    )
+    assert tuple(slot.index_type for slot in ordered_occurrence.index_slots) == (
+        LORENTZ_INDEX,
+        COLOR_ADJ_INDEX,
+        LORENTZ_INDEX,
+    )
+    assert tuple(slot.label for slot in ordered_occurrence.index_slots) == (
+        mu,
+        a3,
+        nu,
+    )
+    print("  Ordered concrete index slots: PASS")
+
+    try:
+        PhiCField.occurrence(role="psi")
+        raise AssertionError("Expected ValueError for scalar field with fermion role")
+    except ValueError as exc:
+        assert "incompatible" in str(exc), exc
+    print("  Invalid scalar role: PASS")
+
+    try:
+        GaugeField.occurrence(role="vector_dag")
+        raise AssertionError("Expected ValueError for self-conjugate field with dag role")
+    except ValueError as exc:
+        assert "self-conjugate" in str(exc), exc
+    print("  Invalid self-conjugate dag role: PASS")
+
+    AntiColorFundIndex = IndexType(
+        "ColorFundBar",
+        COLOR_FUND_INDEX.representation,
+        kind="color_fund_bar",
+        aliases=("color_fund_bar",),
+    )
+    ColoredScalarField = Field(
+        "ColoredScalar",
+        spin=0,
+        self_conjugate=False,
+        kind="scalar",
+        indices=(COLOR_FUND_INDEX,),
+        conjugate_indices=(AntiColorFundIndex,),
+    )
+    colored_conjugate = ColoredScalarField.occurrence(
+        conjugated=True,
+        slot_labels=bind_indices((AntiColorFundIndex, c3)),
+    )
+    assert colored_conjugate.index_slots[0].index_type == AntiColorFundIndex
+    try:
+        ColoredScalarField.occurrence(
+            conjugated=True,
+            slot_labels=bind_indices((COLOR_FUND_INDEX, c3)),
+        )
+        raise AssertionError("Expected ValueError for wrong conjugate index signature")
+    except ValueError as exc:
+        assert "does not declare slot kinds" in str(exc) or "expects" in str(exc), exc
+    print("  Conjugate index signature: PASS")
 
     print("\n  Gauge-ready tests passed.\n")
 
@@ -751,6 +1039,12 @@ def _run_scalar_demo():
         "lamC * phi^dagger * phi",
         **L_phiCdag_phiC,
         species_map={b1: phiCdag0, b2: phiC0},
+    )
+
+    print("\n=== scalar: metadata layer bilinear ===")
+    show_vertex(
+        "Field/PhiC metadata -> lamC * phi^dagger * phi",
+        interaction=TERM_meta_phiCdag_phiC,
     )
 
     print("\n=== scalar: derivative (mu,nu) * phi^4 ===")
@@ -846,6 +1140,14 @@ def _run_gauge_demo():
     print("  Interpretation: the coupling now remaps spinor, Lorentz, and color labels through one slot-label path.")
     print()
 
+    print("\n=== metadata layer: non-abelian fermion current ===")
+    show_vertex(
+        "Field metadata -> gS * psibar gamma^mu T^a psi G^a_mu",
+        interaction=TERM_meta_quark_gluon,
+    )
+    print("  Interpretation: the same vertex is now declared through Field/InteractionTerm metadata instead of aligned parallel lists.")
+    print()
+
     V_scalar_current = simplify_deltas(
         vertex_factor(**L_complex_scalar_current_phi, x=x, d=d)
         + vertex_factor(**L_complex_scalar_current_phidag, x=x, d=d),
@@ -862,6 +1164,21 @@ def _run_gauge_demo():
     print("  Interpretation: the gauge-field Lorentz slot now remaps into the derivative index as well.")
     print()
 
+    V_scalar_current_meta = simplify_deltas(
+        vertex_factor(interaction=TERM_meta_complex_scalar_current_phi, x=x, d=d)
+        + vertex_factor(interaction=TERM_meta_complex_scalar_current_phidag, x=x, d=d)
+    )
+    print("\n=== metadata layer: complex scalar current ===")
+    show_expression(
+        "InteractionTerm -> gPhiA * A_mu * phi^dagger <-> d^mu phi",
+        expr=V_scalar_current_meta,
+        alphas=[occ.species for occ in TERM_meta_complex_scalar_current_phi.fields],
+        betas=[phiCdag0, phiC0, A0],
+        ps=[p1, p2, p3],
+    )
+    print("  Interpretation: the metadata version auto-generates the external legs but keeps the same Lorentz-slot remapping.")
+    print()
+
     print("\n=== gauge-ready: complex scalar contact ===")
     show_vertex(
         "gPhiAA * A_mu A^mu phi^dagger phi",
@@ -869,6 +1186,14 @@ def _run_gauge_demo():
         species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
     )
     print("  Interpretation: repeated gauge legs stay bosonic, while distinct scalar/scalar_dag roles keep the matter flow explicit.")
+    print()
+
+    print("\n=== metadata layer: complex scalar contact ===")
+    show_vertex(
+        "InteractionTerm -> gPhiAA * A_mu A^mu phi^dagger phi",
+        interaction=TERM_meta_complex_scalar_contact,
+    )
+    print("  Interpretation: the same contact term now comes from Field metadata plus slot-labelled occurrences.")
     print()
 
 

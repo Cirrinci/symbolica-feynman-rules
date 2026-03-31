@@ -21,6 +21,7 @@ Pipeline:
 """
 
 from collections import Counter
+from dataclasses import dataclass
 from itertools import permutations
 from math import factorial
 from typing import Literal, Optional, Sequence
@@ -28,7 +29,25 @@ from typing import Literal, Optional, Sequence
 from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 from symbolica.community.idenso import simplify_metrics
-from spenso_structures import SPINOR_KIND, default_leg_slot_labels
+from model_schema import (
+    ConcreteIndexSlot,
+    ExternalLeg,
+    FieldRole,
+    InteractionTerm,
+    default_external_legs_for_interaction,
+    default_leg_slot_labels,
+    external_legs_to_legacy,
+    index_bindings_from_slots,
+    normalize_concrete_index_slots,
+    ordered_index_slots,
+    primary_index_label_from_slots,
+    interaction_term_to_legacy,
+    merge_index_bindings,
+    normalize_index_bindings,
+    primary_binding_labels,
+    normalize_role,
+)
+from spenso_structures import SPINOR_KIND
 
 # ---------------------------------------------------------------------------
 # Module-level Symbolica symbols + Spenso bispinor representation
@@ -62,6 +81,93 @@ Statistics = Literal["boson", "fermion"]
 FERMION_ROLES = ("psi", "psibar")
 
 
+@dataclass(frozen=True)
+class _FieldSlot:
+    position: int
+    species: object
+    role: Optional[FieldRole]
+    slot_labels: Optional[tuple]
+    index_slots: tuple[ConcreteIndexSlot, ...] = ()
+
+    @property
+    def role_name(self) -> Optional[str]:
+        return self.role.name if self.role is not None else None
+
+    @property
+    def is_fermion(self) -> bool:
+        return self.role is not None and self.role.is_fermion
+
+    @property
+    def spinor_label(self):
+        return primary_index_label_from_slots(self.index_slots, SPINOR_KIND)
+
+    def index_slot_at(self, declared_position: int) -> Optional[ConcreteIndexSlot]:
+        if declared_position < 0 or declared_position >= len(self.index_slots):
+            return None
+        return self.index_slots[declared_position]
+
+    def compatible_with(self, leg: "_ExternalLegSlot") -> bool:
+        if self.role is None or leg.role is None:
+            return True
+        return self.role.matches(leg.role)
+
+
+@dataclass(frozen=True)
+class _ExternalLegSlot:
+    position: int
+    species: object
+    momentum: object
+    role: Optional[FieldRole]
+    slot_labels: Optional[tuple]
+    spin: object = None
+    index_slots: tuple[ConcreteIndexSlot, ...] = ()
+
+    @property
+    def role_name(self) -> Optional[str]:
+        return self.role.name if self.role is not None else None
+
+    @property
+    def spinor_label(self):
+        return primary_index_label_from_slots(self.index_slots, SPINOR_KIND)
+
+    def index_slot_at(self, declared_position: int) -> Optional[ConcreteIndexSlot]:
+        if declared_position < 0 or declared_position >= len(self.index_slots):
+            return None
+        return self.index_slots[declared_position]
+
+
+@dataclass(frozen=True)
+class _DerivativeInstruction:
+    index: object
+    target_slot: int
+
+
+@dataclass(frozen=True)
+class _OpenIndexSlot:
+    field_slot_position: int
+    index_slot: ConcreteIndexSlot
+
+
+@dataclass(frozen=True)
+class _PreparedSlotSide:
+    slot_labels: Optional[tuple]
+    index_slots: Optional[tuple[tuple[ConcreteIndexSlot, ...], ...]]
+    spinor_labels: Optional[tuple[object, ...]]
+
+
+@dataclass(frozen=True)
+class _NormalizedContractionInput:
+    coupling: object
+    statistics: Statistics
+    field_slots: tuple[_FieldSlot, ...]
+    external_legs: tuple[_ExternalLegSlot, ...]
+    derivatives: tuple[_DerivativeInstruction, ...]
+
+    @property
+    def num_slots(self) -> int:
+        return len(self.field_slots)
+
+
 # ---------------------------------------------------------------------------
 # Building blocks
 # ---------------------------------------------------------------------------
@@ -76,75 +182,53 @@ def plane_wave(p, x):
 # Fermion helpers
 # ---------------------------------------------------------------------------
 
-def factor_leg_compatible(i, j, alphas, betas, field_roles=None, leg_roles=None):
-    """Compatibility check for matching factor i with external leg j.
+def _role_name(value):
+    if hasattr(value, "role_name"):
+        return value.role_name
+    role = normalize_role(value)
+    return role.name if role is not None else None
 
-    Species compatibility is intentionally left symbolic via delta(alphas[i], betas[j]).
-    This helper enforces only optional role-level constraints (e.g. psi vs psibar).
+
+def _spinor_label(value):
+    if hasattr(value, "spinor_label"):
+        return value.spinor_label
+    return value
+
+
+def _index_slots(value):
+    if hasattr(value, "index_slots"):
+        return value.index_slots
+    return ()
+
+
+def factor_leg_compatible(field_slot, leg):
+    """Compatibility check for matching one field slot with one external leg.
+
+    Species compatibility is intentionally left symbolic via delta(alpha, beta).
+    This helper enforces only optional role-level constraints through the
+    normalized slot/leg objects.
     """
-    if field_roles is not None and leg_roles is not None:
-        return field_roles[i] == leg_roles[j]
-    return True
+    return field_slot.compatible_with(leg)
 
 
 def _fermion_slots_from_roles(field_roles):
     """Return positions of fermionic fields in the interaction ordering."""
-    return [i for i, role in enumerate(field_roles) if role in FERMION_ROLES]
+    return [i for i, role in enumerate(field_roles) if _role_name(role) in FERMION_ROLES]
 
 
 def _group_spinor_slots(field_spinor_indices):
     """Group slots by the spinor label carried by the field factor."""
     groups = {}
     for i, si in enumerate(field_spinor_indices):
-        if si is None:
+        spinor_label = _spinor_label(si)
+        if spinor_label is None:
             continue
-        groups.setdefault(str(si), []).append(i)
+        groups.setdefault(str(spinor_label), []).append(i)
     return groups
 
 
-def _open_spinor_slot_labels(field_roles, field_spinor_indices):
-    """Return (slot, label) pairs for fermion spinor labels that appear once.
-
-    Labels appearing exactly once across fermion slots are treated as open slots
-    carried by coupling tensors (e.g. gamma(mu, i_bar, i_psi)) and can be
-    remapped to external leg spinor indices per contraction permutation.
-    """
-    if field_roles is None or field_spinor_indices is None:
-        return []
-
-    if len(field_roles) != len(field_spinor_indices):
-        raise ValueError("field_roles and field_spinor_indices must have the same length")
-
-    fermion_slots = [
-        i for i, role in enumerate(field_roles)
-        if role in FERMION_ROLES and field_spinor_indices[i] is not None
-    ]
-    counts = Counter(str(field_spinor_indices[i]) for i in fermion_slots)
-
-    return [
-        (i, field_spinor_indices[i])
-        for i in fermion_slots
-        if counts[str(field_spinor_indices[i])] == 1
-    ]
-
-
 def _normalize_slot_label_entry(entry):
-    if entry is None:
-        return None
-
-    normalized = {}
-    for kind, labels in entry.items():
-        if labels is None:
-            continue
-        if isinstance(labels, tuple):
-            values = tuple(label for label in labels if label is not None)
-        elif isinstance(labels, list):
-            values = tuple(label for label in labels if label is not None)
-        else:
-            values = (labels,)
-        if values:
-            normalized[kind] = values
-    return normalized or None
+    return normalize_index_bindings(entry)
 
 
 def _coerce_slot_label_structure(slot_labels, *, expected_length, label_name):
@@ -183,79 +267,184 @@ def _merge_slot_label_structures(
     for i, spinor_index in enumerate(spinor_indices):
         if spinor_index is None:
             continue
-        if roles is not None and roles[i] not in FERMION_ROLES:
+        if roles is not None and _role_name(roles[i]) not in FERMION_ROLES:
             continue
 
-        entry = dict(merged[i] or {})
-        existing = entry.get(SPINOR_KIND)
+        existing = primary_binding_labels(merged[i], SPINOR_KIND)
         if existing is not None and existing != (spinor_index,):
             raise ValueError(
                 f"Conflicting spinor label specification at slot {i}: "
                 f"{existing} vs {(spinor_index,)}"
             )
-        entry[SPINOR_KIND] = (spinor_index,)
-        merged[i] = entry
+        if existing == (spinor_index,):
+            continue
+        merged[i] = merge_index_bindings(
+            merged[i],
+            ((SPINOR_KIND, (spinor_index,)),),
+        )
 
     return merged if any(entry is not None for entry in merged) else None
 
 
-def _primary_slot_labels(slot_labels, kind):
-    if slot_labels is None:
+def _coerce_index_slot_structure(index_slots, *, expected_length, label_name):
+    if index_slots is None:
+        return None
+    if len(index_slots) != expected_length:
+        raise ValueError(f"{label_name} must have the same length as alphas/ps")
+
+    coerced = []
+    for entry in index_slots:
+        normalized = normalize_concrete_index_slots(entry)
+        coerced.append(tuple(normalized) if normalized is not None else ())
+    return tuple(coerced)
+
+
+def _slot_labels_from_index_slot_structure(index_slots):
+    if index_slots is None:
+        return None
+    slot_labels = tuple(index_bindings_from_slots(entry) for entry in index_slots)
+    if not any(entry is not None for entry in slot_labels):
+        return None
+    return slot_labels
+
+
+def _effective_index_slots(slot_labels, explicit_index_slots):
+    if explicit_index_slots is not None and slot_labels is None:
+        return tuple(explicit_index_slots)
+    if explicit_index_slots is not None:
+        expected_indices = tuple(index_slot.index_type for index_slot in explicit_index_slots)
+        return ordered_index_slots(slot_labels, expected_indices=expected_indices)
+    return ordered_index_slots(slot_labels)
+
+
+def _primary_index_labels_from_structure(index_slots, index_type_or_alias):
+    if index_slots is None:
         return None
     labels = []
     found = False
-    for entry in slot_labels:
-        if entry is not None and kind in entry and entry[kind]:
-            labels.append(entry[kind][0])
+    for entry in index_slots:
+        label = primary_index_label_from_slots(entry, index_type_or_alias)
+        labels.append(label)
+        if label is not None:
             found = True
-        else:
-            labels.append(None)
-    return labels if found else None
+    return tuple(labels) if found else None
 
 
-def _slot_labels_have_kind(slot_labels, kind):
-    if slot_labels is None:
+def _index_slot_structure_has_type(index_slots, index_type_or_alias):
+    if index_slots is None:
         return False
-    return any(entry is not None and kind in entry and entry[kind] for entry in slot_labels)
+    return any(
+        primary_index_label_from_slots(entry, index_type_or_alias) is not None
+        for entry in index_slots
+    )
 
 
-def _open_slot_labels(slot_labels):
-    if slot_labels is None:
+def _prepare_slot_side(
+    *,
+    base_slot_labels,
+    explicit_index_slots,
+    spinor_indices,
+    roles,
+    expected_length,
+    label_name,
+) -> _PreparedSlotSide:
+    normalized_slot_labels = _coerce_slot_label_structure(
+        base_slot_labels,
+        expected_length=expected_length,
+        label_name=label_name,
+    )
+    explicit_index_slots = _coerce_index_slot_structure(
+        explicit_index_slots,
+        expected_length=expected_length,
+        label_name=f"{label_name}_index_slots",
+    )
+    if normalized_slot_labels is None and explicit_index_slots is not None:
+        normalized_slot_labels = _slot_labels_from_index_slot_structure(explicit_index_slots)
+
+    merged_slot_labels = _merge_slot_label_structures(
+        normalized_slot_labels,
+        spinor_indices,
+        roles,
+        expected_length=expected_length,
+        label_name=label_name,
+    )
+
+    if merged_slot_labels is None and explicit_index_slots is None:
+        return _PreparedSlotSide(
+            slot_labels=None,
+            index_slots=None,
+            spinor_labels=None,
+        )
+
+    effective_index_slots = []
+    for position in range(expected_length):
+        merged_entry = merged_slot_labels[position] if merged_slot_labels is not None else None
+        explicit_entry = explicit_index_slots[position] if explicit_index_slots is not None else None
+        effective_index_slots.append(_effective_index_slots(merged_entry, explicit_entry))
+    effective_index_slots = tuple(effective_index_slots)
+
+    effective_slot_labels = merged_slot_labels
+    if effective_slot_labels is None:
+        effective_slot_labels = _slot_labels_from_index_slot_structure(effective_index_slots)
+
+    return _PreparedSlotSide(
+        slot_labels=effective_slot_labels,
+        index_slots=effective_index_slots,
+        spinor_labels=_primary_index_labels_from_structure(effective_index_slots, SPINOR_KIND),
+    )
+
+
+def _open_index_slots(field_slots):
+    if field_slots is None:
         return []
 
     counts = Counter()
-    for entry in slot_labels:
-        if entry is None:
-            continue
-        for kind, labels in entry.items():
-            for label in labels:
-                counts[(kind, str(label))] += 1
+    for field_slot in field_slots:
+        for index_slot in _index_slots(field_slot):
+            if index_slot.label is None:
+                continue
+            counts[(index_slot.index_type, str(index_slot.label))] += 1
 
     open_labels = []
-    for slot, entry in enumerate(slot_labels):
-        if entry is None:
-            continue
-        for kind, labels in entry.items():
-            for position, label in enumerate(labels):
-                if counts[(kind, str(label))] == 1:
-                    open_labels.append((slot, kind, position, label))
+    for field_slot in field_slots:
+        for index_slot in _index_slots(field_slot):
+            if index_slot.label is None:
+                continue
+            if counts[(index_slot.index_type, str(index_slot.label))] == 1:
+                open_labels.append(
+                    _OpenIndexSlot(
+                        field_slot_position=field_slot.position,
+                        index_slot=index_slot,
+                    )
+                )
     return open_labels
 
 
-def _slot_label_replacements_for_permutation(open_slot_labels, leg_slot_labels, perm):
+def _slot_label_replacements_for_permutation(open_slot_labels, external_legs, perm):
     """Build concrete label replacements for one contraction permutation."""
     replacements = []
-    for slot, kind, position, label in open_slot_labels:
-        target_entry = leg_slot_labels[perm[slot]]
-        if (
-            target_entry is None
-            or kind not in target_entry
-            or len(target_entry[kind]) <= position
-        ):
+    for open_slot in open_slot_labels:
+        source_index = open_slot.index_slot
+        target_leg = external_legs[perm[open_slot.field_slot_position]]
+        target_index = target_leg.index_slot_at(source_index.declared_position)
+        if target_index is None:
             raise ValueError(
-                f"Missing leg slot label for kind '{kind}' at slot {perm[slot]}"
+                "Missing leg index slot at declared position "
+                f"{source_index.declared_position} for external leg {target_leg.position}"
             )
-        replacements.append((label, target_entry[kind][position]))
+        if target_index.index_type != source_index.index_type:
+            raise ValueError(
+                "Mismatched index types during slot remapping: field slot "
+                f"{open_slot.field_slot_position} carries '{source_index.index_type.name}' "
+                f"at declared position {source_index.declared_position}, but external leg "
+                f"{target_leg.position} carries '{target_index.index_type.name}'."
+            )
+        if target_index.label is None:
+            raise ValueError(
+                f"Missing leg slot label for index type '{source_index.index_type.name}' "
+                f"at external leg {target_leg.position}"
+            )
+        replacements.append((source_index.label, target_index.label))
     return replacements
 
 
@@ -278,7 +467,7 @@ def _all_fermion_slots_labeled(field_roles, field_spinor_indices):
         return False
 
     for i, role in enumerate(field_roles):
-        if role in FERMION_ROLES and field_spinor_indices[i] is None:
+        if _role_name(role) in FERMION_ROLES and _spinor_label(field_spinor_indices[i]) is None:
             return False
     return True
 
@@ -321,6 +510,263 @@ def _external_factor_for_contraction(
     return delta(alpha, beta) * U(beta, p)
 
 
+def _has_legacy_leg_inputs(
+    *,
+    betas,
+    ps,
+    leg_roles,
+    leg_spins,
+    leg_spinor_indices,
+    leg_slot_labels,
+    leg_index_slots,
+):
+    return any(
+        value is not None
+        for value in (
+            betas,
+            ps,
+            leg_roles,
+            leg_spins,
+            leg_spinor_indices,
+            leg_slot_labels,
+            leg_index_slots,
+        )
+    )
+
+
+def _normalize_vertex_inputs(
+    *,
+    interaction: Optional[InteractionTerm],
+    external_legs: Optional[Sequence[ExternalLeg]],
+    coupling,
+    alphas,
+    betas,
+    ps,
+    derivative_indices,
+    derivative_targets,
+    statistics,
+    field_roles,
+    leg_roles,
+    field_spinor_indices,
+    field_slot_labels,
+    field_index_slots,
+    leg_spins,
+    leg_spinor_indices,
+    leg_slot_labels,
+    leg_index_slots,
+):
+    if interaction is not None:
+        if any(
+            value is not None
+            for value in (
+                coupling,
+                alphas,
+                field_roles,
+                field_spinor_indices,
+                field_slot_labels,
+                field_index_slots,
+            )
+        ) or derivative_targets is not None or derivative_indices:
+            raise ValueError(
+                "When interaction=InteractionTerm(...) is provided, omit the legacy "
+                "field-side arguments coupling/alphas/field_roles/field_slot_labels/"
+                "field_spinor_indices/field_index_slots/derivative_*."
+            )
+
+        normalized = interaction_term_to_legacy(interaction)
+
+        if external_legs is not None:
+            if _has_legacy_leg_inputs(
+                betas=betas,
+                ps=ps,
+                leg_roles=leg_roles,
+                leg_spins=leg_spins,
+                leg_spinor_indices=leg_spinor_indices,
+                leg_slot_labels=leg_slot_labels,
+                leg_index_slots=leg_index_slots,
+            ):
+                raise ValueError(
+                    "When external_legs=... is provided, omit the legacy leg-side "
+                    "arguments betas/ps/leg_roles/leg_slot_labels/leg_index_slots/"
+                    "leg_spinor_indices/leg_spins."
+                )
+            normalized.update(external_legs_to_legacy(external_legs))
+            return normalized
+
+        if (
+            ps is not None
+            and betas is None
+            and leg_roles is None
+            and leg_spins is None
+            and leg_spinor_indices is None
+            and leg_slot_labels is None
+            and leg_index_slots is None
+        ):
+            normalized.update(
+                external_legs_to_legacy(
+                    default_external_legs_for_interaction(interaction, momenta=ps)
+                )
+            )
+            return normalized
+
+        if not _has_legacy_leg_inputs(
+            betas=betas,
+            ps=ps,
+            leg_roles=leg_roles,
+            leg_spins=leg_spins,
+            leg_spinor_indices=leg_spinor_indices,
+            leg_slot_labels=leg_slot_labels,
+            leg_index_slots=leg_index_slots,
+        ):
+            normalized.update(
+                external_legs_to_legacy(default_external_legs_for_interaction(interaction))
+            )
+            return normalized
+
+        if betas is None or ps is None:
+            raise ValueError(
+                "When combining interaction=... with legacy leg inputs, provide both "
+                "betas and ps, or use external_legs=..., or omit leg inputs entirely "
+                "to auto-generate them."
+            )
+
+        normalized.update(
+            dict(
+                betas=betas,
+                ps=ps,
+                leg_roles=leg_roles,
+                leg_spins=leg_spins,
+                leg_spinor_indices=leg_spinor_indices,
+                leg_slot_labels=leg_slot_labels,
+                leg_index_slots=leg_index_slots,
+            )
+        )
+        return normalized
+
+    if external_legs is not None:
+        if _has_legacy_leg_inputs(
+            betas=betas,
+            ps=ps,
+            leg_roles=leg_roles,
+            leg_spins=leg_spins,
+                leg_spinor_indices=leg_spinor_indices,
+                leg_slot_labels=leg_slot_labels,
+                leg_index_slots=leg_index_slots,
+            ):
+                raise ValueError(
+                    "When external_legs=... is provided, omit the legacy leg-side "
+                    "arguments betas/ps/leg_roles/leg_slot_labels/leg_index_slots/"
+                    "leg_spinor_indices/leg_spins."
+                )
+        leg_data = external_legs_to_legacy(external_legs)
+        betas = leg_data["betas"]
+        ps = leg_data["ps"]
+        leg_roles = leg_data["leg_roles"]
+        leg_spins = leg_data["leg_spins"]
+        leg_spinor_indices = leg_data["leg_spinor_indices"]
+        leg_slot_labels = leg_data["leg_slot_labels"]
+        leg_index_slots = leg_data["leg_index_slots"]
+
+    return dict(
+        coupling=coupling,
+        alphas=alphas,
+        betas=betas,
+        ps=ps,
+        derivative_indices=derivative_indices,
+        derivative_targets=derivative_targets,
+        statistics=statistics,
+        field_roles=field_roles,
+        leg_roles=leg_roles,
+        field_spinor_indices=field_spinor_indices,
+        field_slot_labels=field_slot_labels,
+        field_index_slots=field_index_slots,
+        leg_spins=leg_spins,
+        leg_spinor_indices=leg_spinor_indices,
+        leg_slot_labels=leg_slot_labels,
+        leg_index_slots=leg_index_slots,
+    )
+
+
+def _build_contraction_input(
+    *,
+    coupling,
+    statistics,
+    alphas,
+    betas,
+    ps,
+    derivative_indices,
+    derivative_targets,
+    field_roles,
+    leg_roles,
+    field_slot_labels,
+    field_index_slots,
+    leg_spins,
+    leg_slot_labels,
+    leg_index_slots,
+) -> _NormalizedContractionInput:
+    normalized_field_index_slots = _coerce_index_slot_structure(
+        field_index_slots,
+        expected_length=len(alphas),
+        label_name="field_index_slots",
+    )
+    normalized_leg_index_slots = _coerce_index_slot_structure(
+        leg_index_slots,
+        expected_length=len(ps),
+        label_name="leg_index_slots",
+    )
+
+    field_slots = []
+    for position, alpha in enumerate(alphas):
+        normalized_slot_labels = field_slot_labels[position] if field_slot_labels is not None else None
+        normalized_index_slots = (
+            normalized_field_index_slots[position]
+            if normalized_field_index_slots is not None
+            else ordered_index_slots(normalized_slot_labels)
+        )
+        field_slots.append(
+            _FieldSlot(
+                position=position,
+                species=alpha,
+                role=normalize_role(field_roles[position]) if field_roles is not None else None,
+                slot_labels=normalized_slot_labels,
+                index_slots=normalized_index_slots,
+            )
+        )
+
+    external_legs = []
+    for position, (beta, momentum) in enumerate(zip(betas, ps)):
+        normalized_slot_labels = leg_slot_labels[position] if leg_slot_labels is not None else None
+        normalized_index_slots = (
+            normalized_leg_index_slots[position]
+            if normalized_leg_index_slots is not None
+            else ordered_index_slots(normalized_slot_labels)
+        )
+        external_legs.append(
+            _ExternalLegSlot(
+                position=position,
+                species=beta,
+                momentum=momentum,
+                role=normalize_role(leg_roles[position]) if leg_roles is not None else None,
+                slot_labels=normalized_slot_labels,
+                spin=leg_spins[position] if leg_spins is not None else _default_spin_symbol(position),
+                index_slots=normalized_index_slots,
+            )
+        )
+
+    derivatives = tuple(
+        _DerivativeInstruction(index=index, target_slot=target)
+        for index, target in zip(derivative_indices, derivative_targets)
+    )
+
+    return _NormalizedContractionInput(
+        coupling=coupling,
+        statistics=statistics,
+        field_slots=tuple(field_slots),
+        external_legs=tuple(external_legs),
+        derivatives=derivatives,
+    )
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -360,14 +806,16 @@ def _infer_fermion_chains_from_endpoints(field_roles, field_spinor_indices):
                 f"{len(slots)} occurrences for index '{spinor_label}'."
             )
         a, b = slots
-        if field_roles[a] == "psibar" and field_roles[b] == "psi":
+        role_a = _role_name(field_roles[a])
+        role_b = _role_name(field_roles[b])
+        if role_a == "psibar" and role_b == "psi":
             chains.append((a, b))
-        elif field_roles[a] == "psi" and field_roles[b] == "psibar":
+        elif role_a == "psi" and role_b == "psibar":
             chains.append((b, a))
         else:
             raise ValueError(
                 "Invalid fermion chain endpoints: expected one 'psibar' and one 'psi' "
-                f"for the same spinor index, got roles ({field_roles[a]}, {field_roles[b]})"
+                f"for the same spinor index, got roles ({role_a}, {role_b})"
             )
     return chains
 
@@ -395,7 +843,10 @@ def _validate_supported_fermion_structure(field_roles, field_spinor_indices, cou
     if len(fermion_slots) <= 2:
         return
 
-    if field_spinor_indices is None:
+    if field_spinor_indices is None or all(
+        _spinor_label(field_spinor_indices[i]) is None
+        for i in fermion_slots
+    ):
         raise ValueError(
             "Multi-fermion operators require explicit spinor-contraction data. "
             "Provide repeated dummy labels in field_spinor_indices, e.g. "
@@ -409,8 +860,8 @@ def _validate_supported_fermion_structure(field_roles, field_spinor_indices, cou
     # spinor label and the coupling tensor is expected to provide the explicit
     # chain structure (e.g. gamma(i1,i2)*gamma(i3,i4)).
     fermion_slots = _fermion_slots_from_roles(field_roles)
-    labels = [str(field_spinor_indices[i]) for i in fermion_slots]
-    if all(field_spinor_indices[i] is not None for i in fermion_slots) and len(set(labels)) == len(labels):
+    labels = [str(_spinor_label(field_spinor_indices[i])) for i in fermion_slots]
+    if all(_spinor_label(field_spinor_indices[i]) is not None for i in fermion_slots) and len(set(labels)) == len(labels):
         if coupling is None:
             raise ValueError(
                 "Explicit open-slot multi-fermion encoding requires coupling to "
@@ -419,9 +870,9 @@ def _validate_supported_fermion_structure(field_roles, field_spinor_indices, cou
 
         coupling_text = coupling.to_canonical_string()
         missing = [
-            str(field_spinor_indices[i])
+            str(_spinor_label(field_spinor_indices[i]))
             for i in fermion_slots
-            if str(field_spinor_indices[i]) not in coupling_text
+            if str(_spinor_label(field_spinor_indices[i])) not in coupling_text
         ]
         if missing:
             raise ValueError(
@@ -441,9 +892,11 @@ def _validate_supported_fermion_structure(field_roles, field_spinor_indices, cou
 
 def contract_to_full_expression(
     *,
-    alphas: Sequence,
-    betas: Sequence,
-    ps: Sequence,
+    interaction: Optional[InteractionTerm] = None,
+    external_legs: Optional[Sequence[ExternalLeg]] = None,
+    alphas: Optional[Sequence] = None,
+    betas: Optional[Sequence] = None,
+    ps: Optional[Sequence] = None,
     x,
     derivative_indices=(),
     derivative_targets: Optional[Sequence[int]] = None,
@@ -452,12 +905,20 @@ def contract_to_full_expression(
     leg_roles=None,
     field_spinor_indices: Optional[Sequence] = None,
     field_slot_labels=None,
+    field_index_slots=None,
     leg_spins: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
     leg_slot_labels=None,
+    leg_index_slots=None,
     coupling=None,
 ):
     """Sum over all Wick contractions to build the full vacuum matrix element.
+
+    Inputs can be supplied in two equivalent ways:
+      1. the legacy parallel-list interface (alphas/betas/ps/roles/labels)
+      2. the metadata interface via ``interaction=InteractionTerm(...)`` and
+         optional ``external_legs=[...]``. If external legs are omitted, they
+         are auto-generated in field order with momenta ``p1, p2, ...``.
 
     For bosons the sum is a permanent (all signs +1).
     For fermions the sign of each permutation contributes (-1)^parity.
@@ -465,16 +926,61 @@ def contract_to_full_expression(
     If derivative information is provided, derivative momentum factors are
     evaluated per permutation, i.e. the derivative acting on field k picks the
     momentum of the external leg that field k contracts with in that
-    permutation... this caused many errors when I was trying to use it in the vertex_factor function :(
+    permutation.
 
     When spinor leg labels are available, fermion external factors are replaced
     by Spenso bispinor metrics g(bis(4,a), bis(4,b)) connecting legs whose
     fields share a bilinear spinor contraction (inferred from
     field_spinor_indices). Coupling-level open labels are remapped through the
     generic slot-label machinery, so spinor, Lorentz, and gauge labels can all
-    follow the contraction permutation. Bosonic fields still produce U(beta, p)
-    as usual.
+    follow the contraction permutation. Internally, the normalized
+    ``ConcreteIndexSlot`` sequences are the authoritative source of index data;
+    grouped slot-label mappings are kept only as compatibility shims. Bosonic
+    fields still produce U(beta, p) as usual.
     """
+
+    normalized = _normalize_vertex_inputs(
+        interaction=interaction,
+        external_legs=external_legs,
+        coupling=coupling,
+        alphas=alphas,
+        betas=betas,
+        ps=ps,
+        derivative_indices=derivative_indices,
+        derivative_targets=derivative_targets,
+        statistics=statistics,
+        field_roles=field_roles,
+        leg_roles=leg_roles,
+        field_spinor_indices=field_spinor_indices,
+        field_slot_labels=field_slot_labels,
+        field_index_slots=field_index_slots,
+        leg_spins=leg_spins,
+        leg_spinor_indices=leg_spinor_indices,
+        leg_slot_labels=leg_slot_labels,
+        leg_index_slots=leg_index_slots,
+    )
+    coupling = normalized["coupling"]
+    alphas = normalized["alphas"]
+    betas = normalized["betas"]
+    ps = normalized["ps"]
+    derivative_indices = normalized["derivative_indices"]
+    derivative_targets = normalized["derivative_targets"]
+    statistics = normalized["statistics"]
+    field_roles = normalized["field_roles"]
+    leg_roles = normalized["leg_roles"]
+    field_spinor_indices = normalized["field_spinor_indices"]
+    field_slot_labels = normalized["field_slot_labels"]
+    field_index_slots = normalized["field_index_slots"]
+    leg_spins = normalized["leg_spins"]
+    leg_spinor_indices = normalized["leg_spinor_indices"]
+    leg_slot_labels = normalized["leg_slot_labels"]
+    leg_index_slots = normalized["leg_index_slots"]
+
+    if alphas is None or betas is None or ps is None:
+        raise ValueError(
+            "contract_to_full_expression requires either legacy alphas/betas/ps "
+            "inputs or interaction=InteractionTerm(...)."
+        )
 
     #first check if the lengths of the sequences are the same
     n = len(alphas)
@@ -504,26 +1010,28 @@ def contract_to_full_expression(
     if leg_spinor_indices is not None and len(leg_spinor_indices) != n:
         raise ValueError("leg_spinor_indices must have the same length as ps")
 
-    effective_field_slot_labels = _merge_slot_label_structures(
-        field_slot_labels,
-        field_spinor_indices,
-        field_roles,
+    field_slot_state = _prepare_slot_side(
+        base_slot_labels=field_slot_labels,
+        explicit_index_slots=field_index_slots,
+        spinor_indices=field_spinor_indices,
+        roles=field_roles,
         expected_length=n,
         label_name="field_slot_labels",
     )
-    effective_leg_slot_labels = _merge_slot_label_structures(
-        leg_slot_labels,
-        leg_spinor_indices,
-        leg_roles,
+    leg_slot_state = _prepare_slot_side(
+        base_slot_labels=leg_slot_labels,
+        explicit_index_slots=leg_index_slots,
+        spinor_indices=leg_spinor_indices,
+        roles=leg_roles,
         expected_length=n,
         label_name="leg_slot_labels",
     )
-    effective_field_spinor_indices = _primary_slot_labels(effective_field_slot_labels, SPINOR_KIND)
-    if effective_field_spinor_indices is None:
-        effective_field_spinor_indices = field_spinor_indices
-    effective_leg_spinor_indices = _primary_slot_labels(effective_leg_slot_labels, SPINOR_KIND)
-    if effective_leg_spinor_indices is None:
-        effective_leg_spinor_indices = leg_spinor_indices
+    effective_field_slot_labels = field_slot_state.slot_labels
+    effective_leg_slot_labels = leg_slot_state.slot_labels
+    effective_field_index_slots = field_slot_state.index_slots
+    effective_leg_index_slots = leg_slot_state.index_slots
+    effective_field_spinor_indices = field_slot_state.spinor_labels
+    effective_leg_spinor_indices = leg_slot_state.spinor_labels
 
     if statistics == "fermion":
         if field_roles is None or leg_roles is None:
@@ -531,47 +1039,68 @@ def contract_to_full_expression(
                 "statistics='fermion' requires both field_roles and leg_roles "
                 "to avoid ambiguous Grassmann signs and incompatible contractions"
             )
+
+    use_spinor_deltas = _index_slot_structure_has_type(effective_leg_index_slots, SPINOR_KIND)
+    contraction_input = _build_contraction_input(
+        coupling=coupling if coupling is not None else Expression.num(1),
+        statistics=statistics,
+        alphas=alphas,
+        betas=betas,
+        ps=ps,
+        derivative_indices=derivative_indices,
+        derivative_targets=derivative_targets,
+        field_roles=field_roles,
+        leg_roles=leg_roles,
+        field_slot_labels=effective_field_slot_labels,
+        field_index_slots=effective_field_index_slots,
+        leg_spins=leg_spins,
+        leg_slot_labels=effective_leg_slot_labels,
+        leg_index_slots=effective_leg_index_slots,
+    )
+
+    field_slots = contraction_input.field_slots
+    external_legs = contraction_input.external_legs
+    derivatives = contraction_input.derivatives
+
+    if statistics == "fermion":
         _validate_supported_fermion_structure(
-            field_roles,
-            effective_field_spinor_indices,
+            field_slots,
+            field_slots,
             coupling=coupling,
         )
 
-    use_spinor_deltas = _slot_labels_have_kind(effective_leg_slot_labels, SPINOR_KIND)
     fermion_chains = []
     if use_spinor_deltas:
         if field_roles is None:
             raise ValueError("field_roles required when spinor leg labels are given")
         if effective_field_spinor_indices is None:
             raise ValueError("field_spinor_indices or field_slot_labels required when spinor leg labels are given")
-        for i, role in enumerate(field_roles):
-            if role in ("psi", "psibar") and effective_field_spinor_indices[i] is None:
+        for field_slot in field_slots:
+            if field_slot.role_name in ("psi", "psibar") and field_slot.spinor_label is None:
                 raise ValueError(
                     "Fermion slots must carry a spinor index when "
                     "spinor leg labels are provided"
                 )
-        for j, role in enumerate(leg_roles):
-            if role in ("psi", "psibar") and effective_leg_spinor_indices[j] is None:
+        for leg in external_legs:
+            if leg.role_name in ("psi", "psibar") and leg.spinor_label is None:
                 raise ValueError(
                     "Fermion legs must carry a spinor index when "
                     "spinor leg labels are provided"
                 )
-        # Fermion chain abstraction for bispinor-metric case:
-        # infer ordered endpoints (psibar_slot, psi_slot).
-        fermion_chains = _infer_fermion_chains_from_endpoints(
-            field_roles,
-            effective_field_spinor_indices,
-        )
+        fermion_chains = _infer_fermion_chains_from_endpoints(field_slots, field_slots)
 
     fermion_slots = (
-        _fermion_slots_from_roles(field_roles)
+        _fermion_slots_from_roles(field_slots)
         if statistics == "fermion" else []
     )
 
     total = Expression.num(0)
     open_slot_labels = []
-    if coupling is not None and effective_field_slot_labels is not None and effective_leg_slot_labels is not None:
-        open_slot_labels = _open_slot_labels(effective_field_slot_labels)
+    if (
+        any(index_slot.is_labeled for field_slot in field_slots for index_slot in field_slot.index_slots)
+        and any(index_slot.is_labeled for leg in external_legs for index_slot in leg.index_slots)
+    ):
+        open_slot_labels = _open_index_slots(field_slots)
 
     for perm in permutations(range(n)):
         term = Expression.num(1)
@@ -579,14 +1108,7 @@ def contract_to_full_expression(
         # Skip incompatible role assignments early (species stays symbolic via deltas).
         valid = True
         for i, j in enumerate(perm):
-            if not factor_leg_compatible(
-                i,
-                j,
-                alphas,
-                betas,
-                field_roles=field_roles,
-                leg_roles=leg_roles,
-            ):
+            if not factor_leg_compatible(field_slots[i], external_legs[j]):
                 valid = False
                 break
         if not valid:
@@ -596,12 +1118,12 @@ def contract_to_full_expression(
         if open_slot_labels:
             label_replacements = _slot_label_replacements_for_permutation(
                 open_slot_labels,
-                effective_leg_slot_labels,
+                external_legs,
                 perm,
             )
 
         coupling_term = _apply_label_replacements(
-            coupling if coupling is not None else Expression.num(1),
+            contraction_input.coupling,
             label_replacements,
         )
         term *= coupling_term
@@ -610,39 +1132,40 @@ def contract_to_full_expression(
             term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
 
         #first we evaluate the derivative momentum factors with the momentum assigned by this permutation
-        for mu, tgt in zip(derivative_indices, derivative_targets):
-            mapped_mu = _apply_label_replacements(mu, label_replacements)
-            term *= (-I) * pcomp(ps[perm[tgt]], mapped_mu)
+        for derivative in derivatives:
+            mapped_mu = _apply_label_replacements(derivative.index, label_replacements)
+            term *= (-I) * pcomp(external_legs[perm[derivative.target_slot]].momentum, mapped_mu)
 
         #now we evaluate the delta and U factors
         p_sum = Expression.num(0)
         for i, j in enumerate(perm):
-            role = field_roles[i] if field_roles is not None else None
+            field_slot = field_slots[i]
+            leg = external_legs[j]
+            role = field_slot.role_name
 
             if use_spinor_deltas and role in ("psi", "psibar"):
-                term *= delta(alphas[i], betas[j])
+                term *= delta(field_slot.species, leg.species)
             else:
-                spin = leg_spins[j] if leg_spins is not None else _default_spin_symbol(j)
                 spinor_index = (
-                    effective_field_spinor_indices[i]
-                    if effective_field_spinor_indices is not None
+                    field_slot.spinor_label
+                    if field_slot.spinor_label is not None
                     else S(f"si{i + 1}")
                 )
                 term *= _external_factor_for_contraction(
                     role=role,
-                    alpha=alphas[i],
-                    beta=betas[j],
-                    p=ps[j],
-                    spin=spin,
+                    alpha=field_slot.species,
+                    beta=leg.species,
+                    p=leg.momentum,
+                    spin=leg.spin,
                     spinor_index=spinor_index,
                 )
-            p_sum += ps[j]
+            p_sum += leg.momentum
 
         if use_spinor_deltas:
             for psibar_slot, psi_slot in fermion_chains:
                 term *= bis.g(
-                    effective_leg_spinor_indices[perm[psibar_slot]],
-                    effective_leg_spinor_indices[perm[psi_slot]],
+                    external_legs[perm[psibar_slot]].spinor_label,
+                    external_legs[perm[psi_slot]].spinor_label,
                 ).to_expression()
 
         term *= plane_wave(p_sum, x)
@@ -685,10 +1208,12 @@ def infer_derivative_targets(field_derivative_map):
 
 def vertex_factor(
     *,
-    coupling,
-    alphas: Sequence,
-    betas: Sequence,
-    ps: Sequence,
+    interaction: Optional[InteractionTerm] = None,
+    external_legs: Optional[Sequence[ExternalLeg]] = None,
+    coupling=None,
+    alphas: Optional[Sequence] = None,
+    betas: Optional[Sequence] = None,
+    ps: Optional[Sequence] = None,
     x,
     derivative_indices=(),
     derivative_targets=None,
@@ -697,9 +1222,11 @@ def vertex_factor(
     leg_roles=None,
     field_spinor_indices: Optional[Sequence] = None,
     field_slot_labels=None,
+    field_index_slots=None,
     leg_spins: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
     leg_slot_labels=None,
+    leg_index_slots=None,
     strip_externals: bool = True,
     include_delta: bool = True,
     d=None,
@@ -710,12 +1237,21 @@ def vertex_factor(
         1. Contract fields with creation operators
         2. Evaluate derivative momentum factors for each contraction
            (permutation-aware assignment)
-        3. Integrate over x: exp(-i sum(p).x) -> (2pi)^d Delta(sum(p))
+        3. Integrate over x: under the current local convention, the common
+           plane-wave factor is replaced by 1 when ``include_delta=True``
         4. Strip external wavefunctions U(beta, p) -> 1
         5. Multiply by i
 
     Parameters
     ----------
+    interaction : optional InteractionTerm
+        Metadata-layer input describing the interaction monomial. When given,
+        omit the legacy field-side arguments and optionally provide
+        ``external_legs=[...]`` for a custom external ordering. If the legs are
+        omitted, default legs are generated in field order.
+    external_legs : optional sequence of ExternalLeg
+        Metadata-layer external states paired with ``interaction``. This is the
+        future-proof alternative to manual betas/ps/leg_roles/... lists.
     coupling : Symbolica expression for the coupling constant/tensor
     alphas : species labels for the fields in the Lagrangian term
     betas : species labels for the external particles
@@ -728,40 +1264,129 @@ def vertex_factor(
         For fermions, repeated labels in ``field_spinor_indices`` are treated
         as bilinear contractions and are preserved as open spinor metrics in
         the amputated vertex.
-    include_delta : replace the x-integral with momentum delta
+    include_delta : apply the current x-integration convention. In this local
+        branch, the common plane-wave factor is replaced by 1 rather than an
+        explicit momentum delta.
     d : spacetime dimension symbol (defaults to S('d'))
     field_slot_labels / leg_slot_labels : generic per-slot index-label
         mappings, e.g. spinor, Lorentz, or gauge labels carried by each
         field/external leg. These are used to remap open tensor slots inside
         the coupling according to the contraction permutation.
+    field_index_slots / leg_index_slots : direct concrete-index-slot inputs for
+        callers that already work with typed ordered slots. These are preserved
+        as first-class inputs rather than being reconstructed from labels.
     leg_spinor_indices : legacy convenience argument for spinor labels on
         external legs. If omitted, stripped vertices auto-generate default
         leg labels from the available field-slot labels.
     """
-    effective_field_slot_labels = _merge_slot_label_structures(
-        field_slot_labels,
-        field_spinor_indices,
-        field_roles,
+    normalized = _normalize_vertex_inputs(
+        interaction=interaction,
+        external_legs=external_legs,
+        coupling=coupling,
+        alphas=alphas,
+        betas=betas,
+        ps=ps,
+        derivative_indices=derivative_indices,
+        derivative_targets=derivative_targets,
+        statistics=statistics,
+        field_roles=field_roles,
+        leg_roles=leg_roles,
+        field_spinor_indices=field_spinor_indices,
+        field_slot_labels=field_slot_labels,
+        field_index_slots=field_index_slots,
+        leg_spins=leg_spins,
+        leg_spinor_indices=leg_spinor_indices,
+        leg_slot_labels=leg_slot_labels,
+        leg_index_slots=leg_index_slots,
+    )
+    coupling = normalized["coupling"]
+    alphas = normalized["alphas"]
+    betas = normalized["betas"]
+    ps = normalized["ps"]
+    derivative_indices = normalized["derivative_indices"]
+    derivative_targets = normalized["derivative_targets"]
+    statistics = normalized["statistics"]
+    field_roles = normalized["field_roles"]
+    leg_roles = normalized["leg_roles"]
+    field_spinor_indices = normalized["field_spinor_indices"]
+    field_slot_labels = normalized["field_slot_labels"]
+    field_index_slots = normalized["field_index_slots"]
+    leg_spins = normalized["leg_spins"]
+    leg_spinor_indices = normalized["leg_spinor_indices"]
+    leg_slot_labels = normalized["leg_slot_labels"]
+    leg_index_slots = normalized["leg_index_slots"]
+
+    if coupling is None or alphas is None or betas is None or ps is None:
+        raise ValueError(
+            "vertex_factor requires either legacy coupling/alphas/betas/ps "
+            "inputs or interaction=InteractionTerm(...)."
+        )
+
+    field_slot_state = _prepare_slot_side(
+        base_slot_labels=field_slot_labels,
+        explicit_index_slots=field_index_slots,
+        spinor_indices=field_spinor_indices,
+        roles=field_roles,
         expected_length=len(ps),
         label_name="field_slot_labels",
     )
-    effective_leg_slot_labels = _merge_slot_label_structures(
-        leg_slot_labels,
-        leg_spinor_indices,
-        leg_roles,
+    leg_slot_state = _prepare_slot_side(
+        base_slot_labels=leg_slot_labels,
+        explicit_index_slots=leg_index_slots,
+        spinor_indices=leg_spinor_indices,
+        roles=leg_roles,
         expected_length=len(ps),
         label_name="leg_slot_labels",
     )
+    effective_field_slot_labels = field_slot_state.slot_labels
+    effective_field_index_slots = field_slot_state.index_slots
+    effective_field_spinor_indices = field_slot_state.spinor_labels
+    effective_leg_slot_labels = leg_slot_state.slot_labels
+    effective_leg_index_slots = leg_slot_state.index_slots
+    effective_leg_spinor_indices = leg_slot_state.spinor_labels
     if (
         strip_externals
         and effective_leg_slot_labels is None
         and effective_field_slot_labels is not None
     ):
         effective_leg_slot_labels = default_leg_slot_labels(effective_field_slot_labels)
+        leg_slot_state = _prepare_slot_side(
+            base_slot_labels=effective_leg_slot_labels,
+            explicit_index_slots=leg_index_slots,
+            spinor_indices=leg_spinor_indices,
+            roles=leg_roles,
+            expected_length=len(ps),
+            label_name="leg_slot_labels",
+        )
+        effective_leg_slot_labels = leg_slot_state.slot_labels
+        effective_leg_index_slots = leg_slot_state.index_slots
+        effective_leg_spinor_indices = leg_slot_state.spinor_labels
 
-    effective_leg_spinor_indices = _primary_slot_labels(effective_leg_slot_labels, SPINOR_KIND)
-    if effective_leg_spinor_indices is None:
-        effective_leg_spinor_indices = leg_spinor_indices
+    if (
+        strip_externals
+        and effective_leg_spinor_indices is None
+        and statistics == "fermion"
+        and _all_fermion_slots_labeled(field_roles, effective_field_spinor_indices)
+    ):
+        generated_leg_spinors = _default_leg_spinor_indices(len(ps))
+        generated_leg_slot_labels = _merge_slot_label_structures(
+            effective_leg_slot_labels,
+            generated_leg_spinors,
+            leg_roles,
+            expected_length=len(ps),
+            label_name="leg_slot_labels",
+        )
+        leg_slot_state = _prepare_slot_side(
+            base_slot_labels=generated_leg_slot_labels,
+            explicit_index_slots=leg_index_slots,
+            spinor_indices=None,
+            roles=leg_roles,
+            expected_length=len(ps),
+            label_name="leg_slot_labels",
+        )
+        effective_leg_slot_labels = leg_slot_state.slot_labels
+        effective_leg_index_slots = leg_slot_state.index_slots
+        effective_leg_spinor_indices = leg_slot_state.spinor_labels
 
     contracted = contract_to_full_expression(
         alphas=alphas,
@@ -773,11 +1398,13 @@ def vertex_factor(
         statistics=statistics,
         field_roles=field_roles,
         leg_roles=leg_roles,
-        field_spinor_indices=field_spinor_indices,
+        field_spinor_indices=effective_field_spinor_indices,
         field_slot_labels=effective_field_slot_labels,
+        field_index_slots=effective_field_index_slots,
         leg_spins=leg_spins,
         leg_spinor_indices=effective_leg_spinor_indices,
         leg_slot_labels=effective_leg_slot_labels,
+        leg_index_slots=effective_leg_index_slots,
         coupling=coupling,
     )
     full = contracted
