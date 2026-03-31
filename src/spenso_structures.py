@@ -1,15 +1,13 @@
 """
 Thin wrappers for Spenso HEP tensor objects used by the Symbolica prototype.
 
-These helpers ensures that gamma
-matrices, and metrics are represented as native Spenso
-tensors with typed index slots.
+These helpers ensure that gamma matrices, metrics, and gauge tensors are
+represented as native Spenso tensors with typed index slots.
 """
 
 from itertools import count
-from typing import Mapping, Sequence
 
-from symbolica import Expression, S
+from symbolica import Expression
 from symbolica.community.idenso import simplify_gamma, simplify_metrics
 from symbolica.community.spenso import (
     Representation,
@@ -34,13 +32,6 @@ SPINOR_KIND = "spinor"
 LORENTZ_KIND = "lorentz"
 COLOR_FUND_KIND = "color_fund"
 COLOR_ADJ_KIND = "color_adj"
-
-DEFAULT_SLOT_LABEL_PREFIXES = {
-    SPINOR_KIND: "i",
-    LORENTZ_KIND: "mu",
-    COLOR_FUND_KIND: "c",
-    COLOR_ADJ_KIND: "a",
-}
 
 
 def _slot(rep, index):
@@ -67,55 +58,6 @@ def color_adj_index(index):
 
 def _fresh_index_name(prefix):
     return f"{prefix}_{next(_GAMMA_LOWERED_COUNTER)}"
-
-
-def _label_tuple(labels):
-    if labels is None:
-        return ()
-    if isinstance(labels, tuple):
-        return tuple(label for label in labels if label is not None)
-    if isinstance(labels, list):
-        return tuple(label for label in labels if label is not None)
-    return (labels,)
-
-
-def slot_labels(**labels_by_kind):
-    """Normalize per-slot index labels into a consistent mapping."""
-    normalized = {}
-    for kind, labels in labels_by_kind.items():
-        values = _label_tuple(labels)
-        if values:
-            normalized[kind] = values
-    return normalized
-
-
-def default_leg_slot_labels(
-    field_slot_labels: Sequence[Mapping[str, Sequence]],
-    *,
-    prefix_overrides=None,
-):
-    """Generate default external-leg labels from a field-slot layout."""
-    prefix_map = dict(DEFAULT_SLOT_LABEL_PREFIXES)
-    if prefix_overrides is not None:
-        prefix_map.update(prefix_overrides)
-
-    generated = []
-    for leg_position, entry in enumerate(field_slot_labels, start=1):
-        if not entry:
-            generated.append(None)
-            continue
-
-        leg_entry = {}
-        for kind, labels in entry.items():
-            prefix = prefix_map.get(kind, kind.replace(" ", "_"))
-            values = []
-            for index_position, _ in enumerate(labels, start=1):
-                suffix = "" if len(labels) == 1 else f"_{index_position}"
-                values.append(S(f"{prefix}{leg_position}{suffix}"))
-            leg_entry[kind] = tuple(values)
-        generated.append(leg_entry)
-
-    return generated
 
 
 def gamma_matrix(left_spinor, right_spinor, lorentz):
