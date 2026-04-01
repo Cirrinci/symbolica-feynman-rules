@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Optional
 
-from symbolica import S
+from symbolica import S, Expression
 
 from model import (
     ComplexScalarKineticTerm,
@@ -163,7 +163,8 @@ def compile_complex_scalar_gauge_terms(
     gauge_group: GaugeGroup,
     gauge_field: Field,
     lorentz_labels=None,
-    prefactor=1,
+    current_prefactor=1,
+    contact_prefactor=1,
     label_prefix: str = "",
 ):
     """Compile the abelian complex-scalar gauge current/contact terms."""
@@ -181,10 +182,11 @@ def compile_complex_scalar_gauge_terms(
         _default_vector_label(gauge_field, gauge_group, suffix="mu"),
         _default_vector_label(gauge_field, gauge_group, suffix="nu"),
     )
-    base = prefactor * gauge_group.coupling * charge
+    current_base = current_prefactor * gauge_group.coupling * charge
+    contact_coupling = contact_prefactor * ((gauge_group.coupling * charge) ** 2)
 
     current_phi = InteractionTerm(
-        coupling=base,
+        coupling=current_base,
         fields=(
             scalar.occurrence(conjugated=True),
             scalar.occurrence(),
@@ -194,7 +196,7 @@ def compile_complex_scalar_gauge_terms(
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: scalar current (+)",
     )
     current_phidag = InteractionTerm(
-        coupling=-base,
+        coupling=-current_base,
         fields=(
             scalar.occurrence(conjugated=True),
             scalar.occurrence(),
@@ -204,7 +206,7 @@ def compile_complex_scalar_gauge_terms(
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: scalar current (-)",
     )
     contact = InteractionTerm(
-        coupling=(base ** 2) * scalar_gauge_contact(mu, nu),
+        coupling=contact_coupling * scalar_gauge_contact(mu, nu),
         fields=(
             scalar.occurrence(conjugated=True),
             scalar.occurrence(),
@@ -252,6 +254,8 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                         scalar=field,
                         gauge_group=gauge_group,
                         gauge_field=gauge_field,
+                        current_prefactor=1,
+                        contact_prefactor=1,
                     )
                 )
 
@@ -284,7 +288,7 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
             fermion=fermion,
             gauge_group=gauge_group,
             gauge_field=gauge_field,
-            prefactor=term.coefficient,
+            prefactor=-term.coefficient,
             label=label,
         ),
     )
@@ -314,7 +318,8 @@ def compile_complex_scalar_kinetic_term(
         scalar=scalar,
         gauge_group=gauge_group,
         gauge_field=gauge_field,
-        prefactor=term.coefficient,
+        current_prefactor=Expression.I * term.coefficient,
+        contact_prefactor=term.coefficient,
         label_prefix=label_prefix,
     )
 

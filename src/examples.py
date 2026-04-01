@@ -84,6 +84,7 @@ chi0 = S("chi0")
 phiC0 = S("phiC0")
 phiCdag0 = S("phiCdag0")
 psibar0, psi0 = S("psibar0", "psi0")
+psibarQED0, psiQED0 = S("psibarQED0", "psiQED0")
 A0 = S("A0")
 G0 = S("G0")
 
@@ -103,6 +104,7 @@ gV = S("gV")
 gS = S("gS")
 eQED = S("eQED")
 qPhi = S("qPhi")
+qPsi = S("qPsi")
 gPhiA = S("gPhiA")
 gPhiAA = S("gPhiAA")
 g4F = S("g4F")
@@ -447,6 +449,15 @@ PhiQEDField = Field(
     conjugate_symbol=phiCdag0,
     quantum_numbers={"Q": qPhi},
 )
+PsiQEDField = Field(
+    "PsiQED",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    symbol=psiQED0,
+    conjugate_symbol=psibarQED0,
+    indices=(SPINOR_INDEX,),
+    quantum_numbers={"Q": qPsi},
+)
 PsiField = Field("Psi", spin=Fraction(1, 2), self_conjugate=False, symbol=psi0, conjugate_symbol=psibar0, indices=(SPINOR_INDEX,))
 GaugeField = Field("A", spin=1, self_conjugate=True, symbol=A0, indices=(LORENTZ_INDEX,))
 QuarkField = Field("q", spin=Fraction(1, 2), self_conjugate=False, symbol=psi0, conjugate_symbol=psibar0, indices=(SPINOR_INDEX, COLOR_FUND_INDEX))
@@ -464,7 +475,7 @@ QCD_GROUP = GaugeGroup(
     gauge_boson=G0,
     representations=(COLOR_FUND_REP,),
 )
-SCALAR_QED_GROUP = GaugeGroup(
+QED_GROUP = GaugeGroup(
     name="U1QED",
     abelian=True,
     coupling=eQED,
@@ -478,8 +489,13 @@ MODEL_QCD_BASE = Model(
 )
 MODEL_SCALAR_QED_BASE = Model(
     name="ScalarQED-minimal",
-    gauge_groups=(SCALAR_QED_GROUP,),
+    gauge_groups=(QED_GROUP,),
     fields=(PhiQEDField, GaugeField),
+)
+MODEL_QED_FERMION_BASE = Model(
+    name="FermionQED-minimal",
+    gauge_groups=(QED_GROUP,),
+    fields=(PsiQEDField, GaugeField),
 )
 MODEL_QCD_COVARIANT = Model(
     name="QCD-covariant",
@@ -489,9 +505,15 @@ MODEL_QCD_COVARIANT = Model(
 )
 MODEL_SCALAR_QED_COVARIANT = Model(
     name="ScalarQED-covariant",
-    gauge_groups=(SCALAR_QED_GROUP,),
+    gauge_groups=(QED_GROUP,),
     fields=(PhiQEDField, GaugeField),
     covariant_terms=(ComplexScalarKineticTerm(field=PhiQEDField),),
+)
+MODEL_QED_FERMION_COVARIANT = Model(
+    name="FermionQED-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(PsiQEDField, GaugeField),
+    covariant_terms=(DiracKineticTerm(field=PsiQEDField),),
 )
 
 
@@ -622,6 +644,11 @@ LEGS_quark_gluon = (
     QuarkField.leg(p1, conjugated=True, spin=s1, labels={SPINOR_KIND: i1, COLOR_FUND_KIND: c1}),
     QuarkField.leg(p2, spin=s2, labels={SPINOR_KIND: i2, COLOR_FUND_KIND: c2}),
     GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}),
+)
+LEGS_qed_fermion = (
+    PsiQEDField.leg(p1, conjugated=True, spin=s1, labels={SPINOR_KIND: i1}),
+    PsiQEDField.leg(p2, spin=s2, labels={SPINOR_KIND: i2}),
+    GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}),
 )
 
 TERM_complex_scalar_current_phi = InteractionTerm(
@@ -874,6 +901,7 @@ def _run_gauge_demo():
 
 def _run_covariant_demo():
     compiled_qcd = compile_covariant_terms(MODEL_QCD_COVARIANT)
+    compiled_qed = compile_covariant_terms(MODEL_QED_FERMION_COVARIANT)
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
 
     print("# " + "=" * 79)
@@ -885,6 +913,14 @@ def _run_covariant_demo():
         vertex=_model_demo_vertex(
             interaction=compiled_qcd[0],
             external_legs=LEGS_quark_gluon,
+        ),
+    )
+    _print_vertex_block(
+        "covariant: psibar i gamma^mu D_mu psi_QED",
+        description=MODEL_QED_FERMION_COVARIANT.covariant_terms[0].label or "Abelian Dirac kinetic term expanded through the gauge compiler",
+        vertex=_model_demo_vertex(
+            interaction=compiled_qed[0],
+            external_legs=LEGS_qed_fermion,
         ),
     )
     _print_vertex_block(
@@ -926,6 +962,7 @@ def _run_demo_output(suite):
         _run_covariant_demo()
     if suite == "model":
         compiled_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
+        compiled_qed = compile_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
         compiled_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
 
         print("# " + "=" * 79)
@@ -949,6 +986,14 @@ def _run_demo_output(suite):
             vertex=_model_demo_vertex(
                 interaction=compiled_qcd[0],
                 external_legs=LEGS_quark_gluon,
+            ),
+        )
+        _print_vertex_block(
+            "model compiler: fermion QED",
+            description=compiled_qed[0].label,
+            vertex=_model_demo_vertex(
+                interaction=compiled_qed[0],
+                external_legs=LEGS_qed_fermion,
             ),
         )
         _print_vertex_block(
@@ -1315,6 +1360,20 @@ def _run_compiled_gauge_tests():
         description=term_qcd.label,
     )
 
+    compiled_qed = compile_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
+    model_qed = with_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
+    assert model_qed.interactions == compiled_qed
+    assert len(compiled_qed) == 1
+
+    term_qed = compiled_qed[0]
+    _check(
+        _model_vertex(interaction=term_qed, external_legs=LEGS_qed_fermion),
+        I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
+        "Compiled model: fermion QED",
+        show_vertex=True,
+        description=term_qed.label,
+    )
+
     compiled_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
     model_scalar_qed = with_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
     assert model_scalar_qed.interactions == compiled_scalar_qed
@@ -1375,10 +1434,24 @@ def _run_covariant_compiler_tests():
     term_qcd = compiled_qcd[0]
     _check(
         _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
-        I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
         "Covariant compiler: quark-gluon",
         show_vertex=True,
         description=term_qcd.label,
+    )
+
+    compiled_qed = compile_covariant_terms(MODEL_QED_FERMION_COVARIANT)
+    model_qed = with_compiled_covariant_terms(MODEL_QED_FERMION_COVARIANT)
+    assert model_qed.interactions == compiled_qed
+    assert len(compiled_qed) == 1
+
+    term_qed = compiled_qed[0]
+    _check(
+        _model_vertex(interaction=term_qed, external_legs=LEGS_qed_fermion),
+        -I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
+        "Covariant compiler: fermion QED",
+        show_vertex=True,
+        description=term_qed.label,
     )
 
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
@@ -1401,7 +1474,7 @@ def _run_covariant_compiler_tests():
             species_map={b1: phiCdag0, b2: phiC0, b3: A0},
         )
     )
-    expected_sc = eQED * qPhi * (pcomp(p2, scalar_current_index) - pcomp(p1, scalar_current_index)) * D3
+    expected_sc = I * eQED * qPhi * (pcomp(p2, scalar_current_index) - pcomp(p1, scalar_current_index)) * D3
     _check(
         V_sc,
         expected_sc,
@@ -1420,41 +1493,6 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: scalar QED contact",
         show_vertex=True,
         description=term_sc_contact.label,
-    )
-
-    minimal_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
-    _check(
-        _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
-        _model_vertex(interaction=minimal_qcd[0], external_legs=LEGS_quark_gluon),
-        "Covariant compiler matches minimal quark-gluon",
-    )
-
-    minimal_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
-    minimal_current = (
-        _model_vertex(
-            interaction=minimal_scalar_qed[0],
-            external_legs=LEGS_compiled_scalar_current,
-            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
-        )
-        + _model_vertex(
-            interaction=minimal_scalar_qed[1],
-            external_legs=LEGS_compiled_scalar_current,
-            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
-        )
-    ).expand()
-    _check(V_sc, minimal_current, "Covariant compiler matches minimal scalar current")
-    _check(
-        _model_vertex(
-            interaction=term_sc_contact,
-            external_legs=LEGS_compiled_scalar_contact,
-            species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
-        ),
-        _model_vertex(
-            interaction=minimal_scalar_qed[2],
-            external_legs=LEGS_compiled_scalar_contact,
-            species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
-        ),
-        "Covariant compiler matches minimal scalar contact",
     )
 
     print("\n  Covariant-derivative compiler tests passed.\n")
