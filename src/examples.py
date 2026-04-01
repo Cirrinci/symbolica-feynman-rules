@@ -17,6 +17,7 @@ from model_symbolica import (
     delta,
     bis,
     Delta,
+    Dot,
     pcomp,
     vertex_factor,
     simplify_deltas,
@@ -111,16 +112,74 @@ def _check(got, expected, label):
     print(f"  {label}: PASS")
 
 
-def show_vertex(title, *, coupling, alphas, betas, ps, species_map=None, **kwargs):
-    V = vertex_factor(coupling=coupling, alphas=alphas, betas=betas, ps=ps, x=x, d=d, **kwargs)
-    compact = simplify_deltas(V, species_map=species_map)
-    print("=" * 80)
-    print(f"  {title}")
-    print(f"  alphas = {alphas}")
-    print(f"  betas  = {betas}")
-    print(f"  ps     = {ps}")
-    print(f"\n  Vertex:\n  {compact}\n")
-    return V, compact
+def _print_demo_header(title):
+    print(f"# === {title} ===\n")
+
+
+def _print_vertex_block(
+    title,
+    *,
+    description=None,
+    vertex=None,
+    compact_override=None,
+    sum_notation=None,
+    interpretation=None,
+    error=None,
+):
+    _print_demo_header(title)
+    if description:
+        print(description)
+    print()
+
+    if error is not None:
+        print(error)
+    elif vertex is not None:
+        print("Vertex:")
+        print(vertex)
+
+    if compact_override is not None:
+        print()
+        print("Compact override:")
+        print(compact_override)
+
+    if sum_notation is not None:
+        print("Sum notation:")
+        print(sum_notation)
+
+    if interpretation is not None:
+        print()
+        print(f"Interpretation: {interpretation}")
+
+    print()
+
+
+def _direct_vertex(*, species_map=None, simplify_gamma=False, **kwargs):
+    if "include_delta" not in kwargs:
+        kwargs["include_delta"] = False
+    expr = vertex_factor(x=x, d=d, **kwargs)
+    expr = simplify_deltas(expr, species_map=species_map)
+    q_ = S("q_")
+    x_ = S("x_")
+    expr = expr.replace(Expression.EXP(-I * Dot(q_, x_)), 1)
+    if simplify_gamma:
+        expr = simplify_gamma_chain(expr)
+    return expr
+
+
+def _model_demo_vertex(*, interaction, external_legs, species_map=None, simplify_gamma=False, strip_externals=True):
+    expr = _model_vertex(
+        interaction=interaction,
+        external_legs=external_legs,
+        strip_externals=strip_externals,
+        include_delta=False,
+        species_map=species_map,
+    )
+    q_ = S("q_")
+    x_ = S("x_")
+    expr = expr.replace(Expression.EXP(-I * Dot(q_, x_)), 1)
+    if simplify_gamma:
+        expr = simplify_gamma_chain(expr)
+    return expr
 
 
 # ===================================================================
@@ -543,15 +602,250 @@ LEGS_complex_scalar_contact = (
 # Helper: vertex from model-layer objects
 # ===================================================================
 
-def _model_vertex(*, interaction, external_legs, strip_externals=True, species_map=None):
+def _model_vertex(
+    *,
+    interaction,
+    external_legs,
+    strip_externals=True,
+    include_delta=True,
+    species_map=None,
+):
     expr = vertex_factor(
         interaction=interaction,
         external_legs=external_legs,
         x=x, d=d,
         strip_externals=strip_externals,
+        include_delta=include_delta,
     )
     return simplify_deltas(expr, species_map=species_map)
 
+
+# ===================================================================
+# Demo output (human-readable vertex blocks)
+# ===================================================================
+
+def _run_scalar_demo():
+    print("# " + "=" * 79)
+    print("Demo: scalar\n")
+    print("# " + "=" * 79)
+
+    _print_vertex_block(
+        "scalar: phi^4",
+        description="lam4 * phi^4",
+        vertex=_direct_vertex(**L_phi4, species_map={b1: phi0, b2: phi0, b3: phi0, b4: phi0}),
+    )
+    _print_vertex_block(
+        "scalar: phi^2 chi^2",
+        description="g * phi^2 * chi^2",
+        vertex=_direct_vertex(**L_phi2chi2, species_map={b1: phi0, b2: phi0, b3: chi0, b4: chi0}),
+    )
+    _print_vertex_block(
+        "scalar: complex scalar bilinear",
+        description="lamC * phi^dagger * phi",
+        vertex=_direct_vertex(**L_phiCdag_phiC, species_map={b1: phiCdag0, b2: phiC0}),
+    )
+    _print_vertex_block(
+        "scalar: derivative (mu,nu) * phi^4",
+        description="gD * (d_mu phi)(d_nu phi) phi phi",
+        compact_override=COMPACT_DERIV,
+        sum_notation=compact_sum_notation(
+            derivative_indices=deriv_indices,
+            derivative_targets=deriv_targets,
+            n_legs=len(L_deriv["ps"]),
+        ),
+    )
+    _print_vertex_block(
+        "scalar: derivative (mu,mu) * phi^4",
+        description="gD2 * (d_mu phi)(d_mu phi) phi phi",
+        compact_override=COMPACT_DERIV2,
+        sum_notation=compact_sum_notation(
+            derivative_indices=deriv_indices2,
+            derivative_targets=deriv_targets2,
+            n_legs=len(L_deriv2["ps"]),
+        ),
+    )
+    _print_vertex_block(
+        "scalar: multi-species phi_i^2 phi_j^2 phi_k^2",
+        description="gijk(i,j,k) * phi_i^2 phi_j^2 phi_k^2",
+        vertex=_direct_vertex(
+            **L_multi,
+            species_map={b1: idx_i, b2: idx_i, b3: idx_j, b4: idx_j, b5: idx_k, b6: idx_k},
+        ),
+    )
+
+
+def _run_fermion_demo():
+    print("# " + "=" * 79)
+    print("Demo: fermion\n")
+
+    _print_vertex_block(
+        "fermion: Yukawa [amputated]",
+        description="yF * psibar * psi * phi",
+        vertex=_direct_vertex(**L_yukawa, species_map={b1: psibar0, b2: psi0, b3: phi0}),
+    )
+    _print_vertex_block(
+        "fermion: Yukawa [matrix element]",
+        description="yF * psibar * psi * phi  [matrix element]",
+        vertex=_direct_vertex(
+            **L_yukawa,
+            species_map={b1: psibar0, b2: psi0, b3: phi0},
+            strip_externals=False,
+        ),
+    )
+    _print_vertex_block(
+        "fermion: vector current",
+        description="gV * psibar gamma^mu psi A_mu",
+        vertex=_direct_vertex(**L_vec_current, species_map={b1: psibar0, b2: psi0, b3: A0}),
+    )
+    _print_vertex_block(
+        "fermion: axial current",
+        description="gV * psibar gamma^mu gamma5 psi A_mu",
+        vertex=_direct_vertex(**L_axial_current, species_map={b1: psibar0, b2: psi0, b3: A0}),
+    )
+
+    try:
+        vertex_factor(**L_4fermion, x=x, d=d)
+    except ValueError:
+        _print_vertex_block(
+            "fermion: underspecified product diagnostic",
+            description="g4F * psi * psibar * psi * psibar  [no spinor contractions]",
+            error="rejected: multi-fermion operators need explicit spinor contractions",
+        )
+
+    _print_vertex_block(
+        "fermion: -(g/2)(psibar psi)^2 [amputated]",
+        description="-(g/2)(psibar psi)^2 [amputated]",
+        vertex=_direct_vertex(**L_psibar_psi_sq, species_map={b1: psibar0, b2: psi0, b3: psibar0, b4: psi0}),
+    )
+    _print_vertex_block(
+        "fermion: -(g/2)(psibar psi)^2 [matrix element]",
+        description="-(g/2)(psibar psi)^2 [matrix element]",
+        vertex=_direct_vertex(
+            **L_psibar_psi_sq,
+            species_map={b1: psibar0, b2: psi0, b3: psibar0, b4: psi0},
+            strip_externals=False,
+        ),
+    )
+    _print_vertex_block(
+        "fermion: current-current operator",
+        description="gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)  [stripped]",
+        vertex=_direct_vertex(
+            **L_current_current,
+            species_map={b1: psibar0, b2: psi0, b3: psibar0, b4: psi0},
+            simplify_gamma=True,
+        ),
+    )
+
+
+def _run_mixed_demo():
+    print("# " + "=" * 79)
+    print("Demo: fermion+scalar\n")
+
+    _print_vertex_block(
+        "fermion+scalar: mixed derivatives",
+        description="yF * (d_mu psibar) * psi * phi * chi",
+        vertex=_direct_vertex(**L_mix_dpsibar, species_map={b1: psibar0, b2: psi0, b3: phi0, b4: chi0}),
+    )
+    _print_vertex_block(
+        "fermion+scalar: mixed derivatives",
+        description="yF * psibar * (d_nu psi) * phi * chi",
+        vertex=_direct_vertex(**L_mix_dpsi, species_map={b1: psibar0, b2: psi0, b3: phi0, b4: chi0}),
+    )
+    _print_vertex_block(
+        "fermion+scalar: mixed derivatives",
+        description="yF * psibar * psi * (d_mu phi) * (d_nu chi)",
+        vertex=_direct_vertex(**L_mix_dphi_dchi, species_map={b1: psibar0, b2: psi0, b3: phi0, b4: chi0}),
+    )
+    _print_vertex_block(
+        "fermion+scalar: higher derivatives",
+        description="g1 * psibar * psi * (d^2 phi) * chi",
+        vertex=_direct_vertex(**L_double_deriv_phi_chi, species_map={b1: psibar0, b2: psi0, b3: phi0, b4: chi0}),
+    )
+    _print_vertex_block(
+        "fermion+scalar: higher derivatives",
+        description="g2 * psibar * psi * (d_mu d_nu phi)(d_mu d_nu phi)",
+        vertex=_direct_vertex(**L_double_deriv_phi_phi, species_map={b1: psibar0, b2: psi0, b3: phi0, b4: phi0}),
+    )
+
+
+def _run_gauge_demo():
+    print("# " + "=" * 79)
+    print("Demo: gauge-ready\n")
+
+    _print_vertex_block(
+        "gauge-ready: non-abelian fermion current",
+        description="gS * psibar gamma^mu T^a psi G^a_mu",
+        vertex=_direct_vertex(**L_quark_gluon, species_map={b1: psibar0, b2: psi0, b3: G0}),
+    )
+    _print_vertex_block(
+        "gauge-ready: complex scalar current",
+        description="gPhiA * A_mu * phi^dagger <-> d^mu phi",
+        vertex=(
+            _direct_vertex(**L_complex_scalar_current_phi, species_map={b1: phiCdag0, b2: phiC0, b3: A0})
+            + _direct_vertex(**L_complex_scalar_current_phidag, species_map={b1: phiCdag0, b2: phiC0, b3: A0})
+        ).expand(),
+    )
+    _print_vertex_block(
+        "gauge-ready: complex scalar contact",
+        description="gPhiAA * A_mu A^mu phi^dagger phi",
+        vertex=_direct_vertex(**L_complex_scalar_contact, species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0}),
+    )
+
+
+def _run_demo_output(suite):
+    if suite in ("scalar", "all"):
+        _run_scalar_demo()
+    if suite in ("fermion", "all"):
+        _run_fermion_demo()
+        _run_mixed_demo()
+    if suite in ("gauge", "all"):
+        _run_gauge_demo()
+    if suite == "model":
+        print("# " + "=" * 79)
+        print("Demo: model-layer\n")
+        _print_vertex_block(
+            "model: Yukawa [amputated]",
+            description=TERM_yukawa.label,
+            vertex=_model_demo_vertex(interaction=TERM_yukawa, external_legs=LEGS_yukawa),
+        )
+        _print_vertex_block(
+            "model: quark-gluon",
+            description=TERM_quark_gluon.label,
+            vertex=_model_demo_vertex(
+                interaction=TERM_quark_gluon,
+                external_legs=LEGS_quark_gluon,
+            ),
+        )
+    if suite == "cross":
+        print("# " + "=" * 79)
+        print("Demo: cross-checks\n")
+        _print_vertex_block(
+            "cross: current-current",
+            description="model-layer and direct API should agree after gamma simplification",
+            vertex=simplify_gamma_chain(
+                _model_demo_vertex(interaction=TERM_current_current, external_legs=LEGS_fermion4)
+            ),
+        )
+    if suite == "role":
+        print("# " + "=" * 79)
+        print("Demo: role regressions\n")
+        _print_vertex_block(
+            "role: complex scalar conjugation filtering",
+            description="ROLE_SCALAR_DAG / ROLE_SCALAR should eliminate wrong bosonic permutations",
+            vertex=simplify_deltas(
+                vertex_factor(
+                    coupling=lamC,
+                    alphas=[phiCdag0, phiC0],
+                    betas=[b1, b2],
+                    ps=[p1, p2],
+                    field_roles=["scalar_dag", "scalar"],
+                    leg_roles=["scalar_dag", "scalar"],
+                    x=x,
+                    d=d,
+                ),
+                species_map={b1: phiCdag0, b2: phiC0},
+            ),
+        )
 
 # ===================================================================
 # Direct-API tests (validate the engine is correct after refactor)
@@ -960,7 +1254,15 @@ if __name__ == "__main__":
         default="all",
     )
     parser.add_argument("--skip-tests", action="store_true")
+    parser.add_argument(
+        "--no-demo",
+        action="store_true",
+        help="Suppress the detailed human-readable vertex output blocks.",
+    )
     args = parser.parse_args()
+
+    if not args.no_demo:
+        _run_demo_output(args.suite)
 
     if not args.skip_tests:
         if args.suite == "all":
