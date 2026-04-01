@@ -104,11 +104,13 @@ c1, c2, a3 = S("c1", "c2", "a3")
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _check(got, expected, label):
+def _check(got, expected, label, *, show_vertex=False, description=None):
     assert (
         got.expand().to_canonical_string()
         == expected.expand().to_canonical_string()
     ), f"{label} FAILED:\n  got:      {got}\n  expected: {expected}"
+    if show_vertex:
+        _print_vertex_block(label, description=description, vertex=got)
     print(f"  {label}: PASS")
 
 
@@ -627,7 +629,6 @@ def _model_vertex(
 def _run_scalar_demo():
     print("# " + "=" * 79)
     print("Demo: scalar\n")
-    print("# " + "=" * 79)
 
     _print_vertex_block(
         "scalar: phi^4",
@@ -1024,18 +1025,24 @@ def _run_model_tests():
         _model_vertex(interaction=TERM_phi4, external_legs=LEGS_phi4, species_map=sm_phi),
         24 * I * lam4 * D4,
         "Model: phi^4",
+        show_vertex=True,
+        description=TERM_phi4.label,
     )
     _check(
         _model_vertex(interaction=TERM_phi2chi2, external_legs=LEGS_phi2chi2,
                       species_map={b1: phi0, b2: phi0, b3: chi0, b4: chi0}),
         4 * I * g_sym * D4,
         "Model: phi^2 chi^2",
+        show_vertex=True,
+        description=TERM_phi2chi2.label,
     )
     _check(
         _model_vertex(interaction=TERM_phiCdag_phiC, external_legs=LEGS_phiCdag_phiC,
                       species_map={b1: phiCdag0, b2: phiC0}),
         I * lamC * (2 * pi) ** d * Delta(p1 + p2),
         "Model: phi^dag phi",
+        show_vertex=True,
+        description=TERM_phiCdag_phiC.label,
     )
 
     # Fermion
@@ -1043,16 +1050,22 @@ def _run_model_tests():
         _model_vertex(interaction=TERM_yukawa, external_legs=LEGS_yukawa),
         I * yF * G12 * D3,
         "Model: Yukawa amputated",
+        show_vertex=True,
+        description=TERM_yukawa.label,
     )
     _check(
         _model_vertex(interaction=TERM_vec_current, external_legs=LEGS_vec_current),
         I * gV * gamma_matrix(i1, i2, mu3) * D3,
         "Model: Vector current",
+        show_vertex=True,
+        description=TERM_vec_current.label,
     )
     _check(
         _model_vertex(interaction=TERM_axial_current, external_legs=LEGS_vec_current),
         I * gV * gamma_matrix(i1, alpha_s, mu3) * gamma5_matrix(alpha_s, i2) * D3,
         "Model: Axial current",
+        show_vertex=True,
+        description=TERM_axial_current.label,
     )
 
     V_sp = _model_vertex(interaction=TERM_psibar_psi_sq, external_legs=LEGS_fermion4)
@@ -1061,7 +1074,13 @@ def _run_model_tests():
         * (bis.g(i1, i2).to_expression() * bis.g(i3, i4).to_expression()
            - bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
     )
-    _check(V_sp, expected_sp, "Model: (psibar psi)^2 amputated")
+    _check(
+        V_sp,
+        expected_sp,
+        "Model: (psibar psi)^2 amputated",
+        show_vertex=True,
+        description=TERM_psibar_psi_sq.label,
+    )
 
     V_jj = _model_vertex(interaction=TERM_current_current, external_legs=LEGS_fermion4)
     expected_jj = (
@@ -1069,12 +1088,24 @@ def _run_model_tests():
         * (gamma_matrix(i1, i2, mu) * gamma_matrix(i3, i4, mu)
            - gamma_matrix(i1, i4, mu) * gamma_matrix(i3, i2, mu))
     )
-    _check(simplify_gamma_chain(V_jj), expected_jj, "Model: Current-current")
+    _check(
+        simplify_gamma_chain(V_jj),
+        expected_jj,
+        "Model: Current-current",
+        show_vertex=True,
+        description=TERM_current_current.label,
+    )
 
     # Gauge-ready
     V_qg = _model_vertex(interaction=TERM_quark_gluon, external_legs=LEGS_quark_gluon)
     expected_qg = I * gS * gamma_matrix(i1, i2, mu3) * gauge_generator(a3, c1, c2) * D3
-    _check(V_qg, expected_qg, "Model: Quark-gluon")
+    _check(
+        V_qg,
+        expected_qg,
+        "Model: Quark-gluon",
+        show_vertex=True,
+        description=TERM_quark_gluon.label,
+    )
 
     V_sc = (
         _model_vertex(interaction=TERM_complex_scalar_current_phi,
@@ -1083,11 +1114,21 @@ def _run_model_tests():
                         external_legs=LEGS_complex_scalar_current, species_map=sm_scalar_gauge)
     )
     assert V_sc.expand().to_canonical_string() != Expression.num(0).to_canonical_string()
+    _print_vertex_block(
+        "Model: Complex scalar current",
+        description="model-layer complex scalar current combination",
+        vertex=V_sc,
+    )
     print("  Model: Complex scalar current (non-zero): PASS")
 
     V_ct = _model_vertex(interaction=TERM_complex_scalar_contact,
                          external_legs=LEGS_complex_scalar_contact, species_map=sm_contact)
     assert V_ct.expand().to_canonical_string() != Expression.num(0).to_canonical_string()
+    _print_vertex_block(
+        "Model: Complex scalar contact",
+        description=TERM_complex_scalar_contact.label,
+        vertex=V_ct,
+    )
     print("  Model: Complex scalar contact (non-zero): PASS")
 
     print("\n  Model-layer tests passed.\n")
