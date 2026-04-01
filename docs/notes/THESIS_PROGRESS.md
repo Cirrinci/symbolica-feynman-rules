@@ -27,7 +27,7 @@ Main files:
 - `src/operators.py`
   - reusable operator builders
 - `src/gauge_compiler.py`
-  - minimal model-driven gauge compiler
+  - minimal structural gauge compiler plus covariant-derivative compiler for covered matter-sector cases
 - `src/examples.py`
   - runnable examples and regression checks
 
@@ -52,6 +52,9 @@ The current prototype already supports:
 - a first model layer that can drive the same engine as the direct API
 - reusable operator builders for the covered fermion/gauge structures
 - a minimal compiled gauge workflow for non-abelian fermion currents and abelian complex-scalar terms
+- a working covariant-derivative compiler for covered fermion and complex-scalar gauge interactions
+- fixed-convention covariant outputs for QCD/QED fermions and QED/QCD complex scalars
+- multi-gauge-group covariant expansion for covered matter fields
 - direct/model agreement checks in the main example suite
 - a runnable gamma/tensor validation sandbox
 
@@ -67,6 +70,7 @@ Reasonable summary:
 - spinor/Lorentz tensor structures: working in the covered patterns
 - model-driven input: working and usable
 - minimal gauge-model compilation: working
+- covariant-derivative compilation for covered matter-sector cases: working
 - gauge-complete support: not implemented
 - full FeynRules-like usability layer: not implemented
 
@@ -85,23 +89,22 @@ The prototype is not yet a complete FeynRules replacement.
 
 Main missing or weak points:
 
-- there is still no real covariant-derivative compiler
 - the model layer is still thinner than the intended end state
+- conventions now work in code but still need one stable documentation/testing source of truth
 - gauge support is broader but still not gauge-complete
 - gauge-field self-interactions and broader gauge support are not implemented
 - there is not yet a dedicated test harness beyond the main example script
 
 ### Next milestone
 
-The next milestone is to turn the current minimal gauge compiler into a true covariant-derivative compiler.
+The next milestone is to freeze conventions and extend the compiler into the pure-gauge sector.
 
 That means:
 
-1. compile `D_mu phi` and `D_mu psi` from model declarations
-2. expand `|D_mu phi|^2` automatically
-3. expand `psibar i gamma^mu D_mu psi` automatically
-4. make gauge-normalization conventions explicit
-5. then continue into broader gauge support
+1. write the active conventions once in code/docs/tests
+2. move the growing checks into a stronger regression layout
+3. add pure non-abelian gauge self-interactions
+4. then continue into broader gauge support
 
 ### Writing use
 

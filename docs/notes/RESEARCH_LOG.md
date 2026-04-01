@@ -122,6 +122,58 @@ What this achieved:
 - restored a second live validation path for gamma/tensor identities
 - established the first genuinely model-driven gauge workflow in the repository
 
+### 2026-04-01 (later): covariant-derivative compiler, fixed conventions, and non-abelian matter support
+
+What happened:
+
+- a working covariant-derivative compiler was added on top of the model/gauge layer
+- the convention was fixed consistently as
+  `D_mu = partial_mu + i g A_mu`
+- the covered covariant cases were checked explicitly:
+  - fermion QCD
+  - fermion QED
+  - scalar QED 3-point
+  - scalar QED 4-point
+  - scalar QCD 3-point
+  - scalar QCD 4-point
+  - mixed QCD+QED fermion coupling
+- one covariant kinetic term now expands into the sum over all gauge groups acting on the field
+- non-abelian complex-scalar current/contact compilation was added, including explicit representation labels and spectator-index identities
+- the output/docs were clarified so the minimal structural compiler is separated from the physical covariant compiler
+
+What this achieved:
+
+- the project now has a working covariant-expansion layer, not only a minimal structural gauge compiler
+- the representation/generic structure layer is working for the covered matter-sector cases
+- the covariant expansion layer is working for the covered matter-sector cases
+- basic validation on standard abelian and non-abelian matter interactions is working
+- a major source of fake sign/confvention bugs was removed by separating:
+  - the minimal compiler as a generic interaction-structure layer
+  - the covariant compiler as the convention-fixed `D_mu` expansion layer
+
+Current interpretation:
+
+- representation/generic structure layer: working
+- covariant expansion layer: working
+- basic validation on standard interactions: working
+- convention confusion: mostly resolved
+
+Practical next steps:
+
+1. freeze conventions in one place across code/docs/tests
+   - Fourier convention
+   - derivative-to-momentum rule
+   - overall vertex `i`
+   - covariant-derivative sign
+2. turn the current checks into stronger regression tests so refactors cannot silently flip signs or factors
+3. extend benchmarks and coverage toward the next harder sector
+   - pure Yang-Mills 3-gluon and 4-gluon
+   - ghosts if they become relevant to the chosen scope
+   - more mixed-representation / multi-gauge-group cases
+   - later chiral/projector structures if needed
+4. keep improving output readability with clearer labels and compact interpretations
+5. decide which compiler is the public physics-facing API; the covariant compiler is the strongest candidate
+
 ### Where we are in the overall progress
 
 Best current summary:
@@ -132,6 +184,7 @@ Best current summary:
 - first tensor-structured fermion/gauge-ready phase: working
 - model-layer phase: working and usable
 - minimal gauge-compiler phase: working
+- covariant-derivative compiler phase: working for covered matter-sector cases
 - gauge-complete phase: not implemented
 - full FeynRules-style compilation layer: not implemented
 - export/usability layer: not implemented
@@ -144,24 +197,24 @@ The project now has a real core, not just experiments:
 - one usable model layer
 - one reusable operator vocabulary
 - one minimal gauge compiler
+- one working covariant-derivative compiler for the covered matter-sector cases
 - two runnable validation scripts
 
 The main remaining risks are structural rather than conceptual:
 
-- there is still no real covariant-derivative compiler
-- gauge support is broader, but still not gauge-complete
+- conventions now exist in code, but still need to be frozen/documented centrally
+- gauge support is broader, but still not gauge-complete, especially in the pure-gauge sector
 - the model/compiler/test boundary is still too concentrated in `src/examples.py`
 
 ### Immediate next milestone
 
 The next milestone should be:
 
-"Covariant-derivative compilation"
+"Convention freeze and pure-gauge extension"
 
 That means:
 
-1. define model/compiler builders for `D_mu psi` and `D_mu phi`
-2. expand `|D_mu phi|^2` into scalar-current and contact interactions automatically
-3. expand `psibar i gamma^mu D_mu psi` into fermion-gauge current interactions automatically
-4. fix and document gauge-normalization conventions before widening gauge coverage
-5. move the now-growing checks out of `src/examples.py` into a dedicated test layout
+1. freeze and document the active conventions once across code/docs/tests
+2. move the now-growing checks out of `src/examples.py` into a dedicated test layout
+3. extend the compiler into the next harder sector, starting with pure non-abelian gauge self-interactions
+4. decide whether the minimal compiler remains only an internal/helper layer while the covariant compiler becomes the main public layer

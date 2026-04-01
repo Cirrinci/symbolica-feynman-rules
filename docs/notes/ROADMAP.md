@@ -37,6 +37,7 @@ The current state is better described as:
 - one usable model-definition layer
 - one reusable operator vocabulary
 - one minimal gauge compiler
+- one working covariant-derivative compiler for covered matter-sector cases
 - one main regression script
 - one focused gamma/tensor validation script
 
@@ -44,8 +45,8 @@ That is a usable baseline, but not yet a durable library layout.
 
 Most important current technical limits:
 
-- there is still no true covariant-derivative compiler
-- the gauge compiler covers only a minimal subset of gauge workflows
+- conventions are now implemented in code but not yet frozen/documented in one authoritative place
+- the gauge compiler now covers matter-sector covariant terms, but not the pure-gauge sector
 - examples still carry too much of the live regression burden
 - pure-gauge and broader gauge-complete structures are still absent
 
@@ -53,11 +54,10 @@ Most important current technical limits:
 
 The safest order from here is:
 
-1. compile covariant-derivative structures from model declarations
-2. stabilize gauge-normalization conventions
-3. broaden gauge support beyond the minimal compiled cases
-4. add a real test harness
-5. then widen multi-fermion and export support
+1. stabilize gauge-normalization conventions
+2. broaden gauge support into the pure-gauge sector
+3. add a real test harness
+4. then widen multi-fermion and export support
 
 This order matters because new physics features will compound the current
 structural weaknesses if they are added first.
@@ -78,6 +78,10 @@ Success criteria:
 
 - the scalar and fermion gauge currents no longer need to be assembled manually in examples
 - the compiler, not the example file, becomes the source of the basic gauge interactions
+
+Status:
+
+- reached for the covered matter-sector cases
 
 ### Phase 2: Gauge-structure expansion
 
@@ -131,12 +135,11 @@ Success criteria:
 
 These are the next concrete tasks recommended for the codebase:
 
-1. implement compiler builders for `D_mu psi` and `D_mu phi`
-2. compile `|D_mu phi|^2` into the scalar-current and contact terms automatically
-3. compile `psibar i gamma^mu D_mu psi` into the fermion-gauge current automatically
-4. settle and document scalar-QED normalization conventions before extending the gauge compiler
-5. split the current `src/examples.py` assertions into proper tests
-6. then move on to non-abelian scalar terms and pure-gauge structures
+1. freeze and document the active conventions once across code/docs/tests
+2. split the current `src/examples.py` assertions into proper tests
+3. extend the compiler into pure non-abelian gauge self-interactions
+4. keep the minimal compiler as a structural helper layer and make the covariant compiler the main physics-facing layer
+5. then continue toward broader gauge-complete structures
 
 ### Rule of thumb
 
