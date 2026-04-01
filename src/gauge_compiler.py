@@ -19,7 +19,9 @@ from typing import Optional
 from symbolica import S
 
 from model import (
+    ComplexScalarKineticTerm,
     DerivativeAction,
+    DiracKineticTerm,
     Field,
     GaugeGroup,
     InteractionTerm,
@@ -70,6 +72,32 @@ def _field_charge(field: Field, gauge_group: GaugeGroup):
     return field.quantum_numbers[gauge_group.charge]
 
 
+def _field_transforms_under_gauge_group(field: Field, gauge_group: GaugeGroup) -> bool:
+    if gauge_group.abelian:
+        if gauge_group.charge is None:
+            return False
+        return field.quantum_numbers.get(gauge_group.charge, 0) != 0
+    return gauge_group.matter_representation(field) is not None
+
+
+def _resolve_covariant_gauge_group(model: Model, *, field: Field, gauge_group=None) -> GaugeGroup:
+    if gauge_group is not None:
+        resolved = model.find_gauge_group(gauge_group)
+        if resolved is None:
+            raise ValueError(f"Could not resolve gauge group {gauge_group!r}.")
+        return resolved
+
+    matches = [group for group in model.gauge_groups if _field_transforms_under_gauge_group(field, group)]
+    if not matches:
+        raise ValueError(f"Field {field.name!r} does not transform under any declared gauge group.")
+    if len(matches) > 1:
+        raise ValueError(
+            f"Field {field.name!r} transforms under multiple gauge groups; "
+            "specify gauge_group explicitly in the covariant term."
+        )
+    return matches[0]
+
+
 def compile_fermion_gauge_current(
     *,
     fermion: Field,
@@ -79,6 +107,7 @@ def compile_fermion_gauge_current(
     spinor_labels=None,
     matter_labels=None,
     adjoint_label=None,
+    prefactor=1,
     label: str = "",
 ) -> InteractionTerm:
     """Compile one fermion-gauge current interaction from model metadata."""
@@ -90,7 +119,7 @@ def compile_fermion_gauge_current(
     mu = lorentz_label or _default_vector_label(gauge_field, gauge_group, suffix="mu")
     i_bar, i_psi = spinor_labels or _default_spinor_labels(fermion, gauge_group)
 
-    coupling = gauge_group.coupling * psi_bar_gamma_psi(i_bar, i_psi, mu)
+    coupling = prefactor * gauge_group.coupling * psi_bar_gamma_psi(i_bar, i_psi, mu)
     bar_labels = {SPINOR_KIND: i_bar}
     psi_labels = {SPINOR_KIND: i_psi}
     gauge_labels = {LORENTZ_KIND: mu}
@@ -134,6 +163,7 @@ def compile_complex_scalar_gauge_terms(
     gauge_group: GaugeGroup,
     gauge_field: Field,
     lorentz_labels=None,
+    prefactor=1,
     label_prefix: str = "",
 ):
     """Compile the abelian complex-scalar gauge current/contact terms."""
@@ -151,7 +181,7 @@ def compile_complex_scalar_gauge_terms(
         _default_vector_label(gauge_field, gauge_group, suffix="mu"),
         _default_vector_label(gauge_field, gauge_group, suffix="nu"),
     )
-    base = gauge_group.coupling * charge
+    base = prefactor * gauge_group.coupling * charge
 
     current_phi = InteractionTerm(
         coupling=base,
@@ -231,4 +261,81 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
 def with_minimal_gauge_interactions(model: Model) -> Model:
     """Return a copy of a model with compiled gauge interactions appended."""
     compiled = compile_minimal_gauge_interactions(model)
+    return replace(model, interactions=model.interactions + compiled)
+
+
+def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[InteractionTerm, ...]:
+    """Compile the gauge-interaction part of ``psibar i gamma^mu D_mu psi``."""
+    fermion = model.find_field(term.field)
+    if fermion is None:
+        raise ValueError(f"Could not resolve fermion field {term.field!r}.")
+    if fermion.kind != "fermion":
+        raise ValueError(f"Dirac kinetic term requires a fermion field, got kind={fermion.kind!r}.")
+
+    gauge_group = _resolve_covariant_gauge_group(
+        model,
+        field=fermion,
+        gauge_group=term.gauge_group,
+    )
+    gauge_field = model.gauge_boson_field(gauge_group)
+    label = term.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name}"
+    return (
+        compile_fermion_gauge_current(
+            fermion=fermion,
+            gauge_group=gauge_group,
+            gauge_field=gauge_field,
+            prefactor=term.coefficient,
+            label=label,
+        ),
+    )
+
+
+def compile_complex_scalar_kinetic_term(
+    model: Model,
+    term: ComplexScalarKineticTerm,
+) -> tuple[InteractionTerm, ...]:
+    """Compile the gauge-interaction part of ``(D_mu phi)^dagger (D^mu phi)``."""
+    scalar = model.find_field(term.field)
+    if scalar is None:
+        raise ValueError(f"Could not resolve scalar field {term.field!r}.")
+    if scalar.kind != "scalar" or scalar.self_conjugate:
+        raise ValueError(
+            "Complex-scalar kinetic terms require a non-self-conjugate scalar field."
+        )
+
+    gauge_group = _resolve_covariant_gauge_group(
+        model,
+        field=scalar,
+        gauge_group=term.gauge_group,
+    )
+    gauge_field = model.gauge_boson_field(gauge_group)
+    label_prefix = term.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name})"
+    return compile_complex_scalar_gauge_terms(
+        scalar=scalar,
+        gauge_group=gauge_group,
+        gauge_field=gauge_field,
+        prefactor=term.coefficient,
+        label_prefix=label_prefix,
+    )
+
+
+def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
+    """Compile all declared covariant-kinetic terms in a model."""
+    interactions: list[InteractionTerm] = []
+
+    for term in model.covariant_terms:
+        if isinstance(term, DiracKineticTerm):
+            interactions.extend(compile_dirac_kinetic_term(model, term))
+            continue
+        if isinstance(term, ComplexScalarKineticTerm):
+            interactions.extend(compile_complex_scalar_kinetic_term(model, term))
+            continue
+        raise TypeError(f"Unsupported covariant term type: {type(term)!r}")
+
+    return tuple(interactions)
+
+
+def with_compiled_covariant_terms(model: Model) -> Model:
+    """Return a copy of a model with compiled covariant terms appended."""
+    compiled = compile_covariant_terms(model)
     return replace(model, interactions=model.interactions + compiled)

@@ -7,7 +7,12 @@ Covers both the direct parallel-list API and the FeynRules-style model layer.
 import argparse
 from fractions import Fraction
 
-from gauge_compiler import compile_minimal_gauge_interactions, with_minimal_gauge_interactions
+from gauge_compiler import (
+    compile_covariant_terms,
+    compile_minimal_gauge_interactions,
+    with_compiled_covariant_terms,
+    with_minimal_gauge_interactions,
+)
 from model_symbolica import (
     S,
     Expression,
@@ -49,6 +54,8 @@ from spenso_structures import (
     simplify_gamma_chain,
 )
 from model import (
+    ComplexScalarKineticTerm,
+    DiracKineticTerm,
     Field,
     GaugeGroup,
     GaugeRepresentation,
@@ -474,6 +481,18 @@ MODEL_SCALAR_QED_BASE = Model(
     gauge_groups=(SCALAR_QED_GROUP,),
     fields=(PhiQEDField, GaugeField),
 )
+MODEL_QCD_COVARIANT = Model(
+    name="QCD-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(QuarkField, GluonField),
+    covariant_terms=(DiracKineticTerm(field=QuarkField),),
+)
+MODEL_SCALAR_QED_COVARIANT = Model(
+    name="ScalarQED-covariant",
+    gauge_groups=(SCALAR_QED_GROUP,),
+    fields=(PhiQEDField, GaugeField),
+    covariant_terms=(ComplexScalarKineticTerm(field=PhiQEDField),),
+)
 
 
 # ===================================================================
@@ -853,6 +872,48 @@ def _run_gauge_demo():
     )
 
 
+def _run_covariant_demo():
+    compiled_qcd = compile_covariant_terms(MODEL_QCD_COVARIANT)
+    compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
+
+    print("# " + "=" * 79)
+    print("Demo: covariant compiler\n")
+
+    _print_vertex_block(
+        "covariant: psibar i gamma^mu D_mu q",
+        description=MODEL_QCD_COVARIANT.covariant_terms[0].label or "Dirac kinetic term expanded through the gauge compiler",
+        vertex=_model_demo_vertex(
+            interaction=compiled_qcd[0],
+            external_legs=LEGS_quark_gluon,
+        ),
+    )
+    _print_vertex_block(
+        "covariant: (D_mu phi)^dagger (D^mu phi) current",
+        description=MODEL_SCALAR_QED_COVARIANT.covariant_terms[0].label or "Complex-scalar kinetic term expanded through the gauge compiler",
+        vertex=(
+            _model_demo_vertex(
+                interaction=compiled_scalar_qed[0],
+                external_legs=LEGS_compiled_scalar_current,
+                species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+            )
+            + _model_demo_vertex(
+                interaction=compiled_scalar_qed[1],
+                external_legs=LEGS_compiled_scalar_current,
+                species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+            )
+        ).expand(),
+    )
+    _print_vertex_block(
+        "covariant: (D_mu phi)^dagger (D^mu phi) contact",
+        description=compiled_scalar_qed[2].label,
+        vertex=_model_demo_vertex(
+            interaction=compiled_scalar_qed[2],
+            external_legs=LEGS_compiled_scalar_contact,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+        ),
+    )
+
+
 def _run_demo_output(suite):
     if suite in ("scalar", "all"):
         _run_scalar_demo()
@@ -861,6 +922,8 @@ def _run_demo_output(suite):
         _run_mixed_demo()
     if suite in ("gauge", "all"):
         _run_gauge_demo()
+    if suite == "covariant":
+        _run_covariant_demo()
     if suite == "model":
         compiled_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
         compiled_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
@@ -1297,6 +1360,107 @@ def _run_compiled_gauge_tests():
 
 
 # ===================================================================
+# Covariant-derivative compiler tests
+# ===================================================================
+
+def _run_covariant_compiler_tests():
+    D3 = (2 * pi) ** d * Delta(p1 + p2 + p3)
+    D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
+
+    compiled_qcd = compile_covariant_terms(MODEL_QCD_COVARIANT)
+    model_qcd = with_compiled_covariant_terms(MODEL_QCD_COVARIANT)
+    assert model_qcd.interactions == compiled_qcd
+    assert len(compiled_qcd) == 1
+
+    term_qcd = compiled_qcd[0]
+    _check(
+        _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
+        I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        "Covariant compiler: quark-gluon",
+        show_vertex=True,
+        description=term_qcd.label,
+    )
+
+    compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
+    model_scalar_qed = with_compiled_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
+    assert model_scalar_qed.interactions == compiled_scalar_qed
+    assert len(compiled_scalar_qed) == 3
+
+    term_sc_phi, term_sc_phidag, term_sc_contact = compiled_scalar_qed
+    scalar_current_index = term_sc_phi.derivatives[0].lorentz_index
+
+    V_sc = (
+        _model_vertex(
+            interaction=term_sc_phi,
+            external_legs=LEGS_compiled_scalar_current,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+        )
+        + _model_vertex(
+            interaction=term_sc_phidag,
+            external_legs=LEGS_compiled_scalar_current,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+        )
+    )
+    expected_sc = eQED * qPhi * (pcomp(p2, scalar_current_index) - pcomp(p1, scalar_current_index)) * D3
+    _check(
+        V_sc,
+        expected_sc,
+        "Covariant compiler: scalar QED current",
+        show_vertex=True,
+        description=term_sc_phi.label,
+    )
+
+    _check(
+        _model_vertex(
+            interaction=term_sc_contact,
+            external_legs=LEGS_compiled_scalar_contact,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+        ),
+        2 * I * (eQED ** 2) * (qPhi ** 2) * scalar_gauge_contact(mu3, mu4) * D4,
+        "Covariant compiler: scalar QED contact",
+        show_vertex=True,
+        description=term_sc_contact.label,
+    )
+
+    minimal_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
+    _check(
+        _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
+        _model_vertex(interaction=minimal_qcd[0], external_legs=LEGS_quark_gluon),
+        "Covariant compiler matches minimal quark-gluon",
+    )
+
+    minimal_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
+    minimal_current = (
+        _model_vertex(
+            interaction=minimal_scalar_qed[0],
+            external_legs=LEGS_compiled_scalar_current,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+        )
+        + _model_vertex(
+            interaction=minimal_scalar_qed[1],
+            external_legs=LEGS_compiled_scalar_current,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+        )
+    ).expand()
+    _check(V_sc, minimal_current, "Covariant compiler matches minimal scalar current")
+    _check(
+        _model_vertex(
+            interaction=term_sc_contact,
+            external_legs=LEGS_compiled_scalar_contact,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+        ),
+        _model_vertex(
+            interaction=minimal_scalar_qed[2],
+            external_legs=LEGS_compiled_scalar_contact,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+        ),
+        "Covariant compiler matches minimal scalar contact",
+    )
+
+    print("\n  Covariant-derivative compiler tests passed.\n")
+
+
+# ===================================================================
 # Cross-check: model-layer vs direct API agreement
 # ===================================================================
 
@@ -1447,6 +1611,11 @@ def _run_all_tests():
     _run_compiled_gauge_tests()
 
     print("=" * 80)
+    print("  Covariant-derivative compiler tests")
+    print("=" * 80)
+    _run_covariant_compiler_tests()
+
+    print("=" * 80)
     print("  Role regression tests")
     print("=" * 80)
     _run_role_regression_tests()
@@ -1458,7 +1627,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run vertex examples and tests.")
     parser.add_argument(
         "--suite",
-        choices=("scalar", "fermion", "gauge", "model", "cross", "role", "all"),
+        choices=("scalar", "fermion", "gauge", "model", "covariant", "cross", "role", "all"),
         default="all",
     )
     parser.add_argument("--skip-tests", action="store_true")
@@ -1485,6 +1654,8 @@ if __name__ == "__main__":
         elif args.suite == "model":
             _run_model_tests()
             _run_compiled_gauge_tests()
+        elif args.suite == "covariant":
+            _run_covariant_compiler_tests()
         elif args.suite == "cross":
             _run_cross_checks()
         elif args.suite == "role":

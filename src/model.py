@@ -373,6 +373,41 @@ class InteractionTerm:
 
 
 # ---------------------------------------------------------------------------
+# Covariant-derivative kinetic terms
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class DiracKineticTerm:
+    """Model-level declaration for ``psibar i gamma^mu D_mu psi``.
+
+    The current compiler expands only the gauge-interaction part of this term.
+    If ``gauge_group`` is omitted, the compiler infers the unique applicable
+    gauge group from the model metadata.
+    """
+    field: object
+    gauge_group: object = None
+    coefficient: object = 1
+    label: str = ""
+
+
+@dataclass(frozen=True)
+class ComplexScalarKineticTerm:
+    """Model-level declaration for ``(D_mu phi)^dagger (D^mu phi)``.
+
+    The current compiler expands only the gauge-interaction part of this term.
+    If ``gauge_group`` is omitted, the compiler infers the unique applicable
+    gauge group from the model metadata.
+    """
+    field: object
+    gauge_group: object = None
+    coefficient: object = 1
+    label: str = ""
+
+
+CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
+
+
+# ---------------------------------------------------------------------------
 # Model container
 # ---------------------------------------------------------------------------
 
@@ -384,6 +419,7 @@ class Model:
     fields: tuple[Field, ...] = ()
     parameters: tuple[Parameter, ...] = ()
     interactions: tuple[InteractionTerm, ...] = ()
+    covariant_terms: tuple[CovariantTerm, ...] = ()
 
     def find_field(self, target) -> Optional[Field]:
         """Resolve a field by object identity, declaration name, or symbol."""
@@ -400,6 +436,19 @@ class Model:
                 return field
             if field.conjugate_symbol is not None and str(field.conjugate_symbol) == target_text:
                 return field
+        return None
+
+    def find_gauge_group(self, target) -> Optional[GaugeGroup]:
+        """Resolve a gauge group by object identity or declaration name."""
+        if isinstance(target, GaugeGroup):
+            return target
+        if target is None:
+            return None
+
+        target_text = str(target)
+        for gauge_group in self.gauge_groups:
+            if gauge_group.name == target_text:
+                return gauge_group
         return None
 
     def gauge_boson_field(self, gauge_group: GaugeGroup) -> Field:
