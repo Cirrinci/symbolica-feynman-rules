@@ -2,42 +2,34 @@
 
 ## Why this strategy
 
-You are already moving in the right direction: `src/model_schema.py` and
-`src/examples_metadata.py` show a metadata-first, object-based layer that avoids
-the old parallel-list API.
+The repository already has the right split in outline:
 
-The next step is to align this layer directly with the FeynRules input model so
-that adding new indices or fields means adding metadata, not adding custom
-conditionals.
+- `src/model_symbolica.py` as the engine
+- `src/model.py` as the declaration layer
+- `src/spenso_structures.py` as the tensor vocabulary
 
-## Design target (FeynRules-like)
+The problem is that this split is not complete yet. Some engine decisions still
+depend on stringified symbols, and too much physics structure is still assembled
+inside `src/examples.py`.
 
-Mirror FeynRules blocks as Python objects:
+The next step is not another wave of examples. It is to make the current split
+real and durable.
 
-1. Gauge groups (`M$GaugeGroups`)
-2. Index declarations (`IndexRange`, `IndexStyle`)
-3. Particle classes (`M$ClassesDescription`)
-4. Parameters (`M$Parameters`)
-5. Lagrangian terms (`LGauge`, `LFermions`, `LHiggs`, `LYukawa`, ...)
+## Design target
 
-Then compile those declarations into your existing `InteractionTerm` objects,
-which are consumed by `vertex_factor(...)`.
+The long-term target remains FeynRules-like:
 
-## Key insight from `UnbrokenSM_BFM.fr.txt`
-
-The model file mostly declares *metadata*:
-
-- group structure (abelian/non-abelian, coupling, generators, structure constants)
-- index vocabularies (SU2W, Colour, Generation, ...)
-- field classes with intrinsic index signatures
-- parameters with index signatures
-- symbolic Lagrangian pieces
-
-This is exactly the shape your schema layer should own.
+1. gauge groups
+2. index declarations
+3. particle classes
+4. parameters
+5. Lagrangian terms
+6. compilation into normalized interaction objects
+7. vertex extraction through one engine
 
 ## Recommended architecture
 
-## 1) Keep `model_symbolica.py` as a pure engine
+## 1) Keep `src/model_symbolica.py` as a pure engine
 
 `src/model_symbolica.py` should remain responsible for:
 
@@ -45,92 +37,100 @@ This is exactly the shape your schema layer should own.
 - fermion signs
 - derivative momentum factors
 - open-index remapping
-- simplification calls
+- low-level simplification calls
 
-No model-specific branching should be added here.
+It should not absorb more model-specific branching.
 
-## 2) Extend `model_schema.py` into a full model declaration layer
+Most important cleanup here:
 
-Add these new dataclasses:
+- remove string-based species/index matching
+- rely on exact symbolic objects and structural inspection instead
 
-- `GaugeGroup(name, abelian, coupling, gauge_boson, structure_constant=None, representations=())`
-- `IndexFamily(name, size, style, index_type)`
-- `Parameter(name, indexed_by=(), complex=False, internal=True, value=None)`
-- `Model(name, gauge_groups, index_families, fields, parameters, interactions)`
+## 2) Strengthen `src/model.py` into a stricter declaration layer
 
-You already have `Field`, `FieldOccurrence`, `ExternalLeg`, `InteractionTerm`.
-Use those as the core and attach model-level containers around them.
+`src/model.py` already has the right core objects:
 
-## 3) Introduce typed operator builders (replace raw tensor strings)
+- `Field`
+- `FieldOccurrence`
+- `ExternalLeg`
+- `DerivativeAction`
+- `InteractionTerm`
+- `Model`
 
-Create one module (for example `src/operators.py`) with builders returning
-Symbolica/Spenso expressions:
+The next step is to make this layer carry more meaning:
+
+- distinguish scalar, vector, and gauge-field roles properly
+- make index signatures more central to compatibility checks
+- reduce the amount of parallel-list logic that leaks into calling code
+
+## 3) Centralize operator builders
+
+Create a dedicated operator vocabulary, either by extending
+`src/spenso_structures.py` or by adding a new module such as `src/operators.py`.
+
+That module should provide builders for common structures:
 
 - `psi_bar_psi(...)`
-- `psi_bar_gamma_psi(mu, ...)`
+- `psi_bar_gamma_psi(...)`
 - `psi_bar_gamma5_psi(...)`
-- `covariant_derivative(field, mu, group_context)`
-- `field_strength(gauge_field, mu, nu, group_context)`
+- gauge-current structures
+- scalar current structures
+- later covariant derivatives and field strengths
 
-This avoids ad hoc coupling strings and centralizes conventions.
+This avoids hand-building the same structures differently across examples.
 
-## 4) Add a compiler layer from model declarations to interaction terms
+## 4) Add a compiler layer when the current pieces are stable
 
-Create `src/model_compile.py`:
+After the engine/model/tensor boundary is cleaned up, add a higher-level
+compiler layer:
 
-- input: high-level model declarations and Lagrangian builders
+- input: model declarations and operator builders
 - output: normalized `InteractionTerm` objects
-- responsibilities:
-  - expand covariant derivatives
-  - insert generators `T^a_{ij}` and structure constants `f^{abc}`
-  - canonicalize dummy labels
-  - assign derivatives to target slots
-  - apply normalization factors consistently
 
-This is the main bridge to "FeynRules-like input, Symbolica engine output."
+Responsibilities:
+
+- canonicalize dummy labels
+- expand covariant-derivative structures
+- insert generators and other gauge tensors
+- apply normalization conventions consistently
+
+That is the correct place for FeynRules-style compilation logic.
 
 ## 5) Make index growth declarative
 
-For every field occurrence, all index slots should come from:
+For every field occurrence, index slots should come from metadata, not from
+hard-coded branches.
 
-1. field intrinsic signature (`Field.indices`)
-2. optional conjugate signature
-3. occurrence-level concrete labels
+The intended rule is:
 
-No function should special-case "if color and spinor then ...".
-All operations should iterate over `ConcreteIndexSlot` entries by type.
+1. field declaration defines intrinsic slots
+2. occurrence defines concrete labels
+3. engine consumes those slots generically
 
-## Mapping of FeynRules concepts to your current code
+If a future field or index type requires touching multiple engine conditionals,
+the layering is still too weak.
 
-- `M$GaugeGroups` -> new `GaugeGroup` model objects
-- `IndexRange/IndexStyle` -> `IndexFamily` + `IndexType`
-- `M$ClassesDescription` -> existing `Field` objects (+ metadata extensions)
-- `M$Parameters` -> new `Parameter` objects
-- `Lagrangian definitions` -> operator builders + compiler -> `InteractionTerm`
+## Suggested implementation order
 
-## Suggested implementation order (short, safe increments)
-
-1. **Model container only**:
-   add `Model`, `GaugeGroup`, `IndexFamily`, `Parameter` dataclasses.
-2. **Operator builders**:
-   move common current/gamma/gauge structures from examples into reusable helpers.
-3. **Compiler MVP**:
-   compile a QED-like model to `psibar gamma^mu psi A_mu`.
-4. **Non-abelian fermion current**:
-   compile `psibar gamma^mu T^a psi G^a_mu`.
-5. **Scalar covariant derivative**:
-   compile `phi^\dagger D_mu phi` interactions.
-6. **Pure gauge terms**:
-   compile `F^2` into triple/quartic gauge vertices.
-
-Each step should add tests in metadata mode first, then compare to legacy where
-possible.
+1. remove string-based logic from `src/model_symbolica.py`
+2. repair the stale sandbox and validation path
+3. strengthen `src/model.py`
+4. centralize operator builders
+5. add a compiler layer
+6. broaden gauge support
 
 ## Immediate concrete next task
 
-Implement `Model` + `GaugeGroup` + `Parameter` in `model_schema.py` and port the
-existing gauge-ready examples in `examples_metadata.py` to be declared through a
-single model object.
+The next concrete step should be:
 
-If that works, you can stop writing manual interaction tuples and start writing
-FeynRules-style model declarations.
+Repair the object boundary between `src/model.py`, `src/spenso_structures.py`,
+and `src/model_symbolica.py`.
+
+In practice, that means:
+
+1. eliminate stringified matching in the engine
+2. give field roles/index signatures stronger semantics
+3. move hand-built current structures out of `src/examples.py`
+
+If those three pieces are done, the project will be in a much stronger position
+to grow like a real FeynRules-style system instead of a growing prototype.

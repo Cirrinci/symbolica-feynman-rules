@@ -1,118 +1,99 @@
-## Symbolica Feynman Rule Prototype
+## Symbolica + Spenso Feynman-Rule Prototype
 
-This repository focuses on deriving Feynman vertices directly with Symbolica,
-using canonical quantization plus Wick-contraction sums.
+This repository explores a Python-based analogue of FeynRules built around:
 
-Main code path:
+- Symbolica for symbolic expressions, rewriting, and simplification
+- Spenso for tensor structures, spinor/Lorentz objects, and index-aware building blocks
 
-- `code/model_symbolica.py` is the primary implementation.
-- `code/examples_symbolica.py` contains runnable examples/tests for this implementation.
-- `code/spenso_gamma_checks.py` contains focused Spenso/gamma-matrix experiments and checks.
+The current codebase is centered on a Symbolica contraction engine plus a thin
+model layer that maps FeynRules-style declarations into that engine.
 
+### Repository layout
 
-Legacy prototype files have been archived outside this repository path.
+Main source files:
 
-### Current scope -- Lagrangian intewraction with
+- `src/model_symbolica.py`
+  - core contraction engine
+  - direct parallel-list API
+  - simplification helpers
+  - compact derivative-sum helpers
+- `src/model.py`
+  - model-layer dataclasses
+  - `Field`, `FieldOccurrence`, `ExternalLeg`, `DerivativeAction`,
+    `InteractionTerm`, `Model`
+  - bridge from model declarations to `vertex_factor(...)`
+- `src/spenso_structures.py`
+  - Spenso-backed wrappers for gamma matrices, metrics, and gauge generators
+- `src/examples.py`
+  - runnable examples and regression checks
+  - covers both the direct API and the model layer
+- `src/spenso_gamma_checks.py`
+  - focused gamma/tensor sandbox
+  - currently stale and not runnable as-is because it still imports `model_legacy`
 
-- Scakar fields.
-- derivatives.
-- Fermions.
-- Mix.
-- spinor-index handling through Spenso bispinor metrics.
-- Amputated fermion vertices with open spinor indices for both repeated-dummy
-  bilinears and explicit coupling tensors such as `gamma(mu, i_bar, i_psi)`.
+Supporting notes live under `docs/notes/`.
 
 ### Current status
 
-not
-yet a general FeynRules-like fermion engine.
+What is working in the active code path:
 
-What is solid right now:
+- scalar polynomial interactions
+- multi-species scalar interactions
+- derivative interactions with permutation-aware momentum assignment
+- fermion permutation signs
+- stripped and unstripped external fermion factors
+- open spinor-index output through Spenso bispinor metrics
+- gamma-matrix and gauge-generator structures supplied through wrappers
+- a model-layer API that compiles to the engine
+- direct/model cross-checks in the main regression script
+- gauge-ready examples such as quark-gluon and complex-scalar current structures
 
-- scalar polynomial and derivative vertices
-- fermion bilinears 
-- open-spinor remapping inside explicit coupling tensors such as
-  `gamma(mu, i_bar, i_psi)`
-- amputated open-index output for scalar fermion bilinears, e.g.
-  `i y g(i1,i2)` for Yukawa and
-  `-i g [g(i1,i2)g(i3,i4) - g(i1,i4)g(i3,i2)]` for `-(g/2)(psibar psi)^2`
-- amputated open-index output for a current-current operator such as
-  `gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)`
-- unamputated matrix-element output with `UF/UbarF` kept explicitly
+What is not yet solid:
 
-What is not solid yet:
+- object-based matching is incomplete; parts of the engine still rely on string comparisons
+- the model layer does not yet distinguish all non-fermion roles precisely
+- `src/spenso_gamma_checks.py` is stale
+- general multi-fermion tensor support is still narrower than a full FeynRules-like system
+- gauge-boson self-interactions and a broader gauge-model workflow are not implemented
 
-- indices generalization
-- Gauge boson
+### Conventions
 
-Physics convention to keep in mind:
+The main engine entry point is:
 
-- the physically correct fermion vertex is the amputated open-index object
-- the unstripped output is a matrix element diagnostic, not the final vertex
+- `vertex_factor(...)` in `src/model_symbolica.py`
 
+It accepts either:
 
-### Core pipeline
+- model-layer input: `interaction=...`, `external_legs=...`
+- direct input: `coupling`, `alphas`, `betas`, `ps`, plus optional role/index metadata
 
-The function `vertex_factor(...)` in `model_symbolica.py` performs:
+Important output conventions:
 
-1. Contraction sum over external legs.
-2. Derivative momentum factors per contraction.
-3. Plane-wave replacement by momentum conservation delta.
-4. External wavefunction amputation to an open-index vertex (optional).
-5. Final multiplication by `i`.
+- `strip_externals=True` by default
+  - external wavefunctions are amputated from the displayed vertex
+- `include_delta=True` by default
+  - the returned expression keeps the overall momentum-conservation factor
+    `(2*pi)^d Delta(sum p)`
+- use `include_delta=False` when you want the reduced vertex with that universal factor stripped
 
-Project convention:
+Related helpers:
 
-- `vertex_factor(...)` returns the reduced vertex by default, with the
-  universal overall factor `(2*pi)^d Delta(sum p)` stripped.
-- Pass `include_delta=True` only when you explicitly want that overall factor
-  kept in the output.
+- `simplify_deltas(...)`
+- `simplify_spinor_indices(...)`
+- `simplify_vertex(...)`
+- `compact_vertex_sum_form(...)`
+- `compact_sum_notation(...)`
 
-Related helpers in `model_symbolica.py`:
+### Main workflow
 
-- `contract_to_full_expression`
-- `infer_derivative_targets`
-- `simplify_deltas`
-- `simplify_spinor_indices`
-- `simplify_vertex`
-- `compact_vertex_sum_form`
-- `compact_sum_notation`
+The current workflow is:
 
-### Current session checklist (2026-03-26)
+1. declare an interaction, either directly or through `InteractionTerm`
+2. provide external legs
+3. let `vertex_factor(...)` perform contraction sums and derivative bookkeeping
+4. optionally simplify the result with `simplify_vertex(...)` or more targeted helpers
 
-Recently completed:
-
-1. Explicit open-spinor labels in the coupling are remapped to external leg
-   spinor slots during compatible fermion contractions.
-2. Runnable regressions now cover explicit gamma-current examples, including:
-   - `psibar gamma^mu psi A_mu`
-   - `gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)`
-3. Focused gamma checks now display the simplified current-current structures
-   clearly enough to inspect direct and exchange terms.
-
-Next:
-
-1. Gauge fields and indices....
-
-Recommended first command:
-
-- `./.venv/bin/python code/examples_symbolica.py --suite fermion`
-
-### File overview
-
-- `code/model_symbolica.py`
-  - Main symbolic engine and simplification helpers.
-  - Supports both bosonic and fermionic workflows in the current scope.
-
-- `code/examples_symbolica.py`
-  - Scripted examples for scalar, derivative, and fermion-structure checks.
-  - Good quick validation target after edits.
-
-- `code/spenso_gamma_checks.py`
-  - Focused gamma/gamma5/Clifford-identity sandbox.
-  - Good place to extend spinor/Lorentz tensor experiments before adding gauge fields.
-
-
+The main runnable entry point for this workflow is `src/examples.py`.
 
 ### Setup
 
@@ -120,30 +101,44 @@ Create or refresh the local virtual environment:
 
 - `bash setup_env.sh`
 
-This installs dependencies from `requirements.txt` into `.venv`.
+This installs the dependencies listed in `requirements.txt` into `.venv`.
 
 ### Usage
 
-Recommended run commands from repository root:
+Run the main example and regression script from the repository root:
 
-- `./.venv/bin/python code/examples_symbolica.py`
-- `./.venv/bin/python code/spenso_gamma_checks.py`
-- `./.venv/bin/python code/examples_symbolica.py --suite scalar`
-- `./.venv/bin/python code/examples_symbolica.py --suite fermion`
+- `./.venv/bin/python src/examples.py`
+- `./.venv/bin/python src/examples.py --suite scalar`
+- `./.venv/bin/python src/examples.py --suite fermion`
+- `./.venv/bin/python src/examples.py --suite gauge`
+- `./.venv/bin/python src/examples.py --suite model`
+- `./.venv/bin/python src/examples.py --suite cross`
 
-For notebooks, ensure the kernel uses the repository virtual environment:
+Notes:
+
+- `src/examples.py --suite all` is the main validation target
+- `src/spenso_gamma_checks.py` is currently stale and needs an import update before it can be used again
+
+For notebooks, use the repository virtual environment:
 
 - `.venv/bin/python`
 
-### Roadmap
+### Current notes
 
-Short term:
+Project notes are kept in:
 
-- Add more regression tests for mixed scalar-fermion permutations.
-- Expand compact-sum formulas for broader derivative patterns.
-- Add guardrails for ambiguous fermion spinor-label encodings.
+- `docs/notes/PROJECT_GOAL.md`
+- `docs/notes/ROADMAP.md`
+- `docs/notes/RESEARCH_LOG.md`
+- `docs/notes/THESIS_PROGRESS.md`
+- `docs/notes/FEYNRULES_STYLE_STRATEGY.md`
 
-Medium term:
+### Immediate priorities
 
-- Extend tensor/index handling toward gauge-field interactions.
-- Add stronger notebook-to-script parity tests.
+The highest-value next steps in the codebase are:
+
+1. remove the remaining string-based matching from the engine
+2. repair `src/spenso_gamma_checks.py`
+3. tighten the model-layer role and index semantics
+4. centralize tensor/operator builders instead of hand-building structures in examples
+5. move the runnable assertions toward a dedicated test harness
