@@ -1094,7 +1094,7 @@ def _run_demo_output(suite):
             ),
         )
         _print_vertex_block(
-            "model compiler: quark-gluon",
+            "minimal gauge compiler: quark-gluon",
             description=compiled_qcd[0].label,
             vertex=_model_demo_vertex(
                 interaction=compiled_qcd[0],
@@ -1102,7 +1102,7 @@ def _run_demo_output(suite):
             ),
         )
         _print_vertex_block(
-            "model compiler: fermion QED",
+            "minimal gauge compiler: fermion QED",
             description=compiled_qed[0].label,
             vertex=_model_demo_vertex(
                 interaction=compiled_qed[0],
@@ -1110,7 +1110,7 @@ def _run_demo_output(suite):
             ),
         )
         _print_vertex_block(
-            "model compiler: scalar QED current",
+            "minimal gauge compiler: scalar QED current",
             description="compiled U(1) current from gauge group + field charge",
             vertex=(
                 _model_demo_vertex(
@@ -1126,7 +1126,7 @@ def _run_demo_output(suite):
             ).expand(),
         )
         _print_vertex_block(
-            "model compiler: scalar QED contact",
+            "minimal gauge compiler: scalar QED contact",
             description=compiled_scalar_qed[2].label,
             vertex=_model_demo_vertex(
                 interaction=compiled_scalar_qed[2],
@@ -1135,7 +1135,7 @@ def _run_demo_output(suite):
             ),
         )
         _print_vertex_block(
-            "model compiler: scalar QCD current",
+            "minimal gauge compiler: scalar QCD current",
             description="compiled SU(3) scalar current from representation metadata",
             vertex=(
                 _model_demo_vertex(
@@ -1151,7 +1151,7 @@ def _run_demo_output(suite):
             ).expand(),
         )
         _print_vertex_block(
-            "model compiler: scalar QCD contact",
+            "minimal gauge compiler: scalar QCD contact",
             description=compiled_scalar_qcd[2].label,
             vertex=_model_demo_vertex(
                 interaction=compiled_scalar_qcd[2],

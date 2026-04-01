@@ -1,6 +1,9 @@
 # ================================================================================
 Demo: all
 
+Note:
+minimal compiler shows generic interaction structure; covariant compiler shows the convention-fixed `D_mu` expansion.
+
 # === scalar: phi^4 ===
 
 lam4 * phi^4
