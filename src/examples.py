@@ -83,8 +83,11 @@ phi0 = S("phi0")
 chi0 = S("chi0")
 phiC0 = S("phiC0")
 phiCdag0 = S("phiCdag0")
+phiQCD0 = S("phiQCD0")
+phiQCDdag0 = S("phiQCDdag0")
 psibar0, psi0 = S("psibar0", "psi0")
 psibarQED0, psiQED0 = S("psibarQED0", "psiQED0")
+psibarMix0, psiMix0 = S("psibarMix0", "psiMix0")
 A0 = S("A0")
 G0 = S("G0")
 
@@ -105,6 +108,7 @@ gS = S("gS")
 eQED = S("eQED")
 qPhi = S("qPhi")
 qPsi = S("qPsi")
+qMix = S("qMix")
 gPhiA = S("gPhiA")
 gPhiAA = S("gPhiAA")
 g4F = S("g4F")
@@ -121,7 +125,8 @@ idx_i, idx_j, idx_k = S("i", "j", "k")
 
 i_bar_q, i_psi_q = S("i_bar_q", "i_psi_q")
 c_bar_q, c_psi_q, a_g = S("c_bar_q", "c_psi_q", "a_g")
-c1, c2, a3 = S("c1", "c2", "a3")
+c1, c2, c_mid = S("c1", "c2", "c_mid")
+a3, a4 = S("a3", "a4")
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +182,15 @@ def _print_vertex_block(
         print(f"Interpretation: {interpretation}")
 
     print()
+
+
+def _symmetrized_generator_contact(adj_left, adj_right, color_left, color_right, color_middle):
+    return (
+        gauge_generator(adj_left, color_left, color_middle)
+        * gauge_generator(adj_right, color_middle, color_right)
+        + gauge_generator(adj_right, color_left, color_middle)
+        * gauge_generator(adj_left, color_middle, color_right)
+    )
 
 
 def _direct_vertex(*, species_map=None, simplify_gamma=False, **kwargs):
@@ -449,6 +463,14 @@ PhiQEDField = Field(
     conjugate_symbol=phiCdag0,
     quantum_numbers={"Q": qPhi},
 )
+PhiQCDField = Field(
+    "PhiQCD",
+    spin=0,
+    self_conjugate=False,
+    symbol=phiQCD0,
+    conjugate_symbol=phiQCDdag0,
+    indices=(COLOR_FUND_INDEX,),
+)
 PsiQEDField = Field(
     "PsiQED",
     spin=Fraction(1, 2),
@@ -457,6 +479,15 @@ PsiQEDField = Field(
     conjugate_symbol=psibarQED0,
     indices=(SPINOR_INDEX,),
     quantum_numbers={"Q": qPsi},
+)
+PsiMixField = Field(
+    "PsiMix",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    symbol=psiMix0,
+    conjugate_symbol=psibarMix0,
+    indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    quantum_numbers={"Q": qMix},
 )
 PsiField = Field("Psi", spin=Fraction(1, 2), self_conjugate=False, symbol=psi0, conjugate_symbol=psibar0, indices=(SPINOR_INDEX,))
 GaugeField = Field("A", spin=1, self_conjugate=True, symbol=A0, indices=(LORENTZ_INDEX,))
@@ -492,6 +523,11 @@ MODEL_SCALAR_QED_BASE = Model(
     gauge_groups=(QED_GROUP,),
     fields=(PhiQEDField, GaugeField),
 )
+MODEL_SCALAR_QCD_BASE = Model(
+    name="ScalarQCD-minimal",
+    gauge_groups=(QCD_GROUP,),
+    fields=(PhiQCDField, GluonField),
+)
 MODEL_QED_FERMION_BASE = Model(
     name="FermionQED-minimal",
     gauge_groups=(QED_GROUP,),
@@ -509,11 +545,23 @@ MODEL_SCALAR_QED_COVARIANT = Model(
     fields=(PhiQEDField, GaugeField),
     covariant_terms=(ComplexScalarKineticTerm(field=PhiQEDField),),
 )
+MODEL_SCALAR_QCD_COVARIANT = Model(
+    name="ScalarQCD-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(PhiQCDField, GluonField),
+    covariant_terms=(ComplexScalarKineticTerm(field=PhiQCDField),),
+)
 MODEL_QED_FERMION_COVARIANT = Model(
     name="FermionQED-covariant",
     gauge_groups=(QED_GROUP,),
     fields=(PsiQEDField, GaugeField),
     covariant_terms=(DiracKineticTerm(field=PsiQEDField),),
+)
+MODEL_MIXED_FERMION_COVARIANT = Model(
+    name="MixedQCDQED-covariant",
+    gauge_groups=(QCD_GROUP, QED_GROUP),
+    fields=(PsiMixField, GluonField, GaugeField),
+    covariant_terms=(DiracKineticTerm(field=PsiMixField),),
 )
 
 
@@ -650,6 +698,16 @@ LEGS_qed_fermion = (
     PsiQEDField.leg(p2, spin=s2, labels={SPINOR_KIND: i2}),
     GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}),
 )
+LEGS_mixed_fermion_gluon = (
+    PsiMixField.leg(p1, conjugated=True, spin=s1, labels={SPINOR_KIND: i1, COLOR_FUND_KIND: c1}),
+    PsiMixField.leg(p2, spin=s2, labels={SPINOR_KIND: i2, COLOR_FUND_KIND: c2}),
+    GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}),
+)
+LEGS_mixed_fermion_qed = (
+    PsiMixField.leg(p1, conjugated=True, spin=s1, labels={SPINOR_KIND: i1, COLOR_FUND_KIND: c1}),
+    PsiMixField.leg(p2, spin=s2, labels={SPINOR_KIND: i2, COLOR_FUND_KIND: c2}),
+    GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}),
+)
 
 TERM_complex_scalar_current_phi = InteractionTerm(
     coupling=gPhiA,
@@ -681,6 +739,11 @@ LEGS_compiled_scalar_current = (
     PhiQEDField.leg(p2, species=b2),
     GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}, species=b3),
 )
+LEGS_compiled_scalar_qcd_current = (
+    PhiQCDField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
+    PhiQCDField.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
+    GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
+)
 
 TERM_complex_scalar_contact = InteractionTerm(
     coupling=gPhiAA * scalar_gauge_contact(mu, nu),
@@ -703,6 +766,12 @@ LEGS_compiled_scalar_contact = (
     PhiQEDField.leg(p2, species=b2),
     GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}, species=b3),
     GaugeField.leg(p4, labels={LORENTZ_KIND: mu4}, species=b4),
+)
+LEGS_compiled_scalar_qcd_contact = (
+    PhiQCDField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
+    PhiQCDField.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
+    GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
+    GluonField.leg(p4, labels={LORENTZ_KIND: mu4, COLOR_ADJ_KIND: a4}, species=b4),
 )
 
 
@@ -902,13 +971,15 @@ def _run_gauge_demo():
 def _run_covariant_demo():
     compiled_qcd = compile_covariant_terms(MODEL_QCD_COVARIANT)
     compiled_qed = compile_covariant_terms(MODEL_QED_FERMION_COVARIANT)
+    compiled_mixed = compile_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
+    compiled_scalar_qcd = compile_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
 
     print("# " + "=" * 79)
     print("Demo: covariant compiler\n")
 
     _print_vertex_block(
-        "covariant: psibar i gamma^mu D_mu q",
+        "covariant: qbar i gamma^mu D_mu q",
         description=MODEL_QCD_COVARIANT.covariant_terms[0].label or "Dirac kinetic term expanded through the gauge compiler",
         vertex=_model_demo_vertex(
             interaction=compiled_qcd[0],
@@ -921,6 +992,22 @@ def _run_covariant_demo():
         vertex=_model_demo_vertex(
             interaction=compiled_qed[0],
             external_legs=LEGS_qed_fermion,
+        ),
+    )
+    _print_vertex_block(
+        "covariant: one Dirac term over QCD+QED [gluon piece]",
+        description="Single kinetic term expanded over all matching gauge groups",
+        vertex=_model_demo_vertex(
+            interaction=compiled_mixed[0],
+            external_legs=LEGS_mixed_fermion_gluon,
+        ),
+    )
+    _print_vertex_block(
+        "covariant: one Dirac term over QCD+QED [photon piece]",
+        description="Same kinetic term, second gauge-group contribution",
+        vertex=_model_demo_vertex(
+            interaction=compiled_mixed[1],
+            external_legs=LEGS_mixed_fermion_qed,
         ),
     )
     _print_vertex_block(
@@ -948,6 +1035,31 @@ def _run_covariant_demo():
             species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
         ),
     )
+    _print_vertex_block(
+        "covariant: (D_mu PhiQCD)^dagger (D^mu PhiQCD) current",
+        description=MODEL_SCALAR_QCD_COVARIANT.covariant_terms[0].label or "Non-abelian complex-scalar kinetic term expanded through the gauge compiler",
+        vertex=(
+            _model_demo_vertex(
+                interaction=compiled_scalar_qcd[0],
+                external_legs=LEGS_compiled_scalar_qcd_current,
+                species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+            )
+            + _model_demo_vertex(
+                interaction=compiled_scalar_qcd[1],
+                external_legs=LEGS_compiled_scalar_qcd_current,
+                species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+            )
+        ).expand(),
+    )
+    _print_vertex_block(
+        "covariant: (D_mu PhiQCD)^dagger (D^mu PhiQCD) contact",
+        description=compiled_scalar_qcd[2].label,
+        vertex=_model_demo_vertex(
+            interaction=compiled_scalar_qcd[2],
+            external_legs=LEGS_compiled_scalar_qcd_contact,
+            species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
+        ),
+    )
 
 
 def _run_demo_output(suite):
@@ -964,6 +1076,7 @@ def _run_demo_output(suite):
         compiled_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
         compiled_qed = compile_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
         compiled_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
+        compiled_scalar_qcd = compile_minimal_gauge_interactions(MODEL_SCALAR_QCD_BASE)
 
         print("# " + "=" * 79)
         print("Demo: model-layer\n")
@@ -1019,6 +1132,31 @@ def _run_demo_output(suite):
                 interaction=compiled_scalar_qed[2],
                 external_legs=LEGS_compiled_scalar_contact,
                 species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+            ),
+        )
+        _print_vertex_block(
+            "model compiler: scalar QCD current",
+            description="compiled SU(3) scalar current from representation metadata",
+            vertex=(
+                _model_demo_vertex(
+                    interaction=compiled_scalar_qcd[0],
+                    external_legs=LEGS_compiled_scalar_qcd_current,
+                    species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+                )
+                + _model_demo_vertex(
+                    interaction=compiled_scalar_qcd[1],
+                    external_legs=LEGS_compiled_scalar_qcd_current,
+                    species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+                )
+            ).expand(),
+        )
+        _print_vertex_block(
+            "model compiler: scalar QCD contact",
+            description=compiled_scalar_qcd[2].label,
+            vertex=_model_demo_vertex(
+                interaction=compiled_scalar_qcd[2],
+                external_legs=LEGS_compiled_scalar_qcd_contact,
+                species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
             ),
         )
     if suite == "cross":
@@ -1415,6 +1553,60 @@ def _run_compiled_gauge_tests():
         description=term_sc_contact.label,
     )
 
+    compiled_scalar_qcd = compile_minimal_gauge_interactions(MODEL_SCALAR_QCD_BASE)
+    model_scalar_qcd = with_minimal_gauge_interactions(MODEL_SCALAR_QCD_BASE)
+    assert model_scalar_qcd.interactions == compiled_scalar_qcd
+    assert len(compiled_scalar_qcd) == 3
+
+    term_sqcd_phi, term_sqcd_phidag, term_sqcd_contact = compiled_scalar_qcd
+    scalar_qcd_index = term_sqcd_phi.derivatives[0].lorentz_index
+    sqcd_internal = S("c_mid_PhiQCD_SU3C")
+
+    V_sqcd = (
+        _model_vertex(
+            interaction=term_sqcd_phi,
+            external_legs=LEGS_compiled_scalar_qcd_current,
+            species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+        )
+        + _model_vertex(
+            interaction=term_sqcd_phidag,
+            external_legs=LEGS_compiled_scalar_qcd_current,
+            species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+        )
+    )
+    expected_sqcd = (
+        gS
+        * gauge_generator(a3, c1, c2)
+        * (pcomp(p2, scalar_qcd_index) - pcomp(p1, scalar_qcd_index))
+        * D3
+    )
+    _check(
+        V_sqcd,
+        expected_sqcd,
+        "Compiled model: scalar QCD current",
+        show_vertex=True,
+        description="SU(3) current pair compiled from scalar representation metadata",
+    )
+
+    expected_sqcd_contact = (
+        I
+        * (gS ** 2)
+        * scalar_gauge_contact(mu3, mu4)
+        * _symmetrized_generator_contact(a3, a4, c1, c2, sqcd_internal)
+        * D4
+    )
+    _check(
+        _model_vertex(
+            interaction=term_sqcd_contact,
+            external_legs=LEGS_compiled_scalar_qcd_contact,
+            species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
+        ),
+        expected_sqcd_contact,
+        "Compiled model: scalar QCD contact",
+        show_vertex=True,
+        description=term_sqcd_contact.label,
+    )
+
     print("\n  Compiled gauge-model tests passed.\n")
 
 
@@ -1452,6 +1644,31 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: fermion QED",
         show_vertex=True,
         description=term_qed.label,
+    )
+
+    compiled_mixed = compile_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
+    model_mixed = with_compiled_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
+    assert model_mixed.interactions == compiled_mixed
+    assert len(compiled_mixed) == 2
+
+    _check(
+        _model_vertex(interaction=compiled_mixed[0], external_legs=LEGS_mixed_fermion_gluon),
+        -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        "Covariant compiler: mixed fermion QCD piece",
+        show_vertex=True,
+        description="One kinetic term automatically expanded over all matching gauge groups",
+    )
+    _check(
+        _model_vertex(interaction=compiled_mixed[1], external_legs=LEGS_mixed_fermion_qed),
+        -I
+        * eQED
+        * qMix
+        * psi_bar_gamma_psi(i1, i2, mu3)
+        * COLOR_FUND_INDEX.representation.g(c1, c2).to_expression()
+        * D3,
+        "Covariant compiler: mixed fermion QED piece",
+        show_vertex=True,
+        description="Second contribution from the same mixed-group kinetic term",
     )
 
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
@@ -1493,6 +1710,61 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: scalar QED contact",
         show_vertex=True,
         description=term_sc_contact.label,
+    )
+
+    compiled_scalar_qcd = compile_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
+    model_scalar_qcd = with_compiled_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
+    assert model_scalar_qcd.interactions == compiled_scalar_qcd
+    assert len(compiled_scalar_qcd) == 3
+
+    term_sqcd_phi, term_sqcd_phidag, term_sqcd_contact = compiled_scalar_qcd
+    scalar_qcd_index = term_sqcd_phi.derivatives[0].lorentz_index
+    sqcd_internal = S("c_mid_PhiQCD_SU3C")
+
+    V_sqcd = (
+        _model_vertex(
+            interaction=term_sqcd_phi,
+            external_legs=LEGS_compiled_scalar_qcd_current,
+            species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+        )
+        + _model_vertex(
+            interaction=term_sqcd_phidag,
+            external_legs=LEGS_compiled_scalar_qcd_current,
+            species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0},
+        )
+    )
+    expected_sqcd = (
+        I
+        * gS
+        * gauge_generator(a3, c1, c2)
+        * (pcomp(p2, scalar_qcd_index) - pcomp(p1, scalar_qcd_index))
+        * D3
+    )
+    _check(
+        V_sqcd,
+        expected_sqcd,
+        "Covariant compiler: scalar QCD current",
+        show_vertex=True,
+        description=term_sqcd_phi.label,
+    )
+
+    expected_sqcd_contact = (
+        I
+        * (gS ** 2)
+        * scalar_gauge_contact(mu3, mu4)
+        * _symmetrized_generator_contact(a3, a4, c1, c2, sqcd_internal)
+        * D4
+    )
+    _check(
+        _model_vertex(
+            interaction=term_sqcd_contact,
+            external_legs=LEGS_compiled_scalar_qcd_contact,
+            species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
+        ),
+        expected_sqcd_contact,
+        "Covariant compiler: scalar QCD contact",
+        show_vertex=True,
+        description=term_sqcd_contact.label,
     )
 
     print("\n  Covariant-derivative compiler tests passed.\n")

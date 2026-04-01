@@ -5,7 +5,7 @@ This module turns model metadata into normalized ``InteractionTerm`` objects
 for the gauge interactions that are already supported by the engine:
 
 - fermion-gauge currents for abelian and non-abelian groups
-- abelian complex-scalar current/contact terms
+- complex-scalar current/contact terms for abelian and non-abelian groups
 
 The goal is not a full FeynRules compiler yet. It is the smallest model-driven
 bridge that replaces hand-written gauge interaction terms in examples.
@@ -50,6 +50,11 @@ def _default_matter_labels(field: Field, rep_prefix: str):
     return _symbol(f"{rep_prefix}_bar_{stem}"), _symbol(f"{rep_prefix}_{stem}")
 
 
+def _default_index_labels(field: Field, index, qualifier: str = "id"):
+    stem = f"{field.name}_{index.kind}_{qualifier}"
+    return _symbol(f"{index.prefix}_bar_{stem}"), _symbol(f"{index.prefix}_{stem}")
+
+
 def _first_non_lorentz_index_kind(field: Field) -> Optional[str]:
     for index in field.indices:
         if index.kind != LORENTZ_KIND:
@@ -80,22 +85,42 @@ def _field_transforms_under_gauge_group(field: Field, gauge_group: GaugeGroup) -
     return gauge_group.matter_representation(field) is not None
 
 
-def _resolve_covariant_gauge_group(model: Model, *, field: Field, gauge_group=None) -> GaugeGroup:
+def _resolve_covariant_gauge_groups(model: Model, *, field: Field, gauge_group=None) -> tuple[GaugeGroup, ...]:
     if gauge_group is not None:
+        if isinstance(gauge_group, (tuple, list)):
+            resolved = []
+            for item in gauge_group:
+                group = model.find_gauge_group(item)
+                if group is None:
+                    raise ValueError(f"Could not resolve gauge group {item!r}.")
+                resolved.append(group)
+            return tuple(resolved)
+
         resolved = model.find_gauge_group(gauge_group)
         if resolved is None:
             raise ValueError(f"Could not resolve gauge group {gauge_group!r}.")
-        return resolved
+        return (resolved,)
 
-    matches = [group for group in model.gauge_groups if _field_transforms_under_gauge_group(field, group)]
+    matches = tuple(group for group in model.gauge_groups if _field_transforms_under_gauge_group(field, group))
     if not matches:
         raise ValueError(f"Field {field.name!r} does not transform under any declared gauge group.")
-    if len(matches) > 1:
-        raise ValueError(
-            f"Field {field.name!r} transforms under multiple gauge groups; "
-            "specify gauge_group explicitly in the covariant term."
-        )
-    return matches[0]
+    return matches
+
+
+def _spectator_identity_factor(field: Field, *, exclude_index_kinds=()):
+    factor = Expression.num(1)
+    left_labels = {}
+    right_labels = {}
+
+    for index in field.indices:
+        if index.kind in exclude_index_kinds or index.kind == LORENTZ_KIND:
+            continue
+        left_label, right_label = _default_index_labels(field, index)
+        factor *= index.representation.g(left_label, right_label).to_expression()
+        left_labels[index.kind] = left_label
+        right_labels[index.kind] = right_label
+
+    return factor, left_labels, right_labels
 
 
 def compile_fermion_gauge_current(
@@ -123,6 +148,7 @@ def compile_fermion_gauge_current(
     bar_labels = {SPINOR_KIND: i_bar}
     psi_labels = {SPINOR_KIND: i_psi}
     gauge_labels = {LORENTZ_KIND: mu}
+    spectator_exclusions = {SPINOR_KIND}
 
     if gauge_group.abelian:
         coupling *= _field_charge(fermion, gauge_group)
@@ -145,6 +171,15 @@ def compile_fermion_gauge_current(
         bar_labels[rep.index.kind] = left_label
         psi_labels[rep.index.kind] = right_label
         gauge_labels[adj_kind] = adjoint
+        spectator_exclusions.add(rep.index.kind)
+
+    spectator_factor, spectator_left_labels, spectator_right_labels = _spectator_identity_factor(
+        fermion,
+        exclude_index_kinds=spectator_exclusions,
+    )
+    coupling *= spectator_factor
+    bar_labels.update(spectator_left_labels)
+    psi_labels.update(spectator_right_labels)
 
     return InteractionTerm(
         coupling=coupling,
@@ -163,34 +198,83 @@ def compile_complex_scalar_gauge_terms(
     gauge_group: GaugeGroup,
     gauge_field: Field,
     lorentz_labels=None,
+    matter_labels=None,
+    adjoint_labels=None,
+    internal_label=None,
     current_prefactor=1,
     contact_prefactor=1,
     label_prefix: str = "",
 ):
-    """Compile the abelian complex-scalar gauge current/contact terms."""
+    """Compile the complex-scalar gauge current/contact terms."""
     if scalar.kind != "scalar" or scalar.self_conjugate:
         raise ValueError("Complex-scalar gauge terms require a non-self-conjugate scalar field.")
     if gauge_field.kind != "vector":
         raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
-    if not gauge_group.abelian:
-        raise NotImplementedError(
-            "Non-abelian complex-scalar compilation is not implemented yet."
-        )
-
-    charge = _field_charge(scalar, gauge_group)
     mu, nu = lorentz_labels or (
         _default_vector_label(gauge_field, gauge_group, suffix="mu"),
         _default_vector_label(gauge_field, gauge_group, suffix="nu"),
     )
-    current_base = current_prefactor * gauge_group.coupling * charge
-    contact_coupling = contact_prefactor * ((gauge_group.coupling * charge) ** 2)
+    scalar_bar_labels = {}
+    scalar_labels = {}
+    gauge_labels_mu = {LORENTZ_KIND: mu}
+    gauge_labels_nu = {LORENTZ_KIND: nu}
+    spectator_exclusions = set()
+
+    if gauge_group.abelian:
+        charge = _field_charge(scalar, gauge_group)
+        current_base = current_prefactor * gauge_group.coupling * charge
+        contact_coupling = contact_prefactor * ((gauge_group.coupling * charge) ** 2)
+    else:
+        rep = gauge_group.matter_representation(scalar)
+        if rep is None:
+            raise ValueError(
+                f"Field {scalar.name!r} carries no representation declared for "
+                f"gauge group {gauge_group.name!r}."
+            )
+        adj_kind = _adjoint_index_kind(gauge_field)
+        if adj_kind is None:
+            raise ValueError(
+                f"Gauge field {gauge_field.name!r} does not expose a non-Lorentz "
+                "adjoint index."
+            )
+
+        left_label, right_label = matter_labels or _default_matter_labels(scalar, rep.index.prefix)
+        adjoint_mu, adjoint_nu = adjoint_labels or (
+            _symbol(f"{adj_kind}_{gauge_field.name}_{gauge_group.name}_1"),
+            _symbol(f"{adj_kind}_{gauge_field.name}_{gauge_group.name}_2"),
+        )
+        middle_label = internal_label or _symbol(f"{rep.index.prefix}_mid_{scalar.name}_{gauge_group.name}")
+
+        generator_mu = rep.build_generator(adjoint_mu, left_label, right_label)
+        generator_chain = (
+            rep.build_generator(adjoint_mu, left_label, middle_label)
+            * rep.build_generator(adjoint_nu, middle_label, right_label)
+        )
+
+        current_base = current_prefactor * gauge_group.coupling * generator_mu
+        contact_coupling = contact_prefactor * (gauge_group.coupling ** 2) * generator_chain
+
+        scalar_bar_labels[rep.index.kind] = left_label
+        scalar_labels[rep.index.kind] = right_label
+        gauge_labels_mu[adj_kind] = adjoint_mu
+        gauge_labels_nu[adj_kind] = adjoint_nu
+        spectator_exclusions.add(rep.index.kind)
+
+    spectator_factor, spectator_left_labels, spectator_right_labels = _spectator_identity_factor(
+        scalar,
+        exclude_index_kinds=spectator_exclusions,
+    )
+    current_base *= spectator_factor
+    contact_coupling *= spectator_factor
+    scalar_bar_labels.update(spectator_left_labels)
+    scalar_labels.update(spectator_right_labels)
 
     current_phi = InteractionTerm(
         coupling=current_base,
         fields=(
-            scalar.occurrence(conjugated=True),
-            scalar.occurrence(),
-            gauge_field.occurrence(labels={LORENTZ_KIND: mu}),
+            scalar.occurrence(conjugated=True, labels=scalar_bar_labels),
+            scalar.occurrence(labels=scalar_labels),
+            gauge_field.occurrence(labels=gauge_labels_mu),
         ),
         derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: scalar current (+)",
@@ -198,9 +282,9 @@ def compile_complex_scalar_gauge_terms(
     current_phidag = InteractionTerm(
         coupling=-current_base,
         fields=(
-            scalar.occurrence(conjugated=True),
-            scalar.occurrence(),
-            gauge_field.occurrence(labels={LORENTZ_KIND: mu}),
+            scalar.occurrence(conjugated=True, labels=scalar_bar_labels),
+            scalar.occurrence(labels=scalar_labels),
+            gauge_field.occurrence(labels=gauge_labels_mu),
         ),
         derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: scalar current (-)",
@@ -208,10 +292,10 @@ def compile_complex_scalar_gauge_terms(
     contact = InteractionTerm(
         coupling=contact_coupling * scalar_gauge_contact(mu, nu),
         fields=(
-            scalar.occurrence(conjugated=True),
-            scalar.occurrence(),
-            gauge_field.occurrence(labels={LORENTZ_KIND: mu}),
-            gauge_field.occurrence(labels={LORENTZ_KIND: nu}),
+            scalar.occurrence(conjugated=True, labels=scalar_bar_labels),
+            scalar.occurrence(labels=scalar_labels),
+            gauge_field.occurrence(labels=gauge_labels_mu),
+            gauge_field.occurrence(labels=gauge_labels_nu),
         ),
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: scalar contact",
     )
@@ -246,9 +330,13 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                 )
                 continue
 
-            if field.kind == "scalar" and not field.self_conjugate and gauge_group.abelian:
-                if gauge_group.charge is None or field.quantum_numbers.get(gauge_group.charge, 0) == 0:
-                    continue
+            if field.kind == "scalar" and not field.self_conjugate:
+                if gauge_group.abelian:
+                    if gauge_group.charge is None or field.quantum_numbers.get(gauge_group.charge, 0) == 0:
+                        continue
+                else:
+                    if gauge_group.matter_representation(field) is None:
+                        continue
                 interactions.extend(
                     compile_complex_scalar_gauge_terms(
                         scalar=field,
@@ -276,22 +364,26 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
     if fermion.kind != "fermion":
         raise ValueError(f"Dirac kinetic term requires a fermion field, got kind={fermion.kind!r}.")
 
-    gauge_group = _resolve_covariant_gauge_group(
+    gauge_groups = _resolve_covariant_gauge_groups(
         model,
         field=fermion,
         gauge_group=term.gauge_group,
     )
-    gauge_field = model.gauge_boson_field(gauge_group)
     label = term.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name}"
-    return (
-        compile_fermion_gauge_current(
-            fermion=fermion,
-            gauge_group=gauge_group,
-            gauge_field=gauge_field,
-            prefactor=-term.coefficient,
-            label=label,
-        ),
-    )
+
+    interactions = []
+    for gauge_group in gauge_groups:
+        gauge_field = model.gauge_boson_field(gauge_group)
+        interactions.append(
+            compile_fermion_gauge_current(
+                fermion=fermion,
+                gauge_group=gauge_group,
+                gauge_field=gauge_field,
+                prefactor=-term.coefficient,
+                label=label,
+            )
+        )
+    return tuple(interactions)
 
 
 def compile_complex_scalar_kinetic_term(
@@ -307,21 +399,27 @@ def compile_complex_scalar_kinetic_term(
             "Complex-scalar kinetic terms require a non-self-conjugate scalar field."
         )
 
-    gauge_group = _resolve_covariant_gauge_group(
+    label_prefix = term.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name})"
+    gauge_groups = _resolve_covariant_gauge_groups(
         model,
         field=scalar,
         gauge_group=term.gauge_group,
     )
-    gauge_field = model.gauge_boson_field(gauge_group)
-    label_prefix = term.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name})"
-    return compile_complex_scalar_gauge_terms(
-        scalar=scalar,
-        gauge_group=gauge_group,
-        gauge_field=gauge_field,
-        current_prefactor=Expression.I * term.coefficient,
-        contact_prefactor=term.coefficient,
-        label_prefix=label_prefix,
-    )
+
+    interactions = []
+    for gauge_group in gauge_groups:
+        gauge_field = model.gauge_boson_field(gauge_group)
+        interactions.extend(
+            compile_complex_scalar_gauge_terms(
+                scalar=scalar,
+                gauge_group=gauge_group,
+                gauge_field=gauge_field,
+                current_prefactor=Expression.I * term.coefficient,
+                contact_prefactor=term.coefficient,
+                label_prefix=label_prefix,
+            )
+        )
+    return tuple(interactions)
 
 
 def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
