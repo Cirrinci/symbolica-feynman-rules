@@ -1,24 +1,32 @@
 """
-Focused gamma-matrix and tensor-slot checks for the Symbolica/Spenso prototype.
+Gamma-matrix, tensor-slot, and gauge-structure checks for the Symbolica/Spenso
+vertex engine.
 
-Currently covered here:
-- Clifford anticommutator
+Currently covered:
+- Clifford anticommutator {gamma^mu, gamma^nu} = 2 g^{mu nu}
 - gamma5, sigma, and chiral projectors
 - gamma^mu gamma^nu vs gamma^nu gamma^mu ordering
 - longer gamma chains and projected currents
 - stripped current-current operator
-- complex-scalar gauge structures
+- complex-scalar gauge structures (A_mu phi^dag <-> d^mu phi, A_mu A^mu phi^dag phi)
 
-Note:
-This script follows the reduced-vertex convention used by
-``model_symbolica.py`` by default, so the universal overall
-``(2*pi)^d Delta(sum p)`` factor is stripped from the displayed output.
+All checks run as assertions that can be invoked by ``pytest`` or
+``python spenso_gamma_checks.py``.
 """
 
 from symbolica import Expression
 
-from model_legacy import I, S, pcomp, simplify_deltas, vertex_factor
+from model_symbolica import (
+    I,
+    S,
+    pcomp,
+    delta,
+    simplify_deltas,
+    vertex_factor,
+)
 from spenso_structures import (
+    SPINOR_KIND,
+    LORENTZ_KIND,
     chiral_projector_left,
     chiral_projector_right,
     gamma_anticommutator,
@@ -29,9 +37,12 @@ from spenso_structures import (
     lorentz_metric,
     sigma_tensor,
     simplify_gamma_chain,
-    slot_labels,
     spinor_metric,
 )
+
+# ---------------------------------------------------------------------------
+# Common symbols
+# ---------------------------------------------------------------------------
 
 x = S("x")
 d = S("d")
@@ -53,6 +64,8 @@ gPhiAA = S("gPhiAA")
 mu = S("mu")
 nu = S("nu")
 rho = S("rho")
+rho_mu = S("rho_mu")
+rho_nu = S("rho_nu")
 mu3 = S("mu3")
 mu4 = S("mu4")
 i_bar = S("i_bar")
@@ -64,9 +77,10 @@ s2 = S("s2")
 s3 = S("s3")
 s4 = S("s4")
 
-rho_mu = "rho_mu"
-rho_nu = "rho_nu"
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _check(got, expected, label):
     assert (
@@ -106,6 +120,11 @@ def _show_raw_and_simplified(title, expr):
 
 
 def _vertex(coupling, *, strip_externals=True, alphas, betas, ps, field_roles, leg_roles, field_spinor_indices):
+    """Fermion bilinear vertex using the direct engine API (Delta stripped)."""
+    field_index_labels = [
+        {SPINOR_KIND: si} if si is not None else {}
+        for si in field_spinor_indices
+    ]
     return simplify_deltas(
         vertex_factor(
             coupling=coupling,
@@ -115,8 +134,9 @@ def _vertex(coupling, *, strip_externals=True, alphas, betas, ps, field_roles, l
             statistics="fermion",
             field_roles=field_roles,
             leg_roles=leg_roles,
-            field_spinor_indices=field_spinor_indices,
+            field_index_labels=field_index_labels,
             strip_externals=strip_externals,
+            include_delta=False,
             x=x,
             d=d,
         ),
@@ -134,8 +154,10 @@ def _boson_vertex(
     derivative_targets=None,
     field_roles=None,
     leg_roles=None,
-    field_slot_labels=None,
+    field_index_labels=None,
+    leg_index_labels=None,
 ):
+    """Boson vertex using the direct engine API (Delta stripped)."""
     return simplify_deltas(
         vertex_factor(
             coupling=coupling,
@@ -147,8 +169,10 @@ def _boson_vertex(
             statistics="boson",
             field_roles=field_roles,
             leg_roles=leg_roles,
-            field_slot_labels=field_slot_labels,
+            field_index_labels=field_index_labels,
+            leg_index_labels=leg_index_labels,
             strip_externals=True,
+            include_delta=False,
             x=x,
             d=d,
         ),
@@ -156,25 +180,40 @@ def _boson_vertex(
     )
 
 
-if __name__ == "__main__":
-    print(f"\n{'='*80}")
-    print("  Demo: spenso-gamma")
-    print(f"{'='*80}\n")
+# ---------------------------------------------------------------------------
+# Gamma identity checks
+# ---------------------------------------------------------------------------
 
+def test_gamma_identities():
     print("== gamma identities ==")
-    print(
-        "Tr(gamma^mu gamma_mu) =",
-        hep_tensor_scalar(
-            gamma_matrix("si", "sj", "mu") * gamma_matrix("sj", "si", "mu")
-        ),
+    tr = hep_tensor_scalar(
+        gamma_matrix("si", "sj", "mu") * gamma_matrix("sj", "si", "mu")
     )
+    print(f"Tr(gamma^mu gamma_mu) = {tr}")
     print()
+
+    anticom = simplify_gamma_chain(
+        gamma_anticommutator("si", "sk", "mu", "nu")
+    ).expand()
     print("{gamma^mu, gamma^nu} =")
-    anticom = simplify_gamma_chain(gamma_anticommutator("si", "sk", "mu", "nu")).expand()
     print(anticom)
     print()
 
+    _check(
+        anticom,
+        2 * lorentz_metric("mu", "nu") * spinor_metric("si", "sk"),
+        "Clifford anticommutator",
+    )
+    return anticom
+
+
+# ---------------------------------------------------------------------------
+# Bilinear checks
+# ---------------------------------------------------------------------------
+
+def test_bilinears():
     print("== bilinears ==")
+
     bilinear_up = _vertex(
         g_bilin * gamma_matrix(i_bar, i_psi, mu),
         alphas=[psibar0, psi0],
@@ -317,7 +356,82 @@ if __name__ == "__main__":
     )
     print()
 
+    # Assertions
+    i1_sym, i2_sym, i3_sym, i4_sym = S("i1", "i2", "i3", "i4")
+
+    _check(bilinear_up, I * g_bilin * gamma_matrix(i1_sym, i2_sym, mu), "psibar gamma^mu psi")
+    _check(bilinear_g5, I * g_bilin * gamma5_matrix(i1_sym, i2_sym), "psibar gamma5 psi")
+    _check(bilinear_sigma, I * g_bilin * sigma_tensor(i1_sym, i2_sym, mu, nu), "psibar sigma^{mu nu} psi")
+    _check(
+        _gamma_simplified((bilinear_pl + bilinear_pr).expand()),
+        I * g_bilin * spinor_metric(i1_sym, i2_sym),
+        "P_L + P_R = 1",
+    )
+    _check(
+        _gamma_simplified((bilinear_pr - bilinear_pl).expand()),
+        I * g_bilin * gamma5_matrix(i1_sym, i2_sym),
+        "P_R - P_L = gamma5",
+    )
+    _check(
+        bilinear_down,
+        I * g_bilin * gamma_lowered_matrix(i1_sym, i2_sym, mu, rho_mu),
+        "psibar gamma_mu psi",
+    )
+    _check(
+        bilinear_mu_nu,
+        I * g_bilin * gamma_matrix(i1_sym, alpha, mu) * gamma_matrix(alpha, i2_sym, nu),
+        "psibar gamma^mu gamma^nu psi",
+    )
+    _check(
+        bilinear_nu_mu,
+        I * g_bilin * gamma_matrix(i1_sym, alpha, nu) * gamma_matrix(alpha, i2_sym, mu),
+        "psibar gamma^nu gamma^mu psi",
+    )
+    _check(
+        bilinear_down_down,
+        I * g_bilin * gamma_lowered_matrix(i1_sym, alpha, mu, rho_mu) * gamma_lowered_matrix(alpha, i2_sym, nu, rho_nu),
+        "psibar gamma_mu gamma_nu psi",
+    )
+    _check(
+        _gamma_simplified((bilinear_mu_nu + bilinear_nu_mu).expand()),
+        2 * I * g_bilin * lorentz_metric(mu, nu) * spinor_metric(i1_sym, i2_sym),
+        "gamma^mu gamma^nu + gamma^nu gamma^mu",
+    )
+    _check(
+        _display_expr(bilinear_mu_nu_rho).expand(),
+        I * g_bilin * gamma_matrix(i1_sym, alpha, mu) * gamma_matrix(alpha, beta, nu) * gamma_matrix(beta, i2_sym, rho),
+        "raw psibar gamma^mu gamma^nu gamma^rho psi",
+    )
+    _check(
+        _gamma_simplified(bilinear_mu_nu_rho),
+        I * g_bilin * (
+            gamma_matrix(alpha, i2_sym, rho) * gamma_matrix(beta, alpha, nu) * gamma_matrix(i1_sym, beta, mu)
+            - 2 * lorentz_metric(mu, nu) * gamma_matrix(i1_sym, i2_sym, rho)
+            + 2 * lorentz_metric(mu, rho) * gamma_matrix(i1_sym, i2_sym, nu)
+        ),
+        "simplified psibar gamma^mu gamma^nu gamma^rho psi",
+    )
+    _check(
+        bilinear_mu_nu_rho,
+        I * g_bilin * gamma_matrix(i1_sym, alpha, mu) * gamma_matrix(alpha, beta, nu) * gamma_matrix(beta, i2_sym, rho),
+        "psibar gamma^mu gamma^nu gamma^rho psi",
+    )
+    _check(
+        bilinear_mu_nu_g5,
+        I * g_bilin * gamma_matrix(i1_sym, alpha, mu) * gamma_matrix(alpha, beta, nu) * gamma5_matrix(beta, i2_sym),
+        "psibar gamma^mu gamma^nu gamma5 psi",
+    )
+
+    return dict(bilinear_up=bilinear_up, bilinear_mu_nu=bilinear_mu_nu, bilinear_down_down=bilinear_down_down)
+
+
+# ---------------------------------------------------------------------------
+# Current-current operator
+# ---------------------------------------------------------------------------
+
+def test_current_current():
     print("== current-current operator ==")
+
     current_current = _vertex(
         g_bilin
         * gamma_matrix(s1, s2, mu)
@@ -367,9 +481,25 @@ if __name__ == "__main__":
         left_projected_current_current,
     )
 
-    print(f"\n{'='*80}")
+    i1_sym, i2_sym, i3_sym, i4_sym = S("i1", "i2", "i3", "i4")
+    _check(
+        _gamma_simplified(current_current),
+        2 * I * g_bilin * (
+            gamma_matrix(i1_sym, i2_sym, mu) * gamma_matrix(i3_sym, i4_sym, mu)
+            - gamma_matrix(i1_sym, i4_sym, mu) * gamma_matrix(i3_sym, i2_sym, mu)
+        ),
+        "stripped current-current",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Complex scalar gauge structures
+# ---------------------------------------------------------------------------
+
+def test_complex_scalar_gauge():
+    print("\n" + "=" * 80)
     print("  Complex Scalar Structures")
-    print(f"{'='*80}\n")
+    print("=" * 80 + "\n")
 
     complex_scalar_pair = _boson_vertex(
         lamC,
@@ -390,7 +520,7 @@ if __name__ == "__main__":
         derivative_targets=[1],
         field_roles=["scalar_dag", "scalar", "vector"],
         leg_roles=["scalar_dag", "scalar", "vector"],
-        field_slot_labels=[None, None, slot_labels(lorentz=mu)],
+        field_index_labels=[{}, {}, {LORENTZ_KIND: mu}],
     )
     complex_scalar_current_phidag = _boson_vertex(
         -gPhiA,
@@ -401,7 +531,7 @@ if __name__ == "__main__":
         derivative_targets=[0],
         field_roles=["scalar_dag", "scalar", "vector"],
         leg_roles=["scalar_dag", "scalar", "vector"],
-        field_slot_labels=[None, None, slot_labels(lorentz=mu)],
+        field_index_labels=[{}, {}, {LORENTZ_KIND: mu}],
     )
     complex_scalar_current = (complex_scalar_current_phi + complex_scalar_current_phidag).expand()
     _show_expr("gPhiA * A_mu * phi^dagger <-> d^mu phi", complex_scalar_current)
@@ -413,153 +543,33 @@ if __name__ == "__main__":
         ps=[p1, p2, p3, p4],
         field_roles=["scalar_dag", "scalar", "vector", "vector"],
         leg_roles=["scalar_dag", "scalar", "vector", "vector"],
-        field_slot_labels=[
-            None,
-            None,
-            slot_labels(lorentz=mu),
-            slot_labels(lorentz=nu),
-        ],
+        field_index_labels=[{}, {}, {LORENTZ_KIND: mu}, {LORENTZ_KIND: nu}],
+        leg_index_labels=[{}, {}, {LORENTZ_KIND: mu3}, {LORENTZ_KIND: mu4}],
     )
     _show_expr("gPhiAA * A_mu A^mu phi^dagger phi", complex_scalar_contact)
 
-    print("== tests ==")
-    i1_sym, i2_sym, i3_sym, i4_sym = S("i1", "i2", "i3", "i4")
+    # Assertions
+    _check(complex_scalar_pair, I * lamC, "phi^dagger phi")
+    _check(complex_scalar_current, gPhiA * (pcomp(p2, mu) - pcomp(p1, mu)), "complex scalar gauge current")
+    _check(complex_scalar_contact, 2 * I * gPhiAA * lorentz_metric(mu3, mu4), "complex scalar gauge contact")
 
-    _check(
-        anticom,
-        2 * lorentz_metric("mu", "nu") * spinor_metric("si", "sk"),
-        "Clifford anticommutator",
-    )
-    _check(
-        bilinear_up,
-        I * g_bilin * gamma_matrix(i1_sym, i2_sym, mu),
-        "psibar gamma^mu psi",
-    )
-    _check(
-        bilinear_g5,
-        I * g_bilin * gamma5_matrix(i1_sym, i2_sym),
-        "psibar gamma5 psi",
-    )
-    _check(
-        bilinear_sigma,
-        I * g_bilin * sigma_tensor(i1_sym, i2_sym, mu, nu),
-        "psibar sigma^{mu nu} psi",
-    )
-    _check(
-        _gamma_simplified((bilinear_pl + bilinear_pr).expand()),
-        I * g_bilin * spinor_metric(i1_sym, i2_sym),
-        "P_L + P_R = 1",
-    )
-    _check(
-        _gamma_simplified((bilinear_pr - bilinear_pl).expand()),
-        I * g_bilin * gamma5_matrix(i1_sym, i2_sym),
-        "P_R - P_L = gamma5",
-    )
-    _check(
-        bilinear_down,
-        I
-        * g_bilin
-        * gamma_lowered_matrix(i1_sym, i2_sym, mu, rho_mu),
-        "psibar gamma_mu psi",
-    )
-    _check(
-        bilinear_mu_nu,
-        I
-        * g_bilin
-        * gamma_matrix(i1_sym, alpha, mu)
-        * gamma_matrix(alpha, i2_sym, nu),
-        "psibar gamma^mu gamma^nu psi",
-    )
-    _check(
-        bilinear_nu_mu,
-        I
-        * g_bilin
-        * gamma_matrix(i1_sym, alpha, nu)
-        * gamma_matrix(alpha, i2_sym, mu),
-        "psibar gamma^nu gamma^mu psi",
-    )
-    _check(
-        bilinear_down_down,
-        I
-        * g_bilin
-        * gamma_lowered_matrix(i1_sym, alpha, mu, rho_mu)
-        * gamma_lowered_matrix(alpha, i2_sym, nu, rho_nu),
-        "psibar gamma_mu gamma_nu psi",
-    )
-    _check(
-        _gamma_simplified((bilinear_mu_nu + bilinear_nu_mu).expand()),
-        2
-        * I
-        * g_bilin
-        * lorentz_metric(mu, nu)
-        * spinor_metric(i1_sym, i2_sym),
-        "gamma^mu gamma^nu + gamma^nu gamma^mu",
-    )
-    _check(
-        _gamma_simplified(current_current),
-        2
-        * I
-        * g_bilin
-        * (
-            gamma_matrix(i1_sym, i2_sym, mu) * gamma_matrix(i3_sym, i4_sym, mu)
-            - gamma_matrix(i1_sym, i4_sym, mu) * gamma_matrix(i3_sym, i2_sym, mu)
-        ),
-        "stripped current-current",
-    )
-    _check(
-        _display_expr(bilinear_mu_nu_rho).expand(),
-        I
-        * g_bilin
-        * gamma_matrix(i1_sym, alpha, mu)
-        * gamma_matrix(alpha, beta, nu)
-        * gamma_matrix(beta, i2_sym, rho),
-        "raw psibar gamma^mu gamma^nu gamma^rho psi",
-    )
-    _check(
-        _gamma_simplified(bilinear_mu_nu_rho),
-        I
-        * g_bilin
-        * (
-            gamma_matrix(alpha, i2_sym, rho)
-            * gamma_matrix(beta, alpha, nu)
-            * gamma_matrix(i1_sym, beta, mu)
-            - 2 * lorentz_metric(mu, nu) * gamma_matrix(i1_sym, i2_sym, rho)
-            + 2 * lorentz_metric(mu, rho) * gamma_matrix(i1_sym, i2_sym, nu)
-        ),
-        "simplified psibar gamma^mu gamma^nu gamma^rho psi",
-    )
-    _check(
-        bilinear_mu_nu_rho,
-        I
-        * g_bilin
-        * gamma_matrix(i1_sym, alpha, mu)
-        * gamma_matrix(alpha, beta, nu)
-        * gamma_matrix(beta, i2_sym, rho),
-        "psibar gamma^mu gamma^nu gamma^rho psi",
-    )
-    _check(
-        bilinear_mu_nu_g5,
-        I
-        * g_bilin
-        * gamma_matrix(i1_sym, alpha, mu)
-        * gamma_matrix(alpha, beta, nu)
-        * gamma5_matrix(beta, i2_sym),
-        "psibar gamma^mu gamma^nu gamma5 psi",
-    )
-    _check(
-        complex_scalar_pair,
-        I * lamC,
-        "phi^dagger phi",
-    )
-    _check(
-        complex_scalar_current,
-        gPhiA * (pcomp(p2, mu3) - pcomp(p1, mu3)),
-        "complex scalar gauge current",
-    )
-    _check(
-        complex_scalar_contact,
-        2 * I * gPhiAA * lorentz_metric(mu3, mu4),
-        "complex scalar gauge contact",
-    )
 
-    print("\nAll selected tests passed.")
+# ---------------------------------------------------------------------------
+# Runner
+# ---------------------------------------------------------------------------
+
+def run_all():
+    print(f"\n{'='*80}")
+    print("  spenso-gamma checks")
+    print(f"{'='*80}\n")
+
+    test_gamma_identities()
+    test_bilinears()
+    test_current_current()
+    test_complex_scalar_gauge()
+
+    print("\nAll spenso-gamma checks passed.")
+
+
+if __name__ == "__main__":
+    run_all()

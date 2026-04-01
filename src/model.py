@@ -40,6 +40,43 @@ Statistics = Literal["boson", "fermion"]
 
 
 # ---------------------------------------------------------------------------
+# FieldRole  (typed replacement for raw strings like "psi", "scalar")
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class FieldRole:
+    """Typed role that a field plays in an interaction or on an external leg.
+
+    The engine uses duck typing on this object (.is_fermion, .compatible_with)
+    so the engine module never needs to import model.py.
+    """
+    name: str
+    statistics: Statistics
+    conjugated: bool = False
+
+    @property
+    def is_fermion(self) -> bool:
+        return self.statistics == "fermion"
+
+    def compatible_with(self, other) -> bool:
+        if isinstance(other, FieldRole):
+            return self.name == other.name
+        return self.name == str(other)
+
+    def __repr__(self):
+        return f"FieldRole({self.name!r})"
+
+
+ROLE_SCALAR = FieldRole("scalar", "boson")
+ROLE_SCALAR_DAG = FieldRole("scalar_dag", "boson", conjugated=True)
+ROLE_VECTOR = FieldRole("vector", "boson")
+ROLE_PSI = FieldRole("psi", "fermion")
+ROLE_PSIBAR = FieldRole("psibar", "fermion", conjugated=True)
+ROLE_GHOST = FieldRole("ghost", "fermion")
+ROLE_GHOST_DAG = FieldRole("ghost_dag", "fermion", conjugated=True)
+
+
+# ---------------------------------------------------------------------------
 # IndexType
 # ---------------------------------------------------------------------------
 
@@ -140,10 +177,16 @@ class Field:
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
 
-    def role_for(self, conjugated: bool = False) -> str:
+    def role_for(self, conjugated: bool = False) -> FieldRole:
         if self.kind == "fermion":
-            return "psibar" if conjugated else "psi"
-        return "scalar"
+            return ROLE_PSIBAR if conjugated else ROLE_PSI
+        if self.kind == "ghost":
+            return ROLE_GHOST_DAG if conjugated else ROLE_GHOST
+        if self.kind == "vector":
+            return ROLE_VECTOR
+        if conjugated and not self.self_conjugate:
+            return ROLE_SCALAR_DAG
+        return ROLE_SCALAR
 
     def species_for(self, conjugated: bool = False):
         if conjugated and not self.self_conjugate:
@@ -194,7 +237,7 @@ class FieldOccurrence:
         return self.field.species_for(self.conjugated)
 
     @property
-    def role(self) -> str:
+    def role(self) -> FieldRole:
         return self.field.role_for(self.conjugated)
 
     @property
@@ -223,7 +266,7 @@ class ExternalLeg:
         return self.field.species_for(self.conjugated)
 
     @property
-    def role(self) -> str:
+    def role(self) -> FieldRole:
         return self.field.role_for(self.conjugated)
 
 

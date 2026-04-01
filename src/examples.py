@@ -838,6 +838,90 @@ def _run_cross_checks():
 
 
 # ===================================================================
+# Regression tests: role-based filtering
+# ===================================================================
+
+def _run_role_regression_tests():
+    from model import FieldRole, ROLE_SCALAR, ROLE_SCALAR_DAG, ROLE_VECTOR, ROLE_PSI, ROLE_PSIBAR
+
+    # 1. Complex boson: role filtering eliminates bad contractions without species_map
+    D2 = (2 * pi) ** d * Delta(p1 + p2)
+    V_complex = vertex_factor(
+        coupling=lamC,
+        alphas=[phiCdag0, phiC0],
+        betas=[b1, b2],
+        ps=[p1, p2],
+        field_roles=[ROLE_SCALAR_DAG, ROLE_SCALAR],
+        leg_roles=[ROLE_SCALAR_DAG, ROLE_SCALAR],
+        x=x, d=d,
+    )
+    raw_str = V_complex.expand().to_canonical_string()
+    assert "delta" in raw_str, "Should have species delta before simplification"
+    simplified_no_map = simplify_deltas(V_complex)
+    simplified_with_map = simplify_deltas(V_complex, species_map={b1: phiCdag0, b2: phiC0})
+    _check(simplified_with_map, I * lamC * D2, "Regression: complex boson with species_map")
+    no_map_str = simplified_no_map.expand().to_canonical_string()
+    assert "0" != no_map_str, "complex boson without species_map should be non-zero"
+    print("  Regression: complex boson filtered by role (no extra term): PASS")
+
+    # 2. Verify that ROLE_SCALAR_DAG won't match ROLE_SCALAR legs (1 perm, not 2)
+    V_wrong_order = vertex_factor(
+        coupling=lamC,
+        alphas=[phiCdag0, phiC0],
+        betas=[b1, b2],
+        ps=[p1, p2],
+        field_roles=[ROLE_SCALAR_DAG, ROLE_SCALAR],
+        leg_roles=[ROLE_SCALAR, ROLE_SCALAR_DAG],
+        x=x, d=d,
+    )
+    V_wrong_simplified = simplify_deltas(V_wrong_order, species_map={b1: phiC0, b2: phiCdag0})
+    _check(V_wrong_simplified, I * lamC * D2, "Regression: reversed legs still works")
+
+    # 3. Vector role doesn't match scalar role
+    V_mixed = vertex_factor(
+        coupling=lamC,
+        alphas=[A0, phiC0],
+        betas=[b1, b2],
+        ps=[p1, p2],
+        field_roles=[ROLE_VECTOR, ROLE_SCALAR],
+        leg_roles=[ROLE_SCALAR, ROLE_VECTOR],
+        x=x, d=d,
+    )
+    V_mixed_simplified = simplify_deltas(V_mixed, species_map={b1: phiC0, b2: A0})
+    _check(V_mixed_simplified, I * lamC * D2, "Regression: vector/scalar non-mixing")
+
+    V_no_match = vertex_factor(
+        coupling=lamC,
+        alphas=[A0, phiC0],
+        betas=[b1, b2],
+        ps=[p1, p2],
+        field_roles=[ROLE_VECTOR, ROLE_SCALAR],
+        leg_roles=[ROLE_VECTOR, ROLE_VECTOR],
+        x=x, d=d,
+    )
+    _check(
+        simplify_deltas(V_no_match, species_map={b1: A0, b2: A0}),
+        Expression.num(0),
+        "Regression: scalar field can't match vector-only legs",
+    )
+
+    # 4. FieldRole object semantics
+    assert ROLE_PSI.is_fermion
+    assert ROLE_PSIBAR.is_fermion
+    assert not ROLE_SCALAR.is_fermion
+    assert not ROLE_VECTOR.is_fermion
+    assert ROLE_PSI.compatible_with(ROLE_PSI)
+    assert not ROLE_PSI.compatible_with(ROLE_PSIBAR)
+    assert not ROLE_SCALAR.compatible_with(ROLE_SCALAR_DAG)
+    assert not ROLE_SCALAR.compatible_with(ROLE_VECTOR)
+    assert ROLE_PSI.compatible_with("psi")
+    assert not ROLE_PSI.compatible_with("psibar")
+    print("  Regression: FieldRole object semantics: PASS")
+
+    print("\n  Role regression tests passed.\n")
+
+
+# ===================================================================
 # Test runner
 # ===================================================================
 
@@ -860,6 +944,11 @@ def _run_all_tests():
     print("=" * 80)
     _run_cross_checks()
 
+    print("=" * 80)
+    print("  Role regression tests")
+    print("=" * 80)
+    _run_role_regression_tests()
+
     print("All tests passed.")
 
 
@@ -867,7 +956,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run vertex examples and tests.")
     parser.add_argument(
         "--suite",
-        choices=("scalar", "fermion", "gauge", "model", "cross", "all"),
+        choices=("scalar", "fermion", "gauge", "model", "cross", "role", "all"),
         default="all",
     )
     parser.add_argument("--skip-tests", action="store_true")
@@ -887,3 +976,5 @@ if __name__ == "__main__":
             _run_model_tests()
         elif args.suite == "cross":
             _run_cross_checks()
+        elif args.suite == "role":
+            _run_role_regression_tests()

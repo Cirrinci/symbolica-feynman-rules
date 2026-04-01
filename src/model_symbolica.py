@@ -45,7 +45,39 @@ I = Expression.I
 pi = Expression.PI
 
 Statistics = Literal["boson", "fermion"]
-FERMION_ROLES = ("psi", "psibar")
+
+
+# ---------------------------------------------------------------------------
+# Role helpers (duck-typed: accept both FieldRole objects and legacy strings)
+# ---------------------------------------------------------------------------
+
+_STRING_TO_FERMION = frozenset(("psi", "psibar", "ghost", "ghost_dag"))
+
+
+def _role_is_fermion(role) -> bool:
+    if hasattr(role, "is_fermion"):
+        return role.is_fermion
+    return str(role) in _STRING_TO_FERMION
+
+
+def _role_is_psi(role) -> bool:
+    if hasattr(role, "name"):
+        return role.name == "psi"
+    return str(role) == "psi"
+
+
+def _role_is_psibar(role) -> bool:
+    if hasattr(role, "name"):
+        return role.name == "psibar"
+    return str(role) == "psibar"
+
+
+def _roles_compatible(field_role, leg_role) -> bool:
+    if hasattr(field_role, "compatible_with"):
+        return field_role.compatible_with(leg_role)
+    if hasattr(leg_role, "compatible_with"):
+        return leg_role.compatible_with(field_role)
+    return field_role == leg_role
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +130,7 @@ def _open_index_labels(field_index_labels, field_roles=None):
 
     open_slots = []
     for slot_idx, slot_labels in enumerate(field_index_labels):
-        if field_roles is not None and field_roles[slot_idx] not in FERMION_ROLES:
+        if field_roles is not None and not _role_is_fermion(field_roles[slot_idx]):
             pass
         for kind, label in _flatten_index_labels(slot_labels):
             if counts[(kind, str(label))] == 1:
@@ -123,15 +155,19 @@ def _get_label(index_labels_dict, kind):
 # ---------------------------------------------------------------------------
 
 def factor_leg_compatible(i, j, alphas, betas, field_roles=None, leg_roles=None):
-    """Compatibility check for matching factor i with external leg j."""
+    """Compatibility check for matching factor i with external leg j.
+
+    Uses FieldRole.compatible_with() when roles are typed objects,
+    falls back to equality for legacy strings.
+    """
     if field_roles is not None and leg_roles is not None:
-        return field_roles[i] == leg_roles[j]
+        return _roles_compatible(field_roles[i], leg_roles[j])
     return True
 
 
 def _fermion_slots_from_roles(field_roles):
     """Return positions of fermionic fields in the interaction ordering."""
-    return [i for i, role in enumerate(field_roles) if role in FERMION_ROLES]
+    return [i for i, role in enumerate(field_roles) if _role_is_fermion(role)]
 
 
 def _group_spinor_slots(field_index_labels):
@@ -166,15 +202,15 @@ def _infer_fermion_chains(field_roles, field_index_labels):
                 "expected exactly 2 for a bilinear chain or 1 for an open slot."
             )
         a, b = slots
-        if field_roles[a] == "psibar" and field_roles[b] == "psi":
+        ra, rb = field_roles[a], field_roles[b]
+        if _role_is_psibar(ra) and _role_is_psi(rb):
             chains.append((a, b))
-        elif field_roles[a] == "psi" and field_roles[b] == "psibar":
+        elif _role_is_psi(ra) and _role_is_psibar(rb):
             chains.append((b, a))
         else:
             raise ValueError(
                 f"Invalid fermion chain: spinor index '{spinor_label}' "
-                f"connects roles ({field_roles[a]}, {field_roles[b]}), "
-                "expected (psibar, psi)."
+                f"connects roles ({ra}, {rb}), expected (psibar, psi)."
             )
     return chains
 
@@ -184,7 +220,7 @@ def _all_fermion_slots_labeled(field_roles, field_index_labels):
     if field_roles is None or field_index_labels is None:
         return False
     for i, role in enumerate(field_roles):
-        if role in FERMION_ROLES:
+        if _role_is_fermion(role):
             if _get_label(field_index_labels[i], SPINOR_KIND) is None:
                 return False
     return True
@@ -213,9 +249,9 @@ def _default_leg_index_labels(num_legs: int):
 
 
 def _external_factor_for_contraction(*, role, alpha, beta, p, spin, spinor_index):
-    if role == "psi":
+    if _role_is_psi(role):
         return delta(alpha, beta) * UF(beta, p, spin, spinor_index)
-    if role == "psibar":
+    if _role_is_psibar(role):
         return delta(alpha, beta) * UbarF(beta, p, spin, spinor_index)
     return delta(alpha, beta) * U(beta, p)
 
@@ -304,10 +340,8 @@ def contract_to_full_expression(
     statistics: Statistics = "boson",
     field_roles=None,
     leg_roles=None,
-    # New multi-index params:
     field_index_labels: Optional[Sequence[dict]] = None,
     leg_index_labels: Optional[Sequence[dict]] = None,
-    # Legacy spinor-only params (merged into the above if provided):
     field_spinor_indices: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
@@ -387,7 +421,6 @@ def contract_to_full_expression(
     for perm in permutations(range(n)):
         term = Expression.num(1)
 
-        # Remap open index labels in the coupling for this permutation.
         coupling_term = coupling if coupling is not None else Expression.num(1)
         if open_index_slots and leg_index_labels is not None:
             for slot_idx, kind, label in open_index_slots:
@@ -397,7 +430,6 @@ def contract_to_full_expression(
                     coupling_term = coupling_term.replace(label, target_label)
         term *= coupling_term
 
-        # Role compatibility filter.
         valid = True
         for i, j in enumerate(perm):
             if not factor_leg_compatible(
@@ -412,16 +444,14 @@ def contract_to_full_expression(
         if fermion_slots:
             term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
 
-        # Derivative momentum factors.
         for mu, tgt in zip(derivative_indices, derivative_targets):
             term *= (-I) * pcomp(ps[perm[tgt]], mu)
 
-        # Species deltas and external factors.
         p_sum = Expression.num(0)
         for i, j in enumerate(perm):
             role = field_roles[i] if field_roles is not None else None
 
-            if use_spinor_deltas and role in FERMION_ROLES:
+            if use_spinor_deltas and _role_is_fermion(role):
                 term *= delta(alphas[i], betas[j])
             else:
                 spin = leg_spins[j] if leg_spins is not None else _default_spin_symbol(j)
@@ -440,7 +470,6 @@ def contract_to_full_expression(
                 )
             p_sum += ps[j]
 
-        # Bispinor metrics for inferred fermion chains.
         if use_spinor_deltas:
             for psibar_slot, psi_slot in fermion_chains:
                 bar_label = _get_label(leg_index_labels[perm[psibar_slot]], SPINOR_KIND)
@@ -484,10 +513,8 @@ def infer_derivative_targets(field_derivative_map):
 
 def vertex_factor(
     *,
-    # Model-layer interface (preferred):
     interaction=None,
     external_legs=None,
-    # Direct interface (still supported):
     coupling=None,
     alphas=None,
     betas=None,
@@ -539,7 +566,6 @@ def vertex_factor(
         n,
     )
 
-    # Auto-generate leg spinor labels for fermion amputation.
     if (
         strip_externals
         and leg_index_labels is None
