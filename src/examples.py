@@ -7,6 +7,7 @@ Covers both the direct parallel-list API and the FeynRules-style model layer.
 import argparse
 from fractions import Fraction
 
+from gauge_compiler import compile_minimal_gauge_interactions, with_minimal_gauge_interactions
 from model_symbolica import (
     S,
     Expression,
@@ -26,6 +27,15 @@ from model_symbolica import (
     compact_vertex_sum_form,
     compact_sum_notation,
 )
+from operators import (
+    current_current,
+    psi_bar_gamma5_psi,
+    psi_bar_gamma_psi,
+    psi_bar_psi,
+    quark_gluon_current,
+    scalar_gauge_contact,
+    scalar_gauge_current_term,
+)
 from spenso_structures import (
     SPINOR_KIND,
     LORENTZ_KIND,
@@ -40,8 +50,11 @@ from spenso_structures import (
 )
 from model import (
     Field,
+    GaugeGroup,
+    GaugeRepresentation,
     InteractionTerm,
     DerivativeAction,
+    Model,
     SPINOR_INDEX,
     LORENTZ_INDEX,
     COLOR_FUND_INDEX,
@@ -81,6 +94,8 @@ g2 = S("g2")
 yF = S("yF")
 gV = S("gV")
 gS = S("gS")
+eQED = S("eQED")
+qPhi = S("qPhi")
 gPhiA = S("gPhiA")
 gPhiAA = S("gPhiAA")
 g4F = S("g4F")
@@ -307,7 +322,7 @@ L_psibar_psi_sq_spinor = dict(
 )
 
 L_current_current = dict(
-    coupling=gJJ * gamma_matrix(a_bar, a_psi, mu) * gamma_lowered_matrix(b_bar, b_psi, mu),
+    coupling=gJJ * current_current(a_bar, a_psi, b_bar, b_psi, mu),
     alphas=[psibar0, psi0, psibar0, psi0],
     betas=[b1, b2, b3, b4],
     ps=[p1, p2, p3, p4],
@@ -319,7 +334,7 @@ L_current_current = dict(
 )
 
 L_quark_gluon = dict(
-    coupling=gS * gamma_matrix(i_bar_q, i_psi_q, mu) * gauge_generator(a_g, c_bar_q, c_psi_q),
+    coupling=gS * quark_gluon_current(i_bar_q, i_psi_q, mu, a_g, c_bar_q, c_psi_q),
     alphas=[psibar0, psi0, G0],
     betas=[b1, b2, b3],
     ps=[p1, p2, p3],
@@ -340,25 +355,21 @@ L_quark_gluon = dict(
 )
 
 L_complex_scalar_current_phi = dict(
-    coupling=gPhiA,
+    **scalar_gauge_current_term(gPhiA, mu, 1),
     alphas=[phiCdag0, phiC0, A0],
     betas=[b1, b2, b3],
     ps=[p1, p2, p3],
-    derivative_indices=[mu],
-    derivative_targets=[1],
 )
 
 L_complex_scalar_current_phidag = dict(
-    coupling=-gPhiA,
+    **scalar_gauge_current_term(-gPhiA, mu, 0),
     alphas=[phiCdag0, phiC0, A0],
     betas=[b1, b2, b3],
     ps=[p1, p2, p3],
-    derivative_indices=[mu],
-    derivative_targets=[0],
 )
 
 L_complex_scalar_contact = dict(
-    coupling=gPhiAA * lorentz_metric(mu, nu),
+    coupling=gPhiAA * scalar_gauge_contact(mu, nu),
     alphas=[phiCdag0, phiC0, A0, A0],
     betas=[b1, b2, b3, b4],
     ps=[p1, p2, p3, p4],
@@ -421,10 +432,48 @@ COMPACT_DERIV2 = compact_vertex_sum_form(
 PhiField = Field("Phi", spin=0, self_conjugate=True, symbol=phi0)
 ChiField = Field("Chi", spin=0, self_conjugate=True, symbol=chi0)
 PhiCField = Field("PhiC", spin=0, self_conjugate=False, symbol=phiC0, conjugate_symbol=phiCdag0)
+PhiQEDField = Field(
+    "PhiQED",
+    spin=0,
+    self_conjugate=False,
+    symbol=phiC0,
+    conjugate_symbol=phiCdag0,
+    quantum_numbers={"Q": qPhi},
+)
 PsiField = Field("Psi", spin=Fraction(1, 2), self_conjugate=False, symbol=psi0, conjugate_symbol=psibar0, indices=(SPINOR_INDEX,))
 GaugeField = Field("A", spin=1, self_conjugate=True, symbol=A0, indices=(LORENTZ_INDEX,))
 QuarkField = Field("q", spin=Fraction(1, 2), self_conjugate=False, symbol=psi0, conjugate_symbol=psibar0, indices=(SPINOR_INDEX, COLOR_FUND_INDEX))
 GluonField = Field("G", spin=1, self_conjugate=True, symbol=G0, indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
+
+COLOR_FUND_REP = GaugeRepresentation(
+    index=COLOR_FUND_INDEX,
+    generator_builder=gauge_generator,
+    name="fundamental",
+)
+QCD_GROUP = GaugeGroup(
+    name="SU3C",
+    abelian=False,
+    coupling=gS,
+    gauge_boson=G0,
+    representations=(COLOR_FUND_REP,),
+)
+SCALAR_QED_GROUP = GaugeGroup(
+    name="U1QED",
+    abelian=True,
+    coupling=eQED,
+    gauge_boson="A",
+    charge="Q",
+)
+MODEL_QCD_BASE = Model(
+    name="QCD-minimal",
+    gauge_groups=(QCD_GROUP,),
+    fields=(QuarkField, GluonField),
+)
+MODEL_SCALAR_QED_BASE = Model(
+    name="ScalarQED-minimal",
+    gauge_groups=(SCALAR_QED_GROUP,),
+    fields=(PhiQEDField, GaugeField),
+)
 
 
 # ===================================================================
@@ -482,7 +531,7 @@ LEGS_yukawa_matrix = (
 )
 
 TERM_vec_current = InteractionTerm(
-    coupling=gV * gamma_matrix(i_psi_bar, i_psi, mu),
+    coupling=gV * psi_bar_gamma_psi(i_psi_bar, i_psi, mu),
     fields=(
         PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: i_psi_bar}),
         PsiField.occurrence(labels={SPINOR_KIND: i_psi}),
@@ -492,7 +541,7 @@ TERM_vec_current = InteractionTerm(
 )
 
 TERM_axial_current = InteractionTerm(
-    coupling=gV * gamma_matrix(i_psi_bar, alpha_s, mu) * gamma5_matrix(alpha_s, i_psi),
+    coupling=gV * psi_bar_gamma_psi(i_psi_bar, alpha_s, mu) * psi_bar_gamma5_psi(alpha_s, i_psi),
     fields=(
         PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: i_psi_bar}),
         PsiField.occurrence(labels={SPINOR_KIND: i_psi}),
@@ -531,7 +580,7 @@ LEGS_fermion4_matrix = (
 )
 
 TERM_current_current = InteractionTerm(
-    coupling=gJJ * gamma_matrix(a_bar, a_psi, mu) * gamma_lowered_matrix(b_bar, b_psi, mu),
+    coupling=gJJ * current_current(a_bar, a_psi, b_bar, b_psi, mu),
     fields=(
         PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: a_bar}),
         PsiField.occurrence(labels={SPINOR_KIND: a_psi}),
@@ -542,7 +591,7 @@ TERM_current_current = InteractionTerm(
 )
 
 TERM_quark_gluon = InteractionTerm(
-    coupling=gS * gamma_matrix(i_bar_q, i_psi_q, mu) * gauge_generator(a_g, c_bar_q, c_psi_q),
+    coupling=gS * quark_gluon_current(i_bar_q, i_psi_q, mu, a_g, c_bar_q, c_psi_q),
     fields=(
         QuarkField.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar_q, COLOR_FUND_KIND: c_bar_q}),
         QuarkField.occurrence(labels={SPINOR_KIND: i_psi_q, COLOR_FUND_KIND: c_psi_q}),
@@ -581,9 +630,14 @@ LEGS_complex_scalar_current = (
     PhiCField.leg(p2, species=b2),
     GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}, species=b3),
 )
+LEGS_compiled_scalar_current = (
+    PhiQEDField.leg(p1, conjugated=True, species=b1),
+    PhiQEDField.leg(p2, species=b2),
+    GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}, species=b3),
+)
 
 TERM_complex_scalar_contact = InteractionTerm(
-    coupling=gPhiAA * lorentz_metric(mu, nu),
+    coupling=gPhiAA * scalar_gauge_contact(mu, nu),
     fields=(
         PhiCField.occurrence(conjugated=True),
         PhiCField.occurrence(),
@@ -595,6 +649,12 @@ TERM_complex_scalar_contact = InteractionTerm(
 LEGS_complex_scalar_contact = (
     PhiCField.leg(p1, conjugated=True, species=b1),
     PhiCField.leg(p2, species=b2),
+    GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}, species=b3),
+    GaugeField.leg(p4, labels={LORENTZ_KIND: mu4}, species=b4),
+)
+LEGS_compiled_scalar_contact = (
+    PhiQEDField.leg(p1, conjugated=True, species=b1),
+    PhiQEDField.leg(p2, species=b2),
     GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}, species=b3),
     GaugeField.leg(p4, labels={LORENTZ_KIND: mu4}, species=b4),
 )
@@ -802,6 +862,9 @@ def _run_demo_output(suite):
     if suite in ("gauge", "all"):
         _run_gauge_demo()
     if suite == "model":
+        compiled_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
+        compiled_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
+
         print("# " + "=" * 79)
         print("Demo: model-layer\n")
         _print_vertex_block(
@@ -815,6 +878,39 @@ def _run_demo_output(suite):
             vertex=_model_demo_vertex(
                 interaction=TERM_quark_gluon,
                 external_legs=LEGS_quark_gluon,
+            ),
+        )
+        _print_vertex_block(
+            "model compiler: quark-gluon",
+            description=compiled_qcd[0].label,
+            vertex=_model_demo_vertex(
+                interaction=compiled_qcd[0],
+                external_legs=LEGS_quark_gluon,
+            ),
+        )
+        _print_vertex_block(
+            "model compiler: scalar QED current",
+            description="compiled U(1) current from gauge group + field charge",
+            vertex=(
+                _model_demo_vertex(
+                    interaction=compiled_scalar_qed[0],
+                    external_legs=LEGS_compiled_scalar_current,
+                    species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+                )
+                + _model_demo_vertex(
+                    interaction=compiled_scalar_qed[1],
+                    external_legs=LEGS_compiled_scalar_current,
+                    species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+                )
+            ).expand(),
+        )
+        _print_vertex_block(
+            "model compiler: scalar QED contact",
+            description=compiled_scalar_qed[2].label,
+            vertex=_model_demo_vertex(
+                interaction=compiled_scalar_qed[2],
+                external_legs=LEGS_compiled_scalar_contact,
+                species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
             ),
         )
     if suite == "cross":
@@ -1055,14 +1151,14 @@ def _run_model_tests():
     )
     _check(
         _model_vertex(interaction=TERM_vec_current, external_legs=LEGS_vec_current),
-        I * gV * gamma_matrix(i1, i2, mu3) * D3,
+        I * gV * psi_bar_gamma_psi(i1, i2, mu3) * D3,
         "Model: Vector current",
         show_vertex=True,
         description=TERM_vec_current.label,
     )
     _check(
         _model_vertex(interaction=TERM_axial_current, external_legs=LEGS_vec_current),
-        I * gV * gamma_matrix(i1, alpha_s, mu3) * gamma5_matrix(alpha_s, i2) * D3,
+        I * gV * psi_bar_gamma_psi(i1, alpha_s, mu3) * psi_bar_gamma5_psi(alpha_s, i2) * D3,
         "Model: Axial current",
         show_vertex=True,
         description=TERM_axial_current.label,
@@ -1071,8 +1167,8 @@ def _run_model_tests():
     V_sp = _model_vertex(interaction=TERM_psibar_psi_sq, external_legs=LEGS_fermion4)
     expected_sp = (
         -I * g_psi4 * D4
-        * (bis.g(i1, i2).to_expression() * bis.g(i3, i4).to_expression()
-           - bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
+        * (psi_bar_psi(i1, i2) * psi_bar_psi(i3, i4)
+           - psi_bar_psi(i1, i4) * psi_bar_psi(i3, i2))
     )
     _check(
         V_sp,
@@ -1085,8 +1181,8 @@ def _run_model_tests():
     V_jj = _model_vertex(interaction=TERM_current_current, external_legs=LEGS_fermion4)
     expected_jj = (
         2 * I * gJJ * D4
-        * (gamma_matrix(i1, i2, mu) * gamma_matrix(i3, i4, mu)
-           - gamma_matrix(i1, i4, mu) * gamma_matrix(i3, i2, mu))
+        * (psi_bar_gamma_psi(i1, i2, mu) * psi_bar_gamma_psi(i3, i4, mu)
+           - psi_bar_gamma_psi(i1, i4, mu) * psi_bar_gamma_psi(i3, i2, mu))
     )
     _check(
         simplify_gamma_chain(V_jj),
@@ -1098,7 +1194,7 @@ def _run_model_tests():
 
     # Gauge-ready
     V_qg = _model_vertex(interaction=TERM_quark_gluon, external_legs=LEGS_quark_gluon)
-    expected_qg = I * gS * gamma_matrix(i1, i2, mu3) * gauge_generator(a3, c1, c2) * D3
+    expected_qg = I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3
     _check(
         V_qg,
         expected_qg,
@@ -1132,6 +1228,72 @@ def _run_model_tests():
     print("  Model: Complex scalar contact (non-zero): PASS")
 
     print("\n  Model-layer tests passed.\n")
+
+
+# ===================================================================
+# Compiled gauge-model tests
+# ===================================================================
+
+def _run_compiled_gauge_tests():
+    D3 = (2 * pi) ** d * Delta(p1 + p2 + p3)
+    D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
+
+    compiled_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
+    model_qcd = with_minimal_gauge_interactions(MODEL_QCD_BASE)
+    assert model_qcd.interactions == compiled_qcd
+    assert len(compiled_qcd) == 1
+
+    term_qcd = compiled_qcd[0]
+    _check(
+        _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
+        I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        "Compiled model: quark-gluon",
+        show_vertex=True,
+        description=term_qcd.label,
+    )
+
+    compiled_scalar_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
+    model_scalar_qed = with_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
+    assert model_scalar_qed.interactions == compiled_scalar_qed
+    assert len(compiled_scalar_qed) == 3
+
+    term_sc_phi, term_sc_phidag, term_sc_contact = compiled_scalar_qed
+    scalar_current_index = term_sc_phi.derivatives[0].lorentz_index
+
+    V_sc = (
+        _model_vertex(
+            interaction=term_sc_phi,
+            external_legs=LEGS_compiled_scalar_current,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+        )
+        + _model_vertex(
+            interaction=term_sc_phidag,
+            external_legs=LEGS_compiled_scalar_current,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0},
+        )
+    )
+    expected_sc = eQED * qPhi * (pcomp(p2, scalar_current_index) - pcomp(p1, scalar_current_index)) * D3
+    _check(
+        V_sc,
+        expected_sc,
+        "Compiled model: scalar QED current",
+        show_vertex=True,
+        description="U(1) current pair compiled from field charge and gauge group",
+    )
+
+    _check(
+        _model_vertex(
+            interaction=term_sc_contact,
+            external_legs=LEGS_compiled_scalar_contact,
+            species_map={b1: phiCdag0, b2: phiC0, b3: A0, b4: A0},
+        ),
+        2 * I * (eQED ** 2) * (qPhi ** 2) * scalar_gauge_contact(mu3, mu4) * D4,
+        "Compiled model: scalar QED contact",
+        show_vertex=True,
+        description=term_sc_contact.label,
+    )
+
+    print("\n  Compiled gauge-model tests passed.\n")
 
 
 # ===================================================================
@@ -1280,6 +1442,11 @@ def _run_all_tests():
     _run_cross_checks()
 
     print("=" * 80)
+    print("  Compiled gauge-model tests")
+    print("=" * 80)
+    _run_compiled_gauge_tests()
+
+    print("=" * 80)
     print("  Role regression tests")
     print("=" * 80)
     _run_role_regression_tests()
@@ -1317,6 +1484,7 @@ if __name__ == "__main__":
             _run_gauge_ready_tests()
         elif args.suite == "model":
             _run_model_tests()
+            _run_compiled_gauge_tests()
         elif args.suite == "cross":
             _run_cross_checks()
         elif args.suite == "role":

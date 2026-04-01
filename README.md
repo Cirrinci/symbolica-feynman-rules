@@ -24,12 +24,17 @@ Main source files:
   - bridge from model declarations to `vertex_factor(...)`
 - `src/spenso_structures.py`
   - Spenso-backed wrappers for gamma matrices, metrics, and gauge generators
+- `src/operators.py`
+  - reusable operator builders for bilinears, currents, and scalar-gauge structures
+- `src/gauge_compiler.py`
+  - minimal model-driven gauge-interaction compiler
+  - currently covers non-abelian fermion currents and abelian complex-scalar gauge terms
 - `src/examples.py`
   - runnable examples and regression checks
   - covers both the direct API and the model layer
 - `src/spenso_gamma_checks.py`
   - focused gamma/tensor sandbox
-  - currently stale and not runnable as-is because it still imports `model_legacy`
+  - runnable against the live source tree
 
 Supporting notes live under `docs/notes/`.
 
@@ -44,17 +49,23 @@ What is working in the active code path:
 - stripped and unstripped external fermion factors
 - open spinor-index output through Spenso bispinor metrics
 - gamma-matrix and gauge-generator structures supplied through wrappers
+- reusable operator builders in `src/operators.py`
 - a model-layer API that compiles to the engine
 - direct/model cross-checks in the main regression script
 - gauge-ready examples such as quark-gluon and complex-scalar current structures
+- a minimal gauge compiler driven by `GaugeGroup`, `GaugeRepresentation`, and field metadata
+- compiled gauge-model checks for quark-gluon and abelian complex-scalar interactions
+- runnable gamma/tensor checks in `src/spenso_gamma_checks.py`
 
 What is not yet solid:
 
-- object-based matching is incomplete; parts of the engine still rely on string comparisons
-- the model layer does not yet distinguish all non-fermion roles precisely
-- `src/spenso_gamma_checks.py` is stale
+- there is still no real covariant-derivative compiler for expressions such as
+  `D_mu phi`, `|D_mu phi|^2`, or `psibar i gamma^mu D_mu psi`
+- the current gauge compiler is intentionally minimal and does not yet cover
+  non-abelian scalar terms or pure-gauge self-interactions
 - general multi-fermion tensor support is still narrower than a full FeynRules-like system
-- gauge-boson self-interactions and a broader gauge-model workflow are not implemented
+- most regression checks still live in `src/examples.py` instead of a dedicated test harness
+- normalization conventions for some gauge structures should be made explicit before broader expansion
 
 ### Conventions
 
@@ -117,7 +128,7 @@ Run the main example and regression script from the repository root:
 Notes:
 
 - `src/examples.py --suite all` is the main validation target
-- `src/spenso_gamma_checks.py` is currently stale and needs an import update before it can be used again
+- `./.venv/bin/python src/spenso_gamma_checks.py` is a second live validation path for gamma/tensor structures
 
 For notebooks, use the repository virtual environment:
 
@@ -137,8 +148,11 @@ Project notes are kept in:
 
 The highest-value next steps in the codebase are:
 
-1. remove the remaining string-based matching from the engine
-2. repair `src/spenso_gamma_checks.py`
-3. tighten the model-layer role and index semantics
-4. centralize tensor/operator builders instead of hand-building structures in examples
-5. move the runnable assertions toward a dedicated test harness
+1. add a real covariant-derivative compiler for `D_mu psi`, `D_mu phi`,
+   `|D_mu phi|^2`, and `psibar i gamma^mu D_mu psi`
+2. extend the gauge compiler beyond minimal currents/contact terms toward
+   non-abelian scalar interactions and later pure-gauge structures
+3. make gauge-normalization conventions explicit and stable, especially for
+   scalar-QED current/contact terms
+4. move the runnable assertions in `src/examples.py` toward a dedicated test harness
+5. keep examples as showcase/demo output while tests become the main regression entry point

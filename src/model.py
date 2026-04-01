@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from fractions import Fraction
-from typing import Literal, Mapping, Optional, Sequence
+from typing import Callable, Literal, Mapping, Optional, Sequence
 
 from symbolica import S
 
@@ -103,16 +103,40 @@ COLOR_ADJ_INDEX = IndexType("ColorAdj", COLOR_ADJ, COLOR_ADJ_KIND, prefix="a")
 # GaugeGroup
 # ---------------------------------------------------------------------------
 
+
+@dataclass(frozen=True)
+class GaugeRepresentation:
+    """One matter representation of a gauge group.
+
+    The representation is identified by the index type carried by the matter
+    field, plus a builder that inserts the corresponding generator tensor into
+    an interaction coupling.
+    """
+    index: IndexType
+    generator_builder: Callable[[object, object, object], object]
+    name: str = ""
+
+    def build_generator(self, adjoint_label, left_label, right_label):
+        return self.generator_builder(adjoint_label, left_label, right_label)
+
+
 @dataclass(frozen=True)
 class GaugeGroup:
     """Gauge symmetry group declaration (mirrors M$GaugeGroups)."""
     name: str
     abelian: bool
     coupling: object
-    gauge_boson: Optional[str] = None
-    structure_constant: Optional[str] = None
-    representations: tuple = ()
+    gauge_boson: Optional[object] = None
+    structure_constant: Optional[object] = None
+    representations: tuple[GaugeRepresentation, ...] = ()
     charge: Optional[str] = None
+
+    def matter_representation(self, field: "Field") -> Optional[GaugeRepresentation]:
+        """Return the gauge representation carried by a given matter field."""
+        for rep in self.representations:
+            if rep.index in field.indices:
+                return rep
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -360,3 +384,30 @@ class Model:
     fields: tuple[Field, ...] = ()
     parameters: tuple[Parameter, ...] = ()
     interactions: tuple[InteractionTerm, ...] = ()
+
+    def find_field(self, target) -> Optional[Field]:
+        """Resolve a field by object identity, declaration name, or symbol."""
+        if isinstance(target, Field):
+            return target
+        if target is None:
+            return None
+
+        target_text = str(target)
+        for field in self.fields:
+            if field.name == target_text:
+                return field
+            if str(field.symbol) == target_text:
+                return field
+            if field.conjugate_symbol is not None and str(field.conjugate_symbol) == target_text:
+                return field
+        return None
+
+    def gauge_boson_field(self, gauge_group: GaugeGroup) -> Field:
+        """Resolve the gauge boson field declared for a gauge group."""
+        field = self.find_field(gauge_group.gauge_boson)
+        if field is None:
+            raise ValueError(
+                f"Could not resolve gauge boson {gauge_group.gauge_boson!r} "
+                f"for gauge group {gauge_group.name!r}."
+            )
+        return field

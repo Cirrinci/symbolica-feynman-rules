@@ -112,25 +112,24 @@ the layering is still too weak.
 
 ## Suggested implementation order
 
-1. remove string-based logic from `src/model_symbolica.py`
-2. repair the stale sandbox and validation path
-3. strengthen `src/model.py`
-4. centralize operator builders
-5. add a compiler layer
-6. broaden gauge support
+1. build a real covariant-derivative compiler layer
+2. stabilize gauge-normalization conventions
+3. broaden gauge support beyond the current minimal compiled cases
+4. move regression logic out of `src/examples.py`
+5. then continue toward fuller FeynRules-style workflows
 
 ## Immediate concrete next task
 
 The next concrete step should be:
 
-Repair the object boundary between `src/model.py`, `src/spenso_structures.py`,
-and `src/model_symbolica.py`.
+Compile `D_mu` structures from model declarations instead of hand-assembling
+the resulting gauge interactions.
 
 In practice, that means:
 
-1. eliminate stringified matching in the engine
-2. give field roles/index signatures stronger semantics
-3. move hand-built current structures out of `src/examples.py`
+1. add compiler builders for `D_mu phi` and `D_mu psi`
+2. expand `|D_mu phi|^2` and `psibar i gamma^mu D_mu psi` automatically
+3. keep the resulting gauge-current/contact structures inside the compiler layer rather than in `src/examples.py`
 
 If those three pieces are done, the project will be in a much stronger position
 to grow like a real FeynRules-style system instead of a growing prototype.
