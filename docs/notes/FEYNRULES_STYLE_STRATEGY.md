@@ -112,24 +112,35 @@ the layering is still too weak.
 
 ## Suggested implementation order
 
-1. build a real covariant-derivative compiler layer
-2. stabilize gauge-normalization conventions
-3. broaden gauge support beyond the current minimal compiled cases
-4. move regression logic out of `src/examples.py`
-5. then continue toward fuller FeynRules-style workflows
+1. move the current regression burden out of `src/examples.py`
+2. stabilize one long-lived convention reference across code/docs/tests
+3. tighten the index-slot model so repeated same-kind slots do not collapse
+4. keep the minimal compiler as a structural helper and the physical compiler as the user-facing path
+5. add ordinary gauge-fixing and ghost sectors through that physical compiler
+6. only then continue toward BFM-specific splitting and fuller FeynRules-style workflows
 
 ## Immediate concrete next task
 
-The next concrete step should be:
+The next concrete step should not be another example block.
 
-Compile `D_mu` structures from model declarations instead of hand-assembling
-the resulting gauge interactions.
+It should be a short hardening cycle plus the first gauge-fixing design pass.
 
 In practice, that means:
 
-1. add compiler builders for `D_mu phi` and `D_mu psi`
-2. expand `|D_mu phi|^2` and `psibar i gamma^mu D_mu psi` automatically
-3. keep the resulting gauge-current/contact structures inside the compiler layer rather than in `src/examples.py`
+1. extract the covered covariant and pure-gauge checks into a first real test suite
+2. write one stable conventions note that becomes the reference for sign and normalization choices
+3. refactor index-slot handling so fields with repeated identical index kinds stay distinct
+4. sketch the declaration/compilation API for gauge-fixing terms
 
-If those three pieces are done, the project will be in a much stronger position
-to grow like a real FeynRules-style system instead of a growing prototype.
+## Priority after that
+
+Once that hardening step is done, the next physics order should be:
+
+1. ordinary gauge fixing
+2. ghosts
+3. background/quantum splitting
+4. broader fermion and symmetry-breaking support
+
+That order is safer than jumping straight into BFM because the ordinary gauge
+sector is already working and should remain the base that everything else builds
+on top of.

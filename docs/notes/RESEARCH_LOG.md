@@ -5,7 +5,7 @@ Symbolica/Spenso FeynRules-style prototype.
 
 ### Current status snapshot
 
-As of 2026-04-01:
+As of 2026-04-02:
 
 - the active source tree is `src/`
 - the main runnable validation script is `src/examples.py`
@@ -218,6 +218,39 @@ Practical next steps after today:
 2. add gauge-fixing declarations and compilation
 3. add ghosts after gauge fixing is stable
 4. move regression logic out of `src/examples.py`
+
+### 2026-04-02 (later): source review, reprioritization, and documentation sync
+
+What happened:
+
+- the active `src/` code was reviewed module by module rather than only through the demos
+- the live validation paths were rerun:
+  - `src/examples.py --suite all`
+  - `src/spenso_gamma_checks.py`
+- the review confirmed that the ordinary matter and pure-gauge sectors are working for the covered cases
+- the main nontrivial structural weakness identified in the current code is repeated identical index kinds:
+  the compiler currently stores labels by `index.kind`, which is not robust for fields carrying two slots of the same kind
+- the review also confirmed that multi-fermion support is still intentionally narrow and that the main regression burden still sits inside `src/examples.py`
+
+What this achieved:
+
+- clarified the difference between:
+  - what is already working physics
+  - what is the next physics sector to add
+  - what should be hardened first so the next physics sector does not land on weak foundations
+- sharpened the practical priority order:
+  1. freeze conventions and extract tests
+  2. fix repeated same-kind index-slot handling
+  3. add ordinary gauge fixing
+  4. add ghosts
+  5. only then add BFM-specific background/quantum splitting
+
+What should be done next week:
+
+1. move the current covariant and pure-gauge checks into a first dedicated test harness
+2. write one stable conventions reference shared across code/docs/tests
+3. tighten the model/compiler index-slot representation so repeated same-kind slots remain distinct
+4. draft the declaration/compilation API for gauge-fixing terms
 5. improve the canonical readability of pure-gauge output while keeping the raw form available
 
 ### Where we are in the overall progress

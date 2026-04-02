@@ -74,6 +74,8 @@ What is already credible in the code:
 What still needs work before the project feels structurally sound:
 
 - the model layer is still thinner than a real model compiler
+- fields carrying repeated identical index kinds are not represented robustly enough yet
+- general multi-fermion tensor support is still narrower than a full FeynRules-like system
 - background-field-gauge scaffolding, gauge fixing, and ghosts are still missing
 - gauge support is broader, but still not BFM-complete
 - examples still carry too much of the live regression burden
@@ -91,13 +93,31 @@ Recommended interpretation for future work:
 
 - keep the minimal gauge compiler as a structural helper layer
 - treat the convention-fixed physical compiler as the user-facing path
-- build BFM-specific background/quantum splitting and gauge fixing on top of the
-  now-working ordinary matter and pure-gauge sectors
+- build ordinary gauge fixing first on top of the now-working ordinary matter
+  and pure-gauge sectors
+- then build BFM-specific background/quantum splitting on top of that
+  ordinary gauge-fixed base
 
-Practical near-term plan:
+Priority now:
 
-1. add background/quantum gauge-field splitting
-2. add gauge-fixing declarations and compilation
-3. add ghosts after gauge fixing is stable
-4. move regression logic out of `src/examples.py`
-5. improve pure-gauge output canonicalization while keeping the raw form available
+1. harden the current ordinary gauge baseline
+   - keep conventions frozen in one place across code/docs/tests
+   - move the main assertions out of `src/examples.py` into a dedicated test harness
+   - fix the current weakness around repeated same-kind index slots
+2. add the next ordinary physics sector
+   - gauge-fixing declarations and compilation
+   - then ghosts on top of the gauge-fixed path
+3. only after that, add BFM-specific splitting
+   - background/quantum gauge-field splitting
+   - background-field-gauge-specific declarations
+4. continue with broader physics growth
+   - Weyl/Majorana support if needed
+   - spontaneous symmetry breaking and field mixing
+   - electroweak and later EFT-facing structures
+
+What can reasonably be done next week:
+
+1. extract the current covariant and pure-gauge checks into a first real test suite
+2. add one short conventions note that becomes the stable sign/normalization reference
+3. tighten index-label handling so fields with repeated identical index kinds do not collapse
+4. sketch the model/compiler API for gauge-fixing terms, even if the full sector is not implemented yet

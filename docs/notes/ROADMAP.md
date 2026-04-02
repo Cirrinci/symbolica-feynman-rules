@@ -46,6 +46,8 @@ That is a usable baseline, but not yet a durable library layout.
 Most important current technical limits:
 
 - conventions are now mostly frozen in code/tests, but still need one cleaner long-lived source of truth
+- fields with repeated identical index kinds are not handled robustly enough yet
+- general multi-fermion tensor support is still intentionally narrow
 - the ordinary matter and pure-gauge sectors work, but BFM-specific scaffolding is still absent
 - examples still carry too much of the live regression burden
 - background/quantum splitting, gauge fixing, and ghosts are still absent
@@ -56,8 +58,11 @@ The safest order from here is:
 
 1. keep gauge-normalization conventions frozen
 2. add a real test harness
-3. build BFM-specific scaffolding on top of the ordinary gauge sector
-4. then widen multi-fermion and export support
+3. fix the repeated same-kind index-slot weakness in the model/compiler boundary
+4. add ordinary gauge fixing on top of the current ordinary gauge sector
+5. add ghosts after gauge fixing is stable
+6. then build BFM-specific scaffolding
+7. then widen multi-fermion, symmetry-breaking, and export support
 
 This order matters because new physics features will compound the current
 structural weaknesses if they are added first.
@@ -119,7 +124,39 @@ Success criteria:
 - both the example script and the gamma sandbox remain useful
 - the core compiler behavior is covered by repeatable tests
 
-### Phase 4: Model-layer and usability growth
+### Phase 4: Index-signature hardening
+
+Goal:
+Make the current generic index story actually safe before broader model growth.
+
+Deliverables:
+
+- represent repeated same-kind field slots without collapsing them into one `kind -> label` entry
+- tighten compatibility checks so they can depend on richer index signatures when needed
+- keep the engine generic while moving slot-specific meaning into model metadata
+
+Success criteria:
+
+- a field carrying two slots of the same representation can be compiled without label loss
+- future adjoint/family/flavor extensions do not require ad hoc workarounds
+
+### Phase 5: Ordinary gauge fixing and ghosts
+
+Goal:
+Add the next physical gauge-theory sector on top of the now-working ordinary matter and pure-gauge foundation.
+
+Deliverables:
+
+- gauge-fixing declarations at the model level
+- compilation of gauge-fixing terms through the physical compiler path
+- ghost-field declarations and ghost interactions after gauge fixing is stable
+
+Success criteria:
+
+- gauge fixing is expressed by model/compiler logic rather than handwritten examples
+- ghosts are generated from the same conventions instead of being bolted on separately
+
+### Phase 6: Model-layer and usability growth
 
 Goal:
 Push the current thin model/compiler layer toward a more complete FeynRules-style workflow.
@@ -135,7 +172,7 @@ Success criteria:
 - the model layer becomes the main place where interactions are declared
 - the codebase starts to resemble a durable library rather than an example-driven prototype
 
-### Phase 5: BFM-Oriented Gauge Support
+### Phase 7: BFM-Oriented Gauge Support
 
 Goal:
 Extend the ordinary gauge foundation toward something structurally comparable to `UnbrokenSM_BFM`.
@@ -152,38 +189,85 @@ Success criteria:
 - the model layer can express the core algorithmic ingredients of a BFM-style gauge model
 - BFM-specific structures build on the ordinary gauge compiler instead of bypassing it
 
+### Phase 8: Broader physics growth
+
+Goal:
+Move beyond the current ordinary gauge baseline once the foundation is durable.
+
+Deliverables:
+
+- wider multi-fermion tensor support
+- Weyl/Majorana support if thesis scope requires it
+- spontaneous symmetry breaking, vevs, and field mixing
+- electroweak and later EFT-facing operators
+
+Success criteria:
+
+- the project can express more realistic model-building workflows without losing the current clarity of conventions
+
 ### Immediate next tasks
 
 These are the next concrete tasks recommended for the codebase:
 
 1. keep the active conventions documented once across code/docs/tests
 2. keep the minimal compiler as a structural helper layer and the physical compiler as the main physics-facing layer
-3. add background/quantum gauge-field splitting at the model and compiler level
-4. add gauge-fixing declarations and compilation on top of that split
-5. add the ghost sector after gauge fixing is in place
-6. split the current `src/examples.py` assertions into proper tests
-7. improve canonical output for pure-gauge structures so the main display is closer to textbook forms
-8. then continue toward broader BFM-style model support
+3. split the current `src/examples.py` assertions into proper tests
+4. fix repeated same-kind index-slot handling in the model/compiler boundary
+5. add ordinary gauge-fixing declarations and compilation
+6. add the ghost sector after gauge fixing is in place
+7. add background/quantum gauge-field splitting after the ordinary gauge-fixed path is stable
+8. improve canonical output for pure-gauge structures so the main display is closer to textbook forms
+9. then continue toward broader BFM-style and post-BFM model support
+
+### Priority now
+
+There are two distinct priorities and they should not be conflated:
+
+1. immediate codebase priority
+   - conventions
+   - tests
+   - repeated-index-slot hardening
+2. next physics priority
+   - ordinary gauge fixing
+   - ghosts
+3. later structural extension
+   - BFM splitting
+   - broader fermion / symmetry-breaking / EFT layers
 
 ### Immediate implementation order
 
 Use this order for the next work cycle:
 
-1. Background/quantum split
-   - extend `GaugeGroup` / model declarations so a gauge sector can distinguish ordinary, background, and quantum gauge fields
-   - make the pure-gauge compiler expand with `A -> B + Q` without breaking the ordinary non-BFM case
-2. Gauge fixing
-   - add explicit model declarations for the gauge-fixing sector
-   - compile those terms through the same physical compiler path, not as handwritten examples
-3. Ghosts
-   - add ghost-field declarations and ghost interactions after gauge fixing is stable
-   - keep ghost support in the model/compiler layer, not as a special example-only path
-4. Test extraction
+1. Test extraction
    - move matter-sector and pure-gauge convention checks out of `src/examples.py`
    - keep the example script as an inspection/demo tool
-5. Output cleanup
+2. Convention/source-of-truth cleanup
+   - keep one short reference for Fourier/sign/vertex conventions
+   - use it as the thing code and tests are checked against
+3. Index-slot hardening
+   - make repeated same-kind slots distinct in the model/compiler representation
+   - avoid hidden `kind -> one label only` assumptions where those assumptions are too weak
+4. Gauge fixing
+   - add explicit model declarations for the gauge-fixing sector
+   - compile those terms through the same physical compiler path, not as handwritten examples
+5. Ghosts
+   - add ghost-field declarations and ghost interactions after gauge fixing is stable
+   - keep ghost support in the model/compiler layer, not as a special example-only path
+6. Background/quantum split
+   - extend `GaugeGroup` / model declarations so a gauge sector can distinguish ordinary, background, and quantum gauge fields
+   - make the pure-gauge compiler expand with `A -> B + Q` without breaking the ordinary non-BFM case
+7. Output cleanup
    - add a more canonical simplification/display layer for pure-gauge vertices
    - keep the raw vertex available, but make the readable form the default thing to inspect
+
+### What can be done next week
+
+This is the realistic next-week slice:
+
+1. extract a first `pytest`-style regression layer from the current covariant and pure-gauge checks
+2. add one stable conventions note used as the reference for signs and normalizations
+3. fix the repeated same-kind index-slot issue in the model/compiler boundary
+4. draft the gauge-fixing declaration API and, if time remains, compile the simplest abelian gauge-fixing term
 
 ### Rule of thumb
 

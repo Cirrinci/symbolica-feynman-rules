@@ -96,23 +96,33 @@ Main missing or weak points:
 
 - the model layer is still thinner than the intended end state
 - conventions now work in code but still need one stable documentation/testing source of truth
+- fields carrying repeated identical index kinds are not handled robustly enough yet
+- multi-fermion tensor support is still narrow beyond the covered bilinear-style patterns
 - gauge support is broader but still not BFM-complete
 - background-field-gauge scaffolding, gauge fixing, and ghosts are not implemented
 - there is not yet a dedicated test harness beyond the main example script
 
 ### Next milestone
 
-The next milestone is to build BFM-oriented scaffolding on top of the now-working ordinary gauge foundation.
+The next milestone is to harden the ordinary gauge baseline and add the first gauge-fixing sector, not to jump directly to full BFM support.
 
 That means:
 
 1. keep the active conventions frozen in code/docs/tests
-2. add background/quantum gauge-field splitting at the model/compiler layer
-3. add gauge-fixing terms on top of that split
-4. add ghosts after gauge fixing is stable
-5. move the growing checks into a stronger regression layout
-6. improve the canonical readability of pure-gauge output
-7. then continue into broader BFM-style model support
+2. move the growing checks into a stronger regression layout
+3. fix the repeated same-kind index-slot weakness in the model/compiler boundary
+4. add ordinary gauge-fixing terms through the physical compiler path
+5. add ghosts after gauge fixing is stable
+6. then add background/quantum gauge-field splitting on top of that ordinary gauge-fixed base
+7. improve the canonical readability of pure-gauge output
+8. only then continue into broader BFM-style model support
+
+### What can be done next week
+
+1. extract the current covariant and pure-gauge checks into a first dedicated test suite
+2. write one short stable conventions reference
+3. tighten index-slot handling for repeated same-kind field indices
+4. draft the declaration/compiler interface for gauge-fixing terms
 
 ### Writing use
 
