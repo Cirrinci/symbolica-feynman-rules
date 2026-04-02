@@ -59,6 +59,7 @@ from spenso_structures import (
     structure_constant,
     simplify_gamma_chain,
 )
+from tensor_canonicalization import canonize_spenso_tensors
 from model import (
     ComplexScalarKineticTerm,
     DiracKineticTerm,
@@ -160,6 +161,7 @@ def _print_vertex_block(
     *,
     description=None,
     vertex=None,
+    canonical_vertex=None,
     compact_override=None,
     sum_notation=None,
     interpretation=None,
@@ -175,6 +177,11 @@ def _print_vertex_block(
     elif vertex is not None:
         print("Vertex:")
         print(vertex)
+
+    if canonical_vertex is not None:
+        print()
+        print("Canonicalized:")
+        print(canonical_vertex)
 
     if compact_override is not None:
         print()
@@ -228,6 +235,24 @@ def _model_demo_vertex(*, interaction, external_legs, species_map=None, simplify
     if simplify_gamma:
         expr = simplify_gamma_chain(expr)
     return expr
+
+
+def _canonized_gauge_vertex(
+    expr,
+    *,
+    lorentz_indices=(),
+    adjoint_indices=(),
+    color_fund_indices=(),
+    spinor_indices=(),
+):
+    canonical_expr, _, _ = canonize_spenso_tensors(
+        expr,
+        lorentz_indices=lorentz_indices,
+        adjoint_indices=adjoint_indices,
+        color_fund_indices=color_fund_indices,
+        spinor_indices=spinor_indices,
+    )
+    return canonical_expr
 
 
 # ===================================================================
@@ -1104,6 +1129,18 @@ def _run_covariant_demo():
             external_legs=LEGS_compiled_scalar_qcd_contact,
             species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
         ),
+        canonical_vertex=_canonized_gauge_vertex(
+            _model_demo_vertex(
+                interaction=compiled_scalar_qcd[2],
+                external_legs=LEGS_compiled_scalar_qcd_contact,
+                species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
+            ),
+            lorentz_indices=(mu3, mu4),
+            adjoint_indices=(a3, a4),
+            color_fund_indices=(c1, c2, S("c_mid_PhiQCD_SU3C")),
+        ),
+        compact_override=I * (gS ** 2) * scalar_gauge_contact(mu3, mu4) * _symmetrized_generator_contact(a3, a4, c1, c2, S("c_mid_PhiQCD_SU3C")),
+        interpretation="Raw vertex keeps both generator-order terms explicit; the compact override is the symmetrized color structure.",
     )
     _print_vertex_block(
         "covariant: -1/4 F_mu nu F^mu nu [abelian bilinear]",
@@ -1154,6 +1191,16 @@ def _run_covariant_demo():
             species_map={b1: G0, b2: G0, b3: G0},
             simplify_gamma=True,
         ).expand(),
+        canonical_vertex=_canonized_gauge_vertex(
+            _model_demo_vertex(
+                interaction=compiled_yang_mills[2],
+                external_legs=LEGS_three_gluon,
+                species_map={b1: G0, b2: G0, b3: G0},
+                simplify_gamma=True,
+            ).expand(),
+            lorentz_indices=(mu, nu, rho, S("rho_G_SU3C_cubic")),
+            adjoint_indices=(a3, a4, a5),
+        ),
         compact_override=gS * yang_mills_three_vertex_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3),
         interpretation="Compact override is the convention-fixed Yang-Mills 3-gauge structure.",
     )
@@ -1164,6 +1211,15 @@ def _run_covariant_demo():
             interaction=compiled_yang_mills[3],
             external_legs=LEGS_four_gluon,
             species_map={b1: G0, b2: G0, b3: G0, b4: G0},
+        ),
+        canonical_vertex=_canonized_gauge_vertex(
+            _model_demo_vertex(
+                interaction=compiled_yang_mills[3],
+                external_legs=LEGS_four_gluon,
+                species_map={b1: G0, b2: G0, b3: G0, b4: G0},
+            ),
+            lorentz_indices=(mu, nu, rho, sigma),
+            adjoint_indices=(a3, a4, a5, a6, S("color_adj_mid_G_SU3C")),
         ),
         compact_override=(
             -I
@@ -1985,6 +2041,52 @@ def _run_covariant_compiler_tests():
 
 
 # ===================================================================
+# Tensor canonicalization tests
+# ===================================================================
+
+def _run_tensor_canonicalization_tests():
+    antisym_expr = structure_constant(a3, a4, a5) + structure_constant(a4, a3, a5)
+    canon_antisym, _, _ = canonize_spenso_tensors(
+        antisym_expr,
+        adjoint_indices=(a3, a4, a5),
+    )
+    _check(
+        canon_antisym,
+        Expression.num(0),
+        "Tensor canon: structure constant antisymmetry",
+    )
+
+    compiled_scalar_qcd = compile_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
+    raw_contact = _model_demo_vertex(
+        interaction=compiled_scalar_qcd[2],
+        external_legs=LEGS_compiled_scalar_qcd_contact,
+        species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
+    )
+    alt_dummy = S("c_mid_alt")
+    renamed_contact = raw_contact.replace(S("c_mid_PhiQCD_SU3C"), alt_dummy)
+
+    canon_contact = _canonized_gauge_vertex(
+        raw_contact,
+        lorentz_indices=(mu3, mu4),
+        adjoint_indices=(a3, a4),
+        color_fund_indices=(c1, c2, S("c_mid_PhiQCD_SU3C")),
+    )
+    canon_contact_renamed = _canonized_gauge_vertex(
+        renamed_contact,
+        lorentz_indices=(mu3, mu4),
+        adjoint_indices=(a3, a4),
+        color_fund_indices=(c1, c2, alt_dummy),
+    )
+    _check(
+        canon_contact,
+        canon_contact_renamed,
+        "Tensor canon: scalar QCD contact dummy-label invariance",
+    )
+
+    print("\n  Tensor canonicalization tests passed.\n")
+
+
+# ===================================================================
 # Cross-check: model-layer vs direct API agreement
 # ===================================================================
 
@@ -2140,6 +2242,11 @@ def _run_all_tests():
     _run_covariant_compiler_tests()
 
     print("=" * 80)
+    print("  Tensor canonicalization tests")
+    print("=" * 80)
+    _run_tensor_canonicalization_tests()
+
+    print("=" * 80)
     print("  Role regression tests")
     print("=" * 80)
     _run_role_regression_tests()
@@ -2180,6 +2287,7 @@ if __name__ == "__main__":
             _run_compiled_gauge_tests()
         elif args.suite == "covariant":
             _run_covariant_compiler_tests()
+            _run_tensor_canonicalization_tests()
         elif args.suite == "cross":
             _run_cross_checks()
         elif args.suite == "role":
