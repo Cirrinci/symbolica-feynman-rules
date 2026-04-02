@@ -161,12 +161,16 @@ Project notes are kept in:
 
 The highest-value next steps in the codebase are:
 
-1. add a real covariant-derivative compiler for `D_mu psi`, `D_mu phi`,
-   `|D_mu phi|^2`, and `psibar i gamma^mu D_mu psi`
-   - status: reached for the covered matter-sector cases
-2. extend the same physical compiler path into pure gauge
-   - status: reached for abelian bilinears and Yang-Mills 2/3/4-point terms
-3. add background-field-gauge scaffolding, gauge fixing, and ghosts on top of
-   the ordinary gauge foundation
+1. add background/quantum gauge-field splitting on top of the ordinary gauge compiler
+2. add gauge-fixing declarations and compilation through the same physical path
+3. add ghost-sector support after gauge fixing is stable
 4. move the runnable assertions in `src/examples.py` toward a dedicated test harness
-5. keep examples as showcase/demo output while tests become the main regression entry point
+5. improve canonical/readable pure-gauge output while keeping the raw compiled form available
+
+Suggested implementation order:
+
+1. background/quantum gauge-field splitting
+2. gauge-fixing declarations and compilation
+3. ghost sector support
+4. test extraction from `src/examples.py`
+5. canonical/readable pure-gauge output on top of the raw compiled form

@@ -107,9 +107,12 @@ The next milestone is to build BFM-oriented scaffolding on top of the now-workin
 That means:
 
 1. keep the active conventions frozen in code/docs/tests
-2. move the growing checks into a stronger regression layout
-3. add background/quantum gauge-field splitting, gauge fixing, and ghosts
-4. then continue into broader BFM-style model support
+2. add background/quantum gauge-field splitting at the model/compiler layer
+3. add gauge-fixing terms on top of that split
+4. add ghosts after gauge fixing is stable
+5. move the growing checks into a stronger regression layout
+6. improve the canonical readability of pure-gauge output
+7. then continue into broader BFM-style model support
 
 ### Writing use
 

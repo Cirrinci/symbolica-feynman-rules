@@ -174,6 +174,52 @@ Practical next steps:
 4. keep improving output readability with clearer labels and compact interpretations
 5. decide which compiler is the public physics-facing API; the covariant compiler is the strongest candidate
 
+### 2026-04-02: pure-gauge foundation and Yang-Mills self-interactions
+
+What happened:
+
+- the model layer was extended with a gauge-kinetic declaration via `GaugeKineticTerm`
+- the convention-fixed physical compiler was extended from matter kinetic terms into the pure-gauge sector
+- the compiler now covers:
+  - abelian `-1/4 F_{mu nu} F^{mu nu}` bilinears
+  - non-abelian `-1/4 F^a_{mu nu} F^{a mu nu}` bilinears
+  - Yang-Mills 3-gauge self-interactions
+  - Yang-Mills 4-gauge self-interactions
+- reusable pure-gauge tensor/operator builders were added for both:
+  - the raw compiled vertex form
+  - the more readable compact convention-fixed form
+- the `covariant` demo suite was extended to print the new pure-gauge outputs
+- focused regression checks were added for:
+  - abelian gauge bilinear
+  - non-abelian gauge bilinear
+  - Yang-Mills cubic vertex
+  - Yang-Mills quartic vertex
+- top-level docs were updated so the live repository description matches the code again
+
+What this achieved:
+
+- the project now has a working ordinary gauge-theory foundation for both:
+  - matter-sector covariant derivatives
+  - pure-gauge field-strength expansion
+- the physical compiler can now derive the standard Yang-Mills 2/3/4-point structures from model metadata
+- the next architectural step is clearer: BFM-specific background/quantum splitting can now be built on top of an ordinary gauge sector that already works
+- the minimal structural compiler and the convention-fixed physical compiler are now separated more clearly in both code and docs
+
+Current interpretation after today:
+
+- representation/generic structure layer: working for the covered matter and pure-gauge cases
+- convention-fixed physical compiler: working for the covered ordinary gauge-theory cases
+- pure-gauge sector: working for abelian bilinears and Yang-Mills self-interactions
+- BFM-specific layer: not implemented
+
+Practical next steps after today:
+
+1. add background/quantum gauge-field splitting
+2. add gauge-fixing declarations and compilation
+3. add ghosts after gauge fixing is stable
+4. move regression logic out of `src/examples.py`
+5. improve the canonical readability of pure-gauge output while keeping the raw form available
+
 ### Where we are in the overall progress
 
 Best current summary:
@@ -185,7 +231,8 @@ Best current summary:
 - model-layer phase: working and usable
 - minimal gauge-compiler phase: working
 - covariant-derivative compiler phase: working for covered matter-sector cases
-- gauge-complete phase: not implemented
+- ordinary pure-gauge field-strength phase: working for the covered abelian and Yang-Mills cases
+- gauge-complete / BFM phase: not implemented
 - full FeynRules-style compilation layer: not implemented
 - export/usability layer: not implemented
 
@@ -197,24 +244,25 @@ The project now has a real core, not just experiments:
 - one usable model layer
 - one reusable operator vocabulary
 - one minimal gauge compiler
-- one working covariant-derivative compiler for the covered matter-sector cases
+- one working convention-fixed physical compiler for the covered matter and pure-gauge cases
 - two runnable validation scripts
 
 The main remaining risks are structural rather than conceptual:
 
 - conventions now exist in code, but still need to be frozen/documented centrally
-- gauge support is broader, but still not gauge-complete, especially in the pure-gauge sector
+- the ordinary gauge sector now works, but BFM-specific scaffolding is still absent
 - the model/compiler/test boundary is still too concentrated in `src/examples.py`
 
 ### Immediate next milestone
 
 The next milestone should be:
 
-"Convention freeze and pure-gauge extension"
+"BFM-oriented scaffolding on top of the ordinary gauge foundation"
 
 That means:
 
-1. freeze and document the active conventions once across code/docs/tests
-2. move the now-growing checks out of `src/examples.py` into a dedicated test layout
-3. extend the compiler into the next harder sector, starting with pure non-abelian gauge self-interactions
-4. decide whether the minimal compiler remains only an internal/helper layer while the covariant compiler becomes the main public layer
+1. add background/quantum gauge-field splitting
+2. add gauge-fixing declarations and compilation
+3. add ghosts after gauge fixing is stable
+4. move the now-growing checks out of `src/examples.py` into a dedicated test layout
+5. keep improving the canonical readability of the pure-gauge output

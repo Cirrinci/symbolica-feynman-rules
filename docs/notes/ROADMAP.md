@@ -157,10 +157,33 @@ Success criteria:
 These are the next concrete tasks recommended for the codebase:
 
 1. keep the active conventions documented once across code/docs/tests
-2. split the current `src/examples.py` assertions into proper tests
-3. keep the minimal compiler as a structural helper layer and the physical compiler as the main physics-facing layer
-4. add background/quantum gauge-field splitting, gauge fixing, and ghosts
-5. then continue toward broader BFM-style model support
+2. keep the minimal compiler as a structural helper layer and the physical compiler as the main physics-facing layer
+3. add background/quantum gauge-field splitting at the model and compiler level
+4. add gauge-fixing declarations and compilation on top of that split
+5. add the ghost sector after gauge fixing is in place
+6. split the current `src/examples.py` assertions into proper tests
+7. improve canonical output for pure-gauge structures so the main display is closer to textbook forms
+8. then continue toward broader BFM-style model support
+
+### Immediate implementation order
+
+Use this order for the next work cycle:
+
+1. Background/quantum split
+   - extend `GaugeGroup` / model declarations so a gauge sector can distinguish ordinary, background, and quantum gauge fields
+   - make the pure-gauge compiler expand with `A -> B + Q` without breaking the ordinary non-BFM case
+2. Gauge fixing
+   - add explicit model declarations for the gauge-fixing sector
+   - compile those terms through the same physical compiler path, not as handwritten examples
+3. Ghosts
+   - add ghost-field declarations and ghost interactions after gauge fixing is stable
+   - keep ghost support in the model/compiler layer, not as a special example-only path
+4. Test extraction
+   - move matter-sector and pure-gauge convention checks out of `src/examples.py`
+   - keep the example script as an inspection/demo tool
+5. Output cleanup
+   - add a more canonical simplification/display layer for pure-gauge vertices
+   - keep the raw vertex available, but make the readable form the default thing to inspect
 
 ### Rule of thumb
 

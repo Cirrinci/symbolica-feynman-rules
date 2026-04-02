@@ -93,3 +93,11 @@ Recommended interpretation for future work:
 - treat the convention-fixed physical compiler as the user-facing path
 - build BFM-specific background/quantum splitting and gauge fixing on top of the
   now-working ordinary matter and pure-gauge sectors
+
+Practical near-term plan:
+
+1. add background/quantum gauge-field splitting
+2. add gauge-fixing declarations and compilation
+3. add ghosts after gauge fixing is stable
+4. move regression logic out of `src/examples.py`
+5. improve pure-gauge output canonicalization while keeping the raw form available
