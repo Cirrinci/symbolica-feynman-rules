@@ -27,7 +27,7 @@ Main files:
 - `src/operators.py`
   - reusable operator builders
 - `src/gauge_compiler.py`
-  - minimal structural gauge compiler plus covariant-derivative compiler for covered matter-sector cases
+  - minimal structural gauge compiler plus convention-fixed physical compiler for covered matter and pure-gauge cases
 - `src/examples.py`
   - runnable examples and regression checks
 
@@ -55,6 +55,10 @@ The current prototype already supports:
 - a working covariant-derivative compiler for covered fermion and complex-scalar gauge interactions
 - fixed-convention covariant outputs for QCD/QED fermions and QED/QCD complex scalars
 - multi-gauge-group covariant expansion for covered matter fields
+- pure-gauge kinetic compilation for:
+  - abelian `-1/4 F_{mu nu} F^{mu nu}`
+  - non-abelian `-1/4 F^a_{mu nu} F^{a mu nu}`
+  - Yang-Mills 3-gauge and 4-gauge vertices
 - direct/model agreement checks in the main example suite
 - a runnable gamma/tensor validation sandbox
 
@@ -71,7 +75,8 @@ Reasonable summary:
 - model-driven input: working and usable
 - minimal gauge-model compilation: working
 - covariant-derivative compilation for covered matter-sector cases: working
-- gauge-complete support: not implemented
+- ordinary pure-gauge field-strength compilation: working in the covered abelian and Yang-Mills cases
+- BFM-complete support: not implemented
 - full FeynRules-like usability layer: not implemented
 
 ### Main result so far
@@ -91,20 +96,20 @@ Main missing or weak points:
 
 - the model layer is still thinner than the intended end state
 - conventions now work in code but still need one stable documentation/testing source of truth
-- gauge support is broader but still not gauge-complete
-- gauge-field self-interactions and broader gauge support are not implemented
+- gauge support is broader but still not BFM-complete
+- background-field-gauge scaffolding, gauge fixing, and ghosts are not implemented
 - there is not yet a dedicated test harness beyond the main example script
 
 ### Next milestone
 
-The next milestone is to freeze conventions and extend the compiler into the pure-gauge sector.
+The next milestone is to build BFM-oriented scaffolding on top of the now-working ordinary gauge foundation.
 
 That means:
 
-1. write the active conventions once in code/docs/tests
+1. keep the active conventions frozen in code/docs/tests
 2. move the growing checks into a stronger regression layout
-3. add pure non-abelian gauge self-interactions
-4. then continue into broader gauge support
+3. add background/quantum gauge-field splitting, gauge fixing, and ghosts
+4. then continue into broader BFM-style model support
 
 ### Writing use
 

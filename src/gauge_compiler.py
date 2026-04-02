@@ -1,14 +1,22 @@
 """
-Minimal gauge-interaction compiler for the Symbolica/Spenso prototype.
+Gauge-structure compilers for the Symbolica/Spenso prototype.
 
-This module turns model metadata into normalized ``InteractionTerm`` objects
-for the gauge interactions that are already supported by the engine:
+This module exposes two layers on purpose:
 
-- fermion-gauge currents for abelian and non-abelian groups
-- complex-scalar current/contact terms for abelian and non-abelian groups
+- the minimal compiler: structural gauge interactions from metadata
+- the covariant/physical compiler: convention-fixed kinetic-term expansion
 
-The goal is not a full FeynRules compiler yet. It is the smallest model-driven
-bridge that replaces hand-written gauge interaction terms in examples.
+Frozen conventions for the physical path:
+
+- Fourier transform derivatives act as ``-i p_mu``
+- ``vertex_factor(...)`` contributes the universal overall ``+i``
+- matter covariant derivatives use ``D_mu = partial_mu + i g A_mu``
+- non-abelian field strengths use
+  ``F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu``
+
+With these choices, matter currents carry the signs already locked down in the
+covariant tests, the Yang-Mills 3-gauge vertex is real, and the 4-gauge vertex
+keeps an explicit overall ``i``.
 """
 
 from __future__ import annotations
@@ -23,12 +31,17 @@ from model import (
     DerivativeAction,
     DiracKineticTerm,
     Field,
+    GaugeKineticTerm,
     GaugeGroup,
     InteractionTerm,
     Model,
 )
 from operators import psi_bar_gamma_psi, scalar_gauge_contact
-from spenso_structures import LORENTZ_KIND, SPINOR_KIND
+from spenso_structures import LORENTZ_KIND, SPINOR_KIND, lorentz_metric
+
+
+_HALF = Expression.num(1) / Expression.num(2)
+_QUARTER = Expression.num(1) / Expression.num(4)
 
 
 def _symbol(name: str):
@@ -64,6 +77,39 @@ def _first_non_lorentz_index_kind(field: Field) -> Optional[str]:
 
 def _adjoint_index_kind(gauge_field: Field) -> Optional[str]:
     return _first_non_lorentz_index_kind(gauge_field)
+
+
+def _default_gauge_lorentz_labels(field: Field, gauge_group: GaugeGroup, count: int):
+    stem = f"{field.name}_{gauge_group.name}"
+    return tuple(_symbol(f"mu_{stem}_{slot}") for slot in range(1, count + 1))
+
+
+def _default_adjoint_labels(gauge_field: Field, gauge_group: GaugeGroup, count: int):
+    adj_kind = _adjoint_index_kind(gauge_field)
+    if adj_kind is None:
+        raise ValueError(
+            f"Gauge field {gauge_field.name!r} does not expose a non-Lorentz adjoint index."
+        )
+    stem = f"{gauge_field.name}_{gauge_group.name}"
+    return tuple(_symbol(f"{adj_kind}_{stem}_{slot}") for slot in range(1, count + 1))
+
+
+def _default_internal_adjoint_label(gauge_field: Field, gauge_group: GaugeGroup):
+    adj_kind = _adjoint_index_kind(gauge_field)
+    if adj_kind is None:
+        raise ValueError(
+            f"Gauge field {gauge_field.name!r} does not expose a non-Lorentz adjoint index."
+        )
+    return _symbol(f"{adj_kind}_mid_{gauge_field.name}_{gauge_group.name}")
+
+
+def _build_structure_constant(gauge_group: GaugeGroup, left_label, middle_label, right_label):
+    if gauge_group.structure_constant is None or not callable(gauge_group.structure_constant):
+        raise ValueError(
+            f"Gauge group {gauge_group.name!r} needs a callable structure_constant "
+            "builder for pure-gauge compilation."
+        )
+    return gauge_group.structure_constant(left_label, middle_label, right_label)
 
 
 def _field_charge(field: Field, gauge_group: GaugeGroup):
@@ -302,6 +348,175 @@ def compile_complex_scalar_gauge_terms(
     return (current_phi, current_phidag, contact)
 
 
+def compile_gauge_kinetic_bilinear_terms(
+    *,
+    gauge_group: GaugeGroup,
+    gauge_field: Field,
+    coefficient=1,
+    label_prefix: str = "",
+):
+    """Compile the two-point part of ``-1/4 F_{mu nu} F^{mu nu}``."""
+    if gauge_field.kind != "vector":
+        raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
+
+    alpha, beta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 2)
+    rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}")
+    rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}")
+    rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}")
+    identity_factor, left_labels, right_labels = _spectator_identity_factor(
+        gauge_field,
+        exclude_index_kinds={LORENTZ_KIND},
+    )
+
+    left_field_labels = {LORENTZ_KIND: alpha, **left_labels}
+    right_field_labels = {LORENTZ_KIND: beta, **right_labels}
+    shared_fields = (
+        gauge_field.occurrence(labels=left_field_labels),
+        gauge_field.occurrence(labels=right_field_labels),
+    )
+    prefix = label_prefix + " " if label_prefix else ""
+
+    return (
+        InteractionTerm(
+            coupling=-coefficient * _HALF * identity_factor * lorentz_metric(alpha, beta),
+            fields=shared_fields,
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=rho),
+                DerivativeAction(target=1, lorentz_index=rho),
+            ),
+            label=prefix + f"{gauge_group.name}: gauge kinetic bilinear (metric)",
+        ),
+        InteractionTerm(
+            coupling=(
+                coefficient
+                * _HALF
+                * identity_factor
+                * lorentz_metric(rho_left, beta)
+                * lorentz_metric(rho_right, alpha)
+            ),
+            fields=shared_fields,
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=rho_left),
+                DerivativeAction(target=1, lorentz_index=rho_right),
+            ),
+            label=prefix + f"{gauge_group.name}: gauge kinetic bilinear (cross)",
+        ),
+    )
+
+
+def compile_yang_mills_cubic_term(
+    *,
+    gauge_group: GaugeGroup,
+    gauge_field: Field,
+    coefficient=1,
+    label_prefix: str = "",
+):
+    """Compile the cubic Yang-Mills term from ``-1/4 F^a_{mu nu} F^{a mu nu}``."""
+    if gauge_group.abelian:
+        raise ValueError("Abelian gauge groups do not have Yang-Mills cubic self-interactions.")
+    if gauge_field.kind != "vector":
+        raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
+
+    alpha, beta, gamma = _default_gauge_lorentz_labels(gauge_field, gauge_group, 3)
+    adj_left, adj_middle, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 3)
+    rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}_cubic")
+    coupling = (
+        coefficient
+        * gauge_group.coupling
+        * _build_structure_constant(gauge_group, adj_left, adj_middle, adj_right)
+        * lorentz_metric(alpha, gamma)
+        * lorentz_metric(rho, beta)
+    )
+
+    return InteractionTerm(
+        coupling=coupling,
+        fields=(
+            gauge_field.occurrence(labels={LORENTZ_KIND: alpha, _adjoint_index_kind(gauge_field): adj_left}),
+            gauge_field.occurrence(labels={LORENTZ_KIND: beta, _adjoint_index_kind(gauge_field): adj_middle}),
+            gauge_field.occurrence(labels={LORENTZ_KIND: gamma, _adjoint_index_kind(gauge_field): adj_right}),
+        ),
+        derivatives=(DerivativeAction(target=0, lorentz_index=rho),),
+        label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills cubic",
+    )
+
+
+def compile_yang_mills_quartic_term(
+    *,
+    gauge_group: GaugeGroup,
+    gauge_field: Field,
+    coefficient=1,
+    label_prefix: str = "",
+):
+    """Compile the quartic Yang-Mills term from ``-1/4 F^a_{mu nu} F^{a mu nu}``."""
+    if gauge_group.abelian:
+        raise ValueError("Abelian gauge groups do not have Yang-Mills quartic self-interactions.")
+    if gauge_field.kind != "vector":
+        raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
+
+    alpha, beta, gamma, delta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 4)
+    adj_left, adj_mid_left, adj_mid_right, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 4)
+    internal = _default_internal_adjoint_label(gauge_field, gauge_group)
+    coupling = (
+        -coefficient
+        * _QUARTER
+        * (gauge_group.coupling ** 2)
+        * _build_structure_constant(gauge_group, adj_left, adj_mid_left, internal)
+        * _build_structure_constant(gauge_group, adj_mid_right, adj_right, internal)
+        * lorentz_metric(alpha, gamma)
+        * lorentz_metric(beta, delta)
+    )
+
+    return InteractionTerm(
+        coupling=coupling,
+        fields=(
+            gauge_field.occurrence(labels={LORENTZ_KIND: alpha, _adjoint_index_kind(gauge_field): adj_left}),
+            gauge_field.occurrence(labels={LORENTZ_KIND: beta, _adjoint_index_kind(gauge_field): adj_mid_left}),
+            gauge_field.occurrence(labels={LORENTZ_KIND: gamma, _adjoint_index_kind(gauge_field): adj_mid_right}),
+            gauge_field.occurrence(labels={LORENTZ_KIND: delta, _adjoint_index_kind(gauge_field): adj_right}),
+        ),
+        label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills quartic",
+    )
+
+
+def compile_gauge_kinetic_term(model: Model, term: GaugeKineticTerm) -> tuple[InteractionTerm, ...]:
+    """Compile ``-1/4 F_{mu nu} F^{mu nu}`` for one declared gauge group."""
+    gauge_group = model.find_gauge_group(term.gauge_group)
+    if gauge_group is None:
+        raise ValueError(f"Could not resolve gauge group {term.gauge_group!r}.")
+
+    gauge_field = model.gauge_boson_field(gauge_group)
+    label_prefix = term.label or f"-1/4 {gauge_group.name} field strength squared"
+
+    interactions = list(
+        compile_gauge_kinetic_bilinear_terms(
+            gauge_group=gauge_group,
+            gauge_field=gauge_field,
+            coefficient=term.coefficient,
+            label_prefix=label_prefix,
+        )
+    )
+    if gauge_group.abelian:
+        return tuple(interactions)
+
+    interactions.append(
+        compile_yang_mills_cubic_term(
+            gauge_group=gauge_group,
+            gauge_field=gauge_field,
+            coefficient=term.coefficient,
+            label_prefix=label_prefix,
+        )
+    )
+    interactions.append(
+        compile_yang_mills_quartic_term(
+            gauge_group=gauge_group,
+            gauge_field=gauge_field,
+            coefficient=term.coefficient,
+            label_prefix=label_prefix,
+        )
+    )
+    return tuple(interactions)
+
+
 def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, ...]:
     """Compile the currently supported gauge interactions from a model."""
     interactions: list[InteractionTerm] = []
@@ -423,7 +638,7 @@ def compile_complex_scalar_kinetic_term(
 
 
 def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
-    """Compile all declared covariant-kinetic terms in a model."""
+    """Compile all declared physical kinetic terms in a model."""
     interactions: list[InteractionTerm] = []
 
     for term in model.covariant_terms:
@@ -435,10 +650,13 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
             continue
         raise TypeError(f"Unsupported covariant term type: {type(term)!r}")
 
+    for term in model.gauge_kinetic_terms:
+        interactions.extend(compile_gauge_kinetic_term(model, term))
+
     return tuple(interactions)
 
 
 def with_compiled_covariant_terms(model: Model) -> Model:
-    """Return a copy of a model with compiled covariant terms appended."""
+    """Return a copy of a model with compiled physical kinetic terms appended."""
     compiled = compile_covariant_terms(model)
     return replace(model, interactions=model.interactions + compiled)

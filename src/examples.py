@@ -34,12 +34,17 @@ from model_symbolica import (
 )
 from operators import (
     current_current,
+    gauge_kinetic_bilinear,
+    gauge_kinetic_bilinear_raw,
     psi_bar_gamma5_psi,
     psi_bar_gamma_psi,
     psi_bar_psi,
     quark_gluon_current,
     scalar_gauge_contact,
     scalar_gauge_current_term,
+    yang_mills_four_vertex_raw,
+    yang_mills_three_vertex_metric_raw,
+    yang_mills_three_vertex_raw,
 )
 from spenso_structures import (
     SPINOR_KIND,
@@ -51,6 +56,7 @@ from spenso_structures import (
     gamma5_matrix,
     gauge_generator,
     lorentz_metric,
+    structure_constant,
     simplify_gamma_chain,
 )
 from model import (
@@ -58,6 +64,7 @@ from model import (
     DiracKineticTerm,
     Field,
     GaugeGroup,
+    GaugeKineticTerm,
     GaugeRepresentation,
     InteractionTerm,
     DerivativeAction,
@@ -92,6 +99,7 @@ A0 = S("A0")
 G0 = S("G0")
 
 mu, nu = S("mu", "nu")
+rho, sigma = S("rho", "sigma")
 mu3, mu4 = S("mu3", "mu4")
 
 lam4 = S("lam4")
@@ -126,7 +134,7 @@ idx_i, idx_j, idx_k = S("i", "j", "k")
 i_bar_q, i_psi_q = S("i_bar_q", "i_psi_q")
 c_bar_q, c_psi_q, a_g = S("c_bar_q", "c_psi_q", "a_g")
 c1, c2, c_mid = S("c1", "c2", "c_mid")
-a3, a4 = S("a3", "a4")
+a3, a4, a5, a6 = S("a3", "a4", "a5", "a6")
 
 
 # ---------------------------------------------------------------------------
@@ -504,6 +512,7 @@ QCD_GROUP = GaugeGroup(
     abelian=False,
     coupling=gS,
     gauge_boson=G0,
+    structure_constant=structure_constant,
     representations=(COLOR_FUND_REP,),
 )
 QED_GROUP = GaugeGroup(
@@ -562,6 +571,18 @@ MODEL_MIXED_FERMION_COVARIANT = Model(
     gauge_groups=(QCD_GROUP, QED_GROUP),
     fields=(PsiMixField, GluonField, GaugeField),
     covariant_terms=(DiracKineticTerm(field=PsiMixField),),
+)
+MODEL_QED_GAUGE_COVARIANT = Model(
+    name="QEDGauge-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QED_GROUP),),
+)
+MODEL_QCD_GAUGE_COVARIANT = Model(
+    name="QCDGauge-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QCD_GROUP),),
 )
 
 
@@ -773,6 +794,25 @@ LEGS_compiled_scalar_qcd_contact = (
     GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
     GluonField.leg(p4, labels={LORENTZ_KIND: mu4, COLOR_ADJ_KIND: a4}, species=b4),
 )
+LEGS_photon_kinetic = (
+    GaugeField.leg(p1, species=b1, labels={LORENTZ_KIND: mu3}),
+    GaugeField.leg(p2, species=b2, labels={LORENTZ_KIND: mu4}),
+)
+LEGS_gluon_kinetic = (
+    GluonField.leg(p1, species=b1, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}),
+    GluonField.leg(p2, species=b2, labels={LORENTZ_KIND: mu4, COLOR_ADJ_KIND: a4}),
+)
+LEGS_three_gluon = (
+    GluonField.leg(p1, species=b1, labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a3}),
+    GluonField.leg(p2, species=b2, labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: a4}),
+    GluonField.leg(p3, species=b3, labels={LORENTZ_KIND: rho, COLOR_ADJ_KIND: a5}),
+)
+LEGS_four_gluon = (
+    GluonField.leg(p1, species=b1, labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a3}),
+    GluonField.leg(p2, species=b2, labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: a4}),
+    GluonField.leg(p3, species=b3, labels={LORENTZ_KIND: rho, COLOR_ADJ_KIND: a5}),
+    GluonField.leg(p4, species=b4, labels={LORENTZ_KIND: sigma, COLOR_ADJ_KIND: a6}),
+)
 
 
 # ===================================================================
@@ -974,6 +1014,11 @@ def _run_covariant_demo():
     compiled_mixed = compile_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
     compiled_scalar_qcd = compile_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
+    compiled_photon = compile_covariant_terms(MODEL_QED_GAUGE_COVARIANT)
+    compiled_yang_mills = compile_covariant_terms(MODEL_QCD_GAUGE_COVARIANT)
+    photon_rho = compiled_photon[0].derivatives[0].lorentz_index
+    ym_rho = compiled_yang_mills[0].derivatives[0].lorentz_index
+    ym_internal = S("color_adj_mid_G_SU3C")
 
     print("# " + "=" * 79)
     print("Demo: covariant compiler\n")
@@ -987,7 +1032,7 @@ def _run_covariant_demo():
         ),
     )
     _print_vertex_block(
-        "covariant: psibar i gamma^mu D_mu psi_QED",
+        "covariant: PsiQEDbar i gamma^mu D_mu PsiQED",
         description=MODEL_QED_FERMION_COVARIANT.covariant_terms[0].label or "Abelian Dirac kinetic term expanded through the gauge compiler",
         vertex=_model_demo_vertex(
             interaction=compiled_qed[0],
@@ -1059,6 +1104,75 @@ def _run_covariant_demo():
             external_legs=LEGS_compiled_scalar_qcd_contact,
             species_map={b1: phiQCDdag0, b2: phiQCD0, b3: G0, b4: G0},
         ),
+    )
+    _print_vertex_block(
+        "covariant: -1/4 F_mu nu F^mu nu [abelian bilinear]",
+        description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 U1QED field strength squared",
+        vertex=simplify_gamma_chain((
+            _model_demo_vertex(
+                interaction=compiled_photon[0],
+                external_legs=LEGS_photon_kinetic,
+                species_map={b1: A0, b2: A0},
+            )
+            + _model_demo_vertex(
+                interaction=compiled_photon[1],
+                external_legs=LEGS_photon_kinetic,
+                species_map={b1: A0, b2: A0},
+            )
+        )).expand(),
+        compact_override=I * gauge_kinetic_bilinear(mu3, mu4, p1, p2, photon_rho),
+        interpretation="Compact override shows the convention-fixed bilinear after metric contraction.",
+    )
+    _print_vertex_block(
+        "covariant: -1/4 G^a_mu nu G^{a mu nu} [bilinear]",
+        description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 SU3C field strength squared",
+        vertex=simplify_gamma_chain((
+            _model_demo_vertex(
+                interaction=compiled_yang_mills[0],
+                external_legs=LEGS_gluon_kinetic,
+                species_map={b1: G0, b2: G0},
+            )
+            + _model_demo_vertex(
+                interaction=compiled_yang_mills[1],
+                external_legs=LEGS_gluon_kinetic,
+                species_map={b1: G0, b2: G0},
+            )
+        )).expand(),
+        compact_override=(
+            I
+            * gauge_kinetic_bilinear(mu3, mu4, p1, p2, ym_rho)
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+        ),
+        interpretation="Compact override keeps the adjoint delta explicit and contracts the derivative metrics.",
+    )
+    _print_vertex_block(
+        "covariant: Yang-Mills 3-gauge vertex",
+        description=compiled_yang_mills[2].label,
+        vertex=_model_demo_vertex(
+            interaction=compiled_yang_mills[2],
+            external_legs=LEGS_three_gluon,
+            species_map={b1: G0, b2: G0, b3: G0},
+            simplify_gamma=True,
+        ).expand(),
+        compact_override=gS * yang_mills_three_vertex_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3),
+        interpretation="Compact override is the convention-fixed Yang-Mills 3-gauge structure.",
+    )
+    _print_vertex_block(
+        "covariant: Yang-Mills 4-gauge vertex",
+        description=compiled_yang_mills[3].label,
+        vertex=_model_demo_vertex(
+            interaction=compiled_yang_mills[3],
+            external_legs=LEGS_four_gluon,
+            species_map={b1: G0, b2: G0, b3: G0, b4: G0},
+        ),
+        compact_override=(
+            -I
+            * Expression.num(1)
+            / Expression.num(2)
+            * (gS ** 2)
+            * yang_mills_four_vertex_raw(a3, a4, a5, a6, mu, nu, rho, sigma, ym_internal)
+        ),
+        interpretation="Compact override groups the quartic color structures by Lorentz-metric channel.",
     )
 
 
@@ -1615,6 +1729,7 @@ def _run_compiled_gauge_tests():
 # ===================================================================
 
 def _run_covariant_compiler_tests():
+    D2 = (2 * pi) ** d * Delta(p1 + p2)
     D3 = (2 * pi) ** d * Delta(p1 + p2 + p3)
     D4 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
 
@@ -1767,7 +1882,106 @@ def _run_covariant_compiler_tests():
         description=term_sqcd_contact.label,
     )
 
-    print("\n  Covariant-derivative compiler tests passed.\n")
+    compiled_photon = compile_covariant_terms(MODEL_QED_GAUGE_COVARIANT)
+    model_photon = with_compiled_covariant_terms(MODEL_QED_GAUGE_COVARIANT)
+    assert model_photon.interactions == compiled_photon
+    assert len(compiled_photon) == 2
+
+    photon_metric, photon_cross = compiled_photon
+    photon_rho = photon_metric.derivatives[0].lorentz_index
+    photon_left = photon_cross.derivatives[0].lorentz_index
+    photon_right = photon_cross.derivatives[1].lorentz_index
+    V_photon = (
+        _model_vertex(
+            interaction=photon_metric,
+            external_legs=LEGS_photon_kinetic,
+            species_map={b1: A0, b2: A0},
+        )
+        + _model_vertex(
+            interaction=photon_cross,
+            external_legs=LEGS_photon_kinetic,
+            species_map={b1: A0, b2: A0},
+        )
+    )
+    V_photon = simplify_gamma_chain(V_photon)
+    _check(
+        V_photon,
+        I * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, photon_rho, photon_left, photon_right) * D2,
+        "Covariant compiler: abelian gauge bilinear",
+        show_vertex=True,
+        description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 U1QED field strength squared",
+    )
+
+    compiled_yang_mills = compile_covariant_terms(MODEL_QCD_GAUGE_COVARIANT)
+    model_yang_mills = with_compiled_covariant_terms(MODEL_QCD_GAUGE_COVARIANT)
+    assert model_yang_mills.interactions == compiled_yang_mills
+    assert len(compiled_yang_mills) == 4
+
+    ym_metric, ym_cross, ym_cubic, ym_quartic = compiled_yang_mills
+    ym_rho = ym_metric.derivatives[0].lorentz_index
+    ym_left = ym_cross.derivatives[0].lorentz_index
+    ym_right = ym_cross.derivatives[1].lorentz_index
+    ym_cubic_rho = ym_cubic.derivatives[0].lorentz_index
+    ym_internal = S("color_adj_mid_G_SU3C")
+
+    V_ym_bilinear = (
+        _model_vertex(
+            interaction=ym_metric,
+            external_legs=LEGS_gluon_kinetic,
+            species_map={b1: G0, b2: G0},
+        )
+        + _model_vertex(
+            interaction=ym_cross,
+            external_legs=LEGS_gluon_kinetic,
+            species_map={b1: G0, b2: G0},
+        )
+    )
+    V_ym_bilinear = simplify_gamma_chain(V_ym_bilinear)
+    _check(
+        V_ym_bilinear,
+        I
+        * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, ym_rho, ym_left, ym_right)
+        * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+        * D2,
+        "Covariant compiler: non-abelian gauge bilinear",
+        show_vertex=True,
+        description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 SU3C field strength squared",
+    )
+
+    _check(
+        simplify_gamma_chain(_model_vertex(
+            interaction=ym_cubic,
+            external_legs=LEGS_three_gluon,
+            species_map={b1: G0, b2: G0, b3: G0},
+        )),
+        simplify_gamma_chain(
+            gS
+            * yang_mills_three_vertex_metric_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3, ym_cubic_rho)
+            * D3
+        ),
+        "Covariant compiler: Yang-Mills cubic",
+        show_vertex=True,
+        description=ym_cubic.label,
+    )
+
+    _check(
+        _model_vertex(
+            interaction=ym_quartic,
+            external_legs=LEGS_four_gluon,
+            species_map={b1: G0, b2: G0, b3: G0, b4: G0},
+        ),
+        -I
+        * (gS ** 2)
+        * Expression.num(1)
+        / Expression.num(2)
+        * yang_mills_four_vertex_raw(a3, a4, a5, a6, mu, nu, rho, sigma, ym_internal)
+        * D4,
+        "Covariant compiler: Yang-Mills quartic",
+        show_vertex=True,
+        description=ym_quartic.label,
+    )
+
+    print("\n  Covariant / pure-gauge compiler tests passed.\n")
 
 
 # ===================================================================
@@ -1921,7 +2135,7 @@ def _run_all_tests():
     _run_compiled_gauge_tests()
 
     print("=" * 80)
-    print("  Covariant-derivative compiler tests")
+    print("  Covariant / pure-gauge compiler tests")
     print("=" * 80)
     _run_covariant_compiler_tests()
 

@@ -37,7 +37,7 @@ The current state is better described as:
 - one usable model-definition layer
 - one reusable operator vocabulary
 - one minimal gauge compiler
-- one working covariant-derivative compiler for covered matter-sector cases
+- one convention-fixed physical compiler for covered matter-sector and pure-gauge cases
 - one main regression script
 - one focused gamma/tensor validation script
 
@@ -45,18 +45,18 @@ That is a usable baseline, but not yet a durable library layout.
 
 Most important current technical limits:
 
-- conventions are now implemented in code but not yet frozen/documented in one authoritative place
-- the gauge compiler now covers matter-sector covariant terms, but not the pure-gauge sector
+- conventions are now mostly frozen in code/tests, but still need one cleaner long-lived source of truth
+- the ordinary matter and pure-gauge sectors work, but BFM-specific scaffolding is still absent
 - examples still carry too much of the live regression burden
-- pure-gauge and broader gauge-complete structures are still absent
+- background/quantum splitting, gauge fixing, and ghosts are still absent
 
 ### Recommended build order
 
 The safest order from here is:
 
-1. stabilize gauge-normalization conventions
-2. broaden gauge support into the pure-gauge sector
-3. add a real test harness
+1. keep gauge-normalization conventions frozen
+2. add a real test harness
+3. build BFM-specific scaffolding on top of the ordinary gauge sector
 4. then widen multi-fermion and export support
 
 This order matters because new physics features will compound the current
@@ -99,6 +99,10 @@ Success criteria:
 - QED-like and Yang-Mills-like interactions arise from model/compiler logic
 - gauge structures are no longer just a small handwritten subset
 
+Status:
+
+- reached for the ordinary abelian and Yang-Mills pure-gauge sector
+
 ### Phase 3: Validation and test structure
 
 Goal:
@@ -131,15 +135,32 @@ Success criteria:
 - the model layer becomes the main place where interactions are declared
 - the codebase starts to resemble a durable library rather than an example-driven prototype
 
+### Phase 5: BFM-Oriented Gauge Support
+
+Goal:
+Extend the ordinary gauge foundation toward something structurally comparable to `UnbrokenSM_BFM`.
+
+Deliverables:
+
+- background/quantum gauge-field splitting
+- background-field-gauge declarations
+- ghost and gauge-fixing terms
+- clearer public API boundaries around the physical compiler
+
+Success criteria:
+
+- the model layer can express the core algorithmic ingredients of a BFM-style gauge model
+- BFM-specific structures build on the ordinary gauge compiler instead of bypassing it
+
 ### Immediate next tasks
 
 These are the next concrete tasks recommended for the codebase:
 
-1. freeze and document the active conventions once across code/docs/tests
+1. keep the active conventions documented once across code/docs/tests
 2. split the current `src/examples.py` assertions into proper tests
-3. extend the compiler into pure non-abelian gauge self-interactions
-4. keep the minimal compiler as a structural helper layer and make the covariant compiler the main physics-facing layer
-5. then continue toward broader gauge-complete structures
+3. keep the minimal compiler as a structural helper layer and the physical compiler as the main physics-facing layer
+4. add background/quantum gauge-field splitting, gauge fixing, and ghosts
+5. then continue toward broader BFM-style model support
 
 ### Rule of thumb
 

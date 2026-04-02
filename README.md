@@ -27,8 +27,9 @@ Main source files:
 - `src/operators.py`
   - reusable operator builders for bilinears, currents, and scalar-gauge structures
 - `src/gauge_compiler.py`
-  - minimal model-driven gauge-interaction compiler
-  - currently covers non-abelian fermion currents and abelian complex-scalar gauge terms
+  - minimal structural gauge compiler plus convention-fixed physical compiler
+  - covers minimal matter currents/contact terms, matter covariant derivatives,
+    and pure-gauge kinetic / Yang-Mills self-interactions
 - `src/examples.py`
   - runnable examples and regression checks
   - covers both the direct API and the model layer
@@ -54,18 +55,21 @@ What is working in the active code path:
 - direct/model cross-checks in the main regression script
 - gauge-ready examples such as quark-gluon and complex-scalar current structures
 - a minimal gauge compiler driven by `GaugeGroup`, `GaugeRepresentation`, and field metadata
+- a convention-fixed physical compiler for:
+  - `psibar i gamma^mu D_mu psi`
+  - `(D_mu phi)^dagger (D^mu phi)`
+  - `-1/4 F_{mu nu} F^{mu nu}`
+  - `-1/4 F^a_{mu nu} F^{a mu nu}` with Yang-Mills 3- and 4-gauge vertices
 - compiled gauge-model checks for quark-gluon and abelian complex-scalar interactions
 - runnable gamma/tensor checks in `src/spenso_gamma_checks.py`
 
 What is not yet solid:
 
-- there is still no real covariant-derivative compiler for expressions such as
-  `D_mu phi`, `|D_mu phi|^2`, or `psibar i gamma^mu D_mu psi`
-- the current gauge compiler is intentionally minimal and does not yet cover
-  non-abelian scalar terms or pure-gauge self-interactions
 - general multi-fermion tensor support is still narrower than a full FeynRules-like system
 - most regression checks still live in `src/examples.py` instead of a dedicated test harness
-- normalization conventions for some gauge structures should be made explicit before broader expansion
+- background-field-gauge scaffolding, gauge fixing, and ghosts are still absent
+- the public API boundary between the minimal structural compiler and the
+  physical compiler should be tightened further
 
 ### Conventions
 
@@ -95,6 +99,14 @@ Related helpers:
 - `compact_vertex_sum_form(...)`
 - `compact_sum_notation(...)`
 
+Gauge/compiler conventions:
+
+- derivatives map to `-i p_mu`
+- `vertex_factor(...)` contributes the universal overall `+i`
+- matter uses `D_mu = partial_mu + i g A_mu`
+- pure gauge uses
+  `F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu`
+
 ### Main workflow
 
 The current workflow is:
@@ -123,6 +135,7 @@ Run the main example and regression script from the repository root:
 - `./.venv/bin/python src/examples.py --suite fermion`
 - `./.venv/bin/python src/examples.py --suite gauge`
 - `./.venv/bin/python src/examples.py --suite model`
+- `./.venv/bin/python src/examples.py --suite covariant`
 - `./.venv/bin/python src/examples.py --suite cross`
 
 Notes:
@@ -150,9 +163,10 @@ The highest-value next steps in the codebase are:
 
 1. add a real covariant-derivative compiler for `D_mu psi`, `D_mu phi`,
    `|D_mu phi|^2`, and `psibar i gamma^mu D_mu psi`
-2. extend the gauge compiler beyond minimal currents/contact terms toward
-   non-abelian scalar interactions and later pure-gauge structures
-3. make gauge-normalization conventions explicit and stable, especially for
-   scalar-QED current/contact terms
+   - status: reached for the covered matter-sector cases
+2. extend the same physical compiler path into pure gauge
+   - status: reached for abelian bilinears and Yang-Mills 2/3/4-point terms
+3. add background-field-gauge scaffolding, gauge fixing, and ghosts on top of
+   the ordinary gauge foundation
 4. move the runnable assertions in `src/examples.py` toward a dedicated test harness
 5. keep examples as showcase/demo output while tests become the main regression entry point

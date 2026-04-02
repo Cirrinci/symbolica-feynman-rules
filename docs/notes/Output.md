@@ -3,6 +3,7 @@ Demo: all
 
 Note:
 minimal compiler shows generic interaction structure; covariant compiler shows the convention-fixed `D_mu` expansion.
+Pure-gauge covariant blocks also show a compact override, because the raw compiled vertex keeps the derivative-index metrics explicit.
 
 # === scalar: phi^4 ===
 

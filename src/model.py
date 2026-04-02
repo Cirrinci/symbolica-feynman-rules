@@ -373,7 +373,7 @@ class InteractionTerm:
 
 
 # ---------------------------------------------------------------------------
-# Covariant-derivative kinetic terms
+# Convention-fixed kinetic terms
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -404,6 +404,19 @@ class ComplexScalarKineticTerm:
     label: str = ""
 
 
+@dataclass(frozen=True)
+class GaugeKineticTerm:
+    """Model-level declaration for ``-1/4 F_{mu nu} F^{mu nu}``.
+
+    ``gauge_group`` is required because the gauge field and non-abelian
+    structure constants are properties of the group declaration, not of a
+    separate matter field.
+    """
+    gauge_group: object
+    coefficient: object = 1
+    label: str = ""
+
+
 CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
 
 
@@ -420,6 +433,7 @@ class Model:
     parameters: tuple[Parameter, ...] = ()
     interactions: tuple[InteractionTerm, ...] = ()
     covariant_terms: tuple[CovariantTerm, ...] = ()
+    gauge_kinetic_terms: tuple[GaugeKineticTerm, ...] = ()
 
     def find_field(self, target) -> Optional[Field]:
         """Resolve a field by object identity, declaration name, or symbol."""

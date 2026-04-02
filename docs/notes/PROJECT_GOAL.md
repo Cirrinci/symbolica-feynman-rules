@@ -25,6 +25,8 @@ Core pieces:
   - translation from structured interactions into the engine inputs
 - `src/spenso_structures.py`
   - tensor wrappers for gamma matrices, metrics, and generators
+- `src/gauge_compiler.py`
+  - minimal structural gauge compiler plus convention-fixed physical compiler
 - `src/examples.py`
   - examples, regression checks, and direct/model cross-checks
 
@@ -62,12 +64,18 @@ What is already credible in the code:
 - amputated open-index fermion output
 - gamma-matrix and generator structures passed through wrapped symbolic objects
 - a first model-layer bridge to the engine
+- a working matter-sector covariant compiler for:
+  - `psibar i gamma^mu D_mu psi`
+  - `(D_mu phi)^dagger (D^mu phi)`
+- a working pure-gauge compiler for:
+  - `-1/4 F_{mu nu} F^{mu nu}`
+  - `-1/4 F^a_{mu nu} F^{a mu nu}` with Yang-Mills 3- and 4-gauge vertices
 
 What still needs work before the project feels structurally sound:
 
 - the model layer is still thinner than a real model compiler
-- there is still no covariant-derivative compiler
-- gauge support is broader, but still not gauge-complete
+- background-field-gauge scaffolding, gauge fixing, and ghosts are still missing
+- gauge support is broader, but still not BFM-complete
 - examples still carry too much of the live regression burden
 
 ### Session handoff
@@ -81,5 +89,7 @@ Current conventions to remember:
 
 Recommended interpretation for future work:
 
-- prioritize turning the current minimal gauge compiler into a covariant-derivative compiler
-- broaden gauge support only after the compiler/model boundary for `D_mu` structures is stable
+- keep the minimal gauge compiler as a structural helper layer
+- treat the convention-fixed physical compiler as the user-facing path
+- build BFM-specific background/quantum splitting and gauge fixing on top of the
+  now-working ordinary matter and pure-gauge sectors
