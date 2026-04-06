@@ -39,6 +39,12 @@ Main source files:
 
 Supporting notes live under `docs/notes/`.
 
+Walkthrough material:
+
+- `notebooks/codebase_workflow_walkthrough.ipynb`
+  - first end-to-end walkthrough of the live code path
+  - currently still work in progress, but already runnable
+
 ### Current status
 
 What is working in the active code path:
@@ -161,16 +167,20 @@ Project notes are kept in:
 
 The highest-value next steps in the codebase are:
 
-1. add background/quantum gauge-field splitting on top of the ordinary gauge compiler
-2. add gauge-fixing declarations and compilation through the same physical path
-3. add ghost-sector support after gauge fixing is stable
-4. move the runnable assertions in `src/examples.py` toward a dedicated test harness
-5. improve canonical/readable pure-gauge output while keeping the raw compiled form available
+1. keep conventions documented once across code, docs, and tests
+2. move the runnable assertions in `src/examples.py` toward a dedicated test harness
+3. fix repeated same-kind index-slot handling in the model/compiler boundary
+4. add gauge-fixing declarations and compilation through the physical compiler path
+5. add ghost-sector support after gauge fixing is stable
+6. add background/quantum gauge-field splitting on top of the ordinary gauge-fixed path
+7. improve canonical/readable pure-gauge output while keeping the raw compiled form available
 
 Suggested implementation order:
 
-1. background/quantum gauge-field splitting
-2. gauge-fixing declarations and compilation
-3. ghost sector support
-4. test extraction from `src/examples.py`
-5. canonical/readable pure-gauge output on top of the raw compiled form
+1. keep conventions frozen in one place
+2. extract tests from `src/examples.py`
+3. fix repeated same-kind index-slot handling
+4. add ordinary gauge fixing
+5. add the ghost sector
+6. add background/quantum gauge-field splitting
+7. improve canonical/readable pure-gauge output on top of the raw compiled form
