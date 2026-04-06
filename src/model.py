@@ -117,6 +117,7 @@ class GaugeRepresentation:
     name: str = ""
 
     def build_generator(self, adjoint_label, left_label, right_label):
+        """Build the concrete representation tensor, e.g. T^a_{ij}."""
         return self.generator_builder(adjoint_label, left_label, right_label)
 
 
@@ -202,6 +203,7 @@ class Field:
             object.__setattr__(self, "symbol", S(self.name))
 
     def role_for(self, conjugated: bool = False) -> FieldRole:
+        """Return the interaction/external-leg role implied by this field slot."""
         if self.kind == "fermion":
             return ROLE_PSIBAR if conjugated else ROLE_PSI
         if self.kind == "ghost":
@@ -213,6 +215,7 @@ class Field:
         return ROLE_SCALAR
 
     def species_for(self, conjugated: bool = False):
+        """Return the symbolic species used by the contraction engine."""
         if conjugated and not self.self_conjugate:
             return self.conjugate_symbol or S(self.name + "bar")
         return self.symbol
@@ -426,7 +429,12 @@ CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
 
 @dataclass
 class Model:
-    """Top-level model container (mirrors the full .fr file)."""
+    """Top-level model container (mirrors the full .fr file).
+
+    The model layer stores declarations.  The actual vertex evaluation still
+    happens in ``model_symbolica.py`` after these declarations are translated
+    into ``InteractionTerm`` objects and then into engine kwargs.
+    """
     name: str = ""
     gauge_groups: tuple[GaugeGroup, ...] = ()
     fields: tuple[Field, ...] = ()

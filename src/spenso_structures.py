@@ -61,6 +61,7 @@ def _fresh_index_name(prefix):
 
 
 def gamma_matrix(left_spinor, right_spinor, lorentz):
+    """Return a Spenso-backed gamma^mu tensor as a Symbolica expression."""
     return TensorName.gamma()(
         bispinor_index(left_spinor),
         bispinor_index(right_spinor),
@@ -83,6 +84,7 @@ def gamma_lowered_matrix(
 
 
 def gamma5_matrix(left_spinor, right_spinor):
+    """Return gamma5 with explicit bispinor slots."""
     return TensorName.gamma5()(
         bispinor_index(left_spinor),
         bispinor_index(right_spinor),
@@ -90,6 +92,7 @@ def gamma5_matrix(left_spinor, right_spinor):
 
 
 def sigma_tensor(left_spinor, right_spinor, *lorentz_indices):
+    """Return sigma^{mu nu...} with explicit spinor and Lorentz slots."""
     slots = [
         bispinor_index(left_spinor),
         bispinor_index(right_spinor),
@@ -121,6 +124,7 @@ def chiral_projector_right(left_spinor, right_spinor):
 
 
 def gauge_generator(adj_index, fund_left, fund_right):
+    """Return the fundamental-representation generator tensor t^a_{ij}."""
     return TensorName.t()(
         color_adj_index(adj_index),
         color_fund_index(fund_left),
@@ -129,6 +133,7 @@ def gauge_generator(adj_index, fund_left, fund_right):
 
 
 def structure_constant(a, b, c):
+    """Return the adjoint structure constant tensor f^{abc}."""
     return TensorName.f()(
         color_adj_index(a),
         color_adj_index(b),
@@ -159,12 +164,14 @@ def gamma_commutator(left_spinor, right_spinor, mu, nu):
 
 
 def simplify_gamma_chain(expr):
+    """Apply the standard gamma then metric simplification pass."""
     expr = simplify_gamma(expr)
     expr = simplify_metrics(expr)
     return expr
 
 
 def hep_tensor_scalar(expr):
+    """Evaluate a tensor network down to a scalar using the HEP tensor library."""
     network = TensorNetwork(expr, library=_HEP_LIBRARY)
     network.execute(library=_HEP_LIBRARY)
     return network.result_scalar()

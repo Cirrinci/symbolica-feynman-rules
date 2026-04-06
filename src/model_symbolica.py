@@ -356,6 +356,10 @@ def contract_to_full_expression(
     labels appearing once (open slots) are remapped to the corresponding
     external leg labels.  Labels appearing twice (bilinear chains) produce
     bispinor metrics connecting the matched legs.
+
+    This function is the core engine.  It stays agnostic about the origin of
+    the inputs: the direct API and the model layer both reduce to the same
+    parallel lists before reaching this point.
     """
     n = len(alphas)
     if not (len(betas) == len(ps) == n):
@@ -537,7 +541,12 @@ def vertex_factor(
     """Compute the Feynman vertex factor from an interaction term.
 
     Accepts either model-layer objects (interaction + external_legs) or the
-    direct parallel-list interface.
+    direct parallel-list interface.  The workflow is:
+
+    1. normalize inputs into the engine format
+    2. call contract_to_full_expression(...)
+    3. optionally replace the plane wave by the universal momentum delta
+    4. optionally strip external wavefunctions
     """
     if interaction is not None:
         if external_legs is None:

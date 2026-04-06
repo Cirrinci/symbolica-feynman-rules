@@ -479,7 +479,12 @@ def compile_yang_mills_quartic_term(
 
 
 def compile_gauge_kinetic_term(model: Model, term: GaugeKineticTerm) -> tuple[InteractionTerm, ...]:
-    """Compile ``-1/4 F_{mu nu} F^{mu nu}`` for one declared gauge group."""
+    """Compile ``-1/4 F_{mu nu} F^{mu nu}`` for one declared gauge group.
+
+    For abelian groups this yields only the gauge-boson bilinear.
+    For non-abelian groups it also appends the Yang-Mills cubic and quartic
+    self-interaction terms.
+    """
     gauge_group = model.find_gauge_group(term.gauge_group)
     if gauge_group is None:
         raise ValueError(f"Could not resolve gauge group {term.gauge_group!r}.")
@@ -572,7 +577,11 @@ def with_minimal_gauge_interactions(model: Model) -> Model:
 
 
 def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[InteractionTerm, ...]:
-    """Compile the gauge-interaction part of ``psibar i gamma^mu D_mu psi``."""
+    """Compile the gauge-interaction part of ``psibar i gamma^mu D_mu psi``.
+
+    One model declaration can expand into several interactions when the same
+    fermion transforms under multiple declared gauge groups.
+    """
     fermion = model.find_field(term.field)
     if fermion is None:
         raise ValueError(f"Could not resolve fermion field {term.field!r}.")
@@ -605,7 +614,11 @@ def compile_complex_scalar_kinetic_term(
     model: Model,
     term: ComplexScalarKineticTerm,
 ) -> tuple[InteractionTerm, ...]:
-    """Compile the gauge-interaction part of ``(D_mu phi)^dagger (D^mu phi)``."""
+    """Compile the gauge-interaction part of ``(D_mu phi)^dagger (D^mu phi)``.
+
+    The output contains both the current term and the two-gauge contact term
+    for each applicable gauge group.
+    """
     scalar = model.find_field(term.field)
     if scalar is None:
         raise ValueError(f"Could not resolve scalar field {term.field!r}.")
@@ -638,7 +651,12 @@ def compile_complex_scalar_kinetic_term(
 
 
 def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
-    """Compile all declared physical kinetic terms in a model."""
+    """Compile all declared physical kinetic terms in a model.
+
+    This is the main entry point for the convention-fixed physical compiler:
+    matter covariant terms and pure-gauge kinetic terms are flattened into the
+    ordinary ``InteractionTerm`` objects consumed by the core engine.
+    """
     interactions: list[InteractionTerm] = []
 
     for term in model.covariant_terms:
