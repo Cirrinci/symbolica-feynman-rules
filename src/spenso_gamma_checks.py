@@ -83,6 +83,7 @@ s4 = S("s4")
 # ---------------------------------------------------------------------------
 
 def _check(got, expected, label):
+    """Assert symbolic equality for a focused gamma/tensor check."""
     assert (
         got.expand().to_canonical_string()
         == expected.expand().to_canonical_string()
@@ -91,26 +92,31 @@ def _check(got, expected, label):
 
 
 def _display_expr(expr):
+    """Reparse an expression via its canonical string for stable display."""
     return Expression.parse(expr.to_canonical_string())
 
 
 def _gamma_simplified(expr):
+    """Show an expression after the standard gamma+metric simplification pass."""
     return simplify_gamma_chain(_display_expr(expr)).expand()
 
 
 def _show(title, expr):
+    """Print a simplified tensor expression with a title."""
     print(title)
     print(_gamma_simplified(expr))
     print()
 
 
 def _show_expr(title, expr):
+    """Print the expanded canonical form of an expression."""
     print(title)
     print(_display_expr(expr).expand())
     print()
 
 
 def _show_raw_and_simplified(title, expr):
+    """Print both the raw and simplified forms of a tensor expression."""
     print(title)
     print("raw:")
     print(_display_expr(expr).expand())

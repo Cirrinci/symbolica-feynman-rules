@@ -2,6 +2,10 @@
 Vertex-factor examples and tests.
 
 Covers both the direct parallel-list API and the FeynRules-style model layer.
+This file currently plays two roles:
+
+- readable showcase of the implemented physics structures
+- integration-style regression script for the live source tree
 """
 
 import argparse
@@ -143,6 +147,7 @@ a3, a4, a5, a6 = S("a3", "a4", "a5", "a6")
 # ---------------------------------------------------------------------------
 
 def _check(got, expected, label, *, show_vertex=False, description=None):
+    """Assert symbolic equality and optionally print the checked vertex block."""
     assert (
         got.expand().to_canonical_string()
         == expected.expand().to_canonical_string()
@@ -153,6 +158,7 @@ def _check(got, expected, label, *, show_vertex=False, description=None):
 
 
 def _print_demo_header(title):
+    """Print a short section header for one example block."""
     print(f"# === {title} ===\n")
 
 
@@ -167,10 +173,18 @@ def _print_vertex_block(
     interpretation=None,
     error=None,
 ):
+    """Render one example/result block in a notebook-friendly text format."""
     _print_demo_header(title)
     if description:
         print(description)
     print()
+
+
+def _print_suite_header(title):
+    """Print a top-level header for a grouped validation section."""
+    print("=" * 80)
+    print(f"  {title}")
+    print("=" * 80)
 
     if error is not None:
         print(error)

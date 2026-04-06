@@ -63,12 +63,12 @@ def scalar_gauge_current_term(coupling, derivative_index, target):
 
 
 def scalar_gauge_contact(mu, nu):
-    """Scalar QED contact tensor."""
+    """Two-gauge-boson contact tensor for complex scalar kinetic terms."""
     return lorentz_metric(mu, nu)
 
 
 def gauge_kinetic_bilinear(mu, nu, p_left, p_right, contracted_lorentz):
-    """Convention-fixed two-gauge-field kinetic tensor."""
+    """Compact two-gauge-field kinetic tensor after metric contraction."""
     return (
         lorentz_metric(mu, nu) * pcomp(p_left, contracted_lorentz) * pcomp(p_right, contracted_lorentz)
         - pcomp(p_left, nu) * pcomp(p_right, mu)
@@ -157,6 +157,7 @@ def yang_mills_three_vertex_metric_raw(
 
 
 def _four_gauge_channel_raw(adj_left, adj_right, adj_other_left, adj_other_right, internal):
+    """One color-channel block used in the raw Yang-Mills quartic vertex."""
     return (
         structure_constant(adj_other_right, adj_left, internal)
         * structure_constant(adj_other_left, adj_right, internal)
@@ -170,7 +171,12 @@ def _four_gauge_channel_raw(adj_left, adj_right, adj_other_left, adj_other_right
 
 
 def yang_mills_four_vertex_raw(adj1, adj2, adj3, adj4, mu, nu, rho, sigma, internal):
-    """Unsimplified four-gauge tensor matching the current compiler output."""
+    """Unsimplified four-gauge tensor matching the current compiler output.
+
+    This keeps the separate metric channels explicit so the raw compiled
+    expression can be compared directly against compiler output before any
+    physics-specific compactification step.
+    """
     return (
         lorentz_metric(mu, nu) * lorentz_metric(rho, sigma)
         * _four_gauge_channel_raw(adj1, adj2, adj3, adj4, internal)

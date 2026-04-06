@@ -69,6 +69,7 @@ def _wildcards(arity: int):
 
 
 def _replace_tensor_heads(expr, specs: Sequence[TensorHeadSpec], *, reverse: bool = False):
+    """Swap live tensor heads for canonical temporary heads, or back again."""
     result = expr
     for spec in specs:
         args = _wildcards(spec.arity)
@@ -84,6 +85,7 @@ def _dummy_name(group, slot: int) -> str:
 
 
 def _standardize_dummy_indices(expr, dummy_indices):
+    """Rename dummy indices deterministically for stable comparisons."""
     result = expr
     standardized = []
     for slot, (index, group) in enumerate(dummy_indices, start=1):
@@ -103,6 +105,8 @@ def canonize_tensor_expression(
     """Canonize tensor heads and dummy indices in an expression.
 
     The returned expression is mapped back onto the original live tensor names.
+    This lets the rest of the code stay in the usual Spenso naming scheme while
+    still using Symbolica's tensor canonization machinery internally.
     """
 
     remapped = _replace_tensor_heads(expr, head_specs, reverse=False)
@@ -126,7 +130,9 @@ def canonize_spenso_tensors(
     """Canonize the Spenso tensor structures used in this repository.
 
     Index groups are kept explicit so that dummy indices from different
-    representations cannot be merged accidentally.
+    representations cannot be merged accidentally.  This is the main helper
+    used by the current regression checks when gauge-heavy outputs should be
+    compared modulo dummy-index renaming.
     """
 
     contracted_indices = []
