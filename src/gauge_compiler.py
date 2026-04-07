@@ -53,30 +53,59 @@ def _default_spinor_labels(field: Field, gauge_group: GaugeGroup):
     return _symbol(f"i_bar_{stem}"), _symbol(f"i_{stem}")
 
 
+def _slot_suffix(field: Field, slot: Optional[int]) -> str:
+    if slot is None:
+        return ""
+    kind = field.indices[slot].kind
+    if field.index_kind_count(kind) <= 1:
+        return ""
+    return f"_slot{slot + 1}"
+
+
 def _default_vector_label(field: Field, gauge_group: GaugeGroup, suffix: str = "mu"):
     del field, gauge_group
     return _symbol(suffix)
 
 
-def _default_matter_labels(field: Field, rep_prefix: str):
-    stem = field.name
+def _default_matter_labels(field: Field, rep_prefix: str, slot: Optional[int] = None):
+    stem = f"{field.name}{_slot_suffix(field, slot)}"
     return _symbol(f"{rep_prefix}_bar_{stem}"), _symbol(f"{rep_prefix}_{stem}")
 
 
-def _default_index_labels(field: Field, index, qualifier: str = "id"):
-    stem = f"{field.name}_{index.kind}_{qualifier}"
+def _default_index_labels(field: Field, index, qualifier: str = "id", slot: Optional[int] = None):
+    stem = f"{field.name}_{index.kind}"
+    if slot is not None and field.index_kind_count(index.kind) > 1:
+        stem += f"_{slot + 1}"
+    stem += f"_{qualifier}"
     return _symbol(f"{index.prefix}_bar_{stem}"), _symbol(f"{index.prefix}_{stem}")
 
 
-def _first_non_lorentz_index_kind(field: Field) -> Optional[str]:
-    for index in field.indices:
+def _first_non_lorentz_index_slot(field: Field) -> Optional[int]:
+    for slot, index in enumerate(field.indices):
         if index.kind != LORENTZ_KIND:
-            return index.kind
+            return slot
     return None
 
 
 def _adjoint_index_kind(gauge_field: Field) -> Optional[str]:
-    return _first_non_lorentz_index_kind(gauge_field)
+    slot = _first_non_lorentz_index_slot(gauge_field)
+    if slot is None:
+        return None
+    return gauge_field.indices[slot].kind
+
+
+def _adjoint_index_slot(gauge_field: Field) -> Optional[int]:
+    return _first_non_lorentz_index_slot(gauge_field)
+
+
+def _unique_slot(field: Field, kind: str, *, purpose: str) -> int:
+    slots = field.index_positions(kind=kind)
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} requires field {field.name!r} to expose exactly one {kind!r} slot; "
+            f"found {len(slots)}."
+        )
+    return slots[0]
 
 
 def _default_gauge_lorentz_labels(field: Field, gauge_group: GaugeGroup, count: int):
@@ -153,20 +182,20 @@ def _resolve_covariant_gauge_groups(model: Model, *, field: Field, gauge_group=N
     return matches
 
 
-def _spectator_identity_factor(field: Field, *, exclude_index_kinds=()):
+def _spectator_identity_factor(field: Field, *, exclude_slots=()):
     factor = Expression.num(1)
-    left_labels = {}
-    right_labels = {}
+    left_slot_labels = {}
+    right_slot_labels = {}
 
-    for index in field.indices:
-        if index.kind in exclude_index_kinds or index.kind == LORENTZ_KIND:
+    for slot, index in enumerate(field.indices):
+        if slot in exclude_slots or index.kind == LORENTZ_KIND:
             continue
-        left_label, right_label = _default_index_labels(field, index)
+        left_label, right_label = _default_index_labels(field, index, slot=slot)
         factor *= index.representation.g(left_label, right_label).to_expression()
-        left_labels[index.kind] = left_label
-        right_labels[index.kind] = right_label
+        left_slot_labels[slot] = left_label
+        right_slot_labels[slot] = right_label
 
-    return factor, left_labels, right_labels
+    return factor, left_slot_labels, right_slot_labels
 
 
 def compile_fermion_gauge_current(
@@ -189,43 +218,67 @@ def compile_fermion_gauge_current(
 
     mu = lorentz_label or _default_vector_label(gauge_field, gauge_group, suffix="mu")
     i_bar, i_psi = spinor_labels or _default_spinor_labels(fermion, gauge_group)
+    fermion_spinor_slot = _unique_slot(
+        fermion,
+        SPINOR_KIND,
+        purpose="Fermion gauge-current compilation",
+    )
+    gauge_lorentz_slot = _unique_slot(
+        gauge_field,
+        LORENTZ_KIND,
+        purpose="Gauge-current compilation",
+    )
 
     coupling = prefactor * gauge_group.coupling * psi_bar_gamma_psi(i_bar, i_psi, mu)
-    bar_labels = {SPINOR_KIND: i_bar}
-    psi_labels = {SPINOR_KIND: i_psi}
-    gauge_labels = {LORENTZ_KIND: mu}
-    spectator_exclusions = {SPINOR_KIND}
+    bar_slot_labels = {fermion_spinor_slot: i_bar}
+    psi_slot_labels = {fermion_spinor_slot: i_psi}
+    gauge_slot_labels = {gauge_lorentz_slot: mu}
+    spectator_exclusions = {fermion_spinor_slot}
 
     if gauge_group.abelian:
         coupling *= _field_charge(fermion, gauge_group)
     else:
-        rep = gauge_group.matter_representation(fermion)
-        if rep is None:
+        rep_info = gauge_group.matter_representation_and_slot(fermion)
+        if rep_info is None:
             raise ValueError(
                 f"Field {fermion.name!r} carries no representation declared for "
                 f"gauge group {gauge_group.name!r}."
             )
-        left_label, right_label = matter_labels or _default_matter_labels(fermion, rep.index.prefix)
+        rep, rep_slot = rep_info
         adj_kind = _adjoint_index_kind(gauge_field)
+        adj_slot = _adjoint_index_slot(gauge_field)
         if adj_kind is None:
             raise ValueError(
                 f"Gauge field {gauge_field.name!r} does not expose a non-Lorentz "
                 "adjoint index."
             )
+        if adj_slot is None:
+            raise ValueError(
+                f"Gauge field {gauge_field.name!r} does not expose an adjoint slot."
+            )
+        left_label, right_label = matter_labels or _default_matter_labels(
+            fermion,
+            rep.index.prefix,
+            slot=rep_slot,
+        )
         adjoint = adjoint_label or _symbol(f"{adj_kind}_{gauge_field.name}_{gauge_group.name}")
         coupling *= rep.build_generator(adjoint, left_label, right_label)
-        bar_labels[rep.index.kind] = left_label
-        psi_labels[rep.index.kind] = right_label
-        gauge_labels[adj_kind] = adjoint
-        spectator_exclusions.add(rep.index.kind)
+        bar_slot_labels[rep_slot] = left_label
+        psi_slot_labels[rep_slot] = right_label
+        gauge_slot_labels[adj_slot] = adjoint
+        spectator_exclusions.add(rep_slot)
 
-    spectator_factor, spectator_left_labels, spectator_right_labels = _spectator_identity_factor(
+    spectator_factor, spectator_left_slots, spectator_right_slots = _spectator_identity_factor(
         fermion,
-        exclude_index_kinds=spectator_exclusions,
+        exclude_slots=spectator_exclusions,
     )
     coupling *= spectator_factor
-    bar_labels.update(spectator_left_labels)
-    psi_labels.update(spectator_right_labels)
+    bar_slot_labels.update(spectator_left_slots)
+    psi_slot_labels.update(spectator_right_slots)
+
+    bar_labels = fermion.pack_slot_labels(bar_slot_labels)
+    psi_labels = fermion.pack_slot_labels(psi_slot_labels)
+    gauge_labels = gauge_field.pack_slot_labels(gauge_slot_labels)
 
     return InteractionTerm(
         coupling=coupling,
@@ -256,14 +309,19 @@ def compile_complex_scalar_gauge_terms(
         raise ValueError("Complex-scalar gauge terms require a non-self-conjugate scalar field.")
     if gauge_field.kind != "vector":
         raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
+    gauge_lorentz_slot = _unique_slot(
+        gauge_field,
+        LORENTZ_KIND,
+        purpose="Complex-scalar gauge-term compilation",
+    )
     mu, nu = lorentz_labels or (
         _default_vector_label(gauge_field, gauge_group, suffix="mu"),
         _default_vector_label(gauge_field, gauge_group, suffix="nu"),
     )
-    scalar_bar_labels = {}
-    scalar_labels = {}
-    gauge_labels_mu = {LORENTZ_KIND: mu}
-    gauge_labels_nu = {LORENTZ_KIND: nu}
+    scalar_bar_slot_labels = {}
+    scalar_slot_labels = {}
+    gauge_slot_labels_mu = {gauge_lorentz_slot: mu}
+    gauge_slot_labels_nu = {gauge_lorentz_slot: nu}
     spectator_exclusions = set()
 
     if gauge_group.abelian:
@@ -271,25 +329,37 @@ def compile_complex_scalar_gauge_terms(
         current_base = current_prefactor * gauge_group.coupling * charge
         contact_coupling = contact_prefactor * ((gauge_group.coupling * charge) ** 2)
     else:
-        rep = gauge_group.matter_representation(scalar)
-        if rep is None:
+        rep_info = gauge_group.matter_representation_and_slot(scalar)
+        if rep_info is None:
             raise ValueError(
                 f"Field {scalar.name!r} carries no representation declared for "
                 f"gauge group {gauge_group.name!r}."
             )
+        rep, rep_slot = rep_info
         adj_kind = _adjoint_index_kind(gauge_field)
+        adj_slot = _adjoint_index_slot(gauge_field)
         if adj_kind is None:
             raise ValueError(
                 f"Gauge field {gauge_field.name!r} does not expose a non-Lorentz "
                 "adjoint index."
             )
+        if adj_slot is None:
+            raise ValueError(
+                f"Gauge field {gauge_field.name!r} does not expose an adjoint slot."
+            )
 
-        left_label, right_label = matter_labels or _default_matter_labels(scalar, rep.index.prefix)
+        left_label, right_label = matter_labels or _default_matter_labels(
+            scalar,
+            rep.index.prefix,
+            slot=rep_slot,
+        )
         adjoint_mu, adjoint_nu = adjoint_labels or (
             _symbol(f"{adj_kind}_{gauge_field.name}_{gauge_group.name}_1"),
             _symbol(f"{adj_kind}_{gauge_field.name}_{gauge_group.name}_2"),
         )
-        middle_label = internal_label or _symbol(f"{rep.index.prefix}_mid_{scalar.name}_{gauge_group.name}")
+        middle_label = internal_label or _symbol(
+            f"{rep.index.prefix}_mid_{scalar.name}_{gauge_group.name}{_slot_suffix(scalar, rep_slot)}"
+        )
 
         generator_mu = rep.build_generator(adjoint_mu, left_label, right_label)
         generator_chain = (
@@ -300,20 +370,25 @@ def compile_complex_scalar_gauge_terms(
         current_base = current_prefactor * gauge_group.coupling * generator_mu
         contact_coupling = contact_prefactor * (gauge_group.coupling ** 2) * generator_chain
 
-        scalar_bar_labels[rep.index.kind] = left_label
-        scalar_labels[rep.index.kind] = right_label
-        gauge_labels_mu[adj_kind] = adjoint_mu
-        gauge_labels_nu[adj_kind] = adjoint_nu
-        spectator_exclusions.add(rep.index.kind)
+        scalar_bar_slot_labels[rep_slot] = left_label
+        scalar_slot_labels[rep_slot] = right_label
+        gauge_slot_labels_mu[adj_slot] = adjoint_mu
+        gauge_slot_labels_nu[adj_slot] = adjoint_nu
+        spectator_exclusions.add(rep_slot)
 
-    spectator_factor, spectator_left_labels, spectator_right_labels = _spectator_identity_factor(
+    spectator_factor, spectator_left_slots, spectator_right_slots = _spectator_identity_factor(
         scalar,
-        exclude_index_kinds=spectator_exclusions,
+        exclude_slots=spectator_exclusions,
     )
     current_base *= spectator_factor
     contact_coupling *= spectator_factor
-    scalar_bar_labels.update(spectator_left_labels)
-    scalar_labels.update(spectator_right_labels)
+    scalar_bar_slot_labels.update(spectator_left_slots)
+    scalar_slot_labels.update(spectator_right_slots)
+
+    scalar_bar_labels = scalar.pack_slot_labels(scalar_bar_slot_labels)
+    scalar_labels = scalar.pack_slot_labels(scalar_slot_labels)
+    gauge_labels_mu = gauge_field.pack_slot_labels(gauge_slot_labels_mu)
+    gauge_labels_nu = gauge_field.pack_slot_labels(gauge_slot_labels_nu)
 
     current_phi = InteractionTerm(
         coupling=current_base,
@@ -363,13 +438,18 @@ def compile_gauge_kinetic_bilinear_terms(
     rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}")
     rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}")
     rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}")
-    identity_factor, left_labels, right_labels = _spectator_identity_factor(
+    gauge_lorentz_slot = _unique_slot(
         gauge_field,
-        exclude_index_kinds={LORENTZ_KIND},
+        LORENTZ_KIND,
+        purpose="Gauge kinetic compilation",
+    )
+    identity_factor, left_slots, right_slots = _spectator_identity_factor(
+        gauge_field,
+        exclude_slots={gauge_lorentz_slot},
     )
 
-    left_field_labels = {LORENTZ_KIND: alpha, **left_labels}
-    right_field_labels = {LORENTZ_KIND: beta, **right_labels}
+    left_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, **left_slots})
+    right_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, **right_slots})
     shared_fields = (
         gauge_field.occurrence(labels=left_field_labels),
         gauge_field.occurrence(labels=right_field_labels),
@@ -419,6 +499,16 @@ def compile_yang_mills_cubic_term(
 
     alpha, beta, gamma = _default_gauge_lorentz_labels(gauge_field, gauge_group, 3)
     adj_left, adj_middle, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 3)
+    gauge_lorentz_slot = _unique_slot(
+        gauge_field,
+        LORENTZ_KIND,
+        purpose="Yang-Mills cubic compilation",
+    )
+    adj_slot = _adjoint_index_slot(gauge_field)
+    if adj_slot is None:
+        raise ValueError(
+            f"Gauge field {gauge_field.name!r} does not expose an adjoint slot."
+        )
     rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}_cubic")
     coupling = (
         coefficient
@@ -431,9 +521,15 @@ def compile_yang_mills_cubic_term(
     return InteractionTerm(
         coupling=coupling,
         fields=(
-            gauge_field.occurrence(labels={LORENTZ_KIND: alpha, _adjoint_index_kind(gauge_field): adj_left}),
-            gauge_field.occurrence(labels={LORENTZ_KIND: beta, _adjoint_index_kind(gauge_field): adj_middle}),
-            gauge_field.occurrence(labels={LORENTZ_KIND: gamma, _adjoint_index_kind(gauge_field): adj_right}),
+            gauge_field.occurrence(
+                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, adj_slot: adj_left})
+            ),
+            gauge_field.occurrence(
+                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, adj_slot: adj_middle})
+            ),
+            gauge_field.occurrence(
+                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: gamma, adj_slot: adj_right})
+            ),
         ),
         derivatives=(DerivativeAction(target=0, lorentz_index=rho),),
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills cubic",
@@ -455,6 +551,16 @@ def compile_yang_mills_quartic_term(
 
     alpha, beta, gamma, delta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 4)
     adj_left, adj_mid_left, adj_mid_right, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 4)
+    gauge_lorentz_slot = _unique_slot(
+        gauge_field,
+        LORENTZ_KIND,
+        purpose="Yang-Mills quartic compilation",
+    )
+    adj_slot = _adjoint_index_slot(gauge_field)
+    if adj_slot is None:
+        raise ValueError(
+            f"Gauge field {gauge_field.name!r} does not expose an adjoint slot."
+        )
     internal = _default_internal_adjoint_label(gauge_field, gauge_group)
     coupling = (
         -coefficient
@@ -469,10 +575,18 @@ def compile_yang_mills_quartic_term(
     return InteractionTerm(
         coupling=coupling,
         fields=(
-            gauge_field.occurrence(labels={LORENTZ_KIND: alpha, _adjoint_index_kind(gauge_field): adj_left}),
-            gauge_field.occurrence(labels={LORENTZ_KIND: beta, _adjoint_index_kind(gauge_field): adj_mid_left}),
-            gauge_field.occurrence(labels={LORENTZ_KIND: gamma, _adjoint_index_kind(gauge_field): adj_mid_right}),
-            gauge_field.occurrence(labels={LORENTZ_KIND: delta, _adjoint_index_kind(gauge_field): adj_right}),
+            gauge_field.occurrence(
+                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, adj_slot: adj_left})
+            ),
+            gauge_field.occurrence(
+                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, adj_slot: adj_mid_left})
+            ),
+            gauge_field.occurrence(
+                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: gamma, adj_slot: adj_mid_right})
+            ),
+            gauge_field.occurrence(
+                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: delta, adj_slot: adj_right})
+            ),
         ),
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills quartic",
     )

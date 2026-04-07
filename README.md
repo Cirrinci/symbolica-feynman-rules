@@ -130,7 +130,8 @@ Create or refresh the local virtual environment:
 
 - `bash setup_env.sh`
 
-This installs the dependencies listed in `requirements.txt` into `.venv`.
+This creates `.venv` and installs the pinned runtime and validation
+dependencies listed in `requirements.txt`.
 
 ### Usage
 
@@ -143,6 +144,7 @@ Run the main example and regression script from the repository root:
 - `./.venv/bin/python src/examples.py --suite model`
 - `./.venv/bin/python src/examples.py --suite covariant`
 - `./.venv/bin/python src/examples.py --suite cross`
+- `./.venv/bin/python -m pytest -q`
 
 Notes:
 

@@ -97,6 +97,8 @@ phiC0 = S("phiC0")
 phiCdag0 = S("phiCdag0")
 phiQCD0 = S("phiQCD0")
 phiQCDdag0 = S("phiQCDdag0")
+phiBi0 = S("phiBi0")
+phiBidag0 = S("phiBidag0")
 psibar0, psi0 = S("psibar0", "psi0")
 psibarQED0, psiQED0 = S("psibarQED0", "psiQED0")
 psibarMix0, psiMix0 = S("psibarMix0", "psiMix0")
@@ -138,7 +140,7 @@ idx_i, idx_j, idx_k = S("i", "j", "k")
 
 i_bar_q, i_psi_q = S("i_bar_q", "i_psi_q")
 c_bar_q, c_psi_q, a_g = S("c_bar_q", "c_psi_q", "a_g")
-c1, c2, c_mid = S("c1", "c2", "c_mid")
+c1, c2, c3, c4, c_mid = S("c1", "c2", "c3", "c4", "c_mid")
 a3, a4, a5, a6 = S("a3", "a4", "a5", "a6")
 
 
@@ -177,39 +179,6 @@ def _print_vertex_block(
     _print_demo_header(title)
     if description:
         print(description)
-    print()
-
-
-def _print_suite_header(title):
-    """Print a top-level header for a grouped validation section."""
-    print("=" * 80)
-    print(f"  {title}")
-    print("=" * 80)
-
-    if error is not None:
-        print(error)
-    elif vertex is not None:
-        print("Vertex:")
-        print(vertex)
-
-    if canonical_vertex is not None:
-        print()
-        print("Canonicalized:")
-        print(canonical_vertex)
-
-    if compact_override is not None:
-        print()
-        print("Compact override:")
-        print(compact_override)
-
-    if sum_notation is not None:
-        print("Sum notation:")
-        print(sum_notation)
-
-    if interpretation is not None:
-        print()
-        print(f"Interpretation: {interpretation}")
-
     print()
 
 
@@ -518,6 +487,14 @@ PhiQCDField = Field(
     conjugate_symbol=phiQCDdag0,
     indices=(COLOR_FUND_INDEX,),
 )
+PhiBiField = Field(
+    "PhiBi",
+    spin=0,
+    self_conjugate=False,
+    symbol=phiBi0,
+    conjugate_symbol=phiBidag0,
+    indices=(COLOR_FUND_INDEX, COLOR_FUND_INDEX),
+)
 PsiQEDField = Field(
     "PsiQED",
     spin=Fraction(1, 2),
@@ -546,8 +523,30 @@ COLOR_FUND_REP = GaugeRepresentation(
     generator_builder=gauge_generator,
     name="fundamental",
 )
+COLOR_FUND_REP_SLOT0 = GaugeRepresentation(
+    index=COLOR_FUND_INDEX,
+    generator_builder=gauge_generator,
+    name="fundamental_slot0",
+    slot=0,
+)
 QCD_GROUP = GaugeGroup(
     name="SU3C",
+    abelian=False,
+    coupling=gS,
+    gauge_boson=G0,
+    structure_constant=structure_constant,
+    representations=(COLOR_FUND_REP,),
+)
+QCD_GROUP_BISLOT = GaugeGroup(
+    name="SU3CBi",
+    abelian=False,
+    coupling=gS,
+    gauge_boson=G0,
+    structure_constant=structure_constant,
+    representations=(COLOR_FUND_REP_SLOT0,),
+)
+QCD_GROUP_AMBIGUOUS = GaugeGroup(
+    name="SU3CAmbiguous",
     abelian=False,
     coupling=gS,
     gauge_boson=G0,
@@ -575,6 +574,16 @@ MODEL_SCALAR_QCD_BASE = Model(
     name="ScalarQCD-minimal",
     gauge_groups=(QCD_GROUP,),
     fields=(PhiQCDField, GluonField),
+)
+MODEL_SCALAR_QCD_BISLOT_BASE = Model(
+    name="ScalarQCD-bislot-minimal",
+    gauge_groups=(QCD_GROUP_BISLOT,),
+    fields=(PhiBiField, GluonField),
+)
+MODEL_SCALAR_QCD_BISLOT_AMBIGUOUS = Model(
+    name="ScalarQCD-bislot-ambiguous",
+    gauge_groups=(QCD_GROUP_AMBIGUOUS,),
+    fields=(PhiBiField, GluonField),
 )
 MODEL_QED_FERMION_BASE = Model(
     name="FermionQED-minimal",
@@ -802,6 +811,11 @@ LEGS_compiled_scalar_current = (
 LEGS_compiled_scalar_qcd_current = (
     PhiQCDField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
     PhiQCDField.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
+    GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
+)
+LEGS_compiled_scalar_bislot_current = (
+    PhiBiField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: (c1, c3)}),
+    PhiBiField.leg(p2, species=b2, labels={COLOR_FUND_KIND: (c2, c4)}),
     GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
 )
 
@@ -1789,6 +1803,43 @@ def _run_compiled_gauge_tests():
         "Compiled model: scalar QCD contact",
         show_vertex=True,
         description=term_sqcd_contact.label,
+    )
+
+    try:
+        compile_minimal_gauge_interactions(MODEL_SCALAR_QCD_BISLOT_AMBIGUOUS)
+    except ValueError as exc:
+        assert "GaugeRepresentation(slot" in str(exc)
+        print("  Compiled model: repeated-slot ambiguity rejected: PASS")
+    else:
+        raise AssertionError("Repeated same-kind representation slot should require GaugeRepresentation(slot=...)")
+
+    compiled_bislot = compile_minimal_gauge_interactions(MODEL_SCALAR_QCD_BISLOT_BASE)
+    assert len(compiled_bislot) == 3
+    term_bislot_phi, term_bislot_phidag, _ = compiled_bislot
+    bislot_current_index = term_bislot_phi.derivatives[0].lorentz_index
+    spectator_identity = COLOR_FUND_INDEX.representation.g(c3, c4).to_expression()
+    V_bislot = (
+        _model_vertex(
+            interaction=term_bislot_phi,
+            external_legs=LEGS_compiled_scalar_bislot_current,
+            species_map={b1: phiBidag0, b2: phiBi0, b3: G0},
+        )
+        + _model_vertex(
+            interaction=term_bislot_phidag,
+            external_legs=LEGS_compiled_scalar_bislot_current,
+            species_map={b1: phiBidag0, b2: phiBi0, b3: G0},
+        )
+    )
+    _check(
+        V_bislot,
+        gS
+        * gauge_generator(a3, c1, c2)
+        * spectator_identity
+        * (pcomp(p2, bislot_current_index) - pcomp(p1, bislot_current_index))
+        * D3,
+        "Compiled model: repeated-slot scalar QCD current",
+        show_vertex=True,
+        description="Active color slot is explicit; the second identical color slot remains a spectator identity.",
     )
 
     print("\n  Compiled gauge-model tests passed.\n")

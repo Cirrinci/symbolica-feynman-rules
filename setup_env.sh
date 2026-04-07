@@ -27,5 +27,5 @@ echo "Using interpreter: $CANDIDATE_PYTHON"
 
 echo "Environment ready."
 echo "Use it with: source .venv/bin/activate"
-echo "Or run directly: .venv/bin/python code/examples_symbolica.py"
-
+echo "Run the regression script with: .venv/bin/python src/examples.py --suite all --no-demo"
+echo "Or use pytest with: .venv/bin/python -m pytest -q"

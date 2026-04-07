@@ -94,7 +94,7 @@ def plane_wave(p, x):
 # ---------------------------------------------------------------------------
 
 def _flatten_index_labels(index_labels_dict):
-    """Flatten a {kind: label_or_labels} dict into [(kind, label), ...].
+    """Flatten a {kind: label_or_labels} dict into [(kind, ordinal, label), ...].
 
     Supports both single labels and tuples/lists for fields with multiple
     indices of the same kind.
@@ -104,11 +104,11 @@ def _flatten_index_labels(index_labels_dict):
     result = []
     for kind, labels in index_labels_dict.items():
         if isinstance(labels, (list, tuple)):
-            for label in labels:
+            for ordinal, label in enumerate(labels):
                 if label is not None:
-                    result.append((kind, label))
+                    result.append((kind, ordinal, label))
         elif labels is not None:
-            result.append((kind, labels))
+            result.append((kind, 0, labels))
     return result
 
 
@@ -118,35 +118,35 @@ def _open_index_labels(field_index_labels, field_roles=None):
     These are 'open' labels carried by the coupling tensor (e.g. gamma(mu,i,j))
     and must be remapped to external leg labels per contraction permutation.
 
-    Returns: list of (field_slot, kind, label)
+    Returns: list of (field_slot, kind, ordinal, label)
     """
     if field_index_labels is None:
         return []
 
     counts = Counter()
     for slot_labels in field_index_labels:
-        for kind, label in _flatten_index_labels(slot_labels):
+        for kind, _, label in _flatten_index_labels(slot_labels):
             counts[(kind, str(label))] += 1
 
     open_slots = []
     for slot_idx, slot_labels in enumerate(field_index_labels):
         if field_roles is not None and not _role_is_fermion(field_roles[slot_idx]):
             pass
-        for kind, label in _flatten_index_labels(slot_labels):
+        for kind, ordinal, label in _flatten_index_labels(slot_labels):
             if counts[(kind, str(label))] == 1:
-                open_slots.append((slot_idx, kind, label))
+                open_slots.append((slot_idx, kind, ordinal, label))
     return open_slots
 
 
-def _get_label(index_labels_dict, kind):
-    """Get first label for a given kind from an index labels dict."""
+def _get_label(index_labels_dict, kind, ordinal=0):
+    """Get one label for a given kind/ordinal from an index-label dict."""
     if not index_labels_dict:
         return None
     val = index_labels_dict.get(kind)
     if val is None:
         return None
     if isinstance(val, (list, tuple)):
-        return val[0] if val else None
+        return val[ordinal] if 0 <= ordinal < len(val) else None
     return val
 
 
@@ -427,9 +427,9 @@ def contract_to_full_expression(
 
         coupling_term = coupling if coupling is not None else Expression.num(1)
         if open_index_slots and leg_index_labels is not None:
-            for slot_idx, kind, label in open_index_slots:
+            for slot_idx, kind, ordinal, label in open_index_slots:
                 target_leg = perm[slot_idx]
-                target_label = _get_label(leg_index_labels[target_leg], kind)
+                target_label = _get_label(leg_index_labels[target_leg], kind, ordinal)
                 if target_label is not None:
                     coupling_term = coupling_term.replace(label, target_label)
         term *= coupling_term

@@ -308,9 +308,6 @@ Complex scalar gauge contact: PASS
 Gauge-ready tests passed.
 
 All selected tests passed.
-(.venv) rems@student-net-hci-3769 thesis-code % /Users/rems/Library/CloudStorage/OneDrive-ETHZurich/ETHz/ETHz_FS26/MScThesis/t
-hesis-code/.venv/bin/python /Users/rems/Library/CloudStorage/OneDrive-ETHZurich/ETHz/ETHz_FS26/MScThesis/thesis-code/code/spen
-so_gamma_checks.py
 
 # ================================================================================
 Demo: spenso-gamma

@@ -1,0 +1,2 @@
+symbolica==1.4.0
+pytest>=8,<9

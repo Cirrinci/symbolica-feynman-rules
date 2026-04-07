@@ -19,6 +19,7 @@ by vertex_factor() in model_symbolica.py, so the engine stays untouched.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Callable, Literal, Mapping, Optional, Sequence
@@ -110,15 +111,42 @@ class GaugeRepresentation:
 
     The representation is identified by the index type carried by the matter
     field, plus a builder that inserts the corresponding generator tensor into
-    an interaction coupling.
+    an interaction coupling.  ``slot`` is optional, but becomes important when
+    a field carries the same index type more than once and the active slot must
+    be selected explicitly.
     """
     index: IndexType
     generator_builder: Callable[[object, object, object], object]
     name: str = ""
+    slot: Optional[int] = None
 
     def build_generator(self, adjoint_label, left_label, right_label):
         """Build the concrete representation tensor, e.g. T^a_{ij}."""
         return self.generator_builder(adjoint_label, left_label, right_label)
+
+    def slot_for(self, field: "Field") -> Optional[int]:
+        """Resolve which field-index slot this representation acts on."""
+        matches = [slot for slot, index in enumerate(field.indices) if index == self.index]
+        if self.slot is not None:
+            if self.slot < 0 or self.slot >= len(field.indices):
+                raise ValueError(
+                    f"GaugeRepresentation(slot={self.slot}) is out of range for "
+                    f"field {field.name!r}."
+                )
+            if field.indices[self.slot] != self.index:
+                raise ValueError(
+                    f"GaugeRepresentation(slot={self.slot}) for index {self.index.name!r} "
+                    f"does not match field {field.name!r}."
+                )
+            return self.slot
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise ValueError(
+                f"Field {field.name!r} carries repeated index type {self.index.name!r}; "
+                "declare GaugeRepresentation(slot=...) to disambiguate the active slot."
+            )
+        return matches[0]
 
 
 @dataclass(frozen=True)
@@ -134,9 +162,20 @@ class GaugeGroup:
 
     def matter_representation(self, field: "Field") -> Optional[GaugeRepresentation]:
         """Return the gauge representation carried by a given matter field."""
+        resolved = self.matter_representation_and_slot(field)
+        if resolved is None:
+            return None
+        return resolved[0]
+
+    def matter_representation_and_slot(
+        self,
+        field: "Field",
+    ) -> Optional[tuple[GaugeRepresentation, int]]:
+        """Return the gauge representation and the concrete field slot it uses."""
         for rep in self.representations:
-            if rep.index in field.indices:
-                return rep
+            slot = rep.slot_for(field)
+            if slot is not None:
+                return rep, slot
         return None
 
 
@@ -180,6 +219,43 @@ def _infer_statistics(kind: str) -> Statistics:
     return "boson"
 
 
+def _copy_index_label_value(value):
+    if isinstance(value, tuple):
+        return value
+    if isinstance(value, list):
+        return tuple(value)
+    return value
+
+
+def _copy_index_labels(labels: Mapping | None) -> dict:
+    if not labels:
+        return {}
+    return {kind: _copy_index_label_value(value) for kind, value in labels.items()}
+
+
+def _normalize_index_labels(field: "Field", labels: Mapping | None) -> dict:
+    normalized = _copy_index_labels(labels)
+    if not normalized:
+        return {}
+
+    kind_counts = Counter(index.kind for index in field.indices)
+    for kind, value in normalized.items():
+        expected = kind_counts.get(kind, 0)
+        if expected <= 1 or value is None:
+            continue
+        if not isinstance(value, tuple):
+            raise ValueError(
+                f"Field {field.name!r} carries repeated index kind {kind!r}; "
+                "provide labels as a tuple/list in slot order."
+            )
+        if len(value) != expected:
+            raise ValueError(
+                f"Field {field.name!r} carries {expected} indices of kind {kind!r}; "
+                f"got {len(value)} labels."
+            )
+    return normalized
+
+
 @dataclass(frozen=True)
 class Field:
     """Particle field declaration (mirrors M$ClassesDescription)."""
@@ -220,12 +296,48 @@ class Field:
             return self.conjugate_symbol or S(self.name + "bar")
         return self.symbol
 
+    def index_positions(
+        self,
+        *,
+        kind: Optional[str] = None,
+        index: Optional[IndexType] = None,
+    ) -> tuple[int, ...]:
+        """Return field-index slots matching one kind or one concrete index type."""
+        if (kind is None) == (index is None):
+            raise ValueError("Provide exactly one of kind=... or index=...")
+        if kind is not None:
+            return tuple(slot for slot, item in enumerate(self.indices) if item.kind == kind)
+        return tuple(slot for slot, item in enumerate(self.indices) if item == index)
+
+    def index_kind_count(self, kind: str) -> int:
+        return sum(1 for index in self.indices if index.kind == kind)
+
+    def pack_slot_labels(self, slot_labels: Mapping[int, object]) -> dict:
+        """Pack slot-indexed labels into the engine's kind-keyed label format."""
+        grouped: dict[str, list[object]] = {}
+        kind_counts = Counter(index.kind for index in self.indices)
+        for slot, index in enumerate(self.indices):
+            if slot not in slot_labels:
+                continue
+            label = slot_labels[slot]
+            if label is None:
+                continue
+            grouped.setdefault(index.kind, []).append(label)
+
+        packed = {}
+        for kind, labels in grouped.items():
+            if kind_counts[kind] > 1 or len(labels) > 1:
+                packed[kind] = tuple(labels)
+            else:
+                packed[kind] = labels[0]
+        return packed
+
     def occurrence(self, *, conjugated: bool = False, labels: dict | None = None):
         """Create a FieldOccurrence of this field in an interaction term."""
         return FieldOccurrence(
             field=self,
             conjugated=conjugated,
-            labels=labels or {},
+            labels=_normalize_index_labels(self, labels),
         )
 
     def leg(
@@ -244,7 +356,7 @@ class Field:
             conjugated=conjugated,
             species=species,
             spin=spin,
-            labels=labels or {},
+            labels=_normalize_index_labels(self, labels),
         )
 
 
@@ -269,7 +381,10 @@ class FieldOccurrence:
 
     @property
     def spinor_label(self):
-        return self.labels.get(SPINOR_KIND)
+        spinor = self.labels.get(SPINOR_KIND)
+        if isinstance(spinor, tuple):
+            return spinor[0] if spinor else None
+        return spinor
 
 
 # ---------------------------------------------------------------------------
@@ -351,8 +466,8 @@ class InteractionTerm:
         field_roles = [occ.role for occ in self.fields]
         leg_roles = [leg.role for leg in external_legs]
 
-        field_index_labels = [dict(occ.labels) for occ in self.fields]
-        leg_index_labels = [dict(leg.labels) for leg in external_legs]
+        field_index_labels = [_copy_index_labels(occ.labels) for occ in self.fields]
+        leg_index_labels = [_copy_index_labels(leg.labels) for leg in external_legs]
 
         leg_spins = [leg.spin for leg in external_legs]
 
