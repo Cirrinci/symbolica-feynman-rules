@@ -5,15 +5,10 @@
 .env
 **/.DS_Store
 
+# Keep the main walkthrough notebook visible in git even if broader
+# notebook ignore rules are added later.
+!notebooks/codebase_workflow_walkthrough.ipynb
+
 # Files not intended for public visibility
-Literature/
-Notebooks/1b396a2187182a4aebf5078982f8207c-57134e5ac6bcbe50b124cf57bfe6b6b57c12a229/
-Notebooks/SpensoExample.ipynb
-Notebooks/first.ipynb
-Notebooks/playground.ipynb
-Notebooks/spenso_and_idenso.ipynb
-wolframnotebook/
-code/LagrangainArchitecture.py
-code/prototype_terms.py
-first_playground/
 archive/
+sandbox/
