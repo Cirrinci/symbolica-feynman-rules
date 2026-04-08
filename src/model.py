@@ -119,13 +119,24 @@ class GaugeRepresentation:
     generator_builder: Callable[[object, object, object], object]
     name: str = ""
     slot: Optional[int] = None
+    slot_policy: Literal["unique", "sum"] = "unique"
 
     def build_generator(self, adjoint_label, left_label, right_label):
         """Build the concrete representation tensor, e.g. T^a_{ij}."""
         return self.generator_builder(adjoint_label, left_label, right_label)
 
-    def slot_for(self, field: "Field") -> Optional[int]:
-        """Resolve which field-index slot this representation acts on."""
+    def slots_for(self, field: "Field") -> tuple[int, ...]:
+        """Resolve which field-index slots this representation acts on.
+
+        Semantics:
+        - If ``slot`` is explicitly set, it selects that one slot.
+        - Otherwise:
+          - if no matching slots exist, returns ().
+          - if exactly one matching slot exists, returns (slot,).
+          - if multiple matching slots exist:
+            - ``slot_policy='unique'`` (default): raise (ambiguity must be explicit)
+            - ``slot_policy='sum'``: return all matching slots
+        """
         matches = [slot for slot, index in enumerate(field.indices) if index == self.index]
         if self.slot is not None:
             if self.slot < 0 or self.slot >= len(field.indices):
@@ -138,15 +149,34 @@ class GaugeRepresentation:
                     f"GaugeRepresentation(slot={self.slot}) for index {self.index.name!r} "
                     f"does not match field {field.name!r}."
                 )
-            return self.slot
+            return (self.slot,)
         if not matches:
-            return None
+            return ()
         if len(matches) > 1:
+            if self.slot_policy == "sum":
+                return tuple(matches)
             raise ValueError(
                 f"Field {field.name!r} carries repeated index type {self.index.name!r}; "
-                "declare GaugeRepresentation(slot=...) to disambiguate the active slot."
+                "declare GaugeRepresentation(slot=...) for strict selection, or set "
+                "GaugeRepresentation(slot_policy='sum') to sum over all matching slots."
             )
-        return matches[0]
+        return (matches[0],)
+
+    def slot_for(self, field: "Field") -> Optional[int]:
+        """Backward-compatible helper: resolve a unique slot or None.
+
+        This preserves the original strict semantics (ambiguity -> error) unless
+        ``slot`` is explicitly set.
+        """
+        slots = self.slots_for(field)
+        if not slots:
+            return None
+        if len(slots) != 1:
+            raise ValueError(
+                f"GaugeRepresentation for index {self.index.name!r} resolved to {len(slots)} slots; "
+                "use slots_for(...) or set slot=... for a unique slot."
+            )
+        return slots[0]
 
 
 @dataclass(frozen=True)
@@ -162,7 +192,7 @@ class GaugeGroup:
 
     def matter_representation(self, field: "Field") -> Optional[GaugeRepresentation]:
         """Return the gauge representation carried by a given matter field."""
-        resolved = self.matter_representation_and_slot(field)
+        resolved = self.matter_representation_and_slots(field)
         if resolved is None:
             return None
         return resolved[0]
@@ -176,6 +206,17 @@ class GaugeGroup:
             slot = rep.slot_for(field)
             if slot is not None:
                 return rep, slot
+        return None
+
+    def matter_representation_and_slots(
+        self,
+        field: "Field",
+    ) -> Optional[tuple[GaugeRepresentation, tuple[int, ...]]]:
+        """Return the gauge representation and all concrete field slots it uses."""
+        for rep in self.representations:
+            slots = rep.slots_for(field)
+            if slots:
+                return rep, tuple(slots)
         return None
 
 
@@ -313,23 +354,34 @@ class Field:
         return sum(1 for index in self.indices if index.kind == kind)
 
     def pack_slot_labels(self, slot_labels: Mapping[int, object]) -> dict:
-        """Pack slot-indexed labels into the engine's kind-keyed label format."""
-        grouped: dict[str, list[object]] = {}
-        kind_counts = Counter(index.kind for index in self.indices)
-        for slot, index in enumerate(self.indices):
-            if slot not in slot_labels:
-                continue
-            label = slot_labels[slot]
-            if label is None:
-                continue
-            grouped.setdefault(index.kind, []).append(label)
+        """Pack slot-indexed labels into the engine's kind-keyed label format.
 
-        packed = {}
-        for kind, labels in grouped.items():
-            if kind_counts[kind] > 1 or len(labels) > 1:
-                packed[kind] = tuple(labels)
-            else:
-                packed[kind] = labels[0]
+        For repeated kinds, the packed tuple is **ordinal-stable**: its length is
+        exactly the number of slots of that kind, using ``None`` placeholders for
+        unspecified slots.
+        """
+        kind_counts = Counter(index.kind for index in self.indices)
+        kind_slots: dict[str, list[int]] = {}
+        for slot, index in enumerate(self.indices):
+            kind_slots.setdefault(index.kind, []).append(slot)
+
+        packed: dict[str, object] = {}
+        for kind, slots in kind_slots.items():
+            count = kind_counts[kind]
+            if count <= 1:
+                # Single-slot kinds stay as a single label when present.
+                slot = slots[0]
+                if slot in slot_labels and slot_labels[slot] is not None:
+                    packed[kind] = slot_labels[slot]
+                continue
+
+            # Repeated kinds: preserve slot ordinal with None placeholders.
+            labels = [None] * count
+            for ordinal, slot in enumerate(slots):
+                if slot in slot_labels:
+                    labels[ordinal] = slot_labels[slot]
+            packed[kind] = tuple(labels)
+
         return packed
 
     def occurrence(self, *, conjugated: bool = False, labels: dict | None = None):

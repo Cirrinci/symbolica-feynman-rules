@@ -523,6 +523,12 @@ COLOR_FUND_REP = GaugeRepresentation(
     generator_builder=gauge_generator,
     name="fundamental",
 )
+COLOR_FUND_REP_SUM = GaugeRepresentation(
+    index=COLOR_FUND_INDEX,
+    generator_builder=gauge_generator,
+    name="fundamental_sum",
+    slot_policy="sum",
+)
 COLOR_FUND_REP_SLOT0 = GaugeRepresentation(
     index=COLOR_FUND_INDEX,
     generator_builder=gauge_generator,
@@ -544,6 +550,14 @@ QCD_GROUP_BISLOT = GaugeGroup(
     gauge_boson=G0,
     structure_constant=structure_constant,
     representations=(COLOR_FUND_REP_SLOT0,),
+)
+QCD_GROUP_BISLOT_SUM = GaugeGroup(
+    name="SU3CBiSum",
+    abelian=False,
+    coupling=gS,
+    gauge_boson=G0,
+    structure_constant=structure_constant,
+    representations=(COLOR_FUND_REP_SUM,),
 )
 QCD_GROUP_AMBIGUOUS = GaugeGroup(
     name="SU3CAmbiguous",
@@ -579,6 +593,12 @@ MODEL_SCALAR_QCD_BISLOT_BASE = Model(
     name="ScalarQCD-bislot-minimal",
     gauge_groups=(QCD_GROUP_BISLOT,),
     fields=(PhiBiField, GluonField),
+)
+MODEL_SCALAR_QCD_BISLOT_COVARIANT_SUM = Model(
+    name="ScalarQCD-bislot-covariant-sum",
+    gauge_groups=(QCD_GROUP_BISLOT_SUM,),
+    fields=(PhiBiField, GluonField),
+    covariant_terms=(ComplexScalarKineticTerm(field=PhiBiField),),
 )
 MODEL_SCALAR_QCD_BISLOT_AMBIGUOUS = Model(
     name="ScalarQCD-bislot-ambiguous",
@@ -817,6 +837,12 @@ LEGS_compiled_scalar_bislot_current = (
     PhiBiField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: (c1, c3)}),
     PhiBiField.leg(p2, species=b2, labels={COLOR_FUND_KIND: (c2, c4)}),
     GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
+)
+LEGS_compiled_scalar_bislot_contact = (
+    PhiBiField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: (c1, c3)}),
+    PhiBiField.leg(p2, species=b2, labels={COLOR_FUND_KIND: (c2, c4)}),
+    GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
+    GluonField.leg(p4, labels={LORENTZ_KIND: mu4, COLOR_ADJ_KIND: a4}, species=b4),
 )
 
 TERM_complex_scalar_contact = InteractionTerm(
@@ -1067,6 +1093,7 @@ def _run_covariant_demo():
     compiled_mixed = compile_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
     compiled_scalar_qcd = compile_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
+    compiled_bislot_sum = compile_covariant_terms(MODEL_SCALAR_QCD_BISLOT_COVARIANT_SUM)
     compiled_photon = compile_covariant_terms(MODEL_QED_GAUGE_COVARIANT)
     compiled_yang_mills = compile_covariant_terms(MODEL_QCD_GAUGE_COVARIANT)
     photon_rho = compiled_photon[0].derivatives[0].lorentz_index
@@ -1169,6 +1196,50 @@ def _run_covariant_demo():
         ),
         compact_override=I * (gS ** 2) * scalar_gauge_contact(mu3, mu4) * _symmetrized_generator_contact(a3, a4, c1, c2, S("c_mid_PhiQCD_SU3C")),
         interpretation="Raw vertex keeps both generator-order terms explicit; the compact override is the symmetrized color structure.",
+    )
+    _print_vertex_block(
+        "covariant: (D_mu PhiBi)^dagger (D^mu PhiBi) [bislot, slot_policy='sum']",
+        description="Bislotted scalar kinetic term expanded by summing over both identical color-fundamental slots.",
+        vertex=(
+            sum(
+                (
+                    _model_demo_vertex(
+                        interaction=term,
+                        external_legs=LEGS_compiled_scalar_bislot_current,
+                        species_map={b1: phiBidag0, b2: phiBi0, b3: G0},
+                    )
+                    for term in compiled_bislot_sum
+                    if "current" in term.label
+                ),
+                Expression.num(0),
+            )
+        ).expand(),
+        interpretation=(
+            "Vertex shown here is the SUM of all compiled current terms (both slots). "
+            "Below we list the compiled term labels and also show the summed contact vertex."
+        ),
+    )
+    print("Compiled bislot-sum term labels:")
+    for term in compiled_bislot_sum:
+        print(" -", term.label)
+    print()
+    _print_vertex_block(
+        "covariant: (D_mu PhiBi)^dagger (D^mu PhiBi) contact [bislot sum]",
+        description="Sum of all ordered slot-pair contact contributions.",
+        vertex=(
+            sum(
+                (
+                    _model_demo_vertex(
+                        interaction=term,
+                        external_legs=LEGS_compiled_scalar_bislot_contact,
+                        species_map={b1: phiBidag0, b2: phiBi0, b3: G0, b4: G0},
+                    )
+                    for term in compiled_bislot_sum
+                    if "contact" in term.label
+                ),
+                Expression.num(0),
+            )
+        ).expand(),
     )
     _print_vertex_block(
         "covariant: -1/4 F_mu nu F^mu nu [abelian bilinear]",
