@@ -60,7 +60,9 @@ Most important cleanup here:
 The next step is to make this layer carry more meaning:
 
 - distinguish scalar, vector, and gauge-field roles properly
+- make abelian charges and non-abelian representation slots first-class field metadata
 - make index signatures more central to compatibility checks
+- make covariant-derivative construction depend on that metadata rather than one hard-coded universal `D_mu`
 - reduce the amount of parallel-list logic that leaks into calling code
 
 ## 3) Centralize operator builders

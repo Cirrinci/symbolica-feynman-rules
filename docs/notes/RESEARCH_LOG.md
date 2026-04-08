@@ -253,6 +253,60 @@ What should be done next week:
 4. draft the declaration/compilation API for gauge-fixing terms
 5. improve the canonical readability of pure-gauge output while keeping the raw form available
 
+### 2026-04-08: repeated-slot hardening, bislot covariant support, and walkthrough sync
+
+What happened:
+
+- the model/compiler boundary was hardened for fields carrying multiple slots of the same index kind
+- `GaugeRepresentation` now supports:
+  - `slot_policy="unique"` as the strict default
+  - `slot_policy="sum"` as an explicit opt-in for tensor-product-style expansion over all matching slots
+  - multi-slot resolution helpers used by the gauge compiler
+- `Field.pack_slot_labels(...)` was made ordinal-stable for repeated kinds by preserving tuple length and `None` placeholders
+- the gauge compiler was updated so the covered current/contact paths now loop over active slots instead of assuming one unique slot
+- ambiguous repeated-slot cases are now rejected by default, while the bislot QCD scalar case can be expanded intentionally under `slot_policy="sum"`
+- non-abelian scalar contact compilation now includes the ordered slot-pair expansion needed for same-slot and cross-slot placements
+- spectator identities on inactive repeated slots are now inserted systematically in both minimal and covariant gauge compilation
+- the walkthrough notebook was expanded and synchronized with the live source tree, especially around:
+  - section 9 / 9.1 for the covariant compiler
+  - the bislotted scalar `slot_policy="sum"` example
+  - the pure-gauge follow-up section
+- a first dedicated `pytest` regression file was added for the bislot covariant case while the broader matrix remains in `src/examples.py`
+- the live validation paths were rerun successfully:
+  - `src/examples.py --suite all --no-demo`
+  - `pytest -q`
+
+What this achieved:
+
+- repeated same-kind index slots no longer collapse at the model/compiler boundary for the covered code paths
+- the covariant compiler now has a real, explicit semantics for repeated slots:
+  - ambiguity is an error by default
+  - tensor-product summation is an explicit metadata choice
+- the bislotted scalar covariant expansion is now working for the covered QCD-style case, including ordered contact-term slot pairs
+- the source tree, executable examples, and notebook walkthrough now tell the same story about the current compiler layers
+- the project now has the start of a real test split instead of keeping absolutely all covariant validation inside demo code
+
+Current interpretation after this update:
+
+- repeated same-kind slot handling: working for the covered minimal and covariant gauge-compiler paths
+- covariant matter compiler: working for the covered single-group fermion/scalar cases and mixed-group fermion case
+- pure-gauge compiler: working for the covered abelian and Yang-Mills cases
+- dedicated `pytest` coverage: started, but still too small compared with the live regression matrix
+
+What remains unfinished around this area:
+
+- mixed-group complex-scalar covariant terms still do not generate cross-group two-gauge contact terms
+- model-level validation is still too permissive when undeclared `Field` or `GaugeGroup` objects are passed directly
+- explicit abelian group selection can still compile zero-coupling interactions instead of rejecting bad metadata
+- most covariant and pure-gauge regression coverage still lives in `src/examples.py`
+
+Practical next steps:
+
+1. complete mixed-group complex-scalar covariant contact generation
+2. tighten model membership checks for fields and gauge groups used by compiler declarations
+3. expand the dedicated `pytest` layer so the main covariant/pure-gauge matrix no longer depends on demo scripts
+4. then continue into gauge fixing, ghosts, and later BFM-specific work on top of the ordinary gauge baseline
+
 ### Where we are in the overall progress
 
 Best current summary:

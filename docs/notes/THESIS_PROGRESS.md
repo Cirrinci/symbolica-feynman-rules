@@ -55,11 +55,17 @@ The current prototype already supports:
 - a working covariant-derivative compiler for covered fermion and complex-scalar gauge interactions
 - fixed-convention covariant outputs for QCD/QED fermions and QED/QCD complex scalars
 - multi-gauge-group covariant expansion for covered matter fields
+- repeated same-kind slot handling for the covered gauge-compiler paths, including:
+  - strict ambiguity rejection by default
+  - explicit `slot_policy="sum"` opt-in
+  - spectator identities on inactive repeated slots
+  - ordered slot-pair expansion for bislotted scalar contact terms
 - pure-gauge kinetic compilation for:
   - abelian `-1/4 F_{mu nu} F^{mu nu}`
   - non-abelian `-1/4 F^a_{mu nu} F^{a mu nu}`
   - Yang-Mills 3-gauge and 4-gauge vertices
 - direct/model agreement checks in the main example suite
+- a first dedicated `pytest` regression file for the bislot covariant case
 - a runnable gamma/tensor validation sandbox
 
 ### Current position
@@ -75,6 +81,7 @@ Reasonable summary:
 - model-driven input: working and usable
 - minimal gauge-model compilation: working
 - covariant-derivative compilation for covered matter-sector cases: working
+- repeated same-kind slot handling in the covered compiler paths: working
 - ordinary pure-gauge field-strength compilation: working in the covered abelian and Yang-Mills cases
 - BFM-complete support: not implemented
 - full FeynRules-like usability layer: not implemented
@@ -96,11 +103,12 @@ Main missing or weak points:
 
 - the model layer is still thinner than the intended end state
 - conventions now work in code but still need one stable documentation/testing source of truth
-- fields carrying repeated identical index kinds are not handled robustly enough yet
+- mixed-group complex-scalar covariant contact terms are not complete yet
+- model-level validation is still too permissive for undeclared `Field` / `GaugeGroup` objects passed directly into compiler declarations
 - multi-fermion tensor support is still narrow beyond the covered bilinear-style patterns
 - gauge support is broader but still not BFM-complete
 - background-field-gauge scaffolding, gauge fixing, and ghosts are not implemented
-- there is not yet a dedicated test harness beyond the main example script
+- a dedicated test harness has started, but most regression coverage is still in the main example script
 
 ### Next milestone
 
@@ -110,7 +118,7 @@ That means:
 
 1. keep the active conventions frozen in code/docs/tests
 2. move the growing checks into a stronger regression layout
-3. fix the repeated same-kind index-slot weakness in the model/compiler boundary
+3. complete the remaining mixed-group scalar covariant cases and tighten compiler validation
 4. add ordinary gauge-fixing terms through the physical compiler path
 5. add ghosts after gauge fixing is stable
 6. then add background/quantum gauge-field splitting on top of that ordinary gauge-fixed base
@@ -121,7 +129,7 @@ That means:
 
 1. extract the current covariant and pure-gauge checks into a first dedicated test suite
 2. write one short stable conventions reference
-3. tighten index-slot handling for repeated same-kind field indices
+3. add the missing mixed-group scalar covariant contact coverage and harden model/compiler validation
 4. draft the declaration/compiler interface for gauge-fixing terms
 
 ### Writing use

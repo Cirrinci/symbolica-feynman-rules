@@ -13,6 +13,159 @@ In the docs, “covariant derivative” means gauge-covariant derivatives of the
 - Matter: `D_mu = partial_mu + i g A_mu`
 - Derivatives map to momentum factors in Fourier space: `partial_mu -> -i p_mu`
 
+### Conceptual frame: the covariant derivative is representation-dependent
+
+Yes: in general the covariant derivative is representation-dependent.
+
+The stable abstraction is:
+
+- `D_mu = partial_mu + i sum_G g_G A^a_{G,mu} T^a_R`
+
+where the gauge-group data come from the gauge declaration, while the object
+`T^a_R` is determined by the field representation `R`.
+
+- for an abelian factor, `T_R` reduces to the field charge
+- for a non-abelian factor, `T^a_R` is the generator acting in that field's representation
+
+This is the right FeynRules-style mental model for the codebase:
+
+- gauge groups declare the gauge boson, coupling, structure constants, and available representations
+- fields declare their quantum numbers and index slots
+- the covariant compiler reads that metadata and builds the gauge part appropriate to the field
+
+Important convention note for this repository:
+
+- the physical compiler freezes the sign convention as `D_mu = partial_mu + i g A_mu`
+- the structural point here is the dependence on representation metadata, not the overall sign choice
+- if the sign convention changes later, the metadata flow should stay the same
+
+#### 1. Do not hardcode one universal `D_mu`
+
+Treat the covariant derivative as a function of field metadata, not as one
+single object reused blindly for every field.
+
+Each field should carry at least:
+
+- whether it is a scalar, fermion, or vector
+- whether it is self-conjugate
+- its abelian quantum numbers
+- its non-abelian representation indices
+- which gauge groups act on it
+
+That is exactly the same split used by FeynRules:
+
+- `QuantumNumbers` encode `U(1)`-type charges
+- `Indices` encode non-abelian representation slots
+- gauge groups declare the generator structure that acts on those slots
+
+#### 2. Separate the problem into two layers
+
+Layer A: gauge-group data
+
+- gauge boson `A_mu^a`
+- coupling `g`
+- whether the group is abelian
+- generator object `T^a` or abelian charge label
+- structure constants for non-abelian groups
+
+Layer B: field transformation data
+
+- under `U(1)`: charge `q`
+- under `SU(N)`: representation type such as singlet, fundamental, or adjoint
+- the actual index slots the group acts on
+- for repeated identical index kinds, whether the action is on one selected slot or summed over matching slots
+
+Once those two layers exist, the derivative builder only has to read metadata
+and sum the relevant gauge contributions.
+
+#### 3. Build `D_mu phi` by summing one contribution per gauge factor
+
+Conceptually:
+
+- start from `partial_mu phi`
+- for each gauge group `G`:
+  - if `phi` is neutral or a singlet under `G`, add nothing
+  - if `G = U(1)`, add `+ i g q A_mu phi`
+  - if `G` is non-abelian, add `+ i g A_mu^a T^a_R phi`
+
+That is the reusable core. The derivative builder should not care whether the
+field is "the scalar case" or "the fermion case" until it needs the field kind
+for the surrounding kinetic term.
+
+#### 4. Let the representation determine the concrete formula
+
+Examples in the repository sign convention:
+
+Complex scalar with electric charge `q`:
+
+- `D_mu phi = (partial_mu + i e q A_mu) phi`
+
+Fermion in QED:
+
+- `D_mu psi = (partial_mu + i e q A_mu) psi`
+
+Fundamental of `SU(3)`:
+
+- `(D_mu phi)^i = partial_mu phi^i + i g_s G_mu^a (T^a)^i{}_j phi^j`
+
+Adjoint of `SU(N)`:
+
+- `(D_mu X)^a = partial_mu X^a + g f^{abc} A_mu^b X^c`
+
+The important point is that the symmetry is the same, but the concrete action
+depends on the representation:
+
+- fundamental action uses the generator matrix on a fundamental slot
+- adjoint action uses the adjoint generators, equivalently the structure constants
+
+#### 5. Treat conjugate fields as conjugate representations
+
+This is one of the easiest places to make a wrong implementation choice.
+
+If `phi` transforms in `R`, then `phi^dagger` transforms in the conjugate
+representation `R*`.
+
+That means:
+
+- for abelian groups, the charge changes sign
+- for non-abelian groups, the generator action becomes that of the conjugate representation
+
+So the code should not blindly reuse the same gauge term for both a field and
+its daggered occurrence. The conjugate action should be derived from metadata.
+
+For example in scalar QED with the sign convention used in this repository:
+
+- `D_mu phi = (partial_mu + i e q A_mu) phi`
+- `D_mu phi^dagger = (partial_mu - i e q A_mu) phi^dagger`
+
+That sign flip is essential.
+
+### Status update (2026-04-08)
+
+This note started as the design document for the repeated-slot generalization.
+The main implementation described below is now present in the live code for the
+covered compiler paths.
+
+Implemented pieces in the current source tree:
+
+- `GaugeRepresentation` now has explicit repeated-slot semantics through:
+  - `slot`
+  - `slot_policy="unique"` and `slot_policy="sum"`
+  - `slots_for(...)` and related multi-slot helpers
+- `GaugeGroup` and the gauge compiler now resolve all active matching slots instead of assuming only one unique slot
+- `Field.pack_slot_labels(...)` now preserves ordinal stability for repeated kinds with explicit `None` placeholders
+- the minimal and covariant gauge compilers now insert spectator identities consistently on inactive repeated slots
+- covariant compilation of the covered bislot scalar case now expands:
+  - one current pair per active slot
+  - one contact contribution per ordered slot pair
+- ambiguous repeated-slot cases are rejected by default and only summed when the metadata opts in with `slot_policy="sum"`
+- initial dedicated `pytest` coverage exists in `tests/test_covariant_bislot_sum.py`
+
+Remaining gaps after the current implementation:
+
+- mixed-group complex-scalar kinetic terms still miss the cross-group two-gauge contact terms
+- most of the covariant regression matrix still lives in `src/examples.py` rather than the dedicated `tests/` tree
+
 ### Where covariant-derivative expansion happens
 
 #### Covariant compiler entry point
@@ -34,7 +187,7 @@ In the docs, “covariant derivative” means gauge-covariant derivatives of the
       - identifying labels that appear exactly once across field slots (`_open_index_labels`)
       - replacing them with the corresponding external-leg labels for each permutation
 
-### What limits generality today (specifically for repeated identical index kinds)
+### What limited generality before the current implementation (specifically for repeated identical index kinds)
 
 This section lists the concrete hard-coded assumptions that prevent “fully general” covariant-derivative expansion for fields carrying multiple indices of the same kind (e.g. a tensor field with two identical color-fundamental slots).
 
@@ -79,15 +232,15 @@ Failure mode:
 
 - If tuple lengths do not preserve the intended ordinal positions, `_get_label` can return the wrong label for a given ordinal, and `_open_index_labels` counting/remapping can misidentify which coupling labels are “open” vs “contracted”.
 
-### Generalization design (to support “sum over tensor factors” and cross-slot contact terms)
+### Generalization design (now implemented for the covered repeated-slot compiler paths)
 
 The goal is to make covariant-derivative extraction/expansion general in the presence of repeated identical index kinds.
 
 There are three complementary changes: metadata semantics, covariant compiler updates, and ordinal-stable label packing.
 
-#### A) Add a slot policy: unique-slot (current) vs sum over matching slots (general)
+#### A) Add a slot policy: unique-slot vs sum over matching slots
 
-Proposed API change (conceptual):
+Implemented API change:
 
 - Extend `GaugeRepresentation` with a `slot_policy` or similar field:
   - `slot_policy="unique"` (default for backward compatibility): current behavior
@@ -153,7 +306,7 @@ This yields the full tensor-product representation of the gauge interaction in t
 
 #### D) Make packing ordinal-stable for repeated kinds (use `None` placeholders)
 
-Proposed change to `Field.pack_slot_labels(slot_labels)`:
+Implemented change to `Field.pack_slot_labels(slot_labels)`:
 
 - For each index kind that appears `N` times in `Field.indices`, the packed representation should always output:
   - `label_or_tuple` where tuples (or lists) have length exactly `N`
@@ -226,11 +379,7 @@ These are the codebase hardening tasks that must happen before (or along with) g
 
 1. Freeze covariant/engine conventions into a stable, single source of truth (docs + tests)
 2. Move covariant compiler assertions out of `src/examples.py` into a dedicated pytest-style test harness
-3. Implement repeated index kind hardening by:
-   - adding slot policy semantics to `GaugeRepresentation`
-   - updating `src/gauge_compiler.py` to loop over active slots for current and contact terms
-   - making `Field.pack_slot_labels` ordinal-stable with explicit `None` placeholders
+3. Extend the now-working repeated-slot machinery into the still-missing mixed-group scalar contact case
 4. Keep `src/model_symbolica.py` generic:
    - no tensor-specific branching in the engine
    - ensure all generality is expressed by correct couplings/labels coming from compiler layers
-
