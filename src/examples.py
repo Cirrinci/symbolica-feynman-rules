@@ -153,75 +153,25 @@ a3, a4, a5, a6 = S("a3", "a4", "a5", "a6")
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _check(got, expected, label, *, show_vertex=False, description=None):
+def _check(got, expected, label, *, show_vertex=False, description=None, display_vertex=None):
     """Assert symbolic equality and optionally print the checked vertex block."""
     assert (
         got.expand().to_canonical_string()
         == expected.expand().to_canonical_string()
     ), f"{label} FAILED:\n  got:      {got}\n  expected: {expected}"
     if show_vertex:
-        _print_vertex_block(label, description=description, vertex=got)
+        _print_vertex_block(
+            label,
+            description=description,
+            vertex=got,
+            compact_override=display_vertex,
+        )
     print(f"  {label}: PASS")
 
 
 def _print_demo_header(title):
     """Print a short section header for one example block."""
     print(f"# === {title} ===\n")
-
-
-def _slot_label_sequence(field: Field, labels: dict) -> tuple[object | None, ...]:
-    """Return slot labels in the field's declared slot order."""
-    labels = labels or {}
-    kind_ordinals: dict[str, int] = {}
-    ordered_labels: list[object | None] = []
-    for index in field.indices:
-        ordinal = kind_ordinals.get(index.kind, 0)
-        kind_ordinals[index.kind] = ordinal + 1
-        value = labels.get(index.kind)
-        if isinstance(value, tuple):
-            ordered_labels.append(value[ordinal] if ordinal < len(value) else None)
-        else:
-            ordered_labels.append(value)
-    return tuple(ordered_labels)
-
-
-def _format_field_occurrence(occ) -> str:
-    """Render one interaction field factor with slot labels."""
-    if occ.field.kind == "fermion" and occ.conjugated:
-        base = f"{occ.field.name}bar"
-    elif occ.conjugated and not occ.field.self_conjugate:
-        base = f"{occ.field.name}^dagger"
-    else:
-        base = occ.field.name
-
-    slot_labels = _slot_label_sequence(occ.field, occ.labels)
-    if slot_labels:
-        rendered_labels = ", ".join(
-            "_" if label is None else str(label) for label in slot_labels
-        )
-        return f"{base}[{rendered_labels}]"
-    return base
-
-
-def _format_interaction_term(term: InteractionTerm) -> str:
-    """Render a compact monomial-style view of one compiled interaction term."""
-    derivatives_by_target: dict[int, list[object]] = {}
-    for derivative in term.derivatives:
-        derivatives_by_target.setdefault(derivative.target, []).append(
-            derivative.lorentz_index
-        )
-
-    factors: list[str] = []
-    for target, occ in enumerate(term.fields):
-        field_factor = _format_field_occurrence(occ)
-        derivatives = derivatives_by_target.get(target, [])
-        if derivatives:
-            derivative_prefix = " ".join(f"d_({index})" for index in derivatives)
-            field_factor = f"({derivative_prefix} {field_factor})"
-        factors.append(field_factor)
-
-    monomial = " * ".join(factors) if factors else "1"
-    return f"{term.coupling} * {monomial}"
 
 
 def _print_section(title, content):
@@ -236,7 +186,7 @@ def _print_section(title, content):
 
 
 def _print_interaction_terms(terms):
-    """Print one or more compiled interaction terms with labels and monomials."""
+    """Print one or more compiled interaction-term labels."""
     if not terms:
         return
     heading = "Compiled interaction term" if len(terms) == 1 else "Compiled interaction terms"
@@ -245,11 +195,7 @@ def _print_interaction_terms(terms):
         prefix = f"{index}. " if len(terms) > 1 else ""
         if isinstance(term, InteractionTerm):
             label = _ANSI_ESCAPE_RE.sub("", term.label or "<no label>")
-            print(f"  {prefix}Label: {label}")
-            print(
-                "     Monomial: "
-                + _ANSI_ESCAPE_RE.sub("", _format_interaction_term(term))
-            )
+            print(f"  {prefix}{label}")
         else:
             print(f"  {prefix}{_ANSI_ESCAPE_RE.sub('', str(term))}")
     print()
@@ -283,16 +229,15 @@ def _print_vertex_block(
             _print_section("Context", description)
     elif description:
         _print_section("Interaction / source", description)
-    if vertex is not None:
-        _print_section("Computed vertex", vertex)
-    if canonical_vertex is not None:
-        _print_section("Canonicalized vertex", canonical_vertex)
+
     if compact_override is not None:
-        _print_section("Compact form", compact_override)
-    if sum_notation is not None:
-        _print_section("Sum notation", sum_notation)
-    if interpretation is not None:
-        _print_section("Interpretation", interpretation)
+        display_vertex = compact_override
+    elif canonical_vertex is not None:
+        display_vertex = canonical_vertex
+    else:
+        display_vertex = vertex
+    if display_vertex is not None:
+        _print_section("Vertex", display_vertex)
     if error is not None:
         _print_section("Status", error)
     print()
@@ -2105,6 +2050,7 @@ def _run_compiled_gauge_tests():
         "Compiled model: scalar QCD contact",
         show_vertex=True,
         description=term_sqcd_contact.label,
+        display_vertex=expected_sqcd_contact,
     )
 
     try:
@@ -2399,6 +2345,7 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: scalar QCD contact",
         show_vertex=True,
         description=term_sqcd_contact.label,
+        display_vertex=expected_sqcd_contact,
     )
 
     compiled_photon = compile_covariant_terms(MODEL_QED_GAUGE_COVARIANT)
@@ -2429,6 +2376,7 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: abelian gauge bilinear",
         show_vertex=True,
         description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 U1QED field strength squared",
+        display_vertex=I * gauge_kinetic_bilinear(mu3, mu4, p1, p2, photon_rho) * D2,
     )
 
     compiled_yang_mills = compile_covariant_terms(MODEL_QCD_GAUGE_COVARIANT)
@@ -2465,6 +2413,12 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: non-abelian gauge bilinear",
         show_vertex=True,
         description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 SU3C field strength squared",
+        display_vertex=(
+            I
+            * gauge_kinetic_bilinear(mu3, mu4, p1, p2, ym_rho)
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+            * D2
+        ),
     )
 
     _check(
@@ -2481,6 +2435,7 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: Yang-Mills cubic",
         show_vertex=True,
         description=ym_cubic.label,
+        display_vertex=gS * yang_mills_three_vertex_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3) * D3,
     )
 
     _check(
@@ -2498,6 +2453,14 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: Yang-Mills quartic",
         show_vertex=True,
         description=ym_quartic.label,
+        display_vertex=(
+            -I
+            * Expression.num(1)
+            / Expression.num(2)
+            * (gS ** 2)
+            * yang_mills_four_vertex_raw(a3, a4, a5, a6, mu, nu, rho, sigma, ym_internal)
+            * D4
+        ),
     )
 
     print("\n  Covariant / pure-gauge compiler tests passed.\n")
