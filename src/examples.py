@@ -9,6 +9,7 @@ This file currently plays two roles:
 """
 
 import argparse
+import re
 from fractions import Fraction
 
 from gauge_compiler import (
@@ -87,6 +88,7 @@ from model import (
 
 x = S("x")
 d = S("d")
+_ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 
 p1, p2, p3, p4, p5, p6 = S("p1", "p2", "p3", "p4", "p5", "p6")
 b1, b2, b3, b4, b5, b6 = S("b1", "b2", "b3", "b4", "b5", "b6")
@@ -97,6 +99,8 @@ phiC0 = S("phiC0")
 phiCdag0 = S("phiCdag0")
 phiQCD0 = S("phiQCD0")
 phiQCDdag0 = S("phiQCDdag0")
+phiMix0 = S("phiMix0")
+phiMixdag0 = S("phiMixdag0")
 phiBi0 = S("phiBi0")
 phiBidag0 = S("phiBidag0")
 psibar0, psi0 = S("psibar0", "psi0")
@@ -124,6 +128,7 @@ eQED = S("eQED")
 qPhi = S("qPhi")
 qPsi = S("qPsi")
 qMix = S("qMix")
+qPhiMix = S("qPhiMix")
 gPhiA = S("gPhiA")
 gPhiAA = S("gPhiAA")
 g4F = S("g4F")
@@ -164,10 +169,97 @@ def _print_demo_header(title):
     print(f"# === {title} ===\n")
 
 
+def _slot_label_sequence(field: Field, labels: dict) -> tuple[object | None, ...]:
+    """Return slot labels in the field's declared slot order."""
+    labels = labels or {}
+    kind_ordinals: dict[str, int] = {}
+    ordered_labels: list[object | None] = []
+    for index in field.indices:
+        ordinal = kind_ordinals.get(index.kind, 0)
+        kind_ordinals[index.kind] = ordinal + 1
+        value = labels.get(index.kind)
+        if isinstance(value, tuple):
+            ordered_labels.append(value[ordinal] if ordinal < len(value) else None)
+        else:
+            ordered_labels.append(value)
+    return tuple(ordered_labels)
+
+
+def _format_field_occurrence(occ) -> str:
+    """Render one interaction field factor with slot labels."""
+    if occ.field.kind == "fermion" and occ.conjugated:
+        base = f"{occ.field.name}bar"
+    elif occ.conjugated and not occ.field.self_conjugate:
+        base = f"{occ.field.name}^dagger"
+    else:
+        base = occ.field.name
+
+    slot_labels = _slot_label_sequence(occ.field, occ.labels)
+    if slot_labels:
+        rendered_labels = ", ".join(
+            "_" if label is None else str(label) for label in slot_labels
+        )
+        return f"{base}[{rendered_labels}]"
+    return base
+
+
+def _format_interaction_term(term: InteractionTerm) -> str:
+    """Render a compact monomial-style view of one compiled interaction term."""
+    derivatives_by_target: dict[int, list[object]] = {}
+    for derivative in term.derivatives:
+        derivatives_by_target.setdefault(derivative.target, []).append(
+            derivative.lorentz_index
+        )
+
+    factors: list[str] = []
+    for target, occ in enumerate(term.fields):
+        field_factor = _format_field_occurrence(occ)
+        derivatives = derivatives_by_target.get(target, [])
+        if derivatives:
+            derivative_prefix = " ".join(f"d_({index})" for index in derivatives)
+            field_factor = f"({derivative_prefix} {field_factor})"
+        factors.append(field_factor)
+
+    monomial = " * ".join(factors) if factors else "1"
+    return f"{term.coupling} * {monomial}"
+
+
+def _print_section(title, content):
+    """Print one labeled section, preserving multiline content."""
+    if content is None:
+        return
+    print(f"{title}:")
+    text = _ANSI_ESCAPE_RE.sub("", str(content))
+    for line in text.splitlines():
+        print(f"  {line}")
+    print()
+
+
+def _print_interaction_terms(terms):
+    """Print one or more compiled interaction terms with labels and monomials."""
+    if not terms:
+        return
+    heading = "Compiled interaction term" if len(terms) == 1 else "Compiled interaction terms"
+    print(f"{heading}:")
+    for index, term in enumerate(terms, start=1):
+        prefix = f"{index}. " if len(terms) > 1 else ""
+        if isinstance(term, InteractionTerm):
+            label = _ANSI_ESCAPE_RE.sub("", term.label or "<no label>")
+            print(f"  {prefix}Label: {label}")
+            print(
+                "     Monomial: "
+                + _ANSI_ESCAPE_RE.sub("", _format_interaction_term(term))
+            )
+        else:
+            print(f"  {prefix}{_ANSI_ESCAPE_RE.sub('', str(term))}")
+    print()
+
+
 def _print_vertex_block(
     title,
     *,
     description=None,
+    interaction_terms=None,
     vertex=None,
     canonical_vertex=None,
     compact_override=None,
@@ -177,8 +269,32 @@ def _print_vertex_block(
 ):
     """Render one example/result block in a notebook-friendly text format."""
     _print_demo_header(title)
-    if description:
-        print(description)
+    if interaction_terms:
+        interaction_terms = tuple(interaction_terms)
+        _print_interaction_terms(interaction_terms)
+        if (
+            description
+            and not (
+                len(interaction_terms) == 1
+                and isinstance(interaction_terms[0], InteractionTerm)
+                and str(description) == interaction_terms[0].label
+            )
+        ):
+            _print_section("Context", description)
+    elif description:
+        _print_section("Interaction / source", description)
+    if vertex is not None:
+        _print_section("Computed vertex", vertex)
+    if canonical_vertex is not None:
+        _print_section("Canonicalized vertex", canonical_vertex)
+    if compact_override is not None:
+        _print_section("Compact form", compact_override)
+    if sum_notation is not None:
+        _print_section("Sum notation", sum_notation)
+    if interpretation is not None:
+        _print_section("Interpretation", interpretation)
+    if error is not None:
+        _print_section("Status", error)
     print()
 
 
@@ -487,6 +603,15 @@ PhiQCDField = Field(
     conjugate_symbol=phiQCDdag0,
     indices=(COLOR_FUND_INDEX,),
 )
+PhiMixField = Field(
+    "PhiMix",
+    spin=0,
+    self_conjugate=False,
+    symbol=phiMix0,
+    conjugate_symbol=phiMixdag0,
+    indices=(COLOR_FUND_INDEX,),
+    quantum_numbers={"Q": qPhiMix},
+)
 PhiBiField = Field(
     "PhiBi",
     spin=0,
@@ -639,6 +764,12 @@ MODEL_MIXED_FERMION_COVARIANT = Model(
     gauge_groups=(QCD_GROUP, QED_GROUP),
     fields=(PsiMixField, GluonField, GaugeField),
     covariant_terms=(DiracKineticTerm(field=PsiMixField),),
+)
+MODEL_MIXED_SCALAR_COVARIANT = Model(
+    name="MixedScalarQCDQED-covariant",
+    gauge_groups=(QCD_GROUP, QED_GROUP),
+    fields=(PhiMixField, GluonField, GaugeField),
+    covariant_terms=(ComplexScalarKineticTerm(field=PhiMixField),),
 )
 MODEL_QED_GAUGE_COVARIANT = Model(
     name="QEDGauge-covariant",
@@ -796,6 +927,22 @@ LEGS_mixed_fermion_qed = (
     PsiMixField.leg(p1, conjugated=True, spin=s1, labels={SPINOR_KIND: i1, COLOR_FUND_KIND: c1}),
     PsiMixField.leg(p2, spin=s2, labels={SPINOR_KIND: i2, COLOR_FUND_KIND: c2}),
     GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}),
+)
+LEGS_mixed_scalar_gluon = (
+    PhiMixField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
+    PhiMixField.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
+    GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
+)
+LEGS_mixed_scalar_qed = (
+    PhiMixField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
+    PhiMixField.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
+    GaugeField.leg(p3, labels={LORENTZ_KIND: mu3}, species=b3),
+)
+LEGS_mixed_scalar_contact = (
+    PhiMixField.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
+    PhiMixField.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
+    GluonField.leg(p3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}, species=b3),
+    GaugeField.leg(p4, labels={LORENTZ_KIND: mu4}, species=b4),
 )
 
 TERM_complex_scalar_current_phi = InteractionTerm(
@@ -1091,6 +1238,7 @@ def _run_covariant_demo():
     compiled_qcd = compile_covariant_terms(MODEL_QCD_COVARIANT)
     compiled_qed = compile_covariant_terms(MODEL_QED_FERMION_COVARIANT)
     compiled_mixed = compile_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
+    compiled_mixed_scalar = compile_covariant_terms(MODEL_MIXED_SCALAR_COVARIANT)
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
     compiled_scalar_qcd = compile_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
     compiled_bislot_sum = compile_covariant_terms(MODEL_SCALAR_QCD_BISLOT_COVARIANT_SUM)
@@ -1106,6 +1254,7 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: qbar i gamma^mu D_mu q",
         description=MODEL_QCD_COVARIANT.covariant_terms[0].label or "Dirac kinetic term expanded through the gauge compiler",
+        interaction_terms=(compiled_qcd[0],),
         vertex=_model_demo_vertex(
             interaction=compiled_qcd[0],
             external_legs=LEGS_quark_gluon,
@@ -1114,6 +1263,7 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: PsiQEDbar i gamma^mu D_mu PsiQED",
         description=MODEL_QED_FERMION_COVARIANT.covariant_terms[0].label or "Abelian Dirac kinetic term expanded through the gauge compiler",
+        interaction_terms=(compiled_qed[0],),
         vertex=_model_demo_vertex(
             interaction=compiled_qed[0],
             external_legs=LEGS_qed_fermion,
@@ -1122,6 +1272,7 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: one Dirac term over QCD+QED [gluon piece]",
         description="Single kinetic term expanded over all matching gauge groups",
+        interaction_terms=(compiled_mixed[0],),
         vertex=_model_demo_vertex(
             interaction=compiled_mixed[0],
             external_legs=LEGS_mixed_fermion_gluon,
@@ -1130,14 +1281,76 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: one Dirac term over QCD+QED [photon piece]",
         description="Same kinetic term, second gauge-group contribution",
+        interaction_terms=(compiled_mixed[1],),
         vertex=_model_demo_vertex(
             interaction=compiled_mixed[1],
             external_legs=LEGS_mixed_fermion_qed,
         ),
     )
+    mixed_scalar_qcd_terms = [
+        term for term in compiled_mixed_scalar
+        if "SU3C: scalar current" in term.label
+    ]
+    mixed_scalar_qed_terms = [
+        term for term in compiled_mixed_scalar
+        if "U1QED: scalar current" in term.label
+    ]
+    mixed_scalar_contact_terms = [
+        term for term in compiled_mixed_scalar
+        if "mixed contact" in term.label
+    ]
+    _print_vertex_block(
+        "covariant: one scalar term over QCD+QED [gluon current]",
+        description="Single complex-scalar kinetic term expanded over all matching gauge groups",
+        interaction_terms=mixed_scalar_qcd_terms,
+        vertex=sum(
+            (
+                _model_demo_vertex(
+                    interaction=term,
+                    external_legs=LEGS_mixed_scalar_gluon,
+                    species_map={b1: phiMixdag0, b2: phiMix0, b3: G0},
+                )
+                for term in mixed_scalar_qcd_terms
+            ),
+            Expression.num(0),
+        ).expand(),
+    )
+    _print_vertex_block(
+        "covariant: one scalar term over QCD+QED [photon current]",
+        description="Same kinetic term, abelian current with the color slot left as a spectator identity",
+        interaction_terms=mixed_scalar_qed_terms,
+        vertex=sum(
+            (
+                _model_demo_vertex(
+                    interaction=term,
+                    external_legs=LEGS_mixed_scalar_qed,
+                    species_map={b1: phiMixdag0, b2: phiMix0, b3: A0},
+                )
+                for term in mixed_scalar_qed_terms
+            ),
+            Expression.num(0),
+        ).expand(),
+    )
+    _print_vertex_block(
+        "covariant: one scalar term over QCD+QED [mixed contact]",
+        description="Ordered cross-group contact pieces from the same kinetic term, summed into one physical vertex",
+        interaction_terms=mixed_scalar_contact_terms,
+        vertex=sum(
+            (
+                _model_demo_vertex(
+                    interaction=term,
+                    external_legs=LEGS_mixed_scalar_contact,
+                    species_map={b1: phiMixdag0, b2: phiMix0, b3: G0, b4: A0},
+                )
+                for term in mixed_scalar_contact_terms
+            ),
+            Expression.num(0),
+        ).expand(),
+    )
     _print_vertex_block(
         "covariant: (D_mu phi)^dagger (D^mu phi) current",
         description=MODEL_SCALAR_QED_COVARIANT.covariant_terms[0].label or "Complex-scalar kinetic term expanded through the gauge compiler",
+        interaction_terms=compiled_scalar_qed[:2],
         vertex=(
             _model_demo_vertex(
                 interaction=compiled_scalar_qed[0],
@@ -1153,7 +1366,8 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: (D_mu phi)^dagger (D^mu phi) contact",
-        description=compiled_scalar_qed[2].label,
+        description="Two-gauge contact contribution from the same complex-scalar kinetic term.",
+        interaction_terms=(compiled_scalar_qed[2],),
         vertex=_model_demo_vertex(
             interaction=compiled_scalar_qed[2],
             external_legs=LEGS_compiled_scalar_contact,
@@ -1163,6 +1377,7 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: (D_mu PhiQCD)^dagger (D^mu PhiQCD) current",
         description=MODEL_SCALAR_QCD_COVARIANT.covariant_terms[0].label or "Non-abelian complex-scalar kinetic term expanded through the gauge compiler",
+        interaction_terms=compiled_scalar_qcd[:2],
         vertex=(
             _model_demo_vertex(
                 interaction=compiled_scalar_qcd[0],
@@ -1178,7 +1393,8 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: (D_mu PhiQCD)^dagger (D^mu PhiQCD) contact",
-        description=compiled_scalar_qcd[2].label,
+        description="Two-gluon contact contribution with explicit generator ordering.",
+        interaction_terms=(compiled_scalar_qcd[2],),
         vertex=_model_demo_vertex(
             interaction=compiled_scalar_qcd[2],
             external_legs=LEGS_compiled_scalar_qcd_contact,
@@ -1200,6 +1416,9 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: (D_mu PhiBi)^dagger (D^mu PhiBi) [bislot, slot_policy='sum']",
         description="Bislotted scalar kinetic term expanded by summing over both identical color-fundamental slots.",
+        interaction_terms=tuple(
+            term for term in compiled_bislot_sum if "current" in term.label
+        ),
         vertex=(
             sum(
                 (
@@ -1216,16 +1435,15 @@ def _run_covariant_demo():
         ).expand(),
         interpretation=(
             "Vertex shown here is the SUM of all compiled current terms (both slots). "
-            "Below we list the compiled term labels and also show the summed contact vertex."
+            "The compiled current terms are listed above, and the summed contact vertex follows below."
         ),
     )
-    print("Compiled bislot-sum term labels:")
-    for term in compiled_bislot_sum:
-        print(" -", term.label)
-    print()
     _print_vertex_block(
         "covariant: (D_mu PhiBi)^dagger (D^mu PhiBi) contact [bislot sum]",
         description="Sum of all ordered slot-pair contact contributions.",
+        interaction_terms=tuple(
+            term for term in compiled_bislot_sum if "contact" in term.label
+        ),
         vertex=(
             sum(
                 (
@@ -1244,6 +1462,7 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: -1/4 F_mu nu F^mu nu [abelian bilinear]",
         description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 U1QED field strength squared",
+        interaction_terms=compiled_photon[:2],
         vertex=simplify_gamma_chain((
             _model_demo_vertex(
                 interaction=compiled_photon[0],
@@ -1262,6 +1481,7 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: -1/4 G^a_mu nu G^{a mu nu} [bilinear]",
         description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 SU3C field strength squared",
+        interaction_terms=compiled_yang_mills[:2],
         vertex=simplify_gamma_chain((
             _model_demo_vertex(
                 interaction=compiled_yang_mills[0],
@@ -1283,7 +1503,8 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: Yang-Mills 3-gauge vertex",
-        description=compiled_yang_mills[2].label,
+        description="Cubic self-interaction term from the non-abelian field strength.",
+        interaction_terms=(compiled_yang_mills[2],),
         vertex=_model_demo_vertex(
             interaction=compiled_yang_mills[2],
             external_legs=LEGS_three_gluon,
@@ -1305,7 +1526,8 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: Yang-Mills 4-gauge vertex",
-        description=compiled_yang_mills[3].label,
+        description="Quartic self-interaction term from the non-abelian field strength.",
+        interaction_terms=(compiled_yang_mills[3],),
         vertex=_model_demo_vertex(
             interaction=compiled_yang_mills[3],
             external_legs=LEGS_four_gluon,
@@ -1352,11 +1574,13 @@ def _run_demo_output(suite):
         _print_vertex_block(
             "model: Yukawa [amputated]",
             description=TERM_yukawa.label,
+            interaction_terms=(TERM_yukawa,),
             vertex=_model_demo_vertex(interaction=TERM_yukawa, external_legs=LEGS_yukawa),
         )
         _print_vertex_block(
             "model: quark-gluon",
             description=TERM_quark_gluon.label,
+            interaction_terms=(TERM_quark_gluon,),
             vertex=_model_demo_vertex(
                 interaction=TERM_quark_gluon,
                 external_legs=LEGS_quark_gluon,
@@ -1364,7 +1588,8 @@ def _run_demo_output(suite):
         )
         _print_vertex_block(
             "minimal gauge compiler: quark-gluon",
-            description=compiled_qcd[0].label,
+            description="Compiled non-abelian fermion current from model metadata.",
+            interaction_terms=(compiled_qcd[0],),
             vertex=_model_demo_vertex(
                 interaction=compiled_qcd[0],
                 external_legs=LEGS_quark_gluon,
@@ -1372,7 +1597,8 @@ def _run_demo_output(suite):
         )
         _print_vertex_block(
             "minimal gauge compiler: fermion QED",
-            description=compiled_qed[0].label,
+            description="Compiled abelian fermion current from charge metadata.",
+            interaction_terms=(compiled_qed[0],),
             vertex=_model_demo_vertex(
                 interaction=compiled_qed[0],
                 external_legs=LEGS_qed_fermion,
@@ -1381,6 +1607,7 @@ def _run_demo_output(suite):
         _print_vertex_block(
             "minimal gauge compiler: scalar QED current",
             description="compiled U(1) current from gauge group + field charge",
+            interaction_terms=compiled_scalar_qed[:2],
             vertex=(
                 _model_demo_vertex(
                     interaction=compiled_scalar_qed[0],
@@ -1396,7 +1623,8 @@ def _run_demo_output(suite):
         )
         _print_vertex_block(
             "minimal gauge compiler: scalar QED contact",
-            description=compiled_scalar_qed[2].label,
+            description="Two-photon contact compiled from the same scalar kinetic term.",
+            interaction_terms=(compiled_scalar_qed[2],),
             vertex=_model_demo_vertex(
                 interaction=compiled_scalar_qed[2],
                 external_legs=LEGS_compiled_scalar_contact,
@@ -1406,6 +1634,7 @@ def _run_demo_output(suite):
         _print_vertex_block(
             "minimal gauge compiler: scalar QCD current",
             description="compiled SU(3) scalar current from representation metadata",
+            interaction_terms=compiled_scalar_qcd[:2],
             vertex=(
                 _model_demo_vertex(
                     interaction=compiled_scalar_qcd[0],
@@ -1421,7 +1650,8 @@ def _run_demo_output(suite):
         )
         _print_vertex_block(
             "minimal gauge compiler: scalar QCD contact",
-            description=compiled_scalar_qcd[2].label,
+            description="Two-gluon scalar contact compiled from representation metadata.",
+            interaction_terms=(compiled_scalar_qcd[2],),
             vertex=_model_demo_vertex(
                 interaction=compiled_scalar_qcd[2],
                 external_legs=LEGS_compiled_scalar_qcd_contact,
@@ -1434,6 +1664,7 @@ def _run_demo_output(suite):
         _print_vertex_block(
             "cross: current-current",
             description="model-layer and direct API should agree after gamma simplification",
+            interaction_terms=(TERM_current_current,),
             vertex=simplify_gamma_chain(
                 _model_demo_vertex(interaction=TERM_current_current, external_legs=LEGS_fermion4)
             ),
@@ -1976,6 +2207,102 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: mixed fermion QED piece",
         show_vertex=True,
         description="Second contribution from the same mixed-group kinetic term",
+    )
+
+    compiled_mixed_scalar = compile_covariant_terms(MODEL_MIXED_SCALAR_COVARIANT)
+    model_mixed_scalar = with_compiled_covariant_terms(MODEL_MIXED_SCALAR_COVARIANT)
+    assert model_mixed_scalar.interactions == compiled_mixed_scalar
+    assert len(compiled_mixed_scalar) == 8
+
+    mixed_scalar_qcd_terms = [
+        term for term in compiled_mixed_scalar
+        if "SU3C: scalar current" in term.label
+    ]
+    mixed_scalar_qed_terms = [
+        term for term in compiled_mixed_scalar
+        if "U1QED: scalar current" in term.label
+    ]
+    mixed_scalar_contact_terms = [
+        term for term in compiled_mixed_scalar
+        if "mixed contact" in term.label
+    ]
+    assert len(mixed_scalar_qcd_terms) == 2
+    assert len(mixed_scalar_qed_terms) == 2
+    assert len(mixed_scalar_contact_terms) == 2
+
+    mixed_scalar_qcd_index = mixed_scalar_qcd_terms[0].derivatives[0].lorentz_index
+    V_mixed_scalar_qcd = sum(
+        (
+            _model_vertex(
+                interaction=term,
+                external_legs=LEGS_mixed_scalar_gluon,
+                species_map={b1: phiMixdag0, b2: phiMix0, b3: G0},
+            )
+            for term in mixed_scalar_qcd_terms
+        ),
+        Expression.num(0),
+    )
+    _check(
+        V_mixed_scalar_qcd,
+        I
+        * gS
+        * gauge_generator(a3, c1, c2)
+        * (pcomp(p2, mixed_scalar_qcd_index) - pcomp(p1, mixed_scalar_qcd_index))
+        * D3,
+        "Covariant compiler: mixed scalar QCD current",
+        show_vertex=True,
+        description="Single mixed-group scalar kinetic term, non-abelian current piece",
+    )
+
+    mixed_scalar_qed_index = mixed_scalar_qed_terms[0].derivatives[0].lorentz_index
+    V_mixed_scalar_qed = sum(
+        (
+            _model_vertex(
+                interaction=term,
+                external_legs=LEGS_mixed_scalar_qed,
+                species_map={b1: phiMixdag0, b2: phiMix0, b3: A0},
+            )
+            for term in mixed_scalar_qed_terms
+        ),
+        Expression.num(0),
+    )
+    _check(
+        V_mixed_scalar_qed,
+        I
+        * eQED
+        * qPhiMix
+        * COLOR_FUND_INDEX.representation.g(c1, c2).to_expression()
+        * (pcomp(p2, mixed_scalar_qed_index) - pcomp(p1, mixed_scalar_qed_index))
+        * D3,
+        "Covariant compiler: mixed scalar QED current",
+        show_vertex=True,
+        description="Same mixed-group scalar kinetic term, abelian current piece",
+    )
+
+    V_mixed_scalar_contact = sum(
+        (
+            _model_vertex(
+                interaction=term,
+                external_legs=LEGS_mixed_scalar_contact,
+                species_map={b1: phiMixdag0, b2: phiMix0, b3: G0, b4: A0},
+            )
+            for term in mixed_scalar_contact_terms
+        ),
+        Expression.num(0),
+    )
+    _check(
+        V_mixed_scalar_contact,
+        2
+        * I
+        * gS
+        * eQED
+        * qPhiMix
+        * gauge_generator(a3, c1, c2)
+        * scalar_gauge_contact(mu3, mu4)
+        * D4,
+        "Covariant compiler: mixed scalar contact",
+        show_vertex=True,
+        description="Cross-group contact terms from one complex-scalar kinetic term",
     )
 
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
