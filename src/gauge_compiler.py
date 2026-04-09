@@ -160,20 +160,81 @@ def _field_transforms_under_gauge_group(field: Field, gauge_group: GaugeGroup) -
     return gauge_group.matter_representation(field) is not None
 
 
+def _require_declared_field(model: Model, target, *, purpose: str) -> Field:
+    """Resolve one field strictly from the parent model declarations."""
+    if isinstance(target, Field):
+        for field in model.fields:
+            if field is target:
+                return field
+        raise ValueError(
+            f"{purpose} requires field {target.name!r} to be declared in model.fields."
+        )
+
+    resolved = model.find_field(target)
+    if resolved is None:
+        raise ValueError(f"{purpose} could not resolve field {target!r} in model.fields.")
+    return resolved
+
+
+def _require_declared_gauge_group(model: Model, target, *, purpose: str) -> GaugeGroup:
+    """Resolve one gauge group strictly from the parent model declarations."""
+    if isinstance(target, GaugeGroup):
+        for gauge_group in model.gauge_groups:
+            if gauge_group is target:
+                return gauge_group
+        raise ValueError(
+            f"{purpose} requires gauge group {target.name!r} to be declared in model.gauge_groups."
+        )
+
+    resolved = model.find_gauge_group(target)
+    if resolved is None:
+        raise ValueError(
+            f"{purpose} could not resolve gauge group {target!r} in model.gauge_groups."
+        )
+    return resolved
+
+
+def _require_field_transforms_under_gauge_group(
+    field: Field,
+    gauge_group: GaugeGroup,
+    *,
+    purpose: str,
+):
+    """Reject explicit group selections that do not act on the chosen field."""
+    if gauge_group.abelian:
+        if gauge_group.charge is None:
+            raise ValueError(
+                f"{purpose} cannot use abelian gauge group {gauge_group.name!r} "
+                "without a declared charge label."
+            )
+        charge = field.quantum_numbers.get(gauge_group.charge, 0)
+        if charge == 0:
+            raise ValueError(
+                f"{purpose} requires field {field.name!r} to carry non-zero "
+                f"charge {gauge_group.charge!r} under gauge group {gauge_group.name!r}."
+            )
+        return
+
+    if gauge_group.matter_representation(field) is None:
+        raise ValueError(
+            f"{purpose} requires field {field.name!r} to carry a declared "
+            f"representation under gauge group {gauge_group.name!r}."
+        )
+
+
 def _resolve_covariant_gauge_groups(model: Model, *, field: Field, gauge_group=None) -> tuple[GaugeGroup, ...]:
+    purpose = f"Covariant compilation for field {field.name!r}"
     if gauge_group is not None:
         if isinstance(gauge_group, (tuple, list)):
             resolved = []
             for item in gauge_group:
-                group = model.find_gauge_group(item)
-                if group is None:
-                    raise ValueError(f"Could not resolve gauge group {item!r}.")
+                group = _require_declared_gauge_group(model, item, purpose=purpose)
+                _require_field_transforms_under_gauge_group(field, group, purpose=purpose)
                 resolved.append(group)
             return tuple(resolved)
 
-        resolved = model.find_gauge_group(gauge_group)
-        if resolved is None:
-            raise ValueError(f"Could not resolve gauge group {gauge_group!r}.")
+        resolved = _require_declared_gauge_group(model, gauge_group, purpose=purpose)
+        _require_field_transforms_under_gauge_group(field, resolved, purpose=purpose)
         return (resolved,)
 
     matches = tuple(group for group in model.gauge_groups if _field_transforms_under_gauge_group(field, group))
@@ -951,9 +1012,11 @@ def compile_gauge_kinetic_term(model: Model, term: GaugeKineticTerm) -> tuple[In
     For non-abelian groups it also appends the Yang-Mills cubic and quartic
     self-interaction terms.
     """
-    gauge_group = model.find_gauge_group(term.gauge_group)
-    if gauge_group is None:
-        raise ValueError(f"Could not resolve gauge group {term.gauge_group!r}.")
+    gauge_group = _require_declared_gauge_group(
+        model,
+        term.gauge_group,
+        purpose="Gauge-kinetic compilation",
+    )
 
     gauge_field = model.gauge_boson_field(gauge_group)
     label_prefix = term.label or f"-1/4 {gauge_group.name} field strength squared"
@@ -1048,9 +1111,11 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
     One model declaration can expand into several interactions when the same
     fermion transforms under multiple declared gauge groups.
     """
-    fermion = model.find_field(term.field)
-    if fermion is None:
-        raise ValueError(f"Could not resolve fermion field {term.field!r}.")
+    fermion = _require_declared_field(
+        model,
+        term.field,
+        purpose="Dirac kinetic compilation",
+    )
     if fermion.kind != "fermion":
         raise ValueError(f"Dirac kinetic term requires a fermion field, got kind={fermion.kind!r}.")
 
@@ -1085,9 +1150,11 @@ def compile_complex_scalar_kinetic_term(
     The output contains both the current term and the two-gauge contact term
     for each applicable gauge group.
     """
-    scalar = model.find_field(term.field)
-    if scalar is None:
-        raise ValueError(f"Could not resolve scalar field {term.field!r}.")
+    scalar = _require_declared_field(
+        model,
+        term.field,
+        purpose="Complex-scalar kinetic compilation",
+    )
     if scalar.kind != "scalar" or scalar.self_conjugate:
         raise ValueError(
             "Complex-scalar kinetic terms require a non-self-conjugate scalar field."
