@@ -66,19 +66,22 @@ What is working in the active code path:
   - `(D_mu phi)^dagger (D^mu phi)`
   - `-1/4 F_{mu nu} F^{mu nu}`
   - `-1/4 F^a_{mu nu} F^{a mu nu}` with Yang-Mills 3- and 4-gauge vertices
+  - `-(1/2 xi) (partial.A)^2`
+  - the ordinary non-abelian Faddeev-Popov ghost sector
 - compiled gauge-model checks for quark-gluon and abelian complex-scalar interactions
 - dedicated `pytest` coverage for:
   - repeated-slot covariant expansion
   - mixed-group scalar contact compilation
   - compiler validation hardening
   - the main covariant / pure-gauge compiler matrix
+  - ordinary gauge-fixing and ghost compilation
 - runnable gamma/tensor checks in `src/spenso_gamma_checks.py`
 
 What is not yet solid:
 
 - general multi-fermion tensor support is still narrower than a full FeynRules-like system
 - broader direct/model regression coverage still partly lives in `src/examples.py`
-- background-field-gauge scaffolding, gauge fixing, and ghosts are still absent
+- background-field-gauge scaffolding and background/quantum splitting are still absent
 - declaration/model validation is tighter in the compiler entry points, but still not complete across the whole model layer
 - the public API boundary between the minimal structural compiler and the
   physical compiler should be tightened further
@@ -122,6 +125,10 @@ Gauge/compiler conventions:
 - matter uses `D_mu = partial_mu + i g A_mu`
 - pure gauge uses
   `F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu`
+- ordinary gauge fixing uses
+  `L_gf = -(1/2 xi) (partial.A)^2`
+- ordinary non-abelian ghosts use the integrated form
+  `L_gh = (partial cbar)(partial c) - g f (partial cbar) A c`
 
 ### Main workflow
 
@@ -183,17 +190,15 @@ The highest-value next steps in the codebase are:
 1. keep conventions documented once across code, docs, and tests
 2. keep moving the runnable assertions in `src/examples.py` toward a dedicated test harness
 3. tighten the remaining declaration/model validation outside the compiler entry points
-4. add gauge-fixing declarations and compilation through the physical compiler path
-5. add ghost-sector support after gauge fixing is stable
-6. add background/quantum gauge-field splitting on top of the ordinary gauge-fixed path
-7. improve canonical/readable pure-gauge output while keeping the raw compiled form available
+4. add background/quantum gauge-field splitting on top of the ordinary gauge-fixed path
+5. improve canonical/readable pure-gauge output while keeping the raw compiled form available
+6. widen the ordinary gauge-fixed regression matrix and examples
 
 Suggested implementation order:
 
 1. keep conventions frozen in one place
 2. extract tests from `src/examples.py`
 3. tighten remaining declaration/model validation
-4. add ordinary gauge fixing
-5. add the ghost sector
-6. add background/quantum gauge-field splitting
-7. improve canonical/readable pure-gauge output on top of the raw compiled form
+4. add background/quantum gauge-field splitting
+5. improve canonical/readable pure-gauge output on top of the raw compiled form
+6. widen the ordinary gauge-fixed regression matrix

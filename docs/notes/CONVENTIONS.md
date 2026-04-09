@@ -57,9 +57,42 @@ Consequences:
 - the Yang-Mills cubic vertex is real in the stripped raw output
 - the Yang-Mills quartic vertex keeps an explicit overall `i`
 
+## Ordinary Gauge Fixing
+
+The convention-fixed ordinary gauge-fixing compiler uses:
+
+`L_gf = -(1/2 xi) (partial.A)^2`
+
+Consequences:
+
+- the raw two-gauge output is the symmetrized unsimplified form produced by the
+  bosonic contraction sum
+- compact textbook forms such as `+(i/xi) p_mu p_nu` are readability rewrites
+  of that same raw result under the momentum-conservation delta
+
+## Ordinary Ghost Sector
+
+The convention-fixed ordinary non-abelian ghost compiler uses the integrated
+form:
+
+`L_gh = -cbar^a partial^mu (D_mu c)^a = (partial cbar)(partial c) - g f (partial cbar) A c`
+
+with the adjoint covariant derivative encoded as:
+
+`(D_mu c)^a = partial_mu c^a - g f^{abc} A_mu^b c^c`
+
+Consequences:
+
+- the ghost bilinear compiles to a stripped raw vertex proportional to
+  `-i delta_adj p_bar.p_ghost`
+- the ghost-gauge vertex is real in the stripped raw output and carries the
+  antighost momentum
+- the cubic ghost term keeps an explicit Lorentz metric between the derivative
+  index and the external gauge-field slot in the compiler-raw form
+
 ## Raw vs Compact Output
 
-For the pure-gauge sector, the compiler's raw output may keep derivative-index
-metrics explicit. Compact textbook-looking forms used in displays or tests are
-readability rewrites of the same convention-fixed result, not alternative
-conventions.
+For the pure-gauge, gauge-fixing, and ghost sectors, the compiler's raw output
+may keep derivative-index metrics explicit. Compact textbook-looking forms used
+in displays or tests are readability rewrites of the same convention-fixed
+result, not alternative conventions.

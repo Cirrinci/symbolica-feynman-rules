@@ -31,7 +31,9 @@ from model import (
     DerivativeAction,
     DiracKineticTerm,
     Field,
+    GhostTerm,
     GaugeKineticTerm,
+    GaugeFixingTerm,
     GaugeGroup,
     InteractionTerm,
     Model,
@@ -130,6 +132,10 @@ def _default_internal_adjoint_label(gauge_field: Field, gauge_group: GaugeGroup)
             f"Gauge field {gauge_field.name!r} does not expose a non-Lorentz adjoint index."
         )
     return _symbol(f"{adj_kind}_mid_{gauge_field.name}_{gauge_group.name}")
+
+
+def _default_ghost_labels(field: Field, index, slot: Optional[int] = None):
+    return _default_index_labels(field, index, qualifier="ghost", slot=slot)
 
 
 def _build_structure_constant(gauge_group: GaugeGroup, left_label, middle_label, right_label):
@@ -291,6 +297,28 @@ def _mixed_scalar_contact_slot_suffix(active_slots: tuple[int, ...]) -> str:
     if len(active_slots) == 1:
         return f" [slot {active_slots[0] + 1}]"
     return f" [slots {', '.join(str(slot + 1) for slot in active_slots)}]"
+
+
+def _ghost_field_for_group(model: Model, gauge_group: GaugeGroup) -> Field:
+    """Resolve and validate the ghost field declared for one gauge group."""
+    if gauge_group.ghost_field is None:
+        raise ValueError(
+            f"Ghost compilation requires gauge group {gauge_group.name!r} to declare ghost_field."
+        )
+    ghost_field = _require_declared_field(
+        model,
+        gauge_group.ghost_field,
+        purpose="Ghost compilation",
+    )
+    if ghost_field.kind != "ghost":
+        raise ValueError(
+            f"Ghost compilation requires field {ghost_field.name!r} to have kind='ghost'."
+        )
+    if ghost_field.self_conjugate:
+        raise ValueError(
+            f"Ghost compilation requires field {ghost_field.name!r} to be non-self-conjugate."
+        )
+    return ghost_field
 
 
 def compile_fermion_gauge_current(
@@ -1051,6 +1079,147 @@ def compile_gauge_kinetic_term(model: Model, term: GaugeKineticTerm) -> tuple[In
     return tuple(interactions)
 
 
+def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[InteractionTerm, ...]:
+    """Compile the ordinary linear-covariant gauge-fixing bilinear.
+
+    The supported form is ``-(coefficient / 2 xi) (partial.A)^2`` for one
+    declared gauge group.
+    """
+    gauge_group = _require_declared_gauge_group(
+        model,
+        term.gauge_group,
+        purpose="Gauge-fixing compilation",
+    )
+    gauge_field = model.gauge_boson_field(gauge_group)
+    if gauge_field.kind != "vector":
+        raise ValueError(f"Gauge-fixing compilation requires a vector field, got kind={gauge_field.kind!r}.")
+    gauge_lorentz_slot = _unique_slot(
+        gauge_field,
+        LORENTZ_KIND,
+        purpose="Gauge-fixing compilation",
+    )
+
+    alpha, beta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 2)
+    rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}_gf")
+    rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}_gf")
+    identity_factor, left_slots, right_slots = _spectator_identity_factor(
+        gauge_field,
+        exclude_slots={gauge_lorentz_slot},
+    )
+
+    coupling = (
+        -term.coefficient
+        * _HALF
+        / term.xi
+        * identity_factor
+        * lorentz_metric(alpha, rho_left)
+        * lorentz_metric(beta, rho_right)
+    )
+    left_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, **left_slots})
+    right_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, **right_slots})
+    label = term.label or f"-(1/2 {term.xi}) ({gauge_group.name} gauge fixing)"
+
+    return (
+        InteractionTerm(
+            coupling=coupling,
+            fields=(
+                gauge_field.occurrence(labels=left_field_labels),
+                gauge_field.occurrence(labels=right_field_labels),
+            ),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=rho_left),
+                DerivativeAction(target=1, lorentz_index=rho_right),
+            ),
+            label=label,
+        ),
+    )
+
+
+def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, ...]:
+    """Compile the ordinary unbroken Faddeev-Popov ghost sector.
+
+    For the current conventions this corresponds to:
+    ``-cbar^a partial^mu(D_mu c)^a = (partial cbar)(partial c) - g f (partial cbar) A c``.
+    """
+    gauge_group = _require_declared_gauge_group(
+        model,
+        term.gauge_group,
+        purpose="Ghost compilation",
+    )
+    if gauge_group.abelian:
+        raise ValueError(
+            f"Ghost compilation is only supported for non-abelian gauge groups; got {gauge_group.name!r}."
+        )
+
+    gauge_field = model.gauge_boson_field(gauge_group)
+    ghost_field = _ghost_field_for_group(model, gauge_group)
+
+    adj_kind, gauge_adj_slot = _adjoint_slot_info(
+        gauge_field,
+        purpose="Ghost compilation",
+    )
+    gauge_lorentz_slot = _unique_slot(
+        gauge_field,
+        LORENTZ_KIND,
+        purpose="Ghost compilation",
+    )
+    ghost_adj_slot = _unique_slot(
+        ghost_field,
+        adj_kind,
+        purpose="Ghost compilation",
+    )
+
+    mu = _default_vector_label(gauge_field, gauge_group, suffix="mu")
+    nu = _default_vector_label(gauge_field, gauge_group, suffix="nu_ghost")
+    rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}_ghost")
+    a_bar, a_ghost = _default_ghost_labels(
+        ghost_field,
+        ghost_field.indices[ghost_adj_slot],
+        slot=ghost_adj_slot,
+    )
+    a_gauge = _symbol(f"{adj_kind}_{gauge_field.name}_{gauge_group.name}_ghost")
+
+    ghost_bar_labels = ghost_field.pack_slot_labels({ghost_adj_slot: a_bar})
+    ghost_labels = ghost_field.pack_slot_labels({ghost_adj_slot: a_ghost})
+    gauge_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: mu, gauge_adj_slot: a_gauge})
+    label_prefix = term.label or f"{gauge_group.name} Faddeev-Popov ghosts"
+
+    ghost_bilinear = InteractionTerm(
+        coupling=(
+            term.coefficient
+            * ghost_field.indices[ghost_adj_slot].representation.g(a_bar, a_ghost).to_expression()
+            * lorentz_metric(mu, nu)
+        ),
+        fields=(
+            ghost_field.occurrence(conjugated=True, labels=ghost_bar_labels),
+            ghost_field.occurrence(labels=ghost_labels),
+        ),
+        derivatives=(
+            DerivativeAction(target=0, lorentz_index=mu),
+            DerivativeAction(target=1, lorentz_index=nu),
+        ),
+        label=label_prefix + " bilinear",
+    )
+
+    ghost_gauge = InteractionTerm(
+        coupling=(
+            -term.coefficient
+            * gauge_group.coupling
+            * _build_structure_constant(gauge_group, a_bar, a_gauge, a_ghost)
+            * lorentz_metric(rho, mu)
+        ),
+        fields=(
+            ghost_field.occurrence(conjugated=True, labels=ghost_bar_labels),
+            gauge_field.occurrence(labels=gauge_labels),
+            ghost_field.occurrence(labels=ghost_labels),
+        ),
+        derivatives=(DerivativeAction(target=0, lorentz_index=rho),),
+        label=label_prefix + " gauge interaction",
+    )
+
+    return (ghost_bilinear, ghost_gauge)
+
+
 def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, ...]:
     """Compile the currently supported gauge interactions from a model."""
     interactions: list[InteractionTerm] = []
@@ -1221,6 +1390,12 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
 
     for term in model.gauge_kinetic_terms:
         interactions.extend(compile_gauge_kinetic_term(model, term))
+
+    for term in model.gauge_fixing_terms:
+        interactions.extend(compile_gauge_fixing_term(model, term))
+
+    for term in model.ghost_terms:
+        interactions.extend(compile_ghost_term(model, term))
 
     return tuple(interactions)
 

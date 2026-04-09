@@ -186,6 +186,7 @@ class GaugeGroup:
     abelian: bool
     coupling: object
     gauge_boson: Optional[object] = None
+    ghost_field: Optional[object] = None
     structure_constant: Optional[object] = None
     representations: tuple[GaugeRepresentation, ...] = ()
     charge: Optional[str] = None
@@ -587,6 +588,32 @@ class GaugeKineticTerm:
     label: str = ""
 
 
+@dataclass(frozen=True)
+class GaugeFixingTerm:
+    """Model-level declaration for ``-(1/2 xi) (partial.A)^2``.
+
+    This covers the ordinary unbroken linear covariant gauge-fixing term for one
+    declared gauge group. ``xi`` is the usual gauge-fixing parameter.
+    """
+    gauge_group: object
+    xi: object = 1
+    coefficient: object = 1
+    label: str = ""
+
+
+@dataclass(frozen=True)
+class GhostTerm:
+    """Model-level declaration for the ordinary Faddeev-Popov ghost sector.
+
+    The current implementation covers the unbroken non-abelian linear-covariant
+    gauge case. The corresponding ghost field is resolved from the parent gauge
+    group's ``ghost_field`` metadata.
+    """
+    gauge_group: object
+    coefficient: object = 1
+    label: str = ""
+
+
 CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
 
 
@@ -609,6 +636,8 @@ class Model:
     interactions: tuple[InteractionTerm, ...] = ()
     covariant_terms: tuple[CovariantTerm, ...] = ()
     gauge_kinetic_terms: tuple[GaugeKineticTerm, ...] = ()
+    gauge_fixing_terms: tuple[GaugeFixingTerm, ...] = ()
+    ghost_terms: tuple[GhostTerm, ...] = ()
 
     def find_field(self, target) -> Optional[Field]:
         """Resolve a field by object identity, declaration name, or symbol."""

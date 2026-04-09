@@ -10,6 +10,7 @@ from symbolica import Expression
 
 from model_symbolica import bis, pcomp
 from spenso_structures import (
+    COLOR_ADJ,
     gamma5_matrix,
     gamma_lowered_matrix,
     gamma_matrix,
@@ -100,6 +101,29 @@ def gauge_kinetic_bilinear_raw(
     )
 
 
+def gauge_fixing_bilinear_raw(
+    mu,
+    nu,
+    p_left,
+    p_right,
+    left_derivative_lorentz,
+    right_derivative_lorentz,
+):
+    """Unsimplified two-gauge-field gauge-fixing tensor matching compiler output."""
+    return (
+        (Expression.num(1) / Expression.num(2))
+        * lorentz_metric(mu, left_derivative_lorentz)
+        * lorentz_metric(nu, right_derivative_lorentz)
+        * pcomp(p_left, left_derivative_lorentz)
+        * pcomp(p_right, right_derivative_lorentz)
+        + (Expression.num(1) / Expression.num(2))
+        * lorentz_metric(mu, right_derivative_lorentz)
+        * lorentz_metric(nu, left_derivative_lorentz)
+        * pcomp(p_left, right_derivative_lorentz)
+        * pcomp(p_right, left_derivative_lorentz)
+    )
+
+
 def yang_mills_three_vertex_raw(adj_left, adj_mid, adj_right, mu, nu, rho, p_left, p_mid, p_right):
     """Unsimplified three-gauge tensor matching the current compiler output."""
     return (
@@ -184,4 +208,37 @@ def yang_mills_four_vertex_raw(adj1, adj2, adj3, adj4, mu, nu, rho, sigma, inter
         * _four_gauge_channel_raw(adj1, adj3, adj2, adj4, internal)
         + lorentz_metric(mu, sigma) * lorentz_metric(nu, rho)
         * _four_gauge_channel_raw(adj1, adj4, adj2, adj3, internal)
+    )
+
+
+def ghost_kinetic_raw(
+    adjoint_bar,
+    adjoint_ghost,
+    p_bar,
+    p_ghost,
+    bar_derivative_lorentz,
+    ghost_derivative_lorentz,
+):
+    """Unsimplified ghost bilinear tensor matching compiler output."""
+    return (
+        COLOR_ADJ.g(adjoint_bar, adjoint_ghost).to_expression()
+        * lorentz_metric(bar_derivative_lorentz, ghost_derivative_lorentz)
+        * pcomp(p_bar, bar_derivative_lorentz)
+        * pcomp(p_ghost, ghost_derivative_lorentz)
+    )
+
+
+def ghost_gauge_raw(
+    adjoint_bar,
+    adjoint_gauge,
+    adjoint_ghost,
+    gauge_lorentz,
+    derivative_lorentz,
+    p_bar,
+):
+    """Unsimplified ghost-gauge tensor matching compiler output."""
+    return (
+        structure_constant(adjoint_bar, adjoint_gauge, adjoint_ghost)
+        * lorentz_metric(derivative_lorentz, gauge_lorentz)
+        * pcomp(p_bar, derivative_lorentz)
     )

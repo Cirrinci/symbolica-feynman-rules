@@ -111,30 +111,29 @@ Main missing or weak points:
 - model/declaration validation is tighter in the compiler entry points, but is still not complete across the broader model layer
 - multi-fermion tensor support is still narrow beyond the covered bilinear-style patterns
 - gauge support is broader but still not BFM-complete
-- background-field-gauge scaffolding, gauge fixing, and ghosts are not implemented
+- background-field-gauge scaffolding and background/quantum splitting are not implemented
 - the dedicated test harness now covers the core covariant / pure-gauge matrix, but broader direct/model coverage still lives in the main example script
 
 ### Next milestone
 
-The next milestone is to harden the ordinary gauge baseline and add the first gauge-fixing sector, not to jump directly to full BFM support.
+The next milestone is to harden the ordinary gauge-fixed baseline and move into
+the first BFM-specific layer, not to widen scope randomly.
 
 That means:
 
 1. keep the active conventions frozen in code/docs/tests
 2. move the growing checks into a stronger regression layout
 3. tighten the remaining model/declaration validation and continue widening the test split
-4. add ordinary gauge-fixing terms through the physical compiler path
-5. add ghosts after gauge fixing is stable
-6. then add background/quantum gauge-field splitting on top of that ordinary gauge-fixed base
-7. improve the canonical readability of pure-gauge output
-8. only then continue into broader BFM-style model support
+4. add background/quantum gauge-field splitting on top of the ordinary gauge-fixed base
+5. improve the canonical readability of pure-gauge, gauge-fixing, and ghost output
+6. only then continue into broader BFM-style model support
 
 ### What can be done next week
 
 1. keep widening the dedicated `pytest` split beyond the covariant / pure-gauge matrix
 2. keep the new conventions note as the single sign/normalization reference
 3. tighten the remaining model/declaration validation outside the current compiler entry points
-4. draft the declaration/compiler interface for gauge-fixing terms
+4. draft the declaration/compiler interface for background/quantum splitting
 
 ### Writing use
 
