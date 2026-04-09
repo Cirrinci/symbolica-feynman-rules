@@ -7,8 +7,7 @@ repository, what is already implemented, and what still remains.
 
 The central point is simple:
 
-> The covariant derivative is not one universal object. It depends on the field
-> representation.
+> The covariant derivative depends on the field representation.
 
 That is the right FeynRules-style viewpoint:
 
