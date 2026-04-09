@@ -72,7 +72,8 @@ What is working in the active code path:
 - dedicated `pytest` coverage for:
   - repeated-slot covariant expansion
   - mixed-group scalar contact compilation
-  - compiler validation hardening
+  - compiler validation hardening for undeclared gauge bosons, partial
+    fermion spinor labels, and ambiguous multi-representation matches
   - the main covariant / pure-gauge compiler matrix
   - ordinary gauge-fixing and ghost compilation
 - runnable gamma/tensor checks in `src/spenso_gamma_checks.py`
@@ -82,7 +83,9 @@ What is not yet solid:
 - general multi-fermion tensor support is still narrower than a full FeynRules-like system
 - broader direct/model regression coverage still partly lives in `src/examples.py`
 - background-field-gauge scaffolding and background/quantum splitting are still absent
-- declaration/model validation is tighter in the compiler entry points, but still not complete across the whole model layer
+- declaration/model validation is tighter in the compiler entry points, including
+  undeclared gauge-boson metadata and partial fermion spinor-label rejection, but
+  still not complete across the whole model layer
 - the public API boundary between the minimal structural compiler and the
   physical compiler should be tightened further
 

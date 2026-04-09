@@ -402,3 +402,7 @@ complex scalar gauge current: PASS
 complex scalar gauge contact: PASS
 
 All selected tests passed.
+
+Validation hardening:
+Undeclared gauge boson metadata rejected: PASS
+Multiple non-abelian representation matches rejected: PASS

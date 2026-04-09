@@ -1965,6 +1965,23 @@ def _run_fermion_tests():
     )
     _check(simplify_gamma_chain(V), expected_jj, "Current-current stripped")
 
+    try:
+        vertex_factor(
+            **L_yukawa,
+            x=x,
+            d=d,
+            leg_index_labels=[
+                {SPINOR_KIND: i1},
+                {},
+                {},
+            ],
+        )
+    except ValueError as exc:
+        assert "all fermion external legs" in str(exc)
+        print("  Missing fermion leg spinor index -> ValueError: PASS")
+    else:
+        raise AssertionError("Partial fermion leg spinor labels should be rejected")
+
     print("\n  Fermion tests passed.\n")
 
 
@@ -2365,6 +2382,82 @@ def _run_covariant_compiler_tests():
         show_vertex=True,
         description=term_qed.label,
     )
+
+    rogue_photon = Field(
+        "RogueA",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("RogueA"),
+        indices=(LORENTZ_INDEX,),
+    )
+    rogue_qed_group = GaugeGroup(
+        name="RogueU1",
+        abelian=True,
+        coupling=eQED,
+        gauge_boson=rogue_photon,
+        charge="Q",
+    )
+    rogue_qed_model = Model(
+        name="rogue-qed-gauge-boson",
+        gauge_groups=(rogue_qed_group,),
+        fields=(PsiQEDField,),
+        covariant_terms=(DiracKineticTerm(field=PsiQEDField),),
+    )
+    try:
+        compile_covariant_terms(rogue_qed_model)
+    except ValueError as exc:
+        assert "declared in model.fields" in str(exc)
+        print("  Undeclared gauge boson metadata rejected: PASS")
+    else:
+        raise AssertionError("Undeclared gauge boson metadata should be rejected")
+
+    multi_rep_fermion = Field(
+        "PsiMultiRep",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psiMultiRep"),
+        conjugate_symbol=S("psibarMultiRep"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, COLOR_ADJ_INDEX),
+    )
+    multi_rep_gluon = Field(
+        "GMultiRep",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("GMultiRep"),
+        indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+    )
+    multi_rep_group = GaugeGroup(
+        name="SU3MultiRep",
+        abelian=False,
+        coupling=gS,
+        gauge_boson=multi_rep_gluon.symbol,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fund",
+            ),
+            GaugeRepresentation(
+                index=COLOR_ADJ_INDEX,
+                generator_builder=structure_constant,
+                name="adjoint",
+            ),
+        ),
+    )
+    multi_rep_model = Model(
+        name="multi-representation-rejection",
+        gauge_groups=(multi_rep_group,),
+        fields=(multi_rep_fermion, multi_rep_gluon),
+        covariant_terms=(DiracKineticTerm(field=multi_rep_fermion),),
+    )
+    try:
+        compile_covariant_terms(multi_rep_model)
+    except ValueError as exc:
+        assert "matches multiple representations" in str(exc)
+        print("  Multiple non-abelian representation matches rejected: PASS")
+    else:
+        raise AssertionError("Multiple same-group representation matches should be rejected")
 
     compiled_mixed = compile_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
     model_mixed = with_compiled_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
