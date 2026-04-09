@@ -307,6 +307,44 @@ Practical next steps:
 3. expand the dedicated `pytest` layer so the main covariant/pure-gauge matrix no longer depends on demo scripts
 4. then continue into gauge fixing, ghosts, and later BFM-specific work on top of the ordinary gauge baseline
 
+### 2026-04-09: validation hardening, pytest extraction, and conventions freeze
+
+What happened:
+
+- the covariant and gauge-kinetic compiler entry points were hardened so they now require
+  fields and gauge groups declared in the parent `Model`
+- explicit gauge-group selections now raise when:
+  - an abelian choice is made for a neutral field
+  - a non-abelian choice is made for a singlet / missing representation
+- dedicated `pytest` coverage was added for those compiler-validation rules
+- the main covariant and pure-gauge regression matrix was extracted from `src/examples.py`
+  into a dedicated `pytest` file
+- a short frozen conventions note was added so the active sign and normalization
+  choices now live in one main reference file
+- the top-level status docs were synchronized with the live code path
+
+What this achieved:
+
+- metadata mistakes now fail earlier instead of compiling into silent zero-coupling output
+- the core ordinary covariant / pure-gauge compiler path no longer depends only on
+  the demo script for regression coverage
+- the active sign conventions are now documented in one place instead of being spread
+  across code comments, README bullets, and test expectations
+
+Current interpretation after this update:
+
+- mixed-group complex-scalar covariant contacts: working
+- compiler-side validation for undeclared fields/groups and invalid explicit gauge selections: working
+- dedicated `pytest` coverage for the main covariant / pure-gauge matrix: working
+- broader direct/model regression extraction: still incomplete
+
+Practical next steps:
+
+1. keep widening the `pytest` split beyond the covariant / pure-gauge matrix
+2. tighten the remaining model/declaration validation outside the current compiler entry points
+3. draft and implement gauge-fixing declarations through the physical compiler path
+4. then add ghosts and later BFM-specific background/quantum splitting
+
 ### Where we are in the overall progress
 
 Best current summary:
@@ -332,24 +370,24 @@ The project now has a real core, not just experiments:
 - one reusable operator vocabulary
 - one minimal gauge compiler
 - one working convention-fixed physical compiler for the covered matter and pure-gauge cases
-- two runnable validation scripts
+- one growing dedicated `pytest` layer
+- two runnable validation/demo scripts
 
 The main remaining risks are structural rather than conceptual:
 
-- conventions now exist in code, but still need to be frozen/documented centrally
+- broader direct/model regression still leans too heavily on `src/examples.py`
 - the ordinary gauge sector now works, but BFM-specific scaffolding is still absent
-- the model/compiler/test boundary is still too concentrated in `src/examples.py`
+- the remaining declaration/model validation is still narrower than a fuller library-quality API
 
 ### Immediate next milestone
 
 The next milestone should be:
 
-"BFM-oriented scaffolding on top of the ordinary gauge foundation"
+"ordinary gauge-fixing support on top of the ordinary gauge foundation"
 
 That means:
 
-1. add background/quantum gauge-field splitting
-2. add gauge-fixing declarations and compilation
-3. add ghosts after gauge fixing is stable
-4. move the now-growing checks out of `src/examples.py` into a dedicated test layout
-5. keep improving the canonical readability of the pure-gauge output
+1. add gauge-fixing declarations and compilation
+2. add ghosts after gauge fixing is stable
+3. only then add background/quantum gauge-field splitting
+4. keep improving the canonical readability of the pure-gauge output

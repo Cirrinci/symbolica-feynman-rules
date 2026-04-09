@@ -67,17 +67,27 @@ What is working in the active code path:
   - `-1/4 F_{mu nu} F^{mu nu}`
   - `-1/4 F^a_{mu nu} F^{a mu nu}` with Yang-Mills 3- and 4-gauge vertices
 - compiled gauge-model checks for quark-gluon and abelian complex-scalar interactions
+- dedicated `pytest` coverage for:
+  - repeated-slot covariant expansion
+  - mixed-group scalar contact compilation
+  - compiler validation hardening
+  - the main covariant / pure-gauge compiler matrix
 - runnable gamma/tensor checks in `src/spenso_gamma_checks.py`
 
 What is not yet solid:
 
 - general multi-fermion tensor support is still narrower than a full FeynRules-like system
-- most regression checks still live in `src/examples.py` instead of a dedicated test harness
+- broader direct/model regression coverage still partly lives in `src/examples.py`
 - background-field-gauge scaffolding, gauge fixing, and ghosts are still absent
+- declaration/model validation is tighter in the compiler entry points, but still not complete across the whole model layer
 - the public API boundary between the minimal structural compiler and the
   physical compiler should be tightened further
 
 ### Conventions
+
+Frozen compiler conventions are documented in:
+
+- `docs/notes/CONVENTIONS.md`
 
 The main engine entry point is:
 
@@ -163,6 +173,7 @@ Project notes are kept in:
 - `docs/notes/ROADMAP.md`
 - `docs/notes/RESEARCH_LOG.md`
 - `docs/notes/THESIS_PROGRESS.md`
+- `docs/notes/CONVENTIONS.md`
 - `docs/notes/FEYNRULES_STYLE_STRATEGY.md`
 
 ### Immediate priorities
@@ -170,8 +181,8 @@ Project notes are kept in:
 The highest-value next steps in the codebase are:
 
 1. keep conventions documented once across code, docs, and tests
-2. move the runnable assertions in `src/examples.py` toward a dedicated test harness
-3. fix repeated same-kind index-slot handling in the model/compiler boundary
+2. keep moving the runnable assertions in `src/examples.py` toward a dedicated test harness
+3. tighten the remaining declaration/model validation outside the compiler entry points
 4. add gauge-fixing declarations and compilation through the physical compiler path
 5. add ghost-sector support after gauge fixing is stable
 6. add background/quantum gauge-field splitting on top of the ordinary gauge-fixed path
@@ -181,7 +192,7 @@ Suggested implementation order:
 
 1. keep conventions frozen in one place
 2. extract tests from `src/examples.py`
-3. fix repeated same-kind index-slot handling
+3. tighten remaining declaration/model validation
 4. add ordinary gauge fixing
 5. add the ghost sector
 6. add background/quantum gauge-field splitting

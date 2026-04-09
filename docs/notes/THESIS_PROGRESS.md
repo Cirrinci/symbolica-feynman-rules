@@ -36,6 +36,7 @@ Supporting notes:
 - `docs/notes/PROJECT_GOAL.md`
 - `docs/notes/ROADMAP.md`
 - `docs/notes/RESEARCH_LOG.md`
+- `docs/notes/CONVENTIONS.md`
 - `docs/notes/FEYNRULES_STYLE_STRATEGY.md`
 
 ### What is already achieved
@@ -65,7 +66,11 @@ The current prototype already supports:
   - non-abelian `-1/4 F^a_{mu nu} F^{a mu nu}`
   - Yang-Mills 3-gauge and 4-gauge vertices
 - direct/model agreement checks in the main example suite
-- a first dedicated `pytest` regression file for the bislot covariant case
+- dedicated `pytest` regression coverage for:
+  - repeated-slot covariant expansion
+  - mixed-group scalar contact compilation
+  - compiler validation hardening
+  - the main covariant / pure-gauge compiler matrix
 - a runnable gamma/tensor validation sandbox
 
 ### Current position
@@ -102,13 +107,12 @@ The prototype is not yet a complete FeynRules replacement.
 Main missing or weak points:
 
 - the model layer is still thinner than the intended end state
-- conventions now work in code but still need one stable documentation/testing source of truth
-- mixed-group complex-scalar covariant contact terms are not complete yet
-- model-level validation is still too permissive for undeclared `Field` / `GaugeGroup` objects passed directly into compiler declarations
+- conventions now have a dedicated reference note, but must stay frozen across future compiler changes
+- model/declaration validation is tighter in the compiler entry points, but is still not complete across the broader model layer
 - multi-fermion tensor support is still narrow beyond the covered bilinear-style patterns
 - gauge support is broader but still not BFM-complete
 - background-field-gauge scaffolding, gauge fixing, and ghosts are not implemented
-- a dedicated test harness has started, but most regression coverage is still in the main example script
+- the dedicated test harness now covers the core covariant / pure-gauge matrix, but broader direct/model coverage still lives in the main example script
 
 ### Next milestone
 
@@ -118,7 +122,7 @@ That means:
 
 1. keep the active conventions frozen in code/docs/tests
 2. move the growing checks into a stronger regression layout
-3. complete the remaining mixed-group scalar covariant cases and tighten compiler validation
+3. tighten the remaining model/declaration validation and continue widening the test split
 4. add ordinary gauge-fixing terms through the physical compiler path
 5. add ghosts after gauge fixing is stable
 6. then add background/quantum gauge-field splitting on top of that ordinary gauge-fixed base
@@ -127,9 +131,9 @@ That means:
 
 ### What can be done next week
 
-1. extract the current covariant and pure-gauge checks into a first dedicated test suite
-2. write one short stable conventions reference
-3. add the missing mixed-group scalar covariant contact coverage and harden model/compiler validation
+1. keep widening the dedicated `pytest` split beyond the covariant / pure-gauge matrix
+2. keep the new conventions note as the single sign/normalization reference
+3. tighten the remaining model/declaration validation outside the current compiler entry points
 4. draft the declaration/compiler interface for gauge-fixing terms
 
 ### Writing use
