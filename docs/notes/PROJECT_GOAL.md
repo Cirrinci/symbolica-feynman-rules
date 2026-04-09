@@ -70,15 +70,24 @@ What is already credible in the code:
 - a working pure-gauge compiler for:
   - `-1/4 F_{mu nu} F^{mu nu}`
   - `-1/4 F^a_{mu nu} F^{a mu nu}` with Yang-Mills 3- and 4-gauge vertices
+- a working ordinary gauge-fixing compiler for:
+  - `-(1/2 xi) (partial.A)^2`
+  - `-(1/2 xi) (partial.G)^2`
+- a working ordinary non-abelian ghost compiler for:
+  - the antighost-ghost bilinear
+  - the antighost-gluon-ghost vertex
+- a first dedicated `pytest` split covering the main covariant, pure-gauge,
+  compiler-validation, and ordinary gauge-fixed paths
 
 What still needs work before the project feels structurally sound:
 
 - the model layer is still thinner than a real model compiler
-- fields carrying repeated identical index kinds are not represented robustly enough yet
+- fields carrying repeated identical index kinds are now handled for the covered
+  compiler paths, but the broader model story is still not fully generalized
 - general multi-fermion tensor support is still narrower than a full FeynRules-like system
-- background-field-gauge scaffolding, gauge fixing, and ghosts are still missing
-- gauge support is broader, but still not BFM-complete
-- examples still carry too much of the live regression burden
+- background-field-gauge scaffolding and background/quantum splitting are still missing
+- the ordinary gauge-fixed baseline now works, but gauge support is still not BFM-complete
+- examples still carry too much of the broader direct/model regression burden
 
 ### Session handoff
 
@@ -93,31 +102,29 @@ Recommended interpretation for future work:
 
 - keep the minimal gauge compiler as a structural helper layer
 - treat the convention-fixed physical compiler as the user-facing path
-- build ordinary gauge fixing first on top of the now-working ordinary matter
-  and pure-gauge sectors
-- then build BFM-specific background/quantum splitting on top of that
+- keep the newly added ordinary gauge-fixing and ghost sectors inside that same
+  model/compiler path
+- then build BFM-specific background/quantum splitting on top of the
   ordinary gauge-fixed base
 
 Priority now:
 
 1. harden the current ordinary gauge baseline
    - keep conventions frozen in one place across code/docs/tests
-   - move the main assertions out of `src/examples.py` into a dedicated test harness
-   - fix the current weakness around repeated same-kind index slots
-2. add the next ordinary physics sector
-   - gauge-fixing declarations and compilation
-   - then ghosts on top of the gauge-fixed path
-3. only after that, add BFM-specific splitting
+   - keep widening the dedicated test harness beyond the current core matrix
+   - tighten the remaining declaration/model validation outside the current compiler entry points
+2. add the first BFM-specific layer
    - background/quantum gauge-field splitting
    - background-field-gauge-specific declarations
-4. continue with broader physics growth
+   - BFM gauge fixing and ghosts on top of that split
+3. continue with broader physics growth
    - Weyl/Majorana support if needed
    - spontaneous symmetry breaking and field mixing
    - electroweak and later EFT-facing structures
 
 What can reasonably be done next week:
 
-1. extract the current covariant and pure-gauge checks into a first real test suite
-2. add one short conventions note that becomes the stable sign/normalization reference
-3. tighten index-label handling so fields with repeated identical index kinds do not collapse
-4. sketch the model/compiler API for gauge-fixing terms, even if the full sector is not implemented yet
+1. draft and implement the model/compiler interface for background and quantum gauge fields
+2. extend the pure-gauge compiler with the split `A -> B + Q` while preserving the ordinary non-BFM path
+3. add a small BFM-oriented demo/test matrix on top of that split
+4. keep improving canonical readability for pure-gauge, gauge-fixing, and ghost output

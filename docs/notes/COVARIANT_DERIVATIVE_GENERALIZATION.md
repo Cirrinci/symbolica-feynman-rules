@@ -241,10 +241,10 @@ That is why the compiler output splits into current and contact contributions.
 
 ### Still Missing
 
-- more covariant regression coverage still lives in `src/examples.py` instead of
-  the dedicated `tests/` tree
-- model validation is still permissive in places where covariant terms should
-  require fields and gauge groups to be declared in the parent `Model`
+- some broader direct/model regression coverage still lives in `src/examples.py`
+  instead of the dedicated `tests/` tree
+- broader model/declaration validation outside the current compiler entry points
+  is still more permissive than a library-quality API
 
 ## Where Covariant Expansion Happens
 
@@ -366,14 +366,15 @@ contact terms do not use it, because they do not need an internal bridge index.
    into `tests/`.
 2. Add more exact symbolic-equality checks for the remaining covariant cases,
    not just term-count smoke tests.
-3. Tighten model validation around undeclared references and invalid explicit
-   abelian group selections.
+3. Keep tightening model/declaration validation outside the current covariant
+   compiler entry points.
 4. Keep `src/model_symbolica.py` generic:
    - no tensor-specific branching in the engine
    - all generality should come from correct couplings and labels emitted by the
      compiler layer
 5. Treat broader readability/canonicalization work as a follow-up once the
-   current covariant layer is fully hardened
+   ordinary gauge-fixed baseline is fully hardened and the first BFM split is in
+   place
 
 ## Bottom Line
 

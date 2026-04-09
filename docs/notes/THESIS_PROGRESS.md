@@ -27,7 +27,7 @@ Main files:
 - `src/operators.py`
   - reusable operator builders
 - `src/gauge_compiler.py`
-  - minimal structural gauge compiler plus convention-fixed physical compiler for covered matter and pure-gauge cases
+  - minimal structural gauge compiler plus convention-fixed physical compiler for covered matter, pure-gauge, ordinary gauge-fixing, and ghost cases
 - `src/examples.py`
   - runnable examples and regression checks
 
@@ -65,12 +65,19 @@ The current prototype already supports:
   - abelian `-1/4 F_{mu nu} F^{mu nu}`
   - non-abelian `-1/4 F^a_{mu nu} F^{a mu nu}`
   - Yang-Mills 3-gauge and 4-gauge vertices
+- ordinary gauge-fixing compilation for:
+  - abelian `-(1/2 xi) (partial.A)^2`
+  - non-abelian `-(1/2 xi) (partial.G)^2`
+- ordinary non-abelian Faddeev-Popov ghost compilation for:
+  - the ghost bilinear
+  - the ghost-gluon interaction
 - direct/model agreement checks in the main example suite
 - dedicated `pytest` regression coverage for:
   - repeated-slot covariant expansion
   - mixed-group scalar contact compilation
   - compiler validation hardening
   - the main covariant / pure-gauge compiler matrix
+  - ordinary gauge-fixing and ghost compilation
 - a runnable gamma/tensor validation sandbox
 
 ### Current position
@@ -88,6 +95,8 @@ Reasonable summary:
 - covariant-derivative compilation for covered matter-sector cases: working
 - repeated same-kind slot handling in the covered compiler paths: working
 - ordinary pure-gauge field-strength compilation: working in the covered abelian and Yang-Mills cases
+- ordinary gauge fixing: working in the covered abelian and non-abelian cases
+- ordinary non-abelian ghosts: working in the covered unbroken case
 - BFM-complete support: not implemented
 - full FeynRules-like usability layer: not implemented
 
@@ -110,14 +119,15 @@ Main missing or weak points:
 - conventions now have a dedicated reference note, but must stay frozen across future compiler changes
 - model/declaration validation is tighter in the compiler entry points, but is still not complete across the broader model layer
 - multi-fermion tensor support is still narrow beyond the covered bilinear-style patterns
-- gauge support is broader but still not BFM-complete
+- gauge support is broader and the ordinary gauge-fixed baseline is now working, but it is still not BFM-complete
 - background-field-gauge scaffolding and background/quantum splitting are not implemented
-- the dedicated test harness now covers the core covariant / pure-gauge matrix, but broader direct/model coverage still lives in the main example script
+- the dedicated test harness now covers the core covariant / pure-gauge / gauge-fixing / ghost matrix, but broader direct/model coverage still lives in the main example script
+- raw pure-gauge / gauge-fixing / ghost output is still less canonical than the compact readability forms used in demos and tests
 
 ### Next milestone
 
-The next milestone is to harden the ordinary gauge-fixed baseline and move into
-the first BFM-specific layer, not to widen scope randomly.
+The next milestone is to use the now-working ordinary gauge-fixed baseline to
+enter the first BFM-specific layer, not to widen scope randomly.
 
 That means:
 
@@ -125,15 +135,16 @@ That means:
 2. move the growing checks into a stronger regression layout
 3. tighten the remaining model/declaration validation and continue widening the test split
 4. add background/quantum gauge-field splitting on top of the ordinary gauge-fixed base
-5. improve the canonical readability of pure-gauge, gauge-fixing, and ghost output
-6. only then continue into broader BFM-style model support
+5. compile BFM gauge fixing and ghosts on top of that split
+6. improve the canonical readability of pure-gauge, gauge-fixing, and ghost output
+7. only then continue into broader BFM-style model support
 
 ### What can be done next week
 
-1. keep widening the dedicated `pytest` split beyond the covariant / pure-gauge matrix
+1. keep widening the dedicated `pytest` split beyond the current core matrix
 2. keep the new conventions note as the single sign/normalization reference
 3. tighten the remaining model/declaration validation outside the current compiler entry points
-4. draft the declaration/compiler interface for background/quantum splitting
+4. draft and implement the declaration/compiler interface for background/quantum splitting
 
 ### Writing use
 

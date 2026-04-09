@@ -5,7 +5,7 @@ Symbolica/Spenso FeynRules-style prototype.
 
 ### Current status snapshot
 
-As of 2026-04-02:
+As of 2026-04-09:
 
 - the active source tree is `src/`
 - the main runnable validation script is `src/examples.py`
@@ -13,6 +13,7 @@ As of 2026-04-02:
 - the current model layer is `src/model.py`
 - reusable operator builders live in `src/operators.py`
 - the minimal gauge compiler lives in `src/gauge_compiler.py`
+- the walkthrough notebook is `notebooks/codebase_workflow_walkthrough.ipynb`
 - `src/spenso_gamma_checks.py` is runnable against the current source tree
 - the long-term goal remains a Python analogue of FeynRules using Symbolica for symbolic rewriting and Spenso for tensor/index structures
 
@@ -345,6 +346,79 @@ Practical next steps:
 3. draft and implement gauge-fixing declarations through the physical compiler path
 4. then add ghosts and later BFM-specific background/quantum splitting
 
+### 2026-04-09 (later): ordinary gauge fixing, ghosts, demos, and notebook sync
+
+What happened:
+
+- the model layer was extended with:
+  - `GaugeFixingTerm`
+  - `GhostTerm`
+  - `GaugeGroup.ghost_field`
+  - explicit ghost / antighost roles on top of the shared `Field` dataclass
+- the physical compiler was extended with:
+  - `compile_gauge_fixing_term(...)`
+  - `compile_ghost_term(...)`
+  - strict ghost-field resolution through the parent `Model`
+- the ordinary gauge-fixing path now compiles the linear-covariant bilinear
+  `-(1/2 xi) (partial.A)^2` for both abelian and non-abelian gauge groups
+- the ordinary non-abelian ghost path now compiles the integrated Faddeev-Popov
+  sector
+  `-cbar partial.D c = (partial cbar)(partial c) - g f (partial cbar) A c`
+- reusable raw/compact operator helpers were added for the new gauge-fixing and
+  ghost display forms
+- `src/examples.py` gained a dedicated `gaugefix` suite that prints:
+  - compiled interaction labels
+  - compiled `InteractionTerm` objects
+  - the evaluated vertices
+  - compact readability rewrites
+- the notebook walkthrough gained a simple section `10.5 Ordinary Gauge Fixing And Ghosts`
+  in the same manual-print style as sections 9.1 and 10
+- dedicated `pytest` coverage was added in `tests/test_gauge_fixing_and_ghosts.py`
+  for:
+  - abelian and non-abelian gauge fixing
+  - the non-abelian ghost bilinear
+  - the ghost-gluon interaction
+  - rejection of abelian ghost terms
+  - rejection of self-conjugate ghost fields
+- the live validation paths were rerun successfully:
+  - `pytest -q`
+  - `src/examples.py --suite gaugefix`
+  - `src/examples.py --suite all --no-demo`
+
+What this achieved:
+
+- the project now has a working ordinary gauge-fixed baseline at the
+  model/compiler level, not only in handwritten example algebra
+- the ordinary gauge-theory path now covers, in one compiler stack:
+  - matter covariant derivatives
+  - pure-gauge field strengths
+  - ordinary gauge fixing
+  - ordinary non-abelian ghosts
+- the examples, notebook, and tests now all expose the same new physics sector
+- the next step is clearer and cleaner: build the first BFM-specific layer on
+  top of the ordinary gauge-fixed base, rather than mixing ordinary and BFM
+  work together
+
+Current interpretation after this update:
+
+- ordinary gauge-fixed baseline: working for the covered unbroken abelian and
+  non-abelian cases
+- compiler-generated gauge fixing: working
+- compiler-generated ordinary non-abelian ghosts: working
+- notebook/demo/test synchronization for the new sector: working
+- BFM-specific background/quantum splitting: still not implemented
+
+Practical next steps:
+
+1. add background/quantum gauge-field splitting on top of the current ordinary
+   gauge-field declarations
+2. extend the pure-gauge compiler with `A -> B + Q` while preserving the
+   ordinary non-BFM path
+3. add BFM gauge-fixing declarations and compilation on top of that split
+4. add the corresponding BFM ghost sector
+5. keep improving canonical readability for pure-gauge, gauge-fixing, and ghost
+   output while widening the dedicated regression split
+
 ### Where we are in the overall progress
 
 Best current summary:
@@ -357,6 +431,7 @@ Best current summary:
 - minimal gauge-compiler phase: working
 - covariant-derivative compiler phase: working for covered matter-sector cases
 - ordinary pure-gauge field-strength phase: working for the covered abelian and Yang-Mills cases
+- ordinary gauge-fixing and ghost phase: working for the covered unbroken cases
 - gauge-complete / BFM phase: not implemented
 - full FeynRules-style compilation layer: not implemented
 - export/usability layer: not implemented
@@ -369,25 +444,28 @@ The project now has a real core, not just experiments:
 - one usable model layer
 - one reusable operator vocabulary
 - one minimal gauge compiler
-- one working convention-fixed physical compiler for the covered matter and pure-gauge cases
+- one working convention-fixed physical compiler for the covered matter, pure-gauge, gauge-fixing, and ghost cases
 - one growing dedicated `pytest` layer
+- one walkthrough notebook that now tracks the same compiler layers
 - two runnable validation/demo scripts
 
 The main remaining risks are structural rather than conceptual:
 
 - broader direct/model regression still leans too heavily on `src/examples.py`
-- the ordinary gauge sector now works, but BFM-specific scaffolding is still absent
+- the ordinary gauge-fixed sector now works, but BFM-specific scaffolding is still absent
 - the remaining declaration/model validation is still narrower than a fuller library-quality API
+- raw pure-gauge / gauge-fixing / ghost output still benefits from compact
+  readability rewrites in displays and tests
 
 ### Immediate next milestone
 
 The next milestone should be:
 
-"ordinary gauge-fixing support on top of the ordinary gauge foundation"
+"the first BFM-specific layer on top of the ordinary gauge-fixed foundation"
 
 That means:
 
-1. add gauge-fixing declarations and compilation
-2. add ghosts after gauge fixing is stable
-3. only then add background/quantum gauge-field splitting
-4. keep improving the canonical readability of the pure-gauge output
+1. add background/quantum gauge-field splitting
+2. compile BFM gauge fixing on top of that split
+3. compile the corresponding BFM ghost sector
+4. keep improving the canonical readability of pure-gauge, gauge-fixing, and ghost output
