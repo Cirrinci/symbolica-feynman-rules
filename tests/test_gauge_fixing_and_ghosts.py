@@ -18,6 +18,7 @@ from model import (  # noqa: E402
     LORENTZ_INDEX,
     SPINOR_INDEX,
     COLOR_ADJ_KIND,
+    COLOR_FUND_KIND,
     LORENTZ_KIND,
     DiracKineticTerm,
     Field,
@@ -29,7 +30,7 @@ from model import (  # noqa: E402
     Model,
 )
 from model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
-from operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw  # noqa: E402
+from operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw, psi_bar_gamma_psi, quark_gluon_current  # noqa: E402
 from spenso_structures import gauge_generator, structure_constant  # noqa: E402
 
 
@@ -314,6 +315,25 @@ def test_compile_gauge_fixing_term_rejects_xi_zero():
         compile_covariant_terms(model)
 
 
+def test_compile_gauge_fixing_term_rejects_symbolically_zero_xi():
+    photon = _make_photon(S("A"))
+    u1 = GaugeGroup(
+        name="U1QED",
+        abelian=True,
+        coupling=S("eQED"),
+        gauge_boson=photon.symbol,
+        charge="Q",
+    )
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=u1, xi=S("xiZero") - S("xiZero")),),
+    )
+
+    with pytest.raises(ValueError, match=r"xi to be non-zero"):
+        compile_covariant_terms(model)
+
+
 def test_compile_gauge_fixing_term_rejects_non_vector_gauge_boson():
     scalar_gauge = Field(
         "X",
@@ -357,6 +377,33 @@ def test_compile_ghost_term_rejects_missing_ghost_field_declaration():
         compile_covariant_terms(model)
 
 
+def test_compile_ghost_term_rejects_non_ghost_field_kind():
+    gluon = _make_gluon(S("G"))
+    bad_field = Field(
+        "phiAdj",
+        spin=0,
+        self_conjugate=True,
+        symbol=S("phiAdj"),
+        indices=(COLOR_ADJ_INDEX,),
+    )
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        ghost_field=bad_field.symbol,
+        structure_constant=structure_constant,
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, bad_field),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    with pytest.raises(ValueError, match=r"kind='ghost'"):
+        compile_covariant_terms(model)
+
+
 def test_compile_ghost_term_rejects_adjoint_index_mismatch():
     gluon = _make_gluon(S("G"))
     bad_ghost = Field(
@@ -387,20 +434,35 @@ def test_compile_ghost_term_rejects_adjoint_index_mismatch():
 
 
 def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
+    d = S("d")
+    p1, p2, p3 = S("p1", "p2", "p3")
+    b1, b2, b3 = S("b1", "b2", "b3")
+    i1, i2 = S("i1", "i2")
+    mu3 = S("mu3")
+    c1, c2 = S("c1", "c2")
+    a1, a2, a3 = S("a1", "a2", "a3")
+    gS = S("gS")
+    xi_qcd = S("xiQCD")
+    quark_symbol = S("q")
+    antiquark_symbol = S("qbar")
+    gluon_symbol = S("G")
+    ghost_symbol = S("ghG")
+    antighost_symbol = S("ghGbar")
+
     quark = Field(
         "q",
         spin=1 / 2,
         self_conjugate=False,
-        symbol=S("q"),
-        conjugate_symbol=S("qbar"),
+        symbol=quark_symbol,
+        conjugate_symbol=antiquark_symbol,
         indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
     )
-    gluon = _make_gluon(S("G"))
-    ghost = _make_ghost(S("ghG"), S("ghGbar"))
+    gluon = _make_gluon(gluon_symbol)
+    ghost = _make_ghost(ghost_symbol, antighost_symbol)
     su3 = GaugeGroup(
         name="SU3C",
         abelian=False,
-        coupling=S("gS"),
+        coupling=gS,
         gauge_boson=gluon.symbol,
         ghost_field=ghost.symbol,
         structure_constant=structure_constant,
@@ -417,7 +479,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         fields=(quark, gluon, ghost),
         covariant_terms=(DiracKineticTerm(field=quark),),
         gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
-        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=S("xiQCD")),),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=xi_qcd),),
         ghost_terms=(GhostTerm(gauge_group=su3),),
     )
 
@@ -432,3 +494,171 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
     assert any("gauge fixing" in label for label in labels)
     assert any("Faddeev-Popov ghosts bilinear" in label for label in labels)
     assert any("Faddeev-Popov ghosts gauge interaction" in label for label in labels)
+
+    current_term = compiled[0]
+    got_current = _model_vertex(
+        interaction=current_term,
+        external_legs=(
+            quark.leg(p1, conjugated=True, species=b1, labels={"spinor": i1, COLOR_FUND_KIND: c1}),
+            quark.leg(p2, species=b2, labels={"spinor": i2, COLOR_FUND_KIND: c2}),
+            gluon.leg(p3, species=b3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}),
+        ),
+        species_map={b1: antiquark_symbol, b2: quark_symbol, b3: gluon_symbol},
+    )
+    expected_current = (
+        -I
+        * gS
+        * quark_gluon_current(i1, i2, mu3, a3, c1, c2)
+        * (2 * pi) ** d
+        * Delta(p1 + p2 + p3)
+    )
+    assert got_current.expand().to_canonical_string() == expected_current.expand().to_canonical_string()
+
+    ghost_gauge_term = compiled[-1]
+    got_ghost_gauge = _model_vertex(
+        interaction=ghost_gauge_term,
+        external_legs=(
+            ghost.leg(p1, conjugated=True, species=b1, labels={COLOR_ADJ_KIND: a1}),
+            gluon.leg(p2, species=b2, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a2}),
+            ghost.leg(p3, species=b3, labels={COLOR_ADJ_KIND: a3}),
+        ),
+        species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
+    )
+    ghost_rho = ghost_gauge_term.derivatives[0].lorentz_index
+    expected_ghost_gauge = (
+        -gS
+        * ghost_gauge_raw(a1, a2, a3, mu3, ghost_rho, p1)
+        * (2 * pi) ** d
+        * Delta(p1 + p2 + p3)
+    )
+    assert got_ghost_gauge.expand().to_canonical_string() == expected_ghost_gauge.expand().to_canonical_string()
+
+
+def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order_and_vertices():
+    d = S("d")
+    p1, p2, p3 = S("p1", "p2", "p3")
+    b1, b2, b3 = S("b1", "b2", "b3")
+    i1, i2 = S("i1", "i2")
+    mu3 = S("mu3")
+    c1, c2 = S("c1", "c2")
+    a1, a2, a3 = S("a1", "a2", "a3")
+    gS = S("gS")
+    eQED = S("eQED")
+    q_mix = S("qMix")
+    xi_qcd = S("xiQCD")
+    quark_symbol = S("psiMix")
+    antiquark_symbol = S("psibarMix")
+    gluon_symbol = S("G")
+    photon_symbol = S("A")
+    ghost_symbol = S("ghG")
+    antighost_symbol = S("ghGbar")
+
+    quark = Field(
+        "PsiMix",
+        spin=1 / 2,
+        self_conjugate=False,
+        symbol=quark_symbol,
+        conjugate_symbol=antiquark_symbol,
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+        quantum_numbers={"Q": q_mix},
+    )
+    gluon = _make_gluon(gluon_symbol)
+    photon = _make_photon(photon_symbol)
+    ghost = _make_ghost(ghost_symbol, antighost_symbol)
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=gS,
+        gauge_boson=gluon.symbol,
+        ghost_field=ghost.symbol,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fund",
+            ),
+        ),
+    )
+    u1 = GaugeGroup(
+        name="U1QED",
+        abelian=True,
+        coupling=eQED,
+        gauge_boson=photon.symbol,
+        charge="Q",
+    )
+    model = Model(
+        gauge_groups=(su3, u1),
+        fields=(quark, gluon, photon, ghost),
+        covariant_terms=(DiracKineticTerm(field=quark),),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=xi_qcd),),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert with_compiled_covariant_terms(model).interactions == compiled
+    assert len(compiled) == 5
+
+    qcd_term, qed_term, gauge_fixing_term, ghost_bilinear_term, ghost_gauge_term = compiled
+    assert qcd_term.fields[-1].field is gluon
+    assert qed_term.fields[-1].field is photon
+    assert gauge_fixing_term.fields[0].field is gluon and gauge_fixing_term.fields[1].field is gluon
+    assert ghost_bilinear_term.fields[0].field is ghost and ghost_bilinear_term.fields[1].field is ghost
+    assert ghost_gauge_term.fields[0].field is ghost and ghost_gauge_term.fields[1].field is gluon
+    assert all(photon not in tuple(field.field for field in term.fields) for term in compiled[2:])
+
+    got_qcd = _model_vertex(
+        interaction=qcd_term,
+        external_legs=(
+            quark.leg(p1, conjugated=True, species=b1, labels={"spinor": i1, COLOR_FUND_KIND: c1}),
+            quark.leg(p2, species=b2, labels={"spinor": i2, COLOR_FUND_KIND: c2}),
+            gluon.leg(p3, species=b3, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}),
+        ),
+        species_map={b1: antiquark_symbol, b2: quark_symbol, b3: gluon_symbol},
+    )
+    expected_qcd = (
+        -I
+        * gS
+        * quark_gluon_current(i1, i2, mu3, a3, c1, c2)
+        * (2 * pi) ** d
+        * Delta(p1 + p2 + p3)
+    )
+    assert got_qcd.expand().to_canonical_string() == expected_qcd.expand().to_canonical_string()
+
+    got_qed = _model_vertex(
+        interaction=qed_term,
+        external_legs=(
+            quark.leg(p1, conjugated=True, species=b1, labels={"spinor": i1, COLOR_FUND_KIND: c1}),
+            quark.leg(p2, species=b2, labels={"spinor": i2, COLOR_FUND_KIND: c2}),
+            photon.leg(p3, species=b3, labels={LORENTZ_KIND: mu3}),
+        ),
+        species_map={b1: antiquark_symbol, b2: quark_symbol, b3: photon_symbol},
+    )
+    expected_qed = (
+        -I
+        * eQED
+        * q_mix
+        * psi_bar_gamma_psi(i1, i2, mu3)
+        * COLOR_FUND_INDEX.representation.g(c1, c2).to_expression()
+        * (2 * pi) ** d
+        * Delta(p1 + p2 + p3)
+    )
+    assert got_qed.expand().to_canonical_string() == expected_qed.expand().to_canonical_string()
+
+    got_ghost_gauge = _model_vertex(
+        interaction=ghost_gauge_term,
+        external_legs=(
+            ghost.leg(p1, conjugated=True, species=b1, labels={COLOR_ADJ_KIND: a1}),
+            gluon.leg(p2, species=b2, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a2}),
+            ghost.leg(p3, species=b3, labels={COLOR_ADJ_KIND: a3}),
+        ),
+        species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
+    )
+    ghost_rho = ghost_gauge_term.derivatives[0].lorentz_index
+    expected_ghost_gauge = (
+        -gS
+        * ghost_gauge_raw(a1, a2, a3, mu3, ghost_rho, p1)
+        * (2 * pi) ** d
+        * Delta(p1 + p2 + p3)
+    )
+    assert got_ghost_gauge.expand().to_canonical_string() == expected_ghost_gauge.expand().to_canonical_string()

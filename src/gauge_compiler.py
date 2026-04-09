@@ -50,6 +50,18 @@ def _symbol(name: str):
     return S(name)
 
 
+def _is_explicit_zero(value) -> bool:
+    """Whether one coefficient is manifestly zero after local normalization."""
+    try:
+        normalized = value.expand() if hasattr(value, "expand") else value
+    except Exception:
+        normalized = value
+    try:
+        return bool(normalized == 0)
+    except Exception:
+        return False
+
+
 def _default_spinor_labels(field: Field, gauge_group: GaugeGroup):
     stem = f"{field.name}_{gauge_group.name}"
     return _symbol(f"i_bar_{stem}"), _symbol(f"i_{stem}")
@@ -1090,7 +1102,7 @@ def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[Inte
         term.gauge_group,
         purpose="Gauge-fixing compilation",
     )
-    if term.xi == 0:
+    if _is_explicit_zero(term.xi):
         raise ValueError("Gauge-fixing compilation requires xi to be non-zero.")
     gauge_field = model.gauge_boson_field(gauge_group)
     if gauge_field.kind != "vector":
