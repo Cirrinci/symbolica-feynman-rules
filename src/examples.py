@@ -39,8 +39,14 @@ from model_symbolica import (
 )
 from operators import (
     current_current,
+    gauge_fixing_bilinear,
+    gauge_fixing_bilinear_raw,
     gauge_kinetic_bilinear,
     gauge_kinetic_bilinear_raw,
+    ghost_gauge,
+    ghost_gauge_raw,
+    ghost_kinetic,
+    ghost_kinetic_raw,
     psi_bar_gamma5_psi,
     psi_bar_gamma_psi,
     psi_bar_psi,
@@ -69,6 +75,8 @@ from model import (
     ComplexScalarKineticTerm,
     DiracKineticTerm,
     Field,
+    GhostTerm,
+    GaugeFixingTerm,
     GaugeGroup,
     GaugeKineticTerm,
     GaugeRepresentation,
@@ -103,6 +111,8 @@ phiMix0 = S("phiMix0")
 phiMixdag0 = S("phiMixdag0")
 phiBi0 = S("phiBi0")
 phiBidag0 = S("phiBidag0")
+ghG0 = S("ghG0")
+ghGbar0 = S("ghGbar0")
 psibar0, psi0 = S("psibar0", "psi0")
 psibarQED0, psiQED0 = S("psibarQED0", "psiQED0")
 psibarMix0, psiMix0 = S("psibarMix0", "psiMix0")
@@ -125,6 +135,8 @@ yF = S("yF")
 gV = S("gV")
 gS = S("gS")
 eQED = S("eQED")
+xiQED = S("xiQED")
+xiQCD = S("xiQCD")
 qPhi = S("qPhi")
 qPsi = S("qPsi")
 qMix = S("qMix")
@@ -201,11 +213,28 @@ def _print_interaction_terms(terms):
     print()
 
 
+def _print_interaction_term_objects(terms):
+    """Print the concrete compiled InteractionTerm objects."""
+    if not terms:
+        return
+    heading = "Compiled interaction object" if len(terms) == 1 else "Compiled interaction objects"
+    print(f"{heading}:")
+    for index, term in enumerate(terms, start=1):
+        prefix = f"{index}. " if len(terms) > 1 else ""
+        text = _ANSI_ESCAPE_RE.sub("", repr(term))
+        first, *rest = text.splitlines() or [text]
+        print(f"  {prefix}{first}")
+        for line in rest:
+            print(f"     {line}")
+    print()
+
+
 def _print_vertex_block(
     title,
     *,
     description=None,
     interaction_terms=None,
+    show_term_objects=False,
     vertex=None,
     canonical_vertex=None,
     compact_override=None,
@@ -218,6 +247,8 @@ def _print_vertex_block(
     if interaction_terms:
         interaction_terms = tuple(interaction_terms)
         _print_interaction_terms(interaction_terms)
+        if show_term_objects:
+            _print_interaction_term_objects(interaction_terms)
         if (
             description
             and not (
@@ -230,14 +261,16 @@ def _print_vertex_block(
     elif description:
         _print_section("Interaction / source", description)
 
+    if vertex is not None:
+        _print_section("Vertex", vertex)
+    if canonical_vertex is not None:
+        _print_section("Canonical vertex", canonical_vertex)
     if compact_override is not None:
-        display_vertex = compact_override
-    elif canonical_vertex is not None:
-        display_vertex = canonical_vertex
-    else:
-        display_vertex = vertex
-    if display_vertex is not None:
-        _print_section("Vertex", display_vertex)
+        _print_section("Compact form", compact_override)
+    if sum_notation is not None:
+        _print_section("Sum notation", sum_notation)
+    if interpretation is not None:
+        _print_section("Interpretation", interpretation)
     if error is not None:
         _print_section("Status", error)
     print()
@@ -587,6 +620,15 @@ PsiField = Field("Psi", spin=Fraction(1, 2), self_conjugate=False, symbol=psi0, 
 GaugeField = Field("A", spin=1, self_conjugate=True, symbol=A0, indices=(LORENTZ_INDEX,))
 QuarkField = Field("q", spin=Fraction(1, 2), self_conjugate=False, symbol=psi0, conjugate_symbol=psibar0, indices=(SPINOR_INDEX, COLOR_FUND_INDEX))
 GluonField = Field("G", spin=1, self_conjugate=True, symbol=G0, indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
+GhostGluonField = Field(
+    "ghG",
+    spin=0,
+    kind="ghost",
+    self_conjugate=False,
+    symbol=ghG0,
+    conjugate_symbol=ghGbar0,
+    indices=(COLOR_ADJ_INDEX,),
+)
 
 COLOR_FUND_REP = GaugeRepresentation(
     index=COLOR_FUND_INDEX,
@@ -610,6 +652,15 @@ QCD_GROUP = GaugeGroup(
     abelian=False,
     coupling=gS,
     gauge_boson=G0,
+    structure_constant=structure_constant,
+    representations=(COLOR_FUND_REP,),
+)
+QCD_GROUP_GHOST = GaugeGroup(
+    name="SU3C",
+    abelian=False,
+    coupling=gS,
+    gauge_boson=G0,
+    ghost_field=ghG0,
     structure_constant=structure_constant,
     representations=(COLOR_FUND_REP,),
 )
@@ -727,6 +778,39 @@ MODEL_QCD_GAUGE_COVARIANT = Model(
     gauge_groups=(QCD_GROUP,),
     fields=(GluonField,),
     gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QCD_GROUP),),
+)
+MODEL_QED_GAUGE_FIXING_COVARIANT = Model(
+    name="QEDGaugeFixing-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED),),
+)
+MODEL_QCD_GAUGE_FIXING_COVARIANT = Model(
+    name="QCDGaugeFixing-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QCD_GROUP, xi=xiQCD),),
+)
+MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
+    name="QEDGaugeFixed-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QED_GROUP),),
+    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED),),
+)
+MODEL_QCD_GHOST_COVARIANT = Model(
+    name="QCDGhost-covariant",
+    gauge_groups=(QCD_GROUP_GHOST,),
+    fields=(GluonField, GhostGluonField),
+    ghost_terms=(GhostTerm(gauge_group=QCD_GROUP_GHOST),),
+)
+MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
+    name="QCDGaugeFixed-covariant",
+    gauge_groups=(QCD_GROUP_GHOST,),
+    fields=(GluonField, GhostGluonField),
+    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QCD_GROUP_GHOST),),
+    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QCD_GROUP_GHOST, xi=xiQCD),),
+    ghost_terms=(GhostTerm(gauge_group=QCD_GROUP_GHOST),),
 )
 
 
@@ -983,6 +1067,15 @@ LEGS_four_gluon = (
     GluonField.leg(p2, species=b2, labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: a4}),
     GluonField.leg(p3, species=b3, labels={LORENTZ_KIND: rho, COLOR_ADJ_KIND: a5}),
     GluonField.leg(p4, species=b4, labels={LORENTZ_KIND: sigma, COLOR_ADJ_KIND: a6}),
+)
+LEGS_ghost_bilinear = (
+    GhostGluonField.leg(p1, conjugated=True, species=b1, labels={COLOR_ADJ_KIND: a3}),
+    GhostGluonField.leg(p2, species=b2, labels={COLOR_ADJ_KIND: a4}),
+)
+LEGS_ghost_gluon = (
+    GhostGluonField.leg(p1, conjugated=True, species=b1, labels={COLOR_ADJ_KIND: a3}),
+    GluonField.leg(p2, species=b2, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a4}),
+    GhostGluonField.leg(p3, species=b3, labels={COLOR_ADJ_KIND: a5}),
 )
 
 
@@ -1498,6 +1591,147 @@ def _run_covariant_demo():
     )
 
 
+def _run_gauge_fixed_demo():
+    compiled_qed_gf = compile_covariant_terms(MODEL_QED_GAUGE_FIXING_COVARIANT)
+    compiled_qcd_gf = compile_covariant_terms(MODEL_QCD_GAUGE_FIXING_COVARIANT)
+    compiled_qed_gauge_fixed = compile_covariant_terms(MODEL_QED_ORDINARY_GAUGE_FIXED)
+    compiled_qcd_ghost = compile_covariant_terms(MODEL_QCD_GHOST_COVARIANT)
+    compiled_qcd_gauge_fixed = compile_covariant_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED)
+
+    photon_metric, photon_cross, photon_gf = compiled_qed_gauge_fixed
+    photon_rho = photon_metric.derivatives[0].lorentz_index
+    qcd_ghost_bilinear, qcd_ghost_gauge = compiled_qcd_ghost
+    gluon_metric, gluon_cross, _, _, gluon_gf, _, _ = compiled_qcd_gauge_fixed
+    gluon_rho = gluon_metric.derivatives[0].lorentz_index
+    ghost_rho = S("rho_ghost")
+
+    print("# " + "=" * 79)
+    print("Demo: ordinary gauge fixing and ghosts\n")
+
+    _print_vertex_block(
+        "gauge-fixed: -(1/2 xi) (partial.A)^2 [abelian]",
+        description="Ordinary linear-covariant gauge fixing for the abelian gauge field.",
+        interaction_terms=(compiled_qed_gf[0],),
+        show_term_objects=True,
+        vertex=_model_demo_vertex(
+            interaction=compiled_qed_gf[0],
+            external_legs=LEGS_photon_kinetic,
+            species_map={b1: A0, b2: A0},
+        ),
+        compact_override=(I / xiQED) * gauge_fixing_bilinear(mu3, mu4, p1, p2),
+        interpretation=(
+            "The raw vertex is the symmetrized bosonic contraction of the two differentiated gauge fields. "
+            "The compact form is the ordinary gauge-fixing bilinear."
+        ),
+    )
+    _print_vertex_block(
+        "gauge-fixed: -(1/2 xi) (partial.G)^2 [non-abelian]",
+        description="The same ordinary linear-covariant gauge fixing for the gluon field, with the adjoint identity explicit.",
+        interaction_terms=(compiled_qcd_gf[0],),
+        show_term_objects=True,
+        vertex=_model_demo_vertex(
+            interaction=compiled_qcd_gf[0],
+            external_legs=LEGS_gluon_kinetic,
+            species_map={b1: G0, b2: G0},
+        ),
+        compact_override=(
+            (I / xiQCD)
+            * gauge_fixing_bilinear(mu3, mu4, p1, p2)
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+        ),
+        interpretation="Compared to the abelian case, the only extra structure is the adjoint delta.",
+    )
+    _print_vertex_block(
+        "gauge-fixed: ordinary photon bilinear",
+        description="Gauge kinetic plus ordinary gauge fixing combined into the full two-point photon vertex.",
+        interaction_terms=(photon_metric, photon_cross, photon_gf),
+        show_term_objects=True,
+        vertex=simplify_gamma_chain((
+            _model_demo_vertex(
+                interaction=photon_metric,
+                external_legs=LEGS_photon_kinetic,
+                species_map={b1: A0, b2: A0},
+            )
+            + _model_demo_vertex(
+                interaction=photon_cross,
+                external_legs=LEGS_photon_kinetic,
+                species_map={b1: A0, b2: A0},
+            )
+            + _model_demo_vertex(
+                interaction=photon_gf,
+                external_legs=LEGS_photon_kinetic,
+                species_map={b1: A0, b2: A0},
+            )
+        )).expand(),
+        compact_override=I * (
+            gauge_kinetic_bilinear(mu3, mu4, p1, p2, photon_rho)
+            + gauge_fixing_bilinear(mu3, mu4, p1, p2) / xiQED
+        ),
+        interpretation="This is the ordinary gauge-fixed abelian two-point structure in the current compiler conventions.",
+    )
+    _print_vertex_block(
+        "gauge-fixed: Faddeev-Popov ghost bilinear",
+        description="Ordinary non-abelian ghost kinetic term compiled from -cbar partial.D c in integrated form.",
+        interaction_terms=(qcd_ghost_bilinear,),
+        show_term_objects=True,
+        vertex=_model_demo_vertex(
+            interaction=qcd_ghost_bilinear,
+            external_legs=LEGS_ghost_bilinear,
+            species_map={b1: ghGbar0, b2: ghG0},
+        ),
+        compact_override=-I * ghost_kinetic(a3, a4, p1, p2, ghost_rho),
+        interpretation="The compact form makes the adjoint delta and the p_bar.p_ghost contraction explicit.",
+    )
+    _print_vertex_block(
+        "gauge-fixed: ghost-gluon interaction",
+        description="Ordinary non-abelian ghost coupling. The derivative acts on the antighost, so the cubic vertex carries the antighost momentum.",
+        interaction_terms=(qcd_ghost_gauge,),
+        show_term_objects=True,
+        vertex=_model_demo_vertex(
+            interaction=qcd_ghost_gauge,
+            external_legs=LEGS_ghost_gluon,
+            species_map={b1: ghGbar0, b2: G0, b3: ghG0},
+        ),
+        compact_override=-gS * ghost_gauge(a3, a4, a5, mu3, p1),
+        interpretation="The raw compiler output keeps the Lorentz metric explicit; the compact form contracts it to p_antighost,mu.",
+    )
+    _print_vertex_block(
+        "gauge-fixed: ordinary gluon bilinear",
+        description="Yang-Mills bilinear plus ordinary gauge fixing combined into the full two-point gluon vertex.",
+        interaction_terms=(gluon_metric, gluon_cross, gluon_gf),
+        show_term_objects=True,
+        vertex=simplify_gamma_chain((
+            _model_demo_vertex(
+                interaction=gluon_metric,
+                external_legs=LEGS_gluon_kinetic,
+                species_map={b1: G0, b2: G0},
+            )
+            + _model_demo_vertex(
+                interaction=gluon_cross,
+                external_legs=LEGS_gluon_kinetic,
+                species_map={b1: G0, b2: G0},
+            )
+            + _model_demo_vertex(
+                interaction=gluon_gf,
+                external_legs=LEGS_gluon_kinetic,
+                species_map={b1: G0, b2: G0},
+            )
+        )).expand(),
+        compact_override=(
+            I
+            * (
+                gauge_kinetic_bilinear(mu3, mu4, p1, p2, gluon_rho)
+                + gauge_fixing_bilinear(mu3, mu4, p1, p2) / xiQCD
+            )
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+        ),
+        interpretation=(
+            "This is the ordinary gauge-fixed non-abelian two-point structure. "
+            "The ghost sector is separate and starts at the antighost-ghost and antighost-gluon-ghost vertices above."
+        ),
+    )
+
+
 def _run_demo_output(suite):
     if suite in ("scalar", "all"):
         _run_scalar_demo()
@@ -1508,6 +1742,8 @@ def _run_demo_output(suite):
         _run_gauge_demo()
     if suite == "covariant":
         _run_covariant_demo()
+    if suite == "gaugefix":
+        _run_gauge_fixed_demo()
     if suite == "model":
         compiled_qcd = compile_minimal_gauge_interactions(MODEL_QCD_BASE)
         compiled_qed = compile_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
@@ -2467,6 +2703,204 @@ def _run_covariant_compiler_tests():
 
 
 # ===================================================================
+# Ordinary gauge-fixing / ghost compiler tests
+# ===================================================================
+
+def _run_gauge_fixed_compiler_tests():
+    D2 = (2 * pi) ** d * Delta(p1 + p2)
+    D3 = (2 * pi) ** d * Delta(p1 + p2 + p3)
+
+    compiled_qed_gf = compile_covariant_terms(MODEL_QED_GAUGE_FIXING_COVARIANT)
+    model_qed_gf = with_compiled_covariant_terms(MODEL_QED_GAUGE_FIXING_COVARIANT)
+    assert model_qed_gf.interactions == compiled_qed_gf
+    assert len(compiled_qed_gf) == 1
+
+    qed_gf_term = compiled_qed_gf[0]
+    qed_gf_left = qed_gf_term.derivatives[0].lorentz_index
+    qed_gf_right = qed_gf_term.derivatives[1].lorentz_index
+    _check(
+        _model_vertex(
+            interaction=qed_gf_term,
+            external_legs=LEGS_photon_kinetic,
+            species_map={b1: A0, b2: A0},
+        ),
+        (I / xiQED) * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, qed_gf_left, qed_gf_right) * D2,
+        "Gauge-fixed compiler: abelian gauge fixing",
+        show_vertex=True,
+        description=qed_gf_term.label,
+        display_vertex=(I / xiQED) * gauge_fixing_bilinear(mu3, mu4, p1, p2) * D2,
+    )
+
+    compiled_qcd_gf = compile_covariant_terms(MODEL_QCD_GAUGE_FIXING_COVARIANT)
+    model_qcd_gf = with_compiled_covariant_terms(MODEL_QCD_GAUGE_FIXING_COVARIANT)
+    assert model_qcd_gf.interactions == compiled_qcd_gf
+    assert len(compiled_qcd_gf) == 1
+
+    qcd_gf_term = compiled_qcd_gf[0]
+    qcd_gf_left = qcd_gf_term.derivatives[0].lorentz_index
+    qcd_gf_right = qcd_gf_term.derivatives[1].lorentz_index
+    _check(
+        _model_vertex(
+            interaction=qcd_gf_term,
+            external_legs=LEGS_gluon_kinetic,
+            species_map={b1: G0, b2: G0},
+        ),
+        (
+            (I / xiQCD)
+            * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, qcd_gf_left, qcd_gf_right)
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+            * D2
+        ),
+        "Gauge-fixed compiler: non-abelian gauge fixing",
+        show_vertex=True,
+        description=qcd_gf_term.label,
+        display_vertex=(
+            (I / xiQCD)
+            * gauge_fixing_bilinear(mu3, mu4, p1, p2)
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+            * D2
+        ),
+    )
+
+    compiled_qed_gauge_fixed = compile_covariant_terms(MODEL_QED_ORDINARY_GAUGE_FIXED)
+    model_qed_gauge_fixed = with_compiled_covariant_terms(MODEL_QED_ORDINARY_GAUGE_FIXED)
+    assert model_qed_gauge_fixed.interactions == compiled_qed_gauge_fixed
+    assert len(compiled_qed_gauge_fixed) == 3
+
+    photon_metric, photon_cross, photon_gf = compiled_qed_gauge_fixed
+    photon_rho = photon_metric.derivatives[0].lorentz_index
+    photon_left = photon_cross.derivatives[0].lorentz_index
+    photon_right = photon_cross.derivatives[1].lorentz_index
+    photon_gf_left = photon_gf.derivatives[0].lorentz_index
+    photon_gf_right = photon_gf.derivatives[1].lorentz_index
+    V_photon_gauge_fixed = simplify_gamma_chain((
+        _model_vertex(
+            interaction=photon_metric,
+            external_legs=LEGS_photon_kinetic,
+            species_map={b1: A0, b2: A0},
+        )
+        + _model_vertex(
+            interaction=photon_cross,
+            external_legs=LEGS_photon_kinetic,
+            species_map={b1: A0, b2: A0},
+        )
+        + _model_vertex(
+            interaction=photon_gf,
+            external_legs=LEGS_photon_kinetic,
+            species_map={b1: A0, b2: A0},
+        )
+    ))
+    _check(
+        V_photon_gauge_fixed,
+        simplify_gamma_chain(
+            I
+            * (
+                gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, photon_rho, photon_left, photon_right)
+                + gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, photon_gf_left, photon_gf_right) / xiQED
+            )
+            * D2
+        ),
+        "Gauge-fixed compiler: ordinary photon bilinear",
+        show_vertex=True,
+        description="Gauge kinetic plus ordinary gauge fixing",
+        display_vertex=I * (
+            gauge_kinetic_bilinear(mu3, mu4, p1, p2, photon_rho)
+            + gauge_fixing_bilinear(mu3, mu4, p1, p2) / xiQED
+        ) * D2,
+    )
+
+    compiled_qcd_ghost = compile_covariant_terms(MODEL_QCD_GHOST_COVARIANT)
+    model_qcd_ghost = with_compiled_covariant_terms(MODEL_QCD_GHOST_COVARIANT)
+    assert model_qcd_ghost.interactions == compiled_qcd_ghost
+    assert len(compiled_qcd_ghost) == 2
+
+    qcd_ghost_bilinear, qcd_ghost_gauge = compiled_qcd_ghost
+    ghost_mu = qcd_ghost_bilinear.derivatives[0].lorentz_index
+    ghost_nu = qcd_ghost_bilinear.derivatives[1].lorentz_index
+    _check(
+        _model_vertex(
+            interaction=qcd_ghost_bilinear,
+            external_legs=LEGS_ghost_bilinear,
+            species_map={b1: ghGbar0, b2: ghG0},
+        ),
+        -I * ghost_kinetic_raw(a3, a4, p1, p2, ghost_mu, ghost_nu) * D2,
+        "Gauge-fixed compiler: ghost bilinear",
+        show_vertex=True,
+        description=qcd_ghost_bilinear.label,
+        display_vertex=-I * ghost_kinetic(a3, a4, p1, p2, S("rho_ghost")) * D2,
+    )
+
+    ghost_rho = qcd_ghost_gauge.derivatives[0].lorentz_index
+    _check(
+        _model_vertex(
+            interaction=qcd_ghost_gauge,
+            external_legs=LEGS_ghost_gluon,
+            species_map={b1: ghGbar0, b2: G0, b3: ghG0},
+        ),
+        -gS * ghost_gauge_raw(a3, a4, a5, mu3, ghost_rho, p1) * D3,
+        "Gauge-fixed compiler: ghost-gluon interaction",
+        show_vertex=True,
+        description=qcd_ghost_gauge.label,
+        display_vertex=-gS * ghost_gauge(a3, a4, a5, mu3, p1) * D3,
+    )
+
+    compiled_qcd_gauge_fixed = compile_covariant_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED)
+    model_qcd_gauge_fixed = with_compiled_covariant_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED)
+    assert model_qcd_gauge_fixed.interactions == compiled_qcd_gauge_fixed
+    assert len(compiled_qcd_gauge_fixed) == 7
+
+    gluon_metric, gluon_cross, _, _, gluon_gf, _, _ = compiled_qcd_gauge_fixed
+    gluon_rho = gluon_metric.derivatives[0].lorentz_index
+    gluon_left = gluon_cross.derivatives[0].lorentz_index
+    gluon_right = gluon_cross.derivatives[1].lorentz_index
+    gluon_gf_left = gluon_gf.derivatives[0].lorentz_index
+    gluon_gf_right = gluon_gf.derivatives[1].lorentz_index
+    V_gluon_gauge_fixed = simplify_gamma_chain((
+        _model_vertex(
+            interaction=gluon_metric,
+            external_legs=LEGS_gluon_kinetic,
+            species_map={b1: G0, b2: G0},
+        )
+        + _model_vertex(
+            interaction=gluon_cross,
+            external_legs=LEGS_gluon_kinetic,
+            species_map={b1: G0, b2: G0},
+        )
+        + _model_vertex(
+            interaction=gluon_gf,
+            external_legs=LEGS_gluon_kinetic,
+            species_map={b1: G0, b2: G0},
+        )
+    ))
+    _check(
+        V_gluon_gauge_fixed,
+        simplify_gamma_chain(
+            I
+            * (
+                gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, gluon_rho, gluon_left, gluon_right)
+                + gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, gluon_gf_left, gluon_gf_right) / xiQCD
+            )
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+            * D2
+        ),
+        "Gauge-fixed compiler: ordinary gluon bilinear",
+        show_vertex=True,
+        description="Yang-Mills bilinear plus ordinary gauge fixing",
+        display_vertex=(
+            I
+            * (
+                gauge_kinetic_bilinear(mu3, mu4, p1, p2, gluon_rho)
+                + gauge_fixing_bilinear(mu3, mu4, p1, p2) / xiQCD
+            )
+            * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
+            * D2
+        ),
+    )
+
+    print("\n  Ordinary gauge-fixing / ghost compiler tests passed.\n")
+
+
+# ===================================================================
 # Tensor canonicalization tests
 # ===================================================================
 
@@ -2668,6 +3102,11 @@ def _run_all_tests():
     _run_covariant_compiler_tests()
 
     print("=" * 80)
+    print("  Ordinary gauge-fixing / ghost compiler tests")
+    print("=" * 80)
+    _run_gauge_fixed_compiler_tests()
+
+    print("=" * 80)
     print("  Tensor canonicalization tests")
     print("=" * 80)
     _run_tensor_canonicalization_tests()
@@ -2684,7 +3123,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run vertex examples and tests.")
     parser.add_argument(
         "--suite",
-        choices=("scalar", "fermion", "gauge", "model", "covariant", "cross", "role", "all"),
+        choices=("scalar", "fermion", "gauge", "gaugefix", "model", "covariant", "cross", "role", "all"),
         default="all",
     )
     parser.add_argument("--skip-tests", action="store_true")
@@ -2708,6 +3147,8 @@ if __name__ == "__main__":
             _run_fermion_derivative_mixed_tests()
         elif args.suite == "gauge":
             _run_gauge_ready_tests()
+        elif args.suite == "gaugefix":
+            _run_gauge_fixed_compiler_tests()
         elif args.suite == "model":
             _run_model_tests()
             _run_compiled_gauge_tests()

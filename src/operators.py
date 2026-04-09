@@ -76,6 +76,11 @@ def gauge_kinetic_bilinear(mu, nu, p_left, p_right, contracted_lorentz):
     )
 
 
+def gauge_fixing_bilinear(mu, nu, p_left, p_right):
+    """Compact two-gauge-field gauge-fixing tensor after metric contraction."""
+    return pcomp(p_left, nu) * pcomp(p_right, mu)
+
+
 def gauge_kinetic_bilinear_raw(
     mu,
     nu,
@@ -228,6 +233,15 @@ def ghost_kinetic_raw(
     )
 
 
+def ghost_kinetic(adjoint_bar, adjoint_ghost, p_bar, p_ghost, contracted_lorentz):
+    """Compact ghost bilinear tensor after Lorentz-metric contraction."""
+    return (
+        COLOR_ADJ.g(adjoint_bar, adjoint_ghost).to_expression()
+        * pcomp(p_bar, contracted_lorentz)
+        * pcomp(p_ghost, contracted_lorentz)
+    )
+
+
 def ghost_gauge_raw(
     adjoint_bar,
     adjoint_gauge,
@@ -242,3 +256,8 @@ def ghost_gauge_raw(
         * lorentz_metric(derivative_lorentz, gauge_lorentz)
         * pcomp(p_bar, derivative_lorentz)
     )
+
+
+def ghost_gauge(adjoint_bar, adjoint_gauge, adjoint_ghost, gauge_lorentz, p_bar):
+    """Compact ghost-gauge tensor after Lorentz-metric contraction."""
+    return structure_constant(adjoint_bar, adjoint_gauge, adjoint_ghost) * pcomp(p_bar, gauge_lorentz)
