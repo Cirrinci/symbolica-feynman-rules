@@ -191,22 +191,54 @@ class GaugeGroup:
     representations: tuple[GaugeRepresentation, ...] = ()
     charge: Optional[str] = None
 
+    def _matching_representations(
+        self,
+        field: "Field",
+    ) -> tuple[tuple[GaugeRepresentation, tuple[int, ...]], ...]:
+        """Resolve the unique supported representation match for one field.
+
+        The current compiler supports at most one matching representation per
+        field within a given gauge group. Repeated slots of one representation
+        remain supported through ``GaugeRepresentation(slot_policy='sum')``.
+        """
+        matches = []
+        for rep in self.representations:
+            slots = rep.slots_for(field)
+            if slots:
+                matches.append((rep, tuple(slots)))
+
+        if len(matches) > 1:
+            rep_names = ", ".join(rep.name or rep.index.name for rep, _ in matches)
+            raise ValueError(
+                f"Field {field.name!r} matches multiple representations under gauge group "
+                f"{self.name!r} ({rep_names}). This is not currently supported."
+            )
+
+        return tuple(matches)
+
     def matter_representation(self, field: "Field") -> Optional[GaugeRepresentation]:
         """Return the gauge representation carried by a given matter field."""
-        resolved = self.matter_representation_and_slots(field)
-        if resolved is None:
+        matches = self._matching_representations(field)
+        if not matches:
             return None
-        return resolved[0]
+        return matches[0][0]
 
     def matter_representation_and_slot(
         self,
         field: "Field",
     ) -> Optional[tuple[GaugeRepresentation, int]]:
         """Return the gauge representation and the concrete field slot it uses."""
-        for rep in self.representations:
-            slot = rep.slot_for(field)
-            if slot is not None:
-                return rep, slot
+        matches = self._matching_representations(field)
+        if not matches:
+            return None
+
+        rep, slots = matches[0]
+        if len(slots) != 1:
+            raise ValueError(
+                f"GaugeRepresentation for index {rep.index.name!r} resolved to {len(slots)} slots; "
+                "use matter_representation_and_slots(...) or set slot=... for a unique slot."
+            )
+        return rep, slots[0]
         return None
 
     def matter_representation_and_slots(
@@ -214,10 +246,9 @@ class GaugeGroup:
         field: "Field",
     ) -> Optional[tuple[GaugeRepresentation, tuple[int, ...]]]:
         """Return the gauge representation and all concrete field slots it uses."""
-        for rep in self.representations:
-            slots = rep.slots_for(field)
-            if slots:
-                return rep, tuple(slots)
+        matches = self._matching_representations(field)
+        if matches:
+            return matches[0]
         return None
 
 
@@ -642,7 +673,10 @@ class Model:
     def find_field(self, target) -> Optional[Field]:
         """Resolve a field by object identity, declaration name, or symbol."""
         if isinstance(target, Field):
-            return target
+            for field in self.fields:
+                if field is target:
+                    return field
+            return None
         if target is None:
             return None
 
@@ -659,7 +693,10 @@ class Model:
     def find_gauge_group(self, target) -> Optional[GaugeGroup]:
         """Resolve a gauge group by object identity or declaration name."""
         if isinstance(target, GaugeGroup):
-            return target
+            for gauge_group in self.gauge_groups:
+                if gauge_group is target:
+                    return gauge_group
+            return None
         if target is None:
             return None
 
@@ -671,6 +708,15 @@ class Model:
 
     def gauge_boson_field(self, gauge_group: GaugeGroup) -> Field:
         """Resolve the gauge boson field declared for a gauge group."""
+        if isinstance(gauge_group.gauge_boson, Field):
+            field = self.find_field(gauge_group.gauge_boson)
+            if field is None:
+                raise ValueError(
+                    f"Gauge group {gauge_group.name!r} requires gauge boson "
+                    f"{gauge_group.gauge_boson.name!r} to be declared in model.fields."
+                )
+            return field
+
         field = self.find_field(gauge_group.gauge_boson)
         if field is None:
             raise ValueError(

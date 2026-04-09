@@ -226,6 +226,72 @@ def _all_fermion_slots_labeled(field_roles, field_index_labels):
     return True
 
 
+def _fermion_leg_spinor_labels_present(leg_roles, leg_index_labels):
+    """Whether any fermion external leg already carries an explicit spinor label."""
+    if leg_roles is None or leg_index_labels is None:
+        return False
+    return any(
+        _role_is_fermion(role) and _get_label(labels, SPINOR_KIND) is not None
+        for role, labels in zip(leg_roles, leg_index_labels)
+    )
+
+
+def _with_default_fermion_leg_index_labels(leg_roles, leg_index_labels):
+    """Inject default spinor labels for fermion legs while preserving other labels."""
+    defaults = _default_leg_index_labels(len(leg_roles))
+    merged = []
+    for i, role in enumerate(leg_roles):
+        labels = dict(leg_index_labels[i] or {})
+        if _role_is_fermion(role) and _get_label(labels, SPINOR_KIND) is None:
+            labels[SPINOR_KIND] = _get_label(defaults[i], SPINOR_KIND)
+        merged.append(labels)
+    return merged
+
+
+def _validate_fermion_spinor_delta_inputs(
+    field_roles,
+    leg_roles,
+    field_index_labels,
+    leg_index_labels,
+):
+    """Reject partial spinor-delta inputs that would erase fermion structure."""
+    if field_roles is None or leg_roles is None or leg_index_labels is None:
+        return
+    if not _fermion_leg_spinor_labels_present(leg_roles, leg_index_labels):
+        return
+
+    missing_field_slots = [
+        str(i + 1)
+        for i, role in enumerate(field_roles)
+        if _role_is_fermion(role)
+        and (
+            field_index_labels is None
+            or _get_label(field_index_labels[i], SPINOR_KIND) is None
+        )
+    ]
+    if missing_field_slots:
+        raise ValueError(
+            "Fermion spinor-delta stripping requires spinor labels on all fermion "
+            "interaction slots; missing slots "
+            + ", ".join(missing_field_slots)
+            + "."
+        )
+
+    missing_leg_slots = [
+        str(i + 1)
+        for i, role in enumerate(leg_roles)
+        if _role_is_fermion(role)
+        and _get_label(leg_index_labels[i], SPINOR_KIND) is None
+    ]
+    if missing_leg_slots:
+        raise ValueError(
+            "Fermion spinor-delta stripping requires spinor labels on all fermion "
+            "external legs; missing legs "
+            + ", ".join(missing_leg_slots)
+            + "."
+        )
+
+
 def _fermion_sign_from_slots(perm, fermion_slots):
     """Grassmann sign from permutation restricted to fermion slots."""
     if len(fermion_slots) <= 1:
@@ -400,6 +466,12 @@ def contract_to_full_expression(
             )
         _validate_supported_fermion_structure(
             field_roles, field_index_labels, coupling=coupling,
+        )
+        _validate_fermion_spinor_delta_inputs(
+            field_roles,
+            leg_roles,
+            field_index_labels,
+            leg_index_labels,
         )
 
     use_spinor_deltas = leg_index_labels is not None and any(
@@ -577,11 +649,19 @@ def vertex_factor(
 
     if (
         strip_externals
-        and leg_index_labels is None
         and statistics == "fermion"
         and _all_fermion_slots_labeled(field_roles, field_index_labels)
     ):
-        leg_index_labels = _default_leg_index_labels(n)
+        if leg_index_labels is None:
+            leg_index_labels = _default_leg_index_labels(n)
+        elif (
+            leg_roles is not None
+            and not _fermion_leg_spinor_labels_present(leg_roles, leg_index_labels)
+        ):
+            leg_index_labels = _with_default_fermion_leg_index_labels(
+                leg_roles,
+                leg_index_labels,
+            )
 
     contracted = contract_to_full_expression(
         alphas=alphas,
