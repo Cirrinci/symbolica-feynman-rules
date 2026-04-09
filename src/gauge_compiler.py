@@ -1090,6 +1090,8 @@ def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[Inte
         term.gauge_group,
         purpose="Gauge-fixing compilation",
     )
+    if term.xi == 0:
+        raise ValueError("Gauge-fixing compilation requires xi to be non-zero.")
     gauge_field = model.gauge_boson_field(gauge_group)
     if gauge_field.kind != "vector":
         raise ValueError(f"Gauge-fixing compilation requires a vector field, got kind={gauge_field.kind!r}.")

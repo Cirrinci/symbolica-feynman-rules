@@ -14,18 +14,23 @@ from symbolica import S  # noqa: E402
 from gauge_compiler import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
+    COLOR_FUND_INDEX,
     LORENTZ_INDEX,
+    SPINOR_INDEX,
     COLOR_ADJ_KIND,
     LORENTZ_KIND,
+    DiracKineticTerm,
     Field,
     GaugeFixingTerm,
     GaugeGroup,
+    GaugeKineticTerm,
+    GaugeRepresentation,
     GhostTerm,
     Model,
 )
 from model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
 from operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw  # noqa: E402
-from spenso_structures import structure_constant  # noqa: E402
+from spenso_structures import gauge_generator, structure_constant  # noqa: E402
 
 
 def _model_vertex(*, interaction, external_legs, species_map):
@@ -288,3 +293,142 @@ def test_compile_self_conjugate_ghost_field_is_rejected():
 
     with pytest.raises(ValueError, match=r"non-self-conjugate"):
         compile_covariant_terms(model)
+
+
+def test_compile_gauge_fixing_term_rejects_xi_zero():
+    photon = _make_photon(S("A"))
+    u1 = GaugeGroup(
+        name="U1QED",
+        abelian=True,
+        coupling=S("eQED"),
+        gauge_boson=photon.symbol,
+        charge="Q",
+    )
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=u1, xi=0),),
+    )
+
+    with pytest.raises(ValueError, match=r"xi to be non-zero"):
+        compile_covariant_terms(model)
+
+
+def test_compile_gauge_fixing_term_rejects_non_vector_gauge_boson():
+    scalar_gauge = Field(
+        "X",
+        spin=0,
+        self_conjugate=True,
+        symbol=S("X"),
+    )
+    u1 = GaugeGroup(
+        name="U1Bad",
+        abelian=True,
+        coupling=S("eBad"),
+        gauge_boson=scalar_gauge.symbol,
+        charge="Q",
+    )
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(scalar_gauge,),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=u1, xi=S("xiBad")),),
+    )
+
+    with pytest.raises(ValueError, match=r"requires a vector field"):
+        compile_covariant_terms(model)
+
+
+def test_compile_ghost_term_rejects_missing_ghost_field_declaration():
+    gluon = _make_gluon(S("G"))
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        structure_constant=structure_constant,
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    with pytest.raises(ValueError, match=r"declare ghost_field"):
+        compile_covariant_terms(model)
+
+
+def test_compile_ghost_term_rejects_adjoint_index_mismatch():
+    gluon = _make_gluon(S("G"))
+    bad_ghost = Field(
+        "ghWrong",
+        spin=0,
+        kind="ghost",
+        self_conjugate=False,
+        symbol=S("ghWrong"),
+        conjugate_symbol=S("ghWrongBar"),
+        indices=(COLOR_FUND_INDEX,),
+    )
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        ghost_field=bad_ghost.symbol,
+        structure_constant=structure_constant,
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, bad_ghost),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    with pytest.raises(ValueError, match=r"requires field .* exactly one .* slot"):
+        compile_covariant_terms(model)
+
+
+def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
+    quark = Field(
+        "q",
+        spin=1 / 2,
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    gluon = _make_gluon(S("G"))
+    ghost = _make_ghost(S("ghG"), S("ghGbar"))
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        ghost_field=ghost.symbol,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fund",
+            ),
+        ),
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(quark, gluon, ghost),
+        covariant_terms=(DiracKineticTerm(field=quark),),
+        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=S("xiQCD")),),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert with_compiled_covariant_terms(model).interactions == compiled
+    assert len(compiled) == 8
+    labels = [interaction.label for interaction in compiled]
+    assert any("gamma^mu D_mu" in label for label in labels)
+    assert sum("gauge kinetic bilinear" in label for label in labels) == 2
+    assert any("Yang-Mills cubic" in label for label in labels)
+    assert any("Yang-Mills quartic" in label for label in labels)
+    assert any("gauge fixing" in label for label in labels)
+    assert any("Faddeev-Popov ghosts bilinear" in label for label in labels)
+    assert any("Faddeev-Popov ghosts gauge interaction" in label for label in labels)

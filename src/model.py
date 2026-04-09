@@ -239,7 +239,6 @@ class GaugeGroup:
                 "use matter_representation_and_slots(...) or set slot=... for a unique slot."
             )
         return rep, slots[0]
-        return None
 
     def matter_representation_and_slots(
         self,
