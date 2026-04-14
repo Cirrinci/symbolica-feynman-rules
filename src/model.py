@@ -20,7 +20,7 @@ by vertex_factor() in model_symbolica.py, so the engine stays untouched.
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fractions import Fraction
 from functools import cached_property
 from typing import Callable, Literal, Mapping, Optional, Sequence
@@ -559,6 +559,89 @@ class FieldStrengthFactor(_DeclaredFactorMixin):
         return f"FieldStrength({group_name}, {self.left_index}, {self.right_index})"
 
 
+@dataclass(frozen=True)
+class GaugeFixingDeclaration:
+    gauge_group: object
+    xi: object = 1
+    coefficient: object = 1
+    label: str = ""
+
+    def __add__(self, other):
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=terms + (self,))
+
+    def __mul__(self, other):
+        if _is_decl_scalar(other):
+            return replace(self, coefficient=self.coefficient * other)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if _is_decl_scalar(other):
+            return replace(self, coefficient=other * self.coefficient)
+        return NotImplemented
+
+    def __neg__(self):
+        return replace(self, coefficient=-self.coefficient)
+
+    def __str__(self):
+        group_name = getattr(self.gauge_group, "name", self.gauge_group)
+        body = f"GaugeFixing({group_name}, xi={self.xi})"
+        if self.coefficient == 1:
+            return body
+        return f"{self.coefficient} * {body}"
+
+
+@dataclass(frozen=True)
+class GhostLagrangianDeclaration:
+    gauge_group: object
+    coefficient: object = 1
+    label: str = ""
+
+    def __add__(self, other):
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=terms + (self,))
+
+    def __mul__(self, other):
+        if _is_decl_scalar(other):
+            return replace(self, coefficient=self.coefficient * other)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if _is_decl_scalar(other):
+            return replace(self, coefficient=other * self.coefficient)
+        return NotImplemented
+
+    def __neg__(self):
+        return replace(self, coefficient=-self.coefficient)
+
+    def __str__(self):
+        group_name = getattr(self.gauge_group, "name", self.gauge_group)
+        body = f"GhostLagrangian({group_name})"
+        if self.coefficient == 1:
+            return body
+        return f"{self.coefficient} * {body}"
+
+
 def _is_decl_scalar(value) -> bool:
     return not isinstance(
         value,
@@ -575,7 +658,9 @@ def _is_decl_scalar(value) -> bool:
             DiracKineticTerm,
             ComplexScalarKineticTerm,
             GaugeKineticTerm,
+            GaugeFixingDeclaration,
             GaugeFixingTerm,
+            GhostLagrangianDeclaration,
             GhostTerm,
             Lagrangian,
         ),
@@ -675,6 +760,25 @@ def FieldStrength(gauge_group, left_index, right_index) -> FieldStrengthFactor:
         gauge_group=gauge_group,
         left_index=left_index,
         right_index=right_index,
+    )
+
+
+def GaugeFixing(gauge_group, *, xi=1, coefficient=1, label="") -> GaugeFixingDeclaration:
+    """Declarative ordinary gauge-fixing wrapper for ``DeclaredLagrangian``."""
+    return GaugeFixingDeclaration(
+        gauge_group=gauge_group,
+        xi=xi,
+        coefficient=coefficient,
+        label=label,
+    )
+
+
+def GhostLagrangian(gauge_group, *, coefficient=1, label="") -> GhostLagrangianDeclaration:
+    """Declarative Faddeev-Popov ghost-sector wrapper for ``DeclaredLagrangian``."""
+    return GhostLagrangianDeclaration(
+        gauge_group=gauge_group,
+        coefficient=coefficient,
+        label=label,
     )
 
 
@@ -1211,13 +1315,27 @@ def _lower_declared_monomial(term: _DeclaredMonomial):
         "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
         "CovD(Phi.bar, mu) * CovD(Phi, mu), "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
-        "plus explicit InteractionTerm / GaugeFixingTerm / GhostTerm declarations."
+        "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
+        "or the legacy GaugeFixingTerm / GhostTerm declarations."
     )
 
 
 def _lower_declared_source_term(term):
     if isinstance(term, _DeclaredMonomial):
         return _lower_declared_monomial(term)
+    if isinstance(term, GaugeFixingDeclaration):
+        return GaugeFixingTerm(
+            gauge_group=term.gauge_group,
+            xi=term.xi,
+            coefficient=term.coefficient,
+            label=term.label,
+        )
+    if isinstance(term, GhostLagrangianDeclaration):
+        return GhostTerm(
+            gauge_group=term.gauge_group,
+            coefficient=term.coefficient,
+            label=term.label,
+        )
     return term
 
 
@@ -1231,7 +1349,9 @@ def _declared_source_terms_from_item(item):
             DiracKineticTerm,
             ComplexScalarKineticTerm,
             GaugeKineticTerm,
+            GaugeFixingDeclaration,
             GaugeFixingTerm,
+            GhostLagrangianDeclaration,
             GhostTerm,
             InteractionTerm,
         ),
@@ -1256,8 +1376,9 @@ class DeclaredLagrangian:
 
     This is a high-level declaration container. Its source terms preserve the
     original FeynRules-style declarations (`CovD(...)`, `FieldStrength(...)`,
-    etc.), while `lowered_terms` provides the existing model declarations
-    consumed by the current compiler back-end.
+    `GaugeFixing(...)`, `GhostLagrangian(...)`, etc.), while `lowered_terms`
+    provides the existing model declarations consumed by the current compiler
+    back-end.
     """
     source_terms: tuple[object, ...] = ()
 

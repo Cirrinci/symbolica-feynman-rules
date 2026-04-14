@@ -163,8 +163,8 @@ model = Model(
         I * Psi.bar * Gamma(mu) * CovD(Psi, mu)
         + CovD(Phi.bar, mu) * CovD(Phi, mu)
         - S(1) / 4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)
-        + GaugeFixingTerm(gauge_group=SU3C, xi=xiQCD)
-        + GhostTerm(gauge_group=SU3C)
+        + GaugeFixing(SU3C, xi=xiQCD)
+        + GhostLagrangian(SU3C)
     ),
 )
 

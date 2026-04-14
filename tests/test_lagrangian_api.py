@@ -47,11 +47,11 @@ from model import (  # noqa: E402
     DerivativeAction,
     DiracKineticTerm,
     Field,
-    GaugeFixingTerm,
+    GaugeFixing,
     GaugeGroup,
     GaugeKineticTerm,
     GaugeRepresentation,
-    GhostTerm,
+    GhostLagrangian,
     InteractionTerm,
     Lagrangian,
     Model,
@@ -705,8 +705,8 @@ def test_precompiled_full_stack_no_double_count():
         fields=(gluon, ghost),
         lagrangian_decl=(
             _gauge_decl(su3)
-            + GaugeFixingTerm(gauge_group=su3, xi=xiQCD)
-            + GhostTerm(gauge_group=su3)
+            + GaugeFixing(su3, xi=xiQCD)
+            + GhostLagrangian(su3)
         ),
     )
 
@@ -834,7 +834,7 @@ def test_lagrangian_abelian_gauge_fixing():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon,),
-        lagrangian_decl=GaugeFixingTerm(gauge_group=u1, xi=xiQED),
+        lagrangian_decl=GaugeFixing(u1, xi=xiQED),
     )
 
     compiled = compile_covariant_terms(model)
@@ -861,7 +861,7 @@ def test_lagrangian_nonabelian_gauge_fixing():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        lagrangian_decl=GaugeFixingTerm(gauge_group=su3, xi=xiQCD),
+        lagrangian_decl=GaugeFixing(su3, xi=xiQCD),
     )
 
     compiled = compile_covariant_terms(model)
@@ -879,6 +879,30 @@ def test_lagrangian_nonabelian_gauge_fixing():
     assert _canon(got) == _canon(ref)
 
 
+def test_gauge_fixing_wrapper_preserves_source_and_scalar_prefactor():
+    """GaugeFixing(...) stays visible in the source declaration and scales naturally."""
+    eQED, xiQED = S("eQED", "xiQED")
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    base = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=GaugeFixing(u1, xi=xiQED),
+    )
+    scaled = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=-(Expression.num(2) * GaugeFixing(u1, xi=xiQED)),
+    )
+
+    assert str(scaled.lagrangian_decl.source_terms[0]) == f"-2 * GaugeFixing(U1, xi={xiQED})"
+
+    got = scaled.lagrangian().feynman_rule(photon, photon, simplify=True)
+    ref = -(Expression.num(2) * base.lagrangian().feynman_rule(photon, photon, simplify=True))
+    assert _canon(got) == _canon(ref)
+
+
 # ===========================================================================
 # Compiled sector: ghosts
 # ===========================================================================
@@ -893,7 +917,7 @@ def test_lagrangian_ghost_bilinear():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, ghost),
-        lagrangian_decl=GhostTerm(gauge_group=su3),
+        lagrangian_decl=GhostLagrangian(su3),
     )
 
     compiled = compile_covariant_terms(model)
@@ -922,7 +946,7 @@ def test_lagrangian_ghost_gauge_interaction():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, ghost),
-        lagrangian_decl=GhostTerm(gauge_group=su3),
+        lagrangian_decl=GhostLagrangian(su3),
     )
 
     compiled = compile_covariant_terms(model)
@@ -938,6 +962,31 @@ def test_lagrangian_ghost_gauge_interaction():
         ghost.leg(q3, labels={COLOR_ADJ_KIND: S("i4")}),
     )
     ref = _ref_vertex(ghost_gauge_term, legs)
+    assert _canon(got) == _canon(ref)
+
+
+def test_ghost_lagrangian_wrapper_preserves_source_and_scalar_prefactor():
+    """GhostLagrangian(...) stays visible in the source declaration and scales naturally."""
+    gS = S("gS")
+    gluon = _make_gluon()
+    ghost = _make_ghost()
+    su3 = _make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol)
+
+    base = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=GhostLagrangian(su3),
+    )
+    scaled = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=Expression.num(3) * GhostLagrangian(su3),
+    )
+
+    assert str(scaled.lagrangian_decl.source_terms[0]) == "3 * GhostLagrangian(SU3)"
+
+    got = scaled.lagrangian().feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    ref = Expression.num(3) * base.lagrangian().feynman_rule(ghost.bar, gluon, ghost, simplify=True)
     assert _canon(got) == _canon(ref)
 
 

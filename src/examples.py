@@ -73,15 +73,12 @@ from spenso_structures import (
 from tensor_canonicalization import canonize_spenso_tensors
 from model import (
     CovD,
-    ComplexScalarKineticTerm,
     FieldStrength,
     Gamma,
-    DiracKineticTerm,
     Field,
-    GhostTerm,
-    GaugeFixingTerm,
+    GhostLagrangian,
+    GaugeFixing,
     GaugeGroup,
-    GaugeKineticTerm,
     GaugeRepresentation,
     InteractionTerm,
     DerivativeAction,
@@ -797,13 +794,13 @@ MODEL_QED_GAUGE_FIXING_COVARIANT = Model(
     name="QEDGaugeFixing-covariant",
     gauge_groups=(QED_GROUP,),
     fields=(GaugeField,),
-    lagrangian_decl=GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED),
+    lagrangian_decl=GaugeFixing(QED_GROUP, xi=xiQED),
 )
 MODEL_QCD_GAUGE_FIXING_COVARIANT = Model(
     name="QCDGaugeFixing-covariant",
     gauge_groups=(QCD_GROUP,),
     fields=(GluonField,),
-    lagrangian_decl=GaugeFixingTerm(gauge_group=QCD_GROUP, xi=xiQCD),
+    lagrangian_decl=GaugeFixing(QCD_GROUP, xi=xiQCD),
 )
 MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
     name="QEDGaugeFixed-covariant",
@@ -812,14 +809,14 @@ MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
     lagrangian_decl=(
         -(Expression.num(1) / Expression.num(4))
         * FieldStrength(QED_GROUP, mu, nu) * FieldStrength(QED_GROUP, mu, nu)
-        + GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED)
+        + GaugeFixing(QED_GROUP, xi=xiQED)
     ),
 )
 MODEL_QCD_GHOST_COVARIANT = Model(
     name="QCDGhost-covariant",
     gauge_groups=(QCD_GROUP_GHOST,),
     fields=(GluonField, GhostGluonField),
-    lagrangian_decl=GhostTerm(gauge_group=QCD_GROUP_GHOST),
+    lagrangian_decl=GhostLagrangian(QCD_GROUP_GHOST),
 )
 MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
     name="QCDGaugeFixed-covariant",
@@ -828,8 +825,8 @@ MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
     lagrangian_decl=(
         -(Expression.num(1) / Expression.num(4))
         * FieldStrength(QCD_GROUP_GHOST, mu, nu) * FieldStrength(QCD_GROUP_GHOST, mu, nu)
-        + GaugeFixingTerm(gauge_group=QCD_GROUP_GHOST, xi=xiQCD)
-        + GhostTerm(gauge_group=QCD_GROUP_GHOST)
+        + GaugeFixing(QCD_GROUP_GHOST, xi=xiQCD)
+        + GhostLagrangian(QCD_GROUP_GHOST)
     ),
 )
 

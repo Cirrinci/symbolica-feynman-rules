@@ -24,10 +24,10 @@ from model import (  # noqa: E402
     Gamma,
     LORENTZ_KIND,
     Field,
-    GaugeFixingTerm,
+    GaugeFixing,
     GaugeGroup,
     GaugeRepresentation,
-    GhostTerm,
+    GhostLagrangian,
     Model,
 )
 from model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
@@ -109,7 +109,7 @@ def test_compile_abelian_gauge_fixing_term():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon,),
-        lagrangian_decl=GaugeFixingTerm(gauge_group=u1, xi=xi_qed),
+        lagrangian_decl=GaugeFixing(u1, xi=xi_qed),
     )
 
     compiled = compile_covariant_terms(model)
@@ -156,7 +156,7 @@ def test_compile_nonabelian_gauge_fixing_term():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        lagrangian_decl=GaugeFixingTerm(gauge_group=su3, xi=xi_qcd),
+        lagrangian_decl=GaugeFixing(su3, xi=xi_qcd),
     )
 
     compiled = compile_covariant_terms(model)
@@ -207,7 +207,7 @@ def test_compile_nonabelian_ghost_terms():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, ghost),
-        lagrangian_decl=GhostTerm(gauge_group=su3),
+        lagrangian_decl=GhostLagrangian(su3),
     )
 
     compiled = compile_covariant_terms(model)
@@ -275,7 +275,7 @@ def test_compile_abelian_ghost_term_is_rejected():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon, ghost),
-        lagrangian_decl=GhostTerm(gauge_group=u1),
+        lagrangian_decl=GhostLagrangian(u1),
     )
 
     with pytest.raises(ValueError, match=r"only supported for non-abelian gauge groups"):
@@ -303,7 +303,7 @@ def test_compile_self_conjugate_ghost_field_is_rejected():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, ghost),
-        lagrangian_decl=GhostTerm(gauge_group=su3),
+        lagrangian_decl=GhostLagrangian(su3),
     )
 
     with pytest.raises(ValueError, match=r"non-self-conjugate"):
@@ -322,7 +322,7 @@ def test_compile_gauge_fixing_term_rejects_xi_zero():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon,),
-        lagrangian_decl=GaugeFixingTerm(gauge_group=u1, xi=0),
+        lagrangian_decl=GaugeFixing(u1, xi=0),
     )
 
     with pytest.raises(ValueError, match=r"xi to be non-zero"):
@@ -341,7 +341,7 @@ def test_compile_gauge_fixing_term_rejects_symbolically_zero_xi():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon,),
-        lagrangian_decl=GaugeFixingTerm(gauge_group=u1, xi=S("xiZero") - S("xiZero")),
+        lagrangian_decl=GaugeFixing(u1, xi=S("xiZero") - S("xiZero")),
     )
 
     with pytest.raises(ValueError, match=r"xi to be non-zero"):
@@ -365,7 +365,7 @@ def test_compile_gauge_fixing_term_rejects_non_vector_gauge_boson():
     model = Model(
         gauge_groups=(u1,),
         fields=(scalar_gauge,),
-        lagrangian_decl=GaugeFixingTerm(gauge_group=u1, xi=S("xiBad")),
+        lagrangian_decl=GaugeFixing(u1, xi=S("xiBad")),
     )
 
     with pytest.raises(ValueError, match=r"requires a vector field"):
@@ -384,7 +384,7 @@ def test_compile_ghost_term_rejects_missing_ghost_field_declaration():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        lagrangian_decl=GhostTerm(gauge_group=su3),
+        lagrangian_decl=GhostLagrangian(su3),
     )
 
     with pytest.raises(ValueError, match=r"declare ghost_field"):
@@ -411,7 +411,7 @@ def test_compile_ghost_term_rejects_non_ghost_field_kind():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, bad_field),
-        lagrangian_decl=GhostTerm(gauge_group=su3),
+        lagrangian_decl=GhostLagrangian(su3),
     )
 
     with pytest.raises(ValueError, match=r"kind='ghost'"):
@@ -440,7 +440,7 @@ def test_compile_ghost_term_rejects_adjoint_index_mismatch():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, bad_ghost),
-        lagrangian_decl=GhostTerm(gauge_group=su3),
+        lagrangian_decl=GhostLagrangian(su3),
     )
 
     with pytest.raises(ValueError, match=r"requires field .* exactly one .* slot"):
@@ -494,8 +494,8 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         lagrangian_decl=(
             _dirac_decl(quark)
             + _gauge_decl(su3)
-            + GaugeFixingTerm(gauge_group=su3, xi=xi_qcd)
-            + GhostTerm(gauge_group=su3)
+            + GaugeFixing(su3, xi=xi_qcd)
+            + GhostLagrangian(su3)
         ),
     )
 
@@ -608,8 +608,8 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         fields=(quark, gluon, photon, ghost),
         lagrangian_decl=(
             _dirac_decl(quark)
-            + GaugeFixingTerm(gauge_group=su3, xi=xi_qcd)
-            + GhostTerm(gauge_group=su3)
+            + GaugeFixing(su3, xi=xi_qcd)
+            + GhostLagrangian(su3)
         ),
     )
 

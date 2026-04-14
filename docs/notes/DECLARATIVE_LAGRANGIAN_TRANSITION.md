@@ -20,8 +20,8 @@ model = Model(
         I * Psi.bar * Gamma(mu) * CovD(Psi, mu)
         + CovD(Phi.bar, mu) * CovD(Phi, mu)
         - S(1) / 4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)
-        + GaugeFixingTerm(gauge_group=SU3C, xi=xiQCD)
-        + GhostTerm(gauge_group=SU3C)
+        + GaugeFixing(SU3C, xi=xiQCD)
+        + GhostLagrangian(SU3C)
     ),
 )
 ```
@@ -39,9 +39,16 @@ Introduce:
 - `CovD(field, mu)`
 - `Gamma(mu)`
 - `FieldStrength(group, mu, nu)`
+- `GaugeFixing(group, xi=...)`
+- `GhostLagrangian(group)`
 
 These objects are only a front-end DSL. They do not replace the current
 compiler internals.
+
+For gauge-fixing and ghosts, the stable front-end should stay typed and
+canonical rather than trying to parse arbitrary `DC[...]` / `Div[...]`
+expressions first. If richer symbolic sugar is added later, it should still
+lower onto this same back-end.
 
 Status: implemented
 
@@ -52,11 +59,31 @@ Supported canonical forms:
 - `I * Psi.bar * Gamma(mu) * CovD(Psi, mu)` -> `DiracKineticTerm`
 - `CovD(Phi.bar, mu) * CovD(Phi, mu)` -> `ComplexScalarKineticTerm`
 - `-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu)` -> `GaugeKineticTerm`
-- direct `GaugeFixingTerm(...)`
-- direct `GhostTerm(...)`
+- `GaugeFixing(G, xi=...)` -> `GaugeFixingTerm`
+- `GhostLagrangian(G)` -> `GhostTerm`
 - direct `InteractionTerm(...)`
 
 This keeps the existing gauge compiler as the single lowering back-end.
+
+Status: implemented
+
+### 2b. Current recommended declaration patterns
+
+Use the canonical declarative objects as the public surface:
+
+- fermion kinetic term:
+  - `I * Psi.bar * Gamma(mu) * CovD(Psi, mu)`
+- complex scalar kinetic term:
+  - `CovD(Phi.bar, mu) * CovD(Phi, mu)`
+- gauge kinetic term:
+  - `-(1/4) * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu)`
+- ordinary gauge fixing:
+  - `GaugeFixing(G, xi=xiG)`
+- ordinary ghosts:
+  - `GhostLagrangian(G)`
+
+Generic higher-derivative monomials are still declared explicitly with
+`InteractionTerm(...)` and `DerivativeAction(...)`.
 
 Status: implemented
 
@@ -78,7 +105,8 @@ Status: implemented
 ### 3b. Preserve the source declaration for demos and introspection
 
 `DeclaredLagrangian` should keep the original declarative source terms
-(`CovD(...)`, `FieldStrength(...)`, direct helper classes, manual
+(`CovD(...)`, `FieldStrength(...)`, `GaugeFixing(...)`,
+`GhostLagrangian(...)`, direct helper classes, manual
 `InteractionTerm`s) and expose a cached lowered view for the existing compiler.
 
 This allows the examples to print the declaration the user actually wrote,
@@ -121,8 +149,9 @@ Status: implemented
 Remaining cleanup work:
 
 - add more user-facing demos that show the new declaration syntax directly
-- decide whether `GaugeFixingTerm` / `GhostTerm` also need fully symbolic DSL
-  wrappers or whether direct helper classes are enough
+- decide whether the canonical wrappers should later grow into fully symbolic
+  `Div(...)` / ghost-covariant-derivative expressions, or remain the stable
+  user-facing front-end
 - remove the remaining thin legacy-slot compatibility tests after one deprecation
   cycle
 - document the recommended import surface for declarative model building
