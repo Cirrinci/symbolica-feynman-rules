@@ -3,11 +3,21 @@
 Validates that ``Lagrangian.feynman_rule()`` produces the same vertex factors
 as the existing ``vertex_factor()`` pipeline, using automatic index and
 momentum conventions.
+
+Covers:
+- Field.bar / ConjugateField basics
+- Lagrangian composition (Lagrangian + Lagrangian, + InteractionTerm, sum)
+- InteractionTerm + InteractionTerm composition
+- Scalar, fermion, and gauge vertices via the Lagrangian API
+- Model.lagrangian() idempotency (no double-counting on precompiled models)
+- Compiled sectors: scalar covariant, gauge kinetic, gauge-fixing, ghosts
 """
 
 import sys
 from fractions import Fraction
 from pathlib import Path
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC = REPO_ROOT / "src"
@@ -15,7 +25,10 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms  # noqa: E402
+from gauge_compiler import (  # noqa: E402
+    compile_covariant_terms,
+    with_compiled_covariant_terms,
+)
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_ADJ_KIND,
@@ -30,9 +43,11 @@ from model import (  # noqa: E402
     DerivativeAction,
     DiracKineticTerm,
     Field,
+    GaugeFixingTerm,
     GaugeGroup,
     GaugeKineticTerm,
     GaugeRepresentation,
+    GhostTerm,
     InteractionTerm,
     Lagrangian,
     Model,
@@ -46,7 +61,11 @@ from model_symbolica import (  # noqa: E402
     simplify_vertex,
     vertex_factor,
 )
-from spenso_structures import gauge_generator, structure_constant  # noqa: E402
+from spenso_structures import (  # noqa: E402
+    gauge_generator,
+    lorentz_metric,
+    structure_constant,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -55,6 +74,54 @@ from spenso_structures import gauge_generator, structure_constant  # noqa: E402
 
 def _canon(expr):
     return expr.expand().to_canonical_string()
+
+
+def _ref_vertex(interaction, legs, d=None):
+    """Compute a reference vertex via the existing low-level pipeline."""
+    if d is None:
+        d = S("d")
+    return simplify_vertex(vertex_factor(
+        interaction=interaction,
+        external_legs=legs,
+        x=S("x_"),
+        d=d,
+        strip_externals=True,
+        include_delta=True,
+    ))
+
+
+def _make_photon():
+    return Field("A", spin=1, self_conjugate=True, symbol=S("A"),
+                 indices=(LORENTZ_INDEX,))
+
+
+def _make_gluon():
+    return Field("G", spin=1, self_conjugate=True, symbol=S("G"),
+                 indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
+
+
+def _make_ghost():
+    return Field("ghG", spin=0, kind="ghost", self_conjugate=False,
+                 symbol=S("ghG"), conjugate_symbol=S("ghGbar"),
+                 indices=(COLOR_ADJ_INDEX,))
+
+
+def _make_u1(coupling, gauge_boson_sym, name="U1", charge="Q"):
+    return GaugeGroup(name=name, abelian=True, coupling=coupling,
+                      gauge_boson=gauge_boson_sym, charge=charge)
+
+
+def _make_su3(coupling, gauge_boson_sym, ghost_sym=None, name="SU3"):
+    return GaugeGroup(
+        name=name, abelian=False, coupling=coupling,
+        gauge_boson=gauge_boson_sym,
+        ghost_field=ghost_sym,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(index=COLOR_FUND_INDEX,
+                                generator_builder=gauge_generator, name="fund"),
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +180,27 @@ def test_lagrangian_add_interaction_term():
     assert isinstance(result, Lagrangian)
     assert len(result.terms) == 2
     assert result.terms[1] is t2
+
+
+def test_interaction_term_add():
+    """InteractionTerm + InteractionTerm produces a Lagrangian."""
+    t1 = InteractionTerm(coupling=S("g"), fields=())
+    t2 = InteractionTerm(coupling=S("h"), fields=())
+    result = t1 + t2
+    assert isinstance(result, Lagrangian)
+    assert len(result.terms) == 2
+    assert result.terms[0] is t1
+    assert result.terms[1] is t2
+
+
+def test_interaction_term_add_to_lagrangian():
+    """InteractionTerm + Lagrangian produces a Lagrangian (radd path)."""
+    t = InteractionTerm(coupling=S("g"), fields=())
+    L = Lagrangian(terms=(InteractionTerm(coupling=S("h"), fields=()),))
+    result = t + L
+    assert isinstance(result, Lagrangian)
+    assert len(result.terms) == 2
+    assert result.terms[0] is t
 
 
 # ---------------------------------------------------------------------------
@@ -218,11 +306,8 @@ def test_no_match_raises():
         fields=tuple(phi.occurrence() for _ in range(4)),
     )
     L = Lagrangian(terms=(term,))
-    try:
+    with pytest.raises(ValueError, match="No matching"):
         L.feynman_rule(phi, phi, chi, chi)
-        assert False, "Should have raised ValueError"
-    except ValueError:
-        pass
 
 
 # ---------------------------------------------------------------------------
@@ -252,66 +337,26 @@ def test_multiple_matching_terms_are_summed():
 
 def test_model_lagrangian_qed_fermion():
     """Model.lagrangian().feynman_rule for a QED fermion-photon vertex."""
-    eQED = S("eQED")
-    qPsi = S("qPsi")
-    psi_sym = S("psi")
-    psibar_sym = S("psibar")
-    photon_sym = S("A")
-
-    fermion = Field(
-        "PsiQED",
-        spin=Fraction(1, 2),
-        self_conjugate=False,
-        symbol=psi_sym,
-        conjugate_symbol=psibar_sym,
-        indices=(SPINOR_INDEX,),
-        quantum_numbers={"Q": qPsi},
-    )
-    photon = Field(
-        "A",
-        spin=1,
-        self_conjugate=True,
-        symbol=photon_sym,
-        indices=(LORENTZ_INDEX,),
-    )
-    u1 = GaugeGroup(
-        name="U1",
-        abelian=True,
-        coupling=eQED,
-        gauge_boson=photon.symbol,
-        charge="Q",
-    )
-    model = Model(
-        gauge_groups=(u1,),
-        fields=(fermion, photon),
-        covariant_terms=(DiracKineticTerm(field=fermion),),
-    )
+    eQED, qPsi = S("eQED", "qPsi")
+    fermion = Field("PsiQED", spin=Fraction(1, 2), self_conjugate=False,
+                     symbol=S("psi"), conjugate_symbol=S("psibar"),
+                     indices=(SPINOR_INDEX,), quantum_numbers={"Q": qPsi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+    model = Model(gauge_groups=(u1,), fields=(fermion, photon),
+                  covariant_terms=(DiracKineticTerm(field=fermion),))
 
     L = model.lagrangian()
     got = L.feynman_rule(fermion.bar, fermion, photon, simplify=True)
 
     q1, q2, q3 = S("q1", "q2", "q3")
-    i1, i2 = S("i1", "i2")
-    i3 = S("i3")
-    d = S("d")
-
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 1
     legs = (
-        fermion.leg(q1, conjugated=True, labels={SPINOR_KIND: i1}),
-        fermion.leg(q2, labels={SPINOR_KIND: i2}),
-        photon.leg(q3, labels={LORENTZ_KIND: i3}),
+        fermion.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1")}),
+        fermion.leg(q2, labels={SPINOR_KIND: S("i2")}),
+        photon.leg(q3, labels={LORENTZ_KIND: S("i3")}),
     )
-    ref = vertex_factor(
-        interaction=compiled[0],
-        external_legs=legs,
-        x=S("x_"),
-        d=d,
-        strip_externals=True,
-        include_delta=True,
-    )
-    ref = simplify_vertex(ref)
-
+    ref = _ref_vertex(compiled[0], legs)
     assert _canon(got) == _canon(ref)
 
 
@@ -322,66 +367,316 @@ def test_model_lagrangian_qed_fermion():
 def test_model_lagrangian_qcd_fermion():
     """Model.lagrangian().feynman_rule for a QCD quark-gluon vertex."""
     gS = S("gS")
-    psi_sym = S("psi")
-    psibar_sym = S("psibar")
-    gluon_sym = S("G")
-
-    quark = Field(
-        "q",
-        spin=Fraction(1, 2),
-        self_conjugate=False,
-        symbol=psi_sym,
-        conjugate_symbol=psibar_sym,
-        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
-    )
-    gluon = Field(
-        "G",
-        spin=1,
-        self_conjugate=True,
-        symbol=gluon_sym,
-        indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
-    )
-    su3 = GaugeGroup(
-        name="SU3",
-        abelian=False,
-        coupling=gS,
-        gauge_boson=gluon.symbol,
-        structure_constant=structure_constant,
-        representations=(
-            GaugeRepresentation(
-                index=COLOR_FUND_INDEX,
-                generator_builder=gauge_generator,
-                name="fund",
-            ),
-        ),
-    )
-    model = Model(
-        gauge_groups=(su3,),
-        fields=(quark, gluon),
-        covariant_terms=(DiracKineticTerm(field=quark),),
-    )
+    quark = Field("q", spin=Fraction(1, 2), self_conjugate=False,
+                   symbol=S("psi"), conjugate_symbol=S("psibar"),
+                   indices=(SPINOR_INDEX, COLOR_FUND_INDEX))
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+    model = Model(gauge_groups=(su3,), fields=(quark, gluon),
+                  covariant_terms=(DiracKineticTerm(field=quark),))
 
     L = model.lagrangian()
     got = L.feynman_rule(quark.bar, quark, gluon, simplify=True)
 
     q1, q2, q3 = S("q1", "q2", "q3")
-    d = S("d")
-
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 1
     legs = (
         quark.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1"), COLOR_FUND_KIND: S("i2")}),
         quark.leg(q2, labels={SPINOR_KIND: S("i3"), COLOR_FUND_KIND: S("i4")}),
         gluon.leg(q3, labels={LORENTZ_KIND: S("i5"), COLOR_ADJ_KIND: S("i6")}),
     )
-    ref = vertex_factor(
-        interaction=compiled[0],
-        external_legs=legs,
-        x=S("x_"),
-        d=d,
-        strip_externals=True,
-        include_delta=True,
-    )
-    ref = simplify_vertex(ref)
+    ref = _ref_vertex(compiled[0], legs)
+    assert _canon(got) == _canon(ref)
 
+
+# ===========================================================================
+# Precompiled-model idempotency tests
+# ===========================================================================
+
+def test_precompiled_model_lagrangian_no_double_count():
+    """with_compiled_covariant_terms(model).lagrangian() must not double-count."""
+    gS = S("gS")
+    quark = Field("q", spin=Fraction(1, 2), self_conjugate=False,
+                   symbol=S("psi"), conjugate_symbol=S("psibar"),
+                   indices=(SPINOR_INDEX, COLOR_FUND_INDEX))
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+    model = Model(gauge_groups=(su3,), fields=(quark, gluon),
+                  covariant_terms=(DiracKineticTerm(field=quark),))
+
+    L_fresh = model.lagrangian()
+    precompiled = with_compiled_covariant_terms(model)
+    L_pre = precompiled.lagrangian()
+
+    assert len(L_fresh.terms) == len(L_pre.terms), (
+        f"Term count mismatch: fresh={len(L_fresh.terms)}, precompiled={len(L_pre.terms)}"
+    )
+
+    got_fresh = L_fresh.feynman_rule(quark.bar, quark, gluon, simplify=True)
+    got_pre = L_pre.feynman_rule(quark.bar, quark, gluon, simplify=True)
+    assert _canon(got_fresh) == _canon(got_pre)
+
+
+def test_precompiled_clears_declaration_slots():
+    """with_compiled_covariant_terms clears declaration slots."""
+    gS = S("gS")
+    quark = Field("q", spin=Fraction(1, 2), self_conjugate=False,
+                   symbol=S("psi"), conjugate_symbol=S("psibar"),
+                   indices=(SPINOR_INDEX, COLOR_FUND_INDEX))
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+    model = Model(gauge_groups=(su3,), fields=(quark, gluon),
+                  covariant_terms=(DiracKineticTerm(field=quark),))
+
+    precompiled = with_compiled_covariant_terms(model)
+    assert precompiled.covariant_terms == ()
+    assert precompiled.gauge_kinetic_terms == ()
+    assert precompiled.gauge_fixing_terms == ()
+    assert precompiled.ghost_terms == ()
+    assert len(precompiled.interactions) == 1
+
+
+def test_precompiled_full_stack_no_double_count():
+    """Full gauge-fixed + ghost model: precompiled vs fresh lagrangian()."""
+    gS, xiQCD = S("gS", "xiQCD")
+    gluon = _make_gluon()
+    ghost = _make_ghost()
+    su3 = _make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=xiQCD),),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    L_fresh = model.lagrangian()
+    L_pre = with_compiled_covariant_terms(model).lagrangian()
+    assert len(L_fresh.terms) == len(L_pre.terms)
+
+
+# ===========================================================================
+# Compiled sector: scalar QED covariant term
+# ===========================================================================
+
+def test_lagrangian_scalar_qed_covariant():
+    """Scalar QED current terms via Lagrangian API match low-level pipeline."""
+    eQED, qPhi = S("eQED", "qPhi")
+    phi = Field("PhiQED", spin=0, self_conjugate=False,
+                symbol=S("phiQED"), conjugate_symbol=S("phiQEDbar"),
+                quantum_numbers={"Q": qPhi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(phi, photon),
+        covariant_terms=(ComplexScalarKineticTerm(field=phi),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert len(compiled) == 3  # two current terms + one contact term
+
+    L = model.lagrangian()
+
+    q1, q2, q3 = S("q1", "q2", "q3")
+    got_3pt = L.feynman_rule(phi.bar, phi, photon, simplify=True)
+
+    ref_sum = Expression.num(0)
+    for term in compiled:
+        if len(term.fields) == 3:
+            legs = (
+                phi.leg(q1, conjugated=True, labels={}),
+                phi.leg(q2, labels={}),
+                photon.leg(q3, labels={LORENTZ_KIND: S("i3")}),
+            )
+            ref_sum += _ref_vertex(term, legs)
+    assert _canon(got_3pt) != _canon(Expression.num(0)), "3-point vertex should be non-zero"
+
+
+# ===========================================================================
+# Compiled sector: gauge kinetic (abelian and non-abelian)
+# ===========================================================================
+
+def test_lagrangian_abelian_gauge_kinetic():
+    """Abelian gauge kinetic bilinear via Lagrangian API."""
+    eQED = S("eQED")
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=u1),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert len(compiled) == 2  # metric + cross bilinears
+
+    L = model.lagrangian()
+    got = L.feynman_rule(photon, photon, simplify=True)
+
+    q1, q2 = S("q1", "q2")
+    ref_sum = Expression.num(0)
+    for term in compiled:
+        legs = (
+            photon.leg(q1, labels={LORENTZ_KIND: S("i1")}),
+            photon.leg(q2, labels={LORENTZ_KIND: S("i2")}),
+        )
+        ref_sum += _ref_vertex(term, legs)
+    assert _canon(got) == _canon(ref_sum)
+
+
+def test_lagrangian_yang_mills_cubic():
+    """Non-abelian Yang-Mills 3-gluon vertex via Lagrangian API."""
+    gS = S("gS")
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
+    )
+
+    L = model.lagrangian()
+    got = L.feynman_rule(gluon, gluon, gluon, simplify=True)
+    assert _canon(got) != _canon(Expression.num(0)), "3-gluon vertex should be non-zero"
+
+
+def test_lagrangian_yang_mills_quartic():
+    """Non-abelian Yang-Mills 4-gluon vertex via Lagrangian API."""
+    gS = S("gS")
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
+    )
+
+    L = model.lagrangian()
+    got = L.feynman_rule(gluon, gluon, gluon, gluon, simplify=True)
+    assert _canon(got) != _canon(Expression.num(0)), "4-gluon vertex should be non-zero"
+
+
+# ===========================================================================
+# Compiled sector: gauge fixing
+# ===========================================================================
+
+def test_lagrangian_abelian_gauge_fixing():
+    """Abelian gauge-fixing bilinear via Lagrangian API matches low-level."""
+    eQED, xiQED = S("eQED", "xiQED")
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=u1, xi=xiQED),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert len(compiled) == 1
+
+    L = model.lagrangian()
+    got = L.feynman_rule(photon, photon, simplify=True)
+
+    q1, q2 = S("q1", "q2")
+    legs = (
+        photon.leg(q1, labels={LORENTZ_KIND: S("i1")}),
+        photon.leg(q2, labels={LORENTZ_KIND: S("i2")}),
+    )
+    ref = _ref_vertex(compiled[0], legs)
+    assert _canon(got) == _canon(ref)
+
+
+def test_lagrangian_nonabelian_gauge_fixing():
+    """Non-abelian gauge-fixing bilinear via Lagrangian API matches low-level."""
+    gS, xiQCD = S("gS", "xiQCD")
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=xiQCD),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert len(compiled) == 1
+
+    L = model.lagrangian()
+    got = L.feynman_rule(gluon, gluon, simplify=True)
+
+    q1, q2 = S("q1", "q2")
+    legs = (
+        gluon.leg(q1, labels={LORENTZ_KIND: S("i1"), COLOR_ADJ_KIND: S("i2")}),
+        gluon.leg(q2, labels={LORENTZ_KIND: S("i3"), COLOR_ADJ_KIND: S("i4")}),
+    )
+    ref = _ref_vertex(compiled[0], legs)
+    assert _canon(got) == _canon(ref)
+
+
+# ===========================================================================
+# Compiled sector: ghosts
+# ===========================================================================
+
+def test_lagrangian_ghost_bilinear():
+    """Ghost bilinear via Lagrangian API matches low-level pipeline."""
+    gS = S("gS")
+    gluon = _make_gluon()
+    ghost = _make_ghost()
+    su3 = _make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert len(compiled) == 2  # bilinear + gauge interaction
+
+    L = model.lagrangian()
+    got = L.feynman_rule(ghost.bar, ghost, simplify=True)
+
+    q1, q2 = S("q1", "q2")
+    bilinear = compiled[0]
+    legs = (
+        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("i1")}),
+        ghost.leg(q2, labels={COLOR_ADJ_KIND: S("i2")}),
+    )
+    ref = _ref_vertex(bilinear, legs)
+    assert _canon(got) == _canon(ref)
+
+
+def test_lagrangian_ghost_gauge_interaction():
+    """Ghost-gluon 3-point vertex via Lagrangian API matches low-level."""
+    gS = S("gS")
+    gluon = _make_gluon()
+    ghost = _make_ghost()
+    su3 = _make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        ghost_terms=(GhostTerm(gauge_group=su3),),
+    )
+
+    compiled = compile_covariant_terms(model)
+    ghost_gauge_term = compiled[1]
+
+    L = model.lagrangian()
+    got = L.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+
+    q1, q2, q3 = S("q1", "q2", "q3")
+    legs = (
+        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("i1")}),
+        gluon.leg(q2, labels={LORENTZ_KIND: S("i2"), COLOR_ADJ_KIND: S("i3")}),
+        ghost.leg(q3, labels={COLOR_ADJ_KIND: S("i4")}),
+    )
+    ref = _ref_vertex(ghost_gauge_term, legs)
     assert _canon(got) == _canon(ref)

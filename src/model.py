@@ -545,6 +545,20 @@ class InteractionTerm:
                 return "fermion"
         return "boson"
 
+    def __add__(self, other):
+        if isinstance(other, InteractionTerm):
+            return Lagrangian(terms=(self, other))
+        if isinstance(other, Lagrangian):
+            return Lagrangian(terms=(self,) + other.terms)
+        return NotImplemented
+
+    def __radd__(self, other):
+        if other == 0:
+            return Lagrangian(terms=(self,))
+        if isinstance(other, InteractionTerm):
+            return Lagrangian(terms=(other, self))
+        return NotImplemented
+
     def to_vertex_kwargs(self, external_legs: Sequence[ExternalLeg]) -> dict:
         """Generate the dict consumed by vertex_factor().
 

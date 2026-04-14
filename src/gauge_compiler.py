@@ -1415,6 +1415,19 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
 
 
 def with_compiled_covariant_terms(model: Model) -> Model:
-    """Return a copy of a model with compiled physical kinetic terms appended."""
+    """Return a copy of a model with compiled physical kinetic terms appended.
+
+    The returned model has empty declaration slots (covariant_terms,
+    gauge_kinetic_terms, gauge_fixing_terms, ghost_terms) so that a
+    subsequent call to ``Model.lagrangian()`` does not re-compile and
+    double-count the same terms.
+    """
     compiled = compile_covariant_terms(model)
-    return replace(model, interactions=model.interactions + compiled)
+    return replace(
+        model,
+        interactions=model.interactions + compiled,
+        covariant_terms=(),
+        gauge_kinetic_terms=(),
+        gauge_fixing_terms=(),
+        ghost_terms=(),
+    )
