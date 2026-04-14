@@ -1125,18 +1125,8 @@ def _run_scalar_demo():
         vertex=_direct_vertex(**L_phiCdag_phiC, species_map={b1: phiCdag0, b2: phiC0}),
     )
     _print_vertex_block(
-        "scalar: derivative (mu,nu) * phi^4",
-        description="gD * (d_mu phi)(d_nu phi) phi phi",
-        compact_override=COMPACT_DERIV,
-        sum_notation=compact_sum_notation(
-            derivative_indices=deriv_indices,
-            derivative_targets=deriv_targets,
-            n_legs=len(L_deriv["ps"]),
-        ),
-    )
-    _print_vertex_block(
-        "scalar: derivative (mu,mu) * phi^4",
-        description="gD2 * (d_mu phi)(d_mu phi) phi phi",
+        "scalar: derivative-contracted phi^4",
+        description="gD2 * (d_mu phi)(d^mu phi) phi phi",
         compact_override=COMPACT_DERIV2,
         sum_notation=compact_sum_notation(
             derivative_indices=deriv_indices2,
@@ -1891,10 +1881,10 @@ def _run_scalar_tests():
     _check(V, I * lamC * (2 * pi) ** d * Delta(p1 + p2), "phi^dag phi")
 
     V = simplify_deltas(vertex_factor(**L_deriv, x=x, d=d), species_map=sm_phi)
-    _check(V, COMPACT_DERIV, "Derivative (mu,nu)")
+    _check(V, COMPACT_DERIV, "Generic derivative combinatorics (mu,nu)")
 
     V = simplify_deltas(vertex_factor(**L_deriv2, x=x, d=d), species_map=sm_phi)
-    _check(V, COMPACT_DERIV2, "Derivative (mu,mu)")
+    _check(V, COMPACT_DERIV2, "Derivative-contracted (mu,mu)")
 
     D6 = (2 * pi) ** d * Delta(p1 + p2 + p3 + p4 + p5 + p6)
     V_multi = vertex_factor(**L_multi, x=x, d=d)

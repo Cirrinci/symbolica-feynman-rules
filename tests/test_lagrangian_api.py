@@ -271,6 +271,24 @@ def test_complex_scalar_mass_term():
     assert _canon(got) == _canon(expected)
 
 
+def test_complex_scalar_mass_term_tuple_input():
+    """(Field, bool) input works the same as Field.bar."""
+    phiC = Field("PhiC", spin=0, self_conjugate=False, symbol=S("phiC"), conjugate_symbol=S("phiCdag"))
+    lamC = S("lamC")
+
+    term = InteractionTerm(
+        coupling=lamC,
+        fields=(phiC.occurrence(conjugated=True), phiC.occurrence()),
+    )
+    L = Lagrangian(terms=(term,))
+    got = L.feynman_rule((phiC, True), phiC, simplify=True)
+
+    q1, q2 = S("q1", "q2")
+    d = S("d")
+    expected = I * lamC * (2 * pi) ** d * Delta(q1 + q2)
+    assert _canon(got) == _canon(expected)
+
+
 # ---------------------------------------------------------------------------
 # phi^2 chi^2: mixed species
 # ---------------------------------------------------------------------------
@@ -332,6 +350,28 @@ def test_no_match_raises():
     L = Lagrangian(terms=(term,))
     with pytest.raises(ValueError, match="No matching"):
         L.feynman_rule(phi, phi, chi, chi)
+
+
+def test_same_symbol_different_kind_does_not_match():
+    """Distinct field kinds sharing one symbol must not silently match."""
+    scalar = Field("S", spin=0, self_conjugate=True, symbol=S("X"))
+    vector = Field("V", spin=1, self_conjugate=True, symbol=S("X"))
+    term = InteractionTerm(coupling=S("g"), fields=(scalar.occurrence(),))
+    L = Lagrangian(terms=(term,))
+
+    with pytest.raises(ValueError, match="No matching"):
+        L.feynman_rule(vector)
+
+
+def test_same_symbol_different_fields_do_not_match():
+    """Distinct declared fields sharing a symbol must not silently match."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("X"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("X"))
+    term = InteractionTerm(coupling=S("g"), fields=(phi.occurrence(),))
+    L = Lagrangian(terms=(term,))
+
+    with pytest.raises(ValueError, match="No matching"):
+        L.feynman_rule(chi)
 
 
 # ---------------------------------------------------------------------------

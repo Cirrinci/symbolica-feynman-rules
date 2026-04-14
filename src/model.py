@@ -613,14 +613,39 @@ def _species_key(species) -> str:
     return str(species)
 
 
+def _field_match_key(field_obj: Field, conjugated: bool) -> tuple:
+    """Stable key for matching external fields to interaction slots.
+
+    Match on the declared field metadata rather than only the species symbol,
+    so distinct fields that happen to share a symbol do not collide. For
+    self-conjugate fields the conjugation flag is irrelevant.
+    """
+    effective_conjugated = bool(conjugated and not field_obj.self_conjugate)
+    return (
+        field_obj.name,
+        str(Fraction(field_obj.spin)),
+        field_obj.kind,
+        field_obj.statistics,
+        tuple((index.name, index.kind, index.prefix) for index in field_obj.indices),
+        _species_key(field_obj.symbol),
+        _species_key(field_obj.conjugate_symbol) if field_obj.conjugate_symbol is not None else None,
+        effective_conjugated,
+    )
+
+
 def _parse_field_arg(arg) -> tuple[Field, bool]:
     """Normalize a feynman_rule field argument to (Field, conjugated)."""
+    if isinstance(arg, tuple) and len(arg) == 2:
+        field_obj, conjugated = arg
+        if isinstance(field_obj, Field) and isinstance(conjugated, bool):
+            return (field_obj, conjugated)
     if isinstance(arg, ConjugateField):
         return (arg.field, True)
     if isinstance(arg, Field):
         return (arg, False)
     raise TypeError(
-        f"Expected Field or Field.bar (ConjugateField), got {type(arg).__name__}"
+        "Expected Field, (Field, bool), or Field.bar (ConjugateField), "
+        f"got {type(arg).__name__}"
     )
 
 
@@ -660,10 +685,10 @@ def _term_matches_fields(
     if len(term.fields) != len(parsed_fields):
         return False
     term_species = Counter(
-        _species_key(occ.species) for occ in term.fields
+        _field_match_key(occ.field, occ.conjugated) for occ in term.fields
     )
     ext_species = Counter(
-        _species_key(fld.species_for(conj)) for fld, conj in parsed_fields
+        _field_match_key(fld, conj) for fld, conj in parsed_fields
     )
     return term_species == ext_species
 
@@ -706,9 +731,9 @@ class Lagrangian:
 
         Parameters
         ----------
-        *fields : Field or ConjugateField
-            External fields in leg order.  Use ``field.bar`` for conjugated
-            fields (e.g. ``Phi.bar``).
+        *fields : Field, tuple[Field, bool], or ConjugateField
+            External fields in leg order.  Use ``field.bar`` or ``(field, True)``
+            for conjugated fields (e.g. ``Phi.bar``).
         momenta : list of expressions, optional
             Override the default q1, q2, ... momentum assignment.  Each entry
             can be an algebraic expression (e.g. ``p3 - p6``).
