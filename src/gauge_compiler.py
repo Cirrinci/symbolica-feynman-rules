@@ -1393,7 +1393,7 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     """
     interactions: list[InteractionTerm] = []
 
-    for term in model.covariant_terms:
+    for term in model.all_covariant_terms():
         if isinstance(term, DiracKineticTerm):
             interactions.extend(compile_dirac_kinetic_term(model, term))
             continue
@@ -1402,13 +1402,13 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
             continue
         raise TypeError(f"Unsupported covariant term type: {type(term)!r}")
 
-    for term in model.gauge_kinetic_terms:
+    for term in model.all_gauge_kinetic_terms():
         interactions.extend(compile_gauge_kinetic_term(model, term))
 
-    for term in model.gauge_fixing_terms:
+    for term in model.all_gauge_fixing_terms():
         interactions.extend(compile_gauge_fixing_term(model, term))
 
-    for term in model.ghost_terms:
+    for term in model.all_ghost_terms():
         interactions.extend(compile_ghost_term(model, term))
 
     return tuple(interactions)
@@ -1423,9 +1423,13 @@ def with_compiled_covariant_terms(model: Model) -> Model:
     double-count the same terms.
     """
     compiled = compile_covariant_terms(model)
+    manual_decl_terms = tuple(
+        term for term in model.lagrangian_decl.terms if isinstance(term, InteractionTerm)
+    )
     return replace(
         model,
         interactions=model.interactions + compiled,
+        lagrangian_decl=type(model.lagrangian_decl)(terms=manual_decl_terms),
         covariant_terms=(),
         gauge_kinetic_terms=(),
         gauge_fixing_terms=(),

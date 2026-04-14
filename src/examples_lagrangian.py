@@ -159,6 +159,13 @@ def _term_label(term):
     return str(term)
 
 
+def _model_decl_label(model, attr_name, fallback):
+    terms = getattr(model, attr_name, ())
+    if terms and getattr(terms[0], "label", ""):
+        return terms[0].label
+    return fallback
+
+
 def _format_lagrangian_terms(terms, *, max_terms=_DEFAULT_LAGRANGIAN_TERM_LIMIT):
     cleaned_terms = tuple(terms or ())
     if not cleaned_terms:
@@ -1245,13 +1252,21 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: qbar i gamma^mu D_mu q",
         lagrangian_terms=_matching_lagrangian_terms(compiled_qcd, QuarkField.bar, QuarkField, GluonField),
-        description=MODEL_QCD_COVARIANT.covariant_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QCD_COVARIANT,
+            "covariant_terms",
+            "Dirac kinetic term expanded through the gauge compiler",
+        ),
         vertex=MODEL_QCD_COVARIANT.lagrangian().feynman_rule(QuarkField.bar, QuarkField, GluonField),
     )
     _print_vertex_block(
         "covariant: PsiQEDbar i gamma^mu D_mu PsiQED",
         lagrangian_terms=_matching_lagrangian_terms(compiled_qed, PsiQEDField.bar, PsiQEDField, GaugeField),
-        description=MODEL_QED_FERMION_COVARIANT.covariant_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QED_FERMION_COVARIANT,
+            "covariant_terms",
+            "Abelian Dirac kinetic term expanded through the gauge compiler",
+        ),
         vertex=MODEL_QED_FERMION_COVARIANT.lagrangian().feynman_rule(PsiQEDField.bar, PsiQEDField, GaugeField),
     )
     _print_vertex_block(
@@ -1273,7 +1288,11 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: (D_mu phi)^dagger (D^mu phi) current",
         lagrangian_terms=_matching_lagrangian_terms(compiled_scalar_qed, PhiQEDField.bar, PhiQEDField, GaugeField),
-        description=MODEL_SCALAR_QED_COVARIANT.covariant_terms[0].label,
+        description=_model_decl_label(
+            MODEL_SCALAR_QED_COVARIANT,
+            "covariant_terms",
+            "Complex-scalar kinetic term expanded through the gauge compiler",
+        ),
         vertex=MODEL_SCALAR_QED_COVARIANT.lagrangian().feynman_rule(PhiQEDField.bar, PhiQEDField, GaugeField),
     )
     _print_vertex_block(
@@ -1289,7 +1308,11 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: (D_mu PhiQCD)^dagger (D^mu PhiQCD) current",
         lagrangian_terms=_matching_lagrangian_terms(compiled_scalar_qcd, PhiQCDField.bar, PhiQCDField, GluonField),
-        description=MODEL_SCALAR_QCD_COVARIANT.covariant_terms[0].label,
+        description=_model_decl_label(
+            MODEL_SCALAR_QCD_COVARIANT,
+            "covariant_terms",
+            "Non-abelian complex-scalar kinetic term expanded through the gauge compiler",
+        ),
         vertex=MODEL_SCALAR_QCD_COVARIANT.lagrangian().feynman_rule(PhiQCDField.bar, PhiQCDField, GluonField),
     )
     _print_vertex_block(
@@ -1349,13 +1372,21 @@ def _run_covariant_demo():
     _print_vertex_block(
         "covariant: -1/4 F_mu nu F^mu nu [abelian bilinear]",
         lagrangian_terms=_matching_lagrangian_terms(compiled_photon, GaugeField, GaugeField),
-        description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QED_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 U1QED field strength squared",
+        ),
         vertex=MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField),
     )
     _print_vertex_block(
         "covariant: -1/4 G^a_mu nu G^{a mu nu} [bilinear]",
         lagrangian_terms=_matching_lagrangian_terms(compiled_yang_mills, GluonField, GluonField),
-        description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QCD_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 SU3C field strength squared",
+        ),
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(GluonField, GluonField),
     )
     _print_vertex_block(
@@ -1388,13 +1419,21 @@ def _run_pure_gauge_demo():
     _print_vertex_block(
         "pure gauge: QED photon bilinear",
         lagrangian_terms=_matching_lagrangian_terms(compiled_photon, GaugeField, GaugeField),
-        description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QED_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 U1QED field strength squared",
+        ),
         vertex=MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField),
     )
     _print_vertex_block(
         "pure gauge: QCD gluon bilinear",
         lagrangian_terms=_matching_lagrangian_terms(compiled_yang_mills, GluonField, GluonField),
-        description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QCD_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 SU3C field strength squared",
+        ),
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(GluonField, GluonField),
     )
     _print_vertex_block(
@@ -1428,13 +1467,21 @@ def _run_gauge_fixed_demo():
     _print_vertex_block(
         "gauge-fixed: -(1/2 xi) (partial.A)^2 [abelian]",
         lagrangian_terms=_matching_lagrangian_terms(compiled_qed_gf, GaugeField, GaugeField),
-        description=MODEL_QED_GAUGE_FIXING_COVARIANT.gauge_fixing_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QED_GAUGE_FIXING_COVARIANT,
+            "gauge_fixing_terms",
+            "-(1/2 xiQED) (U1QED gauge fixing)",
+        ),
         vertex=MODEL_QED_GAUGE_FIXING_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField),
     )
     _print_vertex_block(
         "gauge-fixed: -(1/2 xi) (partial.G)^2 [non-abelian]",
         lagrangian_terms=_matching_lagrangian_terms(compiled_qcd_gf, GluonField, GluonField),
-        description=MODEL_QCD_GAUGE_FIXING_COVARIANT.gauge_fixing_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QCD_GAUGE_FIXING_COVARIANT,
+            "gauge_fixing_terms",
+            "-(1/2 xiQCD) (SU3C gauge fixing)",
+        ),
         vertex=MODEL_QCD_GAUGE_FIXING_COVARIANT.lagrangian().feynman_rule(GluonField, GluonField),
     )
     _print_vertex_block(
@@ -1446,7 +1493,11 @@ def _run_gauge_fixed_demo():
     _print_vertex_block(
         "gauge-fixed: Faddeev-Popov ghost bilinear",
         lagrangian_terms=_matching_lagrangian_terms(compiled_qcd_ghost, GhostGluonField.bar, GhostGluonField),
-        description=MODEL_QCD_GHOST_COVARIANT.ghost_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QCD_GHOST_COVARIANT,
+            "ghost_terms",
+            "SU3C Faddeev-Popov ghosts bilinear",
+        ),
         vertex=MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
             GhostGluonField.bar, GhostGluonField,
         ),
@@ -1476,7 +1527,11 @@ def _run_ghost_demo():
     _print_vertex_block(
         "ghost: bilinear",
         lagrangian_terms=_matching_lagrangian_terms(compiled_qcd_ghost, GhostGluonField.bar, GhostGluonField),
-        description=MODEL_QCD_GHOST_COVARIANT.ghost_terms[0].label,
+        description=_model_decl_label(
+            MODEL_QCD_GHOST_COVARIANT,
+            "ghost_terms",
+            "SU3C Faddeev-Popov ghosts bilinear",
+        ),
         vertex=MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
             GhostGluonField.bar, GhostGluonField,
         ),

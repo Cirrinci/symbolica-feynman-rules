@@ -72,7 +72,10 @@ from spenso_structures import (
 )
 from tensor_canonicalization import canonize_spenso_tensors
 from model import (
+    CovD,
     ComplexScalarKineticTerm,
+    FieldStrength,
+    Gamma,
     DiracKineticTerm,
     Field,
     GhostTerm,
@@ -211,6 +214,13 @@ def _print_interaction_terms(terms):
         else:
             print(f"  {prefix}{_ANSI_ESCAPE_RE.sub('', str(term))}")
     print()
+
+
+def _model_decl_label(model, attr_name, fallback):
+    terms = getattr(model, attr_name, ())
+    if terms and getattr(terms[0], "label", ""):
+        return terms[0].label
+    return fallback
 
 
 def _print_interaction_term_objects(terms):
@@ -719,7 +729,7 @@ MODEL_SCALAR_QCD_BISLOT_COVARIANT_SUM = Model(
     name="ScalarQCD-bislot-covariant-sum",
     gauge_groups=(QCD_GROUP_BISLOT_SUM,),
     fields=(PhiBiField, GluonField),
-    covariant_terms=(ComplexScalarKineticTerm(field=PhiBiField),),
+    lagrangian_decl=CovD(PhiBiField.bar, mu) * CovD(PhiBiField, mu),
 )
 MODEL_SCALAR_QCD_BISLOT_AMBIGUOUS = Model(
     name="ScalarQCD-bislot-ambiguous",
@@ -735,82 +745,90 @@ MODEL_QCD_COVARIANT = Model(
     name="QCD-covariant",
     gauge_groups=(QCD_GROUP,),
     fields=(QuarkField, GluonField),
-    covariant_terms=(DiracKineticTerm(field=QuarkField),),
+    lagrangian_decl=I * QuarkField.bar * Gamma(mu) * CovD(QuarkField, mu),
 )
 MODEL_SCALAR_QED_COVARIANT = Model(
     name="ScalarQED-covariant",
     gauge_groups=(QED_GROUP,),
     fields=(PhiQEDField, GaugeField),
-    covariant_terms=(ComplexScalarKineticTerm(field=PhiQEDField),),
+    lagrangian_decl=CovD(PhiQEDField.bar, mu) * CovD(PhiQEDField, mu),
 )
 MODEL_SCALAR_QCD_COVARIANT = Model(
     name="ScalarQCD-covariant",
     gauge_groups=(QCD_GROUP,),
     fields=(PhiQCDField, GluonField),
-    covariant_terms=(ComplexScalarKineticTerm(field=PhiQCDField),),
+    lagrangian_decl=CovD(PhiQCDField.bar, mu) * CovD(PhiQCDField, mu),
 )
 MODEL_QED_FERMION_COVARIANT = Model(
     name="FermionQED-covariant",
     gauge_groups=(QED_GROUP,),
     fields=(PsiQEDField, GaugeField),
-    covariant_terms=(DiracKineticTerm(field=PsiQEDField),),
+    lagrangian_decl=I * PsiQEDField.bar * Gamma(mu) * CovD(PsiQEDField, mu),
 )
 MODEL_MIXED_FERMION_COVARIANT = Model(
     name="MixedQCDQED-covariant",
     gauge_groups=(QCD_GROUP, QED_GROUP),
     fields=(PsiMixField, GluonField, GaugeField),
-    covariant_terms=(DiracKineticTerm(field=PsiMixField),),
+    lagrangian_decl=I * PsiMixField.bar * Gamma(mu) * CovD(PsiMixField, mu),
 )
 MODEL_MIXED_SCALAR_COVARIANT = Model(
     name="MixedScalarQCDQED-covariant",
     gauge_groups=(QCD_GROUP, QED_GROUP),
     fields=(PhiMixField, GluonField, GaugeField),
-    covariant_terms=(ComplexScalarKineticTerm(field=PhiMixField),),
+    lagrangian_decl=CovD(PhiMixField.bar, mu) * CovD(PhiMixField, mu),
 )
 MODEL_QED_GAUGE_COVARIANT = Model(
     name="QEDGauge-covariant",
     gauge_groups=(QED_GROUP,),
     fields=(GaugeField,),
-    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QED_GROUP),),
+    lagrangian_decl=-(Expression.num(1) / Expression.num(4))
+    * FieldStrength(QED_GROUP, mu, nu) * FieldStrength(QED_GROUP, mu, nu),
 )
 MODEL_QCD_GAUGE_COVARIANT = Model(
     name="QCDGauge-covariant",
     gauge_groups=(QCD_GROUP,),
     fields=(GluonField,),
-    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QCD_GROUP),),
+    lagrangian_decl=-(Expression.num(1) / Expression.num(4))
+    * FieldStrength(QCD_GROUP, mu, nu) * FieldStrength(QCD_GROUP, mu, nu),
 )
 MODEL_QED_GAUGE_FIXING_COVARIANT = Model(
     name="QEDGaugeFixing-covariant",
     gauge_groups=(QED_GROUP,),
     fields=(GaugeField,),
-    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED),),
+    lagrangian_decl=GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED),
 )
 MODEL_QCD_GAUGE_FIXING_COVARIANT = Model(
     name="QCDGaugeFixing-covariant",
     gauge_groups=(QCD_GROUP,),
     fields=(GluonField,),
-    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QCD_GROUP, xi=xiQCD),),
+    lagrangian_decl=GaugeFixingTerm(gauge_group=QCD_GROUP, xi=xiQCD),
 )
 MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
     name="QEDGaugeFixed-covariant",
     gauge_groups=(QED_GROUP,),
     fields=(GaugeField,),
-    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QED_GROUP),),
-    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED),),
+    lagrangian_decl=(
+        -(Expression.num(1) / Expression.num(4))
+        * FieldStrength(QED_GROUP, mu, nu) * FieldStrength(QED_GROUP, mu, nu)
+        + GaugeFixingTerm(gauge_group=QED_GROUP, xi=xiQED)
+    ),
 )
 MODEL_QCD_GHOST_COVARIANT = Model(
     name="QCDGhost-covariant",
     gauge_groups=(QCD_GROUP_GHOST,),
     fields=(GluonField, GhostGluonField),
-    ghost_terms=(GhostTerm(gauge_group=QCD_GROUP_GHOST),),
+    lagrangian_decl=GhostTerm(gauge_group=QCD_GROUP_GHOST),
 )
 MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
     name="QCDGaugeFixed-covariant",
     gauge_groups=(QCD_GROUP_GHOST,),
     fields=(GluonField, GhostGluonField),
-    gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=QCD_GROUP_GHOST),),
-    gauge_fixing_terms=(GaugeFixingTerm(gauge_group=QCD_GROUP_GHOST, xi=xiQCD),),
-    ghost_terms=(GhostTerm(gauge_group=QCD_GROUP_GHOST),),
+    lagrangian_decl=(
+        -(Expression.num(1) / Expression.num(4))
+        * FieldStrength(QCD_GROUP_GHOST, mu, nu) * FieldStrength(QCD_GROUP_GHOST, mu, nu)
+        + GaugeFixingTerm(gauge_group=QCD_GROUP_GHOST, xi=xiQCD)
+        + GhostTerm(gauge_group=QCD_GROUP_GHOST)
+    ),
 )
 
 
@@ -1281,7 +1299,11 @@ def _run_covariant_demo():
 
     _print_vertex_block(
         "covariant: qbar i gamma^mu D_mu q",
-        description=MODEL_QCD_COVARIANT.covariant_terms[0].label or "Dirac kinetic term expanded through the gauge compiler",
+        description=_model_decl_label(
+            MODEL_QCD_COVARIANT,
+            "covariant_terms",
+            "Dirac kinetic term expanded through the gauge compiler",
+        ),
         interaction_terms=(compiled_qcd[0],),
         vertex=_model_demo_vertex(
             interaction=compiled_qcd[0],
@@ -1290,7 +1312,11 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: PsiQEDbar i gamma^mu D_mu PsiQED",
-        description=MODEL_QED_FERMION_COVARIANT.covariant_terms[0].label or "Abelian Dirac kinetic term expanded through the gauge compiler",
+        description=_model_decl_label(
+            MODEL_QED_FERMION_COVARIANT,
+            "covariant_terms",
+            "Abelian Dirac kinetic term expanded through the gauge compiler",
+        ),
         interaction_terms=(compiled_qed[0],),
         vertex=_model_demo_vertex(
             interaction=compiled_qed[0],
@@ -1377,7 +1403,11 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: (D_mu phi)^dagger (D^mu phi) current",
-        description=MODEL_SCALAR_QED_COVARIANT.covariant_terms[0].label or "Complex-scalar kinetic term expanded through the gauge compiler",
+        description=_model_decl_label(
+            MODEL_SCALAR_QED_COVARIANT,
+            "covariant_terms",
+            "Complex-scalar kinetic term expanded through the gauge compiler",
+        ),
         interaction_terms=compiled_scalar_qed[:2],
         vertex=(
             _model_demo_vertex(
@@ -1404,7 +1434,11 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: (D_mu PhiQCD)^dagger (D^mu PhiQCD) current",
-        description=MODEL_SCALAR_QCD_COVARIANT.covariant_terms[0].label or "Non-abelian complex-scalar kinetic term expanded through the gauge compiler",
+        description=_model_decl_label(
+            MODEL_SCALAR_QCD_COVARIANT,
+            "covariant_terms",
+            "Non-abelian complex-scalar kinetic term expanded through the gauge compiler",
+        ),
         interaction_terms=compiled_scalar_qcd[:2],
         vertex=(
             _model_demo_vertex(
@@ -1489,7 +1523,11 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: -1/4 F_mu nu F^mu nu [abelian bilinear]",
-        description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 U1QED field strength squared",
+        description=_model_decl_label(
+            MODEL_QED_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 U1QED field strength squared",
+        ),
         interaction_terms=compiled_photon[:2],
         vertex=simplify_gamma_chain((
             _model_demo_vertex(
@@ -1508,7 +1546,11 @@ def _run_covariant_demo():
     )
     _print_vertex_block(
         "covariant: -1/4 G^a_mu nu G^{a mu nu} [bilinear]",
-        description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 SU3C field strength squared",
+        description=_model_decl_label(
+            MODEL_QCD_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 SU3C field strength squared",
+        ),
         interaction_terms=compiled_yang_mills[:2],
         vertex=simplify_gamma_chain((
             _model_demo_vertex(
@@ -2694,7 +2736,11 @@ def _run_covariant_compiler_tests():
         I * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, photon_rho, photon_left, photon_right) * D2,
         "Covariant compiler: abelian gauge bilinear",
         show_vertex=True,
-        description=MODEL_QED_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 U1QED field strength squared",
+        description=_model_decl_label(
+            MODEL_QED_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 U1QED field strength squared",
+        ),
         display_vertex=I * gauge_kinetic_bilinear(mu3, mu4, p1, p2, photon_rho) * D2,
     )
 
@@ -2731,7 +2777,11 @@ def _run_covariant_compiler_tests():
         * D2,
         "Covariant compiler: non-abelian gauge bilinear",
         show_vertex=True,
-        description=MODEL_QCD_GAUGE_COVARIANT.gauge_kinetic_terms[0].label or "-1/4 SU3C field strength squared",
+        description=_model_decl_label(
+            MODEL_QCD_GAUGE_COVARIANT,
+            "gauge_kinetic_terms",
+            "-1/4 SU3C field strength squared",
+        ),
         display_vertex=(
             I
             * gauge_kinetic_bilinear(mu3, mu4, p1, p2, ym_rho)

@@ -34,6 +34,10 @@ from model import (  # noqa: E402
     COLOR_ADJ_KIND,
     COLOR_FUND_INDEX,
     COLOR_FUND_KIND,
+    CovD,
+    DeclaredLagrangian,
+    FieldStrength,
+    Gamma,
     LORENTZ_INDEX,
     LORENTZ_KIND,
     SPINOR_INDEX,
@@ -424,6 +428,30 @@ def test_model_lagrangian_qed_fermion():
     assert _canon(got) == _canon(ref)
 
 
+def test_declared_lagrangian_qed_fermion():
+    """A declarative CovD-based Dirac term lowers to the legacy QED term."""
+    eQED, qPsi = S("eQED", "qPsi")
+    mu = S("mu")
+    fermion = Field("PsiQED", spin=Fraction(1, 2), self_conjugate=False,
+                     symbol=S("psi"), conjugate_symbol=S("psibar"),
+                     indices=(SPINOR_INDEX,), quantum_numbers={"Q": qPsi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    decl = I * fermion.bar * Gamma(mu) * CovD(fermion, mu)
+    model = Model(gauge_groups=(u1,), fields=(fermion, photon), lagrangian_decl=decl)
+    legacy = Model(gauge_groups=(u1,), fields=(fermion, photon),
+                   covariant_terms=(DiracKineticTerm(field=fermion),))
+
+    assert isinstance(model.lagrangian_decl, DeclaredLagrangian)
+    assert len(model.all_covariant_terms()) == 1
+    assert isinstance(model.all_covariant_terms()[0], DiracKineticTerm)
+
+    got = model.lagrangian().feynman_rule(fermion.bar, fermion, photon, simplify=True)
+    ref = legacy.lagrangian().feynman_rule(fermion.bar, fermion, photon, simplify=True)
+    assert _canon(got) == _canon(ref)
+
+
 # ---------------------------------------------------------------------------
 # Model.lagrangian() integration: QCD quark-gluon vertex
 # ---------------------------------------------------------------------------
@@ -451,6 +479,51 @@ def test_model_lagrangian_qcd_fermion():
     )
     ref = _ref_vertex(compiled[0], legs)
     assert _canon(got) == _canon(ref)
+
+
+def test_declared_lagrangian_scalar_qed_matches_legacy():
+    """A declarative scalar CovD term lowers to the legacy scalar kinetic term."""
+    eQED, qPhi = S("eQED", "qPhi")
+    mu = S("mu")
+    phi = Field("PhiQED", spin=0, self_conjugate=False,
+                symbol=S("phiQED"), conjugate_symbol=S("phiQEDbar"),
+                quantum_numbers={"Q": qPhi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    decl = CovD(phi.bar, mu) * CovD(phi, mu)
+    model = Model(gauge_groups=(u1,), fields=(phi, photon), lagrangian_decl=decl)
+    legacy = Model(gauge_groups=(u1,), fields=(phi, photon),
+                   covariant_terms=(ComplexScalarKineticTerm(field=phi),))
+
+    got_3pt = model.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    ref_3pt = legacy.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    assert _canon(got_3pt) == _canon(ref_3pt)
+
+    got_4pt = model.lagrangian().feynman_rule(phi.bar, phi, photon, photon, simplify=True)
+    ref_4pt = legacy.lagrangian().feynman_rule(phi.bar, phi, photon, photon, simplify=True)
+    assert _canon(got_4pt) == _canon(ref_4pt)
+
+
+def test_declared_lagrangian_field_strength_matches_legacy():
+    """FieldStrength declarations lower to the legacy gauge-kinetic term."""
+    gS = S("gS")
+    mu, nu = S("mu", "nu")
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    decl = -(Expression.num(1) / Expression.num(4)) * FieldStrength(su3, mu, nu) * FieldStrength(su3, mu, nu)
+    model = Model(gauge_groups=(su3,), fields=(gluon,), lagrangian_decl=decl)
+    legacy = Model(gauge_groups=(su3,), fields=(gluon,),
+                   gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),))
+
+    got_3pt = model.lagrangian().feynman_rule(gluon, gluon, gluon, simplify=True)
+    ref_3pt = legacy.lagrangian().feynman_rule(gluon, gluon, gluon, simplify=True)
+    assert _canon(got_3pt) == _canon(ref_3pt)
+
+    got_4pt = model.lagrangian().feynman_rule(gluon, gluon, gluon, gluon, simplify=True)
+    ref_4pt = legacy.lagrangian().feynman_rule(gluon, gluon, gluon, gluon, simplify=True)
+    assert _canon(got_4pt) == _canon(ref_4pt)
 
 
 # ===========================================================================
@@ -498,6 +571,40 @@ def test_precompiled_clears_declaration_slots():
     assert precompiled.gauge_fixing_terms == ()
     assert precompiled.ghost_terms == ()
     assert len(precompiled.interactions) == 1
+
+
+def test_precompiled_keeps_manual_declared_interactions():
+    """Precompilation clears only physical declarative terms, not manual ones."""
+    eQED, qPhi, lam4 = S("eQED", "qPhi", "lam4")
+    mu = S("mu")
+    phi = Field("PhiQED", spin=0, self_conjugate=False,
+                symbol=S("phiQED"), conjugate_symbol=S("phiQEDbar"),
+                quantum_numbers={"Q": qPhi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+    quartic = InteractionTerm(
+        coupling=lam4,
+        fields=tuple(phi.occurrence() for _ in range(4)),
+    )
+    decl = quartic + (CovD(phi.bar, mu) * CovD(phi, mu))
+
+    model = Model(gauge_groups=(u1,), fields=(phi, photon), lagrangian_decl=decl)
+    precompiled = with_compiled_covariant_terms(model)
+
+    assert precompiled.covariant_terms == ()
+    assert precompiled.gauge_kinetic_terms == ()
+    assert precompiled.gauge_fixing_terms == ()
+    assert precompiled.ghost_terms == ()
+    assert len(precompiled.lagrangian_decl.terms) == 1
+    assert isinstance(precompiled.lagrangian_decl.terms[0], InteractionTerm)
+
+    fresh_phi4 = model.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
+    pre_phi4 = precompiled.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
+    assert _canon(fresh_phi4) == _canon(pre_phi4)
+
+    fresh_gauge = model.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    pre_gauge = precompiled.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    assert _canon(fresh_gauge) == _canon(pre_gauge)
 
 
 def test_precompiled_full_stack_no_double_count():
