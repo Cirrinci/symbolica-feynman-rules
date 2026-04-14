@@ -423,6 +423,11 @@ class Field:
             labels=_normalize_index_labels(self, labels),
         )
 
+    @property
+    def bar(self) -> "ConjugateField":
+        """Return a conjugated-field marker for use in ``Lagrangian.feynman_rule()``."""
+        return ConjugateField(self)
+
     def leg(
         self,
         momentum,
@@ -441,6 +446,16 @@ class Field:
             spin=spin,
             labels=_normalize_index_labels(self, labels),
         )
+
+
+# ---------------------------------------------------------------------------
+# ConjugateField  (conjugation marker for the Lagrangian API)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class ConjugateField:
+    """Lightweight marker for a conjugated field in ``Lagrangian.feynman_rule()``."""
+    field: Field
 
 
 # ---------------------------------------------------------------------------
@@ -571,6 +586,185 @@ class InteractionTerm:
             derivative_indices=derivative_indices,
             derivative_targets=derivative_targets,
         )
+
+
+# ---------------------------------------------------------------------------
+# Lagrangian  (FeynRules-style vertex extraction)
+# ---------------------------------------------------------------------------
+
+def _species_key(species) -> str:
+    """Hashable key for a Symbolica species expression."""
+    if hasattr(species, "to_canonical_string"):
+        return species.to_canonical_string()
+    return str(species)
+
+
+def _parse_field_arg(arg) -> tuple[Field, bool]:
+    """Normalize a feynman_rule field argument to (Field, conjugated)."""
+    if isinstance(arg, ConjugateField):
+        return (arg.field, True)
+    if isinstance(arg, Field):
+        return (arg, False)
+    raise TypeError(
+        f"Expected Field or Field.bar (ConjugateField), got {type(arg).__name__}"
+    )
+
+
+def _auto_leg_labels(field_obj: Field, counter: list[int]) -> dict:
+    """Generate sequential index labels i1, i2, ... for all index slots on one leg."""
+    kind_counts = Counter(idx.kind for idx in field_obj.indices)
+    kind_ordinals: dict[str, int] = {}
+    labels: dict[str, object] = {}
+
+    for idx in field_obj.indices:
+        label = S(f"i{counter[0]}")
+        counter[0] += 1
+
+        ordinal = kind_ordinals.get(idx.kind, 0)
+        kind_ordinals[idx.kind] = ordinal + 1
+        count = kind_counts[idx.kind]
+
+        if count > 1:
+            if idx.kind not in labels:
+                labels[idx.kind] = [None] * count
+            labels[idx.kind][ordinal] = label
+        else:
+            labels[idx.kind] = label
+
+    for kind in list(labels):
+        if isinstance(labels[kind], list):
+            labels[kind] = tuple(labels[kind])
+
+    return labels
+
+
+def _term_matches_fields(
+    term: InteractionTerm,
+    parsed_fields: Sequence[tuple[Field, bool]],
+) -> bool:
+    """Check if an InteractionTerm's field content matches the external fields."""
+    if len(term.fields) != len(parsed_fields):
+        return False
+    term_species = Counter(
+        _species_key(occ.species) for occ in term.fields
+    )
+    ext_species = Counter(
+        _species_key(fld.species_for(conj)) for fld, conj in parsed_fields
+    )
+    return term_species == ext_species
+
+
+@dataclass
+class Lagrangian:
+    """Collection of interaction terms with a single ``feynman_rule()`` entry point.
+
+    Mirrors the FeynRules workflow: declare Lagrangian pieces, compose with
+    ``+``, then extract vertex factors by specifying external fields.
+
+    Example::
+
+        L = LGauge + LFermions + LHiggs
+        vertex = L.feynman_rule(Phi.bar, Phi, A)
+    """
+    terms: tuple[InteractionTerm, ...] = ()
+
+    def __add__(self, other):
+        if isinstance(other, Lagrangian):
+            return Lagrangian(terms=self.terms + other.terms)
+        if isinstance(other, InteractionTerm):
+            return Lagrangian(terms=self.terms + (other,))
+        return NotImplemented
+
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        if isinstance(other, InteractionTerm):
+            return Lagrangian(terms=(other,) + self.terms)
+        return NotImplemented
+
+    def feynman_rule(self, *fields, momenta=None, simplify=True):
+        """Compute the Feynman vertex rule for the given external fields.
+
+        Conventions:
+        - leg order = argument order
+        - momenta default to q1, q2, q3, ...
+        - open indices are labeled i1, i2, i3, ... sequentially across legs
+
+        Parameters
+        ----------
+        *fields : Field or ConjugateField
+            External fields in leg order.  Use ``field.bar`` for conjugated
+            fields (e.g. ``Phi.bar``).
+        momenta : list of expressions, optional
+            Override the default q1, q2, ... momentum assignment.  Each entry
+            can be an algebraic expression (e.g. ``p3 - p6``).
+        simplify : bool
+            If True (default), apply ``simplify_vertex`` to the result.
+
+        Returns
+        -------
+        Expression
+            The summed, stripped Feynman vertex factor with ``(2 pi)^d Delta``
+            momentum conservation.
+        """
+        from model_symbolica import simplify_vertex, vertex_factor
+        from symbolica import Expression
+
+        parsed = [_parse_field_arg(f) for f in fields]
+        n = len(parsed)
+        if n == 0:
+            raise ValueError("At least one external field is required.")
+
+        if momenta is None:
+            momenta_list = [S(f"q{k + 1}") for k in range(n)]
+        else:
+            momenta_list = list(momenta)
+        if len(momenta_list) != n:
+            raise ValueError(f"Expected {n} momenta, got {len(momenta_list)}.")
+
+        idx_counter = [1]
+        legs = []
+        for k, (fld, conj) in enumerate(parsed):
+            labels = _auto_leg_labels(fld, idx_counter)
+            legs.append(ExternalLeg(
+                field=fld,
+                momentum=momenta_list[k],
+                conjugated=conj,
+                labels=labels,
+            ))
+
+        matching = [t for t in self.terms if _term_matches_fields(t, parsed)]
+        if not matching:
+            desc = ", ".join(
+                f"{fld.name}{'bar' if conj else ''}" for fld, conj in parsed
+            )
+            raise ValueError(f"No matching interaction terms for: {desc}")
+
+        x = S("x_")
+        d = S("d")
+        total = Expression.num(0)
+        for term in matching:
+            total += vertex_factor(
+                interaction=term,
+                external_legs=legs,
+                x=x,
+                d=d,
+                strip_externals=True,
+                include_delta=True,
+            )
+
+        if simplify:
+            from model_symbolica import simplify_deltas
+
+            unique_species = list(dict.fromkeys(
+                fld.species_for(conj) for fld, conj in parsed
+            ))
+            if len(unique_species) > 1:
+                species_map = {sp: sp for sp in unique_species}
+                total = simplify_deltas(total, species_map=species_map)
+            total = simplify_vertex(total)
+
+        return total
 
 
 # ---------------------------------------------------------------------------
@@ -723,3 +917,14 @@ class Model:
                 f"for gauge group {gauge_group.name!r}."
             )
         return field
+
+    def lagrangian(self) -> Lagrangian:
+        """Compile all declared terms and return a ``Lagrangian``.
+
+        Combines explicit ``interactions`` with the output of the covariant
+        compiler (gauge kinetic, gauge fixing, ghosts, matter covariant terms).
+        """
+        from gauge_compiler import compile_covariant_terms
+
+        compiled = compile_covariant_terms(self)
+        return Lagrangian(terms=self.interactions + compiled)
