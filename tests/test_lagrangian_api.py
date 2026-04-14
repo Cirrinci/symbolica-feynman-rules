@@ -66,6 +66,30 @@ from spenso_structures import (  # noqa: E402
     lorentz_metric,
     structure_constant,
 )
+from examples import (  # noqa: E402
+    MODEL_QCD_COVARIANT,
+    MODEL_QED_FERMION_COVARIANT,
+    MODEL_SCALAR_QED_COVARIANT,
+    MODEL_SCALAR_QCD_COVARIANT,
+    MODEL_MIXED_FERMION_COVARIANT,
+    MODEL_MIXED_SCALAR_COVARIANT,
+    MODEL_QED_GAUGE_COVARIANT,
+    MODEL_QCD_GAUGE_COVARIANT,
+    MODEL_QED_GAUGE_FIXING_COVARIANT,
+    MODEL_QCD_GAUGE_FIXING_COVARIANT,
+    MODEL_QED_ORDINARY_GAUGE_FIXED,
+    MODEL_QCD_GHOST_COVARIANT,
+    MODEL_QCD_ORDINARY_GAUGE_FIXED,
+    QuarkField,
+    GluonField,
+    GaugeField,
+    PsiQEDField,
+    PsiMixField,
+    PhiQEDField,
+    PhiQCDField,
+    PhiMixField,
+    GhostGluonField,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -680,3 +704,140 @@ def test_lagrangian_ghost_gauge_interaction():
     )
     ref = _ref_vertex(ghost_gauge_term, legs)
     assert _canon(got) == _canon(ref)
+
+
+# ===========================================================================
+# Precompiled-model idempotency on *actual* examples.py models
+#
+# These use the same model objects that examples.py feeds through
+# with_compiled_covariant_terms(), so they guard against the double-counting
+# regression on the real repo workflow.
+# ===========================================================================
+
+def _assert_precompiled_idempotent(model, label):
+    """Fresh lagrangian() and precompiled lagrangian() must have equal term count."""
+    L_fresh = model.lagrangian()
+    precompiled = with_compiled_covariant_terms(model)
+
+    assert precompiled.covariant_terms == (), f"{label}: covariant_terms not cleared"
+    assert precompiled.gauge_kinetic_terms == (), f"{label}: gauge_kinetic_terms not cleared"
+    assert precompiled.gauge_fixing_terms == (), f"{label}: gauge_fixing_terms not cleared"
+    assert precompiled.ghost_terms == (), f"{label}: ghost_terms not cleared"
+
+    L_pre = precompiled.lagrangian()
+    assert len(L_fresh.terms) == len(L_pre.terms), (
+        f"{label}: term count mismatch: fresh={len(L_fresh.terms)}, "
+        f"precompiled={len(L_pre.terms)}"
+    )
+    return L_fresh, L_pre
+
+
+def test_precompiled_examples_qcd_fermion():
+    """MODEL_QCD_COVARIANT: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QCD_COVARIANT, "QCD-covariant")
+    got = L_fresh.feynman_rule(QuarkField.bar, QuarkField, GluonField, simplify=True)
+    got_pre = L_pre.feynman_rule(QuarkField.bar, QuarkField, GluonField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_qed_fermion():
+    """MODEL_QED_FERMION_COVARIANT: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QED_FERMION_COVARIANT, "FermionQED-covariant")
+    got = L_fresh.feynman_rule(PsiQEDField.bar, PsiQEDField, GaugeField, simplify=True)
+    got_pre = L_pre.feynman_rule(PsiQEDField.bar, PsiQEDField, GaugeField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_scalar_qed():
+    """MODEL_SCALAR_QED_COVARIANT: precompiled vs fresh, term count."""
+    _assert_precompiled_idempotent(MODEL_SCALAR_QED_COVARIANT, "ScalarQED-covariant")
+
+
+def test_precompiled_examples_scalar_qcd():
+    """MODEL_SCALAR_QCD_COVARIANT: precompiled vs fresh, term count."""
+    _assert_precompiled_idempotent(MODEL_SCALAR_QCD_COVARIANT, "ScalarQCD-covariant")
+
+
+def test_precompiled_examples_mixed_fermion():
+    """MODEL_MIXED_FERMION_COVARIANT: precompiled vs fresh, term count."""
+    _assert_precompiled_idempotent(
+        MODEL_MIXED_FERMION_COVARIANT, "MixedQCDQED-covariant")
+
+
+def test_precompiled_examples_mixed_scalar():
+    """MODEL_MIXED_SCALAR_COVARIANT: precompiled vs fresh, term count."""
+    _assert_precompiled_idempotent(
+        MODEL_MIXED_SCALAR_COVARIANT, "MixedScalarQCDQED-covariant")
+
+
+def test_precompiled_examples_qed_gauge_kinetic():
+    """MODEL_QED_GAUGE_COVARIANT: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QED_GAUGE_COVARIANT, "QEDGauge-covariant")
+    got = L_fresh.feynman_rule(GaugeField, GaugeField, simplify=True)
+    got_pre = L_pre.feynman_rule(GaugeField, GaugeField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_qcd_gauge_kinetic():
+    """MODEL_QCD_GAUGE_COVARIANT: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QCD_GAUGE_COVARIANT, "QCDGauge-covariant")
+    got = L_fresh.feynman_rule(GluonField, GluonField, simplify=True)
+    got_pre = L_pre.feynman_rule(GluonField, GluonField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_qed_gauge_fixing():
+    """MODEL_QED_GAUGE_FIXING_COVARIANT: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QED_GAUGE_FIXING_COVARIANT, "QEDGaugeFixing-covariant")
+    got = L_fresh.feynman_rule(GaugeField, GaugeField, simplify=True)
+    got_pre = L_pre.feynman_rule(GaugeField, GaugeField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_qcd_gauge_fixing():
+    """MODEL_QCD_GAUGE_FIXING_COVARIANT: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QCD_GAUGE_FIXING_COVARIANT, "QCDGaugeFixing-covariant")
+    got = L_fresh.feynman_rule(GluonField, GluonField, simplify=True)
+    got_pre = L_pre.feynman_rule(GluonField, GluonField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_qed_ordinary_gauge_fixed():
+    """MODEL_QED_ORDINARY_GAUGE_FIXED: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QED_ORDINARY_GAUGE_FIXED, "QEDGaugeFixed-covariant")
+    got = L_fresh.feynman_rule(GaugeField, GaugeField, simplify=True)
+    got_pre = L_pre.feynman_rule(GaugeField, GaugeField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_qcd_ghost():
+    """MODEL_QCD_GHOST_COVARIANT: precompiled vs fresh, vertex-level."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QCD_GHOST_COVARIANT, "QCDGhost-covariant")
+    got = L_fresh.feynman_rule(GhostGluonField.bar, GhostGluonField, simplify=True)
+    got_pre = L_pre.feynman_rule(GhostGluonField.bar, GhostGluonField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+
+
+def test_precompiled_examples_qcd_ordinary_gauge_fixed():
+    """MODEL_QCD_ORDINARY_GAUGE_FIXED: precompiled vs fresh, term count + vertex."""
+    L_fresh, L_pre = _assert_precompiled_idempotent(
+        MODEL_QCD_ORDINARY_GAUGE_FIXED, "QCDGaugeFixed-covariant")
+    got = L_fresh.feynman_rule(GluonField, GluonField, simplify=True)
+    got_pre = L_pre.feynman_rule(GluonField, GluonField, simplify=True)
+    assert _canon(got) == _canon(got_pre)
+    got_3g = L_fresh.feynman_rule(GluonField, GluonField, GluonField, simplify=True)
+    got_3g_pre = L_pre.feynman_rule(GluonField, GluonField, GluonField, simplify=True)
+    assert _canon(got_3g) == _canon(got_3g_pre)
+    got_ghost = L_fresh.feynman_rule(
+        GhostGluonField.bar, GhostGluonField, simplify=True)
+    got_ghost_pre = L_pre.feynman_rule(
+        GhostGluonField.bar, GhostGluonField, simplify=True)
+    assert _canon(got_ghost) == _canon(got_ghost_pre)
