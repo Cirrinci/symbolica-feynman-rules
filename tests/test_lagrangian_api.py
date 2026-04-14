@@ -526,6 +526,70 @@ def test_declared_lagrangian_field_strength_matches_legacy():
     assert _canon(got_4pt) == _canon(ref_4pt)
 
 
+def test_declared_lagrangian_rejects_scalar_covd_without_conjugate_pair():
+    """Scalar declarative form requires one barred and one unbarred CovD factor."""
+    eQED, qPhi = S("eQED", "qPhi")
+    mu = S("mu")
+    phi = Field(
+        "PhiQED",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phiQED"),
+        conjugate_symbol=S("phiQEDbar"),
+        quantum_numbers={"Q": qPhi},
+    )
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    with pytest.raises(ValueError, match="Unsupported declarative Lagrangian term"):
+        Model(
+            gauge_groups=(u1,),
+            fields=(phi, photon),
+            lagrangian_decl=CovD(phi, mu) * CovD(phi, mu),
+        )
+
+
+def test_declared_lagrangian_rejects_gamma_covd_index_mismatch():
+    """Dirac declarative form requires Gamma and CovD to share Lorentz index."""
+    eQED, qPsi = S("eQED", "qPsi")
+    mu, nu = S("mu", "nu")
+    fermion = Field(
+        "PsiQED",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Q": qPsi},
+    )
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    with pytest.raises(ValueError, match="Unsupported declarative Lagrangian term"):
+        Model(
+            gauge_groups=(u1,),
+            fields=(fermion, photon),
+            lagrangian_decl=I * fermion.bar * Gamma(mu) * CovD(fermion, nu),
+        )
+
+
+def test_declared_lagrangian_rejects_field_strength_index_mismatch():
+    """Field-strength declarative form requires matching (mu,nu) pair."""
+    gS = S("gS")
+    mu, nu = S("mu", "nu")
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    with pytest.raises(ValueError, match="Unsupported declarative Lagrangian term"):
+        Model(
+            gauge_groups=(su3,),
+            fields=(gluon,),
+            lagrangian_decl=-(Expression.num(1) / Expression.num(4))
+            * FieldStrength(su3, mu, nu)
+            * FieldStrength(su3, nu, mu),
+        )
+
+
 # ===========================================================================
 # Precompiled-model idempotency tests
 # ===========================================================================

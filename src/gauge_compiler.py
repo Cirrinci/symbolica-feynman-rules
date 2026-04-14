@@ -1392,8 +1392,14 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     ordinary ``InteractionTerm`` objects consumed by the core engine.
     """
     interactions: list[InteractionTerm] = []
+    buckets = model._declared_piece_buckets()
 
-    for term in model.all_covariant_terms():
+    all_covariant_terms = model.covariant_terms + buckets["covariant_terms"]
+    all_gauge_kinetic_terms = model.gauge_kinetic_terms + buckets["gauge_kinetic_terms"]
+    all_gauge_fixing_terms = model.gauge_fixing_terms + buckets["gauge_fixing_terms"]
+    all_ghost_terms = model.ghost_terms + buckets["ghost_terms"]
+
+    for term in all_covariant_terms:
         if isinstance(term, DiracKineticTerm):
             interactions.extend(compile_dirac_kinetic_term(model, term))
             continue
@@ -1402,13 +1408,13 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
             continue
         raise TypeError(f"Unsupported covariant term type: {type(term)!r}")
 
-    for term in model.all_gauge_kinetic_terms():
+    for term in all_gauge_kinetic_terms:
         interactions.extend(compile_gauge_kinetic_term(model, term))
 
-    for term in model.all_gauge_fixing_terms():
+    for term in all_gauge_fixing_terms:
         interactions.extend(compile_gauge_fixing_term(model, term))
 
-    for term in model.all_ghost_terms():
+    for term in all_ghost_terms:
         interactions.extend(compile_ghost_term(model, term))
 
     return tuple(interactions)

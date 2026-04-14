@@ -36,6 +36,11 @@ from spenso_structures import (
     LORENTZ_KIND,
     SPINOR_KIND,
 )
+from decl_lagrangian_lowering import (
+    lower_dirac_monomial as _lower_dirac_monomial_impl,
+    lower_field_strength_monomial as _lower_field_strength_monomial_impl,
+    lower_scalar_covd_monomial as _lower_scalar_covd_monomial_impl,
+)
 
 Statistics = Literal["boson", "fermion"]
 
@@ -1041,6 +1046,20 @@ class DiracKineticTerm:
     coefficient: object = 1
     label: str = ""
 
+    def __add__(self, other):
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(terms=(self,))
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=terms + (self,))
+
 
 @dataclass(frozen=True)
 class ComplexScalarKineticTerm:
@@ -1055,6 +1074,20 @@ class ComplexScalarKineticTerm:
     coefficient: object = 1
     label: str = ""
 
+    def __add__(self, other):
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(terms=(self,))
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=terms + (self,))
+
 
 @dataclass(frozen=True)
 class GaugeKineticTerm:
@@ -1067,6 +1100,20 @@ class GaugeKineticTerm:
     gauge_group: object
     coefficient: object = 1
     label: str = ""
+
+    def __add__(self, other):
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(terms=(self,))
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=terms + (self,))
 
 
 @dataclass(frozen=True)
@@ -1081,6 +1128,20 @@ class GaugeFixingTerm:
     coefficient: object = 1
     label: str = ""
 
+    def __add__(self, other):
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(terms=(self,))
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=terms + (self,))
+
 
 @dataclass(frozen=True)
 class GhostTerm:
@@ -1094,78 +1155,46 @@ class GhostTerm:
     coefficient: object = 1
     label: str = ""
 
+    def __add__(self, other):
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=(self,) + terms)
 
-def _expr_equal(left, right) -> bool:
-    left_expr = left.expand() if hasattr(left, "expand") else left
-    right_expr = right.expand() if hasattr(right, "expand") else right
-    if hasattr(left_expr, "to_canonical_string") and hasattr(right_expr, "to_canonical_string"):
-        return left_expr.to_canonical_string() == right_expr.to_canonical_string()
-    return left_expr == right_expr
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(terms=(self,))
+        terms = _declared_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(terms=terms + (self,))
 
 
 def _lower_dirac_monomial(term: _DeclaredMonomial):
-    field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
-    gamma_factors = [factor for factor in term.factors if isinstance(factor, GammaFactor)]
-    covd_factors = [factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)]
-    if len(term.factors) != 3 or len(field_factors) != 1 or len(gamma_factors) != 1 or len(covd_factors) != 1:
-        return None
-
-    field_factor = field_factors[0]
-    gamma_factor = gamma_factors[0]
-    covd_factor = covd_factors[0]
-    if field_factor.field is not covd_factor.field:
-        return None
-    if field_factor.field.kind != "fermion":
-        return None
-    if not field_factor.conjugated or covd_factor.conjugated:
-        return None
-    if gamma_factor.lorentz_index != covd_factor.lorentz_index:
-        return None
-
-    normalized = term.coefficient / Expression.I
-    if not _expr_equal(Expression.I * normalized, term.coefficient):
-        return None
-    return DiracKineticTerm(
-        field=field_factor.field,
-        coefficient=normalized,
+    return _lower_dirac_monomial_impl(
+        term,
+        field_factor_cls=_FieldFactor,
+        gamma_factor_cls=GammaFactor,
+        covariant_derivative_factor_cls=CovariantDerivativeFactor,
+        dirac_kinetic_term_cls=DiracKineticTerm,
+        expression_module=Expression,
     )
 
 
 def _lower_scalar_covd_monomial(term: _DeclaredMonomial):
-    covd_factors = [factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)]
-    if len(term.factors) != 2 or len(covd_factors) != 2:
-        return None
-    left, right = covd_factors
-    if left.field is not right.field:
-        return None
-    if left.field.kind != "scalar" or left.field.self_conjugate:
-        return None
-    if left.lorentz_index != right.lorentz_index:
-        return None
-    if {left.conjugated, right.conjugated} != {False, True}:
-        return None
-    return ComplexScalarKineticTerm(
-        field=left.field,
-        coefficient=term.coefficient,
+    return _lower_scalar_covd_monomial_impl(
+        term,
+        covariant_derivative_factor_cls=CovariantDerivativeFactor,
+        complex_scalar_kinetic_term_cls=ComplexScalarKineticTerm,
     )
 
 
 def _lower_field_strength_monomial(term: _DeclaredMonomial):
-    fs_factors = [factor for factor in term.factors if isinstance(factor, FieldStrengthFactor)]
-    if len(term.factors) != 2 or len(fs_factors) != 2:
-        return None
-    left, right = fs_factors
-    if left.gauge_group != right.gauge_group:
-        return None
-    if left.left_index != right.left_index or left.right_index != right.right_index:
-        return None
-
-    normalized = -Expression.num(4) * term.coefficient
-    if not _expr_equal(-(normalized / Expression.num(4)), term.coefficient):
-        return None
-    return GaugeKineticTerm(
-        gauge_group=left.gauge_group,
-        coefficient=normalized,
+    return _lower_field_strength_monomial_impl(
+        term,
+        field_strength_factor_cls=FieldStrengthFactor,
+        gauge_kinetic_term_cls=GaugeKineticTerm,
+        expression_module=Expression,
     )
 
 
@@ -1226,33 +1255,6 @@ class DeclaredLagrangian:
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(terms=terms + self.terms)
-
-
-def _decl_piece_add(self, other):
-    terms = _declared_terms_from_item(other)
-    if terms is None:
-        return NotImplemented
-    return DeclaredLagrangian(terms=(self,) + terms)
-
-
-def _decl_piece_radd(self, other):
-    if other == 0:
-        return DeclaredLagrangian(terms=(self,))
-    terms = _declared_terms_from_item(other)
-    if terms is None:
-        return NotImplemented
-    return DeclaredLagrangian(terms=terms + (self,))
-
-
-for _decl_piece_cls in (
-    DiracKineticTerm,
-    ComplexScalarKineticTerm,
-    GaugeKineticTerm,
-    GaugeFixingTerm,
-    GhostTerm,
-):
-    _decl_piece_cls.__add__ = _decl_piece_add
-    _decl_piece_cls.__radd__ = _decl_piece_radd
 
 
 CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
