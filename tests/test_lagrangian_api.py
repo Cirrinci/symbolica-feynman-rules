@@ -152,6 +152,23 @@ def _make_su3(coupling, gauge_boson_sym, ghost_sym=None, name="SU3"):
     )
 
 
+def _dirac_decl(field):
+    return I * field.bar * Gamma(S("mu_decl")) * CovD(field, S("mu_decl"))
+
+
+def _scalar_decl(field):
+    return CovD(field.bar, S("mu_decl")) * CovD(field, S("mu_decl"))
+
+
+def _gauge_decl(group):
+    mu_decl, nu_decl = S("mu_decl", "nu_decl")
+    return (
+        -(Expression.num(1) / Expression.num(4))
+        * FieldStrength(group, mu_decl, nu_decl)
+        * FieldStrength(group, mu_decl, nu_decl)
+    )
+
+
 # ---------------------------------------------------------------------------
 # Field.bar / ConjugateField basics
 # ---------------------------------------------------------------------------
@@ -412,7 +429,7 @@ def test_model_lagrangian_qed_fermion():
     photon = _make_photon()
     u1 = _make_u1(eQED, photon.symbol)
     model = Model(gauge_groups=(u1,), fields=(fermion, photon),
-                  covariant_terms=(DiracKineticTerm(field=fermion),))
+                  lagrangian_decl=_dirac_decl(fermion))
 
     L = model.lagrangian()
     got = L.feynman_rule(fermion.bar, fermion, photon, simplify=True)
@@ -440,10 +457,13 @@ def test_declared_lagrangian_qed_fermion():
 
     decl = I * fermion.bar * Gamma(mu) * CovD(fermion, mu)
     model = Model(gauge_groups=(u1,), fields=(fermion, photon), lagrangian_decl=decl)
-    legacy = Model(gauge_groups=(u1,), fields=(fermion, photon),
-                   covariant_terms=(DiracKineticTerm(field=fermion),))
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        legacy = Model(gauge_groups=(u1,), fields=(fermion, photon),
+                       covariant_terms=(DiracKineticTerm(field=fermion),))
 
     assert isinstance(model.lagrangian_decl, DeclaredLagrangian)
+    assert len(model.lagrangian_decl.source_terms) == 1
+    assert "CovD(" in str(model.lagrangian_decl.source_terms[0])
     assert len(model.all_covariant_terms()) == 1
     assert isinstance(model.all_covariant_terms()[0], DiracKineticTerm)
 
@@ -465,7 +485,7 @@ def test_model_lagrangian_qcd_fermion():
     gluon = _make_gluon()
     su3 = _make_su3(gS, gluon.symbol)
     model = Model(gauge_groups=(su3,), fields=(quark, gluon),
-                  covariant_terms=(DiracKineticTerm(field=quark),))
+                  lagrangian_decl=_dirac_decl(quark))
 
     L = model.lagrangian()
     got = L.feynman_rule(quark.bar, quark, gluon, simplify=True)
@@ -493,8 +513,9 @@ def test_declared_lagrangian_scalar_qed_matches_legacy():
 
     decl = CovD(phi.bar, mu) * CovD(phi, mu)
     model = Model(gauge_groups=(u1,), fields=(phi, photon), lagrangian_decl=decl)
-    legacy = Model(gauge_groups=(u1,), fields=(phi, photon),
-                   covariant_terms=(ComplexScalarKineticTerm(field=phi),))
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        legacy = Model(gauge_groups=(u1,), fields=(phi, photon),
+                       covariant_terms=(ComplexScalarKineticTerm(field=phi),))
 
     got_3pt = model.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
     ref_3pt = legacy.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
@@ -514,8 +535,9 @@ def test_declared_lagrangian_field_strength_matches_legacy():
 
     decl = -(Expression.num(1) / Expression.num(4)) * FieldStrength(su3, mu, nu) * FieldStrength(su3, mu, nu)
     model = Model(gauge_groups=(su3,), fields=(gluon,), lagrangian_decl=decl)
-    legacy = Model(gauge_groups=(su3,), fields=(gluon,),
-                   gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),))
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        legacy = Model(gauge_groups=(su3,), fields=(gluon,),
+                       gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),))
 
     got_3pt = model.lagrangian().feynman_rule(gluon, gluon, gluon, simplify=True)
     ref_3pt = legacy.lagrangian().feynman_rule(gluon, gluon, gluon, simplify=True)
@@ -603,7 +625,7 @@ def test_precompiled_model_lagrangian_no_double_count():
     gluon = _make_gluon()
     su3 = _make_su3(gS, gluon.symbol)
     model = Model(gauge_groups=(su3,), fields=(quark, gluon),
-                  covariant_terms=(DiracKineticTerm(field=quark),))
+                  lagrangian_decl=_dirac_decl(quark))
 
     L_fresh = model.lagrangian()
     precompiled = with_compiled_covariant_terms(model)
@@ -627,7 +649,7 @@ def test_precompiled_clears_declaration_slots():
     gluon = _make_gluon()
     su3 = _make_su3(gS, gluon.symbol)
     model = Model(gauge_groups=(su3,), fields=(quark, gluon),
-                  covariant_terms=(DiracKineticTerm(field=quark),))
+                  lagrangian_decl=_dirac_decl(quark))
 
     precompiled = with_compiled_covariant_terms(model)
     assert precompiled.covariant_terms == ()
@@ -659,8 +681,8 @@ def test_precompiled_keeps_manual_declared_interactions():
     assert precompiled.gauge_kinetic_terms == ()
     assert precompiled.gauge_fixing_terms == ()
     assert precompiled.ghost_terms == ()
-    assert len(precompiled.lagrangian_decl.terms) == 1
-    assert isinstance(precompiled.lagrangian_decl.terms[0], InteractionTerm)
+    assert len(precompiled.lagrangian_decl.source_terms) == 1
+    assert isinstance(precompiled.lagrangian_decl.source_terms[0], InteractionTerm)
 
     fresh_phi4 = model.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
     pre_phi4 = precompiled.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
@@ -681,9 +703,11 @@ def test_precompiled_full_stack_no_double_count():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, ghost),
-        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
-        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=xiQCD),),
-        ghost_terms=(GhostTerm(gauge_group=su3),),
+        lagrangian_decl=(
+            _gauge_decl(su3)
+            + GaugeFixingTerm(gauge_group=su3, xi=xiQCD)
+            + GhostTerm(gauge_group=su3)
+        ),
     )
 
     L_fresh = model.lagrangian()
@@ -707,7 +731,7 @@ def test_lagrangian_scalar_qed_covariant():
     model = Model(
         gauge_groups=(u1,),
         fields=(phi, photon),
-        covariant_terms=(ComplexScalarKineticTerm(field=phi),),
+        lagrangian_decl=_scalar_decl(phi),
     )
 
     compiled = compile_covariant_terms(model)
@@ -743,7 +767,7 @@ def test_lagrangian_abelian_gauge_kinetic():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon,),
-        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=u1),),
+        lagrangian_decl=_gauge_decl(u1),
     )
 
     compiled = compile_covariant_terms(model)
@@ -772,7 +796,7 @@ def test_lagrangian_yang_mills_cubic():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
+        lagrangian_decl=_gauge_decl(su3),
     )
 
     L = model.lagrangian()
@@ -789,7 +813,7 @@ def test_lagrangian_yang_mills_quartic():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
+        lagrangian_decl=_gauge_decl(su3),
     )
 
     L = model.lagrangian()
@@ -810,7 +834,7 @@ def test_lagrangian_abelian_gauge_fixing():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon,),
-        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=u1, xi=xiQED),),
+        lagrangian_decl=GaugeFixingTerm(gauge_group=u1, xi=xiQED),
     )
 
     compiled = compile_covariant_terms(model)
@@ -837,7 +861,7 @@ def test_lagrangian_nonabelian_gauge_fixing():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        gauge_fixing_terms=(GaugeFixingTerm(gauge_group=su3, xi=xiQCD),),
+        lagrangian_decl=GaugeFixingTerm(gauge_group=su3, xi=xiQCD),
     )
 
     compiled = compile_covariant_terms(model)
@@ -869,7 +893,7 @@ def test_lagrangian_ghost_bilinear():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, ghost),
-        ghost_terms=(GhostTerm(gauge_group=su3),),
+        lagrangian_decl=GhostTerm(gauge_group=su3),
     )
 
     compiled = compile_covariant_terms(model)
@@ -898,7 +922,7 @@ def test_lagrangian_ghost_gauge_interaction():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon, ghost),
-        ghost_terms=(GhostTerm(gauge_group=su3),),
+        lagrangian_decl=GhostTerm(gauge_group=su3),
     )
 
     compiled = compile_covariant_terms(model)

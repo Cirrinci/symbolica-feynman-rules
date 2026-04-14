@@ -1430,12 +1430,12 @@ def with_compiled_covariant_terms(model: Model) -> Model:
     """
     compiled = compile_covariant_terms(model)
     manual_decl_terms = tuple(
-        term for term in model.lagrangian_decl.terms if isinstance(term, InteractionTerm)
+        term for term in model.lagrangian_decl.source_terms if isinstance(term, InteractionTerm)
     )
     return replace(
         model,
         interactions=model.interactions + compiled,
-        lagrangian_decl=type(model.lagrangian_decl)(terms=manual_decl_terms),
+        lagrangian_decl=type(model.lagrangian_decl)(source_terms=manual_decl_terms),
         covariant_terms=(),
         gauge_kinetic_terms=(),
         gauge_fixing_terms=(),

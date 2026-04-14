@@ -20,8 +20,8 @@ from model import (  # noqa: E402
     LORENTZ_INDEX,
     COLOR_ADJ_KIND,
     COLOR_FUND_KIND,
+    CovD,
     LORENTZ_KIND,
-    ComplexScalarKineticTerm,
     Field,
     GaugeGroup,
     GaugeRepresentation,
@@ -42,6 +42,10 @@ def _model_vertex(*, interaction, external_legs, species_map):
         d=d,
     )
     return simplify_deltas(expr, species_map=species_map)
+
+
+def _scalar_decl(field):
+    return CovD(field.bar, S("mu_decl")) * CovD(field, S("mu_decl"))
 
 
 def test_compile_mixed_complex_scalar_contact_terms_abelian_nonabelian():
@@ -410,7 +414,7 @@ def test_mixed_scalar_covariant_term_includes_cross_group_contact():
         name="mixed-scalar",
         gauge_groups=(su3, u1),
         fields=(scalar, gluon, photon),
-        covariant_terms=(ComplexScalarKineticTerm(field=scalar),),
+        lagrangian_decl=_scalar_decl(scalar),
     )
 
     compiled = compile_covariant_terms(model)

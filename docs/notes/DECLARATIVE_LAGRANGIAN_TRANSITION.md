@@ -75,6 +75,17 @@ legacy declarations and the new API can coexist during the transition.
 
 Status: implemented
 
+### 3b. Preserve the source declaration for demos and introspection
+
+`DeclaredLagrangian` should keep the original declarative source terms
+(`CovD(...)`, `FieldStrength(...)`, direct helper classes, manual
+`InteractionTerm`s) and expose a cached lowered view for the existing compiler.
+
+This allows the examples to print the declaration the user actually wrote,
+rather than only the compiled `InteractionTerm` expansion.
+
+Status: implemented
+
 ### 4. Preserve idempotent precompilation
 
 `with_compiled_covariant_terms(model)` must:
@@ -112,6 +123,6 @@ Remaining cleanup work:
 - add more user-facing demos that show the new declaration syntax directly
 - decide whether `GaugeFixingTerm` / `GhostTerm` also need fully symbolic DSL
   wrappers or whether direct helper classes are enough
-- decide on a deprecation path for the old split declaration slots in the public
-  API
+- remove the remaining thin legacy-slot compatibility tests after one deprecation
+  cycle
 - document the recommended import surface for declarative model building

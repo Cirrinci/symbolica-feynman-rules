@@ -127,14 +127,20 @@ This lets users work in two styles:
 - **Manual**: build `Lagrangian` from `InteractionTerm` objects directly
 - **Model-level**: declare gauge groups, fields, covariant terms, then call `model.lagrangian().feynman_rule(...)`
 
-### 6. Covariant derivative (deferred, design note only)
+### 6. Covariant derivative (implemented front-end, generalized back-end deferred)
 
-For later, a `CovD(field, mu)` object that:
-- Reads the field's gauge quantum numbers
-- Sums the gauge-action terms from all applicable groups
-- Returns an expression `partial_mu field + i sum_G g_G A_mu T_R field`
+The repository now supports a declarative `CovD(field, mu)` front-end inside
+`lagrangian_decl=...`, e.g.
 
-This is already partially designed in [docs/notes/COVARIANT_DERIVATIVE_GENERALIZATION.md](docs/notes/COVARIANT_DERIVATIVE_GENERALIZATION.md) and will build on the new Lagrangian API.
+- `I * Psi.bar * Gamma(mu) * CovD(Psi, mu)`
+- `CovD(Phi.bar, mu) * CovD(Phi, mu)`
+
+The fully generalized symbolic expansion
+
+- `partial_mu field + i sum_G g_G A_mu T_R field`
+
+is still a future extension described in
+[docs/notes/COVARIANT_DERIVATIVE_GENERALIZATION.md](docs/notes/COVARIANT_DERIVATIVE_GENERALIZATION.md).
 
 ## Files to Change
 
@@ -145,12 +151,22 @@ This is already partially designed in [docs/notes/COVARIANT_DERIVATIVE_GENERALIZ
 ## Example Usage After Implementation
 
 ```python
-# FeynRules-style declarations (already supported)
+# FeynRules-style declarations (recommended)
 SU3C = GaugeGroup(name="SU3C", abelian=False, coupling=g3, ...)
 G = Field(name="G", spin=1, self_conjugate=True, indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
 Phi = Field(name="Phi", spin=0, self_conjugate=False, indices=(SU2D_INDEX,), quantum_numbers={"Y": Fraction(1,2)})
 
-model = Model(gauge_groups=(...), fields=(...), covariant_terms=(...), ...)
+model = Model(
+    gauge_groups=(...),
+    fields=(...),
+    lagrangian_decl=(
+        I * Psi.bar * Gamma(mu) * CovD(Psi, mu)
+        + CovD(Phi.bar, mu) * CovD(Phi, mu)
+        - S(1) / 4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)
+        + GaugeFixingTerm(gauge_group=SU3C, xi=xiQCD)
+        + GhostTerm(gauge_group=SU3C)
+    ),
+)
 
 # NEW: single command
 L = model.lagrangian()

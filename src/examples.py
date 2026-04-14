@@ -218,6 +218,8 @@ def _print_interaction_terms(terms):
 
 def _model_decl_label(model, attr_name, fallback):
     terms = getattr(model, attr_name, ())
+    if not terms:
+        terms = model.lagrangian_decl.source_terms
     if terms and getattr(terms[0], "label", ""):
         return terms[0].label
     return fallback
@@ -2433,7 +2435,7 @@ def _run_covariant_compiler_tests():
         name="rogue-qed-gauge-boson",
         gauge_groups=(rogue_qed_group,),
         fields=(PsiQEDField,),
-        covariant_terms=(DiracKineticTerm(field=PsiQEDField),),
+        lagrangian_decl=I * PsiQEDField.bar * Gamma(mu) * CovD(PsiQEDField, mu),
     )
     try:
         compile_covariant_terms(rogue_qed_model)
@@ -2481,7 +2483,7 @@ def _run_covariant_compiler_tests():
         name="multi-representation-rejection",
         gauge_groups=(multi_rep_group,),
         fields=(multi_rep_fermion, multi_rep_gluon),
-        covariant_terms=(DiracKineticTerm(field=multi_rep_fermion),),
+        lagrangian_decl=I * multi_rep_fermion.bar * Gamma(mu) * CovD(multi_rep_fermion, mu),
     )
     try:
         compile_covariant_terms(multi_rep_model)

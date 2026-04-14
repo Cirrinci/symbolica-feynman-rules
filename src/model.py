@@ -22,7 +22,9 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass, field
 from fractions import Fraction
+from functools import cached_property
 from typing import Callable, Literal, Mapping, Optional, Sequence
+import warnings
 
 from symbolica import Expression, S
 
@@ -553,7 +555,8 @@ class FieldStrengthFactor(_DeclaredFactorMixin):
     right_index: object
 
     def __str__(self):
-        return f"FieldStrength({self.gauge_group}, {self.left_index}, {self.right_index})"
+        group_name = getattr(self.gauge_group, "name", self.gauge_group)
+        return f"FieldStrength({group_name}, {self.left_index}, {self.right_index})"
 
 
 def _is_decl_scalar(value) -> bool:
@@ -767,9 +770,9 @@ class InteractionTerm:
             return Lagrangian(terms=(self, other))
         if isinstance(other, Lagrangian):
             return Lagrangian(terms=(self,) + other.terms)
-        decl_terms = _declared_terms_from_item(other)
+        decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
-            return DeclaredLagrangian(terms=(self,) + decl_terms)
+            return DeclaredLagrangian(source_terms=(self,) + decl_terms)
         return NotImplemented
 
     def __radd__(self, other):
@@ -777,9 +780,9 @@ class InteractionTerm:
             return Lagrangian(terms=(self,))
         if isinstance(other, InteractionTerm):
             return Lagrangian(terms=(other, self))
-        decl_terms = _declared_terms_from_item(other)
+        decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
-            return DeclaredLagrangian(terms=decl_terms + (self,))
+            return DeclaredLagrangian(source_terms=decl_terms + (self,))
         return NotImplemented
 
     def to_vertex_kwargs(self, external_legs: Sequence[ExternalLeg]) -> dict:
@@ -1047,18 +1050,18 @@ class DiracKineticTerm:
     label: str = ""
 
     def __add__(self, other):
-        terms = _declared_terms_from_item(other)
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=(self,) + terms)
+        return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
         if other == 0:
-            return DeclaredLagrangian(terms=(self,))
-        terms = _declared_terms_from_item(other)
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=terms + (self,))
+        return DeclaredLagrangian(source_terms=terms + (self,))
 
 
 @dataclass(frozen=True)
@@ -1075,18 +1078,18 @@ class ComplexScalarKineticTerm:
     label: str = ""
 
     def __add__(self, other):
-        terms = _declared_terms_from_item(other)
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=(self,) + terms)
+        return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
         if other == 0:
-            return DeclaredLagrangian(terms=(self,))
-        terms = _declared_terms_from_item(other)
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=terms + (self,))
+        return DeclaredLagrangian(source_terms=terms + (self,))
 
 
 @dataclass(frozen=True)
@@ -1102,18 +1105,18 @@ class GaugeKineticTerm:
     label: str = ""
 
     def __add__(self, other):
-        terms = _declared_terms_from_item(other)
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=(self,) + terms)
+        return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
         if other == 0:
-            return DeclaredLagrangian(terms=(self,))
-        terms = _declared_terms_from_item(other)
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=terms + (self,))
+        return DeclaredLagrangian(source_terms=terms + (self,))
 
 
 @dataclass(frozen=True)
@@ -1129,18 +1132,18 @@ class GaugeFixingTerm:
     label: str = ""
 
     def __add__(self, other):
-        terms = _declared_terms_from_item(other)
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=(self,) + terms)
+        return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
         if other == 0:
-            return DeclaredLagrangian(terms=(self,))
-        terms = _declared_terms_from_item(other)
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=terms + (self,))
+        return DeclaredLagrangian(source_terms=terms + (self,))
 
 
 @dataclass(frozen=True)
@@ -1156,18 +1159,18 @@ class GhostTerm:
     label: str = ""
 
     def __add__(self, other):
-        terms = _declared_terms_from_item(other)
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=(self,) + terms)
+        return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
         if other == 0:
-            return DeclaredLagrangian(terms=(self,))
-        terms = _declared_terms_from_item(other)
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=terms + (self,))
+        return DeclaredLagrangian(source_terms=terms + (self,))
 
 
 def _lower_dirac_monomial(term: _DeclaredMonomial):
@@ -1212,49 +1215,86 @@ def _lower_declared_monomial(term: _DeclaredMonomial):
     )
 
 
-def _declared_terms_from_item(item):
+def _lower_declared_source_term(term):
+    if isinstance(term, _DeclaredMonomial):
+        return _lower_declared_monomial(term)
+    return term
+
+
+def _declared_source_terms_from_item(item):
     if isinstance(item, DeclaredLagrangian):
-        return item.terms
-    if isinstance(item, _DeclaredMonomial):
-        return (_lower_declared_monomial(item),)
-    if isinstance(item, (DiracKineticTerm, ComplexScalarKineticTerm, GaugeKineticTerm, GaugeFixingTerm, GhostTerm)):
+        return item.source_terms
+    if isinstance(
+        item,
+        (
+            _DeclaredMonomial,
+            DiracKineticTerm,
+            ComplexScalarKineticTerm,
+            GaugeKineticTerm,
+            GaugeFixingTerm,
+            GhostTerm,
+            InteractionTerm,
+        ),
+    ):
         return (item,)
     factor = _coerce_decl_factor(item)
     if factor is not None:
-        return (_lower_declared_monomial(_DeclaredMonomial.from_factor(factor)),)
+        return (_DeclaredMonomial.from_factor(factor),)
     return None
+
+
+def _declared_terms_from_item(item):
+    source_terms = _declared_source_terms_from_item(item)
+    if source_terms is None:
+        return None
+    return tuple(_lower_declared_source_term(term) for term in source_terms)
 
 
 @dataclass(frozen=True)
 class DeclaredLagrangian:
     """User-facing declarative Lagrangian built from fields and covariant derivatives.
 
-    This is a high-level declaration container. Its terms are lowered to the
-    existing model declarations (`InteractionTerm`, `DiracKineticTerm`, etc.)
-    before compilation.
+    This is a high-level declaration container. Its source terms preserve the
+    original FeynRules-style declarations (`CovD(...)`, `FieldStrength(...)`,
+    etc.), while `lowered_terms` provides the existing model declarations
+    consumed by the current compiler back-end.
     """
-    terms: tuple[object, ...] = ()
+    source_terms: tuple[object, ...] = ()
 
     @classmethod
     def from_item(cls, item) -> "DeclaredLagrangian":
-        terms = _declared_terms_from_item(item)
+        terms = _declared_source_terms_from_item(item)
         if terms is None:
             raise TypeError(f"Cannot build DeclaredLagrangian from {type(item).__name__}")
-        return cls(terms=terms)
+        return cls(source_terms=terms)
+
+    @cached_property
+    def lowered_terms(self) -> tuple[object, ...]:
+        return tuple(_lower_declared_source_term(term) for term in self.source_terms)
+
+    @property
+    def terms(self) -> tuple[object, ...]:
+        """Compatibility alias for the lowered term view."""
+        return self.lowered_terms
 
     def __add__(self, other):
-        terms = _declared_terms_from_item(other)
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=self.terms + terms)
+        return DeclaredLagrangian(source_terms=self.source_terms + terms)
 
     def __radd__(self, other):
         if other == 0:
             return self
-        terms = _declared_terms_from_item(other)
+        terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
-        return DeclaredLagrangian(terms=terms + self.terms)
+        return DeclaredLagrangian(source_terms=terms + self.source_terms)
+
+    def __str__(self):
+        if not self.source_terms:
+            return "0"
+        return " + ".join(str(term) for term in self.source_terms)
 
 
 CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
@@ -1284,10 +1324,22 @@ class Model:
     ghost_terms: tuple[GhostTerm, ...] = ()
 
     def __post_init__(self):
+        if any(
+            getattr(self, attr_name)
+            for attr_name in ("covariant_terms", "gauge_kinetic_terms", "gauge_fixing_terms", "ghost_terms")
+        ):
+            warnings.warn(
+                "Model.covariant_terms, gauge_kinetic_terms, gauge_fixing_terms, and ghost_terms "
+                "are deprecated. Prefer a unified lagrangian_decl=... declaration.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if self.lagrangian_decl is None:
             self.lagrangian_decl = DeclaredLagrangian()
         elif not isinstance(self.lagrangian_decl, DeclaredLagrangian):
             self.lagrangian_decl = DeclaredLagrangian.from_item(self.lagrangian_decl)
+        # Lower eagerly for validation while preserving the source declaration.
+        _ = self.lagrangian_decl.lowered_terms
 
     def _declared_piece_buckets(self):
         interactions: list[InteractionTerm] = []
@@ -1296,7 +1348,7 @@ class Model:
         gauge_fixing_terms: list[GaugeFixingTerm] = []
         ghost_terms: list[GhostTerm] = []
 
-        for term in self.lagrangian_decl.terms:
+        for term in self.lagrangian_decl.lowered_terms:
             if isinstance(term, InteractionTerm):
                 interactions.append(term)
                 continue
@@ -1320,6 +1372,17 @@ class Model:
             gauge_kinetic_terms=tuple(gauge_kinetic_terms),
             gauge_fixing_terms=tuple(gauge_fixing_terms),
             ghost_terms=tuple(ghost_terms),
+        )
+
+    def source_lagrangian_terms(self) -> tuple[object, ...]:
+        """Return the user-facing declared Lagrangian terms in source form."""
+        return (
+            self.interactions
+            + self.lagrangian_decl.source_terms
+            + self.covariant_terms
+            + self.gauge_kinetic_terms
+            + self.gauge_fixing_terms
+            + self.ghost_terms
         )
 
     def all_interactions(self) -> tuple[InteractionTerm, ...]:
