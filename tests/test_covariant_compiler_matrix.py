@@ -18,16 +18,16 @@ from model import (  # noqa: E402
     SPINOR_INDEX,
     COLOR_ADJ_KIND,
     COLOR_FUND_KIND,
+    CovD,
     LORENTZ_KIND,
-    ComplexScalarKineticTerm,
-    DiracKineticTerm,
     Field,
+    FieldStrength,
+    Gamma,
     GaugeGroup,
-    GaugeKineticTerm,
     GaugeRepresentation,
     Model,
 )
-from model_symbolica import Delta, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
+from model_symbolica import Delta, Expression, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
 from operators import (  # noqa: E402
     gauge_kinetic_bilinear_raw,
     psi_bar_gamma_psi,
@@ -105,6 +105,23 @@ def _make_su3_group(*, coupling, gauge_boson, name="SU3"):
     )
 
 
+def _dirac_decl(field):
+    return I * field.bar * Gamma(S("mu_decl")) * CovD(field, S("mu_decl"))
+
+
+def _scalar_decl(field):
+    return CovD(field.bar, S("mu_decl")) * CovD(field, S("mu_decl"))
+
+
+def _gauge_decl(group):
+    mu_decl, nu_decl = S("mu_decl", "nu_decl")
+    return (
+        -(Expression.num(1) / Expression.num(4))
+        * FieldStrength(group, mu_decl, nu_decl)
+        * FieldStrength(group, mu_decl, nu_decl)
+    )
+
+
 def test_covariant_dirac_qcd_current():
     d = S("d")
     p1, p2, p3 = S("p1", "p2", "p3")
@@ -131,7 +148,7 @@ def test_covariant_dirac_qcd_current():
     model = Model(
         gauge_groups=(su3,),
         fields=(quark, gluon),
-        covariant_terms=(DiracKineticTerm(field=quark),),
+        lagrangian_decl=_dirac_decl(quark),
     )
 
     compiled = compile_covariant_terms(model)
@@ -178,7 +195,7 @@ def test_covariant_dirac_qed_current():
     model = Model(
         gauge_groups=(u1,),
         fields=(fermion, photon),
-        covariant_terms=(DiracKineticTerm(field=fermion),),
+        lagrangian_decl=_dirac_decl(fermion),
     )
 
     compiled = compile_covariant_terms(model)
@@ -230,7 +247,7 @@ def test_covariant_mixed_fermion_expands_over_qcd_and_qed():
     model = Model(
         gauge_groups=(su3, u1),
         fields=(fermion, gluon, photon),
-        covariant_terms=(DiracKineticTerm(field=fermion),),
+        lagrangian_decl=_dirac_decl(fermion),
     )
 
     compiled = compile_covariant_terms(model)
@@ -298,7 +315,7 @@ def test_covariant_scalar_qed_current_and_contact():
     model = Model(
         gauge_groups=(u1,),
         fields=(scalar, photon),
-        covariant_terms=(ComplexScalarKineticTerm(field=scalar),),
+        lagrangian_decl=_scalar_decl(scalar),
     )
 
     compiled = compile_covariant_terms(model)
@@ -366,7 +383,7 @@ def test_covariant_scalar_qcd_current_and_contact():
     model = Model(
         gauge_groups=(su3,),
         fields=(scalar, gluon),
-        covariant_terms=(ComplexScalarKineticTerm(field=scalar),),
+        lagrangian_decl=_scalar_decl(scalar),
     )
 
     compiled = compile_covariant_terms(model)
@@ -454,7 +471,7 @@ def test_covariant_mixed_scalar_currents_and_contact():
     model = Model(
         gauge_groups=(su3, u1),
         fields=(scalar, gluon, photon),
-        covariant_terms=(ComplexScalarKineticTerm(field=scalar),),
+        lagrangian_decl=_scalar_decl(scalar),
     )
 
     compiled = compile_covariant_terms(model)
@@ -565,7 +582,7 @@ def test_covariant_abelian_gauge_bilinear():
     model = Model(
         gauge_groups=(u1,),
         fields=(photon,),
-        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=u1),),
+        lagrangian_decl=_gauge_decl(u1),
     )
 
     compiled = compile_covariant_terms(model)
@@ -610,7 +627,7 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        gauge_kinetic_terms=(GaugeKineticTerm(gauge_group=su3),),
+        lagrangian_decl=_gauge_decl(su3),
     )
 
     compiled = compile_covariant_terms(model)

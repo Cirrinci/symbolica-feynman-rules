@@ -33,6 +33,9 @@ Main source files:
 - `src/examples.py`
   - runnable examples and regression checks
   - covers both the direct API and the model layer
+- `src/examples_lagrangian.py`
+  - runnable examples centered on the declarative `lagrangian_decl=` API
+  - prints source Lagrangian declarations and the corresponding vertices
 - `src/spenso_gamma_checks.py`
   - focused gamma/tensor sandbox
   - runnable against the live source tree
@@ -69,6 +72,12 @@ What is working in the active code path:
   - `-(1/2 xi) (partial.A)^2`
   - the ordinary non-abelian Faddeev-Popov ghost sector
 - compiled gauge-model checks for quark-gluon and abelian complex-scalar interactions
+- a declarative front-end around `lagrangian_decl=` with:
+  - `CovD(...)`
+  - `Gamma(...)`
+  - `FieldStrength(...)`
+  - `GaugeFixing(...)`
+  - `GhostLagrangian(...)`
 - dedicated `pytest` coverage for:
   - repeated-slot covariant expansion
   - mixed-group scalar contact compilation
@@ -133,6 +142,32 @@ Gauge/compiler conventions:
 - ordinary non-abelian ghosts use the integrated form
   `L_gh = (partial cbar)(partial c) - g f (partial cbar) A c`
 
+### Recommended Declarative Workflow
+
+For model building, prefer one unified declaration entry point:
+
+```python
+model = Model(
+    gauge_groups=(SU3C,),
+    fields=(q, G, ghG),
+    lagrangian_decl=(
+        I * q.bar * Gamma(mu) * CovD(q, mu)
+        - Expression.num(1) / Expression.num(4) * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)
+        + GaugeFixing(SU3C, xi=xiQCD)
+        + GhostLagrangian(SU3C)
+    ),
+)
+
+vertex = model.lagrangian().feynman_rule(q.bar, q, G)
+```
+
+This keeps the front-end close to the structure of a FeynRules model file while
+still lowering into the existing Symbolica + Spenso compiler back-end.
+
+The old split declaration slots (`covariant_terms`, `gauge_kinetic_terms`,
+`gauge_fixing_terms`, `ghost_terms`) are still supported for compatibility, but
+they are now legacy API.
+
 ### Main workflow
 
 The current workflow is:
@@ -142,7 +177,10 @@ The current workflow is:
 3. let `vertex_factor(...)` perform contraction sums and derivative bookkeeping
 4. optionally simplify the result with `simplify_vertex(...)` or more targeted helpers
 
-The main runnable entry point for this workflow is `src/examples.py`.
+The main runnable entry points for this workflow are:
+
+- `src/examples.py`
+- `src/examples_lagrangian.py`
 
 ### Setup
 
@@ -158,7 +196,9 @@ dependencies listed in `requirements.txt`.
 Run the main example and regression script from the repository root:
 
 - `./.venv/bin/python src/examples.py`
+- `./.venv/bin/python src/examples_lagrangian.py`
 - `./.venv/bin/python src/examples.py --suite scalar`
+- `./.venv/bin/python src/examples_lagrangian.py --suite covariant --skip-tests`
 - `./.venv/bin/python src/examples.py --suite fermion`
 - `./.venv/bin/python src/examples.py --suite gauge`
 - `./.venv/bin/python src/examples.py --suite model`

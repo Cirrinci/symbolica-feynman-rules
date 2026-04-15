@@ -9,25 +9,57 @@ SRC = REPO_ROOT / "src"
 sys.path.insert(0, str(SRC))
 
 
-from symbolica import S  # noqa: E402
+from symbolica import S, Expression  # noqa: E402
 
 from gauge_compiler import compile_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
-    LORENTZ_INDEX,
-    SPINOR_INDEX,
+    CovD,
     ComplexScalarKineticTerm,
     DiracKineticTerm,
+    FieldStrength,
+    Gamma,
+    GaugeKineticTerm,
+    LORENTZ_INDEX,
+    SPINOR_INDEX,
     Field,
     GaugeGroup,
-    GaugeKineticTerm,
     GaugeRepresentation,
     Model,
 )
 from model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
 from operators import psi_bar_gamma_psi  # noqa: E402
 from spenso_structures import gauge_generator, structure_constant  # noqa: E402
+
+
+def _dirac_decl(field, *, gauge_group=None):
+    if gauge_group is None:
+        return I * field.bar * Gamma(S("mu_decl")) * CovD(field, S("mu_decl"))
+    return DiracKineticTerm(field=field, gauge_group=gauge_group)
+
+
+def _scalar_decl(field, *, gauge_group=None):
+    if gauge_group is None:
+        return CovD(field.bar, S("mu_decl")) * CovD(field, S("mu_decl"))
+    return ComplexScalarKineticTerm(field=field, gauge_group=gauge_group)
+
+
+def _gauge_decl(group):
+    mu_decl, nu_decl = S("mu_decl", "nu_decl")
+    return (
+        -(Expression.num(1) / Expression.num(4))
+        * FieldStrength(group, mu_decl, nu_decl)
+        * FieldStrength(group, mu_decl, nu_decl)
+    )
+
+
+def _set_decl(model, item):
+    model.lagrangian_decl = type(model.lagrangian_decl).from_item(item)
+    model.covariant_terms = ()
+    model.gauge_kinetic_terms = ()
+    model.gauge_fixing_terms = ()
+    model.ghost_terms = ()
 
 
 def _make_u1_model(*, field_charge):
@@ -106,7 +138,7 @@ def test_covariant_dirac_term_rejects_undeclared_field_object():
         indices=(SPINOR_INDEX,),
         quantum_numbers={"Q": S("qRogue")},
     )
-    model.covariant_terms = (DiracKineticTerm(field=rogue),)
+    _set_decl(model, _dirac_decl(rogue))
 
     with pytest.raises(ValueError, match=r"declared in model\.fields"):
         compile_covariant_terms(model)
@@ -121,7 +153,7 @@ def test_gauge_kinetic_term_rejects_undeclared_gauge_group_object():
         gauge_boson=photon.symbol,
         charge="Q",
     )
-    model.gauge_kinetic_terms = (GaugeKineticTerm(gauge_group=rogue_group),)
+    _set_decl(model, _gauge_decl(rogue_group))
 
     with pytest.raises(ValueError, match=r"declared in model\.gauge_groups"):
         compile_covariant_terms(model)
@@ -145,7 +177,7 @@ def test_covariant_dirac_term_rejects_undeclared_gauge_boson_field_object():
     )
     model.gauge_groups = (rogue_group,)
     model.fields = (psi,)
-    model.covariant_terms = (DiracKineticTerm(field=psi),)
+    _set_decl(model, _dirac_decl(psi))
 
     with pytest.raises(ValueError, match=r"declared in model\.fields"):
         compile_covariant_terms(model)
@@ -153,7 +185,7 @@ def test_covariant_dirac_term_rejects_undeclared_gauge_boson_field_object():
 
 def test_explicit_abelian_group_selection_rejects_neutral_field():
     model, psi, _, u1 = _make_u1_model(field_charge=0)
-    model.covariant_terms = (DiracKineticTerm(field=psi, gauge_group=u1),)
+    _set_decl(model, _dirac_decl(psi, gauge_group=u1))
 
     with pytest.raises(ValueError, match=r"non-zero charge 'Q' under gauge group 'U1'"):
         compile_covariant_terms(model)
@@ -161,7 +193,7 @@ def test_explicit_abelian_group_selection_rejects_neutral_field():
 
 def test_fermion_vertex_rejects_partial_spinor_leg_labels():
     model, psi, photon, _ = _make_u1_model(field_charge=S("qPsi"))
-    model.covariant_terms = (DiracKineticTerm(field=psi),)
+    _set_decl(model, _dirac_decl(psi))
     compiled = compile_covariant_terms(model)
 
     legs = (
@@ -181,7 +213,7 @@ def test_fermion_vertex_rejects_partial_spinor_leg_labels():
 
 def test_fermion_vertex_still_amputates_when_only_bosonic_leg_labels_are_given():
     model, psi, photon, _ = _make_u1_model(field_charge=S("qPsi"))
-    model.covariant_terms = (DiracKineticTerm(field=psi),)
+    _set_decl(model, _dirac_decl(psi))
     compiled = compile_covariant_terms(model)
 
     p1, p2, p3 = S("p1", "p2", "p3")
@@ -217,7 +249,7 @@ def test_fermion_vertex_still_amputates_when_only_bosonic_leg_labels_are_given()
 
 def test_explicit_nonabelian_group_selection_rejects_singlet_field():
     model, scalar, _, su3 = _make_su3_model()
-    model.covariant_terms = (ComplexScalarKineticTerm(field=scalar, gauge_group=su3),)
+    _set_decl(model, _scalar_decl(scalar, gauge_group=su3))
 
     with pytest.raises(ValueError, match=r"declared representation under gauge group 'SU3'"):
         compile_covariant_terms(model)
@@ -261,7 +293,7 @@ def test_nonabelian_field_matching_multiple_representations_is_rejected():
     model = Model(
         gauge_groups=(su3,),
         fields=(fermion, gluon),
-        covariant_terms=(DiracKineticTerm(field=fermion),),
+        lagrangian_decl=_dirac_decl(fermion),
     )
 
     with pytest.raises(ValueError, match=r"matches multiple representations"):
