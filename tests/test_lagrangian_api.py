@@ -70,6 +70,10 @@ from spenso_structures import (  # noqa: E402
     lorentz_metric,
     structure_constant,
 )
+from operators import (  # noqa: E402
+    psi_bar_gamma_psi,
+    psi_bar_psi,
+)
 from examples import (  # noqa: E402
     MODEL_QCD_COVARIANT,
     MODEL_QED_FERMION_COVARIANT,
@@ -1125,3 +1129,207 @@ def test_precompiled_examples_qcd_ordinary_gauge_fixed():
     got_ghost_pre = L_pre.feynman_rule(
         GhostGluonField.bar, GhostGluonField, simplify=True)
     assert _canon(got_ghost) == _canon(got_ghost_pre)
+
+
+def test_dressed_dirac_covd_with_scalar_spectators():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Q": S("Qpsi")},
+    )
+    A = _make_photon()
+    U1 = _make_u1(S("e"), A.symbol)
+    mu = S("mu")
+
+    model = Model(
+        gauge_groups=(U1,),
+        fields=(psi, phi, A),
+        lagrangian_decl=I * psi.bar * Gamma(mu) * CovD(psi, mu) * phi * phi,
+    )
+    L = model.lagrangian()
+
+    i_bar, i_psi = S("i_bar"), S("i_psi")
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=I * psi_bar_gamma_psi(i_bar, i_psi, mu),
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
+                psi.occurrence(labels={SPINOR_KIND: i_psi}),
+                phi.occurrence(),
+                phi.occurrence(),
+            ),
+            derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+        ),
+        InteractionTerm(
+            coupling=-(S("e") * S("Qpsi")) * psi_bar_gamma_psi(i_bar, i_psi, mu),
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
+                psi.occurrence(labels={SPINOR_KIND: i_psi}),
+                A.occurrence(labels={LORENTZ_KIND: mu}),
+                phi.occurrence(),
+                phi.occurrence(),
+            ),
+        ),
+    ))
+
+    assert _canon(L.feynman_rule(psi.bar, psi, phi, phi)) == _canon(
+        ref.feynman_rule(psi.bar, psi, phi, phi)
+    )
+    assert _canon(L.feynman_rule(psi.bar, psi, A, phi, phi)) == _canon(
+        ref.feynman_rule(psi.bar, psi, A, phi, phi)
+    )
+
+
+def test_dressed_scalar_covd_with_complex_scalar_spectators():
+    phi = Field(
+        "Phi",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi"),
+        conjugate_symbol=S("phibar"),
+        quantum_numbers={"Q": S("Qphi")},
+    )
+    chi = Field(
+        "Chi",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("chi"),
+        conjugate_symbol=S("chibar"),
+    )
+    A = _make_photon()
+    U1 = _make_u1(S("e"), A.symbol)
+    mu = S("mu")
+    nu = S("nu")
+
+    model = Model(
+        gauge_groups=(U1,),
+        fields=(phi, chi, A),
+        lagrangian_decl=CovD(phi.bar, mu) * CovD(phi, mu) * chi.bar * chi,
+    )
+    L = model.lagrangian()
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=Expression.num(1),
+            fields=(
+                phi.occurrence(conjugated=True),
+                phi.occurrence(),
+                chi.occurrence(conjugated=True),
+                chi.occurrence(),
+            ),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=mu),
+                DerivativeAction(target=1, lorentz_index=mu),
+            ),
+        ),
+        InteractionTerm(
+            coupling=I * S("e") * S("Qphi"),
+            fields=(
+                phi.occurrence(conjugated=True),
+                phi.occurrence(),
+                A.occurrence(labels={LORENTZ_KIND: mu}),
+                chi.occurrence(conjugated=True),
+                chi.occurrence(),
+            ),
+            derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+        ),
+        InteractionTerm(
+            coupling=-(I * S("e") * S("Qphi")),
+            fields=(
+                phi.occurrence(conjugated=True),
+                phi.occurrence(),
+                A.occurrence(labels={LORENTZ_KIND: mu}),
+                chi.occurrence(conjugated=True),
+                chi.occurrence(),
+            ),
+            derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
+        ),
+        InteractionTerm(
+            coupling=(S("e") * S("Qphi")) ** 2 * lorentz_metric(mu, nu),
+            fields=(
+                phi.occurrence(conjugated=True),
+                phi.occurrence(),
+                A.occurrence(labels={LORENTZ_KIND: mu}),
+                A.occurrence(labels={LORENTZ_KIND: nu}),
+                chi.occurrence(conjugated=True),
+                chi.occurrence(),
+            ),
+        ),
+    ))
+
+    assert _canon(L.feynman_rule(phi.bar, phi, chi.bar, chi)) == _canon(
+        ref.feynman_rule(phi.bar, phi, chi.bar, chi)
+    )
+    assert _canon(L.feynman_rule(phi.bar, phi, A, chi.bar, chi)) == _canon(
+        ref.feynman_rule(phi.bar, phi, A, chi.bar, chi)
+    )
+    assert _canon(L.feynman_rule(phi.bar, phi, A, A, chi.bar, chi)) == _canon(
+        ref.feynman_rule(phi.bar, phi, A, A, chi.bar, chi)
+    )
+
+
+def test_dressed_dirac_covd_with_fermion_spectator_bilinear():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Q": S("Qpsi")},
+    )
+    xi = Field(
+        "Xi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("xi"),
+        conjugate_symbol=S("xibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    A = _make_photon()
+    U1 = _make_u1(S("e"), A.symbol)
+    mu = S("mu")
+
+    model = Model(
+        gauge_groups=(U1,),
+        fields=(psi, xi, A),
+        lagrangian_decl=I * psi.bar * Gamma(mu) * CovD(psi, mu) * xi.bar * xi,
+    )
+    L = model.lagrangian()
+
+    i_bar, i_psi = S("i_bar"), S("i_psi")
+    j_bar, j_psi = S("j_bar"), S("j_psi")
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=I * psi_bar_gamma_psi(i_bar, i_psi, mu) * psi_bar_psi(j_bar, j_psi),
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
+                psi.occurrence(labels={SPINOR_KIND: i_psi}),
+                xi.occurrence(conjugated=True, labels={SPINOR_KIND: j_bar}),
+                xi.occurrence(labels={SPINOR_KIND: j_psi}),
+            ),
+            derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+        ),
+        InteractionTerm(
+            coupling=-(S("e") * S("Qpsi")) * psi_bar_gamma_psi(i_bar, i_psi, mu) * psi_bar_psi(j_bar, j_psi),
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
+                psi.occurrence(labels={SPINOR_KIND: i_psi}),
+                A.occurrence(labels={LORENTZ_KIND: mu}),
+                xi.occurrence(conjugated=True, labels={SPINOR_KIND: j_bar}),
+                xi.occurrence(labels={SPINOR_KIND: j_psi}),
+            ),
+        ),
+    ))
+
+    assert _canon(L.feynman_rule(psi.bar, psi, xi.bar, xi)) == _canon(
+        ref.feynman_rule(psi.bar, psi, xi.bar, xi)
+    )
+    assert _canon(L.feynman_rule(psi.bar, psi, A, xi.bar, xi)) == _canon(
+        ref.feynman_rule(psi.bar, psi, A, xi.bar, xi)
+    )

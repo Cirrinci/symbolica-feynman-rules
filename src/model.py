@@ -657,6 +657,8 @@ def _is_decl_scalar(value) -> bool:
             InteractionTerm,
             DiracKineticTerm,
             ComplexScalarKineticTerm,
+            DressedDiracKineticTerm,
+            DressedComplexScalarKineticTerm,
             GaugeKineticTerm,
             GaugeFixingDeclaration,
             GaugeFixingTerm,
@@ -1197,6 +1199,65 @@ class ComplexScalarKineticTerm:
 
 
 @dataclass(frozen=True)
+class DressedDiracKineticTerm:
+    """Model-level declaration for ``psibar i gamma^mu D_mu psi`` with spectators.
+
+    This extends the canonical fermion covariant term with extra field factors,
+    e.g. ``I * psibar * Gamma(mu) * CovD(psi, mu) * phi * phi``.
+    The compiler expands both the partial-derivative interaction and the
+    gauge-generated interaction pieces.
+    """
+    field: object
+    spectators: tuple[tuple[object, bool], ...] = ()
+    gauge_group: object = None
+    coefficient: object = 1
+    label: str = ""
+
+    def __add__(self, other):
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=terms + (self,))
+
+
+@dataclass(frozen=True)
+class DressedComplexScalarKineticTerm:
+    """Model-level declaration for ``(D_mu phi)^dagger (D^mu phi)`` with spectators.
+
+    This covers declarative operators such as
+    ``CovD(phi.bar, mu) * CovD(phi, mu) * chi * chi``.
+    The compiler expands the derivative, current, and contact pieces.
+    """
+    field: object
+    spectators: tuple[tuple[object, bool], ...] = ()
+    gauge_group: object = None
+    coefficient: object = 1
+    label: str = ""
+
+    def __add__(self, other):
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=(self,) + terms)
+
+    def __radd__(self, other):
+        if other == 0:
+            return DeclaredLagrangian(source_terms=(self,))
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(source_terms=terms + (self,))
+
+
+@dataclass(frozen=True)
 class GaugeKineticTerm:
     """Model-level declaration for ``-1/4 F_{mu nu} F^{mu nu}``.
 
@@ -1288,11 +1349,82 @@ def _lower_dirac_monomial(term: _DeclaredMonomial):
     )
 
 
+def _lower_dressed_dirac_monomial(term: _DeclaredMonomial):
+    from model_symbolica import I
+
+    field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
+    gamma_factors = [factor for factor in term.factors if isinstance(factor, GammaFactor)]
+    covd_factors = [factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)]
+    if len(gamma_factors) != 1 or len(covd_factors) != 1:
+        return None
+    if len(term.factors) != len(field_factors) + 2 or len(field_factors) < 2:
+        return None
+
+    gamma_factor = gamma_factors[0]
+    covd_factor = covd_factors[0]
+    core_fields = [
+        factor
+        for factor in field_factors
+        if factor.field is covd_factor.field
+        and factor.field.kind == "fermion"
+        and factor.conjugated
+        and not covd_factor.conjugated
+    ]
+    if len(core_fields) != 1:
+        return None
+    if gamma_factor.lorentz_index != covd_factor.lorentz_index:
+        return None
+
+    normalized = term.coefficient / I
+    if (I * normalized).expand().to_canonical_string() != term.coefficient.expand().to_canonical_string():
+        return None
+
+    core_field = core_fields[0]
+    spectators = tuple(
+        (factor.field, factor.conjugated)
+        for factor in field_factors
+        if factor is not core_field
+    )
+    if not spectators:
+        return None
+    return DressedDiracKineticTerm(
+        field=core_field.field,
+        spectators=spectators,
+        coefficient=normalized,
+    )
+
+
 def _lower_scalar_covd_monomial(term: _DeclaredMonomial):
     return _lower_scalar_covd_monomial_impl(
         term,
         covariant_derivative_factor_cls=CovariantDerivativeFactor,
         complex_scalar_kinetic_term_cls=ComplexScalarKineticTerm,
+    )
+
+
+def _lower_dressed_scalar_covd_monomial(term: _DeclaredMonomial):
+    covd_factors = [factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)]
+    field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
+    if len(covd_factors) != 2:
+        return None
+    if len(term.factors) != len(field_factors) + 2 or not field_factors:
+        return None
+
+    left, right = covd_factors
+    if left.field is not right.field:
+        return None
+    if left.field.kind != "scalar" or left.field.self_conjugate:
+        return None
+    if left.lorentz_index != right.lorentz_index:
+        return None
+    if {left.conjugated, right.conjugated} != {False, True}:
+        return None
+
+    spectators = tuple((factor.field, factor.conjugated) for factor in field_factors)
+    return DressedComplexScalarKineticTerm(
+        field=left.field,
+        spectators=spectators,
+        coefficient=term.coefficient,
     )
 
 
@@ -1306,14 +1438,22 @@ def _lower_field_strength_monomial(term: _DeclaredMonomial):
 
 
 def _lower_declared_monomial(term: _DeclaredMonomial):
-    for builder in (_lower_dirac_monomial, _lower_scalar_covd_monomial, _lower_field_strength_monomial):
+    for builder in (
+        _lower_dirac_monomial,
+        _lower_dressed_dirac_monomial,
+        _lower_scalar_covd_monomial,
+        _lower_dressed_scalar_covd_monomial,
+        _lower_field_strength_monomial,
+    ):
         lowered = builder(term)
         if lowered is not None:
             return lowered
     raise ValueError(
         "Unsupported declarative Lagrangian term. Supported canonical forms are: "
         "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
+        "I * Psi.bar * Gamma(mu) * CovD(Psi, mu) * spectators, "
         "CovD(Phi.bar, mu) * CovD(Phi, mu), "
+        "CovD(Phi.bar, mu) * CovD(Phi, mu) * spectators, "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
         "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
         "or the legacy GaugeFixingTerm / GhostTerm declarations."
@@ -1348,6 +1488,8 @@ def _declared_source_terms_from_item(item):
             _DeclaredMonomial,
             DiracKineticTerm,
             ComplexScalarKineticTerm,
+            DressedDiracKineticTerm,
+            DressedComplexScalarKineticTerm,
             GaugeKineticTerm,
             GaugeFixingDeclaration,
             GaugeFixingTerm,
@@ -1418,7 +1560,12 @@ class DeclaredLagrangian:
         return " + ".join(str(term) for term in self.source_terms)
 
 
-CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
+CovariantTerm = (
+    DiracKineticTerm
+    | ComplexScalarKineticTerm
+    | DressedDiracKineticTerm
+    | DressedComplexScalarKineticTerm
+)
 
 
 # ---------------------------------------------------------------------------
@@ -1473,7 +1620,15 @@ class Model:
             if isinstance(term, InteractionTerm):
                 interactions.append(term)
                 continue
-            if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
+            if isinstance(
+                term,
+                (
+                    DiracKineticTerm,
+                    ComplexScalarKineticTerm,
+                    DressedDiracKineticTerm,
+                    DressedComplexScalarKineticTerm,
+                ),
+            ):
                 covariant_terms.append(term)
                 continue
             if isinstance(term, GaugeKineticTerm):

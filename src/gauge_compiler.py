@@ -30,6 +30,8 @@ from model import (
     ComplexScalarKineticTerm,
     DerivativeAction,
     DiracKineticTerm,
+    DressedComplexScalarKineticTerm,
+    DressedDiracKineticTerm,
     Field,
     GhostTerm,
     GaugeKineticTerm,
@@ -275,6 +277,110 @@ def _spectator_identity_factor(field: Field, *, exclude_slots=()):
         right_slot_labels[slot] = right_label
 
     return factor, left_slot_labels, right_slot_labels
+
+
+def _default_open_index_label(field: Field, index, position: int, slot: int, *, conjugated: bool):
+    stem = f"{field.name}_{index.kind}_spect_{position + 1}"
+    if field.index_kind_count(index.kind) > 1:
+        stem += f"_{slot + 1}"
+    if conjugated and not field.self_conjugate:
+        return _symbol(f"{index.prefix}_bar_{stem}")
+    return _symbol(f"{index.prefix}_{stem}")
+
+
+def _materialize_spectator_occurrences(spectators: tuple[tuple[Field, bool], ...]):
+    """Build spectator occurrences plus their internal contraction factor.
+
+    Rules:
+    - non-self-conjugate scalar spectators automatically contract in obvious
+      ``phi.bar * phi`` pairs
+    - fermion spectators must appear in explicit ``psibar * psi`` pairs
+    - any remaining spectator indices stay open on the final vertex
+    """
+    if not spectators:
+        return Expression.num(1), ()
+
+    factor = Expression.num(1)
+    slot_labels = [dict() for _ in spectators]
+    by_field: dict[int, tuple[Field, dict[bool, list[int]]]] = {}
+
+    for pos, (field, conjugated) in enumerate(spectators):
+        field_id = id(field)
+        if field_id not in by_field:
+            by_field[field_id] = (field, {False: [], True: []})
+        by_field[field_id][1][bool(conjugated)].append(pos)
+
+    for field, positions in by_field.values():
+        plain_positions = positions[False]
+        conj_positions = positions[True]
+
+        if field.kind == "fermion":
+            if len(plain_positions) != len(conj_positions):
+                raise ValueError(
+                    f"Declarative spectator fermions for field {field.name!r} must appear in "
+                    "explicit bar/psi pairs. Use InteractionTerm(...) for unpaired or more "
+                    "complicated spinor structures."
+                )
+            pair_count = len(plain_positions)
+        elif field.self_conjugate:
+            pair_count = 0
+        else:
+            pair_count = min(len(plain_positions), len(conj_positions))
+
+        for pair_idx in range(pair_count):
+            left_pos = conj_positions[pair_idx]
+            right_pos = plain_positions[pair_idx]
+            for slot, index in enumerate(field.indices):
+                if index.kind == LORENTZ_KIND:
+                    continue
+                left_label, right_label = _default_index_labels(
+                    field,
+                    index,
+                    qualifier=f"spect_{pair_idx + 1}",
+                    slot=slot,
+                )
+                factor *= index.representation.g(left_label, right_label).to_expression()
+                slot_labels[left_pos][slot] = left_label
+                slot_labels[right_pos][slot] = right_label
+
+    occurrences = []
+    for pos, (field, conjugated) in enumerate(spectators):
+        pos_slot_labels = slot_labels[pos]
+        for slot, index in enumerate(field.indices):
+            if slot in pos_slot_labels:
+                continue
+            pos_slot_labels[slot] = _default_open_index_label(
+                field,
+                index,
+                pos,
+                slot,
+                conjugated=conjugated,
+            )
+        occurrences.append(
+            field.occurrence(
+                conjugated=conjugated,
+                labels=field.pack_slot_labels(pos_slot_labels),
+            )
+        )
+
+    return factor, tuple(occurrences)
+
+
+def _decorate_interactions_with_spectators(
+    interactions: tuple[InteractionTerm, ...],
+    *,
+    spectator_factor,
+    spectator_occurrences: tuple,
+) -> tuple[InteractionTerm, ...]:
+    return tuple(
+        InteractionTerm(
+            coupling=interaction.coupling * spectator_factor,
+            fields=interaction.fields + spectator_occurrences,
+            derivatives=interaction.derivatives,
+            label=interaction.label,
+        )
+        for interaction in interactions
+    )
 
 
 def _nonabelian_rep_and_slots(field: Field, gauge_group: GaugeGroup):
@@ -1324,6 +1430,77 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
     return tuple(interactions)
 
 
+def compile_dressed_dirac_kinetic_term(
+    model: Model,
+    term: DressedDiracKineticTerm,
+) -> tuple[InteractionTerm, ...]:
+    """Compile ``psibar i gamma^mu D_mu psi`` dressed by spectator fields."""
+    fermion = _require_declared_field(
+        model,
+        term.field,
+        purpose="Dressed Dirac kinetic compilation",
+    )
+    if fermion.kind != "fermion":
+        raise ValueError(f"Dressed Dirac kinetic term requires a fermion field, got kind={fermion.kind!r}.")
+
+    spectator_factor, spectator_occurrences = _materialize_spectator_occurrences(term.spectators)
+
+    mu = _symbol("mu")
+    i_bar = _symbol(f"i_bar_{fermion.name}_dress")
+    i_psi = _symbol(f"i_{fermion.name}_dress")
+    fermion_spinor_slot = _unique_slot(
+        fermion,
+        SPINOR_KIND,
+        purpose="Dressed Dirac kinetic compilation",
+    )
+    bar_slot_labels = {fermion_spinor_slot: i_bar}
+    psi_slot_labels = {fermion_spinor_slot: i_psi}
+    core_factor, core_bar_slots, core_psi_slots = _spectator_identity_factor(
+        fermion,
+        exclude_slots={fermion_spinor_slot},
+    )
+    bar_slot_labels.update(core_bar_slots)
+    psi_slot_labels.update(core_psi_slots)
+    bar_labels = fermion.pack_slot_labels(bar_slot_labels)
+    psi_labels = fermion.pack_slot_labels(psi_slot_labels)
+
+    label = term.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} dressed"
+    derivative_term = InteractionTerm(
+        coupling=Expression.I * term.coefficient * core_factor * spectator_factor * psi_bar_gamma_psi(i_bar, i_psi, mu),
+        fields=(
+            fermion.occurrence(conjugated=True, labels=bar_labels),
+            fermion.occurrence(labels=psi_labels),
+        ) + spectator_occurrences,
+        derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+        label=label + " partial",
+    )
+
+    gauge_groups = _resolve_covariant_gauge_groups(
+        model,
+        field=fermion,
+        gauge_group=term.gauge_group,
+    )
+    gauge_terms = []
+    for gauge_group in gauge_groups:
+        gauge_field = model.gauge_boson_field(gauge_group)
+        compiled = compile_fermion_gauge_current(
+            fermion=fermion,
+            gauge_group=gauge_group,
+            gauge_field=gauge_field,
+            prefactor=-term.coefficient,
+            label=label,
+        )
+        gauge_terms.extend(
+            _decorate_interactions_with_spectators(
+                compiled,
+                spectator_factor=spectator_factor,
+                spectator_occurrences=spectator_occurrences,
+            )
+        )
+
+    return (derivative_term, *gauge_terms)
+
+
 def compile_complex_scalar_kinetic_term(
     model: Model,
     term: ComplexScalarKineticTerm,
@@ -1384,6 +1561,93 @@ def compile_complex_scalar_kinetic_term(
     return tuple(interactions)
 
 
+def compile_dressed_complex_scalar_kinetic_term(
+    model: Model,
+    term: DressedComplexScalarKineticTerm,
+) -> tuple[InteractionTerm, ...]:
+    """Compile ``(D_mu phi)^dagger (D^mu phi)`` dressed by spectator fields."""
+    scalar = _require_declared_field(
+        model,
+        term.field,
+        purpose="Dressed complex-scalar kinetic compilation",
+    )
+    if scalar.kind != "scalar" or scalar.self_conjugate:
+        raise ValueError(
+            "Dressed complex-scalar kinetic terms require a non-self-conjugate scalar field."
+        )
+
+    spectator_factor, spectator_occurrences = _materialize_spectator_occurrences(term.spectators)
+
+    mu = _symbol("mu")
+    core_factor, scalar_bar_slots, scalar_slots = _spectator_identity_factor(scalar, exclude_slots=())
+    scalar_bar_labels = scalar.pack_slot_labels(scalar_bar_slots)
+    scalar_labels = scalar.pack_slot_labels(scalar_slots)
+
+    label_prefix = term.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name}) dressed"
+    derivative_term = InteractionTerm(
+        coupling=term.coefficient * core_factor * spectator_factor,
+        fields=(
+            scalar.occurrence(conjugated=True, labels=scalar_bar_labels),
+            scalar.occurrence(labels=scalar_labels),
+        ) + spectator_occurrences,
+        derivatives=(
+            DerivativeAction(target=0, lorentz_index=mu),
+            DerivativeAction(target=1, lorentz_index=mu),
+        ),
+        label=label_prefix + " derivative",
+    )
+
+    gauge_groups = _resolve_covariant_gauge_groups(
+        model,
+        field=scalar,
+        gauge_group=term.gauge_group,
+    )
+
+    interactions = [derivative_term]
+    resolved_gauge_fields = []
+    for gauge_group in gauge_groups:
+        gauge_field = model.gauge_boson_field(gauge_group)
+        resolved_gauge_fields.append((gauge_group, gauge_field))
+        compiled = compile_complex_scalar_gauge_terms(
+            scalar=scalar,
+            gauge_group=gauge_group,
+            gauge_field=gauge_field,
+            current_prefactor=Expression.I * term.coefficient,
+            contact_prefactor=term.coefficient,
+            label_prefix=label_prefix,
+        )
+        interactions.extend(
+            _decorate_interactions_with_spectators(
+                compiled,
+                spectator_factor=spectator_factor,
+                spectator_occurrences=spectator_occurrences,
+            )
+        )
+
+    for left_idx, (left_gauge_group, left_gauge_field) in enumerate(resolved_gauge_fields):
+        for right_idx, (right_gauge_group, right_gauge_field) in enumerate(resolved_gauge_fields):
+            if left_idx == right_idx:
+                continue
+            compiled = compile_mixed_complex_scalar_contact_terms(
+                scalar=scalar,
+                left_gauge_group=left_gauge_group,
+                left_gauge_field=left_gauge_field,
+                right_gauge_group=right_gauge_group,
+                right_gauge_field=right_gauge_field,
+                contact_prefactor=term.coefficient,
+                label_prefix=label_prefix,
+            )
+            interactions.extend(
+                _decorate_interactions_with_spectators(
+                    compiled,
+                    spectator_factor=spectator_factor,
+                    spectator_occurrences=spectator_occurrences,
+                )
+            )
+
+    return tuple(interactions)
+
+
 def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     """Compile all declared physical kinetic terms in a model.
 
@@ -1403,8 +1667,14 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
         if isinstance(term, DiracKineticTerm):
             interactions.extend(compile_dirac_kinetic_term(model, term))
             continue
+        if isinstance(term, DressedDiracKineticTerm):
+            interactions.extend(compile_dressed_dirac_kinetic_term(model, term))
+            continue
         if isinstance(term, ComplexScalarKineticTerm):
             interactions.extend(compile_complex_scalar_kinetic_term(model, term))
+            continue
+        if isinstance(term, DressedComplexScalarKineticTerm):
+            interactions.extend(compile_dressed_complex_scalar_kinetic_term(model, term))
             continue
         raise TypeError(f"Unsupported covariant term type: {type(term)!r}")
 
