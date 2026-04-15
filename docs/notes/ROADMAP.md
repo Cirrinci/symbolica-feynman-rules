@@ -243,16 +243,20 @@ These are the next concrete tasks recommended for the codebase:
 
 There are two distinct priorities and they should not be conflated:
 
-1. immediate codebase priority
+1. Lagrangian.feynman_rule() doesnt accept a whole lagrangian without giving all the fields for one specific vertex.
+
+2. L = Lagrangian(terms=(term_dphi4,)) unnatural!!
+3. Ghost and gauge fixing terms are unnatural. possibily to handwrite them.
+4. immediate codebase priority
    - user interface
    - conventions
    - tests
    - remaining declaration/model hardening
    - output cleanup
-2. next physics priority
+5. next physics priority
    - background/quantum splitting
    - BFM gauge fixing and ghosts
-3. later structural extension
+6. later structural extension
    - broader fermion / symmetry-breaking / EFT layers
 
 ### Immediate implementation order
