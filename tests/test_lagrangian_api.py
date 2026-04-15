@@ -55,6 +55,7 @@ from model import (  # noqa: E402
     InteractionTerm,
     Lagrangian,
     Model,
+    PartialD,
 )
 from model_symbolica import (  # noqa: E402
     Delta,
@@ -274,6 +275,169 @@ def test_phi4_vertex():
     assert _canon(got) == _canon(expected)
 
 
+def test_model_accepts_declared_phi4_field_product():
+    """Model.lagrangian_decl accepts a pure field-product local operator."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lam4 = S("lam4")
+
+    model = Model(fields=(phi,), lagrangian_decl=lam4 * phi * phi * phi * phi)
+    got = model.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
+
+    q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+    d = S("d")
+    expected = 24 * I * lam4 * (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_psibar_psi_sq_phi4_field_product():
+    """Canonical psibar psi chains in a field product get inferred spinor labels."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    g = S("g")
+    alpha = S("alpha")
+    beta = S("beta")
+
+    explicit = InteractionTerm(
+        coupling=g,
+        fields=(
+            psi.occurrence(conjugated=True, labels={SPINOR_KIND: alpha}),
+            psi.occurrence(labels={SPINOR_KIND: alpha}),
+            psi.occurrence(conjugated=True, labels={SPINOR_KIND: beta}),
+            psi.occurrence(labels={SPINOR_KIND: beta}),
+            phi.occurrence(),
+            phi.occurrence(),
+            phi.occurrence(),
+            phi.occurrence(),
+        ),
+    )
+
+    declared_model = Model(
+        fields=(psi, phi),
+        lagrangian_decl=g * psi.bar * psi * psi.bar * psi * phi * phi * phi * phi,
+    )
+    explicit_model = Model(fields=(psi, phi), lagrangian_decl=explicit)
+    field_args = (psi.bar, psi, psi.bar, psi, phi, phi, phi, phi)
+
+    got = declared_model.lagrangian().feynman_rule(*field_args, simplify=True)
+    expected = explicit_model.lagrangian().feynman_rule(*field_args, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_local_phi4_product():
+    """Pure local field monomials lower directly from lagrangian_decl."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lam_phi4 = S("lam_phi4")
+
+    model = Model(fields=(phi,), lagrangian_decl=lam_phi4 * phi * phi * phi * phi)
+    got = model.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=lam_phi4,
+            fields=(phi.occurrence(), phi.occurrence(), phi.occurrence(), phi.occurrence()),
+        ),
+    ))
+    expected = ref.feynman_rule(phi, phi, phi, phi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_partiald_phi4_product():
+    """PartialD(...) lowers local scalar derivative monomials without InteractionTerm."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    gD2 = S("gD2")
+    mu = S("mu")
+
+    model = Model(
+        fields=(phi,),
+        lagrangian_decl=gD2 * PartialD(phi, mu) * PartialD(phi, mu) * phi * phi,
+    )
+    got = model.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=gD2,
+            fields=(phi.occurrence(), phi.occurrence(), phi.occurrence(), phi.occurrence()),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=mu),
+                DerivativeAction(target=1, lorentz_index=mu),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(phi, phi, phi, phi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_nested_partiald():
+    """Nested PartialD(...) maps to repeated DerivativeAction entries on one slot."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    g2 = S("g2")
+    mu = S("mu")
+    nu = S("nu")
+
+    model = Model(fields=(phi,), lagrangian_decl=g2 * PartialD(PartialD(phi, mu), nu) * phi)
+    got = model.lagrangian().feynman_rule(phi, phi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=g2,
+            fields=(phi.occurrence(), phi.occurrence()),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=mu),
+                DerivativeAction(target=0, lorentz_index=nu),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(phi, phi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_gamma_partiald_fermion_operator():
+    """Gamma(...) * PartialD(...) lowers to a local fermion derivative operator."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    g = S("g")
+    mu = S("mu")
+    nu = S("nu")
+    i_bar = S("i_bar")
+    i_psi = S("i_psi")
+
+    model = Model(
+        fields=(psi, phi, chi),
+        lagrangian_decl=g * psi.bar * Gamma(mu) * PartialD(psi, nu) * phi * chi,
+    )
+    got = model.lagrangian().feynman_rule(psi.bar, psi, phi, chi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=g * psi_bar_gamma_psi(i_bar, i_psi, mu),
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
+                psi.occurrence(labels={SPINOR_KIND: i_psi}),
+                phi.occurrence(),
+                chi.occurrence(),
+            ),
+            derivatives=(DerivativeAction(target=1, lorentz_index=nu),),
+        ),
+    ))
+    expected = ref.feynman_rule(psi.bar, psi, phi, chi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
 # ---------------------------------------------------------------------------
 # Complex scalar phi^dag phi mass term
 # ---------------------------------------------------------------------------
@@ -289,6 +453,20 @@ def test_complex_scalar_mass_term():
     )
     L = Lagrangian(terms=(term,))
     got = L.feynman_rule(phiC.bar, phiC, simplify=True)
+
+    q1, q2 = S("q1", "q2")
+    d = S("d")
+    expected = I * lamC * (2 * pi) ** d * Delta(q1 + q2)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_complex_scalar_mass_product():
+    """Conjugated field products lower to InteractionTerm correctly."""
+    phiC = Field("PhiC", spin=0, self_conjugate=False, symbol=S("phiC"), conjugate_symbol=S("phiCdag"))
+    lamC = S("lamC")
+
+    model = Model(fields=(phiC,), lagrangian_decl=lamC * phiC.bar * phiC)
+    got = model.lagrangian().feynman_rule(phiC.bar, phiC, simplify=True)
 
     q1, q2 = S("q1", "q2")
     d = S("d")
