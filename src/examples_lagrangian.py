@@ -34,8 +34,11 @@ from model import (
     COLOR_FUND_INDEX,
     Field,
     Gamma,
+    Gamma5,
     Lagrangian,
+    Metric,
     PartialD,
+    T,
 )
 from operators import (
     psi_bar_psi,
@@ -63,10 +66,6 @@ from examples import (
     PsiField, PsiQEDField, PsiMixField,
     QuarkField, GluonField, GhostGluonField,
     GaugeField,
-    # explicit low-level terms still needed for unsupported local structures
-    TERM_axial_current, TERM_current_current,
-    TERM_quark_gluon,
-    TERM_complex_scalar_contact,
     # models
     MODEL_QCD_BASE, MODEL_QED_FERMION_BASE,
     MODEL_SCALAR_QED_BASE, MODEL_SCALAR_QCD_BASE,
@@ -282,7 +281,17 @@ DECL_phi6 = lam6 * PhiField * PhiField * PhiField * PhiField * PhiField * PhiFie
 
 DECL_yukawa = yF * PsiField.bar * PsiField * PhiField
 DECL_vec_current = gV * PsiField.bar * Gamma(mu) * PsiField * GaugeField
+DECL_axial_current = gV * PsiField.bar * Gamma(mu) * Gamma5() * PsiField * GaugeField
 DECL_psibar_psi_sq = -(g_psi4 / Expression.num(2)) * PsiField.bar * PsiField * PsiField.bar * PsiField
+DECL_current_current = (
+    gJJ
+    * PsiField.bar
+    * Gamma(mu)
+    * PsiField
+    * PsiField.bar
+    * Gamma(mu)
+    * PsiField
+)
 
 DECL_dpsibar = yF * PartialD(PsiField.bar, mu) * PsiField * PhiField * ChiField
 DECL_dpsi = yF * PsiField.bar * PartialD(PsiField, nu) * PhiField * ChiField
@@ -298,6 +307,8 @@ DECL_d2phi2 = (
 
 DECL_complex_scalar_current_phi = gPhiA * PhiCField.bar * PartialD(PhiCField, mu) * GaugeField
 DECL_complex_scalar_current_phidag = -gPhiA * PartialD(PhiCField.bar, mu) * PhiCField * GaugeField
+DECL_quark_gluon = gS * QuarkField.bar * Gamma(mu) * T(S("a_decl")) * QuarkField * GluonField
+DECL_complex_scalar_contact = gPhiAA * Metric(mu, nu) * PhiCField.bar * PhiCField * GaugeField * GaugeField
 
 
 # ===================================================================
@@ -388,9 +399,15 @@ def _run_fermion_tests():
     _check(got, expected_vec, "L-API: vector current")
 
     # Axial current: psibar gamma^mu gamma5 psi A
-    L = Lagrangian(terms=(TERM_axial_current,))
+    L = Lagrangian(DECL_axial_current)
     got = L.feynman_rule(PsiField.bar, PsiField, GaugeField)
-    expected_axial = I * gV * gamma_matrix(S("i1"), alpha_s, S("i3")) * gamma5_matrix(alpha_s, S("i2")) * D3
+    expected_axial = (
+        I
+        * gV
+        * gamma_matrix(S("i1"), S("spinor_decl_3"), S("i3"))
+        * gamma5_matrix(S("spinor_decl_3"), S("i2"))
+        * D3
+    )
     _check(got, expected_axial, "L-API: axial current")
 
     # (psibar psi)^2: 4 fermion legs
@@ -406,7 +423,7 @@ def _run_fermion_tests():
     _check(got, expected_sp, "L-API: (psibar psi)^2")
 
     # Current-current: test after gamma chain simplification
-    L = Lagrangian(terms=(TERM_current_current,))
+    L = Lagrangian(DECL_current_current)
     got = simplify_gamma_chain(
         L.feynman_rule(PsiField.bar, PsiField, PsiField.bar, PsiField)
     )
@@ -482,7 +499,7 @@ def _run_gauge_ready_tests():
     # QuarkField.bar → i1=spinor, i2=color_fund
     # QuarkField     → i3=spinor, i4=color_fund
     # GluonField     → i5=lorentz, i6=color_adj
-    L = Lagrangian(terms=(TERM_quark_gluon,))
+    L = Lagrangian(DECL_quark_gluon)
     got = L.feynman_rule(QuarkField.bar, QuarkField, GluonField)
     expected_qg = I * gS * quark_gluon_current(S("i1"), S("i3"), S("i5"), S("i6"), S("i2"), S("i4")) * D3
     _check(got, expected_qg, "L-API: quark-gluon")
@@ -494,7 +511,7 @@ def _run_gauge_ready_tests():
     _check(got_sc, expected_sc, "L-API: complex scalar current")
 
     # Complex scalar contact: phiC^dag, phiC, A, A
-    L_ct = Lagrangian(terms=(TERM_complex_scalar_contact,))
+    L_ct = Lagrangian(DECL_complex_scalar_contact)
     got_ct = L_ct.feynman_rule(PhiCField.bar, PhiCField, GaugeField, GaugeField)
     expected_ct = 2 * I * gPhiAA * scalar_gauge_contact(S("i1"), S("i2")) * D4
     _check(got_ct, expected_ct, "L-API: complex scalar contact")
@@ -996,8 +1013,8 @@ def _run_fermion_demo():
     )
     _print_vertex_block(
         "fermion: axial current",
-        lagrangian_terms=(TERM_axial_current,),
-        vertex=Lagrangian(terms=(TERM_axial_current,)).feynman_rule(PsiField.bar, PsiField, GaugeField),
+        lagrangian_terms=(DECL_axial_current,),
+        vertex=Lagrangian(DECL_axial_current).feynman_rule(PsiField.bar, PsiField, GaugeField),
     )
     _print_vertex_block(
         "fermion: -(g/2)(psibar psi)^2",
@@ -1008,9 +1025,9 @@ def _run_fermion_demo():
     )
     _print_vertex_block(
         "fermion: current-current operator",
-        lagrangian_terms=(TERM_current_current,),
+        lagrangian_terms=(DECL_current_current,),
         vertex=simplify_gamma_chain(
-            Lagrangian(terms=(TERM_current_current,)).feynman_rule(
+            Lagrangian(DECL_current_current).feynman_rule(
                 PsiField.bar, PsiField, PsiField.bar, PsiField,
             )
         ),
@@ -1054,8 +1071,8 @@ def _run_gauge_demo():
 
     _print_vertex_block(
         "gauge-ready: non-abelian fermion current",
-        lagrangian_terms=(TERM_quark_gluon,),
-        vertex=Lagrangian(terms=(TERM_quark_gluon,)).feynman_rule(QuarkField.bar, QuarkField, GluonField),
+        lagrangian_terms=(DECL_quark_gluon,),
+        vertex=Lagrangian(DECL_quark_gluon).feynman_rule(QuarkField.bar, QuarkField, GluonField),
     )
     scalar_current_terms = (DECL_complex_scalar_current_phi, DECL_complex_scalar_current_phidag)
     _print_vertex_block(
@@ -1065,8 +1082,8 @@ def _run_gauge_demo():
     )
     _print_vertex_block(
         "gauge-ready: complex scalar contact",
-        lagrangian_terms=(TERM_complex_scalar_contact,),
-        vertex=Lagrangian(terms=(TERM_complex_scalar_contact,)).feynman_rule(
+        lagrangian_terms=(DECL_complex_scalar_contact,),
+        vertex=Lagrangian(DECL_complex_scalar_contact).feynman_rule(
             PhiCField.bar, PhiCField, GaugeField, GaugeField,
         ),
     )

@@ -36,6 +36,11 @@ from spenso_structures import (
     COLOR_FUND_KIND,
     LORENTZ_KIND,
     SPINOR_KIND,
+    gamma5_matrix,
+    gamma_matrix,
+    gauge_generator,
+    lorentz_metric,
+    structure_constant,
 )
 from decl_lagrangian_lowering import (
     expr_equal as _expr_equal_impl,
@@ -569,6 +574,42 @@ class GammaFactor(_DeclaredFactorMixin):
 
 
 @dataclass(frozen=True)
+class Gamma5Factor(_DeclaredFactorMixin):
+    def __str__(self):
+        return "Gamma5()"
+
+
+@dataclass(frozen=True)
+class MetricFactor(_DeclaredFactorMixin):
+    left_index: object
+    right_index: object
+
+    def __str__(self):
+        return f"Metric({self.left_index}, {self.right_index})"
+
+
+@dataclass(frozen=True)
+class GeneratorFactor(_DeclaredFactorMixin):
+    adjoint_index: object
+
+    def __str__(self):
+        return f"T({self.adjoint_index})"
+
+
+@dataclass(frozen=True)
+class StructureConstantFactor(_DeclaredFactorMixin):
+    left_index: object
+    middle_index: object
+    right_index: object
+
+    def __str__(self):
+        return (
+            f"StructureConstant({self.left_index}, {self.middle_index}, "
+            f"{self.right_index})"
+        )
+
+
+@dataclass(frozen=True)
 class FieldStrengthFactor(_DeclaredFactorMixin):
     gauge_group: object
     left_index: object
@@ -672,6 +713,10 @@ def _is_decl_scalar(value) -> bool:
             CovariantDerivativeFactor,
             PartialDerivativeFactor,
             GammaFactor,
+            Gamma5Factor,
+            MetricFactor,
+            GeneratorFactor,
+            StructureConstantFactor,
             FieldStrengthFactor,
             _DeclaredMonomial,
             DeclaredLagrangian,
@@ -693,7 +738,20 @@ def _coerce_decl_factor(value):
         return _FieldFactor(value)
     if isinstance(value, ConjugateField):
         return _FieldFactor(value.field, conjugated=True)
-    if isinstance(value, (_FieldFactor, CovariantDerivativeFactor, PartialDerivativeFactor, GammaFactor, FieldStrengthFactor)):
+    if isinstance(
+        value,
+        (
+            _FieldFactor,
+            CovariantDerivativeFactor,
+            PartialDerivativeFactor,
+            GammaFactor,
+            Gamma5Factor,
+            MetricFactor,
+            GeneratorFactor,
+            StructureConstantFactor,
+            FieldStrengthFactor,
+        ),
+    ):
         return value
     return None
 
@@ -793,6 +851,30 @@ def PartialD(field, lorentz_index) -> PartialDerivativeFactor:
 def Gamma(lorentz_index) -> GammaFactor:
     """Declarative gamma-matrix placeholder for ``DeclaredLagrangian``."""
     return GammaFactor(lorentz_index=lorentz_index)
+
+
+def Gamma5() -> Gamma5Factor:
+    """Declarative gamma5 placeholder for local spinor chains."""
+    return Gamma5Factor()
+
+
+def Metric(left_index, right_index) -> MetricFactor:
+    """Declarative Lorentz metric placeholder for local tensor monomials."""
+    return MetricFactor(left_index=left_index, right_index=right_index)
+
+
+def T(adjoint_index) -> GeneratorFactor:
+    """Declarative fundamental-representation generator placeholder."""
+    return GeneratorFactor(adjoint_index=adjoint_index)
+
+
+def StructureConstant(left_index, middle_index, right_index) -> StructureConstantFactor:
+    """Declarative structure-constant placeholder for local tensor monomials."""
+    return StructureConstantFactor(
+        left_index=left_index,
+        middle_index=middle_index,
+        right_index=right_index,
+    )
 
 
 def FieldStrength(gauge_group, left_index, right_index) -> FieldStrengthFactor:
@@ -1440,128 +1522,368 @@ def _match_covariant_monomial(
     return None
 
 
-def _generic_interaction_occurrence_labels(field_factors: Sequence[_FieldFactor]) -> list[dict]:
-    labels = [{} for _ in field_factors]
-    fermion_slots = [i for i, factor in enumerate(field_factors) if factor.field.kind == "fermion"]
-    if not fermion_slots or len(fermion_slots) % 2 != 0:
-        return labels
+@dataclass(frozen=True)
+class _LocalFieldEntry:
+    field: Field
+    conjugated: bool
+    derivative_indices: tuple[object, ...]
 
-    pair_slots = [fermion_slots[k : k + 2] for k in range(0, len(fermion_slots), 2)]
-    for pair_number, slots in enumerate(pair_slots, start=1):
-        left, right = (field_factors[slot] for slot in slots)
-        if not left.conjugated or right.conjugated:
-            return labels
-        spinor_label = (
-            S("alpha_decl")
-            if len(pair_slots) == 1
-            else S(f"alpha_decl_{pair_number}")
+
+def _local_field_entry_from_factor(factor) -> _LocalFieldEntry | None:
+    if isinstance(factor, _FieldFactor):
+        return _LocalFieldEntry(
+            field=factor.field,
+            conjugated=factor.conjugated,
+            derivative_indices=(),
         )
-        labels[slots[0]][SPINOR_KIND] = spinor_label
-        labels[slots[1]][SPINOR_KIND] = spinor_label
+    if isinstance(factor, PartialDerivativeFactor):
+        return _LocalFieldEntry(
+            field=factor.field,
+            conjugated=factor.conjugated,
+            derivative_indices=tuple(factor.lorentz_indices),
+        )
+    return None
 
-    return labels
+
+def _is_local_chain_factor(factor) -> bool:
+    return isinstance(factor, (GammaFactor, Gamma5Factor, GeneratorFactor))
 
 
-def _attach_unique_declared_lorentz_label(
-    field_factors: Sequence[_FieldFactor],
-    derivative_indices: Sequence[tuple[object, ...]],
-    gamma_factors: Sequence[GammaFactor],
-    occurrence_labels: list[dict],
-) -> list[dict]:
-    vector_slots = [
-        idx
-        for idx, factor in enumerate(field_factors)
-        if sum(index.kind == LORENTZ_KIND for index in factor.field.indices) == 1
-    ]
-    if len(vector_slots) != 1:
-        return occurrence_labels
+def _is_local_free_tensor_factor(factor) -> bool:
+    return isinstance(factor, (MetricFactor, StructureConstantFactor))
 
-    declared_lorentz_indices: list[object] = []
-    for lorentz_index in (
-        [factor.lorentz_index for factor in gamma_factors]
-        + [
-            lorentz_index
-            for indices in derivative_indices
-            for lorentz_index in indices
-        ]
+
+def _local_chain_kind(factor) -> str:
+    if isinstance(factor, (GammaFactor, Gamma5Factor)):
+        return SPINOR_KIND
+    if isinstance(factor, GeneratorFactor):
+        return COLOR_FUND_KIND
+    raise TypeError(f"Unsupported local chain factor {type(factor).__name__}")
+
+
+def _local_declared_index_refs(factor) -> tuple[tuple[str, object], ...]:
+    if isinstance(factor, PartialDerivativeFactor):
+        return tuple((LORENTZ_KIND, index) for index in factor.lorentz_indices)
+    if isinstance(factor, GammaFactor):
+        return ((LORENTZ_KIND, factor.lorentz_index),)
+    if isinstance(factor, MetricFactor):
+        return (
+            (LORENTZ_KIND, factor.left_index),
+            (LORENTZ_KIND, factor.right_index),
+        )
+    if isinstance(factor, GeneratorFactor):
+        return ((COLOR_ADJ_KIND, factor.adjoint_index),)
+    if isinstance(factor, StructureConstantFactor):
+        return (
+            (COLOR_ADJ_KIND, factor.left_index),
+            (COLOR_ADJ_KIND, factor.middle_index),
+            (COLOR_ADJ_KIND, factor.right_index),
+        )
+    return ()
+
+
+def _build_local_free_tensor_expression(factor):
+    if isinstance(factor, MetricFactor):
+        return lorentz_metric(factor.left_index, factor.right_index)
+    if isinstance(factor, StructureConstantFactor):
+        return structure_constant(
+            factor.left_index,
+            factor.middle_index,
+            factor.right_index,
+        )
+    raise TypeError(f"Unsupported free local tensor factor {type(factor).__name__}")
+
+
+def _fresh_local_label(prefix: str, counters: dict[str, int]):
+    counters[prefix] = counters.get(prefix, 0) + 1
+    return S(f"{prefix}_decl_{counters[prefix]}")
+
+
+def _single_slot_position(field_obj: Field, kind: str) -> int | None:
+    positions = field_obj.index_positions(kind=kind)
+    if len(positions) != 1:
+        return None
+    return positions[0]
+
+
+def _ensure_endpoint_labels(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    left_idx: int,
+    right_idx: int,
+    kind: str,
+    counters: dict[str, int],
+    distinct: bool,
+) -> tuple[object, object] | None:
+    left_slot = _single_slot_position(field_entries[left_idx].field, kind)
+    right_slot = _single_slot_position(field_entries[right_idx].field, kind)
+    if left_slot is None or right_slot is None:
+        return None
+
+    left_label = slot_labels[left_idx].get(left_slot)
+    right_label = slot_labels[right_idx].get(right_slot)
+
+    if left_label is None:
+        left_label = _fresh_local_label(kind, counters)
+        slot_labels[left_idx][left_slot] = left_label
+    if right_label is None:
+        right_label = (
+            _fresh_local_label(kind, counters)
+            if distinct
+            else left_label
+        )
+        slot_labels[right_idx][right_slot] = right_label
+
+    if distinct and _expr_equal_impl(left_label, right_label):
+        return None
+
+    return left_label, right_label
+
+
+def _build_chain_expression(
+    factors: Sequence[object],
+    *,
+    kind: str,
+    left_label,
+    right_label,
+    counters: dict[str, int],
+):
+    if len(factors) == 1:
+        chain_labels = [left_label, right_label]
+    else:
+        chain_labels = [left_label] + [
+            _fresh_local_label(kind, counters)
+            for _ in range(len(factors) - 1)
+        ] + [right_label]
+
+    pieces = []
+    for factor, start_label, end_label in zip(
+        factors,
+        chain_labels[:-1],
+        chain_labels[1:],
     ):
-        if any(_expr_equal_impl(lorentz_index, seen) for seen in declared_lorentz_indices):
+        if isinstance(factor, GammaFactor):
+            pieces.append(gamma_matrix(start_label, end_label, factor.lorentz_index))
             continue
-        declared_lorentz_indices.append(lorentz_index)
+        if isinstance(factor, Gamma5Factor):
+            pieces.append(gamma5_matrix(start_label, end_label))
+            continue
+        if isinstance(factor, GeneratorFactor):
+            pieces.append(gauge_generator(factor.adjoint_index, start_label, end_label))
+            continue
+        raise TypeError(f"Unsupported chain factor {type(factor).__name__}")
 
-    if len(declared_lorentz_indices) != 1:
-        return occurrence_labels
+    expr = Expression.num(1)
+    for piece in pieces:
+        expr *= piece
+    return expr
 
-    slot = vector_slots[0]
-    occurrence_labels[slot] = dict(occurrence_labels[slot])
-    occurrence_labels[slot].setdefault(LORENTZ_KIND, declared_lorentz_indices[0])
-    return occurrence_labels
+
+def _assign_default_pair_labels(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    interval_chain_factors: Sequence[tuple[object, ...]],
+    counters: dict[str, int],
+):
+    non_lorentz_shared_kinds = (SPINOR_KIND, COLOR_FUND_KIND, COLOR_ADJ_KIND)
+
+    for interval_idx, (left, right) in enumerate(zip(field_entries, field_entries[1:])):
+        if not left.conjugated or right.conjugated:
+            continue
+        interval_kinds = {_local_chain_kind(factor) for factor in interval_chain_factors[interval_idx]}
+        for kind in non_lorentz_shared_kinds:
+            if kind in interval_kinds:
+                continue
+            shared = (
+                left.field.index_kind_count(kind) == 1
+                and right.field.index_kind_count(kind) == 1
+            )
+            if not shared:
+                continue
+
+            left_slot = _single_slot_position(left.field, kind)
+            right_slot = _single_slot_position(right.field, kind)
+            if left_slot is None or right_slot is None:
+                continue
+            if left_slot in slot_labels[interval_idx] or right_slot in slot_labels[interval_idx + 1]:
+                continue
+
+            label = _fresh_local_label(kind, counters)
+            slot_labels[interval_idx][left_slot] = label
+            slot_labels[interval_idx + 1][right_slot] = label
+
+
+def _bind_declared_indices_to_field_slots(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    declared_refs: Sequence[tuple[str, object]],
+):
+    by_kind: dict[str, list[object]] = {}
+    for kind, label in declared_refs:
+        by_kind.setdefault(kind, []).append(label)
+
+    for kind, labels in by_kind.items():
+        candidates: list[tuple[int, int]] = []
+        for field_idx, entry in enumerate(field_entries):
+            for slot in entry.field.index_positions(kind=kind):
+                if slot in slot_labels[field_idx]:
+                    continue
+                candidates.append((field_idx, slot))
+        for (field_idx, slot), label in zip(candidates, labels):
+            slot_labels[field_idx][slot] = label
+
+
+def _fill_unassigned_local_slot_labels(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    counters: dict[str, int],
+):
+    for field_idx, entry in enumerate(field_entries):
+        for slot, index in enumerate(entry.field.indices):
+            if slot in slot_labels[field_idx]:
+                continue
+            prefix = index.prefix or index.kind
+            slot_labels[field_idx][slot] = _fresh_local_label(prefix, counters)
 
 
 def _lower_local_interaction_monomial(term: _DeclaredMonomial):
-    base_factors: list[_FieldFactor] = []
-    derivative_indices: list[tuple[object, ...]] = []
-    gamma_factors: list[GammaFactor] = []
+    tokens: list[tuple[str, object]] = []
+    field_entries: list[_LocalFieldEntry] = []
+    declared_refs: list[tuple[str, object]] = []
+    free_tensor_factors: list[object] = []
 
     for factor in term.factors:
-        if isinstance(factor, _FieldFactor):
-            base_factors.append(factor)
-            derivative_indices.append(())
+        field_entry = _local_field_entry_from_factor(factor)
+        if field_entry is not None:
+            field_entries.append(field_entry)
+            tokens.append(("field", len(field_entries) - 1))
+            declared_refs.extend(_local_declared_index_refs(factor))
             continue
-        if isinstance(factor, PartialDerivativeFactor):
-            base_factors.append(_FieldFactor(field=factor.field, conjugated=factor.conjugated))
-            derivative_indices.append(tuple(factor.lorentz_indices))
+        if _is_local_chain_factor(factor):
+            tokens.append(("chain", factor))
+            declared_refs.extend(_local_declared_index_refs(factor))
             continue
-        if isinstance(factor, GammaFactor):
-            gamma_factors.append(factor)
+        if _is_local_free_tensor_factor(factor):
+            tokens.append(("tensor", factor))
+            free_tensor_factors.append(factor)
+            declared_refs.extend(_local_declared_index_refs(factor))
             continue
         return None
 
-    if not base_factors:
+    if not field_entries:
         return None
+
+    field_token_positions = [
+        idx for idx, (kind, _value) in enumerate(tokens) if kind == "field"
+    ]
+    if not field_token_positions:
+        return None
+    if any(kind == "chain" for kind, _value in tokens[: field_token_positions[0]]):
+        return None
+    if any(kind == "chain" for kind, _value in tokens[field_token_positions[-1] + 1 :]):
+        return None
+
+    interval_chain_factors: list[tuple[object, ...]] = [
+        () for _ in range(max(len(field_entries) - 1, 0))
+    ]
+    for interval_idx, (left_pos, right_pos) in enumerate(
+        zip(field_token_positions, field_token_positions[1:])
+    ):
+        between = tokens[left_pos + 1 : right_pos]
+        if not between:
+            continue
+        if any(kind == "chain" for kind, _value in between) and any(
+            kind != "chain" for kind, _value in between
+        ):
+            return None
+        if all(kind == "chain" for kind, _value in between):
+            interval_chain_factors[interval_idx] = tuple(
+                value for kind, value in between if kind == "chain"
+            )
 
     coupling = term.coefficient
-    occurrence_labels = _generic_interaction_occurrence_labels(base_factors)
-    if gamma_factors:
-        if len(gamma_factors) != 1:
-            return None
-        fermion_slots = [i for i, factor in enumerate(base_factors) if factor.field.kind == "fermion"]
-        if len(fermion_slots) != 2:
-            return None
-        left_slot, right_slot = fermion_slots
-        left_factor = base_factors[left_slot]
-        right_factor = base_factors[right_slot]
-        if not left_factor.conjugated or right_factor.conjugated:
-            return None
+    for factor in free_tensor_factors:
+        coupling *= _build_local_free_tensor_expression(factor)
 
-        from operators import psi_bar_gamma_psi
+    slot_labels: list[dict[int, object]] = [{} for _ in field_entries]
+    counters: dict[str, int] = {}
 
-        i_bar = S("alpha_decl_bar")
-        i_psi = S("alpha_decl")
-        occurrence_labels[left_slot][SPINOR_KIND] = i_bar
-        occurrence_labels[right_slot][SPINOR_KIND] = i_psi
-        coupling *= psi_bar_gamma_psi(i_bar, i_psi, gamma_factors[0].lorentz_index)
+    for interval_idx, factors in enumerate(interval_chain_factors):
+        if not factors:
+            continue
 
-    occurrence_labels = _attach_unique_declared_lorentz_label(
-        base_factors,
-        derivative_indices,
-        gamma_factors,
-        occurrence_labels,
+        left = field_entries[interval_idx]
+        right = field_entries[interval_idx + 1]
+        grouped: dict[str, list[object]] = {}
+        group_order: list[str] = []
+        for factor in factors:
+            kind = _local_chain_kind(factor)
+            if kind not in grouped:
+                grouped[kind] = []
+                group_order.append(kind)
+            grouped[kind].append(factor)
+
+        for kind in group_order:
+            if kind == SPINOR_KIND:
+                if left.field.kind != "fermion" or right.field.kind != "fermion":
+                    return None
+                if not left.conjugated or right.conjugated:
+                    return None
+
+            endpoints = _ensure_endpoint_labels(
+                field_entries=field_entries,
+                slot_labels=slot_labels,
+                left_idx=interval_idx,
+                right_idx=interval_idx + 1,
+                kind=kind,
+                counters=counters,
+                distinct=True,
+            )
+            if endpoints is None:
+                return None
+            left_label, right_label = endpoints
+            coupling *= _build_chain_expression(
+                grouped[kind],
+                kind=kind,
+                left_label=left_label,
+                right_label=right_label,
+                counters=counters,
+            )
+
+    _assign_default_pair_labels(
+        field_entries=field_entries,
+        slot_labels=slot_labels,
+        interval_chain_factors=interval_chain_factors,
+        counters=counters,
+    )
+    _bind_declared_indices_to_field_slots(
+        field_entries=field_entries,
+        slot_labels=slot_labels,
+        declared_refs=declared_refs,
+    )
+    _fill_unassigned_local_slot_labels(
+        field_entries=field_entries,
+        slot_labels=slot_labels,
+        counters=counters,
     )
 
     return InteractionTerm(
         coupling=coupling,
         fields=tuple(
-            factor.field.occurrence(
-                conjugated=bool(factor.conjugated and not factor.field.self_conjugate),
-                labels=occurrence_labels[idx],
+            entry.field.occurrence(
+                conjugated=bool(entry.conjugated and not entry.field.self_conjugate),
+                labels=entry.field.pack_slot_labels(slot_labels[idx]),
             )
-            for idx, factor in enumerate(base_factors)
+            for idx, entry in enumerate(field_entries)
         ),
         derivatives=tuple(
             DerivativeAction(target=idx, lorentz_index=lorentz_index)
-            for idx, indices in enumerate(derivative_indices)
-            for lorentz_index in indices
+            for idx, entry in enumerate(field_entries)
+            for lorentz_index in entry.derivative_indices
         ),
     )
 

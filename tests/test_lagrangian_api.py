@@ -38,10 +38,13 @@ from model import (  # noqa: E402
     DeclaredLagrangian,
     FieldStrength,
     Gamma,
+    Gamma5,
     LORENTZ_INDEX,
     LORENTZ_KIND,
+    Metric,
     SPINOR_INDEX,
     SPINOR_KIND,
+    T,
     ConjugateField,
     ComplexScalarKineticTerm,
     DerivativeAction,
@@ -68,13 +71,17 @@ from model_symbolica import (  # noqa: E402
 )
 from spenso_structures import (  # noqa: E402
     gauge_generator,
+    gamma5_matrix,
     gamma_matrix,
     lorentz_metric,
     structure_constant,
 )
 from operators import (  # noqa: E402
+    current_current,
     psi_bar_gamma_psi,
     psi_bar_psi,
+    quark_gluon_current,
+    scalar_gauge_contact,
 )
 from examples import (  # noqa: E402
     MODEL_QCD_COVARIANT,
@@ -371,6 +378,146 @@ def test_lagrangian_accepts_declared_vector_current():
         * (2 * pi) ** S("d")
         * Delta(S("q1") + S("q2") + S("q3"))
     )
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_axial_current():
+    """Ordered spinor chains support Gamma(mu) * Gamma5() locally."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    A = _make_photon()
+    g = S("g")
+    mu = S("mu")
+    i_bar = S("i_bar")
+    i_psi = S("i_psi")
+    alpha = S("spinor_decl_3")
+
+    got = Lagrangian(
+        g * psi.bar * Gamma(mu) * Gamma5() * psi * A
+    ).feynman_rule(psi.bar, psi, A, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=g * gamma_matrix(i_bar, alpha, mu) * gamma5_matrix(alpha, i_psi),
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
+                psi.occurrence(labels={SPINOR_KIND: i_psi}),
+                A.occurrence(labels={LORENTZ_KIND: mu}),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(psi.bar, psi, A, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_current_current():
+    """Multiple spinor chains in one monomial lower without InteractionTerm."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    g = S("g")
+    mu = S("mu")
+    a_bar, a_psi, b_bar, b_psi = S("a_bar", "a_psi", "b_bar", "b_psi")
+
+    got = Lagrangian(
+        g * psi.bar * Gamma(mu) * psi * psi.bar * Gamma(mu) * psi
+    ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=g * current_current(a_bar, a_psi, b_bar, b_psi, mu),
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: a_bar}),
+                psi.occurrence(labels={SPINOR_KIND: a_psi}),
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: b_bar}),
+                psi.occurrence(labels={SPINOR_KIND: b_psi}),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_local_quark_gluon_current():
+    """A color-chain T(a) can sit in the same local monomial as Gamma(mu)."""
+    g = S("g")
+    a = S("a")
+    mu = S("mu")
+    quark = Field(
+        "q",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    gluon = _make_gluon()
+    i_bar, i_psi, c_bar, c_psi = S("i_bar", "i_psi", "c_bar", "c_psi")
+
+    got = Lagrangian(
+        g * quark.bar * Gamma(mu) * T(a) * quark * gluon
+    ).feynman_rule(quark.bar, quark, gluon, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=g * quark_gluon_current(i_bar, i_psi, mu, a, c_bar, c_psi),
+            fields=(
+                quark.occurrence(
+                    conjugated=True,
+                    labels={SPINOR_KIND: i_bar, COLOR_FUND_KIND: c_bar},
+                ),
+                quark.occurrence(
+                    labels={SPINOR_KIND: i_psi, COLOR_FUND_KIND: c_psi},
+                ),
+                gluon.occurrence(labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a}),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(quark.bar, quark, gluon, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_local_scalar_contact():
+    """Metric(mu, nu) binds a two-vector contact term declaratively."""
+    phi = Field(
+        "PhiC",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi"),
+        conjugate_symbol=S("phibar"),
+    )
+    A = _make_photon()
+    g = S("g")
+    mu = S("mu")
+    nu = S("nu")
+
+    got = Lagrangian(
+        g * Metric(mu, nu) * phi.bar * phi * A * A
+    ).feynman_rule(phi.bar, phi, A, A, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=g * scalar_gauge_contact(mu, nu),
+            fields=(
+                phi.occurrence(conjugated=True),
+                phi.occurrence(),
+                A.occurrence(labels={LORENTZ_KIND: mu}),
+                A.occurrence(labels={LORENTZ_KIND: nu}),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(phi.bar, phi, A, A, simplify=True)
     assert _canon(got) == _canon(expected)
 
 
