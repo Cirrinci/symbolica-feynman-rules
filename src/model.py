@@ -1374,7 +1374,7 @@ def _match_covariant_monomial(
 def _generic_interaction_occurrence_labels(field_factors: Sequence[_FieldFactor]) -> list[dict]:
     labels = [{} for _ in field_factors]
     fermion_slots = [i for i, factor in enumerate(field_factors) if factor.field.kind == "fermion"]
-    if len(fermion_slots) <= 2 or len(fermion_slots) % 2 != 0:
+    if not fermion_slots or len(fermion_slots) % 2 != 0:
         return labels
 
     pair_slots = [fermion_slots[k : k + 2] for k in range(0, len(fermion_slots), 2)]

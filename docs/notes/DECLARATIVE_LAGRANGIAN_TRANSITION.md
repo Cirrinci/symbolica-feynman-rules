@@ -111,7 +111,7 @@ Status: implemented
 `InteractionTerm`s) and expose a cached lowered view for the existing compiler.
 
 This allows the examples to print the declaration the user actually wrote,
-rather than only the compiled `InteractionTerm` expansion.
+drather than only the compiled `InteractionTerm` expansion.
 
 Status: implemented
 

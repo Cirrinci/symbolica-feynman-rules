@@ -2221,7 +2221,7 @@ def _run_compiled_gauge_tests():
     term_qcd = compiled_qcd[0]
     _check(
         _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
-        I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
         "Compiled model: quark-gluon",
         show_vertex=True,
         description=term_qcd.label,
@@ -2235,7 +2235,7 @@ def _run_compiled_gauge_tests():
     term_qed = compiled_qed[0]
     _check(
         _model_vertex(interaction=term_qed, external_legs=LEGS_qed_fermion),
-        I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
+        -I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
         "Compiled model: fermion QED",
         show_vertex=True,
         description=term_qed.label,
@@ -2261,7 +2261,7 @@ def _run_compiled_gauge_tests():
             species_map={b1: phiCdag0, b2: phiC0, b3: A0},
         )
     )
-    expected_sc = eQED * qPhi * (pcomp(p2, scalar_current_index) - pcomp(p1, scalar_current_index)) * D3
+    expected_sc = I * eQED * qPhi * (pcomp(p2, scalar_current_index) - pcomp(p1, scalar_current_index)) * D3
     _check(
         V_sc,
         expected_sc,
@@ -2304,7 +2304,7 @@ def _run_compiled_gauge_tests():
         )
     )
     expected_sqcd = (
-        gS
+        I * gS
         * gauge_generator(a3, c1, c2)
         * (pcomp(p2, scalar_qcd_index) - pcomp(p1, scalar_qcd_index))
         * D3
@@ -2364,7 +2364,7 @@ def _run_compiled_gauge_tests():
     )
     _check(
         V_bislot,
-        gS
+        I * gS
         * gauge_generator(a3, c1, c2)
         * spectator_identity
         * (pcomp(p2, bislot_current_index) - pcomp(p1, bislot_current_index))
