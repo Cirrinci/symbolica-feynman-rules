@@ -27,12 +27,6 @@ from typing import Optional
 from symbolica import S, Expression
 
 from model import (
-    GaugeFixingDeclaration,
-    GhostLagrangianDeclaration,
-    _DeclaredMonomial,
-    _lower_field_strength_monomial,
-    _match_covariant_monomial,
-    _source_term_needs_compilation,
     ComplexScalarKineticTerm,
     DerivativeAction,
     DiracKineticTerm,
@@ -1608,48 +1602,30 @@ def _compile_covariant_core_with_spectators(
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
 
 
-def _compile_declared_source_term(model: Model, term) -> tuple[InteractionTerm, ...]:
-    if isinstance(term, (InteractionTerm,)):
+def _compile_analyzed_source_term(model: Model, analyzed) -> tuple[InteractionTerm, ...]:
+    if analyzed.interaction is not None:
         return ()
 
-    if isinstance(term, _DeclaredMonomial):
-        match = _match_covariant_monomial(term)
-        if match is not None:
-            core, spectators = match
-            if spectators:
-                return _compile_covariant_core_with_spectators(model, core, spectators)
-            if isinstance(core, DiracKineticTerm):
-                return compile_dirac_kinetic_term(model, core)
-            return compile_complex_scalar_kinetic_term(model, core)
+    if analyzed.covariant_core is not None:
+        if analyzed.covariant_spectators:
+            return _compile_covariant_core_with_spectators(
+                model,
+                analyzed.covariant_core,
+                analyzed.covariant_spectators,
+            )
+        if isinstance(analyzed.covariant_core, DiracKineticTerm):
+            return compile_dirac_kinetic_term(model, analyzed.covariant_core)
+        return compile_complex_scalar_kinetic_term(model, analyzed.covariant_core)
 
-        gauge_kinetic = _lower_field_strength_monomial(term)
-        if gauge_kinetic is not None:
-            return compile_gauge_kinetic_term(model, gauge_kinetic)
-        return ()
+    if analyzed.gauge_kinetic is not None:
+        return compile_gauge_kinetic_term(model, analyzed.gauge_kinetic)
 
-    if isinstance(term, DiracKineticTerm):
-        return compile_dirac_kinetic_term(model, term)
-    if isinstance(term, ComplexScalarKineticTerm):
-        return compile_complex_scalar_kinetic_term(model, term)
-    if isinstance(term, GaugeKineticTerm):
-        return compile_gauge_kinetic_term(model, term)
-    if isinstance(term, GaugeFixingDeclaration):
-        term = GaugeFixingTerm(
-            gauge_group=term.gauge_group,
-            xi=term.xi,
-            coefficient=term.coefficient,
-            label=term.label,
-        )
-    if isinstance(term, GaugeFixingTerm):
-        return compile_gauge_fixing_term(model, term)
-    if isinstance(term, GhostLagrangianDeclaration):
-        term = GhostTerm(
-            gauge_group=term.gauge_group,
-            coefficient=term.coefficient,
-            label=term.label,
-        )
-    if isinstance(term, GhostTerm):
-        return compile_ghost_term(model, term)
+    if analyzed.gauge_fixing is not None:
+        return compile_gauge_fixing_term(model, analyzed.gauge_fixing)
+
+    if analyzed.ghost is not None:
+        return compile_ghost_term(model, analyzed.ghost)
+
     return ()
 
 
@@ -1663,8 +1639,8 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     """
     interactions: list[InteractionTerm] = []
 
-    for term in model.lagrangian_decl.source_terms:
-        interactions.extend(_compile_declared_source_term(model, term))
+    for analyzed in model.analyzed_source_terms():
+        interactions.extend(_compile_analyzed_source_term(model, analyzed))
 
     for term in model.covariant_terms:
         if isinstance(term, DiracKineticTerm):
@@ -1697,7 +1673,9 @@ def with_compiled_covariant_terms(model: Model) -> Model:
     """
     compiled = compile_covariant_terms(model)
     preserved_source_terms = tuple(
-        term for term in model.lagrangian_decl.source_terms if not _source_term_needs_compilation(term)
+        analyzed.term
+        for analyzed in model.analyzed_source_terms()
+        if not analyzed.needs_compilation
     )
     return replace(
         model,

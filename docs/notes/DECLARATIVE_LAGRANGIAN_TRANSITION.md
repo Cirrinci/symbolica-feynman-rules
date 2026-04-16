@@ -114,6 +114,24 @@ rather than only the compiled `InteractionTerm` expansion.
 
 Status: implemented
 
+### 3c. Use one normalized source-term analysis path
+
+The declarative pipeline should not classify the same source term separately in
+validation, model views, compiler entry points, and precompilation retention.
+
+Instead, one normalized source-term analysis step should decide whether a term
+is:
+
+- a local interaction monomial
+- a covariant matter term, optionally with spectators
+- a gauge-kinetic term
+- a gauge-fixing term
+- a ghost term
+
+All higher-level entry points should consume that same normalized result.
+
+Status: implemented
+
 ### 4. Preserve idempotent precompilation
 
 `with_compiled_covariant_terms(model)` must:
