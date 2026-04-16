@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from typing import Iterable, Sequence
 
 from symbolica import Expression, S
+from model_symbolica import pcomp
+from spenso_structures import lorentz_metric
 
 
 @dataclass(frozen=True)
@@ -147,3 +149,54 @@ def canonize_spenso_tensors(
         contracted_indices=contracted_indices,
         standardize_dummy_names=standardize_dummy_names,
     )
+
+
+def contract_spenso_lorentz_metrics(expr, *, max_passes: int = 8):
+    """Contract explicit Lorentz metrics against momenta and other metrics.
+
+    This is a lightweight local simplification pass for the Spenso tensor
+    structures used in the gauge-sector outputs. It intentionally does not try
+    to perform full tensor algebra; it only contracts patterns of the form
+
+    - ``g(mu, nu) * pcomp(p, nu) -> pcomp(p, mu)``
+    - ``g(mu, nu) * g(rho, nu) -> g(mu, rho)``
+
+    including the symmetric slot/order variants that appear in expanded
+    Lagrangian-API vertices.
+    """
+
+    wildcard_a = S("canon_lorentz_a_")
+    wildcard_b = S("canon_lorentz_b_")
+    wildcard_c = S("canon_lorentz_c_")
+    wildcard_p = S("canon_momentum_")
+
+    rewrites = (
+        (lorentz_metric(wildcard_a, wildcard_b) * pcomp(wildcard_p, wildcard_b), pcomp(wildcard_p, wildcard_a)),
+        (pcomp(wildcard_p, wildcard_b) * lorentz_metric(wildcard_a, wildcard_b), pcomp(wildcard_p, wildcard_a)),
+        (lorentz_metric(wildcard_a, wildcard_b) * pcomp(wildcard_p, wildcard_a), pcomp(wildcard_p, wildcard_b)),
+        (pcomp(wildcard_p, wildcard_a) * lorentz_metric(wildcard_a, wildcard_b), pcomp(wildcard_p, wildcard_b)),
+        (lorentz_metric(wildcard_a, wildcard_b) * lorentz_metric(wildcard_c, wildcard_b), lorentz_metric(wildcard_a, wildcard_c)),
+        (lorentz_metric(wildcard_c, wildcard_b) * lorentz_metric(wildcard_a, wildcard_b), lorentz_metric(wildcard_a, wildcard_c)),
+        (lorentz_metric(wildcard_a, wildcard_b) * lorentz_metric(wildcard_a, wildcard_c), lorentz_metric(wildcard_b, wildcard_c)),
+        (lorentz_metric(wildcard_a, wildcard_c) * lorentz_metric(wildcard_a, wildcard_b), lorentz_metric(wildcard_b, wildcard_c)),
+    )
+
+    result = expr.expand() if hasattr(expr, "expand") else expr
+    for _ in range(max_passes):
+        previous = (
+            result.to_canonical_string()
+            if hasattr(result, "to_canonical_string")
+            else str(result)
+        )
+        for pattern, replacement in rewrites:
+            result = result.replace(pattern, replacement)
+        if hasattr(result, "expand"):
+            result = result.expand()
+        current = (
+            result.to_canonical_string()
+            if hasattr(result, "to_canonical_string")
+            else str(result)
+        )
+        if current == previous:
+            break
+    return result

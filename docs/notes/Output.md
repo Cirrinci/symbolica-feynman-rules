@@ -1,408 +1,127 @@
-# ================================================================================
-Demo: all
+# Curated review of the example vertices
+
+This version is intentionally **not** a raw dump of the printed output.
+
+For each example I list:
+- the interaction term,
+- a **worked summary** of the reported vertex,
+- a short review:
+  - **Correct**
+  - **Correct, needs simplification**
+  - **Correct rejection**
+
+The long printed expressions were often overexpanded. Where useful, I rewrote them into a more canonical compact form while keeping the meaning of your reported result.
+
+## Scalar sector
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| phi^4 | `lam4 * Phi * Phi * Phi * Phi` | `24 i lam4 (2π)^d Δ(q1+q2+q3+q4)` | Correct | Standard 4! combinatoric factor. |
+| phi^2 chi^2 | `g * Phi * Phi * Chi * Chi` | `4 i g (2π)^d Δ(q1+q2+q3+q4)` | Correct | Correct mixed-scalar combinatorics. |
+| complex scalar bilinear | `lamC * PhiC.bar * PhiC` | `i lamC (2π)^d Δ(q1+q2)` | Correct | Plain local bilinear. |
+| derivative-contracted phi^4 | `gD2 * PartialD(Phi, mu) * PartialD(Phi, mu) * Phi * Phi` | `-4 i gD2 (2π)^d Δ(Σq) Σ_{i<j} p_i·p_j`  <br>(reported as the explicit sum over 6 momentum pairs) | Correct, needs simplification | Physics looks right; should be rewritten as a compact pairwise dot-product sum. |
+| phi^6 | `lam6 * Phi * Phi * Phi * Phi * Phi * Phi` | `720 i lam6 (2π)^d Δ(q1+q2+q3+q4+q5+q6)` | Correct | Standard 6! combinatoric factor. |
+
+## Fermion sector
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| Yukawa | `yF * Psi.bar * Psi * Phi` | `i yF (2π)^d δ_spin Δ(q1+q2+q3)` | Correct | Standard scalar Yukawa structure. |
+| vector current | `gV * Psi.bar * Gamma(mu) * Psi * A` | `i gV (2π)^d γ^μ Δ(q1+q2+q3)` | Correct | Standard vector coupling. |
+| scalar four-fermion operator | `-1/2*g_psi4 * Psi.bar * Psi * Psi.bar * Psi` | `i g_psi4 (2π)^d [ -δ12 δ34 + δ14 δ23 ] Δ(Σq)`  <br>(reported in unsimplified spinor-delta form) | Correct, needs simplification | Direct minus exchange structure is right. |
+
+## Fermion + scalar derivative operators
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| psibar gamma^mu partial_mu psi phi chi | `yF * Psi.bar * Gamma(mu) * PartialD(Psi, mu) * Phi * Chi` | `yF (2π)^d γ^μ p_{psi,μ} Δ(Σq)` | Correct | Derivative acts on the fermion field; convention is internally consistent. |
+| psibar psi (partial_mu phi)(partial^mu chi) | `yF * Psi.bar * Psi * PartialD(Phi, mu) * PartialD(Chi, mu)` | `-i yF (2π)^d δ_spin (p_φ·p_χ) Δ(Σq)` | Correct | Expected two-derivative scalar structure. |
+| psibar psi (partial^2 phi) chi | `g1 * Psi.bar * Psi * PartialD(Phi, mu, mu) * Chi` | `-i g1 (2π)^d δ_spin p_φ^2 Δ(Σq)` | Correct | Correct higher-derivative local term. |
+
+## Gauge interactions from declarative models
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| abelian fermion current from CovD | `i * PsiQED.bar * Gamma(mu) * CovD(PsiQED, mu)` | `-i eQED qPsi (2π)^d γ^μ Δ(Σq)` | Correct | Matches the standard `i ψ̄γ·D ψ` convention. |
+| abelian scalar current from CovD | `CovD(PhiQED.bar, mu) * CovD(PhiQED, mu)` | `i eQED qPhi (p2 - p1)^μ (2π)^d Δ(Σq)`  <br>(reported as `-i e p1^μ + i e p2^μ`) | Correct | Standard scalar QED current. |
+| abelian scalar contact from CovD | `CovD(PhiQED.bar, mu) * CovD(PhiQED, mu)` | `2 i eQED^2 qPhi^2 g^{μν} (2π)^d Δ(Σq)` | Correct | Correct two-photon contact from scalar kinetic term. |
+| non-abelian fermion current from CovD | `i * q.bar * Gamma(mu) * CovD(q, mu)` | `-i gS γ^μ T^a (2π)^d Δ(Σq)` | Correct | Standard quark-gluon current. |
+
+## Minimal gauge compiler
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| quark-gluon | `SU3C: q gauge current` | `-i gS γ^μ T^a (2π)^d Δ(Σq)` | Correct | Now convention-consistent with the CovD expansion. |
+| fermion QED | `U1QED: PsiQED gauge current` | `-i eQED qPsi γ^μ (2π)^d Δ(Σq)` | Correct | Sign and overall `i` are now correct. |
+| scalar QED current | `U1QED: scalar current (+) + scalar current (-)` | `i eQED qPhi (p2 - p1)^μ (2π)^d Δ(Σq)` | Correct | Fixed compared with the earlier missing-`i` version. |
+| scalar QED contact | `U1QED: scalar contact` | `2 i eQED^2 qPhi^2 g^{μν} (2π)^d Δ(Σq)` | Correct | Correct contact term. |
+| scalar QCD current | `SU3C: scalar current (+) + SU3C: scalar current (-)` | `i gS T^a (p2 - p1)^μ (2π)^d Δ(Σq)` | Correct | Correct non-abelian scalar current. |
+| scalar QCD contact | `SU3C: scalar contact [slots 1,1]` | `i gS^2 g^{μν} (T^a T^b + T^b T^a) (2π)^d Δ(Σq)`  <br>(reported with explicit generator ordering) | Correct, needs simplification | Good structure; generator ordering is explicit but not canonicalized. |
+| repeated-slot ambiguity | `ambiguous repeated ColorFund slots` | `rejected by compiler` | Correct rejection | This is the right behavior; ambiguity should not be silently resolved. |
+| repeated-slot scalar QCD current | `SU3CBi: scalar current (+)_slot1 + scalar current (-)_slot1` | `i gS (spectator δ) T^a (p2 - p1)^μ (2π)^d Δ(Σq)` | Correct | Active slot plus spectator identity is the expected result. |
+
+## Covariant compiler: matter terms
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| qbar i gamma^mu D_mu q | `i * q.bar * Gamma(mu) * CovD(q, mu)` | `-i gS γ^μ T^a (2π)^d Δ(Σq)` | Correct | Matches the minimal compiler result. |
+| PsiQEDbar i gamma^mu D_mu PsiQED | `i * PsiQED.bar * Gamma(mu) * CovD(PsiQED, mu)` | `-i eQED qPsi γ^μ (2π)^d Δ(Σq)` | Correct | Correct abelian fermion current. |
+| one Dirac term over QCD+QED [gluon piece] | `i * PsiMix.bar * Gamma(mu) * CovD(PsiMix, mu)` | `-i gS γ^μ T^a (2π)^d Δ(Σq)` | Correct | Correct QCD component of the mixed covariant derivative. |
+| one Dirac term over QCD+QED [photon piece] | `i * PsiMix.bar * Gamma(mu) * CovD(PsiMix, mu)` | `-i eQED qMix (spectator color δ) γ^μ (2π)^d Δ(Σq)` | Correct | Correct abelian piece with color spectator identity. |
+| (D_mu phi)^dagger (D^mu phi) current | `CovD(PhiQED.bar, mu) * CovD(PhiQED, mu)` | `i eQED qPhi (p2 - p1)^μ (2π)^d Δ(Σq)` | Correct | Correct scalar current. |
+| (D_mu phi)^dagger (D^mu phi) contact | `CovD(PhiQED.bar, mu) * CovD(PhiQED, mu)` | `2 i eQED^2 qPhi^2 g^{μν} (2π)^d Δ(Σq)` | Correct | Correct scalar contact. |
+| (D_mu PhiQCD)^dagger (D^mu PhiQCD) current | `CovD(PhiQCD.bar, mu) * CovD(PhiQCD, mu)` | `i gS T^a (p2 - p1)^μ (2π)^d Δ(Σq)` | Correct | Correct non-abelian scalar current. |
+| (D_mu PhiQCD)^dagger (D^mu PhiQCD) contact | `CovD(PhiQCD.bar, mu) * CovD(PhiQCD, mu)` | `i gS^2 g^{μν} (T^a T^b + T^b T^a) (2π)^d Δ(Σq)` | Correct, needs simplification | Same comment as the minimal compiler contact term. |
+| one scalar term over QCD+QED [gluon current] | `CovD(PhiMix.bar, mu) * CovD(PhiMix, mu)` | `i gS T^a (p2 - p1)^μ (2π)^d Δ(Σq)` | Correct | Correct QCD contribution. |
+| one scalar term over QCD+QED [photon current] | `CovD(PhiMix.bar, mu) * CovD(PhiMix, mu)` | `i eQED qPhiMix (spectator color δ) (p2 - p1)^μ (2π)^d Δ(Σq)` | Correct | Correct abelian contribution. |
+| one scalar term over QCD+QED [mixed contact] | `CovD(PhiMix.bar, mu) * CovD(PhiMix, mu)` | `2 i gS eQED qPhiMix g^{μν} T^a (2π)^d Δ(Σq)` | Correct | Correct mixed QCD×QED scalar contact. |
+| (D_mu PhiBi)^dagger (D^mu PhiBi) [bislot, slot_policy='sum'] | `CovD(PhiBi.bar, mu) * CovD(PhiBi, mu)` | `sum over both color-fundamental slots of the scalar current` | Correct, needs simplification | Conceptually right; output is expanded over both active slots. |
+| (D_mu PhiBi)^dagger (D^mu PhiBi) contact [bislot sum] | `CovD(PhiBi.bar, mu) * CovD(PhiBi, mu)` | `sum of all ordered slot-pair contact terms` | Correct, needs simplification | Structure looks right but is heavily expanded. |
+
+## Covariant compiler: pure gauge/YM terms
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| -1/4 F_mu nu F^mu nu [abelian bilinear] | `-1/4 * FieldStrength(U1QED, mu, nu) * FieldStrength(U1QED, mu, nu)` | `i (g^{μν} p^2 - p^μ p^ν)`  <br>(reported in unsimplified momentum-expanded form) | Correct, needs simplification | Should be canonicalized to the standard transverse bilinear. |
+| -1/4 G^a_mu nu G^{a mu nu} [bilinear] | `-1/4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)` | `i δ^{ab} (g^{μν} p^2 - p^μ p^ν)`  <br>(reported in unsimplified momentum-expanded form) | Correct, needs simplification | Same as above with adjoint color delta. |
+| Yang-Mills 3-gauge vertex | `-1/4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)` | `gS f^{abc}[ g^{μν}(p1-p2)^ρ + g^{νρ}(p2-p3)^μ + g^{ρμ}(p3-p1)^ν ]`  <br>(reported as a 6-term expanded form) | Correct, needs simplification | Good YM structure, not yet in canonical compact form. |
+| Yang-Mills 4-gauge vertex | `-1/4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)` | `standard quartic YM 3-channel structure`  <br>(reported as a highly expanded sum over metric/color structures) | Correct, needs simplification | Looks right, but should be reduced to the standard 3 independent channels. |
+
+## Pure gauge
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| QED photon bilinear | `-1/4 * FieldStrength(U1QED, mu, nu) * FieldStrength(U1QED, mu, nu)` | `i (g^{μν} p^2 - p^μ p^ν)`  <br>(reported expanded) | Correct, needs simplification | Same physics as the covariant pure-gauge bilinear. |
+| QCD gluon bilinear | `-1/4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)` | `i δ^{ab} (g^{μν} p^2 - p^μ p^ν)`  <br>(reported expanded) | Correct, needs simplification | Correct YM two-point structure. |
+| QCD 3-gluon | `-1/4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)` | `standard YM 3-gluon vertex`  <br>(reported expanded) | Correct, needs simplification | Matches the expected cubic self-interaction. |
+| QCD 4-gluon | `-1/4 * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)` | `standard YM 4-gluon vertex`  <br>(reported expanded) | Correct, needs simplification | Overexpanded but physically consistent. |
+
+## Ordinary gauge fixing and ghosts
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| -(1/2 xi) (partial.A)^2 [abelian] | `GaugeFixing(U1QED, xi=xiQED)` | `i (1/ξ) p^μ p^ν`  <br>(reported expanded) | Correct, needs simplification | Correct abelian gauge-fixing contribution. |
+| -(1/2 xi) (partial.G)^2 [non-abelian] | `GaugeFixing(SU3C, xi=xiQCD)` | `i δ^{ab} (1/ξ) p^μ p^ν`  <br>(reported expanded) | Correct, needs simplification | Correct non-abelian gauge-fixing contribution. |
+| ordinary photon bilinear | `-1/4 F^2 + GaugeFixing(U1QED, xi=xiQED)` | `i [ g^{μν} p^2 - (1 - 1/ξ) p^μ p^ν ]`  <br>(reported expanded) | Correct, needs simplification | Correct full inverse propagator structure. |
+| Faddeev-Popov ghost bilinear | `GhostLagrangian(SU3C)` | `-i δ^{ab} p^2`  <br>(reported expanded with two derivative indices) | Correct, needs simplification | Should be reduced to the standard ghost kinetic form. |
+| ghost-gluon interaction | `GhostLagrangian(SU3C)` | `-gS f^{abc} p^μ` | Correct | Momentum assignment is consistent with derivative on the antighost. |
+| ordinary gluon bilinear | `-1/4 G^2 + GaugeFixing(SU3C, xi=xiQCD) + GhostLagrangian(SU3C)` | `i δ^{ab} [ g^{μν} p^2 - (1 - 1/ξ) p^μ p^ν ]`  <br>(reported expanded) | Correct, needs simplification | Correct full gluon inverse propagator structure. |
+
+## Ghost sector
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| ghost bilinear | `GhostLagrangian(SU3C)` | `-i δ^{ab} p^2`  <br>(reported expanded) | Correct, needs simplification | Same as above, just isolated. |
+| ghost-gluon interaction | `GhostLagrangian(SU3C)` | `-gS f^{abc} p^μ` | Correct | Correct cubic FP ghost coupling. |
+
+## Full gauge-fixed models
+
+| Example | Interaction term | Vertex (curated from reported output) | Review | Note |
+|---|---|---|---|---|
+| full QCD: gluon bilinear | `-1/4 G^2 + GaugeFixing(SU3C, xi=xiQCD) + GhostLagrangian(SU3C)` | `i δ^{ab} [ g^{μν} p^2 - (1 - 1/ξ) p^μ p^ν ]`  <br>(reported expanded) | Correct, needs simplification | Correct full QCD two-point structure. |
+| full QCD: 3-gluon | `-1/4 G^2 + GaugeFixing(SU3C, xi=xiQCD) + GhostLagrangian(SU3C)` | `standard YM 3-gluon vertex`  <br>(reported expanded) | Correct, needs simplification | Gauge fixing and ghosts do not alter the cubic YM self-coupling. |
+| full QCD: 4-gluon | `-1/4 G^2 + GaugeFixing(SU3C, xi=xiQCD) + GhostLagrangian(SU3C)` | `standard YM 4-gluon vertex`  <br>(reported expanded) | Correct, needs simplification | Same physical quartic YM interaction as in the pure-gauge sector. |
+| full QCD: ghost bilinear | `-1/4 G^2 + GaugeFixing(SU3C, xi=xiQCD) + GhostLagrangian(SU3C)` | `-i δ^{ab} p^2`  <br>(reported expanded) | Correct, needs simplification | Correct ghost kinetic term in the full model. |
+| full QCD: ghost-gluon | `-1/4 G^2 + GaugeFixing(SU3C, xi=xiQCD) + GhostLagrangian(SU3C)` | `-gS f^{abc} p^μ` | Correct | Correct ghost-gauge coupling in the full model. |
+| full QED: photon bilinear | `-1/4 F^2 + GaugeFixing(U1QED, xi=xiQED)` | `i [ g^{μν} p^2 - (1 - 1/ξ) p^μ p^ν ]`  <br>(reported expanded) | Correct, needs simplification | Correct full abelian inverse propagator. |
 
-Note:
-minimal compiler shows generic interaction structure; covariant compiler shows the convention-fixed `D_mu` expansion.
-Pure-gauge covariant blocks also show a compact override, because the raw compiled vertex keeps the derivative-index metrics explicit.
-
-# === scalar: phi^4 ===
-
-lam4 * phi^4
-alphas = [phi0, phi0, phi0, phi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
-24𝑖*lam4
-
-# === scalar: phi^6 ===
-
-lam6 * phi^6
-alphas = [phi0, phi0, phi0, phi0, phi0, phi0]
-betas  = [b1, b2, b3, b4, b5, b6]
-ps     = [p1, p2, p3, p4, p5, p6]
-
-Vertex:
-720𝑖*lam6
-
-# === scalar: phi^2 chi^2 ===
-
-g * phi^2 * chi^2
-alphas = [phi0, phi0, chi0, chi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
-4𝑖*g
-
-# === scalar: complex scalar bilinear ===
-
-lamC * phi^dagger * phi
-alphas = [phiCdag0, phiC0]
-betas  = [b1, b2]
-ps     = [p1, p2]
-
-Vertex:
-1𝑖*lamC
-
-# === scalar: derivative (mu,nu) * phi^4 ===
-
-gD * (d_mu phi)(d_nu phi) phi phi
-alphas = [phi0, phi0, phi0, phi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Compact override:
--1𝑖*gD*(2*pcomp(p1,mu)*pcomp(p2,nu)+2*pcomp(p1,mu)*pcomp(p3,nu)+2*pcomp(p1,mu)*pcomp(p4,nu)+2*pcomp(p1,nu)*pcomp(p2,mu)+2*pcomp(p1,nu)*pcomp(p3,mu)+2*pcomp(p1,nu)*pcomp(p4,mu)+2*pcomp(p2,mu)*pcomp(p3,nu)+2*pcomp(p2,mu)*pcomp(p4,nu)+2*pcomp(p2,nu)*pcomp(p3,mu)+2*pcomp(p2,nu)*pcomp(p4,mu)+2*pcomp(p3,mu)*pcomp(p4,nu)+2*pcomp(p3,nu)*pcomp(p4,mu))
-Sum notation:
-(2)! * Σ_{a, b distinct} p_{a,mu} p_{b,nu}
-
-# === scalar: derivative (mu,mu) * phi^4 ===
-
-gD2 * (d_mu phi)(d_mu phi) phi phi
-alphas = [phi0, phi0, phi0, phi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Compact override:
--1𝑖*gD2*(4*pcomp(p1,mu)*pcomp(p2,mu)+4*pcomp(p1,mu)*pcomp(p3,mu)+4*pcomp(p1,mu)*pcomp(p4,mu)+4*pcomp(p2,mu)*pcomp(p3,mu)+4*pcomp(p2,mu)*pcomp(p4,mu)+4*pcomp(p3,mu)*pcomp(p4,mu))
-Sum notation:
-(2)! * Σ_{a, b distinct} p_{a,mu} p_{b,mu}
-
-# === scalar: multi-species phi_i^2 phi_j^2 phi_k^2 ===
-
-gijk(i,j,k) * phi_i^2 phi_j^2 phi_k^2
-alphas = [i, i, j, j, k, k]
-betas  = [b1, b2, b3, b4, b5, b6]
-ps     = [p1, p2, p3, p4, p5, p6]
-
-Vertex:
-8𝑖*gijk(i,j,k)
-
-# === fermion: Yukawa [amputated] ===
-
-yF * psibar * psi * phi
-alphas = [psibar0, psi0, phi0]
-betas  = [b1, b2, b3]
-ps     = [p1, p2, p3]
-
-Vertex:
-1𝑖*yF*g(bis(4, i1),bis(4, i2))
-
-# === fermion: Yukawa [matrix element] ===
-
-yF * psibar * psi * phi  [matrix element]
-alphas = [psibar0, psi0, phi0]
-betas  = [b1, b2, b3]
-ps     = [p1, p2, p3]
-
-Vertex:
-1𝑖*yF*U(phi0,p3)*UF(psi0,p2,s2,alpha_s)*UbarF(psibar0,p1,s1,alpha_s)
-
-# === fermion: vector current ===
-
-gV * psibar gamma^mu psi A_mu
-alphas = [psibar0, psi0, A0]
-betas  = [b1, b2, b3]
-ps     = [p1, p2, p3]
-
-Vertex:
-1𝑖*gV*gamma(bis(4, i1),bis(4, i2),mink(4, mu))
-
-# === fermion: axial current ===
-
-gV * psibar gamma^mu gamma5 psi A_mu
-alphas = [psibar0, psi0, A0]
-betas  = [b1, b2, b3]
-ps     = [p1, p2, p3]
-
-Vertex:
-1𝑖*gV*gamma(bis(4, i1),bis(4, alpha_s),mink(4, mu))*gamma5(bis(4, alpha_s),bis(4, i2))
-
-# === fermion: underspecified product diagnostic ===
-
-g4F * psi * psibar * psi * psibar  [no spinor contractions]
-rejected: multi-fermion operators need explicit spinor contractions
-
-# === fermion: -(g/2)(psibar psi)^2 [amputated] ===
-
-- (g/2)(psibar psi)^2 [amputated]
-alphas = [psibar0, psi0, psibar0, psi0]
-betas = [b1, b2, b3, b4]
-ps = [p1, p2, p3, p4]
-
-Vertex:
-1𝑖*(-g_psi4*g(bis(4, i1),bis(4, i2))*g(bis(4, i3),bis(4, i4))+g_psi4*g(bis(4, i1),bis(4, i4))*g(bis(4, i2),bis(4, i3)))
-
-# === fermion: -(g/2)(psibar psi)^2 [matrix element] ===
-
-- (g/2)(psibar psi)^2 [matrix element]
-alphas = [psibar0, psi0, psibar0, psi0]
-betas = [b1, b2, b3, b4]
-ps = [p1, p2, p3, p4]
-
-Vertex:
-1𝑖*(-1/2*g_psi4*UF(psi0,p2,s2,alpha_s)*UF(psi0,p4,s4,beta_s)*UbarF(psibar0,p1,s1,alpha_s)UbarF(psibar0,p3,s3,beta_s)+1/2g_psi4*UF(psi0,p2,s2,alpha_s)*UF(psi0,p4,s4,beta_s)*UbarF(psibar0,p1,s1,beta_s)UbarF(psibar0,p3,s3,alpha_s)+1/2g_psi4*UF(psi0,p2,s2,beta_s)*UF(psi0,p4,s4,alpha_s)*UbarF(psibar0,p1,s1,alpha_s)UbarF(psibar0,p3,s3,beta_s)-1/2g_psi4*UF(psi0,p2,s2,beta_s)*UF(psi0,p4,s4,alpha_s)*UbarF(psibar0,p1,s1,beta_s)*UbarF(psibar0,p3,s3,alpha_s))
-
-# === fermion: -(g/2)(psibar psi)^2 [explicit spinor labels] ===
-
-- (g/2)(psibar psi)^2 [spinor delta]
-alphas = [psibar0, psi0, psibar0, psi0]
-betas = [b1, b2, b3, b4]
-ps = [p1, p2, p3, p4]
-
-Vertex:
-1𝑖*(-g_psi4*g(bis(4, i1),bis(4, i2))*g(bis(4, i3),bis(4, i4))+g_psi4*g(bis(4, i1),bis(4, i4))*g(bis(4, i2),bis(4, i3)))
-
-================================================================================
--(g/2)(psibar psi)(psibar psi)  →  V = (-ig)[g(i1,i2)*g(i3,i4) - g(i1,i4)*g(i3,i2)]
-
-# === fermion: current-current operator ===
-
-gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)  [stripped]
-alphas = [psibar0, psi0, psibar0, psi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Compact override:
-2𝑖*gJJ*gamma(bis(4, i1),bis(4, i2),mink(4, mu))*gamma(bis(4, i3),bis(4, i4),mink(4, mu))-2𝑖*gJJ*gamma(bis(4, i1),bis(4, i4),mink(4, mu))*gamma(bis(4, i3),bis(4, i2),mink(4, mu))
-
-Interpretation: stripped output keeps the direct minus exchange gamma structure visible.
-
-=== fermion: operator-order diagnostics (psibar psi)^2 ===
-swap-both bilinears:  == V_orig
-swap-one bilinear:   == -V_orig
-
-# === fermion+scalar: mixed derivatives ===
-
-yF * (d_mu psibar) * psi * phi * chi
-alphas = [psibar0, psi0, phi0, chi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
-yF*g(bis(4, i1),bis(4, i2))*pcomp(p1,mu)
-
-================================================================================
-yF * psibar * (d_nu psi) * phi * chi
-alphas = [psibar0, psi0, phi0, chi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
-yF*g(bis(4, i1),bis(4, i2))*pcomp(p2,nu)
-
-================================================================================
-yF * psibar * psi * (d_mu phi) * (d_nu chi)
-alphas = [psibar0, psi0, phi0, chi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
--1𝑖*yF*g(bis(4, i1),bis(4, i2))*pcomp(p3,mu)*pcomp(p4,nu)
-
-================================================================================
-g * (d_mu psibar)(d_nu psi) phi phi chi
-alphas = [psibar0, psi0, phi0, phi0, chi0]
-betas  = [b1, b2, b3, b4, b5]
-ps     = [p1, p2, p3, p4, p5]
-
-Vertex:
--2𝑖*g*g(bis(4, i1),bis(4, i2))*pcomp(p1,mu)*pcomp(p2,nu)
-
-================================================================================
-g1 * psibar * psi * (d^2 phi) * chi
-alphas = [psibar0, psi0, phi0, chi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
--1𝑖*g1*g(bis(4, i1),bis(4, i2))*pcomp(p3,mu)^2
-
-================================================================================
-g2 * psibar * psi * (d_mu d_nu phi)(d_mu d_nu phi)
-alphas = [psibar0, psi0, phi0, phi0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
-2𝑖*g2*g(bis(4, i1),bis(4, i2))*pcomp(p3,mu)*pcomp(p3,nu)*pcomp(p4,mu)*pcomp(p4,nu)
-
-# === gauge-ready: non-abelian fermion current ===
-
-gS * psibar gamma^mu T^a psi G^a_mu
-alphas = [psibar0, psi0, G0]
-betas  = [b1, b2, b3]
-ps     = [p1, p2, p3]
-
-Vertex:
-1𝑖*gS*gamma(bis(4, i1),bis(4, i2),mink(4, mu3))*t(coad(8, a3),cof(3, c1),cof(3, c2))
-
-Interpretation: the coupling now remaps spinor, Lorentz, and color labels through one slot-label path.
-
-=== gauge-ready: complex scalar current ===
-
-gPhiA * A_mu * phi^dagger <-> d^mu phi
-alphas = [phiCdag0, phiC0, A0]
-betas  = [b1, b2, b3]
-ps     = [p1, p2, p3]
-
-Vertex:
--gPhiA*pcomp(p1,mu3)+gPhiA*pcomp(p2,mu3)
-
-Interpretation: the gauge-field Lorentz slot now remaps into the derivative index as well.
-
-# === gauge-ready: complex scalar contact ===
-
-gPhiAA * A_mu A^mu phi^dagger phi
-alphas = [phiCdag0, phiC0, A0, A0]
-betas  = [b1, b2, b3, b4]
-ps     = [p1, p2, p3, p4]
-
-Vertex:
-2𝑖*gPhiAA*g(mink(4, mu3),mink(4, mu4))
-
-Interpretation: repeated gauge legs stay bosonic, while distinct scalar/scalar_dag roles keep the matter flow explicit.
-
-# ================================================================================
-Tests: all
-
-phi^4: PASS
-phi^2 chi^2: PASS
-phi^dagger phi: PASS
-Derivative (mu,nu): PASS
-Derivative (mu,mu): PASS
-Multi-species (base): PASS
-Multi-species (perm): PASS
-Multi-species (bad mult -> 0): PASS
-
-Scalar+derivative tests passed.
-
-Yukawa (amputated): PASS
-Yukawa (unstripped, has UF/UbarF): PASS
-Vector current: PASS
-Axial current: PASS
-underspecified multi-fermion operator rejected: PASS
-(psibar psi)^2 amputated: PASS
-(psibar psi)^2 matrix element (non-zero direct/exchange): PASS
-(psibar psi)^2 spinor deltas: PASS
-Current-current stripped: PASS
-Current-current unstripped (non-zero): PASS
-Missing fermion leg spinor index -> ValueError: PASS
-
-Fermion tests passed.
-
-d_mu psibar: PASS
-d_nu psi: PASS
-(d_mu phi)(d_nu chi): PASS
-5pt mixed: PASS
-g1 * psibar psi (d^2 phi) chi: PASS
-g2 * psibar psi (d_mu d_nu phi)^2: PASS
-
-Mixed fermion+scalar derivative tests passed.
-
-Gauge-ready quark-gluon current: PASS
-Complex scalar gauge current: PASS
-Complex scalar gauge contact: PASS
-
-Gauge-ready tests passed.
-
-All selected tests passed.
-
-# ================================================================================
-Demo: spenso-gamma
-
-== gamma identities ==
-Tr(gamma^mu gamma_mu) = 16.0000000000000
-
-{gamma^mu, gamma^nu} =
-2*g(mink(4, mu),mink(4, nu))*g(bis(4, si),bis(4, sk))
-
-== bilinears ==
-gBilin * psibar gamma^mu psi
-1𝑖*gBilin*gamma(bis(4, i1),bis(4, i2),mink(4, mu))
-
-gBilin * psibar gamma5 psi
-1𝑖*gBilin*gamma5(bis(4, i1),bis(4, i2))
-
-gBilin * psibar sigma^{mu nu} psi
-1𝑖*gBilin*sigma(bis(4, i1),bis(4, i2),mink(4, mu),mink(4, nu))
-
-gBilin * psibar P_L psi
--1𝑖/2*gBilin*gamma5(bis(4, i1),bis(4, i2))+1𝑖/2*gBilin*g(bis(4, i1),bis(4, i2))
-
-gBilin * psibar P_R psi
-1𝑖/2*gBilin*gamma5(bis(4, i1),bis(4, i2))+1𝑖/2*gBilin*g(bis(4, i1),bis(4, i2))
-
-gBilin * psibar gamma_mu psi
-equivalent after metric simplification: True
-
-gBilin * psibar gamma^mu gamma^nu psi
-1𝑖*gBilin*gamma(bis(4, alpha),bis(4, i2),mink(4, nu))*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))
-
-gBilin * psibar gamma^mu gamma^nu gamma^rho psi
-raw:
-1𝑖*gBilin*gamma(bis(4, alpha),bis(4, beta),mink(4, nu))*gamma(bis(4, beta),bis(4, i2),mink(4, rho))gamma(bis(4, i1),bis(4, alpha),mink(4, mu))
-simplified:
-1𝑖gBilin*gamma(bis(4, alpha),bis(4, i2),mink(4, rho))*gamma(bis(4, beta),bis(4, alpha),mink(4, nu))gamma(bis(4, i1),bis(4, beta),mink(4, mu))-2𝑖gBilin*g(mink(4, mu),mink(4, nu))*gamma(bis(4, i1),bis(4, i2),mink(4, rho))+2𝑖*gBilin*g(mink(4, mu),mink(4, rho))*gamma(bis(4, i1),bis(4, i2),mink(4, nu))
-
-gBilin * psibar gamma^mu gamma^nu gamma5 psi
-1𝑖*gBilin*gamma(bis(4, alpha),bis(4, beta),mink(4, nu))*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))*gamma5(bis(4, beta),bis(4, i2))
-
-gBilin * psibar gamma^nu gamma^mu psi
--1𝑖*gBilin*gamma(bis(4, alpha),bis(4, i2),mink(4, nu))*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))+2𝑖*gBilin*g(mink(4, mu),mink(4, nu))*g(bis(4, i1),bis(4, i2))
-
-sum of both orderings
-2𝑖*gBilin*g(mink(4, mu),mink(4, nu))*g(bis(4, i1),bis(4, i2))
-
-gBilin * psibar gamma_mu gamma_nu psi
-equivalent after metric simplification: True
-
-== current-current operator ==
-gBilin * (psibar gamma^mu psi)(psibar gamma_mu psi)  [stripped]
-2𝑖*gBilin*gamma(bis(4, i1),bis(4, i2),mink(4, mu))*gamma(bis(4, i3),bis(4, i4),mink(4, mu))-2𝑖*gBilin*gamma(bis(4, i1),bis(4, i4),mink(4, mu))*gamma(bis(4, i3),bis(4, i2),mink(4, mu))
-
-gBilin * (psibar gamma^mu gamma5 psi)(psibar gamma_mu gamma5 psi)  [stripped]
-1𝑖*gBilin*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))*gamma(bis(4, i3),bis(4, beta),mink(4, mu))*gamma5(bis(4, alpha),bis(4, i2))gamma5(bis(4, beta),bis(4, i4))-1𝑖gBilin*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))*gamma(bis(4, i3),bis(4, beta),mink(4, mu))*gamma5(bis(4, alpha),bis(4, i4))gamma5(bis(4, beta),bis(4, i2))-1𝑖gBilin*gamma(bis(4, i1),bis(4, beta),mink(4, mu))*gamma(bis(4, i3),bis(4, alpha),mink(4, mu))*gamma5(bis(4, alpha),bis(4, i2))gamma5(bis(4, beta),bis(4, i4))+1𝑖gBilin*gamma(bis(4, i1),bis(4, beta),mink(4, mu))*gamma(bis(4, i3),bis(4, alpha),mink(4, mu))*gamma5(bis(4, alpha),bis(4, i4))*gamma5(bis(4, beta),bis(4, i2))
-
-gBilin * (psibar gamma^mu P_L psi)(psibar gamma_mu P_L psi)  [stripped]
-1𝑖/4*gBilin*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))*gamma(bis(4, i3),bis(4, beta),mink(4, mu))*gamma5(bis(4, alpha),bis(4, i2))gamma5(bis(4, beta),bis(4, i4))-1𝑖/4gBilin*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))*gamma(bis(4, i3),bis(4, beta),mink(4, mu))*gamma5(bis(4, alpha),bis(4, i4))gamma5(bis(4, beta),bis(4, i2))+1𝑖/4gBilin*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))*gamma(bis(4, i3),bis(4, i2),mink(4, mu))gamma5(bis(4, alpha),bis(4, i4))-1𝑖/4gBilin*gamma(bis(4, i1),bis(4, alpha),mink(4, mu))*gamma(bis(4, i3),bis(4, i4),mink(4, mu))gamma5(bis(4, alpha),bis(4, i2))-1𝑖/4gBilin*gamma(bis(4, i1),bis(4, beta),mink(4, mu))*gamma(bis(4, i3),bis(4, alpha),mink(4, mu))*gamma5(bis(4, alpha),bis(4, i2))gamma5(bis(4, beta),bis(4, i4))+1𝑖/4gBilin*gamma(bis(4, i1),bis(4, beta),mink(4, mu))*gamma(bis(4, i3),bis(4, alpha),mink(4, mu))gamma5(bis(4, alpha),bis(4, i4))gamma5(bis(4, beta),bis(4, i2))+1𝑖/4gBilingamma(bis(4, i1),bis(4, beta),mink(4, mu))gamma(bis(4, i3),bis(4, i2),mink(4, mu))gamma5(bis(4, beta),bis(4, i4))-1𝑖/4gBilingamma(bis(4, i1),bis(4, beta),mink(4, mu))gamma(bis(4, i3),bis(4, i4),mink(4, mu))gamma5(bis(4, beta),bis(4, i2))-1𝑖/4gBilingamma(bis(4, i1),bis(4, i2),mink(4, mu))gamma(bis(4, i3),bis(4, alpha),mink(4, mu))gamma5(bis(4, alpha),bis(4, i4))-1𝑖/4gBilingamma(bis(4, i1),bis(4, i2),mink(4, mu))gamma(bis(4, i3),bis(4, beta),mink(4, mu))gamma5(bis(4, beta),bis(4, i4))+1𝑖/2gBilingamma(bis(4, i1),bis(4, i2),mink(4, mu))gamma(bis(4, i3),bis(4, i4),mink(4, mu))+1𝑖/4gBilin*gamma(bis(4, i1),bis(4, i4),mink(4, mu))*gamma(bis(4, i3),bis(4, alpha),mink(4, mu))gamma5(bis(4, alpha),bis(4, i2))+1𝑖/4gBilin*gamma(bis(4, i1),bis(4, i4),mink(4, mu))*gamma(bis(4, i3),bis(4, beta),mink(4, mu))gamma5(bis(4, beta),bis(4, i2))-1𝑖/2gBilin*gamma(bis(4, i1),bis(4, i4),mink(4, mu))*gamma(bis(4, i3),bis(4, i2),mink(4, mu))
-
-# ================================================================================
-Complex Scalar Structures
-
-lamC * phi^dagger phi
-1𝑖*lamC
-
-gPhiA * A_mu * phi^dagger <-> d^mu phi
--gPhiA*pcomp(p1,mu3)+gPhiA*pcomp(p2,mu3)
-
-gPhiAA * A_mu A^mu phi^dagger phi
-2𝑖*gPhiAA*g(mink(4, mu3),mink(4, mu4))
-
-== tests ==
-Clifford anticommutator: PASS
-psibar gamma^mu psi: PASS
-psibar gamma5 psi: PASS
-psibar sigma^{mu nu} psi: PASS
-P_L + P_R = 1: PASS
-P_R - P_L = gamma5: PASS
-psibar gamma_mu psi: PASS
-psibar gamma^mu gamma^nu psi: PASS
-psibar gamma^nu gamma^mu psi: PASS
-psibar gamma_mu gamma_nu psi: PASS
-gamma^mu gamma^nu + gamma^nu gamma^mu: PASS
-stripped current-current: PASS
-raw psibar gamma^mu gamma^nu gamma^rho psi: PASS
-simplified psibar gamma^mu gamma^nu gamma^rho psi: PASS
-psibar gamma^mu gamma^nu gamma^rho psi: PASS
-psibar gamma^mu gamma^nu gamma5 psi: PASS
-phi^dagger phi: PASS
-complex scalar gauge current: PASS
-complex scalar gauge contact: PASS
-
-All selected tests passed.
-
-Validation hardening:
-Undeclared gauge boson metadata rejected: PASS
-Multiple non-abelian representation matches rejected: PASS
