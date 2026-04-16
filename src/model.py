@@ -914,7 +914,10 @@ class InteractionTerm:
         if isinstance(other, InteractionTerm):
             return Lagrangian(terms=(self, other))
         if isinstance(other, Lagrangian):
-            return Lagrangian(terms=(self,) + other.terms)
+            return Lagrangian(self, other)
+        local_terms = _standalone_lagrangian_source_terms_from_item(other)
+        if local_terms is not None:
+            return Lagrangian(self, *local_terms)
         decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
             return DeclaredLagrangian(source_terms=(self,) + decl_terms)
@@ -925,6 +928,9 @@ class InteractionTerm:
             return Lagrangian(terms=(self,))
         if isinstance(other, InteractionTerm):
             return Lagrangian(terms=(other, self))
+        local_terms = _standalone_lagrangian_source_terms_from_item(other)
+        if local_terms is not None:
+            return Lagrangian(*local_terms, self)
         decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
             return DeclaredLagrangian(source_terms=decl_terms + (self,))
@@ -1064,33 +1070,98 @@ def _term_matches_fields(
     return term_species == ext_species
 
 
-@dataclass
+def _standalone_lagrangian_context_error() -> str:
+    return (
+        "Standalone Lagrangian(...) only supports local terms built from "
+        "fields, PartialD(...), and one optional Gamma(...). "
+        "Use Model(lagrangian_decl=...) for CovD(...), FieldStrength(...), "
+        "GaugeFixing(...), and GhostLagrangian(...), since those need "
+        "model metadata."
+    )
+
+
+@dataclass(init=False)
 class Lagrangian:
     """Collection of interaction terms with a single ``feynman_rule()`` entry point.
 
-    Mirrors the FeynRules workflow: declare Lagrangian pieces, compose with
-    ``+``, then extract vertex factors by specifying external fields.
+    Mirrors the FeynRules workflow: declare Lagrangian pieces, compose them
+    with ``+``, then extract vertex factors by specifying external fields.
+
+    Standalone ``Lagrangian(...)`` accepts local declarative monomials directly,
+    so users do not need to build ``InteractionTerm`` objects by hand for
+    operators such as ``lam * Phi * Phi * Phi * Phi`` or
+    ``g * PartialD(Phi, mu) * PartialD(Phi, mu) * Phi * Phi``.
+
+    Source forms that require model metadata, such as ``CovD(...)``,
+    ``FieldStrength(...)``, ``GaugeFixing(...)``, or ``GhostLagrangian(...)``,
+    still belong in ``Model(lagrangian_decl=...)`` and are compiled there.
 
     Example::
 
-        L = LGauge + LFermions + LHiggs
+        L = Lagrangian(lam * Phi * Phi * Phi * Phi)
         vertex = L.feynman_rule(Phi.bar, Phi, A)
     """
     terms: tuple[InteractionTerm, ...] = ()
+    source_terms: tuple[object, ...] = ()
+
+    def __init__(self, *items, terms=None, lagrangian_decl=None):
+        if terms is not None and (items or lagrangian_decl is not None):
+            raise TypeError(
+                "Lagrangian accepts either `terms=` or declarative input, not both."
+            )
+
+        if lagrangian_decl is not None:
+            if items:
+                raise TypeError(
+                    "Pass declarative input either positionally or via "
+                    "`lagrangian_decl=`, not both."
+                )
+            items = (lagrangian_decl,)
+
+        if terms is not None:
+            normalized_terms = _normalize_interaction_terms_input(terms)
+            self.terms = normalized_terms
+            self.source_terms = normalized_terms
+            return
+
+        if not items:
+            self.terms = ()
+            self.source_terms = ()
+            return
+
+        source_terms = _normalize_lagrangian_source_terms(items)
+        self.terms = tuple(
+            _lower_standalone_lagrangian_source_term(term)
+            for term in source_terms
+        )
+        self.source_terms = source_terms
+
+    @classmethod
+    def from_item(cls, item) -> "Lagrangian":
+        return cls(item)
 
     def __add__(self, other):
-        if isinstance(other, Lagrangian):
-            return Lagrangian(terms=self.terms + other.terms)
-        if isinstance(other, InteractionTerm):
-            return Lagrangian(terms=self.terms + (other,))
+        terms = _standalone_lagrangian_source_terms_from_item(other)
+        if terms is not None:
+            return Lagrangian(*self.source_terms, *terms)
+        if _declared_source_terms_from_item(other) is not None:
+            raise ValueError(_standalone_lagrangian_context_error())
         return NotImplemented
 
     def __radd__(self, other):
         if other == 0:
             return self
-        if isinstance(other, InteractionTerm):
-            return Lagrangian(terms=(other,) + self.terms)
+        terms = _standalone_lagrangian_source_terms_from_item(other)
+        if terms is not None:
+            return Lagrangian(*terms, *self.source_terms)
+        if _declared_source_terms_from_item(other) is not None:
+            raise ValueError(_standalone_lagrangian_context_error())
         return NotImplemented
+
+    def __str__(self):
+        if not self.source_terms:
+            return "0"
+        return " + ".join(str(term) for term in self.source_terms)
 
     def feynman_rule(self, *fields, momenta=None, simplify=True):
         """Compute the Feynman vertex rule for the given external fields.
@@ -1372,7 +1443,7 @@ def _match_covariant_monomial(
 def _generic_interaction_occurrence_labels(field_factors: Sequence[_FieldFactor]) -> list[dict]:
     labels = [{} for _ in field_factors]
     fermion_slots = [i for i, factor in enumerate(field_factors) if factor.field.kind == "fermion"]
-    if len(fermion_slots) <= 2 or len(fermion_slots) % 2 != 0:
+    if not fermion_slots or len(fermion_slots) % 2 != 0:
         return labels
 
     pair_slots = [fermion_slots[k : k + 2] for k in range(0, len(fermion_slots), 2)]
@@ -1380,11 +1451,51 @@ def _generic_interaction_occurrence_labels(field_factors: Sequence[_FieldFactor]
         left, right = (field_factors[slot] for slot in slots)
         if not left.conjugated or right.conjugated:
             return labels
-        spinor_label = S(f"alpha_decl_{pair_number}")
+        spinor_label = (
+            S("alpha_decl")
+            if len(pair_slots) == 1
+            else S(f"alpha_decl_{pair_number}")
+        )
         labels[slots[0]][SPINOR_KIND] = spinor_label
         labels[slots[1]][SPINOR_KIND] = spinor_label
 
     return labels
+
+
+def _attach_unique_declared_lorentz_label(
+    field_factors: Sequence[_FieldFactor],
+    derivative_indices: Sequence[tuple[object, ...]],
+    gamma_factors: Sequence[GammaFactor],
+    occurrence_labels: list[dict],
+) -> list[dict]:
+    vector_slots = [
+        idx
+        for idx, factor in enumerate(field_factors)
+        if sum(index.kind == LORENTZ_KIND for index in factor.field.indices) == 1
+    ]
+    if len(vector_slots) != 1:
+        return occurrence_labels
+
+    declared_lorentz_indices: list[object] = []
+    for lorentz_index in (
+        [factor.lorentz_index for factor in gamma_factors]
+        + [
+            lorentz_index
+            for indices in derivative_indices
+            for lorentz_index in indices
+        ]
+    ):
+        if any(_expr_equal_impl(lorentz_index, seen) for seen in declared_lorentz_indices):
+            continue
+        declared_lorentz_indices.append(lorentz_index)
+
+    if len(declared_lorentz_indices) != 1:
+        return occurrence_labels
+
+    slot = vector_slots[0]
+    occurrence_labels[slot] = dict(occurrence_labels[slot])
+    occurrence_labels[slot].setdefault(LORENTZ_KIND, declared_lorentz_indices[0])
+    return occurrence_labels
 
 
 def _lower_local_interaction_monomial(term: _DeclaredMonomial):
@@ -1410,6 +1521,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         return None
 
     coupling = term.coefficient
+    occurrence_labels = _generic_interaction_occurrence_labels(base_factors)
     if gamma_factors:
         if len(gamma_factors) != 1:
             return None
@@ -1424,14 +1536,18 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
 
         from operators import psi_bar_gamma_psi
 
-        occurrence_labels = [{} for _ in base_factors]
         i_bar = S("alpha_decl_bar")
         i_psi = S("alpha_decl")
         occurrence_labels[left_slot][SPINOR_KIND] = i_bar
         occurrence_labels[right_slot][SPINOR_KIND] = i_psi
         coupling *= psi_bar_gamma_psi(i_bar, i_psi, gamma_factors[0].lorentz_index)
-    else:
-        occurrence_labels = _generic_interaction_occurrence_labels(base_factors)
+
+    occurrence_labels = _attach_unique_declared_lorentz_label(
+        base_factors,
+        derivative_indices,
+        gamma_factors,
+        occurrence_labels,
+    )
 
     return InteractionTerm(
         coupling=coupling,
@@ -1499,6 +1615,57 @@ def _declared_source_terms_from_item(item):
     if factor is not None:
         return (_DeclaredMonomial.from_factor(factor),)
     return None
+
+
+def _normalize_interaction_terms_input(terms) -> tuple[InteractionTerm, ...]:
+    if isinstance(terms, Lagrangian):
+        return terms.terms
+    if isinstance(terms, InteractionTerm):
+        normalized = (terms,)
+    else:
+        normalized = tuple(terms)
+    if not all(isinstance(term, InteractionTerm) for term in normalized):
+        raise TypeError(
+            "`terms=` expects InteractionTerm objects. "
+            "For declarative input, use `Lagrangian(...)` or "
+            "`Lagrangian(lagrangian_decl=...)`."
+        )
+    return normalized
+
+
+def _standalone_lagrangian_source_terms_from_item(item):
+    if isinstance(item, Lagrangian):
+        return item.source_terms
+    if isinstance(item, InteractionTerm):
+        return (item,)
+    terms = _declared_source_terms_from_item(item)
+    if terms is None:
+        return None
+    if all(_source_term_interaction(term) is not None for term in terms):
+        return terms
+    return None
+
+
+def _normalize_lagrangian_source_terms(items) -> tuple[object, ...]:
+    normalized: list[object] = []
+    for item in items:
+        terms = _standalone_lagrangian_source_terms_from_item(item)
+        if terms is not None:
+            normalized.extend(terms)
+            continue
+        if _declared_source_terms_from_item(item) is not None:
+            raise ValueError(_standalone_lagrangian_context_error())
+        raise TypeError(f"Cannot build Lagrangian from {type(item).__name__}")
+    return tuple(normalized)
+
+
+def _lower_standalone_lagrangian_source_term(term) -> InteractionTerm:
+    interaction = _source_term_interaction(term)
+    if interaction is not None:
+        return interaction
+    if _source_term_needs_compilation(term):
+        raise ValueError(_standalone_lagrangian_context_error())
+    raise TypeError(f"Cannot lower {type(term).__name__} into a standalone Lagrangian.")
 
 
 def _source_term_interaction(term) -> InteractionTerm | None:

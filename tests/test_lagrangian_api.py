@@ -68,6 +68,7 @@ from model_symbolica import (  # noqa: E402
 )
 from spenso_structures import (  # noqa: E402
     gauge_generator,
+    gamma_matrix,
     lorentz_metric,
     structure_constant,
 )
@@ -273,6 +274,199 @@ def test_phi4_vertex():
     d = S("d")
     expected = 24 * I * lam4 * (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
     assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_phi4_field_product():
+    """Standalone Lagrangian(...) lowers a pure local field product directly."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lam4 = S("lam4")
+
+    got = Lagrangian(lam4 * phi * phi * phi * phi).feynman_rule(
+        phi, phi, phi, phi, simplify=True
+    )
+
+    q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+    d = S("d")
+    expected = 24 * I * lam4 * (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_partiald_phi4_product():
+    """Standalone Lagrangian(...) lowers local PartialD monomials directly."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    gD2 = S("gD2")
+    mu = S("mu")
+
+    got = Lagrangian(
+        gD2 * PartialD(phi, mu) * PartialD(phi, mu) * phi * phi
+    ).feynman_rule(phi, phi, phi, phi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=gD2,
+            fields=(phi.occurrence(), phi.occurrence(), phi.occurrence(), phi.occurrence()),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=mu),
+                DerivativeAction(target=1, lorentz_index=mu),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(phi, phi, phi, phi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_yukawa_product():
+    """Two-fermion scalar bilinears infer the needed spinor labels automatically."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    y = S("y")
+
+    got = Lagrangian(y * psi.bar * psi * phi).feynman_rule(
+        psi.bar, psi, phi, simplify=True
+    )
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=y,
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: S("alpha")}),
+                psi.occurrence(labels={SPINOR_KIND: S("alpha")}),
+                phi.occurrence(),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(psi.bar, psi, phi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_vector_current():
+    """A unique vector slot inherits the declared Lorentz label from Gamma(mu)."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    A = _make_photon()
+    g = S("g")
+    mu = S("mu")
+
+    got = Lagrangian(g * psi.bar * Gamma(mu) * psi * A).feynman_rule(
+        psi.bar, psi, A, simplify=True
+    )
+
+    expected = (
+        I
+        * g
+        * gamma_matrix(S("i1"), S("i2"), S("i3"))
+        * (2 * pi) ** S("d")
+        * Delta(S("q1") + S("q2") + S("q3"))
+    )
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_two_fermion_partiald_operator():
+    """Two-fermion local derivative operators lower without explicit InteractionTerm."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    y = S("y")
+    mu = S("mu")
+
+    got = Lagrangian(
+        y * PartialD(psi.bar, mu) * psi * phi * chi
+    ).feynman_rule(psi.bar, psi, phi, chi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=y,
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: S("alpha")}),
+                psi.occurrence(labels={SPINOR_KIND: S("alpha")}),
+                phi.occurrence(),
+                chi.occurrence(),
+            ),
+            derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
+        ),
+    ))
+    expected = ref.feynman_rule(psi.bar, psi, phi, chi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_declared_complex_scalar_current_pair():
+    """A unique vector slot also inherits the shared derivative Lorentz index."""
+    phi = Field(
+        "PhiC",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi"),
+        conjugate_symbol=S("phibar"),
+    )
+    A = _make_photon()
+    g = S("g")
+    mu = S("mu")
+
+    got = Lagrangian(
+        g * phi.bar * PartialD(phi, mu) * A,
+        -g * PartialD(phi.bar, mu) * phi * A,
+    ).feynman_rule(phi.bar, phi, A, simplify=True)
+
+    expected = (
+        g
+        * (pcomp(S("q2"), mu) - pcomp(S("q1"), mu))
+        * (2 * pi) ** S("d")
+        * Delta(S("q1") + S("q2") + S("q3"))
+    )
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_accepts_lagrangian_decl_keyword():
+    """The standalone API accepts a Model-style lagrangian_decl= alias."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lam4 = S("lam4")
+
+    got = Lagrangian(
+        lagrangian_decl=lam4 * phi * phi * phi * phi
+    ).feynman_rule(phi, phi, phi, phi, simplify=True)
+
+    q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+    d = S("d")
+    expected = 24 * I * lam4 * (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
+    assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_rejects_covariant_decl_without_model():
+    """Covariant structures still need Model metadata for compilation."""
+    qPsi = S("qPsi")
+    mu = S("mu")
+    fermion = Field(
+        "PsiQED",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Q": qPsi},
+    )
+
+    with pytest.raises(ValueError, match="Use Model\\(lagrangian_decl="):
+        Lagrangian(I * fermion.bar * Gamma(mu) * CovD(fermion, mu))
 
 
 def test_model_accepts_declared_phi4_field_product():
