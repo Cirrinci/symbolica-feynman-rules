@@ -32,7 +32,6 @@ from spenso_structures import (
     structure_constant,
 )
 from model import (
-    COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
     InteractionTerm,
     DerivativeAction,
@@ -40,21 +39,15 @@ from model import (
     Lagrangian,
 )
 from operators import (
-    gauge_fixing_bilinear,
-    gauge_kinetic_bilinear,
-    ghost_gauge,
-    ghost_kinetic,
     psi_bar_psi,
     quark_gluon_current,
     scalar_gauge_contact,
-    yang_mills_four_vertex_raw,
-    yang_mills_three_vertex_raw,
 )
 from gauge_compiler import (
     compile_covariant_terms,
     compile_minimal_gauge_interactions,
 )
-from tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
+from tensor_canonicalization import canonize_spenso_tensors
 
 from examples import (
     # symbols
@@ -274,91 +267,6 @@ def _canonized_gauge_vertex(
         spinor_indices=spinor_indices,
     )
     return canonical_expr
-
-
-def _adjoint_identity(left, right):
-    return COLOR_ADJ_INDEX.representation.g(left, right).to_expression()
-
-
-def _compact_qed_gauge_bilinear(metric_term):
-    rho = metric_term.derivatives[0].lorentz_index
-    return I * gauge_kinetic_bilinear(S("i1"), S("i2"), q1, q2, rho) * D2
-
-
-def _compact_qcd_gauge_bilinear(metric_term):
-    rho = metric_term.derivatives[0].lorentz_index
-    return (
-        I
-        * gauge_kinetic_bilinear(S("i1"), S("i3"), q1, q2, rho)
-        * _adjoint_identity(S("i2"), S("i4"))
-        * D2
-    )
-
-
-def _compact_qed_gauge_fixing(xi):
-    return I * gauge_fixing_bilinear(S("i1"), S("i2"), q1, q2) * D2 / xi
-
-
-def _compact_qcd_gauge_fixing(xi):
-    return (
-        I
-        * gauge_fixing_bilinear(S("i1"), S("i3"), q1, q2)
-        * _adjoint_identity(S("i2"), S("i4"))
-        * D2
-        / xi
-    )
-
-
-def _compact_qed_ordinary_bilinear(metric_term, xi):
-    rho = metric_term.derivatives[0].lorentz_index
-    return I * (
-        gauge_kinetic_bilinear(S("i1"), S("i2"), q1, q2, rho)
-        + gauge_fixing_bilinear(S("i1"), S("i2"), q1, q2) / xi
-    ) * D2
-
-
-def _compact_qcd_ordinary_bilinear(metric_term, xi):
-    rho = metric_term.derivatives[0].lorentz_index
-    return (
-        I
-        * (
-            gauge_kinetic_bilinear(S("i1"), S("i3"), q1, q2, rho)
-            + gauge_fixing_bilinear(S("i1"), S("i3"), q1, q2) / xi
-        )
-        * _adjoint_identity(S("i2"), S("i4"))
-        * D2
-    )
-
-
-def _compact_ghost_bilinear():
-    return -I * ghost_kinetic(S("i1"), S("i2"), q1, q2, S("rho_ghost")) * D2
-
-
-def _compact_ghost_gluon():
-    return -gS * ghost_gauge(S("i1"), S("i3"), S("i4"), S("i2"), q1) * D3
-
-
-def _compact_yang_mills_cubic():
-    return gS * yang_mills_three_vertex_raw(
-        S("i2"), S("i4"), S("i6"),
-        S("i1"), S("i3"), S("i5"),
-        q1, q2, q3,
-    ) * D3
-
-
-def _compact_yang_mills_quartic():
-    return (
-        -I
-        * Expression.num(1)
-        / Expression.num(2)
-        * (gS ** 2)
-        * yang_mills_four_vertex_raw(
-            S("i2"), S("i4"), S("i6"), S("i8"),
-            S("i1"), S("i3"), S("i5"), S("i7"),
-            S("color_adj_mid_G_SU3C"),
-        )
-        * D4
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -1479,7 +1387,6 @@ def _run_covariant_demo():
             "-1/4 U1QED field strength squared",
         ),
         vertex=MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField),
-        compact_override=_compact_qed_gauge_bilinear(compiled_photon[0]),
     )
     _print_vertex_block(
         "covariant: -1/4 G^a_mu nu G^{a mu nu} [bilinear]",
@@ -1490,7 +1397,6 @@ def _run_covariant_demo():
             "-1/4 SU3C field strength squared",
         ),
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(GluonField, GluonField),
-        compact_override=_compact_qcd_gauge_bilinear(compiled_yang_mills[0]),
     )
     _print_vertex_block(
         "covariant: Yang-Mills 3-gauge vertex",
@@ -1499,16 +1405,6 @@ def _run_covariant_demo():
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
             GluonField, GluonField, GluonField,
         ),
-        canonical_vertex=_canonized_gauge_vertex(
-            contract_spenso_lorentz_metrics(
-                MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
-                    GluonField, GluonField, GluonField,
-                )
-            ),
-            lorentz_indices=(S("i1"), S("i3"), S("i5")),
-            adjoint_indices=(S("i2"), S("i4"), S("i6")),
-        ),
-        compact_override=_compact_yang_mills_cubic(),
     )
     _print_vertex_block(
         "covariant: Yang-Mills 4-gauge vertex",
@@ -1519,14 +1415,6 @@ def _run_covariant_demo():
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
             GluonField, GluonField, GluonField, GluonField,
         ),
-        canonical_vertex=_canonized_gauge_vertex(
-            MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
-                GluonField, GluonField, GluonField, GluonField,
-            ),
-            lorentz_indices=(S("i1"), S("i3"), S("i5"), S("i7")),
-            adjoint_indices=(S("i2"), S("i4"), S("i6"), S("i8"), S("color_adj_mid_G_SU3C")),
-        ),
-        compact_override=_compact_yang_mills_quartic(),
     )
 
 
@@ -1546,7 +1434,6 @@ def _run_pure_gauge_demo():
             "-1/4 U1QED field strength squared",
         ),
         vertex=MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField),
-        compact_override=_compact_qed_gauge_bilinear(compiled_photon[0]),
     )
     _print_vertex_block(
         "pure gauge: QCD gluon bilinear",
@@ -1557,23 +1444,12 @@ def _run_pure_gauge_demo():
             "-1/4 SU3C field strength squared",
         ),
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(GluonField, GluonField),
-        compact_override=_compact_qcd_gauge_bilinear(compiled_yang_mills[0]),
     )
     _print_vertex_block(
         "pure gauge: QCD 3-gluon",
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QCD_GAUGE_COVARIANT, compiled_yang_mills, GluonField, GluonField, GluonField),
         description="Cubic Yang-Mills self interaction.",
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(GluonField, GluonField, GluonField),
-        canonical_vertex=_canonized_gauge_vertex(
-            contract_spenso_lorentz_metrics(
-                MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
-                    GluonField, GluonField, GluonField,
-                )
-            ),
-            lorentz_indices=(S("i1"), S("i3"), S("i5")),
-            adjoint_indices=(S("i2"), S("i4"), S("i6")),
-        ),
-        compact_override=_compact_yang_mills_cubic(),
     )
     _print_vertex_block(
         "pure gauge: QCD 4-gluon",
@@ -1584,14 +1460,6 @@ def _run_pure_gauge_demo():
         vertex=MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
             GluonField, GluonField, GluonField, GluonField,
         ),
-        canonical_vertex=_canonized_gauge_vertex(
-            MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
-                GluonField, GluonField, GluonField, GluonField,
-            ),
-            lorentz_indices=(S("i1"), S("i3"), S("i5"), S("i7")),
-            adjoint_indices=(S("i2"), S("i4"), S("i6"), S("i8"), S("color_adj_mid_G_SU3C")),
-        ),
-        compact_override=_compact_yang_mills_quartic(),
     )
 
 
@@ -1614,7 +1482,6 @@ def _run_gauge_fixed_demo():
             "-(1/2 xiQED) (U1QED gauge fixing)",
         ),
         vertex=MODEL_QED_GAUGE_FIXING_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField),
-        compact_override=_compact_qed_gauge_fixing(xiQED),
     )
     _print_vertex_block(
         "gauge-fixed: -(1/2 xi) (partial.G)^2 [non-abelian]",
@@ -1625,14 +1492,12 @@ def _run_gauge_fixed_demo():
             "-(1/2 xiQCD) (SU3C gauge fixing)",
         ),
         vertex=MODEL_QCD_GAUGE_FIXING_COVARIANT.lagrangian().feynman_rule(GluonField, GluonField),
-        compact_override=_compact_qcd_gauge_fixing(xiQCD),
     )
     _print_vertex_block(
         "gauge-fixed: ordinary photon bilinear",
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QED_ORDINARY_GAUGE_FIXED, compiled_qed_full, GaugeField, GaugeField),
         description="Gauge kinetic plus ordinary gauge fixing combined into the full two-point photon vertex.",
         vertex=MODEL_QED_ORDINARY_GAUGE_FIXED.lagrangian().feynman_rule(GaugeField, GaugeField),
-        compact_override=_compact_qed_ordinary_bilinear(compiled_qed_full[0], xiQED),
     )
     _print_vertex_block(
         "gauge-fixed: Faddeev-Popov ghost bilinear",
@@ -1645,7 +1510,6 @@ def _run_gauge_fixed_demo():
         vertex=MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
             GhostGluonField.bar, GhostGluonField,
         ),
-        compact_override=_compact_ghost_bilinear(),
     )
     _print_vertex_block(
         "gauge-fixed: ghost-gluon interaction",
@@ -1654,14 +1518,12 @@ def _run_gauge_fixed_demo():
         vertex=MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
             GhostGluonField.bar, GluonField, GhostGluonField,
         ),
-        compact_override=_compact_ghost_gluon(),
     )
     _print_vertex_block(
         "gauge-fixed: ordinary gluon bilinear",
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED, compiled_qcd_full, GluonField, GluonField),
         description="Yang-Mills bilinear plus ordinary gauge fixing combined into the full two-point gluon vertex.",
         vertex=MODEL_QCD_ORDINARY_GAUGE_FIXED.lagrangian().feynman_rule(GluonField, GluonField),
-        compact_override=_compact_qcd_ordinary_bilinear(compiled_qcd_full[0], xiQCD),
     )
 
 
@@ -1682,7 +1544,6 @@ def _run_ghost_demo():
         vertex=MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
             GhostGluonField.bar, GhostGluonField,
         ),
-        compact_override=_compact_ghost_bilinear(),
     )
     _print_vertex_block(
         "ghost: ghost-gluon interaction",
@@ -1691,7 +1552,6 @@ def _run_ghost_demo():
         vertex=MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
             GhostGluonField.bar, GluonField, GhostGluonField,
         ),
-        compact_override=_compact_ghost_gluon(),
     )
 
 
@@ -1709,21 +1569,12 @@ def _run_full_demo():
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED, compiled_qcd_full, GluonField, GluonField),
         description="Gauge kinetic plus ordinary gauge fixing in one model.",
         vertex=lagrangian_qcd.feynman_rule(GluonField, GluonField),
-        compact_override=_compact_qcd_ordinary_bilinear(compiled_qcd_full[0], xiQCD),
     )
     _print_vertex_block(
         "full QCD: 3-gluon",
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED, compiled_qcd_full, GluonField, GluonField, GluonField),
         description="Non-abelian cubic self interaction inside the fully gauge-fixed model.",
         vertex=lagrangian_qcd.feynman_rule(GluonField, GluonField, GluonField),
-        canonical_vertex=_canonized_gauge_vertex(
-            contract_spenso_lorentz_metrics(
-                lagrangian_qcd.feynman_rule(GluonField, GluonField, GluonField)
-            ),
-            lorentz_indices=(S("i1"), S("i3"), S("i5")),
-            adjoint_indices=(S("i2"), S("i4"), S("i6")),
-        ),
-        compact_override=_compact_yang_mills_cubic(),
     )
     _print_vertex_block(
         "full QCD: 4-gluon",
@@ -1732,33 +1583,24 @@ def _run_full_demo():
         ),
         description="Quartic Yang-Mills self interaction inside the fully gauge-fixed model.",
         vertex=lagrangian_qcd.feynman_rule(GluonField, GluonField, GluonField, GluonField),
-        canonical_vertex=_canonized_gauge_vertex(
-            lagrangian_qcd.feynman_rule(GluonField, GluonField, GluonField, GluonField),
-            lorentz_indices=(S("i1"), S("i3"), S("i5"), S("i7")),
-            adjoint_indices=(S("i2"), S("i4"), S("i6"), S("i8"), S("color_adj_mid_G_SU3C")),
-        ),
-        compact_override=_compact_yang_mills_quartic(),
     )
     _print_vertex_block(
         "full QCD: ghost bilinear",
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED, compiled_qcd_full, GhostGluonField.bar, GhostGluonField),
         description="Ghost kinetic term inside the fully gauge-fixed model.",
         vertex=lagrangian_qcd.feynman_rule(GhostGluonField.bar, GhostGluonField),
-        compact_override=_compact_ghost_bilinear(),
     )
     _print_vertex_block(
         "full QCD: ghost-gluon",
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED, compiled_qcd_full, GhostGluonField.bar, GluonField, GhostGluonField),
         description="Ghost-gauge coupling inside the fully gauge-fixed model.",
         vertex=lagrangian_qcd.feynman_rule(GhostGluonField.bar, GluonField, GhostGluonField),
-        compact_override=_compact_ghost_gluon(),
     )
     _print_vertex_block(
         "full QED: photon bilinear",
         lagrangian_terms=_demo_lagrangian_terms(MODEL_QED_ORDINARY_GAUGE_FIXED, compiled_qed_full, GaugeField, GaugeField),
         description="Gauge kinetic plus ordinary gauge fixing for the abelian model.",
         vertex=lagrangian_qed.feynman_rule(GaugeField, GaugeField),
-        compact_override=_compact_qed_ordinary_bilinear(compiled_qed_full[0], xiQED),
     )
 
 

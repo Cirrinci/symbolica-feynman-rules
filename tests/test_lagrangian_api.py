@@ -120,7 +120,7 @@ def _ref_vertex(interaction, legs, d=None):
         d=d,
         strip_externals=True,
         include_delta=True,
-    ))
+    ), external_legs=legs)
 
 
 def _make_photon():

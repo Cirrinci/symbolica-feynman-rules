@@ -1164,15 +1164,13 @@ class Lagrangian:
             )
 
         if simplify:
-            from model_symbolica import simplify_deltas
-
+            species_map = None
             unique_species = list(dict.fromkeys(
                 fld.species_for(conj) for fld, conj in parsed
             ))
             if len(unique_species) > 1:
                 species_map = {sp: sp for sp in unique_species}
-                total = simplify_deltas(total, species_map=species_map)
-            total = simplify_vertex(total)
+            total = simplify_vertex(total, species_map=species_map, external_legs=legs)
 
         return total
 

@@ -22,7 +22,8 @@ from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 from symbolica.community.idenso import simplify_metrics
 
-from spenso_structures import SPINOR_KIND
+from spenso_structures import LORENTZ_KIND, SPINOR_KIND
+from tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
 
 # ---------------------------------------------------------------------------
 # Module-level Symbolica symbols + Spenso bispinor representation
@@ -739,10 +740,60 @@ def simplify_spinor_indices(expr):
     return simplify_metrics(expr)
 
 
-def simplify_vertex(expr, species_map=None):
+def _vector_leg_lorentz_labels(external_legs):
+    labels = []
+    for leg in external_legs:
+        label = _get_label(getattr(leg, "labels", None), LORENTZ_KIND)
+        if label is None:
+            return ()
+        labels.append(label)
+    return tuple(labels)
+
+
+def _vector_leg_internal_labels(external_legs):
+    labels = []
+    for leg in external_legs:
+        label = None
+        for index in getattr(leg.field, "indices", ()):
+            if index.kind == LORENTZ_KIND:
+                continue
+            label = _get_label(getattr(leg, "labels", None), index.kind)
+            if label is not None:
+                labels.append(label)
+                break
+        if label is None:
+            return ()
+    return tuple(labels)
+
+
+def _canonicalize_vector_vertex(expr, external_legs):
+    if external_legs is None or len(external_legs) not in (3, 4):
+        return expr
+    if not all(getattr(getattr(leg, "field", None), "kind", None) == "vector" for leg in external_legs):
+        return expr
+
+    lorentz_labels = _vector_leg_lorentz_labels(external_legs)
+    if not lorentz_labels:
+        return expr
+
+    internal_labels = _vector_leg_internal_labels(external_legs)
+    if not internal_labels:
+        return expr
+
+    canonical_expr, _, _ = canonize_spenso_tensors(
+        expr,
+        lorentz_indices=lorentz_labels,
+        adjoint_indices=internal_labels,
+    )
+    return canonical_expr
+
+
+def simplify_vertex(expr, species_map=None, external_legs=None):
     """Simplify a vertex factor expression in one call."""
     expr = simplify_deltas(expr, species_map=species_map)
     expr = simplify_spinor_indices(expr)
+    expr = contract_spenso_lorentz_metrics(expr)
+    expr = _canonicalize_vector_vertex(expr, external_legs)
     return expr
 
 
