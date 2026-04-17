@@ -184,6 +184,6 @@ class Model:
         canonical covariant / field-strength / gauge-fixing / ghost structures
         are expanded term by term through the compiler.
         """
-        from compiler.covariant import compile_covariant_terms
+        from compiler.gauge import compile_covariant_terms
 
         return Lagrangian(terms=self.all_interactions() + compile_covariant_terms(self))

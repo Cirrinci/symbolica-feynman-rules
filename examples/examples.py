@@ -25,7 +25,7 @@ from compiler.gauge import (
     compile_minimal_gauge_interactions,
     with_minimal_gauge_interactions,
 )
-from compiler.covariant import (
+from compiler.gauge import (
     compile_covariant_terms,
     with_compiled_covariant_terms,
 )

@@ -10,7 +10,7 @@ from examples.examples import (
     MODEL_QCD_GHOST_COVARIANT,
     MODEL_QED_GAUGE_COVARIANT,
 )
-from compiler.covariant import compile_covariant_terms
+from compiler.gauge import compile_covariant_terms
 from lagrangian.operators import (
     gauge_kinetic_bilinear,
     ghost_gauge,
