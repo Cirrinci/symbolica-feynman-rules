@@ -644,7 +644,7 @@ class GhostTerm:
     label: str = ""
 
 
-CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
+CovariantTerm = DiracKineticTerm or ComplexScalarKineticTerm
 
 
 # ---------------------------------------------------------------------------
