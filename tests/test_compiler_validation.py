@@ -11,7 +11,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms  # noqa: E402
+from gauge_compiler import compile_covariant_terms, expand_cov_der  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -90,6 +90,35 @@ def _make_u1_model(*, field_charge):
         gauge_groups=(u1,),
         fields=(psi, photon),
     ), psi, photon, u1
+
+
+def _make_scalar_u1_model(*, field_charge, self_conjugate=False):
+    scalar = Field(
+        "PhiU1",
+        spin=0,
+        self_conjugate=self_conjugate,
+        symbol=S("phi_u1"),
+        conjugate_symbol=None if self_conjugate else S("phidag_u1"),
+        quantum_numbers={"Q": field_charge},
+    )
+    photon = Field(
+        "A",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("A"),
+        indices=(LORENTZ_INDEX,),
+    )
+    u1 = GaugeGroup(
+        name="U1",
+        abelian=True,
+        coupling=S("e"),
+        gauge_boson=photon.symbol,
+        charge="Q",
+    )
+    return Model(
+        gauge_groups=(u1,),
+        fields=(scalar, photon),
+    ), scalar, photon, u1
 
 
 def _make_su3_model():
@@ -189,6 +218,37 @@ def test_explicit_abelian_group_selection_rejects_neutral_field():
 
     with pytest.raises(ValueError, match=r"non-zero charge 'Q' under gauge group 'U1'"):
         compile_covariant_terms(model)
+
+
+def test_expand_cov_der_exposes_group_representation_and_conjugation_metadata():
+    model, scalar, _, u1 = _make_scalar_u1_model(field_charge=S("qPhi"))
+
+    expanded = expand_cov_der(model, CovD(scalar.bar, S("mu_decl")))
+
+    assert expanded.field is scalar
+    assert expanded.conjugated is True
+    assert expanded.derivative_piece.field is scalar
+    assert expanded.derivative_piece.conjugated is True
+    assert len(expanded.gauge_current_pieces) == 1
+
+    piece = expanded.gauge_current_pieces[0]
+    assert piece.metadata.gauge_group is u1
+    assert piece.metadata.gauge_field.symbol == S("A")
+    assert piece.metadata.representation is None
+    assert piece.metadata.representation_name == "Q"
+    assert piece.metadata.representation_slots == ()
+    assert piece.metadata.repeated_index is False
+    assert piece.metadata.conjugated is True
+    assert piece.metadata.conjugation_supported is True
+    assert piece.metadata.self_conjugate_field is False
+    assert expanded.contact_ready_data == expanded.gauge_current_pieces
+
+
+def test_expand_cov_der_rejects_self_conjugate_field():
+    model, scalar, _, _ = _make_scalar_u1_model(field_charge=S("qPhi"), self_conjugate=True)
+
+    with pytest.raises(ValueError, match=r"non-self-conjugate matter fields"):
+        expand_cov_der(model, CovD(scalar, S("mu_decl")))
 
 
 def test_fermion_vertex_rejects_partial_spinor_leg_labels():
