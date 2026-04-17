@@ -47,8 +47,8 @@ from model import (
     InteractionTerm,
     Model,
 )
-from operators import psi_bar_gamma_psi, scalar_gauge_contact
-from spenso_structures import LORENTZ_KIND, SPINOR_KIND, lorentz_metric
+from lagrangian.operators import psi_bar_gamma_psi, scalar_gauge_contact
+from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND, lorentz_metric
 
 
 _HALF = Expression.num(1) / Expression.num(2)

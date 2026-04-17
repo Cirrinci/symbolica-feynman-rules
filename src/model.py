@@ -27,7 +27,7 @@ import warnings
 
 from symbolica import Expression, S
 
-from spenso_structures import (
+from symbolic.spenso_structures import (
     BISPINOR,
     COLOR_ADJ,
     COLOR_FUND,
@@ -42,7 +42,7 @@ from spenso_structures import (
     lorentz_metric,
     structure_constant,
 )
-from decl_lagrangian_lowering import (
+from lagrangian.lowering import (
     expr_equal as _expr_equal_impl,
     lower_field_strength_monomial as _lower_field_strength_monomial_impl,
 )
@@ -1270,7 +1270,7 @@ class Lagrangian:
             The summed, stripped Feynman vertex factor with ``(2 pi)^d Delta``
             momentum conservation.
         """
-        from model_symbolica import simplify_vertex, vertex_factor
+        from symbolic.model_symbolica import simplify_vertex, vertex_factor
         from symbolica import Expression
 
         parsed = [_parse_field_arg(f) for f in fields]
@@ -2269,6 +2269,6 @@ class Model:
         canonical covariant / field-strength / gauge-fixing / ghost structures
         are expanded term by term through the compiler.
         """
-        from gauge_compiler import compile_covariant_terms
+        from compiler.gauge import compile_covariant_terms
 
         return Lagrangian(terms=self.all_interactions() + compile_covariant_terms(self))

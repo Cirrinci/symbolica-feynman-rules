@@ -13,7 +13,7 @@ Conventions (automatic):
 import argparse
 import re
 
-from model_symbolica import (
+from symbolic.model_symbolica import (
     S,
     Expression,
     I,
@@ -23,7 +23,7 @@ from model_symbolica import (
     pcomp,
     compact_vertex_sum_form,
 )
-from spenso_structures import (
+from symbolic.spenso_structures import (
     gauge_generator,
     gamma_matrix,
     gamma5_matrix,
@@ -40,16 +40,16 @@ from model import (
     PartialD,
     T,
 )
-from operators import (
+from lagrangian.operators import (
     psi_bar_psi,
     quark_gluon_current,
     scalar_gauge_contact,
 )
-from gauge_compiler import (
+from compiler.gauge import (
     compile_covariant_terms,
     compile_minimal_gauge_interactions,
 )
-from tensor_canonicalization import canonize_spenso_tensors
+from symbolic.tensor_canonicalization import canonize_spenso_tensors
 
 from examples import (
     # symbols

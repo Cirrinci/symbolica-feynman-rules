@@ -12,13 +12,13 @@ import argparse
 import re
 from fractions import Fraction
 
-from gauge_compiler import (
+from compiler.gauge import (
     compile_covariant_terms,
     compile_minimal_gauge_interactions,
     with_compiled_covariant_terms,
     with_minimal_gauge_interactions,
 )
-from model_symbolica import (
+from symbolic.model_symbolica import (
     S,
     Expression,
     I,
@@ -37,7 +37,7 @@ from model_symbolica import (
     compact_vertex_sum_form,
     compact_sum_notation,
 )
-from operators import (
+from lagrangian.operators import (
     current_current,
     gauge_fixing_bilinear,
     gauge_fixing_bilinear_raw,
@@ -57,7 +57,7 @@ from operators import (
     yang_mills_three_vertex_metric_raw,
     yang_mills_three_vertex_raw,
 )
-from spenso_structures import (
+from symbolic.spenso_structures import (
     SPINOR_KIND,
     LORENTZ_KIND,
     COLOR_FUND_KIND,
@@ -70,7 +70,7 @@ from spenso_structures import (
     structure_constant,
     simplify_gamma_chain,
 )
-from tensor_canonicalization import canonize_spenso_tensors
+from symbolic.tensor_canonicalization import canonize_spenso_tensors
 from model import (
     CovD,
     FieldStrength,

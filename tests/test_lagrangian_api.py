@@ -25,7 +25,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import (  # noqa: E402
+from compiler.gauge import (  # noqa: E402
     compile_covariant_terms,
     with_compiled_covariant_terms,
 )
@@ -60,7 +60,7 @@ from model import (  # noqa: E402
     Model,
     PartialD,
 )
-from model_symbolica import (  # noqa: E402
+from symbolic.model_symbolica import (  # noqa: E402
     Delta,
     I,
     pi,
@@ -69,21 +69,21 @@ from model_symbolica import (  # noqa: E402
     simplify_vertex,
     vertex_factor,
 )
-from spenso_structures import (  # noqa: E402
+from symbolic.spenso_structures import (  # noqa: E402
     gauge_generator,
     gamma5_matrix,
     gamma_matrix,
     lorentz_metric,
     structure_constant,
 )
-from operators import (  # noqa: E402
+from lagrangian.operators import (  # noqa: E402
     current_current,
     psi_bar_gamma_psi,
     psi_bar_psi,
     quark_gluon_current,
     scalar_gauge_contact,
 )
-from examples import (  # noqa: E402
+from examples.examples import (  # noqa: E402
     MODEL_QCD_COVARIANT,
     MODEL_QED_FERMION_COVARIANT,
     MODEL_SCALAR_QED_COVARIANT,

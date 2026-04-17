@@ -22,8 +22,8 @@ from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 from symbolica.community.idenso import simplify_metrics
 
-from spenso_structures import LORENTZ_KIND, SPINOR_KIND
-from tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
+from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND
+from symbolic.tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
 
 # ---------------------------------------------------------------------------
 # Module-level Symbolica symbols + Spenso bispinor representation

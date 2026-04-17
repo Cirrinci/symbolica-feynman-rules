@@ -12,7 +12,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms, expand_cov_der  # noqa: E402
+from compiler.gauge import compile_covariant_terms, expand_cov_der  # noqa: E402
 from model import (  # noqa: E402
     COLOR_FUND_INDEX,
     COLOR_ADJ_INDEX,
@@ -26,10 +26,10 @@ from model import (  # noqa: E402
     COLOR_ADJ_KIND,
     LORENTZ_KIND,
 )
-from model_symbolica import Delta, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
-from operators import scalar_gauge_contact  # noqa: E402
-from spenso_structures import gauge_generator, structure_constant  # noqa: E402
-from tensor_canonicalization import canonize_spenso_tensors  # noqa: E402
+from symbolic.model_symbolica import Delta, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
+from lagrangian.operators import scalar_gauge_contact  # noqa: E402
+from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
+from symbolic.tensor_canonicalization import canonize_spenso_tensors  # noqa: E402
 
 
 def _make_bislot_scalar():

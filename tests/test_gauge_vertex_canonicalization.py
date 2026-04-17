@@ -1,6 +1,6 @@
-from model_symbolica import Delta, Expression, I, S, pi
+from symbolic.model_symbolica import Delta, Expression, I, S, pi
 
-from examples import (
+from examples.examples import (
     d,
     gS,
     GaugeField,
@@ -10,15 +10,15 @@ from examples import (
     MODEL_QCD_GHOST_COVARIANT,
     MODEL_QED_GAUGE_COVARIANT,
 )
-from gauge_compiler import compile_covariant_terms
-from operators import (
+from compiler.gauge import compile_covariant_terms
+from lagrangian.operators import (
     gauge_kinetic_bilinear,
     ghost_gauge,
     ghost_kinetic,
     yang_mills_four_vertex_raw,
     yang_mills_three_vertex_raw,
 )
-from tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
+from symbolic.tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
 
 
 q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")

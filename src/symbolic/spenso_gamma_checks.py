@@ -16,7 +16,7 @@ All checks run as assertions that can be invoked by ``pytest`` or
 
 from symbolica import Expression
 
-from model_symbolica import (
+from symbolic.model_symbolica import (
     I,
     S,
     pcomp,
@@ -24,7 +24,7 @@ from model_symbolica import (
     simplify_deltas,
     vertex_factor,
 )
-from spenso_structures import (
+from symbolic.spenso_structures import (
     SPINOR_KIND,
     LORENTZ_KIND,
     chiral_projector_left,

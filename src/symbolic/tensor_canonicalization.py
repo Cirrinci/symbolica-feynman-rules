@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Iterable, Sequence
 
 from symbolica import Expression, S
-from spenso_structures import lorentz_metric
+from symbolic.spenso_structures import lorentz_metric
 
 pcomp = S("pcomp")
 

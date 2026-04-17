@@ -8,8 +8,8 @@ full model compiler.
 
 from symbolica import Expression
 
-from model_symbolica import bis, pcomp
-from spenso_structures import (
+from symbolic.model_symbolica import bis, pcomp
+from symbolic.spenso_structures import (
     COLOR_ADJ,
     gamma5_matrix,
     gamma_lowered_matrix,

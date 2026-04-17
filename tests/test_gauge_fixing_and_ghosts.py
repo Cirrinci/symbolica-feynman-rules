@@ -11,7 +11,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
+from compiler.gauge import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -30,9 +30,9 @@ from model import (  # noqa: E402
     GhostLagrangian,
     Model,
 )
-from model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
-from operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw, psi_bar_gamma_psi, quark_gluon_current  # noqa: E402
-from spenso_structures import gauge_generator, structure_constant  # noqa: E402
+from symbolic.model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
+from lagrangian.operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw, psi_bar_gamma_psi, quark_gluon_current  # noqa: E402
+from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 
 
 def _model_vertex(*, interaction, external_legs, species_map):

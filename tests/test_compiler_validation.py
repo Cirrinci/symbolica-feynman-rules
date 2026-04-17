@@ -11,7 +11,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms, expand_cov_der  # noqa: E402
+from compiler.gauge import compile_covariant_terms, expand_cov_der  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -28,9 +28,9 @@ from model import (  # noqa: E402
     GaugeRepresentation,
     Model,
 )
-from model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
-from operators import psi_bar_gamma_psi  # noqa: E402
-from spenso_structures import gauge_generator, structure_constant  # noqa: E402
+from symbolic.model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
+from lagrangian.operators import psi_bar_gamma_psi  # noqa: E402
+from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 
 
 def _dirac_decl(field, *, gauge_group=None):
