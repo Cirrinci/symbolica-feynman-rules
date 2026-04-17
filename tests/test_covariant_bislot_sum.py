@@ -26,7 +26,7 @@ from model import (  # noqa: E402
     COLOR_ADJ_KIND,
     LORENTZ_KIND,
 )
-from symbolic.model_symbolica import Delta, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
+from symbolic.vertex_engine import Delta, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
 from lagrangian.operators import scalar_gauge_contact  # noqa: E402
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 from symbolic.tensor_canonicalization import canonize_spenso_tensors  # noqa: E402

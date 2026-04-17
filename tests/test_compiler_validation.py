@@ -28,7 +28,7 @@ from model import (  # noqa: E402
     GaugeRepresentation,
     Model,
 )
-from symbolic.model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
+from symbolic.vertex_engine import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
 from lagrangian.operators import psi_bar_gamma_psi  # noqa: E402
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 

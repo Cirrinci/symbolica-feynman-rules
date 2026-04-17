@@ -153,7 +153,7 @@ class Lagrangian:
             The summed, stripped Feynman vertex factor with ``(2 pi)^d Delta``
             momentum conservation.
         """
-        from symbolic.model_symbolica import simplify_vertex, vertex_factor
+        from symbolic.vertex_engine import simplify_vertex, vertex_factor
         from symbolica import Expression
 
         parsed = [_parse_field_arg(f) for f in fields]

@@ -27,7 +27,7 @@ from compiler.gauge import (
     with_compiled_covariant_terms,
     with_minimal_gauge_interactions,
 )
-from symbolic.model_symbolica import (
+from symbolic.vertex_engine import (
     S,
     Expression,
     I,

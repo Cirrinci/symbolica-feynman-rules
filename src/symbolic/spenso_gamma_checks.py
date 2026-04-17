@@ -16,7 +16,7 @@ All checks run as assertions that can be invoked by ``pytest`` or
 
 from symbolica import Expression
 
-from symbolic.model_symbolica import (
+from symbolic.vertex_engine import (
     I,
     S,
     pcomp,

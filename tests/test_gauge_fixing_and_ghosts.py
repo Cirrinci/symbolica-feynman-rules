@@ -30,7 +30,7 @@ from model import (  # noqa: E402
     GhostLagrangian,
     Model,
 )
-from symbolic.model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
+from symbolic.vertex_engine import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
 from lagrangian.operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw, psi_bar_gamma_psi, quark_gluon_current  # noqa: E402
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 

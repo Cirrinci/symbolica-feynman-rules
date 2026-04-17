@@ -27,7 +27,7 @@ from model import (  # noqa: E402
     GaugeRepresentation,
     Model,
 )
-from symbolic.model_symbolica import Delta, Expression, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
+from symbolic.vertex_engine import Delta, Expression, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
 from lagrangian.operators import (  # noqa: E402
     gauge_kinetic_bilinear_raw,
     psi_bar_gamma_psi,

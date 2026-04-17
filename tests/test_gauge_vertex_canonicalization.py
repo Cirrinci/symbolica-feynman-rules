@@ -1,4 +1,4 @@
-from symbolic.model_symbolica import Delta, Expression, I, S, pi
+from symbolic.vertex_engine import Delta, Expression, I, S, pi
 
 from examples.examples import (
     d,

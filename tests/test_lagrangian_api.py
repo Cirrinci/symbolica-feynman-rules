@@ -60,7 +60,7 @@ from model import (  # noqa: E402
     Model,
     PartialD,
 )
-from symbolic.model_symbolica import (  # noqa: E402
+from symbolic.vertex_engine import (  # noqa: E402
     Delta,
     I,
     pi,

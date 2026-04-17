@@ -22,7 +22,7 @@ if str(REPO_ROOT) not in sys.path:
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from symbolic.model_symbolica import (
+from symbolic.vertex_engine import (
     S,
     Expression,
     I,
