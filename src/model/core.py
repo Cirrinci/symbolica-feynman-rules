@@ -44,7 +44,7 @@ class Model:
     """Top-level model container (mirrors the full .fr file).
 
     The model layer stores declarations.  The actual vertex evaluation still
-    happens in ``model_symbolica.py`` after these declarations are translated
+    happens in ``symbolic/vertex_engine.py`` after these declarations are translated
     into ``InteractionTerm`` objects and then into engine kwargs.
     """
     name: str = ""
@@ -184,6 +184,6 @@ class Model:
         canonical covariant / field-strength / gauge-fixing / ghost structures
         are expanded term by term through the compiler.
         """
-        from compiler.gauge import compile_covariant_terms
+        from compiler.covariant import compile_covariant_terms
 
         return Lagrangian(terms=self.all_interactions() + compile_covariant_terms(self))

@@ -22,10 +22,12 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from compiler.gauge import (
-    compile_covariant_terms,
     compile_minimal_gauge_interactions,
-    with_compiled_covariant_terms,
     with_minimal_gauge_interactions,
+)
+from compiler.covariant import (
+    compile_covariant_terms,
+    with_compiled_covariant_terms,
 )
 from symbolic.vertex_engine import (
     S,

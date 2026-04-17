@@ -54,10 +54,8 @@ from lagrangian.operators import (
     quark_gluon_current,
     scalar_gauge_contact,
 )
-from compiler.gauge import (
-    compile_covariant_terms,
-    compile_minimal_gauge_interactions,
-)
+from compiler.gauge import compile_minimal_gauge_interactions
+from compiler.covariant import compile_covariant_terms
 from symbolic.tensor_canonicalization import canonize_spenso_tensors
 
 from examples import (

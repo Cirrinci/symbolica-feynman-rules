@@ -25,7 +25,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from compiler.gauge import (  # noqa: E402
+from compiler.covariant import (  # noqa: E402
     compile_covariant_terms,
     with_compiled_covariant_terms,
 )

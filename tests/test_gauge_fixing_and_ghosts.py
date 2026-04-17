@@ -11,7 +11,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from compiler.gauge import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
+from compiler.covariant import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
