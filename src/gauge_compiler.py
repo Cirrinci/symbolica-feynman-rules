@@ -27,6 +27,12 @@ from typing import Optional
 from symbolica import S, Expression
 
 from model import (
+    GaugeFixingDeclaration,
+    GhostLagrangianDeclaration,
+    _DeclaredMonomial,
+    _lower_field_strength_monomial,
+    _match_covariant_monomial,
+    _source_term_needs_compilation,
     ComplexScalarKineticTerm,
     DerivativeAction,
     DiracKineticTerm,
@@ -275,6 +281,110 @@ def _spectator_identity_factor(field: Field, *, exclude_slots=()):
         right_slot_labels[slot] = right_label
 
     return factor, left_slot_labels, right_slot_labels
+
+
+def _default_open_index_label(field: Field, index, position: int, slot: int, *, conjugated: bool):
+    stem = f"{field.name}_{index.kind}_spect_{position + 1}"
+    if field.index_kind_count(index.kind) > 1:
+        stem += f"_{slot + 1}"
+    if conjugated and not field.self_conjugate:
+        return _symbol(f"{index.prefix}_bar_{stem}")
+    return _symbol(f"{index.prefix}_{stem}")
+
+
+def _materialize_spectator_occurrences(spectators: tuple[tuple[Field, bool], ...]):
+    """Build spectator occurrences plus their internal contraction factor.
+
+    Rules:
+    - non-self-conjugate scalar spectators automatically contract in obvious
+      ``phi.bar * phi`` pairs
+    - fermion spectators must appear in explicit ``psibar * psi`` pairs
+    - any remaining spectator indices stay open on the final vertex
+    """
+    if not spectators:
+        return Expression.num(1), ()
+
+    factor = Expression.num(1)
+    slot_labels = [dict() for _ in spectators]
+    by_field: dict[int, tuple[Field, dict[bool, list[int]]]] = {}
+
+    for pos, (field, conjugated) in enumerate(spectators):
+        field_id = id(field)
+        if field_id not in by_field:
+            by_field[field_id] = (field, {False: [], True: []})
+        by_field[field_id][1][bool(conjugated)].append(pos)
+
+    for field, positions in by_field.values():
+        plain_positions = positions[False]
+        conj_positions = positions[True]
+
+        if field.kind == "fermion":
+            if len(plain_positions) != len(conj_positions):
+                raise ValueError(
+                    f"Declarative spectator fermions for field {field.name!r} must appear in "
+                    "explicit bar/psi pairs. Use InteractionTerm(...) for unpaired or more "
+                    "complicated spinor structures."
+                )
+            pair_count = len(plain_positions)
+        elif field.self_conjugate:
+            pair_count = 0
+        else:
+            pair_count = min(len(plain_positions), len(conj_positions))
+
+        for pair_idx in range(pair_count):
+            left_pos = conj_positions[pair_idx]
+            right_pos = plain_positions[pair_idx]
+            for slot, index in enumerate(field.indices):
+                if index.kind == LORENTZ_KIND:
+                    continue
+                left_label, right_label = _default_index_labels(
+                    field,
+                    index,
+                    qualifier=f"spect_{pair_idx + 1}",
+                    slot=slot,
+                )
+                factor *= index.representation.g(left_label, right_label).to_expression()
+                slot_labels[left_pos][slot] = left_label
+                slot_labels[right_pos][slot] = right_label
+
+    occurrences = []
+    for pos, (field, conjugated) in enumerate(spectators):
+        pos_slot_labels = slot_labels[pos]
+        for slot, index in enumerate(field.indices):
+            if slot in pos_slot_labels:
+                continue
+            pos_slot_labels[slot] = _default_open_index_label(
+                field,
+                index,
+                pos,
+                slot,
+                conjugated=conjugated,
+            )
+        occurrences.append(
+            field.occurrence(
+                conjugated=conjugated,
+                labels=field.pack_slot_labels(pos_slot_labels),
+            )
+        )
+
+    return factor, tuple(occurrences)
+
+
+def _decorate_interactions_with_spectators(
+    interactions: tuple[InteractionTerm, ...],
+    *,
+    spectator_factor,
+    spectator_occurrences: tuple,
+) -> tuple[InteractionTerm, ...]:
+    return tuple(
+        InteractionTerm(
+            coupling=interaction.coupling * spectator_factor,
+            fields=interaction.fields + spectator_occurrences,
+            derivatives=interaction.derivatives,
+            label=interaction.label,
+        )
+        for interaction in interactions
+    )
 
 
 def _nonabelian_rep_and_slots(field: Field, gauge_group: GaugeGroup):
@@ -1324,6 +1434,36 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
     return tuple(interactions)
 
 
+def _compile_dirac_partial_term(fermion: Field, *, coefficient=1, label: str = "") -> InteractionTerm:
+    mu = _symbol("mu")
+    i_bar = _symbol(f"i_bar_{fermion.name}_covd")
+    i_psi = _symbol(f"i_{fermion.name}_covd")
+    fermion_spinor_slot = _unique_slot(
+        fermion,
+        SPINOR_KIND,
+        purpose="Dirac kinetic partial-term compilation",
+    )
+    bar_slot_labels = {fermion_spinor_slot: i_bar}
+    psi_slot_labels = {fermion_spinor_slot: i_psi}
+    core_factor, core_bar_slots, core_psi_slots = _spectator_identity_factor(
+        fermion,
+        exclude_slots={fermion_spinor_slot},
+    )
+    bar_slot_labels.update(core_bar_slots)
+    psi_slot_labels.update(core_psi_slots)
+    bar_labels = fermion.pack_slot_labels(bar_slot_labels)
+    psi_labels = fermion.pack_slot_labels(psi_slot_labels)
+    return InteractionTerm(
+        coupling=Expression.I * coefficient * core_factor * psi_bar_gamma_psi(i_bar, i_psi, mu),
+        fields=(
+            fermion.occurrence(conjugated=True, labels=bar_labels),
+            fermion.occurrence(labels=psi_labels),
+        ),
+        derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+        label=label or f"i {fermion.name}bar gamma^mu d_mu {fermion.name}",
+    )
+
+
 def compile_complex_scalar_kinetic_term(
     model: Model,
     term: ComplexScalarKineticTerm,
@@ -1384,14 +1524,147 @@ def compile_complex_scalar_kinetic_term(
     return tuple(interactions)
 
 
-def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
-    """Compile all declared physical kinetic terms in a model.
+def _compile_complex_scalar_partial_term(scalar: Field, *, coefficient=1, label: str = "") -> InteractionTerm:
+    mu = _symbol("mu")
+    core_factor, scalar_bar_slots, scalar_slots = _spectator_identity_factor(scalar, exclude_slots=())
+    scalar_bar_labels = scalar.pack_slot_labels(scalar_bar_slots)
+    scalar_labels = scalar.pack_slot_labels(scalar_slots)
+    return InteractionTerm(
+        coupling=coefficient * core_factor,
+        fields=(
+            scalar.occurrence(conjugated=True, labels=scalar_bar_labels),
+            scalar.occurrence(labels=scalar_labels),
+        ),
+        derivatives=(
+            DerivativeAction(target=0, lorentz_index=mu),
+            DerivativeAction(target=1, lorentz_index=mu),
+        ),
+        label=label or f"(d_mu {scalar.name})^dagger (d^mu {scalar.name})",
+    )
 
-    This is the main entry point for the convention-fixed physical compiler:
-    matter covariant terms and pure-gauge kinetic terms are flattened into the
-    ordinary ``InteractionTerm`` objects consumed by the core engine.
+def _compile_covariant_core_with_spectators(
+    model: Model,
+    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    spectators: tuple[tuple[Field, bool], ...],
+) -> tuple[InteractionTerm, ...]:
+    spectator_factor, spectator_occurrences = _materialize_spectator_occurrences(spectators)
+
+    if isinstance(core, DiracKineticTerm):
+        fermion = _require_declared_field(
+            model,
+            core.field,
+            purpose="Covariant monomial compilation",
+        )
+        if fermion.kind != "fermion":
+            raise ValueError(
+                f"Covariant Dirac monomial requires a fermion field, got kind={fermion.kind!r}."
+            )
+        partial_terms = _decorate_interactions_with_spectators(
+            (
+                _compile_dirac_partial_term(
+                    fermion,
+                    coefficient=core.coefficient,
+                    label=core.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} partial",
+                ),
+            ),
+            spectator_factor=spectator_factor,
+            spectator_occurrences=spectator_occurrences,
+        )
+        gauge_terms = _decorate_interactions_with_spectators(
+            compile_dirac_kinetic_term(model, core),
+            spectator_factor=spectator_factor,
+            spectator_occurrences=spectator_occurrences,
+        )
+        return partial_terms + gauge_terms
+
+    if isinstance(core, ComplexScalarKineticTerm):
+        scalar = _require_declared_field(
+            model,
+            core.field,
+            purpose="Covariant monomial compilation",
+        )
+        if scalar.kind != "scalar" or scalar.self_conjugate:
+            raise ValueError(
+                "Covariant complex-scalar monomials require a non-self-conjugate scalar field."
+            )
+        partial_terms = _decorate_interactions_with_spectators(
+            (
+                _compile_complex_scalar_partial_term(
+                    scalar,
+                    coefficient=core.coefficient,
+                    label=core.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name}) derivative",
+                ),
+            ),
+            spectator_factor=spectator_factor,
+            spectator_occurrences=spectator_occurrences,
+        )
+        gauge_terms = _decorate_interactions_with_spectators(
+            compile_complex_scalar_kinetic_term(model, core),
+            spectator_factor=spectator_factor,
+            spectator_occurrences=spectator_occurrences,
+        )
+        return partial_terms + gauge_terms
+
+    raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
+
+
+def _compile_declared_source_term(model: Model, term) -> tuple[InteractionTerm, ...]:
+    if isinstance(term, (InteractionTerm,)):
+        return ()
+
+    if isinstance(term, _DeclaredMonomial):
+        match = _match_covariant_monomial(term)
+        if match is not None:
+            core, spectators = match
+            if spectators:
+                return _compile_covariant_core_with_spectators(model, core, spectators)
+            if isinstance(core, DiracKineticTerm):
+                return compile_dirac_kinetic_term(model, core)
+            return compile_complex_scalar_kinetic_term(model, core)
+
+        gauge_kinetic = _lower_field_strength_monomial(term)
+        if gauge_kinetic is not None:
+            return compile_gauge_kinetic_term(model, gauge_kinetic)
+        return ()
+
+    if isinstance(term, DiracKineticTerm):
+        return compile_dirac_kinetic_term(model, term)
+    if isinstance(term, ComplexScalarKineticTerm):
+        return compile_complex_scalar_kinetic_term(model, term)
+    if isinstance(term, GaugeKineticTerm):
+        return compile_gauge_kinetic_term(model, term)
+    if isinstance(term, GaugeFixingDeclaration):
+        term = GaugeFixingTerm(
+            gauge_group=term.gauge_group,
+            xi=term.xi,
+            coefficient=term.coefficient,
+            label=term.label,
+        )
+    if isinstance(term, GaugeFixingTerm):
+        return compile_gauge_fixing_term(model, term)
+    if isinstance(term, GhostLagrangianDeclaration):
+        term = GhostTerm(
+            gauge_group=term.gauge_group,
+            coefficient=term.coefficient,
+            label=term.label,
+        )
+    if isinstance(term, GhostTerm):
+        return compile_ghost_term(model, term)
+    return ()
+
+
+def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
+    """Compile all declared non-local / structured source terms in a model.
+
+    Local interaction monomials are handled separately by ``Model.all_interactions()``.
+    This function expands only the declared terms that require compilation:
+    covariant-derivative monomials, field-strength terms, gauge fixing, ghosts,
+    and the legacy physical declaration slots.
     """
     interactions: list[InteractionTerm] = []
+
+    for term in model.lagrangian_decl.source_terms:
+        interactions.extend(_compile_declared_source_term(model, term))
 
     for term in model.covariant_terms:
         if isinstance(term, DiracKineticTerm):
@@ -1415,6 +1688,23 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
 
 
 def with_compiled_covariant_terms(model: Model) -> Model:
-    """Return a copy of a model with compiled physical kinetic terms appended."""
+    """Return a copy of a model with compiled physical kinetic terms appended.
+
+    The returned model has empty declaration slots (covariant_terms,
+    gauge_kinetic_terms, gauge_fixing_terms, ghost_terms) so that a
+    subsequent call to ``Model.lagrangian()`` does not re-compile and
+    double-count the same terms.
+    """
     compiled = compile_covariant_terms(model)
-    return replace(model, interactions=model.interactions + compiled)
+    preserved_source_terms = tuple(
+        term for term in model.lagrangian_decl.source_terms if not _source_term_needs_compilation(term)
+    )
+    return replace(
+        model,
+        interactions=model.interactions + compiled,
+        lagrangian_decl=type(model.lagrangian_decl)(source_terms=preserved_source_terms),
+        covariant_terms=(),
+        gauge_kinetic_terms=(),
+        gauge_fixing_terms=(),
+        ghost_terms=(),
+    )

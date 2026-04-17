@@ -27,6 +27,24 @@ The long-term target remains FeynRules-like:
 6. compilation into normalized interaction objects
 7. vertex extraction through one engine
 
+## Current implemented front-end
+
+The repository now has a real declarative entry point:
+
+- `Model(..., lagrangian_decl=...)`
+- `CovD(...)`
+- `Gamma(...)`
+- `FieldStrength(...)`
+- `GaugeFixing(...)`
+- `GhostLagrangian(...)`
+
+These source declarations are preserved for demos and notebooks, then lowered
+to the existing `DiracKineticTerm` / `ComplexScalarKineticTerm` /
+`GaugeKineticTerm` / `GaugeFixingTerm` / `GhostTerm` backend.
+
+That is the right boundary for this codebase: a typed public front-end over the
+current Symbolica + Spenso execution path, not a second symbolic engine.
+
 ## Recommended architecture
 
 ## 1) Keep `src/model_symbolica.py` as a pure engine

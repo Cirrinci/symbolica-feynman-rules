@@ -17,7 +17,7 @@ from model import (  # noqa: E402
     COLOR_FUND_INDEX,
     COLOR_ADJ_INDEX,
     LORENTZ_INDEX,
-    ComplexScalarKineticTerm,
+    CovD,
     Field,
     GaugeGroup,
     GaugeRepresentation,
@@ -78,7 +78,7 @@ def _make_bislot_sum_model():
         name="bislot-sum",
         gauge_groups=(su3,),
         fields=(scalar, gluon),
-        covariant_terms=(ComplexScalarKineticTerm(field=scalar),),
+        lagrangian_decl=CovD(scalar.bar, S("mu_decl")) * CovD(scalar, S("mu_decl")),
     )
     return model, scalar, gluon, su3
 
@@ -127,7 +127,7 @@ def test_ambiguity_is_error_by_default_for_repeated_slots():
         name="bislot-ambiguous",
         gauge_groups=(su3,),
         fields=(scalar, gluon),
-        covariant_terms=(ComplexScalarKineticTerm(field=scalar),),
+        lagrangian_decl=CovD(scalar.bar, S("mu_decl")) * CovD(scalar, S("mu_decl")),
     )
 
     with pytest.raises(ValueError, match=r"repeated index type|slot_policy='sum'|slot=\\.+"):
