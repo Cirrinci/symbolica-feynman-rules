@@ -2400,9 +2400,9 @@ def _run_covariant_compiler_tests():
     compiled_qcd = compile_covariant_terms(MODEL_QCD_COVARIANT)
     model_qcd = with_compiled_covariant_terms(MODEL_QCD_COVARIANT)
     assert model_qcd.interactions == compiled_qcd
-    assert len(compiled_qcd) == 1
+    assert len(compiled_qcd) == 2
 
-    term_qcd = compiled_qcd[0]
+    term_qcd = next(term for term in compiled_qcd if len(term.fields) == 3)
     _check(
         _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
         -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
@@ -2414,9 +2414,9 @@ def _run_covariant_compiler_tests():
     compiled_qed = compile_covariant_terms(MODEL_QED_FERMION_COVARIANT)
     model_qed = with_compiled_covariant_terms(MODEL_QED_FERMION_COVARIANT)
     assert model_qed.interactions == compiled_qed
-    assert len(compiled_qed) == 1
+    assert len(compiled_qed) == 2
 
-    term_qed = compiled_qed[0]
+    term_qed = next(term for term in compiled_qed if len(term.fields) == 3)
     _check(
         _model_vertex(interaction=term_qed, external_legs=LEGS_qed_fermion),
         -I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
@@ -2504,7 +2504,7 @@ def _run_covariant_compiler_tests():
     compiled_mixed = compile_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
     model_mixed = with_compiled_covariant_terms(MODEL_MIXED_FERMION_COVARIANT)
     assert model_mixed.interactions == compiled_mixed
-    assert len(compiled_mixed) == 2
+    assert len(compiled_mixed) == 3
 
     _check(
         _model_vertex(interaction=compiled_mixed[0], external_legs=LEGS_mixed_fermion_gluon),
@@ -2529,7 +2529,7 @@ def _run_covariant_compiler_tests():
     compiled_mixed_scalar = compile_covariant_terms(MODEL_MIXED_SCALAR_COVARIANT)
     model_mixed_scalar = with_compiled_covariant_terms(MODEL_MIXED_SCALAR_COVARIANT)
     assert model_mixed_scalar.interactions == compiled_mixed_scalar
-    assert len(compiled_mixed_scalar) == 8
+    assert len(compiled_mixed_scalar) == 9
 
     mixed_scalar_qcd_terms = [
         term for term in compiled_mixed_scalar
@@ -2625,9 +2625,9 @@ def _run_covariant_compiler_tests():
     compiled_scalar_qed = compile_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
     model_scalar_qed = with_compiled_covariant_terms(MODEL_SCALAR_QED_COVARIANT)
     assert model_scalar_qed.interactions == compiled_scalar_qed
-    assert len(compiled_scalar_qed) == 3
+    assert len(compiled_scalar_qed) == 4
 
-    term_sc_phi, term_sc_phidag, term_sc_contact = compiled_scalar_qed
+    term_sc_phi, term_sc_phidag, term_sc_contact, _ = compiled_scalar_qed
     scalar_current_index = term_sc_phi.derivatives[0].lorentz_index
 
     V_sc = (
@@ -2666,9 +2666,9 @@ def _run_covariant_compiler_tests():
     compiled_scalar_qcd = compile_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
     model_scalar_qcd = with_compiled_covariant_terms(MODEL_SCALAR_QCD_COVARIANT)
     assert model_scalar_qcd.interactions == compiled_scalar_qcd
-    assert len(compiled_scalar_qcd) == 3
+    assert len(compiled_scalar_qcd) == 4
 
-    term_sqcd_phi, term_sqcd_phidag, term_sqcd_contact = compiled_scalar_qcd
+    term_sqcd_phi, term_sqcd_phidag, term_sqcd_contact, _ = compiled_scalar_qcd
     scalar_qcd_index = term_sqcd_phi.derivatives[0].lorentz_index
     sqcd_internal = S("c_mid_PhiQCD_SU3C")
 
@@ -2992,7 +2992,10 @@ def _run_gauge_fixed_compiler_tests():
     assert model_qcd_gauge_fixed.interactions == compiled_qcd_gauge_fixed
     assert len(compiled_qcd_gauge_fixed) == 7
 
-    gluon_metric, gluon_cross, _, _, gluon_gf, _, _ = compiled_qcd_gauge_fixed
+    gluon_metric, gluon_cross = [
+        term for term in compiled_qcd_gauge_fixed if "gauge kinetic bilinear" in term.label
+    ]
+    gluon_gf = next(term for term in compiled_qcd_gauge_fixed if "gauge fixing" in term.label)
     gluon_rho = gluon_metric.derivatives[0].lorentz_index
     gluon_left = gluon_cross.derivatives[0].lorentz_index
     gluon_right = gluon_cross.derivatives[1].lorentz_index
