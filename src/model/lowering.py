@@ -10,6 +10,8 @@ from symbolica import Expression, S
 
 from lagrangian.lowering import (
     expr_equal as _expr_equal_impl,
+    lower_dirac_monomial as _lower_dirac_monomial_impl,
+    lower_scalar_covd_monomial as _lower_scalar_covd_monomial_impl,
     lower_field_strength_monomial as _lower_field_strength_monomial_impl,
 )
 
@@ -54,9 +56,18 @@ from .lagrangian import (
     GaugeKineticTerm,
     GhostTerm,
 )
+
+
 def _match_covariant_monomial(
     term: _DeclaredMonomial,
 ) -> tuple[DiracKineticTerm | ComplexScalarKineticTerm, tuple[tuple[object, bool], ...]] | None:
+    """Match one declarative ``CovD`` monomial and preserve any spectator fields.
+
+    The exact Dirac/scalar covariant-core recognition lives in
+    ``lagrangian.lowering``. This helper stays model-layer specific only because
+    it has one extra job: split out the matched core from any additional local
+    spectator field factors that should be carried along by the compiler.
+    """
     field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
     gamma_factors = [factor for factor in term.factors if isinstance(factor, GammaFactor)]
     covd_factors = [factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)]
@@ -66,41 +77,37 @@ def _match_covariant_monomial(
     if len(gamma_factors) == 1 and len(covd_factors) == 1:
         gamma_factor = gamma_factors[0]
         covd_factor = covd_factors[0]
-        if (
-            covd_factor.field.kind == "fermion"
-            and not covd_factor.conjugated
-            and gamma_factor.lorentz_index == covd_factor.lorentz_index
-        ):
-            core_slot = next(
-                (
-                    idx
-                    for idx, factor in enumerate(field_factors)
-                    if factor.field is covd_factor.field and factor.conjugated
+        for core_slot, field_factor in enumerate(field_factors):
+            core = _lower_dirac_monomial_impl(
+                _DeclaredMonomial(
+                    coefficient=term.coefficient,
+                    factors=(field_factor, gamma_factor, covd_factor),
                 ),
-                None,
+                field_factor_cls=_FieldFactor,
+                gamma_factor_cls=GammaFactor,
+                covariant_derivative_factor_cls=CovariantDerivativeFactor,
+                dirac_kinetic_term_cls=DiracKineticTerm,
+                expression_module=Expression,
             )
-            if core_slot is not None:
-                normalized = term.coefficient / Expression.I
-                if not _expr_equal_impl(Expression.I * normalized, term.coefficient):
-                    return None
-                core = DiracKineticTerm(field=covd_factor.field, coefficient=normalized)
-                spectators = tuple(
-                    (factor.field, factor.conjugated)
-                    for idx, factor in enumerate(field_factors)
-                    if idx != core_slot
-                )
-                return core, spectators
+            if core is None:
+                continue
+            spectators = tuple(
+                (factor.field, factor.conjugated)
+                for idx, factor in enumerate(field_factors)
+                if idx != core_slot
+            )
+            return core, spectators
 
     if len(gamma_factors) == 0 and len(covd_factors) == 2:
-        left, right = covd_factors
-        if (
-            left.field is right.field
-            and left.field.kind == "scalar"
-            and not left.field.self_conjugate
-            and left.lorentz_index == right.lorentz_index
-            and {left.conjugated, right.conjugated} == {False, True}
-        ):
-            core = ComplexScalarKineticTerm(field=left.field, coefficient=term.coefficient)
+        core = _lower_scalar_covd_monomial_impl(
+            _DeclaredMonomial(
+                coefficient=term.coefficient,
+                factors=tuple(covd_factors),
+            ),
+            covariant_derivative_factor_cls=CovariantDerivativeFactor,
+            complex_scalar_kinetic_term_cls=ComplexScalarKineticTerm,
+        )
+        if core is not None:
             spectators = tuple((factor.field, factor.conjugated) for factor in field_factors)
             return core, spectators
 
