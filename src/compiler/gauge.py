@@ -1815,6 +1815,29 @@ def _compile_complex_scalar_partial_term(scalar: Field, *, coefficient=1, label:
         label=label or f"(d_mu {scalar.name})^dagger (d^mu {scalar.name})",
     )
 
+def _assemble_full_covariant_operator(
+    gauge_terms: tuple[InteractionTerm, ...],
+    partial_term: InteractionTerm,
+    spectator_factor: Expression,
+    spectator_occurrences: tuple[tuple[int, int], ...],
+) -> tuple[InteractionTerm, ...]:
+    """Assemble the full covariant operator from gauge and partial-derivative terms.
+
+    Both gauge and partial terms are decorated with spectators (if any) and
+    combined to form the complete declared CovD monomial semantics.
+    """
+    gauge_decorated = _decorate_interactions_with_spectators(
+        gauge_terms,
+        spectator_factor=spectator_factor,
+        spectator_occurrences=spectator_occurrences,
+    )
+    partial_decorated = _decorate_interactions_with_spectators(
+        (partial_term,),
+        spectator_factor=spectator_factor,
+        spectator_occurrences=spectator_occurrences,
+    )
+    return gauge_decorated + partial_decorated
+
 def _compile_declared_covariant_core(
     model: Model,
     core: DiracKineticTerm | ComplexScalarKineticTerm,
@@ -1844,23 +1867,18 @@ def _compile_declared_covariant_core(
             raise ValueError(
                 f"Covariant Dirac monomial requires a fermion field, got kind={fermion.kind!r}."
             )
-        gauge_terms = _decorate_interactions_with_spectators(
-            compile_dirac_kinetic_term(model, core),
-            spectator_factor=spectator_factor,
-            spectator_occurrences=spectator_occurrences,
+        gauge_terms = compile_dirac_kinetic_term(model, core)
+        partial_term = _compile_dirac_partial_term(
+            fermion,
+            coefficient=core.coefficient,
+            label=core.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} partial",
         )
-        partial_terms = _decorate_interactions_with_spectators(
-            (
-                _compile_dirac_partial_term(
-                    fermion,
-                    coefficient=core.coefficient,
-                    label=core.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} partial",
-                ),
-            ),
-            spectator_factor=spectator_factor,
-            spectator_occurrences=spectator_occurrences,
+        return _assemble_full_covariant_operator(
+            gauge_terms,
+            partial_term,
+            spectator_factor,
+            spectator_occurrences,
         )
-        return gauge_terms + partial_terms
 
     if isinstance(core, ComplexScalarKineticTerm):
         scalar = _require_declared_field(
@@ -1872,23 +1890,18 @@ def _compile_declared_covariant_core(
             raise ValueError(
                 "Covariant complex-scalar monomials require a non-self-conjugate scalar field."
             )
-        gauge_terms = _decorate_interactions_with_spectators(
-            compile_complex_scalar_kinetic_term(model, core),
-            spectator_factor=spectator_factor,
-            spectator_occurrences=spectator_occurrences,
+        gauge_terms = compile_complex_scalar_kinetic_term(model, core)
+        partial_term = _compile_complex_scalar_partial_term(
+            scalar,
+            coefficient=core.coefficient,
+            label=core.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name}) derivative",
         )
-        partial_terms = _decorate_interactions_with_spectators(
-            (
-                _compile_complex_scalar_partial_term(
-                    scalar,
-                    coefficient=core.coefficient,
-                    label=core.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name}) derivative",
-                ),
-            ),
-            spectator_factor=spectator_factor,
-            spectator_occurrences=spectator_occurrences,
+        return _assemble_full_covariant_operator(
+            gauge_terms,
+            partial_term,
+            spectator_factor,
+            spectator_occurrences,
         )
-        return gauge_terms + partial_terms
 
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
 
