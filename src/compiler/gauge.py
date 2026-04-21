@@ -738,6 +738,61 @@ def _compile_scalar_current_from_piece(
     )
 
 
+def _build_fermion_current_interaction(
+    *,
+    fermion: Field,
+    piece: CovariantGaugePiece,
+    spinor_slot: int,
+    i_bar,
+    i_psi,
+    prefactor=1,
+    label: str = "",
+    lorentz_label=None,
+    matter_labels=None,
+    adjoint_label=None,
+    spectator_exclude_slots=(),
+) -> InteractionTerm:
+    action = _build_bilinear_gauge_action_data(
+        fermion,
+        piece,
+        lorentz_label=lorentz_label,
+        matter_labels=matter_labels,
+        adjoint_label=adjoint_label,
+        spectator_exclude_slots=spectator_exclude_slots,
+    )
+    bar_labels = fermion.pack_slot_labels({
+        spinor_slot: i_bar,
+        **action.left_slot_labels,
+    })
+    psi_labels = fermion.pack_slot_labels({
+        spinor_slot: i_psi,
+        **action.right_slot_labels,
+    })
+
+    rep = piece.metadata.representation
+    slot_suffix = _slot_suffix(fermion, piece.active_slot)
+    slot_label = f"{label} [{rep.index.name}{slot_suffix}]" if label and rep is not None else label
+    return InteractionTerm(
+        coupling=prefactor * action.coupling * psi_bar_gamma_psi(i_bar, i_psi, lorentz_label or piece.lorentz_index),
+        fields=(
+            fermion.occurrence(conjugated=True, labels=bar_labels),
+            fermion.occurrence(labels=psi_labels),
+            piece.metadata.gauge_field.occurrence(labels=action.gauge_labels),
+        ),
+        label=slot_label or f"{piece.metadata.gauge_group.name}: {fermion.name} gauge current",
+    )
+    return InteractionTerm(
+        coupling=sign * coupling_prefactor * action.coupling,
+        fields=(
+            scalar.occurrence(conjugated=True, labels=scalar.pack_slot_labels(action.left_slot_labels)),
+            scalar.occurrence(labels=scalar.pack_slot_labels(action.right_slot_labels)),
+            piece.metadata.gauge_field.occurrence(labels=action.gauge_labels),
+        ),
+        derivatives=(DerivativeAction(target=derivative_target, lorentz_index=derivative_label),),
+        label=label,
+    )
+
+
 def _default_scalar_contact_internal_label(
     scalar: Field,
     left_piece: CovariantGaugePiece,
@@ -961,35 +1016,19 @@ def compile_fermion_gauge_current(
 
     interactions: list[InteractionTerm] = []
     for piece in pieces:
-        action = _build_bilinear_gauge_action_data(
-            fermion,
-            piece,
-            lorentz_label=mu,
-            matter_labels=matter_labels,
-            adjoint_label=adjoint_label,
-            spectator_exclude_slots={fermion_spinor_slot},
-        )
-        bar_labels = fermion.pack_slot_labels({
-            fermion_spinor_slot: i_bar,
-            **action.left_slot_labels,
-        })
-        psi_labels = fermion.pack_slot_labels({
-            fermion_spinor_slot: i_psi,
-            **action.right_slot_labels,
-        })
-
-        rep = piece.metadata.representation
-        slot_suffix = _slot_suffix(fermion, piece.active_slot)
-        slot_label = f"{label} [{rep.index.name}{slot_suffix}]" if label and rep is not None else label
         interactions.append(
-            InteractionTerm(
-                coupling=prefactor * action.coupling * psi_bar_gamma_psi(i_bar, i_psi, mu),
-                fields=(
-                    fermion.occurrence(conjugated=True, labels=bar_labels),
-                    fermion.occurrence(labels=psi_labels),
-                    gauge_field.occurrence(labels=action.gauge_labels),
-                ),
-                label=slot_label or f"{gauge_group.name}: {fermion.name} gauge current",
+            _build_fermion_current_interaction(
+                fermion=fermion,
+                piece=piece,
+                spinor_slot=fermion_spinor_slot,
+                i_bar=i_bar,
+                i_psi=i_psi,
+                prefactor=prefactor,
+                label=label,
+                lorentz_label=mu,
+                matter_labels=matter_labels,
+                adjoint_label=adjoint_label,
+                spectator_exclude_slots={fermion_spinor_slot},
             )
         )
 
@@ -1651,33 +1690,17 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
     for piece in expanded.gauge_current_pieces:
         gauge_group = piece.metadata.gauge_group
         i_bar, i_psi = _default_spinor_labels(fermion, gauge_group)
-        action = _build_bilinear_gauge_action_data(
-            fermion,
-            piece,
-            lorentz_label=mu,
-            spectator_exclude_slots={fermion_spinor_slot},
-        )
-        bar_labels = fermion.pack_slot_labels({
-            fermion_spinor_slot: i_bar,
-            **action.left_slot_labels,
-        })
-        psi_labels = fermion.pack_slot_labels({
-            fermion_spinor_slot: i_psi,
-            **action.right_slot_labels,
-        })
-
-        rep = piece.metadata.representation
-        slot_suffix = _slot_suffix(fermion, piece.active_slot)
-        slot_label = f"{label} [{rep.index.name}{slot_suffix}]" if label and rep is not None else label
         interactions.append(
-            InteractionTerm(
-                coupling=-term.coefficient * action.coupling * psi_bar_gamma_psi(i_bar, i_psi, mu),
-                fields=(
-                    fermion.occurrence(conjugated=True, labels=bar_labels),
-                    fermion.occurrence(labels=psi_labels),
-                    piece.metadata.gauge_field.occurrence(labels=action.gauge_labels),
-                ),
-                label=slot_label or f"{gauge_group.name}: {fermion.name} gauge current",
+            _build_fermion_current_interaction(
+                fermion=fermion,
+                piece=piece,
+                spinor_slot=fermion_spinor_slot,
+                i_bar=i_bar,
+                i_psi=i_psi,
+                prefactor=-term.coefficient,
+                label=label,
+                lorentz_label=mu,
+                spectator_exclude_slots={fermion_spinor_slot},
             )
         )
 
