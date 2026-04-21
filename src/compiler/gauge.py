@@ -1870,29 +1870,6 @@ def _compile_declared_covariant_core(
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
 
 
-def _compile_analyzed_source_term(model: Model, analyzed) -> tuple[InteractionTerm, ...]:
-    if analyzed.interaction is not None:
-        return ()
-
-    if analyzed.covariant_core is not None:
-        return _compile_declared_covariant_core(
-            model,
-            analyzed.covariant_core,
-            analyzed.covariant_spectators,
-        )
-
-    if analyzed.gauge_kinetic is not None:
-        return compile_gauge_kinetic_term(model, analyzed.gauge_kinetic)
-
-    if analyzed.gauge_fixing is not None:
-        return compile_gauge_fixing_term(model, analyzed.gauge_fixing)
-
-    if analyzed.ghost is not None:
-        return compile_ghost_term(model, analyzed.ghost)
-
-    return ()
-
-
 def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     """Compile all declared non-local / structured source terms in a model.
 
@@ -1910,7 +1887,29 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     interactions: list[InteractionTerm] = []
 
     for analyzed in model.analyzed_source_terms():
-        interactions.extend(_compile_analyzed_source_term(model, analyzed))
+        if analyzed.interaction is not None:
+            continue
+
+        if analyzed.covariant_core is not None:
+            interactions.extend(
+                _compile_declared_covariant_core(
+                    model,
+                    analyzed.covariant_core,
+                    analyzed.covariant_spectators,
+                )
+            )
+            continue
+
+        if analyzed.gauge_kinetic is not None:
+            interactions.extend(compile_gauge_kinetic_term(model, analyzed.gauge_kinetic))
+            continue
+
+        if analyzed.gauge_fixing is not None:
+            interactions.extend(compile_gauge_fixing_term(model, analyzed.gauge_fixing))
+            continue
+
+        if analyzed.ghost is not None:
+            interactions.extend(compile_ghost_term(model, analyzed.ghost))
 
     for term in model.covariant_terms:
         if isinstance(term, DiracKineticTerm):
