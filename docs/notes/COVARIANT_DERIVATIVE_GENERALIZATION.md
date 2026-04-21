@@ -1,398 +1,104 @@
-# Generalizing Covariant-Derivative Expansion for Repeated Index Kinds
+# Covariant-Derivative Generalization
 
-## Purpose
+Purpose: technical rulebook for representation-dependent covariant expansion.
 
-This note explains how covariant-derivative expansion should work in this
-repository, what is already implemented, and what still remains.
+## Core rule
 
-The central point is simple:
+Do not use one universal hard-coded derivative. Use field metadata and gauge metadata:
 
-> The covariant derivative depends on the field representation.
+`D_mu = partial_mu + i sum_G g_G A_{G,mu}^a T_R^a`
 
-That is the right FeynRules-style viewpoint:
+with:
 
-- gauge groups declare the gauge data
-- fields declare the transformation data
-- the compiler combines both into the concrete gauge action
+- abelian case: `T_R -> q`
+- non-abelian case: `T_R -> representation generator`
 
-## Repository Map
+## Repository map
 
-- `src/model_symbolica.py`
-  Contraction engine: Wick-permutation sums, derivative-to-momentum replacement,
-  and open-index remapping.
-- `src/model.py`
-  Model-layer declarations: `Field`, `GaugeGroup`, `InteractionTerm`, and
-  covariant/kinetic term declarations.
-- `src/gauge_compiler.py`
-  Covariant compiler: expands gauge-covariant kinetic terms into ordinary
-  `InteractionTerm`s.
-- `src/spenso_structures.py`, `src/operators.py`
-  Tensor wrappers such as gamma matrices, metrics, and gauge generators.
+The active implementation boundary is now:
 
-## Conventions
+- declaration and lowering: `src/model/*`, `src/lagrangian/*`
+- gauge/covariant compilation: `src/compiler/gauge.py`
+- symbolic vertex extraction: `src/symbolic/vertex_engine.py`
 
-A common textbook form is:
+The important split is unchanged:
 
-```text
-D_mu = partial_mu - i sum_G g_G A^a_{G,mu} T^a_R
-```
+- declaration/lowering decides what gauge action a field carries
+- compiler emits normalized interaction terms
+- symbolic engine stays generic and turns derivatives into momentum factors
 
-The physical compiler in this repository uses:
+## Build rule
 
-```text
-D_mu = partial_mu + i g A_mu
-```
+Conceptually, covariant expansion should do this:
 
-Only the overall sign is conventional. The structural point is unchanged:
+1. start from the ordinary derivative term
+2. inspect each active gauge group on the field
+3. insert the abelian charge or non-abelian generator dictated by metadata
+4. emit one ordinary interaction contribution per active current/contact branch
 
-```text
-D_mu = partial_mu + representation-dependent gauge action
-```
+That means the scalar/fermion distinction belongs mainly to the surrounding
+kinetic term, not to the representation-dependent gauge action itself.
 
-Derivatives become momentum factors in Fourier space:
+## Repeated-slot requirement
 
-```text
-partial_mu -> -i p_mu
-```
+For fields carrying repeated slots of the same index kind, expansion must be metadata-driven:
 
-## Core Rule
+- `slot_policy="unique"`: ambiguous repeated matches are rejected unless a slot is explicit.
+- `slot_policy="sum"`: sum contributions over all active matching slots.
 
-Do not hardcode one universal `D_mu`.
+## Contact-term rule
 
-Instead, treat the covariant derivative as a function of field metadata:
+For scalar contact terms, sum ordered slot pairs `(i, j)`:
 
-```text
-D_mu = partial_mu + i sum_G g_G A^a_{G,mu} T^a_R
-```
+- `i = j`: same-slot chained-generator branch
+- `i != j`: cross-slot branch with one generator per slot
 
-where:
+## Interaction-generation rule
 
-- the gauge declaration provides `g_G`, `A^a_{G,mu}`, abelian/non-abelian
-  status, and generator metadata
-- the field declaration provides the representation `R`, the relevant index
-  slots, and abelian charges
-- the compiler builds the concrete gauge action from those two pieces
+One covariant kinetic term lowers to several ordinary interactions:
 
-This is the right mental model for the codebase:
+- fermion kinetic term produces current vertices
+- complex-scalar kinetic term produces current vertices and two-gauge contact terms
+- multi-group scalar cases also produce ordered mixed-group contact contributions
 
-- `QuantumNumbers` carry abelian charges
-- field indices carry non-abelian representation slots
-- gauge groups declare the generator structure acting on those slots
+This is why the compiler should lower covariant declarations into ordinary
+interaction objects rather than trying to keep a universal symbolic `D_mu`
+alive all the way to vertex extraction.
 
-## Two-Layer Split
+## Conjugate-field rule
 
-### Layer A: gauge-group data
+If a field is in representation `R`, the conjugate occurrence uses `R*`:
 
-- gauge boson `A_mu^a`
-- coupling `g`
-- abelian vs non-abelian
-- generator object `T^a` or charge label
-- structure constants for non-abelian groups
+- abelian charge flips sign
+- non-abelian generator is conjugate representation action
 
-### Layer B: field transformation data
+## Failure modes this note is meant to prevent
 
-- scalar / fermion / vector kind
-- self-conjugate vs non-self-conjugate
-- abelian charges
-- non-abelian representation type
-- concrete field slots on which the group acts
-- for repeated identical index kinds: whether to pick one slot or sum over all
-  matching slots
+The main bugs in this area are structural, not conceptual:
 
-Once those two layers exist, the derivative builder only needs to read metadata
-and sum the active contributions.
+1. single-slot assumption
+   repeated matching slots cannot be treated as one implicit slot
+2. same-slot-only contact construction
+   scalar contact expansion must include cross-slot placements as well
+3. unstable packed-label ordinals
+   repeated-kind labels must preserve slot shape so remapping stays correct
 
-## Representation-Dependent Action
+## Current status (2026-04-21)
 
-For an abelian group, the generator reduces to the field charge:
+Implemented for covered compiler paths:
 
-```text
-U(1): T_R -> q
-```
+- repeated-slot resolution with explicit policy
+- spectator identities on inactive repeated slots
+- ordered contact expansion for bislot scalar cases
+- mixed-group scalar contact contributions
+- ordinal-stable repeated-slot label packing for covered lowering/compiler flows
 
-For a non-abelian group, it is the generator acting in the field
-representation:
+Still to harden:
 
-```text
-SU(N): T^a_R
-```
+- broader regression extraction from examples into tests
+- stricter validation outside core compiler entry points
 
-So the same abstract rule gives different concrete derivatives.
+## Recommended rule of thumb
 
-Complex scalar with charge `q`:
-
-```text
-D_mu phi = (partial_mu + i e q A_mu) phi
-```
-
-Dirac fermion with charge `q`:
-
-```text
-D_mu psi = (partial_mu + i e q A_mu) psi
-```
-
-Fundamental of `SU(3)`:
-
-```text
-(D_mu phi)^i = partial_mu phi^i + i g_s G_mu^a (T^a)^i{}_j phi^j
-```
-
-Adjoint of `SU(N)`:
-
-```text
-(D_mu X)^a = partial_mu X^a + g f^{abc} A_mu^b X^c
-```
-
-Same symmetry principle, different representation action.
-
-## Build Rule
-
-Conceptually, the derivative builder should do this:
-
-```text
-start from partial_mu phi
-for each gauge group G:
-    if phi is neutral or singlet under G:
-        add nothing
-    elif G is abelian:
-        add + i g q A_mu phi
-    else:
-        add + i g A_mu^a T^a_R phi
-```
-
-This is the reusable core.
-
-The builder should not branch too early into a "scalar case" or "fermion case".
-That distinction matters when the full kinetic term is assembled around `D_mu`,
-not when the gauge action itself is determined.
-
-## Conjugate Fields
-
-This is easy to get wrong and should stay explicit.
-
-If `phi` transforms in `R`, then `phi^dagger` transforms in the conjugate
-representation `R*`.
-
-So:
-
-- abelian charges change sign
-- non-abelian generators become those of the conjugate representation
-
-For scalar QED in this repository's sign convention:
-
-```text
-D_mu phi        = (partial_mu + i e q A_mu) phi
-D_mu phi^dagger = (partial_mu - i e q A_mu) phi^dagger
-```
-
-So the compiler must not blindly reuse the same gauge action for both a field
-and its daggered occurrence.
-
-## How Expansion Produces Interaction Terms
-
-One covariant kinetic term expands into several ordinary interactions.
-
-For a complex scalar,
-
-```text
-(D_mu phi)^dagger (D^mu phi)
-```
-
-produces:
-
-- the free kinetic term
-- mixed derivative-gauge terms
-- a two-gauge contact term
-
-So one covariant kinetic term naturally generates both:
-
-- 3-point current vertices
-- 4-point contact vertices
-
-That is why the compiler output splits into current and contact contributions.
-
-## Status as of 2026-04-08
-
-### Implemented
-
-- `GaugeRepresentation` supports repeated-slot semantics through:
-  - `slot`
-  - `slot_policy="unique"`
-  - `slot_policy="sum"`
-  - `slots_for(...)` and related helpers
-- `GaugeGroup` and the gauge compiler resolve all active matching slots instead
-  of assuming a single unique slot
-- `Field.pack_slot_labels(...)` preserves ordinal stability for repeated kinds by
-  keeping explicit `None` placeholders
-- minimal and covariant gauge compilers insert spectator identities
-  consistently on inactive repeated slots
-- the covered bislot scalar case expands into:
-  - one current pair per active slot
-  - one contact contribution per ordered slot pair
-- mixed-group complex-scalar kinetic terms now include the ordered cross-group
-  contact terms generated by
-  `(D_mu phi)^dagger (D^mu phi)`
-- ambiguous repeated-slot cases are rejected by default and are only summed when
-  metadata opts in via `slot_policy="sum"`
-- dedicated `pytest` coverage now includes:
-  - bislot `slot_policy="sum"` current/contact regressions
-  - direct mixed scalar contact compilation checks
-  - one canonicalization-based tensor golden test
-
-### Still Missing
-
-- some broader direct/model regression coverage still lives in `src/examples.py`
-  instead of the dedicated `tests/` tree
-- broader model/declaration validation outside the current compiler entry points
-  is still more permissive than a library-quality API
-
-## Where Covariant Expansion Happens
-
-### Covariant compiler: `src/gauge_compiler.py`
-
-Key entry points:
-
-- `compile_covariant_terms(model)`
-  Flattens declared covariant kinetic terms into standard `InteractionTerm`s.
-- `compile_dirac_kinetic_term(model, DiracKineticTerm)`
-  Expands the gauge part of `psibar i gamma^mu D_mu psi`.
-- `compile_complex_scalar_kinetic_term(model, ComplexScalarKineticTerm)`
-  Expands the gauge part of `(D_mu phi)^dagger (D^mu phi)` into current and
-  contact terms.
-
-### Engine side: `src/model_symbolica.py`
-
-- `InteractionTerm.to_vertex_kwargs(external_legs)`
-  Produces the kwargs consumed by `vertex_factor(...)`.
-- `vertex_factor(...)`
-  Calls `contract_to_full_expression(...)` and applies global factors.
-- `contract_to_full_expression(...)`
-  Handles derivative-to-momentum replacement and open-label remapping.
-
-This is where kinetic-term derivatives become momentum factors.
-
-## What Repeated-Slot Generalization Had to Fix
-
-The issue is not gauge invariance itself. The issue is how to represent
-tensor-product actions when a field carries several slots of the same kind.
-
-### 1. Single-slot assumption
-
-Old behavior effectively assumed that the relevant representation acts on one
-selected slot.
-
-That fails for fields with repeated matching slots, because the correct gauge
-action may be a sum over tensor-product factors.
-
-### 2. Same-slot-only contact terms
-
-Old scalar contact construction only covered the case where both gauge legs act
-on the same slot.
-
-For repeated slots, the full result must also include cross-slot placements:
-
-- first gauge leg acting on slot `i`
-- second gauge leg acting on slot `j`
-- including `i != j`
-
-### 3. Ordinal drift in packed labels
-
-If repeated-kind labels are packed without preserving the full slot shape,
-ordinal lookup becomes unstable.
-
-That breaks:
-
-- open-label detection
-- remapping of coupling labels to external-leg labels
-
-## Design Rule for Repeated Slots
-
-There are three parts:
-
-### A. Slot policy
-
-`GaugeRepresentation` should express one of two behaviors:
-
-- `slot_policy="unique"`
-  Repeated matches are ambiguous unless one slot is explicitly chosen.
-- `slot_policy="sum"`
-  When `slot` is not given, the representation acts on all matching slots and
-  the compiler sums the contributions.
-
-### B. Current terms
-
-For fermion and scalar currents:
-
-- determine all active matching slots
-- for each active slot:
-  - build the generator on that slot
-  - build spectator identities on the inactive slots
-  - emit the corresponding contribution
-
-### C. Contact terms
-
-For scalar contact terms, sum over ordered slot pairs `(slot_i, slot_j)`:
-
-- if `slot_i == slot_j`, use the usual chained-generator structure
-- if `slot_i != slot_j`, place one generator on each slot and keep spectator
-  identities on the rest
-
-### D. Stable label packing
-
-`Field.pack_slot_labels(...)` should always preserve the full repeated-slot
-shape, using `None` placeholders for unspecified positions.
-
-That keeps ordinals stable and open-label remapping correct.
-
-### E. Custom label overrides
-
-`compile_complex_scalar_gauge_terms(...)` exposes two low-level override knobs:
-
-- `matter_labels=(left, right)` is a global override for the active matter slot
-  labels
-- `internal_label=...` replaces the middle index used in same-slot non-abelian
-  contact chains
-
-Under `slot_policy="sum"`, `matter_labels` is reused for every emitted current
-term and for every active slot pair in the contact expansion.  It is therefore
-an output override, not per-slot metadata.
-
-`internal_label` only affects the `slot_i == slot_j` branch.  Cross-slot
-contact terms do not use it, because they do not need an internal bridge index.
-
-## Recommended Next Steps
-
-1. Keep moving the section 9.1 regression checks out of `src/examples.py` and
-   into `tests/`.
-2. Add more exact symbolic-equality checks for the remaining covariant cases,
-   not just term-count smoke tests.
-3. Keep tightening model/declaration validation outside the current covariant
-   compiler entry points.
-4. Keep `src/model_symbolica.py` generic:
-   - no tensor-specific branching in the engine
-   - all generality should come from correct couplings and labels emitted by the
-     compiler layer
-5. Treat broader readability/canonicalization work as a follow-up once the
-   ordinary gauge-fixed baseline is fully hardened and the first BFM split is in
-   place
-
-## Bottom Line
-
-The right abstraction is:
-
-```text
-covariant derivative = partial derivative + representation-dependent gauge action
-```
-
-and the right compiler rule is:
-
-```text
-one covariant kinetic term -> several ordinary interaction terms
-```
-
-For repeated identical index kinds, the hard part is not the physics. The hard
-part is expressing the tensor-product action cleanly in metadata, compiler
-output, and label bookkeeping.
-
-That is why the repeated-slot generalization belongs in the
-declaration/compiler layer, not in the contraction engine.
+Keep repeated-slot meaning in metadata and compiler output. Do not push
+slot-specific physics into the generic symbolic engine.

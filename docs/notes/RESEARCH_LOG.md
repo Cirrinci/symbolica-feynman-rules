@@ -5,16 +5,91 @@ Symbolica/Spenso FeynRules-style prototype. It should stay readable as a
 single narrative of progress, while the other notes carry stable plans,
 conventions, and design discussions.
 
+Rule:
+
+- keep dated work sessions
+- do not collapse past days into milestone summaries
+- new sessions should be appended as new dated entries, not used to overwrite
+  earlier ones
+
+### 2026-04-21: compiler refactor review, SU(2)L baseline, and docs sync
+
+What happened:
+
+- the recent commit chain was reviewed to understand the current direction of
+  the codebase:
+  - `850eafa`: SU(2)L add example and test
+  - `c0b903f`: add assemble full cov in `gauge.py`
+  - `d265819`: extract shared fermion covariant-current emitter
+  - `af18d2b`: clean up the path in `lowering.py`
+  - `b9e043c`: fix example expectations for declarative `CovD`
+  - `93cc26a`: merge `interface-work` into `canonicalization`
+  - `5938ea5`: lowering clean up path of covariant derivative
+  - `c50d855`: merge covariant paths with/without spectators
+- the live source layout was checked and the notes were updated to match the
+  modularized tree under:
+  - `src/compiler/*`
+  - `src/model/*`
+  - `src/lagrangian/*`
+  - `src/symbolic/*`
+- the recent gauge/compiler work was reviewed:
+  - `src/compiler/gauge.py` now carries the refactored covariant assembly path
+  - duplicated fermion-current logic was reduced
+  - spectator/no-spectator handling was merged into one flow
+- the recent lowering cleanup was reviewed in `src/model/lowering.py`
+- the declarative example expectations were aligned with the current lowering
+  and compiler behavior in `examples/examples.py`
+- a new SU(2)L baseline example and dedicated regression coverage were added:
+  - `examples/examples_su2.py`
+  - `tests/test_su2.py`
+- the notes cleanup pass was corrected so `RESEARCH_LOG.md` keeps the full
+  dated session history instead of collapsing older work into summaries
+
+What this achieved:
+
+- clarified that the current phase is consolidation and hardening of the
+  gauge/lowering stack, not random feature growth
+- confirmed that the active architecture is now package-based rather than the
+  older monolithic `src/model.py` / `src/gauge_compiler.py` layout
+- recorded the SU(2)L example/test addition as the newest concrete baseline
+  expansion in the repository
+- synchronized the notes with the live code paths so the documentation no
+  longer points at stale module locations
+- restored the intended purpose of this file as a session-by-session work log
+  rather than a trimmed milestone digest
+
+Practical next steps:
+
+1. add focused regression tests for the newer full-covariant assembly branches
+2. add parity tests for the main declarative families
+   (`CovD`, `FieldStrength`, `GaugeFixing`, `Ghost`)
+3. keep moving behavior checks out of examples and into `tests/`
+
 ### Current status snapshot
 
-As of 2026-04-16:
+As of 2026-04-21:
 
-- the active source tree is `src/`
-- the core symbolic engine is `src/model_symbolica.py`
-- the current model/declaration layer is `src/model.py`
-- reusable operator builders live in `src/operators.py`
-- the gauge/covariant compiler logic lives in `src/gauge_compiler.py`
-- the main runnable validation script is `src/examples.py`
+- the active source tree is modularized under `src/`
+- the core symbolic extraction engine now lives in `src/symbolic/vertex_engine.py`
+- tensor and canonicalization helpers live in:
+  - `src/symbolic/spenso_structures.py`
+  - `src/symbolic/tensor_canonicalization.py`
+- the model/declaration layer now lives in:
+  - `src/model/core.py`
+  - `src/model/interactions.py`
+  - `src/model/declared.py`
+  - `src/model/lagrangian.py`
+  - `src/model/lowering.py`
+  - `src/model/metadata.py`
+- declarative helper/building-block code lives in:
+  - `src/lagrangian/operators.py`
+  - `src/lagrangian/lowering.py`
+- gauge/covariant compiler logic now lives in `src/compiler/gauge.py`
+- runnable validation/examples now live in:
+  - `examples/examples.py`
+  - `examples/examples_lagrangian.py`
+  - `examples/examples_su2.py`
+- dedicated regression coverage now lives in `tests/`
 - the walkthrough notebook is `notebooks/codebase_workflow_walkthrough.ipynb`
 - the main extraction path is now `model.lagrangian().feynman_rule(...)`
 - the recommended public model-building API is now:
