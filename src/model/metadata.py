@@ -14,15 +14,21 @@ from symbolic.spenso_structures import (
     COLOR_ADJ,
     COLOR_FUND,
     LORENTZ,
+    WEAK_ADJ,
+    WEAK_FUND,
     COLOR_ADJ_KIND,
     COLOR_FUND_KIND,
     LORENTZ_KIND,
     SPINOR_KIND,
+    WEAK_ADJ_KIND,
+    WEAK_FUND_KIND,
     gamma5_matrix,
     gamma_matrix,
     gauge_generator,
     lorentz_metric,
     structure_constant,
+    weak_gauge_generator,
+    weak_structure_constant,
 )
 
 Statistics = Literal["boson", "fermion"]
@@ -83,6 +89,9 @@ SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, prefix="i")
 LORENTZ_INDEX = IndexType("Lorentz", LORENTZ, LORENTZ_KIND, prefix="mu")
 COLOR_FUND_INDEX = IndexType("ColorFund", COLOR_FUND, COLOR_FUND_KIND, prefix="c")
 COLOR_ADJ_INDEX = IndexType("ColorAdj", COLOR_ADJ, COLOR_ADJ_KIND, prefix="a")
+# SU(2)_L weak isospin: doublet (fundamental) and triplet (adjoint).
+WEAK_FUND_INDEX = IndexType("WeakFund", WEAK_FUND, WEAK_FUND_KIND, prefix="w")
+WEAK_ADJ_INDEX = IndexType("WeakAdj", WEAK_ADJ, WEAK_ADJ_KIND, prefix="aw")
 
 
 # ---------------------------------------------------------------------------

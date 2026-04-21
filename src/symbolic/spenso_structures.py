@@ -22,6 +22,9 @@ BISPINOR = Representation.bis(4)
 LORENTZ = Representation.mink(4)
 COLOR_FUND = Representation.cof(3)
 COLOR_ADJ = Representation.coad(8)
+# SU(2) weak-isospin representations (doublet, adjoint triplet).
+WEAK_FUND = Representation.cof(2)
+WEAK_ADJ = Representation.coad(3)
 
 _HEP_LIBRARY = TensorLibrary.hep_lib()
 _ONE = Expression.num(1)
@@ -32,6 +35,8 @@ SPINOR_KIND = "spinor"
 LORENTZ_KIND = "lorentz"
 COLOR_FUND_KIND = "color_fund"
 COLOR_ADJ_KIND = "color_adj"
+WEAK_FUND_KIND = "weak_fund"
+WEAK_ADJ_KIND = "weak_adj"
 
 
 def _slot(rep, index):
@@ -54,6 +59,14 @@ def color_fund_index(index):
 
 def color_adj_index(index):
     return _slot(COLOR_ADJ, index)
+
+
+def weak_fund_index(index):
+    return _slot(WEAK_FUND, index)
+
+
+def weak_adj_index(index):
+    return _slot(WEAK_ADJ, index)
 
 
 def _fresh_index_name(prefix):
@@ -138,6 +151,24 @@ def structure_constant(a, b, c):
         color_adj_index(a),
         color_adj_index(b),
         color_adj_index(c),
+    ).to_expression()
+
+
+def weak_gauge_generator(adj_index, fund_left, fund_right):
+    """Return the SU(2) fundamental-representation generator t^a_{ij} (doublet)."""
+    return TensorName.t()(
+        weak_adj_index(adj_index),
+        weak_fund_index(fund_left),
+        weak_fund_index(fund_right),
+    ).to_expression()
+
+
+def weak_structure_constant(a, b, c):
+    """Return the SU(2) adjoint structure constant tensor f^{abc} = epsilon^{abc}."""
+    return TensorName.f()(
+        weak_adj_index(a),
+        weak_adj_index(b),
+        weak_adj_index(c),
     ).to_expression()
 
 
