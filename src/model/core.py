@@ -20,13 +20,8 @@ from .lagrangian import (
 )
 from .lowering import (
     _normalize_interaction_terms_input,
-    _validate_declared_source_term,
-    _source_term_interaction,
-    _source_term_covariant_core,
-    _source_term_gauge_kinetic,
-    _source_term_gauge_fixing,
-    _source_term_ghost,
-    _source_term_needs_compilation,
+    _analyze_declared_source_term,
+    _unsupported_declared_source_term_error,
 )
 from .metadata import Field, GaugeGroup, Parameter
 # ---------------------------------------------------------------------------
@@ -74,7 +69,8 @@ class Model:
         elif not isinstance(self.lagrangian_decl, DeclaredLagrangian):
             self.lagrangian_decl = DeclaredLagrangian.from_item(self.lagrangian_decl)
         for term in self.lagrangian_decl.source_terms:
-            _validate_declared_source_term(term)
+            if _analyze_declared_source_term(term) is None:
+                raise _unsupported_declared_source_term_error()
 
     def source_lagrangian_terms(self) -> tuple[object, ...]:
         """Return the user-facing declared Lagrangian terms in source form."""
@@ -89,38 +85,48 @@ class Model:
 
     def all_interactions(self) -> tuple[InteractionTerm, ...]:
         return self.interactions + tuple(
-            interaction
-            for term in self.lagrangian_decl.source_terms
-            if (interaction := _source_term_interaction(term)) is not None
+            analyzed.interaction
+            for analyzed in self.analyzed_source_terms()
+            if analyzed.interaction is not None
         )
 
     def all_covariant_terms(self) -> tuple[CovariantTerm, ...]:
         return self.covariant_terms + tuple(
-            covariant
-            for term in self.lagrangian_decl.source_terms
-            if (covariant := _source_term_covariant_core(term)) is not None
+            analyzed.covariant_core
+            for analyzed in self.analyzed_source_terms()
+            if analyzed.covariant_core is not None
         )
 
     def all_gauge_kinetic_terms(self) -> tuple[GaugeKineticTerm, ...]:
         return self.gauge_kinetic_terms + tuple(
-            gauge_kinetic
-            for term in self.lagrangian_decl.source_terms
-            if (gauge_kinetic := _source_term_gauge_kinetic(term)) is not None
+            analyzed.gauge_kinetic
+            for analyzed in self.analyzed_source_terms()
+            if analyzed.gauge_kinetic is not None
         )
 
     def all_gauge_fixing_terms(self) -> tuple[GaugeFixingTerm, ...]:
         return self.gauge_fixing_terms + tuple(
-            gauge_fixing
-            for term in self.lagrangian_decl.source_terms
-            if (gauge_fixing := _source_term_gauge_fixing(term)) is not None
+            analyzed.gauge_fixing
+            for analyzed in self.analyzed_source_terms()
+            if analyzed.gauge_fixing is not None
         )
 
     def all_ghost_terms(self) -> tuple[GhostTerm, ...]:
         return self.ghost_terms + tuple(
-            ghost
-            for term in self.lagrangian_decl.source_terms
-            if (ghost := _source_term_ghost(term)) is not None
+            analyzed.ghost
+            for analyzed in self.analyzed_source_terms()
+            if analyzed.ghost is not None
         )
+
+    def analyzed_source_terms(self) -> tuple[object, ...]:
+        """Return the normalized interpretation of each declarative source term."""
+        analyzed_terms = []
+        for term in self.lagrangian_decl.source_terms:
+            analyzed = _analyze_declared_source_term(term)
+            if analyzed is None:
+                raise _unsupported_declared_source_term_error()
+            analyzed_terms.append(analyzed)
+        return tuple(analyzed_terms)
 
     def find_field(self, target) -> Optional[Field]:
         """Resolve a field by object identity, declaration name, or symbol."""

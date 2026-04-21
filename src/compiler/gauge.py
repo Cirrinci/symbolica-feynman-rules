@@ -29,12 +29,6 @@ from symbolica import S, Expression
 from model import (
     CovD,
     CovariantDerivativeFactor,
-    GaugeFixingDeclaration,
-    GhostLagrangianDeclaration,
-    _DeclaredMonomial,
-    _lower_field_strength_monomial,
-    _match_covariant_monomial,
-    _source_term_needs_compilation,
     ComplexScalarKineticTerm,
     DerivativeAction,
     DiracKineticTerm,
@@ -1563,7 +1557,16 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
 
 
 def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, ...]:
-    """Compile the currently supported gauge interactions from a model."""
+    """Compile minimal gauge interactions using kinetic-term conventions.
+
+    The generated interactions are the gauge pieces implied by the standard
+    covariant kinetic terms:
+    - fermions: ``i psibar gamma^mu D_mu psi``
+    - complex scalars: ``(D_mu phi)^dagger (D^mu phi)``
+
+    This keeps the standalone minimal compiler consistent with the declarative
+    ``CovD(...)`` path exposed by ``Model.lagrangian()``.
+    """
     interactions: list[InteractionTerm] = []
 
     for gauge_group in model.gauge_groups:
@@ -1586,6 +1589,7 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                         fermion=field,
                         gauge_group=gauge_group,
                         gauge_field=gauge_field,
+                        prefactor=-1,
                     )
                 )
                 continue
@@ -1602,7 +1606,7 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                         scalar=field,
                         gauge_group=gauge_group,
                         gauge_field=gauge_field,
-                        current_prefactor=1,
+                        current_prefactor=Expression.I,
                         contact_prefactor=1,
                     )
                 )
@@ -1866,44 +1870,26 @@ def _compile_declared_covariant_core(
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
 
 
-def _compile_declared_source_term(model: Model, term) -> tuple[InteractionTerm, ...]:
-    if isinstance(term, (InteractionTerm,)):
+def _compile_analyzed_source_term(model: Model, analyzed) -> tuple[InteractionTerm, ...]:
+    if analyzed.interaction is not None:
         return ()
 
-    if isinstance(term, _DeclaredMonomial):
-        match = _match_covariant_monomial(term)
-        if match is not None:
-            core, spectators = match
-            return _compile_declared_covariant_core(model, core, spectators)
-
-        gauge_kinetic = _lower_field_strength_monomial(term)
-        if gauge_kinetic is not None:
-            return compile_gauge_kinetic_term(model, gauge_kinetic)
-        return ()
-
-    if isinstance(term, DiracKineticTerm):
-        return compile_dirac_kinetic_term(model, term)
-    if isinstance(term, ComplexScalarKineticTerm):
-        return compile_complex_scalar_kinetic_term(model, term)
-    if isinstance(term, GaugeKineticTerm):
-        return compile_gauge_kinetic_term(model, term)
-    if isinstance(term, GaugeFixingDeclaration):
-        term = GaugeFixingTerm(
-            gauge_group=term.gauge_group,
-            xi=term.xi,
-            coefficient=term.coefficient,
-            label=term.label,
+    if analyzed.covariant_core is not None:
+        return _compile_declared_covariant_core(
+            model,
+            analyzed.covariant_core,
+            analyzed.covariant_spectators,
         )
-    if isinstance(term, GaugeFixingTerm):
-        return compile_gauge_fixing_term(model, term)
-    if isinstance(term, GhostLagrangianDeclaration):
-        term = GhostTerm(
-            gauge_group=term.gauge_group,
-            coefficient=term.coefficient,
-            label=term.label,
-        )
-    if isinstance(term, GhostTerm):
-        return compile_ghost_term(model, term)
+
+    if analyzed.gauge_kinetic is not None:
+        return compile_gauge_kinetic_term(model, analyzed.gauge_kinetic)
+
+    if analyzed.gauge_fixing is not None:
+        return compile_gauge_fixing_term(model, analyzed.gauge_fixing)
+
+    if analyzed.ghost is not None:
+        return compile_ghost_term(model, analyzed.ghost)
+
     return ()
 
 
@@ -1923,8 +1909,8 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     """
     interactions: list[InteractionTerm] = []
 
-    for term in model.lagrangian_decl.source_terms:
-        interactions.extend(_compile_declared_source_term(model, term))
+    for analyzed in model.analyzed_source_terms():
+        interactions.extend(_compile_analyzed_source_term(model, analyzed))
 
     for term in model.covariant_terms:
         if isinstance(term, DiracKineticTerm):
@@ -1957,7 +1943,9 @@ def with_compiled_covariant_terms(model: Model) -> Model:
     """
     compiled = compile_covariant_terms(model)
     preserved_source_terms = tuple(
-        term for term in model.lagrangian_decl.source_terms if not _source_term_needs_compilation(term)
+        analyzed.term
+        for analyzed in model.analyzed_source_terms()
+        if not analyzed.needs_compilation
     )
     return replace(
         model,

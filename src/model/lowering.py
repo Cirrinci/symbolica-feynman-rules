@@ -489,14 +489,8 @@ def _lower_field_strength_monomial(term: _DeclaredMonomial):
     )
 
 
-def _validate_declared_monomial(term: _DeclaredMonomial):
-    if _match_covariant_monomial(term) is not None:
-        return
-    if _lower_field_strength_monomial(term) is not None:
-        return
-    if _lower_local_interaction_monomial(term) is not None:
-        return
-    raise ValueError(
+def _unsupported_declared_source_term_error() -> ValueError:
+    return ValueError(
         "Unsupported declarative Lagrangian term. Supported canonical forms are: "
         "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
         "CovD(Phi.bar, mu) * CovD(Phi, mu), "
@@ -507,6 +501,103 @@ def _validate_declared_monomial(term: _DeclaredMonomial):
         "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
         "or the legacy GaugeFixingTerm / GhostTerm declarations."
     )
+
+
+@dataclass(frozen=True)
+class _AnalyzedSourceTerm:
+    term: object
+    interaction: InteractionTerm | None = None
+    covariant_core: DiracKineticTerm | ComplexScalarKineticTerm | None = None
+    covariant_spectators: tuple[tuple[Field, bool], ...] = ()
+    gauge_kinetic: GaugeKineticTerm | None = None
+    gauge_fixing: GaugeFixingTerm | None = None
+    ghost: GhostTerm | None = None
+
+    @property
+    def needs_compilation(self) -> bool:
+        return any(
+            value is not None
+            for value in (
+                self.covariant_core,
+                self.gauge_kinetic,
+                self.gauge_fixing,
+                self.ghost,
+            )
+        )
+
+
+def _analyze_declared_monomial(term: _DeclaredMonomial) -> _AnalyzedSourceTerm | None:
+    match = _match_covariant_monomial(term)
+    if match is not None:
+        core, spectators = match
+        return _AnalyzedSourceTerm(
+            term=term,
+            covariant_core=core,
+            covariant_spectators=spectators,
+        )
+
+    gauge_kinetic = _lower_field_strength_monomial(term)
+    if gauge_kinetic is not None:
+        return _AnalyzedSourceTerm(term=term, gauge_kinetic=gauge_kinetic)
+
+    interaction = _lower_local_interaction_monomial(term)
+    if interaction is not None:
+        return _AnalyzedSourceTerm(term=term, interaction=interaction)
+
+    return None
+
+
+def _analyze_declared_source_term(term) -> _AnalyzedSourceTerm | None:
+    if isinstance(term, InteractionTerm):
+        return _AnalyzedSourceTerm(term=term, interaction=term)
+
+    if isinstance(term, _DeclaredMonomial):
+        return _analyze_declared_monomial(term)
+
+    if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
+        return _AnalyzedSourceTerm(term=term, covariant_core=term)
+
+    if isinstance(term, GaugeKineticTerm):
+        return _AnalyzedSourceTerm(term=term, gauge_kinetic=term)
+
+    if isinstance(term, GaugeFixingDeclaration):
+        return _AnalyzedSourceTerm(
+            term=term,
+            gauge_fixing=GaugeFixingTerm(
+                gauge_group=term.gauge_group,
+                xi=term.xi,
+                coefficient=term.coefficient,
+                label=term.label,
+            ),
+        )
+
+    if isinstance(term, GaugeFixingTerm):
+        return _AnalyzedSourceTerm(term=term, gauge_fixing=term)
+
+    if isinstance(term, GhostLagrangianDeclaration):
+        return _AnalyzedSourceTerm(
+            term=term,
+            ghost=GhostTerm(
+                gauge_group=term.gauge_group,
+                coefficient=term.coefficient,
+                label=term.label,
+            ),
+        )
+
+    if isinstance(term, GhostTerm):
+        return _AnalyzedSourceTerm(term=term, ghost=term)
+
+    return None
+
+
+def _validate_declared_monomial(term: _DeclaredMonomial):
+    if _match_covariant_monomial(term) is not None:
+        return
+    if _lower_field_strength_monomial(term) is not None:
+        return
+    if _lower_local_interaction_monomial(term) is not None:
+        return
+    raise _unsupported_declared_source_term_error()
 def _declared_source_terms_from_item(item):
     from .lagrangian import DeclaredLagrangian
 
@@ -589,86 +680,48 @@ def _lower_standalone_lagrangian_source_term(term) -> InteractionTerm:
 
 
 def _source_term_interaction(term) -> InteractionTerm | None:
-    if isinstance(term, InteractionTerm):
-        return term
-    if isinstance(term, _DeclaredMonomial):
-        return _lower_local_interaction_monomial(term)
-    return None
+    analyzed = _analyze_declared_source_term(term)
+    if analyzed is None:
+        return None
+    return analyzed.interaction
 
 
 def _source_term_covariant_core(term) -> DiracKineticTerm | ComplexScalarKineticTerm | None:
-    if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
-        return term
-    if isinstance(term, _DeclaredMonomial):
-        match = _match_covariant_monomial(term)
-        if match is not None:
-            core, _spectators = match
-            return core
-    return None
+    analyzed = _analyze_declared_source_term(term)
+    if analyzed is None:
+        return None
+    return analyzed.covariant_core
 
 
 def _source_term_gauge_kinetic(term) -> GaugeKineticTerm | None:
-    if isinstance(term, GaugeKineticTerm):
-        return term
-    if isinstance(term, _DeclaredMonomial):
-        return _lower_field_strength_monomial(term)
-    return None
+    analyzed = _analyze_declared_source_term(term)
+    if analyzed is None:
+        return None
+    return analyzed.gauge_kinetic
 
 
 def _source_term_gauge_fixing(term) -> GaugeFixingTerm | None:
-    if isinstance(term, GaugeFixingTerm):
-        return term
-    if isinstance(term, GaugeFixingDeclaration):
-        return GaugeFixingTerm(
-            gauge_group=term.gauge_group,
-            xi=term.xi,
-            coefficient=term.coefficient,
-            label=term.label,
-        )
-    return None
+    analyzed = _analyze_declared_source_term(term)
+    if analyzed is None:
+        return None
+    return analyzed.gauge_fixing
 
 
 def _source_term_ghost(term) -> GhostTerm | None:
-    if isinstance(term, GhostTerm):
-        return term
-    if isinstance(term, GhostLagrangianDeclaration):
-        return GhostTerm(
-            gauge_group=term.gauge_group,
-            coefficient=term.coefficient,
-            label=term.label,
-        )
-    return None
+    analyzed = _analyze_declared_source_term(term)
+    if analyzed is None:
+        return None
+    return analyzed.ghost
 
 
 def _source_term_needs_compilation(term) -> bool:
-    if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm, GaugeKineticTerm, GaugeFixingTerm, GhostTerm)):
-        return True
-    if isinstance(term, (GaugeFixingDeclaration, GhostLagrangianDeclaration)):
-        return True
-    if isinstance(term, _DeclaredMonomial):
-        if _match_covariant_monomial(term) is not None:
-            return True
-        if _lower_field_strength_monomial(term) is not None:
-            return True
-    return False
+    analyzed = _analyze_declared_source_term(term)
+    if analyzed is None:
+        return False
+    return analyzed.needs_compilation
 
 
 def _validate_declared_source_term(term):
-    if isinstance(
-        term,
-        (
-            InteractionTerm,
-            DiracKineticTerm,
-            ComplexScalarKineticTerm,
-            GaugeKineticTerm,
-            GaugeFixingDeclaration,
-            GaugeFixingTerm,
-            GhostLagrangianDeclaration,
-            GhostTerm,
-        ),
-    ):
-        return
-    if isinstance(term, _DeclaredMonomial):
-        _validate_declared_monomial(term)
+    if _analyze_declared_source_term(term) is not None:
         return
     raise TypeError(f"Unsupported declared Lagrangian term type: {type(term)!r}")

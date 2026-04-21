@@ -689,6 +689,36 @@ def test_model_accepts_declared_local_phi4_product():
     assert _canon(got) == _canon(expected)
 
 
+def test_model_accepts_declared_local_yukawa_product():
+    """Local Yukawa monomials lower directly from lagrangian_decl."""
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    y = S("y")
+
+    model = Model(fields=(psi, phi), lagrangian_decl=y * psi.bar * psi * phi)
+    got = model.lagrangian().feynman_rule(psi.bar, psi, phi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=y,
+            fields=(
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: S("alpha_decl_1")}),
+                psi.occurrence(labels={SPINOR_KIND: S("alpha_decl_1")}),
+                phi.occurrence(),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(psi.bar, psi, phi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
 def test_model_accepts_declared_partiald_phi4_product():
     """PartialD(...) lowers local scalar derivative monomials without InteractionTerm."""
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))

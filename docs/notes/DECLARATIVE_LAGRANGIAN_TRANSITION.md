@@ -64,8 +64,9 @@ Supported canonical forms:
 - direct `InteractionTerm(...)`
 
 This keeps the existing gauge compiler as the single lowering back-end.
+the code must be able to take multiple terms like that. for example: Psi.bar * Gamma(mu) * CovD(Psi, mu) *Psi.bar * Gamma(mu) * CovD(Psi, mu)*CovD(Phi.bar, mu) * CovD(Phi, mu)
 
-Status: implemented
+Status: almost
 
 ### 2b. Current recommended declaration patterns
 
@@ -85,7 +86,7 @@ Use the canonical declarative objects as the public surface:
 Generic higher-derivative monomials are still declared explicitly with
 `InteractionTerm(...)` and `DerivativeAction(...)`.
 
-Status: implemented
+Status: implemented but ust be improved and generalized!
 
 ### 3. Make `Model` consume one unified declaration
 
@@ -110,7 +111,7 @@ Status: implemented
 `InteractionTerm`s) and expose a cached lowered view for the existing compiler.
 
 This allows the examples to print the declaration the user actually wrote,
-rather than only the compiled `InteractionTerm` expansion.
+drather than only the compiled `InteractionTerm` expansion.
 
 Status: implemented
 
