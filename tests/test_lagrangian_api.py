@@ -959,17 +959,19 @@ def test_model_lagrangian_qed_fermion():
 
     q1, q2, q3 = S("q1", "q2", "q3")
     compiled = compile_covariant_terms(model)
+    assert len(compiled) == 2
+    gauge_term = next(term for term in compiled if len(term.fields) == 3)
     legs = (
         fermion.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1")}),
         fermion.leg(q2, labels={SPINOR_KIND: S("i2")}),
         photon.leg(q3, labels={LORENTZ_KIND: S("i3")}),
     )
-    ref = _ref_vertex(compiled[0], legs)
+    ref = _ref_vertex(gauge_term, legs)
     assert _canon(got) == _canon(ref)
 
 
 def test_declared_lagrangian_qed_fermion():
-    """A declarative CovD-based Dirac term lowers to the legacy QED term."""
+    """A declarative CovD-based Dirac term preserves the legacy QED gauge vertex."""
     eQED, qPsi = S("eQED", "qPsi")
     mu = S("mu")
     fermion = Field("PsiQED", spin=Fraction(1, 2), self_conjugate=False,
@@ -995,6 +997,41 @@ def test_declared_lagrangian_qed_fermion():
     assert _canon(got) == _canon(ref)
 
 
+def test_declared_lagrangian_qed_fermion_includes_free_bilinear():
+    eQED, qPsi = S("eQED", "qPsi")
+    mu = S("mu")
+    fermion = Field("PsiQED", spin=Fraction(1, 2), self_conjugate=False,
+                     symbol=S("psi"), conjugate_symbol=S("psibar"),
+                     indices=(SPINOR_INDEX,), quantum_numbers={"Q": qPsi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(fermion, photon),
+        lagrangian_decl=I * fermion.bar * Gamma(mu) * CovD(fermion, mu),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert len(compiled) == 2
+
+    L = model.lagrangian()
+    got = L.feynman_rule(fermion.bar, fermion, simplify=True)
+
+    i_bar, i_psi = S("i_bar"), S("i_psi")
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=I * psi_bar_gamma_psi(i_bar, i_psi, mu),
+            fields=(
+                fermion.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
+                fermion.occurrence(labels={SPINOR_KIND: i_psi}),
+            ),
+            derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+        ),
+    ))
+
+    assert _canon(got) == _canon(ref.feynman_rule(fermion.bar, fermion, simplify=True))
+
+
 # ---------------------------------------------------------------------------
 # Model.lagrangian() integration: QCD quark-gluon vertex
 # ---------------------------------------------------------------------------
@@ -1015,17 +1052,19 @@ def test_model_lagrangian_qcd_fermion():
 
     q1, q2, q3 = S("q1", "q2", "q3")
     compiled = compile_covariant_terms(model)
+    assert len(compiled) == 2
+    gauge_term = next(term for term in compiled if len(term.fields) == 3)
     legs = (
         quark.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1"), COLOR_FUND_KIND: S("i2")}),
         quark.leg(q2, labels={SPINOR_KIND: S("i3"), COLOR_FUND_KIND: S("i4")}),
         gluon.leg(q3, labels={LORENTZ_KIND: S("i5"), COLOR_ADJ_KIND: S("i6")}),
     )
-    ref = _ref_vertex(compiled[0], legs)
+    ref = _ref_vertex(gauge_term, legs)
     assert _canon(got) == _canon(ref)
 
 
 def test_declared_lagrangian_scalar_qed_matches_legacy():
-    """A declarative scalar CovD term lowers to the legacy scalar kinetic term."""
+    """A declarative scalar CovD term preserves the legacy QED gauge vertices."""
     eQED, qPhi = S("eQED", "qPhi")
     mu = S("mu")
     phi = Field("PhiQED", spin=0, self_conjugate=False,
@@ -1047,6 +1086,43 @@ def test_declared_lagrangian_scalar_qed_matches_legacy():
     got_4pt = model.lagrangian().feynman_rule(phi.bar, phi, photon, photon, simplify=True)
     ref_4pt = legacy.lagrangian().feynman_rule(phi.bar, phi, photon, photon, simplify=True)
     assert _canon(got_4pt) == _canon(ref_4pt)
+
+
+def test_declared_lagrangian_scalar_qed_includes_free_bilinear():
+    eQED, qPhi = S("eQED", "qPhi")
+    mu = S("mu")
+    phi = Field("PhiQED", spin=0, self_conjugate=False,
+                symbol=S("phiQED"), conjugate_symbol=S("phiQEDbar"),
+                quantum_numbers={"Q": qPhi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(phi, photon),
+        lagrangian_decl=CovD(phi.bar, mu) * CovD(phi, mu),
+    )
+
+    compiled = compile_covariant_terms(model)
+    assert len(compiled) == 4
+
+    L = model.lagrangian()
+    got = L.feynman_rule(phi.bar, phi, simplify=True)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=Expression.num(1),
+            fields=(
+                phi.occurrence(conjugated=True),
+                phi.occurrence(),
+            ),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=mu),
+                DerivativeAction(target=1, lorentz_index=mu),
+            ),
+        ),
+    ))
+
+    assert _canon(got) == _canon(ref.feynman_rule(phi.bar, phi, simplify=True))
 
 
 def test_declared_lagrangian_field_strength_matches_legacy():
@@ -1179,7 +1255,7 @@ def test_precompiled_clears_declaration_slots():
     assert precompiled.gauge_kinetic_terms == ()
     assert precompiled.gauge_fixing_terms == ()
     assert precompiled.ghost_terms == ()
-    assert len(precompiled.interactions) == 1
+    assert len(precompiled.interactions) == 2
 
 
 def test_precompiled_keeps_manual_declared_interactions():
@@ -1258,7 +1334,7 @@ def test_lagrangian_scalar_qed_covariant():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 3  # two current terms + one contact term
+    assert len(compiled) == 4  # two current terms + one contact term + one free bilinear
 
     L = model.lagrangian()
 

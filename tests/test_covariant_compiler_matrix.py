@@ -153,7 +153,7 @@ def test_covariant_dirac_qcd_current():
 
     compiled = compile_covariant_terms(model)
     assert with_compiled_covariant_terms(model).interactions == compiled
-    assert len(compiled) == 1
+    assert len(compiled) == 2
 
     legs = (
         quark.leg(p1, conjugated=True, species=b1, labels={"spinor": i1, COLOR_FUND_KIND: c1}),
@@ -199,7 +199,7 @@ def test_covariant_dirac_qed_current():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 1
+    assert len(compiled) == 2
 
     legs = (
         fermion.leg(p1, conjugated=True, species=b1, labels={"spinor": i1}),
@@ -251,10 +251,10 @@ def test_covariant_mixed_fermion_expands_over_qcd_and_qed():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 2
+    assert len(compiled) == 3
 
     # The compiler emits contributions in model.gauge_groups order.
-    qcd_term, qed_term = compiled
+    qcd_term, qed_term, _partial_term = compiled
 
     qcd_legs = (
         fermion.leg(p1, conjugated=True, species=b1, labels={"spinor": i1, COLOR_FUND_KIND: c1}),
@@ -319,8 +319,8 @@ def test_covariant_scalar_qed_current_and_contact():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 3
-    current_plus, current_minus, contact = compiled
+    assert len(compiled) == 4
+    current_plus, current_minus, contact, _partial_term = compiled
     current_index = current_plus.derivatives[0].lorentz_index
 
     current_legs = (
@@ -387,8 +387,8 @@ def test_covariant_scalar_qcd_current_and_contact():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 3
-    current_plus, current_minus, contact = compiled
+    assert len(compiled) == 4
+    current_plus, current_minus, contact, _partial_term = compiled
     current_index = current_plus.derivatives[0].lorentz_index
 
     current_legs = (
@@ -475,7 +475,7 @@ def test_covariant_mixed_scalar_currents_and_contact():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 8
+    assert len(compiled) == 9
 
     qcd_terms = [term for term in compiled if "SU3C: scalar current" in term.label]
     qed_terms = [term for term in compiled if "U1QED: scalar current" in term.label]

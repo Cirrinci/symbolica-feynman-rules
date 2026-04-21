@@ -418,7 +418,7 @@ def test_mixed_scalar_covariant_term_includes_cross_group_contact():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 8
+    assert len(compiled) == 9
 
     qcd_currents = [term for term in compiled if "SU3: scalar current" in term.label]
     qed_currents = [term for term in compiled if "U1: scalar current" in term.label]

@@ -1788,11 +1788,23 @@ def _compile_complex_scalar_partial_term(scalar: Field, *, coefficient=1, label:
         label=label or f"(d_mu {scalar.name})^dagger (d^mu {scalar.name})",
     )
 
-def _compile_covariant_core_with_spectators(
+def _compile_declared_covariant_core(
     model: Model,
     core: DiracKineticTerm | ComplexScalarKineticTerm,
-    spectators: tuple[tuple[Field, bool], ...],
+    spectators: tuple[tuple[Field, bool], ...] = (),
 ) -> tuple[InteractionTerm, ...]:
+    """Compile one declared ``CovD`` monomial as the full kinetic operator.
+
+    Declarative covariant-derivative monomials represent the full source
+    operator, not only the gauge-current part.  The lowering therefore always
+    emits both pieces:
+    - the free partial-derivative bilinear
+    - the gauge-interaction terms generated from the same core
+
+    Any spectator fields are attached uniformly to both pieces so that plain and
+    spectator-decorated declarative ``CovD`` monomials share the same
+    semantics.
+    """
     spectator_factor, spectator_occurrences = _materialize_spectator_occurrences(spectators)
 
     if isinstance(core, DiracKineticTerm):
@@ -1805,6 +1817,11 @@ def _compile_covariant_core_with_spectators(
             raise ValueError(
                 f"Covariant Dirac monomial requires a fermion field, got kind={fermion.kind!r}."
             )
+        gauge_terms = _decorate_interactions_with_spectators(
+            compile_dirac_kinetic_term(model, core),
+            spectator_factor=spectator_factor,
+            spectator_occurrences=spectator_occurrences,
+        )
         partial_terms = _decorate_interactions_with_spectators(
             (
                 _compile_dirac_partial_term(
@@ -1816,12 +1833,7 @@ def _compile_covariant_core_with_spectators(
             spectator_factor=spectator_factor,
             spectator_occurrences=spectator_occurrences,
         )
-        gauge_terms = _decorate_interactions_with_spectators(
-            compile_dirac_kinetic_term(model, core),
-            spectator_factor=spectator_factor,
-            spectator_occurrences=spectator_occurrences,
-        )
-        return partial_terms + gauge_terms
+        return gauge_terms + partial_terms
 
     if isinstance(core, ComplexScalarKineticTerm):
         scalar = _require_declared_field(
@@ -1833,6 +1845,11 @@ def _compile_covariant_core_with_spectators(
             raise ValueError(
                 "Covariant complex-scalar monomials require a non-self-conjugate scalar field."
             )
+        gauge_terms = _decorate_interactions_with_spectators(
+            compile_complex_scalar_kinetic_term(model, core),
+            spectator_factor=spectator_factor,
+            spectator_occurrences=spectator_occurrences,
+        )
         partial_terms = _decorate_interactions_with_spectators(
             (
                 _compile_complex_scalar_partial_term(
@@ -1844,12 +1861,7 @@ def _compile_covariant_core_with_spectators(
             spectator_factor=spectator_factor,
             spectator_occurrences=spectator_occurrences,
         )
-        gauge_terms = _decorate_interactions_with_spectators(
-            compile_complex_scalar_kinetic_term(model, core),
-            spectator_factor=spectator_factor,
-            spectator_occurrences=spectator_occurrences,
-        )
-        return partial_terms + gauge_terms
+        return gauge_terms + partial_terms
 
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
 
@@ -1862,11 +1874,7 @@ def _compile_declared_source_term(model: Model, term) -> tuple[InteractionTerm, 
         match = _match_covariant_monomial(term)
         if match is not None:
             core, spectators = match
-            if spectators:
-                return _compile_covariant_core_with_spectators(model, core, spectators)
-            if isinstance(core, DiracKineticTerm):
-                return compile_dirac_kinetic_term(model, core)
-            return compile_complex_scalar_kinetic_term(model, core)
+            return _compile_declared_covariant_core(model, core, spectators)
 
         gauge_kinetic = _lower_field_strength_monomial(term)
         if gauge_kinetic is not None:
@@ -1906,6 +1914,12 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     This function expands only the declared terms that require compilation:
     covariant-derivative monomials, field-strength terms, gauge fixing, ghosts,
     and the legacy physical declaration slots.
+
+    Declarative ``CovD(...)`` monomials are compiled as full operators, so their
+    output includes the free bilinear partial-derivative contribution alongside
+    the gauge-interaction pieces.  Legacy ``DiracKineticTerm`` and
+    ``ComplexScalarKineticTerm`` declarations keep their existing gauge-only
+    behavior.
     """
     interactions: list[InteractionTerm] = []
 

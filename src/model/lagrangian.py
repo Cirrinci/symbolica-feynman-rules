@@ -360,7 +360,9 @@ class DeclaredLagrangian:
     This is a source-level declaration container. Terms are preserved in the
     original FeynRules-style form (`CovD(...)`, `FieldStrength(...)`,
     `GaugeFixing(...)`, `GhostLagrangian(...)`, etc.) and compiled one by one
-    when `Model.lagrangian()` is built.
+    when `Model.lagrangian()` is built. Canonical declarative ``CovD(...)``
+    monomials compile to the full operator: free bilinear partial term plus
+    gauge-interaction pieces.
     """
     source_terms: tuple[object, ...] = ()
 
