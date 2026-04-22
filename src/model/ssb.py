@@ -8,7 +8,8 @@ minimum electroweak SSB layer needed to:
 - expose the textbook Higgs/Goldstone expansion around the vev
 - expose the charged and neutral electroweak mixing relations
 - build a broken-phase ``Model`` with explicit local interaction terms for the
-  Higgs-sector mass terms, Goldstone-vector mixings, and diagonal Yukawas
+  Higgs-sector mass terms, Goldstone-vector mixings, flavor-aware Yukawas,
+  physical-basis charged currents, and ``R_xi`` ghost interactions
 
 The resulting broken model reuses the existing ``Model`` / ``InteractionTerm`` /
 ``Lagrangian`` pipeline directly, so all vertex extraction keeps working
@@ -21,17 +22,19 @@ from dataclasses import dataclass
 from typing import Optional
 
 from symbolica import Expression, S
+from symbolica.community.spenso import Representation
 
-from symbolic.spenso_structures import lorentz_metric
+from symbolic.spenso_structures import chiral_projector_left, gamma_matrix, lorentz_metric
 
 from .core import Model
 from .declared import PartialD
 from .interactions import DerivativeAction, InteractionTerm
 from .lagrangian import DeclaredLagrangian
-from .metadata import Field, LORENTZ_INDEX, SPINOR_INDEX, WEAK_ADJ_INDEX, WEAK_FUND_INDEX
+from .metadata import Field, IndexType, LORENTZ_INDEX, SPINOR_INDEX, WEAK_ADJ_INDEX, WEAK_FUND_INDEX
 
 _HALF = Expression.num(1) / Expression.num(2)
 _INV_SQRT2 = _HALF ** _HALF
+FLAVOR_INDEX = IndexType("FlavorFund", Representation.cof(3), "flavor", prefix="f")
 
 
 @dataclass(frozen=True)
@@ -86,6 +89,49 @@ class DiagonalYukawaAssignment:
 
     def mass(self, vev):
         return self.yukawa * vev * _INV_SQRT2
+
+
+@dataclass(frozen=True)
+class FlavorMatrix:
+    """Named two-index flavor object such as ``Ye(i,j)`` or ``VCKM(i,j)``."""
+
+    name: str
+    symbol: object = None
+    dagger_symbol: object | None = None
+
+    def __post_init__(self):
+        if self.symbol is None:
+            object.__setattr__(self, "symbol", S(self.name))
+
+    def entry(self, left_label, right_label):
+        return self.symbol(left_label, right_label)
+
+    def dagger_entry(self, left_label, right_label):
+        if self.dagger_symbol is not None:
+            return self.dagger_symbol(left_label, right_label)
+        return self.symbol(right_label, left_label)
+
+
+@dataclass(frozen=True)
+class FlavorMatrixYukawaAssignment:
+    """Matrix-valued broken-phase Yukawa assignment for one flavored Dirac field."""
+
+    fermion: Field
+    matrix: FlavorMatrix | object
+    label: str = ""
+
+    def mass_entry(self, left_label, right_label, vev):
+        return _flavor_matrix_entry(self.matrix, left_label, right_label) * vev * _INV_SQRT2
+
+
+@dataclass(frozen=True)
+class CKMChargedCurrentAssignment:
+    """Left-handed charged-current flavor mixing between one up/down multiplet pair."""
+
+    up_field: Field
+    down_field: Field
+    matrix: FlavorMatrix | object
+    label: str = ""
 
 
 @dataclass(frozen=True)
@@ -163,6 +209,8 @@ class BrokenElectroweakSector:
     higgs_potential: HiggsPotentialData | None = None
     gauge_fixing: ElectroweakGaugeFixing | None = None
     yukawas: tuple[DiagonalYukawaAssignment, ...] = ()
+    matrix_yukawas: tuple[FlavorMatrixYukawaAssignment, ...] = ()
+    charged_current_mixings: tuple[CKMChargedCurrentAssignment, ...] = ()
 
 
 def electroweak_gz(g1, g2):
@@ -324,6 +372,16 @@ def _default_field(field: Optional[Field], default: Field) -> Field:
     return default if field is None else field
 
 
+def _unique_fields(*fields: Field | None) -> tuple[Field, ...]:
+    ordered: list[Field] = []
+    for field in fields:
+        if field is None:
+            continue
+        if field not in ordered:
+            ordered.append(field)
+    return tuple(ordered)
+
+
 def _validate_source_higgs_doublet(field: Field):
     if field.kind != "scalar" or field.self_conjugate:
         raise ValueError("Electroweak SSB expects a non-self-conjugate scalar Higgs doublet.")
@@ -331,6 +389,118 @@ def _validate_source_higgs_doublet(field: Field):
         raise ValueError("Electroweak SSB expects the Higgs field to carry a weak-fundamental index.")
     if "Y" not in field.quantum_numbers:
         raise ValueError("Electroweak SSB expects the Higgs field to declare hypercharge 'Y'.")
+
+
+def _single_index_slot(field: Field, index: IndexType, *, purpose: str) -> int:
+    slots = field.index_positions(index=index)
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} expects field {field.name!r} to carry exactly one {index.name!r} slot."
+        )
+    return slots[0]
+
+
+def _field_slot_symbol(field: Field, slot: int, stem: str):
+    index = field.indices[slot]
+    return S(f"{index.prefix}_{field.name}_{stem}_{slot}")
+
+
+def _flavor_matrix_symbol(matrix):
+    if isinstance(matrix, FlavorMatrix):
+        return matrix.symbol
+    return matrix
+
+
+def _flavor_matrix_entry(matrix, left_label, right_label):
+    if isinstance(matrix, FlavorMatrix):
+        return matrix.entry(left_label, right_label)
+    return matrix(left_label, right_label)
+
+
+def _flavor_matrix_dagger_entry(matrix, left_label, right_label):
+    if isinstance(matrix, FlavorMatrix):
+        return matrix.dagger_entry(left_label, right_label)
+    return matrix(right_label, left_label)
+
+
+def _validate_flavored_fermion(field: Field, *, purpose: str):
+    if field.kind != "fermion" or field.self_conjugate:
+        raise ValueError(f"{purpose} expects a non-self-conjugate fermion field, got {field.name!r}.")
+    _single_index_slot(field, SPINOR_INDEX, purpose=purpose)
+    _single_index_slot(field, FLAVOR_INDEX, purpose=purpose)
+
+
+def _fermion_bilinear_occurrences(
+    field: Field,
+    *,
+    spinor_label,
+    stem: str,
+    left_slot_overrides: dict[int, object] | None = None,
+    right_slot_overrides: dict[int, object] | None = None,
+):
+    spinor_slot = _single_index_slot(field, SPINOR_INDEX, purpose=f"{field.name} bilinear")
+    left_slot_labels = {spinor_slot: spinor_label}
+    right_slot_labels = {spinor_slot: spinor_label}
+
+    for slot, _index in enumerate(field.indices):
+        if slot == spinor_slot:
+            continue
+        shared = _field_slot_symbol(field, slot, stem)
+        left_slot_labels[slot] = shared
+        right_slot_labels[slot] = shared
+
+    if left_slot_overrides:
+        left_slot_labels.update(left_slot_overrides)
+    if right_slot_overrides:
+        right_slot_labels.update(right_slot_overrides)
+
+    return (
+        field.occurrence(conjugated=True, labels=field.pack_slot_labels(left_slot_labels)),
+        field.occurrence(labels=field.pack_slot_labels(right_slot_labels)),
+    )
+
+
+def _paired_fermion_occurrences(
+    left_field: Field,
+    right_field: Field,
+    *,
+    left_spinor_label,
+    right_spinor_label,
+    stem: str,
+    left_slot_overrides: dict[int, object] | None = None,
+    right_slot_overrides: dict[int, object] | None = None,
+):
+    left_spinor_slot = _single_index_slot(left_field, SPINOR_INDEX, purpose=f"{left_field.name}/{right_field.name} current")
+    right_spinor_slot = _single_index_slot(right_field, SPINOR_INDEX, purpose=f"{left_field.name}/{right_field.name} current")
+
+    if len(left_field.indices) != len(right_field.indices):
+        raise ValueError(
+            f"Charged-current pair {left_field.name!r}/{right_field.name!r} must carry aligned index slots."
+        )
+
+    left_slot_labels = {left_spinor_slot: left_spinor_label}
+    right_slot_labels = {right_spinor_slot: right_spinor_label}
+
+    for slot, (left_index, right_index) in enumerate(zip(left_field.indices, right_field.indices, strict=True)):
+        if slot in (left_spinor_slot, right_spinor_slot):
+            continue
+        if left_index != right_index:
+            raise ValueError(
+                f"Charged-current pair {left_field.name!r}/{right_field.name!r} has mismatched index slot {slot}."
+            )
+        shared = S(f"{left_index.prefix}_{left_field.name}_{right_field.name}_{stem}_{slot}")
+        left_slot_labels[slot] = shared
+        right_slot_labels[slot] = shared
+
+    if left_slot_overrides:
+        left_slot_labels.update(left_slot_overrides)
+    if right_slot_overrides:
+        right_slot_labels.update(right_slot_overrides)
+
+    return (
+        left_field.occurrence(conjugated=True, labels=left_field.pack_slot_labels(left_slot_labels)),
+        right_field.occurrence(labels=right_field.pack_slot_labels(right_slot_labels)),
+    )
 
 
 def _vector_occurrence(field: Field, lorentz_label, *, conjugated: bool = False):
@@ -769,15 +939,148 @@ def _fermion_bilinear_term(
     label: str = "",
 ) -> InteractionTerm:
     spinor = S(f"alpha_{fermion.name}_ssb")
+    bar_occurrence, fermion_occurrence = _fermion_bilinear_occurrences(
+        fermion,
+        spinor_label=spinor,
+        stem="ssb",
+    )
     fields = [
-        fermion.occurrence(conjugated=True, labels={SPINOR_INDEX.kind: spinor}),
-        fermion.occurrence(labels={SPINOR_INDEX.kind: spinor}),
+        bar_occurrence,
+        fermion_occurrence,
     ]
     if scalar is not None:
         fields.append(scalar.occurrence())
     return InteractionTerm(
         coupling=coefficient,
         fields=tuple(fields),
+        label=label,
+    )
+
+
+def _fermion_matrix_bilinear_term(
+    *,
+    coefficient,
+    matrix,
+    fermion: Field,
+    scalar: Field | None = None,
+    label: str = "",
+) -> InteractionTerm:
+    _validate_flavored_fermion(fermion, purpose="Matrix Yukawa assignment")
+    spinor = S(f"alpha_{fermion.name}_matrix_ssb")
+    flavor_slot = _single_index_slot(fermion, FLAVOR_INDEX, purpose=f"{fermion.name} matrix Yukawa")
+    left_flavor = S(f"fL_{fermion.name}_matrix")
+    right_flavor = S(f"fR_{fermion.name}_matrix")
+    bar_occurrence, fermion_occurrence = _fermion_bilinear_occurrences(
+        fermion,
+        spinor_label=spinor,
+        stem="matrix_ssb",
+        left_slot_overrides={flavor_slot: left_flavor},
+        right_slot_overrides={flavor_slot: right_flavor},
+    )
+    fields = [
+        bar_occurrence,
+        fermion_occurrence,
+    ]
+    if scalar is not None:
+        fields.append(scalar.occurrence())
+    return InteractionTerm(
+        coupling=coefficient * _flavor_matrix_entry(matrix, left_flavor, right_flavor),
+        fields=tuple(fields),
+        label=label,
+    )
+
+
+def _charged_current_interaction(
+    *,
+    coefficient,
+    matrix,
+    left_fermion: Field,
+    right_fermion: Field,
+    vector: Field,
+    vector_conjugated: bool = False,
+    dagger_matrix: bool = False,
+    label: str = "",
+) -> InteractionTerm:
+    _validate_flavored_fermion(left_fermion, purpose="Charged-current mixing")
+    _validate_flavored_fermion(right_fermion, purpose="Charged-current mixing")
+    left_flavor_slot = _single_index_slot(left_fermion, FLAVOR_INDEX, purpose=f"{left_fermion.name}/{right_fermion.name} current")
+    right_flavor_slot = _single_index_slot(right_fermion, FLAVOR_INDEX, purpose=f"{left_fermion.name}/{right_fermion.name} current")
+    spinor_left = S(f"alpha_{left_fermion.name}_{right_fermion.name}_cc_left")
+    spinor_mid = S(f"alpha_{left_fermion.name}_{right_fermion.name}_cc_mid")
+    spinor_right = S(f"alpha_{left_fermion.name}_{right_fermion.name}_cc_right")
+    left_flavor = S(f"fL_{left_fermion.name}_{right_fermion.name}_cc")
+    right_flavor = S(f"fR_{left_fermion.name}_{right_fermion.name}_cc")
+    lorentz = S(f"mu_{left_fermion.name}_{right_fermion.name}_{vector.name}_cc")
+    bar_occurrence, fermion_occurrence = _paired_fermion_occurrences(
+        left_fermion,
+        right_fermion,
+        left_spinor_label=spinor_left,
+        right_spinor_label=spinor_right,
+        stem="cc",
+        left_slot_overrides={left_flavor_slot: left_flavor},
+        right_slot_overrides={right_flavor_slot: right_flavor},
+    )
+    matrix_entry = (
+        _flavor_matrix_dagger_entry(matrix, left_flavor, right_flavor)
+        if dagger_matrix
+        else _flavor_matrix_entry(matrix, left_flavor, right_flavor)
+    )
+    return InteractionTerm(
+        coupling=(
+            coefficient
+            * matrix_entry
+            * gamma_matrix(spinor_left, spinor_mid, lorentz)
+            * chiral_projector_left(spinor_mid, spinor_right)
+        ),
+        fields=(
+            bar_occurrence,
+            fermion_occurrence,
+            vector.occurrence(conjugated=vector_conjugated, labels={LORENTZ_INDEX.kind: lorentz}),
+        ),
+        label=label,
+    )
+
+
+def _ghost_scalar_interaction(
+    *,
+    coefficient,
+    antighost: Field,
+    ghost: Field,
+    scalar: Field,
+    scalar_conjugated: bool = False,
+    label: str = "",
+) -> InteractionTerm:
+    fields = [
+        antighost.occurrence(conjugated=True),
+        ghost.occurrence(),
+    ]
+    fields.append(scalar.occurrence(conjugated=scalar_conjugated))
+    return InteractionTerm(
+        coupling=coefficient,
+        fields=tuple(fields),
+        label=label,
+    )
+
+
+def _ghost_vector_interaction(
+    *,
+    coefficient,
+    antighost: Field,
+    vector: Field,
+    ghost: Field,
+    vector_conjugated: bool = False,
+    label: str = "",
+) -> InteractionTerm:
+    rho = S(f"rho_{antighost.name}_{vector.name}_{ghost.name}_ghost")
+    mu = S(f"mu_{antighost.name}_{vector.name}_{ghost.name}_ghost")
+    return InteractionTerm(
+        coupling=coefficient * lorentz_metric(rho, mu),
+        fields=(
+            antighost.occurrence(conjugated=True),
+            vector.occurrence(conjugated=vector_conjugated, labels={LORENTZ_INDEX.kind: mu}),
+            ghost.occurrence(),
+        ),
+        derivatives=(DerivativeAction(target=0, lorentz_index=rho),),
         label=label,
     )
 
@@ -793,6 +1096,134 @@ def _ghost_mass_term(*, ghost: Field, coefficient, scalar: Field | None = None, 
         coupling=coefficient,
         fields=tuple(fields),
         label=label,
+    )
+
+
+def _build_physical_ghost_terms(
+    *,
+    g1,
+    g2,
+    vev,
+    gauge_fixing: ElectroweakGaugeFixing,
+    higgs: Field,
+    goldstone_neutral: Field,
+    goldstone_charged: Field,
+    charged_w: Field,
+    z_boson: Field,
+    photon: Field,
+    ghost_charged: Field,
+    ghost_z: Field,
+    ghost_photon: Field,
+) -> tuple[object, ...]:
+    mw = electroweak_mw(g2, vev)
+    mz = electroweak_mz(g1, g2, vev)
+    mw_sq = mw**2
+    mz_sq = mz**2
+    electric_charge = electroweak_e(g1, g2)
+    g_ww_z = electroweak_gwwz(g1, g2)
+    charged_goldstone_z = (g2**2 - g1**2) / (2 * electroweak_gz(g1, g2))
+
+    return (
+        *_ghost_bilinear_term(
+            ghost=ghost_charged,
+            mass_sq=gauge_fixing.xi_w * mw_sq,
+            label="EW ghost: charged ghost",
+        ),
+        *_ghost_bilinear_term(
+            ghost=ghost_z,
+            mass_sq=gauge_fixing.xi_z * mz_sq,
+            label="EW ghost: Z ghost",
+        ),
+        *_ghost_bilinear_term(
+            ghost=ghost_photon,
+            mass_sq=Expression.num(0),
+            label="EW ghost: photon ghost",
+        ),
+        _ghost_mass_term(
+            ghost=ghost_charged,
+            scalar=higgs,
+            coefficient=-(gauge_fixing.xi_w * mw_sq / vev),
+            label="EW ghost: h cWbar cW",
+        ),
+        _ghost_mass_term(
+            ghost=ghost_z,
+            scalar=higgs,
+            coefficient=-(gauge_fixing.xi_z * mz_sq / vev),
+            label="EW ghost: h cZbar cZ",
+        ),
+        _ghost_vector_interaction(
+            coefficient=-Expression.I * electric_charge,
+            antighost=ghost_charged,
+            vector=photon,
+            ghost=ghost_charged,
+            label="EW ghost: cWbar A cW",
+        ),
+        _ghost_vector_interaction(
+            coefficient=-Expression.I * g_ww_z,
+            antighost=ghost_charged,
+            vector=z_boson,
+            ghost=ghost_charged,
+            label="EW ghost: cWbar Z cW",
+        ),
+        _ghost_vector_interaction(
+            coefficient=Expression.I * electric_charge,
+            antighost=ghost_charged,
+            vector=charged_w,
+            ghost=ghost_photon,
+            label="EW ghost: cWbar W+ cA",
+        ),
+        _ghost_vector_interaction(
+            coefficient=Expression.I * g_ww_z,
+            antighost=ghost_charged,
+            vector=charged_w,
+            ghost=ghost_z,
+            label="EW ghost: cWbar W+ cZ",
+        ),
+        _ghost_vector_interaction(
+            coefficient=Expression.I * electric_charge,
+            antighost=ghost_photon,
+            vector=charged_w,
+            ghost=ghost_charged,
+            vector_conjugated=True,
+            label="EW ghost: cAbar W- cW",
+        ),
+        _ghost_vector_interaction(
+            coefficient=Expression.I * g_ww_z,
+            antighost=ghost_z,
+            vector=charged_w,
+            ghost=ghost_charged,
+            vector_conjugated=True,
+            label="EW ghost: cZbar W- cW",
+        ),
+        _ghost_scalar_interaction(
+            coefficient=-(Expression.I * gauge_fixing.xi_w * mw * g2 * _HALF),
+            antighost=ghost_charged,
+            ghost=ghost_charged,
+            scalar=goldstone_neutral,
+            label="EW ghost: cWbar G0 cW",
+        ),
+        _ghost_scalar_interaction(
+            coefficient=-(gauge_fixing.xi_w * mw * electric_charge),
+            antighost=ghost_charged,
+            ghost=ghost_photon,
+            scalar=goldstone_charged,
+            label="EW ghost: cWbar G+ cA",
+        ),
+        _ghost_scalar_interaction(
+            coefficient=-(gauge_fixing.xi_w * mw * charged_goldstone_z),
+            antighost=ghost_charged,
+            ghost=ghost_z,
+            scalar=goldstone_charged,
+            label="EW ghost: cWbar G+ cZ",
+        ),
+        _ghost_scalar_interaction(
+            coefficient=gauge_fixing.xi_z * mz * g2 * _HALF,
+            antighost=ghost_z,
+            ghost=ghost_charged,
+            scalar=goldstone_charged,
+            scalar_conjugated=True,
+            label="EW ghost: cZbar G- cW",
+        ),
     )
 
 
@@ -817,6 +1248,8 @@ def build_broken_electroweak_sector(
     ghost_z: Field | None = None,
     ghost_photon: Field | None = None,
     yukawas: tuple[DiagonalYukawaAssignment, ...] = (),
+    matrix_yukawas: tuple[FlavorMatrixYukawaAssignment, ...] = (),
+    charged_current_mixings: tuple[CKMChargedCurrentAssignment, ...] = (),
     name: str = "EW-broken-phase",
 ) -> BrokenElectroweakSector:
     """Build a compact broken electroweak sector as an explicit local model.
@@ -827,15 +1260,17 @@ def build_broken_electroweak_sector(
     - explicit ``hWW`` and ``hZZ`` trilinears
     - Goldstone-vector bilinear mixings from the broken Higgs kinetic term
     - diagonal fermion mass terms plus ``h fbar f`` couplings
+    - flavor-matrix Yukawa mass terms plus broken-phase ``h fbar_i f_j`` couplings
+    - explicit left-chiral charged currents with optional CKM-like matrices
     - optional physical-basis gauge kinetic / self-interaction terms
     - optional Higgs-potential mass and self-coupling terms
-    - optional broken-phase ``R_xi`` gauge-fixing bilinears plus ghost bilinears
+    - optional broken-phase ``R_xi`` gauge-fixing bilinears plus physical-basis ghost terms
 
     The pure gauge kinetic / self-interaction sector is intentionally left in
     the unbroken compiler unless ``include_gauge_sector=True`` is requested.
-    Broken-phase ghost interactions are currently implemented at the bilinear
-    level plus the leading ``h cbar c`` couplings; full charged ghost-gauge and
-    ghost-Goldstone interaction completion still belongs to a later step.
+    The ghost layer stays explicit and inspectable in the physical basis:
+    antighost-charged-ghost couplings to ``A``, ``Z``, ``W`` and the Goldstones
+    are assembled directly from the textbook ``R_xi`` gauge-fixing functions.
     """
 
     source_higgs = _default_field(
@@ -1056,35 +1491,21 @@ def build_broken_electroweak_sector(
             -(gauge_fixing.xi_w * mw_sq) * gp_field.bar * gp_field,
             -(gauge_fixing.xi_z * mz_sq / 2) * g0_field * g0_field,
         ))
-        lagrangian_terms.extend(_ghost_bilinear_term(
-            ghost=gh_wp_field,
-            mass_sq=gauge_fixing.xi_w * mw_sq,
-            label="EW ghost: charged ghost",
-        ))
-        lagrangian_terms.extend(_ghost_bilinear_term(
-            ghost=gh_z_field,
-            mass_sq=gauge_fixing.xi_z * mz_sq,
-            label="EW ghost: Z ghost",
-        ))
-        lagrangian_terms.extend(_ghost_bilinear_term(
-            ghost=gh_a_field,
-            mass_sq=Expression.num(0),
-            label="EW ghost: photon ghost",
-        ))
-        lagrangian_terms.append(
-            _ghost_mass_term(
-                ghost=gh_wp_field,
-                scalar=h_field,
-                coefficient=-(gauge_fixing.xi_w * mw_sq / vev),
-                label="EW ghost: h cWbar cW",
-            )
-        )
-        lagrangian_terms.append(
-            _ghost_mass_term(
-                ghost=gh_z_field,
-                scalar=h_field,
-                coefficient=-(gauge_fixing.xi_z * mz_sq / vev),
-                label="EW ghost: h cZbar cZ",
+        lagrangian_terms.extend(
+            _build_physical_ghost_terms(
+                g1=g1,
+                g2=g2,
+                vev=vev,
+                gauge_fixing=gauge_fixing,
+                higgs=h_field,
+                goldstone_neutral=g0_field,
+                goldstone_charged=gp_field,
+                charged_w=wp_field,
+                z_boson=z_field,
+                photon=a_field,
+                ghost_charged=gh_wp_field,
+                ghost_z=gh_z_field,
+                ghost_photon=gh_a_field,
             )
         )
 
@@ -1112,16 +1533,68 @@ def build_broken_electroweak_sector(
             )
         )
 
-    physical_fields = (
+    for assignment in matrix_yukawas:
+        _validate_flavored_fermion(assignment.fermion, purpose="Matrix Yukawa assignment")
+        mass_matrix = _flavor_matrix_symbol(assignment.matrix) * vev * _INV_SQRT2
+        fermion_masses.append((assignment.fermion, mass_matrix))
+        lagrangian_terms.append(
+            _fermion_matrix_bilinear_term(
+                coefficient=-(vev * _INV_SQRT2),
+                matrix=assignment.matrix,
+                fermion=assignment.fermion,
+                label=assignment.label or f"EW SSB: matrix mass term for {assignment.fermion.name}",
+            )
+        )
+        lagrangian_terms.append(
+            _fermion_matrix_bilinear_term(
+                coefficient=-_INV_SQRT2,
+                matrix=assignment.matrix,
+                fermion=assignment.fermion,
+                scalar=h_field,
+                label=assignment.label or f"EW SSB: h matrix Yukawa for {assignment.fermion.name}",
+            )
+        )
+
+    for assignment in charged_current_mixings:
+        lagrangian_terms.append(
+            _charged_current_interaction(
+                coefficient=-(g2 * _INV_SQRT2),
+                matrix=assignment.matrix,
+                left_fermion=assignment.up_field,
+                right_fermion=assignment.down_field,
+                vector=wp_field,
+                label=assignment.label or f"EW SSB: W+ current {assignment.up_field.name} -> {assignment.down_field.name}",
+            )
+        )
+        lagrangian_terms.append(
+            _charged_current_interaction(
+                coefficient=-(g2 * _INV_SQRT2),
+                matrix=assignment.matrix,
+                left_fermion=assignment.down_field,
+                right_fermion=assignment.up_field,
+                vector=wp_field,
+                vector_conjugated=True,
+                dagger_matrix=True,
+                label=assignment.label or f"EW SSB: W- current {assignment.down_field.name} -> {assignment.up_field.name}",
+            )
+        )
+
+    physical_fields = _unique_fields(
         h_field,
         g0_field,
         gp_field,
         wp_field,
         z_field,
         a_field,
-        *(ghost for ghost in (gh_wp_field, gh_z_field, gh_a_field) if ghost is not None),
+        gh_wp_field,
+        gh_z_field,
+        gh_a_field,
         *(assignment.fermion for assignment in yukawas),
+        *(assignment.fermion for assignment in matrix_yukawas),
+        *(assignment.up_field for assignment in charged_current_mixings),
+        *(assignment.down_field for assignment in charged_current_mixings),
     )
+    fermion_fields = tuple(field for field in physical_fields if field.kind == "fermion")
 
     model = Model(
         name=name,
@@ -1144,7 +1617,7 @@ def build_broken_electroweak_sector(
             ghost_charged=gh_wp_field,
             ghost_z=gh_z_field,
             ghost_photon=gh_a_field,
-            fermions=tuple(assignment.fermion for assignment in yukawas),
+            fermions=fermion_fields,
         ),
         higgs_expansion=electroweak_higgs_vev_expansion(
             vev=vev,
@@ -1165,4 +1638,6 @@ def build_broken_electroweak_sector(
         higgs_potential=higgs_potential_data,
         gauge_fixing=gauge_fixing,
         yukawas=tuple(yukawas),
+        matrix_yukawas=tuple(matrix_yukawas),
+        charged_current_mixings=tuple(charged_current_mixings),
     )

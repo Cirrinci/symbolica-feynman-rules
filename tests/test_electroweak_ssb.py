@@ -6,9 +6,13 @@ import pytest
 from symbolica import Expression, S
 
 from model import (
+    CKMChargedCurrentAssignment,
     DiagonalYukawaAssignment,
     ElectroweakGaugeFixing,
+    FLAVOR_INDEX,
     Field,
+    FlavorMatrix,
+    FlavorMatrixYukawaAssignment,
     SPINOR_INDEX,
     build_broken_electroweak_sector,
     electroweak_e,
@@ -17,7 +21,7 @@ from model import (
     standard_model_higgs_doublet,
 )
 from symbolic.vertex_engine import Delta, I, bis, pcomp, pi
-from symbolic.spenso_structures import lorentz_metric
+from symbolic.spenso_structures import chiral_projector_left, gamma_matrix, lorentz_metric
 
 d = S("d")
 g1 = S("g1")
@@ -53,6 +57,24 @@ electron = Field(
     conjugate_symbol=S("ebar0"),
     indices=(SPINOR_INDEX,),
 )
+up_flavored = Field(
+    "u",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    symbol=S("u0"),
+    conjugate_symbol=S("ubar0"),
+    indices=(SPINOR_INDEX, FLAVOR_INDEX),
+)
+down_flavored = Field(
+    "dQ",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    symbol=S("dQ0"),
+    conjugate_symbol=S("dQbar0"),
+    indices=(SPINOR_INDEX, FLAVOR_INDEX),
+)
+yu_matrix = FlavorMatrix("Yu")
+vckm_matrix = FlavorMatrix("VCKM")
 
 BROKEN = build_broken_electroweak_sector(
     g1=g1,
@@ -73,6 +95,16 @@ FULL_BROKEN = build_broken_electroweak_sector(
     yukawas=(DiagonalYukawaAssignment(electron, ye, label="electron Yukawa"),),
 )
 FULL_L = FULL_BROKEN.model.lagrangian()
+FLAVORED_BROKEN = build_broken_electroweak_sector(
+    g1=g1,
+    g2=g2,
+    vev=v,
+    gauge_fixing=ElectroweakGaugeFixing(xi_w=xiW, xi_z=xiZ, xi_a=xiA),
+    higgs_doublet=standard_model_higgs_doublet(),
+    matrix_yukawas=(FlavorMatrixYukawaAssignment(up_flavored, yu_matrix, label="up matrix Yukawa"),),
+    charged_current_mixings=(CKMChargedCurrentAssignment(up_flavored, down_flavored, vckm_matrix, label="CKM current"),),
+)
+FLAVORED_L = FLAVORED_BROKEN.model.lagrangian()
 
 
 def test_standard_higgs_doublet_uses_su2_doublet_hypercharge_half():
@@ -303,3 +335,84 @@ def test_rxi_ghost_bilinears_have_expected_masses():
     got_ca = FULL_L.feynman_rule(c_a.bar, c_a, simplify=True)
     expected_ca = -I * pcomp(q1, S("mu_ghA_ghost")) * pcomp(q2, S("mu_ghA_ghost")) * D2
     assert _canon(got_ca) == _canon(expected_ca)
+
+
+def test_physical_basis_ghost_vertices_cover_gauge_and_goldstone_couplings():
+    c_w = FULL_BROKEN.fields.ghost_charged
+    c_z = FULL_BROKEN.fields.ghost_z
+    c_a = FULL_BROKEN.fields.ghost_photon
+    photon = FULL_BROKEN.fields.photon
+    wp = FULL_BROKEN.fields.charged_w
+    g0 = FULL_BROKEN.fields.goldstone_neutral
+    gp = FULL_BROKEN.fields.goldstone_charged
+
+    got_cwacw = FULL_L.feynman_rule(c_w.bar, photon, c_w, simplify=True)
+    expected_cwacw = -I * electroweak_e(g1, g2) * pcomp(q1, S("i1")) * D3
+    assert _canon(got_cwacw) == _canon(expected_cwacw)
+
+    got_cwwca = FULL_L.feynman_rule(c_w.bar, wp, c_a, simplify=True)
+    expected_cwwca = I * electroweak_e(g1, g2) * pcomp(q1, S("i1")) * D3
+    assert _canon(got_cwwca) == _canon(expected_cwwca)
+
+    got_cwg0cw = FULL_L.feynman_rule(c_w.bar, c_w, g0, simplify=True)
+    expected_cwg0cw = xiW * electroweak_mw(g2, v) * g2 * Expression.num(1) / Expression.num(2) * D3
+    assert _canon(got_cwg0cw) == _canon(expected_cwg0cw)
+
+    got_czgmcw = FULL_L.feynman_rule(c_z.bar, c_w, gp.bar, simplify=True)
+    expected_czgmcw = I * xiZ * electroweak_mz(g1, g2, v) * g2 * Expression.num(1) / Expression.num(2) * D3
+    assert _canon(got_czgmcw) == _canon(expected_czgmcw)
+
+
+def test_matrix_yukawa_generates_open_flavor_mass_and_higgs_vertices():
+    h = FLAVORED_BROKEN.fields.higgs
+
+    got_mass = FLAVORED_L.feynman_rule(up_flavored.bar, up_flavored, simplify=True)
+    expected_mass = (
+        -I
+        * yu_matrix.entry(S("i2"), S("i4"))
+        * v
+        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * bis.g(S("i1"), S("i3")).to_expression()
+        * D2
+    )
+    assert _canon(got_mass) == _canon(expected_mass)
+
+    got_hff = FLAVORED_L.feynman_rule(up_flavored.bar, up_flavored, h, simplify=True)
+    expected_hff = (
+        -I
+        * yu_matrix.entry(S("i2"), S("i4"))
+        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * bis.g(S("i1"), S("i3")).to_expression()
+        * D3
+    )
+    assert _canon(got_hff) == _canon(expected_hff)
+
+
+def test_ckm_charged_current_uses_left_chiral_flavor_matrix_and_dagger():
+    wp = FLAVORED_BROKEN.fields.charged_w
+    alpha_ud = S("alpha_u_dQ_cc_mid")
+    alpha_du = S("alpha_dQ_u_cc_mid")
+
+    got_wp = FLAVORED_L.feynman_rule(up_flavored.bar, down_flavored, wp, simplify=True)
+    expected_wp = (
+        -I
+        * g2
+        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * vckm_matrix.entry(S("i2"), S("i4"))
+        * gamma_matrix(S("i1"), alpha_ud, S("i5"))
+        * chiral_projector_left(alpha_ud, S("i3"))
+        * D3
+    )
+    assert _canon(got_wp) == _canon(expected_wp)
+
+    got_wm = FLAVORED_L.feynman_rule(down_flavored.bar, up_flavored, wp.bar, simplify=True)
+    expected_wm = (
+        -I
+        * g2
+        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * vckm_matrix.dagger_entry(S("i2"), S("i4"))
+        * gamma_matrix(S("i1"), alpha_du, S("i5"))
+        * chiral_projector_left(alpha_du, S("i3"))
+        * D3
+    )
+    assert _canon(got_wm) == _canon(expected_wm)

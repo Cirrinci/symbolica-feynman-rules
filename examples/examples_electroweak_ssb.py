@@ -26,9 +26,13 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from model import (  # noqa: E402
+    CKMChargedCurrentAssignment,
     DiagonalYukawaAssignment,
     ElectroweakGaugeFixing,
+    FLAVOR_INDEX,
     Field,
+    FlavorMatrix,
+    FlavorMatrixYukawaAssignment,
     SPINOR_INDEX,
     build_broken_electroweak_sector,
     standard_model_higgs_doublet,
@@ -51,6 +55,24 @@ electron = Field(
     conjugate_symbol=S("ebar0"),
     indices=(SPINOR_INDEX,),
 )
+up_flavored = Field(
+    "u",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    symbol=S("u0"),
+    conjugate_symbol=S("ubar0"),
+    indices=(SPINOR_INDEX, FLAVOR_INDEX),
+)
+down_flavored = Field(
+    "d",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    symbol=S("d0"),
+    conjugate_symbol=S("dbar0"),
+    indices=(SPINOR_INDEX, FLAVOR_INDEX),
+)
+yu_matrix = FlavorMatrix("Yu")
+vckm_matrix = FlavorMatrix("VCKM")
 
 higgs_doublet = standard_model_higgs_doublet()
 broken = build_broken_electroweak_sector(
@@ -62,6 +84,8 @@ broken = build_broken_electroweak_sector(
     gauge_fixing=ElectroweakGaugeFixing(xi_w=xiW, xi_z=xiZ, xi_a=xiA),
     higgs_doublet=higgs_doublet,
     yukawas=(DiagonalYukawaAssignment(electron, ye, label="electron Yukawa"),),
+    matrix_yukawas=(FlavorMatrixYukawaAssignment(up_flavored, yu_matrix, label="up matrix Yukawa"),),
+    charged_current_mixings=(CKMChargedCurrentAssignment(up_flavored, down_flavored, vckm_matrix, label="CKM current"),),
 )
 L = broken.model.lagrangian()
 
@@ -103,7 +127,8 @@ if __name__ == "__main__":
     print(" MZ =", broken.masses.mz)
     print(" Mh =", broken.masses.mh)
     print(" photon mass =", broken.masses.photon)
-    print(" me =", broken.masses.fermions[0][1])
+    for fermion, mass in broken.masses.fermions:
+        print(f" M[{fermion.name}] =", mass)
     print()
 
     print("Physical gauge couplings:")
@@ -154,5 +179,29 @@ if __name__ == "__main__":
     print(L.feynman_rule(broken.fields.ghost_charged.bar, broken.fields.ghost_charged))
     print()
 
+    print("Physical-basis ghost vertex Γ(cWbar, A, cW):")
+    print(L.feynman_rule(
+        broken.fields.ghost_charged.bar,
+        broken.fields.photon,
+        broken.fields.ghost_charged,
+    ))
+    print()
+
+    print("Physical-basis ghost/Goldstone vertex Γ(cZbar, cW, G-):")
+    print(L.feynman_rule(
+        broken.fields.ghost_z.bar,
+        broken.fields.ghost_charged,
+        broken.fields.goldstone_charged.bar,
+    ))
+    print()
+
     print("Broken-phase h e e vertex Γ(ebar, e, h):")
     print(L.feynman_rule(electron.bar, electron, broken.fields.higgs))
+    print()
+
+    print("Broken-phase matrix Yukawa vertex Γ(ubar, u, h):")
+    print(L.feynman_rule(up_flavored.bar, up_flavored, broken.fields.higgs))
+    print()
+
+    print("Broken-phase charged-current vertex Γ(ubar, d, W+):")
+    print(L.feynman_rule(up_flavored.bar, down_flavored, broken.fields.charged_w))
