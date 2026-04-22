@@ -27,6 +27,7 @@ if str(SRC) not in sys.path:
 
 from model import (  # noqa: E402
     DiagonalYukawaAssignment,
+    ElectroweakGaugeFixing,
     Field,
     SPINOR_INDEX,
     build_broken_electroweak_sector,
@@ -37,6 +38,10 @@ g1 = S("g1")
 g2 = S("g2")
 v = S("v")
 ye = S("y_e")
+lamH = S("lamH")
+xiW = S("xiW")
+xiZ = S("xiZ")
+xiA = S("xiA")
 
 electron = Field(
     "e",
@@ -52,6 +57,9 @@ broken = build_broken_electroweak_sector(
     g1=g1,
     g2=g2,
     vev=v,
+    include_gauge_sector=True,
+    higgs_quartic=lamH,
+    gauge_fixing=ElectroweakGaugeFixing(xi_w=xiW, xi_z=xiZ, xi_a=xiA),
     higgs_doublet=higgs_doublet,
     yukawas=(DiagonalYukawaAssignment(electron, ye, label="electron Yukawa"),),
 )
@@ -93,15 +101,27 @@ if __name__ == "__main__":
     print("Tree-level masses from the broken Higgs sector:")
     print(" MW =", broken.masses.mw)
     print(" MZ =", broken.masses.mz)
+    print(" Mh =", broken.masses.mh)
     print(" photon mass =", broken.masses.photon)
     print(" me =", broken.masses.fermions[0][1])
     print()
 
-    print("Higgs-sector W mass vertex Γ(W-, W+):")
+    print("Physical gauge couplings:")
+    print(" e =", broken.gauge_couplings.electric_charge)
+    print(" g_WWA =", broken.gauge_couplings.g_ww_a)
+    print(" g_WWZ =", broken.gauge_couplings.g_ww_z)
+    print()
+
+    print("Higgs self-couplings from the potential:")
+    print(" lambda_hhh vertex coefficient =", broken.higgs_potential.hhh_vertex_coefficient)
+    print(" lambda_hhhh vertex coefficient =", broken.higgs_potential.hhhh_vertex_coefficient)
+    print()
+
+    print("Broken-phase W two-point vertex Γ(W-, W+):")
     print(L.feynman_rule(broken.fields.charged_w.bar, broken.fields.charged_w))
     print()
 
-    print("Higgs-sector Z mass vertex Γ(Z, Z):")
+    print("Broken-phase Z two-point vertex Γ(Z, Z):")
     print(L.feynman_rule(broken.fields.z_boson, broken.fields.z_boson))
     print()
 
@@ -111,6 +131,27 @@ if __name__ == "__main__":
 
     print("Broken-phase h W W vertex Γ(h, W-, W+):")
     print(L.feynman_rule(broken.fields.higgs, broken.fields.charged_w.bar, broken.fields.charged_w))
+    print()
+
+    print("Physical-basis gauge vertex Γ(W-, W+, A):")
+    print(L.feynman_rule(broken.fields.charged_w.bar, broken.fields.charged_w, broken.fields.photon))
+    print()
+
+    print("Physical-basis gauge vertex Γ(W-, W+, A, Z):")
+    print(L.feynman_rule(
+        broken.fields.charged_w.bar,
+        broken.fields.charged_w,
+        broken.fields.photon,
+        broken.fields.z_boson,
+    ))
+    print()
+
+    print("Gauge-fixed Goldstone/Z bilinear Γ(G0, Z):")
+    print(L.feynman_rule(broken.fields.goldstone_neutral, broken.fields.z_boson))
+    print()
+
+    print("Gauge-fixed charged ghost bilinear Γ(cWbar, cW):")
+    print(L.feynman_rule(broken.fields.ghost_charged.bar, broken.fields.ghost_charged))
     print()
 
     print("Broken-phase h e e vertex Γ(ebar, e, h):")
