@@ -219,13 +219,13 @@ class GhostLagrangianDeclaration:
 def _is_decl_scalar(value) -> bool:
     from .interactions import InteractionTerm
     from .lagrangian import (
+        CompiledLagrangian,
         ComplexScalarKineticTerm,
         DeclaredLagrangian,
         DiracKineticTerm,
         GaugeFixingTerm,
         GaugeKineticTerm,
         GhostTerm,
-        Lagrangian,
     )
 
     return not isinstance(
@@ -252,7 +252,7 @@ def _is_decl_scalar(value) -> bool:
             GaugeFixingTerm,
             GhostLagrangianDeclaration,
             GhostTerm,
-            Lagrangian,
+            CompiledLagrangian,
         ),
     )
 

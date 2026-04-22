@@ -1,4 +1,4 @@
-"""User-facing Lagrangian and source-term classes."""
+"""Compiled, standalone, and declarative Lagrangian containers."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from .interactions import (
     InteractionTerm,
     _auto_leg_labels,
     _parse_field_arg,
-    _standalone_lagrangian_context_error,
     _term_matches_fields,
 )
 
@@ -45,28 +44,132 @@ def _declared_source_terms_from_item(item):
 
     return impl(item)
 
+
+def _standalone_lagrangian_context_error():
+    from .lowering import _standalone_lagrangian_context_error as impl
+
+    return impl()
+
+
+def _compiled_lagrangian_context_error():
+    from .lowering import _compiled_lagrangian_context_error as impl
+
+    return impl()
+
+
 @dataclass(init=False)
-class Lagrangian:
-    """Collection of interaction terms with a single ``feynman_rule()`` entry point.
+class CompiledLagrangian:
+    """Collection of compiled ``InteractionTerm`` objects."""
 
-    Mirrors the FeynRules workflow: declare Lagrangian pieces, compose them
-    with ``+``, then extract vertex factors by specifying external fields.
-
-    Standalone ``Lagrangian(...)`` accepts local declarative monomials directly,
-    so users do not need to build ``InteractionTerm`` objects by hand for
-    operators such as ``lam * Phi * Phi * Phi * Phi`` or
-    ``g * PartialD(Phi, mu) * PartialD(Phi, mu) * Phi * Phi``.
-
-    Source forms that require model metadata, such as ``CovD(...)``,
-    ``FieldStrength(...)``, ``GaugeFixing(...)``, or ``GhostLagrangian(...)``,
-    still belong in ``Model(lagrangian_decl=...)`` and are compiled there.
-
-    Example::
-
-        L = Lagrangian(lam * Phi * Phi * Phi * Phi)
-        vertex = L.feynman_rule(Phi.bar, Phi, A)
-    """
     terms: tuple[InteractionTerm, ...] = ()
+
+    def __init__(self, terms=()):
+        self.terms = _normalize_interaction_terms_input(terms)
+
+    @classmethod
+    def from_item(cls, item) -> "CompiledLagrangian":
+        return cls(terms=item)
+
+    def __add__(self, other):
+        if isinstance(other, InteractionTerm):
+            return CompiledLagrangian(terms=self.terms + (other,))
+        if isinstance(other, CompiledLagrangian):
+            return CompiledLagrangian(terms=self.terms + other.terms)
+        if _declared_source_terms_from_item(other) is not None:
+            raise ValueError(_compiled_lagrangian_context_error())
+        return NotImplemented
+
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        if isinstance(other, InteractionTerm):
+            return CompiledLagrangian(terms=(other,) + self.terms)
+        if isinstance(other, CompiledLagrangian):
+            return CompiledLagrangian(terms=other.terms + self.terms)
+        if _declared_source_terms_from_item(other) is not None:
+            raise ValueError(_compiled_lagrangian_context_error())
+        return NotImplemented
+
+    def __str__(self):
+        if not self.terms:
+            return "0"
+        return " + ".join(str(term) for term in self.terms)
+
+    def feynman_rule(self, *fields, momenta=None, simplify=True):
+        """Compute the Feynman vertex rule for the given external fields."""
+
+        from symbolic.vertex_engine import simplify_vertex, vertex_factor
+
+        parsed = [_parse_field_arg(f) for f in fields]
+        n = len(parsed)
+        if n == 0:
+            raise ValueError("At least one external field is required.")
+
+        if momenta is None:
+            momenta_list = [S(f"q{k + 1}") for k in range(n)]
+        else:
+            momenta_list = list(momenta)
+        if len(momenta_list) != n:
+            raise ValueError(f"Expected {n} momenta, got {len(momenta_list)}.")
+
+        idx_counter = [1]
+        legs = []
+        for k, (fld, conj) in enumerate(parsed):
+            labels = _auto_leg_labels(fld, idx_counter)
+            legs.append(
+                ExternalLeg(
+                    field=fld,
+                    momentum=momenta_list[k],
+                    conjugated=conj,
+                    labels=labels,
+                )
+            )
+
+        matching = [term for term in self.terms if _term_matches_fields(term, parsed)]
+        if not matching:
+            desc = ", ".join(
+                f"{fld.name}{'bar' if conj else ''}" for fld, conj in parsed
+            )
+            raise ValueError(f"No matching interaction terms for: {desc}")
+
+        x = S("x_")
+        d = S("d")
+        total = Expression.num(0)
+        for term in matching:
+            total += vertex_factor(
+                interaction=term,
+                external_legs=legs,
+                x=x,
+                d=d,
+                strip_externals=True,
+                include_delta=True,
+            )
+
+        if simplify:
+            species_map = None
+            unique_species = list(dict.fromkeys(
+                fld.species_for(conj) for fld, conj in parsed
+            ))
+            if len(unique_species) > 1:
+                species_map = {sp: sp for sp in unique_species}
+            total = simplify_vertex(
+                total,
+                species_map=species_map,
+                external_legs=legs,
+            )
+
+        return total
+
+
+@dataclass(init=False)
+class Lagrangian(CompiledLagrangian):
+    """User-facing extraction object with a convenience local source front door.
+
+    ``Lagrangian(...)`` accepts metadata-free local declarations directly.
+    Declarations that require model metadata still belong in
+    ``Model(lagrangian_decl=...)``.
+    """
+
     source_terms: tuple[object, ...] = ()
 
     def __init__(self, *items, terms=None, lagrangian_decl=None):
@@ -128,101 +231,11 @@ class Lagrangian:
             return "0"
         return " + ".join(str(term) for term in self.source_terms)
 
-    def feynman_rule(self, *fields, momenta=None, simplify=True):
-        """Compute the Feynman vertex rule for the given external fields.
-
-        Conventions:
-        - leg order = argument order
-        - momenta default to q1, q2, q3, ...
-        - open indices are labeled i1, i2, i3, ... sequentially across legs
-
-        Parameters
-        ----------
-        *fields : Field, tuple[Field, bool], or ConjugateField
-            External fields in leg order.  Use ``field.bar`` or ``(field, True)``
-            for conjugated fields (e.g. ``Phi.bar``).
-        momenta : list of expressions, optional
-            Override the default q1, q2, ... momentum assignment.  Each entry
-            can be an algebraic expression (e.g. ``p3 - p6``).
-        simplify : bool
-            If True (default), apply ``simplify_vertex`` to the result.
-
-        Returns
-        -------
-        Expression
-            The summed, stripped Feynman vertex factor with ``(2 pi)^d Delta``
-            momentum conservation.
-        """
-        from symbolic.vertex_engine import simplify_vertex, vertex_factor
-        from symbolica import Expression
-
-        parsed = [_parse_field_arg(f) for f in fields]
-        n = len(parsed)
-        if n == 0:
-            raise ValueError("At least one external field is required.")
-
-        if momenta is None:
-            momenta_list = [S(f"q{k + 1}") for k in range(n)]
-        else:
-            momenta_list = list(momenta)
-        if len(momenta_list) != n:
-            raise ValueError(f"Expected {n} momenta, got {len(momenta_list)}.")
-
-        idx_counter = [1]
-        legs = []
-        for k, (fld, conj) in enumerate(parsed):
-            labels = _auto_leg_labels(fld, idx_counter)
-            legs.append(ExternalLeg(
-                field=fld,
-                momentum=momenta_list[k],
-                conjugated=conj,
-                labels=labels,
-            ))
-
-        matching = [t for t in self.terms if _term_matches_fields(t, parsed)]
-        if not matching:
-            desc = ", ".join(
-                f"{fld.name}{'bar' if conj else ''}" for fld, conj in parsed
-            )
-            raise ValueError(f"No matching interaction terms for: {desc}")
-
-        x = S("x_")
-        d = S("d")
-        total = Expression.num(0)
-        for term in matching:
-            total += vertex_factor(
-                interaction=term,
-                external_legs=legs,
-                x=x,
-                d=d,
-                strip_externals=True,
-                include_delta=True,
-            )
-
-        if simplify:
-            species_map = None
-            unique_species = list(dict.fromkeys(
-                fld.species_for(conj) for fld, conj in parsed
-            ))
-            if len(unique_species) > 1:
-                species_map = {sp: sp for sp in unique_species}
-            total = simplify_vertex(total, species_map=species_map, external_legs=legs)
-
-        return total
-
-
-# ---------------------------------------------------------------------------
-# Convention-fixed kinetic terms
-# ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class DiracKineticTerm:
-    """Model-level declaration for ``psibar i gamma^mu D_mu psi``.
+    """Model-level declaration for ``psibar i gamma^mu D_mu psi``."""
 
-    The current compiler expands only the gauge-interaction part of this term.
-    If ``gauge_group`` is omitted, the compiler infers the unique applicable
-    gauge group from the model metadata.
-    """
     field: object
     gauge_group: object = None
     coefficient: object = 1
@@ -245,12 +258,8 @@ class DiracKineticTerm:
 
 @dataclass(frozen=True)
 class ComplexScalarKineticTerm:
-    """Model-level declaration for ``(D_mu phi)^dagger (D^mu phi)``.
+    """Model-level declaration for ``(D_mu phi)^dagger (D^mu phi)``."""
 
-    The current compiler expands only the gauge-interaction part of this term.
-    If ``gauge_group`` is omitted, the compiler infers the unique applicable
-    gauge group from the model metadata.
-    """
     field: object
     gauge_group: object = None
     coefficient: object = 1
@@ -273,12 +282,8 @@ class ComplexScalarKineticTerm:
 
 @dataclass(frozen=True)
 class GaugeKineticTerm:
-    """Model-level declaration for ``-1/4 F_{mu nu} F^{mu nu}``.
+    """Model-level declaration for ``-1/4 F_{mu nu} F^{mu nu}``."""
 
-    ``gauge_group`` is required because the gauge field and non-abelian
-    structure constants are properties of the group declaration, not of a
-    separate matter field.
-    """
     gauge_group: object
     coefficient: object = 1
     label: str = ""
@@ -300,11 +305,8 @@ class GaugeKineticTerm:
 
 @dataclass(frozen=True)
 class GaugeFixingTerm:
-    """Model-level declaration for ``-(1/2 xi) (partial.A)^2``.
+    """Model-level declaration for ``-(1/2 xi) (partial.A)^2``."""
 
-    This covers the ordinary unbroken linear covariant gauge-fixing term for one
-    declared gauge group. ``xi`` is the usual gauge-fixing parameter.
-    """
     gauge_group: object
     xi: object = 1
     coefficient: object = 1
@@ -327,12 +329,8 @@ class GaugeFixingTerm:
 
 @dataclass(frozen=True)
 class GhostTerm:
-    """Model-level declaration for the ordinary Faddeev-Popov ghost sector.
+    """Model-level declaration for the ordinary Faddeev-Popov ghost sector."""
 
-    The current implementation covers the unbroken non-abelian linear-covariant
-    gauge case. The corresponding ghost field is resolved from the parent gauge
-    group's ``ghost_field`` metadata.
-    """
     gauge_group: object
     coefficient: object = 1
     label: str = ""
@@ -352,25 +350,19 @@ class GhostTerm:
         return DeclaredLagrangian(source_terms=terms + (self,))
 
 
-
 @dataclass(frozen=True)
 class DeclaredLagrangian:
-    """User-facing declarative Lagrangian built from fields and covariant derivatives.
+    """Source-level declaration container for ``Model(lagrangian_decl=...)``."""
 
-    This is a source-level declaration container. Terms are preserved in the
-    original FeynRules-style form (`CovD(...)`, `FieldStrength(...)`,
-    `GaugeFixing(...)`, `GhostLagrangian(...)`, etc.) and compiled one by one
-    when `Model.lagrangian()` is built. Canonical declarative ``CovD(...)``
-    monomials compile to the full operator: free bilinear partial term plus
-    gauge-interaction pieces.
-    """
     source_terms: tuple[object, ...] = ()
 
     @classmethod
     def from_item(cls, item) -> "DeclaredLagrangian":
         terms = _declared_source_terms_from_item(item)
         if terms is None:
-            raise TypeError(f"Cannot build DeclaredLagrangian from {type(item).__name__}")
+            raise TypeError(
+                f"Cannot build DeclaredLagrangian from {type(item).__name__}"
+            )
         return cls(source_terms=terms)
 
     def __add__(self, other):
@@ -392,8 +384,4 @@ class DeclaredLagrangian:
             return "0"
         return " + ".join(str(term) for term in self.source_terms)
 
-
-CovariantTerm = (
-    DiracKineticTerm
-    | ComplexScalarKineticTerm
-)
+CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm

@@ -9,6 +9,7 @@ import warnings
 from .declared import _DeclaredMonomial
 from .interactions import InteractionTerm
 from .lagrangian import (
+    CompiledLagrangian,
     ComplexScalarKineticTerm,
     CovariantTerm,
     DeclaredLagrangian,
@@ -16,7 +17,6 @@ from .lagrangian import (
     GaugeFixingTerm,
     GaugeKineticTerm,
     GhostTerm,
-    Lagrangian,
 )
 from .lowering import (
     _normalize_interaction_terms_input,
@@ -183,13 +183,10 @@ class Model:
             )
         return field
 
-    def lagrangian(self) -> Lagrangian:
-        """Compile all declared terms and return a ``Lagrangian``.
-
-        Local interaction monomials are lowered directly. Terms that contain
-        canonical covariant / field-strength / gauge-fixing / ghost structures
-        are expanded term by term through the compiler.
-        """
+    def lagrangian(self) -> CompiledLagrangian:
+        """Compile all declared terms and return a ``CompiledLagrangian``."""
         from compiler.gauge import compile_covariant_terms
 
-        return Lagrangian(terms=self.all_interactions() + compile_covariant_terms(self))
+        return CompiledLagrangian(
+            terms=self.all_interactions() + compile_covariant_terms(self)
+        )

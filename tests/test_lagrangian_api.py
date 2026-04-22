@@ -34,6 +34,7 @@ from model import (  # noqa: E402
     COLOR_ADJ_KIND,
     COLOR_FUND_INDEX,
     COLOR_FUND_KIND,
+    CompiledLagrangian,
     CovD,
     DeclaredLagrangian,
     FieldStrength,
@@ -598,8 +599,26 @@ def test_lagrangian_accepts_lagrangian_decl_keyword():
     assert _canon(got) == _canon(expected)
 
 
+def test_compiled_lagrangian_rejects_source_declarations():
+    """Compiled extraction objects reject source declarations directly."""
+    qPsi = S("qPsi")
+    mu = S("mu")
+    fermion = Field(
+        "PsiQED",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Q": qPsi},
+    )
+
+    with pytest.raises(ValueError, match="Use Model\\(lagrangian_decl="):
+        CompiledLagrangian(I * fermion.bar * Gamma(mu) * CovD(fermion, mu))
+
+
 def test_lagrangian_rejects_covariant_decl_without_model():
-    """Covariant structures still need Model metadata for compilation."""
+    """Model-dependent declarations still require Model metadata."""
     qPsi = S("qPsi")
     mu = S("mu")
     fermion = Field(
@@ -614,6 +633,14 @@ def test_lagrangian_rejects_covariant_decl_without_model():
 
     with pytest.raises(ValueError, match="Use Model\\(lagrangian_decl="):
         Lagrangian(I * fermion.bar * Gamma(mu) * CovD(fermion, mu))
+
+
+def test_compiled_lagrangian_add_rejects_source_declarations():
+    """Compiled extraction objects reject source declarations in composition too."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+
+    with pytest.raises(ValueError, match="Use Model\\(lagrangian_decl="):
+        CompiledLagrangian() + (S("lam4") * phi * phi * phi * phi)
 
 
 def test_model_accepts_declared_phi4_field_product():

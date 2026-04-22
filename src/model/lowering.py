@@ -34,7 +34,6 @@ from .declared import (
 from .interactions import (
     DerivativeAction,
     InteractionTerm,
-    _standalone_lagrangian_context_error,
     _field_match_key,
 )
 from .metadata import (
@@ -621,29 +620,49 @@ def _declared_source_terms_from_item(item):
     return None
 
 
-def _normalize_interaction_terms_input(terms) -> tuple[InteractionTerm, ...]:
-    from .lagrangian import Lagrangian
+def _standalone_lagrangian_context_error() -> str:
+    return (
+        "Standalone Lagrangian(...) only supports local terms built from "
+        "fields, PartialD(...), and one optional Gamma(...). "
+        "Use Model(lagrangian_decl=...) for CovD(...), FieldStrength(...), "
+        "GaugeFixing(...), and GhostLagrangian(...), since those need "
+        "model metadata."
+    )
 
-    if isinstance(terms, Lagrangian):
+
+def _compiled_lagrangian_context_error() -> str:
+    return (
+        "CompiledLagrangian accepts only compiled InteractionTerm values. "
+        "Use Model(lagrangian_decl=...).lagrangian() for source declarations."
+    )
+
+
+def _normalize_interaction_terms_input(terms) -> tuple[InteractionTerm, ...]:
+    from .lagrangian import CompiledLagrangian
+
+    if isinstance(terms, CompiledLagrangian):
         return terms.terms
     if isinstance(terms, InteractionTerm):
         normalized = (terms,)
     else:
+        declared_terms = _declared_source_terms_from_item(terms)
+        if declared_terms is not None:
+            raise ValueError(_compiled_lagrangian_context_error())
         normalized = tuple(terms)
     if not all(isinstance(term, InteractionTerm) for term in normalized):
-        raise TypeError(
-            "`terms=` expects InteractionTerm objects. "
-            "For declarative input, use `Lagrangian(...)` or "
-            "`Lagrangian(lagrangian_decl=...)`."
-        )
+        if any(_declared_source_terms_from_item(term) is not None for term in normalized):
+            raise ValueError(_compiled_lagrangian_context_error())
+        raise TypeError("`terms=` expects InteractionTerm objects or CompiledLagrangian.")
     return normalized
 
 
 def _standalone_lagrangian_source_terms_from_item(item):
-    from .lagrangian import Lagrangian
+    from .lagrangian import CompiledLagrangian, Lagrangian
 
     if isinstance(item, Lagrangian):
         return item.source_terms
+    if isinstance(item, CompiledLagrangian):
+        return item.terms
     if isinstance(item, InteractionTerm):
         return (item,)
     terms = _declared_source_terms_from_item(item)

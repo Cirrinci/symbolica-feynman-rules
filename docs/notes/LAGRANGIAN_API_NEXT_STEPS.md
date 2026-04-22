@@ -6,7 +6,8 @@ Purpose: user-facing API backlog only.
 
 ### 1. Whole-Lagrangian extraction
 
-Add `feynman_rules(...)` on `Lagrangian` in addition to single-vertex `feynman_rule(...)`.
+Add `feynman_rules(...)` on the compiled extraction object returned by
+`Model.lagrangian()` in addition to single-vertex `feynman_rule(...)`.
 
 Why:
 
@@ -21,7 +22,7 @@ Target examples:
 
 Implementation shape:
 
-- group `Lagrangian.terms` by external field content
+- group the compiled term list by external field content
 - infer one canonical field tuple per group
 - reuse the existing single-vertex extraction path internally
 - return a structured mapping or list from field tuple to vertex expression
@@ -33,12 +34,12 @@ Allow direct term usage:
 - `term.feynman_rule(...)`
 - `(term1 + term2).feynman_rule(...)`
 
-without manual wrapping in `Lagrangian(terms=(...))`.
+without manual wrapping in the compiled extraction container.
 
 Implementation shape:
 
 - add a thin `feynman_rule(...)` wrapper on `InteractionTerm`
-- make `term1 + term2` produce a Lagrangian-like object consistently
+- make `term1 + term2` produce the compiled extraction object consistently
 - keep the real extraction logic in one place so term and Lagrangian paths cannot drift
 
 ### 3. Gauge-fixing syntax sugar
