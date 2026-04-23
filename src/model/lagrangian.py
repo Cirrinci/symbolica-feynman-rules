@@ -10,6 +10,7 @@ from .interactions import (
     ExternalLeg,
     InteractionTerm,
     _auto_leg_labels,
+    _field_match_key,
     _parse_field_arg,
     _term_matches_fields,
 )
@@ -57,6 +58,38 @@ def _compiled_lagrangian_context_error():
     return impl()
 
 
+def _field_arg_from_occurrence(occurrence):
+    if occurrence.conjugated and not occurrence.field.self_conjugate:
+        return occurrence.field.bar
+    return occurrence.field
+
+
+def _field_arg_name(field_arg):
+    if hasattr(field_arg, "field"):
+        return f"{field_arg.field.name}.bar"
+    return field_arg.name
+
+
+def _vertex_name_tuple(vertex_fields):
+    return tuple(_field_arg_name(field_arg) for field_arg in vertex_fields)
+
+
+def _term_vertex_key(term: InteractionTerm):
+    return tuple(
+        sorted(
+            (
+                _field_match_key(occ.field, occ.conjugated)
+                for occ in term.fields
+            ),
+            key=repr,
+        )
+    )
+
+
+def _term_vertex_fields(term: InteractionTerm):
+    return tuple(_field_arg_from_occurrence(occ) for occ in term.fields)
+
+
 @dataclass(init=False)
 class CompiledLagrangian:
     """Collection of compiled ``InteractionTerm`` objects."""
@@ -95,15 +128,51 @@ class CompiledLagrangian:
             return "0"
         return " + ".join(str(term) for term in self.terms)
 
-    def feynman_rule(self, *fields, momenta=None, simplify=True):
-        """Compute the Feynman vertex rule for the given external fields."""
+    def _vertex_field_tuples(self):
+        vertices = {}
+        for term in self.terms:
+            key = _term_vertex_key(term)
+            if key not in vertices:
+                vertices[key] = _term_vertex_fields(term)
+        return tuple(vertices.values())
+
+    def feynman_rule(self, *fields, momenta=None, simplify=True, key_format="names"):
+        """Compute Feynman vertex rules.
+
+        With explicit fields, return the vertex rule for that field content.
+        With no fields, return a mapping from available vertex signatures to
+        their corresponding vertex rules. By default, zero-argument keys are
+        tuples of readable field names. Use ``key_format="fields"`` to return
+        tuples of ``Field`` / ``Field.bar`` objects instead.
+        """
 
         from symbolic.vertex_engine import simplify_vertex, vertex_factor
+
+        if key_format not in ("names", "fields"):
+            raise ValueError("key_format must be either 'names' or 'fields'.")
 
         parsed = [_parse_field_arg(f) for f in fields]
         n = len(parsed)
         if n == 0:
-            raise ValueError("At least one external field is required.")
+            if momenta is not None:
+                raise ValueError("`momenta=` is only supported for explicit vertex extraction.")
+            rules_by_field = {
+                vertex_fields: self.feynman_rule(*vertex_fields, simplify=simplify)
+                for vertex_fields in self._vertex_field_tuples()
+            }
+            if key_format == "fields":
+                return rules_by_field
+
+            rules_by_name = {}
+            for vertex_fields, expression in rules_by_field.items():
+                name_key = _vertex_name_tuple(vertex_fields)
+                if name_key in rules_by_name:
+                    raise ValueError(
+                        "Name-keyed vertex signatures are ambiguous; "
+                        "use key_format='fields'."
+                    )
+                rules_by_name[name_key] = expression
+            return rules_by_name
 
         if momenta is None:
             momenta_list = [S(f"q{k + 1}") for k in range(n)]

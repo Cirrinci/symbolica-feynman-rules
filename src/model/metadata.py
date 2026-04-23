@@ -344,6 +344,23 @@ class Field:
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
 
+    def __hash__(self):
+        quantum_numbers = tuple(
+            sorted((str(key), str(value)) for key, value in self.quantum_numbers.items())
+        )
+        return hash((
+            self.name,
+            str(Fraction(self.spin)),
+            self.self_conjugate,
+            tuple((index.name, index.kind, index.prefix) for index in self.indices),
+            self.kind,
+            self.statistics,
+            str(self.symbol),
+            str(self.conjugate_symbol),
+            str(self.mass),
+            quantum_numbers,
+        ))
+
     def role_for(self, conjugated: bool = False) -> FieldRole:
         """Return the interaction/external-leg role implied by this field slot."""
         if self.kind == "fermion":

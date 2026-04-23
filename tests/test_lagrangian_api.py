@@ -996,6 +996,168 @@ def test_multiple_matching_terms_are_summed():
     assert _canon(got) == _canon(expected)
 
 
+def test_feynman_rule_no_args_returns_all_vertices():
+    """A zero-argument call returns every available vertex keyed by names."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    lam4 = S("lam4")
+    g = S("g")
+
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=lam4, fields=tuple(phi.occurrence() for _ in range(4))),
+        InteractionTerm(
+            coupling=g,
+            fields=(phi.occurrence(), phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+    ))
+
+    rules = L.feynman_rule(simplify=True)
+
+    phi4_key = ("Phi", "Phi", "Phi", "Phi")
+    mixed_key = ("Phi", "Phi", "Chi", "Chi")
+    assert set(rules) == {phi4_key, mixed_key}
+    assert _canon(rules[phi4_key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+    assert _canon(rules[mixed_key]) == _canon(
+        L.feynman_rule(phi, phi, chi, chi, simplify=True)
+    )
+
+
+def test_feynman_rule_no_args_can_return_field_keys():
+    """The previous object-keyed zero-argument mapping is still available."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lam4 = S("lam4")
+    L = Lagrangian(lam4 * phi * phi * phi * phi)
+
+    rules = L.feynman_rule(simplify=True, key_format="fields")
+    key = (phi, phi, phi, phi)
+
+    assert tuple(rules) == (key,)
+    assert _canon(rules[key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+
+
+def test_feynman_rule_no_args_merges_repeated_signature():
+    """Repeated terms with the same field content are grouped and summed."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    g1 = S("g1")
+    g2 = S("g2")
+
+    t1 = InteractionTerm(coupling=g1, fields=tuple(phi.occurrence() for _ in range(4)))
+    t2 = InteractionTerm(coupling=g2, fields=tuple(phi.occurrence() for _ in range(4)))
+    L = Lagrangian(terms=(t1, t2))
+
+    rules = L.feynman_rule(simplify=True)
+    raw_rules = L.feynman_rule(simplify=False)
+    key = ("Phi", "Phi", "Phi", "Phi")
+
+    assert tuple(rules) == (key,)
+    assert _canon(rules[key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+    assert _canon(raw_rules[key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=False)
+    )
+
+
+def test_feynman_rule_no_args_normalizes_conjugated_field_keys():
+    """Non-self-conjugate fields use .bar suffixes in default name keys."""
+    phi = Field(
+        "PhiC",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi"),
+        conjugate_symbol=S("phibar"),
+    )
+    lam = S("lam")
+    L = Lagrangian(lam * phi.bar * phi)
+
+    rules = L.feynman_rule(simplify=True)
+    key = next(iter(rules))
+
+    assert len(rules) == 1
+    assert key == ("PhiC.bar", "PhiC")
+    assert _canon(rules[key]) == _canon(L.feynman_rule(phi.bar, phi, simplify=True))
+
+
+def test_feynman_rule_no_args_field_keys_preserve_conjugated_objects():
+    """key_format='fields' keeps Field.bar objects for programmatic lookup."""
+    phi = Field(
+        "PhiC",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi"),
+        conjugate_symbol=S("phibar"),
+    )
+    lam = S("lam")
+    L = Lagrangian(lam * phi.bar * phi)
+
+    rules = L.feynman_rule(simplify=True, key_format="fields")
+    key = next(iter(rules))
+
+    assert len(rules) == 1
+    assert isinstance(key[0], ConjugateField)
+    assert key[0].field is phi
+    assert key[1] is phi
+    assert _canon(rules[key]) == _canon(L.feynman_rule(phi.bar, phi, simplify=True))
+
+
+def test_feynman_rule_no_args_rejects_momenta_override():
+    """A shared momenta= override is ambiguous for mixed-arity enumeration."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    L = Lagrangian(S("g") * phi * phi)
+
+    with pytest.raises(ValueError, match="momenta"):
+        L.feynman_rule(momenta=[S("p")])
+
+
+def test_feynman_rule_rejects_unknown_key_format():
+    """Typos in key_format fail loudly."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    L = Lagrangian(S("g") * phi * phi)
+
+    with pytest.raises(ValueError, match="key_format"):
+        L.feynman_rule(key_format="objects")
+
+
+def test_feynman_rule_no_args_name_keys_reject_ambiguous_names():
+    """Default name keys do not silently merge different same-name fields."""
+    phi1 = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi1"))
+    phi2 = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi2"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("g1"), fields=(phi1.occurrence(), phi1.occurrence())),
+        InteractionTerm(coupling=S("g2"), fields=(phi2.occurrence(), phi2.occurrence())),
+    ))
+
+    with pytest.raises(ValueError, match="key_format='fields'"):
+        L.feynman_rule()
+
+    rules = L.feynman_rule(key_format="fields")
+    assert (phi1, phi1) in rules
+    assert (phi2, phi2) in rules
+
+
+def test_feynman_rule_no_args_nontrivial_model_summary_is_usable():
+    """A larger compiled model returns a usable mapping without API changes."""
+    rules = MODEL_QCD_ORDINARY_GAUGE_FIXED.lagrangian().feynman_rule(simplify=False)
+
+    assert ("G", "G") in rules
+    assert ("G", "G", "G") in rules
+    assert ("G", "G", "G", "G") in rules
+    assert ("ghG.bar", "ghG") in rules
+    assert ("ghG.bar", "G", "ghG") in rules
+    assert _canon(rules[("ghG.bar", "G", "ghG")]) == _canon(
+        MODEL_QCD_ORDINARY_GAUGE_FIXED.lagrangian().feynman_rule(
+            GhostGluonField.bar,
+            GluonField,
+            GhostGluonField,
+            simplify=False,
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # Model.lagrangian() integration: QED Dirac kinetic term
 # ---------------------------------------------------------------------------
