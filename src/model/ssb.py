@@ -36,7 +36,9 @@ _HALF = Expression.num(1) / Expression.num(2)
 _INV_SQRT2 = _HALF ** _HALF
 FLAVOR_INDEX = IndexType("FlavorFund", Representation.cof(3), "flavor", prefix="f")
 
-
+#===============================================================
+#Pretty-printable linear relations for Higgs expansion and gauge mixing
+#===============================================================
 @dataclass(frozen=True)
 class LinearTerm:
     """One term in an inspectable linear field relation.
@@ -78,10 +80,13 @@ class LinearRelation:
             return f"{self.target} = 0"
         return f"{self.target} = " + " + ".join(str(term) for term in self.terms)
 
-
+#===============================================================
+# Convenience data structures for electroweak SSB inputs and outputs
+#===============================================================
 @dataclass(frozen=True)
 class DiagonalYukawaAssignment:
-    """Minimal diagonal Yukawa input for one Dirac fermion."""
+    """Minimal diagonal Yukawa input for one Dirac fermion. 
+        m_f = y_f v / sqrt(2)."""
 
     fermion: Field
     yukawa: object
