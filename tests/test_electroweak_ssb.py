@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from fractions import Fraction
 
 import pytest
@@ -23,6 +24,11 @@ from model import (
 from symbolic.vertex_engine import Delta, I, bis, pcomp, pi
 from symbolic.spenso_structures import chiral_projector_left, gamma_matrix, lorentz_metric
 
+ZERO = Expression.num(0)
+ONE = Expression.num(1)
+HALF = ONE / Expression.num(2)
+SQRT_HALF = HALF ** HALF
+
 d = S("d")
 g1 = S("g1")
 g2 = S("g2")
@@ -36,10 +42,17 @@ xiA = S("xiA")
 q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
 D2 = (2 * pi) ** d * Delta(q1 + q2)
 D3 = (2 * pi) ** d * Delta(q1 + q2 + q3)
+D4 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
+CKM_DUMMY_SPINOR = S("alpha_current_mid")
+_CKM_DUMMY_PATTERN = re.compile(r"python::\{\}::alpha(?:_[A-Za-z0-9]+)+_cc_mid")
 
 
 def _canon(expr):
     return expr.expand().to_canonical_string()
+
+
+def _canon_ckm_current(expr):
+    return _CKM_DUMMY_PATTERN.sub("python::{}::alpha_current_mid", _canon(expr))
 
 
 def _relation_coefficients(relation):
@@ -47,6 +60,18 @@ def _relation_coefficients(relation):
         term.display_name(): _canon(term.coefficient)
         for term in relation.terms
     }
+
+
+def _ghost_kinetic_lorentz_index(lagrangian, ghost: Field):
+    for term in lagrangian.terms:
+        if len(term.derivatives) != 2:
+            continue
+        if tuple((occ.field, occ.conjugated) for occ in term.fields) == (
+            (ghost, True),
+            (ghost, False),
+        ):
+            return term.derivatives[0].lorentz_index
+    raise AssertionError(f"Missing ghost kinetic term for {ghost.name}.")
 
 
 electron = Field(
@@ -111,22 +136,22 @@ def test_standard_higgs_doublet_uses_su2_doublet_hypercharge_half():
     higgs = standard_model_higgs_doublet()
 
     assert higgs.indices == (BROKEN.fields.higgs_doublet.indices[0],)
-    assert _canon(higgs.quantum_numbers["Y"]) == _canon(Expression.num(1) / Expression.num(2))
+    assert _canon(higgs.quantum_numbers["Y"]) == _canon(HALF)
 
 
 def test_higgs_vev_expansion_tracks_higgs_and_goldstones():
     relations = {relation.target: relation for relation in BROKEN.higgs_expansion}
 
     assert _relation_coefficients(relations["H[1]"]) == {
-        "Gp": _canon(Expression.num(1)),
+        "Gp": _canon(ONE),
     }
     assert _relation_coefficients(relations["Hdag[1]"]) == {
-        "Gp.bar": _canon(Expression.num(1)),
+        "Gp.bar": _canon(ONE),
     }
     assert _relation_coefficients(relations["H[2]"]) == {
-        "1": _canon(v * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))),
-        "h": _canon((Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))),
-        "G0": _canon(I * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))),
+        "1": _canon(v * SQRT_HALF),
+        "h": _canon(SQRT_HALF),
+        "G0": _canon(I * SQRT_HALF),
     }
 
 
@@ -134,18 +159,18 @@ def test_charged_gauge_mixing_structure():
     relations = {relation.target: relation for relation in BROKEN.charged_mixing}
 
     assert _relation_coefficients(relations["W+"]) == {
-        "W1": _canon((Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))),
-        "W2": _canon(-I * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))),
+        "W1": _canon(SQRT_HALF),
+        "W2": _canon(-I * SQRT_HALF),
     }
     assert _relation_coefficients(relations["W-"]) == {
-        "W1": _canon((Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))),
-        "W2": _canon(I * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))),
+        "W1": _canon(SQRT_HALF),
+        "W2": _canon(I * SQRT_HALF),
     }
 
 
 def test_neutral_gauge_mixing_structure():
     relations = {relation.target: relation for relation in BROKEN.neutral_mixing}
-    root = (g1**2 + g2**2) ** (Expression.num(1) / Expression.num(2))
+    root = (g1**2 + g2**2) ** HALF
 
     assert _relation_coefficients(relations["Z"]) == {
         "W3": _canon(g2 / root),
@@ -200,10 +225,10 @@ def test_broken_phase_hvv_and_hff_vertices_match_expected_structure():
     h = BROKEN.fields.higgs
     wp = BROKEN.fields.charged_w
     z = BROKEN.fields.z_boson
-    me = ye * v * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+    me = ye * v * SQRT_HALF
 
     got_hww = L.feynman_rule(h, wp.bar, wp, simplify=True)
-    expected_hww = I * (g2**2) * v * (Expression.num(1) / Expression.num(2)) * lorentz_metric(S("i1"), S("i2")) * D3
+    expected_hww = I * (g2**2) * v * HALF * lorentz_metric(S("i1"), S("i2")) * D3
     assert _canon(got_hww) == _canon(expected_hww)
 
     got_hzz = L.feynman_rule(h, z, z, simplify=True)
@@ -211,7 +236,7 @@ def test_broken_phase_hvv_and_hff_vertices_match_expected_structure():
     assert _canon(got_hzz) == _canon(expected_hzz)
 
     got_hff = L.feynman_rule(electron.bar, electron, h, simplify=True)
-    expected_hff = -I * ye * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2)) * bis.g(S("i1"), S("i2")).to_expression() * D3
+    expected_hff = -I * ye * SQRT_HALF * bis.g(S("i1"), S("i2")).to_expression() * D3
     assert _canon(got_hff) == _canon(expected_hff)
 
     got_ff = L.feynman_rule(electron.bar, electron, simplify=True)
@@ -260,8 +285,7 @@ def test_physical_gauge_quartics_match_expected_structure():
             - lorentz_metric(S("i1"), S("i3")) * lorentz_metric(S("i2"), S("i4"))
             - lorentz_metric(S("i1"), S("i4")) * lorentz_metric(S("i2"), S("i3"))
         )
-        * (2 * pi) ** d
-        * Delta(q1 + q2 + q3 + q4)
+        * D4
     )
     assert _canon(got_wwaz) == _canon(expected_wwaz)
 
@@ -274,8 +298,7 @@ def test_physical_gauge_quartics_match_expected_structure():
             - lorentz_metric(S("i1"), S("i3")) * lorentz_metric(S("i2"), S("i4"))
             - lorentz_metric(S("i1"), S("i4")) * lorentz_metric(S("i2"), S("i3"))
         )
-        * (2 * pi) ** d
-        * Delta(q1 + q2 + q3 + q4)
+        * D4
     )
     assert _canon(got_wwaa) == _canon(expected_wwaa)
 
@@ -295,7 +318,7 @@ def test_higgs_potential_derives_higgs_mass_and_self_couplings():
     assert _canon(got_hhh) == _canon(expected_hhh)
 
     got_hhhh = FULL_L.feynman_rule(h, h, h, h, simplify=True)
-    expected_hhhh = -6 * I * lamH * (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
+    expected_hhhh = -6 * I * lamH * D4
     assert _canon(got_hhhh) == _canon(expected_hhhh)
 
 
@@ -305,8 +328,8 @@ def test_rxi_gauge_fixing_cancels_goldstone_vector_mixing_and_sets_goldstone_mas
     wp = FULL_BROKEN.fields.charged_w
     z = FULL_BROKEN.fields.z_boson
 
-    assert _canon(FULL_L.feynman_rule(g0, z, simplify=True)) == _canon(Expression.num(0))
-    assert _canon(FULL_L.feynman_rule(gp, wp.bar, simplify=True)) == _canon(Expression.num(0))
+    assert _canon(FULL_L.feynman_rule(g0, z, simplify=True)) == _canon(ZERO)
+    assert _canon(FULL_L.feynman_rule(gp, wp.bar, simplify=True)) == _canon(ZERO)
 
     got_g0 = FULL_L.feynman_rule(g0, g0, simplify=True)
     expected_g0 = -I * (pcomp(q1, S("mu")) * pcomp(q2, S("mu")) + xiZ * (electroweak_mz(g1, g2, v) ** 2)) * D2
@@ -323,17 +346,20 @@ def test_rxi_ghost_bilinears_have_expected_masses():
     c_a = FULL_BROKEN.fields.ghost_photon
     mw_sq = electroweak_mw(g2, v) ** 2
     mz_sq = electroweak_mz(g1, g2, v) ** 2
+    cw_mu = _ghost_kinetic_lorentz_index(FULL_L, c_w)
+    cz_mu = _ghost_kinetic_lorentz_index(FULL_L, c_z)
+    ca_mu = _ghost_kinetic_lorentz_index(FULL_L, c_a)
 
     got_cw = FULL_L.feynman_rule(c_w.bar, c_w, simplify=True)
-    expected_cw = -I * (pcomp(q1, S("mu_ghWp_ghost")) * pcomp(q2, S("mu_ghWp_ghost")) + xiW * mw_sq) * D2
+    expected_cw = -I * (pcomp(q1, cw_mu) * pcomp(q2, cw_mu) + xiW * mw_sq) * D2
     assert _canon(got_cw) == _canon(expected_cw)
 
     got_cz = FULL_L.feynman_rule(c_z.bar, c_z, simplify=True)
-    expected_cz = -I * (pcomp(q1, S("mu_ghZ_ghost")) * pcomp(q2, S("mu_ghZ_ghost")) + xiZ * mz_sq) * D2
+    expected_cz = -I * (pcomp(q1, cz_mu) * pcomp(q2, cz_mu) + xiZ * mz_sq) * D2
     assert _canon(got_cz) == _canon(expected_cz)
 
     got_ca = FULL_L.feynman_rule(c_a.bar, c_a, simplify=True)
-    expected_ca = -I * pcomp(q1, S("mu_ghA_ghost")) * pcomp(q2, S("mu_ghA_ghost")) * D2
+    expected_ca = -I * pcomp(q1, ca_mu) * pcomp(q2, ca_mu) * D2
     assert _canon(got_ca) == _canon(expected_ca)
 
 
@@ -355,11 +381,11 @@ def test_physical_basis_ghost_vertices_cover_gauge_and_goldstone_couplings():
     assert _canon(got_cwwca) == _canon(expected_cwwca)
 
     got_cwg0cw = FULL_L.feynman_rule(c_w.bar, c_w, g0, simplify=True)
-    expected_cwg0cw = xiW * electroweak_mw(g2, v) * g2 * Expression.num(1) / Expression.num(2) * D3
+    expected_cwg0cw = xiW * electroweak_mw(g2, v) * g2 * HALF * D3
     assert _canon(got_cwg0cw) == _canon(expected_cwg0cw)
 
     got_czgmcw = FULL_L.feynman_rule(c_z.bar, c_w, gp.bar, simplify=True)
-    expected_czgmcw = I * xiZ * electroweak_mz(g1, g2, v) * g2 * Expression.num(1) / Expression.num(2) * D3
+    expected_czgmcw = I * xiZ * electroweak_mz(g1, g2, v) * g2 * HALF * D3
     assert _canon(got_czgmcw) == _canon(expected_czgmcw)
 
 
@@ -371,7 +397,7 @@ def test_matrix_yukawa_generates_open_flavor_mass_and_higgs_vertices():
         -I
         * yu_matrix.entry(S("i2"), S("i4"))
         * v
-        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * SQRT_HALF
         * bis.g(S("i1"), S("i3")).to_expression()
         * D2
     )
@@ -381,7 +407,7 @@ def test_matrix_yukawa_generates_open_flavor_mass_and_higgs_vertices():
     expected_hff = (
         -I
         * yu_matrix.entry(S("i2"), S("i4"))
-        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * SQRT_HALF
         * bis.g(S("i1"), S("i3")).to_expression()
         * D3
     )
@@ -390,29 +416,27 @@ def test_matrix_yukawa_generates_open_flavor_mass_and_higgs_vertices():
 
 def test_ckm_charged_current_uses_left_chiral_flavor_matrix_and_dagger():
     wp = FLAVORED_BROKEN.fields.charged_w
-    alpha_ud = S("alpha_u_dQ_cc_mid")
-    alpha_du = S("alpha_dQ_u_cc_mid")
 
     got_wp = FLAVORED_L.feynman_rule(up_flavored.bar, down_flavored, wp, simplify=True)
     expected_wp = (
         -I
         * g2
-        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * SQRT_HALF
         * vckm_matrix.entry(S("i2"), S("i4"))
-        * gamma_matrix(S("i1"), alpha_ud, S("i5"))
-        * chiral_projector_left(alpha_ud, S("i3"))
+        * gamma_matrix(S("i1"), CKM_DUMMY_SPINOR, S("i5"))
+        * chiral_projector_left(CKM_DUMMY_SPINOR, S("i3"))
         * D3
     )
-    assert _canon(got_wp) == _canon(expected_wp)
+    assert _canon_ckm_current(got_wp) == _canon_ckm_current(expected_wp)
 
     got_wm = FLAVORED_L.feynman_rule(down_flavored.bar, up_flavored, wp.bar, simplify=True)
     expected_wm = (
         -I
         * g2
-        * (Expression.num(1) / Expression.num(2)) ** (Expression.num(1) / Expression.num(2))
+        * SQRT_HALF
         * vckm_matrix.dagger_entry(S("i2"), S("i4"))
-        * gamma_matrix(S("i1"), alpha_du, S("i5"))
-        * chiral_projector_left(alpha_du, S("i3"))
+        * gamma_matrix(S("i1"), CKM_DUMMY_SPINOR, S("i5"))
+        * chiral_projector_left(CKM_DUMMY_SPINOR, S("i3"))
         * D3
     )
-    assert _canon(got_wm) == _canon(expected_wm)
+    assert _canon_ckm_current(got_wm) == _canon_ckm_current(expected_wm)
