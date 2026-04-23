@@ -12,62 +12,9 @@ Rule:
 - new sessions should be appended as new dated entries, not used to overwrite
   earlier ones
 
-### 2026-04-21: compiler refactor review, SU(2)L baseline, and docs sync
-
-What happened:
-
-- the recent commit chain was reviewed to understand the current direction of
-  the codebase:
-  - `850eafa`: SU(2)L add example and test
-  - `c0b903f`: add assemble full cov in `gauge.py`
-  - `d265819`: extract shared fermion covariant-current emitter
-  - `af18d2b`: clean up the path in `lowering.py`
-  - `b9e043c`: fix example expectations for declarative `CovD`
-  - `93cc26a`: merge `interface-work` into `canonicalization`
-  - `5938ea5`: lowering clean up path of covariant derivative
-  - `c50d855`: merge covariant paths with/without spectators
-- the live source layout was checked and the notes were updated to match the
-  modularized tree under:
-  - `src/compiler/*`
-  - `src/model/*`
-  - `src/lagrangian/*`
-  - `src/symbolic/*`
-- the recent gauge/compiler work was reviewed:
-  - `src/compiler/gauge.py` now carries the refactored covariant assembly path
-  - duplicated fermion-current logic was reduced
-  - spectator/no-spectator handling was merged into one flow
-- the recent lowering cleanup was reviewed in `src/model/lowering.py`
-- the declarative example expectations were aligned with the current lowering
-  and compiler behavior in `examples/examples.py`
-- a new SU(2)L baseline example and dedicated regression coverage were added:
-  - `examples/examples_su2.py`
-  - `tests/test_su2.py`
-- the notes cleanup pass was corrected so `RESEARCH_LOG.md` keeps the full
-  dated session history instead of collapsing older work into summaries
-
-What this achieved:
-
-- clarified that the current phase is consolidation and hardening of the
-  gauge/lowering stack, not random feature growth
-- confirmed that the active architecture is now package-based rather than the
-  older monolithic `src/model.py` / `src/gauge_compiler.py` layout
-- recorded the SU(2)L example/test addition as the newest concrete baseline
-  expansion in the repository
-- synchronized the notes with the live code paths so the documentation no
-  longer points at stale module locations
-- restored the intended purpose of this file as a session-by-session work log
-  rather than a trimmed milestone digest
-
-Practical next steps:
-
-1. add focused regression tests for the newer full-covariant assembly branches
-2. add parity tests for the main declarative families
-   (`CovD`, `FieldStrength`, `GaugeFixing`, `Ghost`)
-3. keep moving behavior checks out of examples and into `tests/`
-
 ### Current status snapshot
 
-As of 2026-04-21:
+As of 2026-04-23:
 
 - the active source tree is modularized under `src/`
 - the core symbolic extraction engine now lives in `src/symbolic/vertex_engine.py`
@@ -89,8 +36,12 @@ As of 2026-04-21:
   - `examples/examples.py`
   - `examples/examples_lagrangian.py`
   - `examples/examples_su2.py`
+  - `examples/examples_electroweak_unbroken.py`
+  - `examples/examples_electroweak_ssb.py`
 - dedicated regression coverage now lives in `tests/`
 - the walkthrough notebook is `notebooks/codebase_workflow_walkthrough.ipynb`
+- the final user-facing walkthrough notebook is
+  `notebooks/final_walkthrough_capabilities_and_usage.ipynb`
 - the main extraction path is now `model.lagrangian().feynman_rule(...)`
 - the recommended public model-building API is now:
   `Model(..., lagrangian_decl=...)`
@@ -108,6 +59,7 @@ As of 2026-04-21:
   symbolic engine
 - legacy split declaration slots are still supported for compatibility, but are
   now deprecated in favor of the unified Lagrangian entry point
+- broken-phase electroweak helpers now live in `src/model/ssb.py`
 - the long-term goal remains a Python analogue of FeynRules using Symbolica for
   symbolic rewriting and Spenso for tensor/index structures
 
@@ -185,6 +137,19 @@ What this achieved:
 - shifted the project from plain fermion combinatorics toward actual
   tensor-structured fermion vertices
 - demonstrated that open-index amputated output is viable in the current design
+
+### 2026-03-30: gauge-ready tensor checks
+
+What happened:
+
+- slot-label handling was generalized for gauge-ready tensor structures
+- complex-scalar and gauge interaction examples were added
+- tensor/gamma validation scripts were cleaned up
+
+What this achieved:
+
+- prepared the tensor layer for the later model-driven gauge compiler
+- made gauge-index checks less dependent on one-off notebook experiments
 
 ### 2026-03-31: repository refactor review
 
@@ -349,6 +314,20 @@ What this achieved:
   4. add ghosts
   5. only then add BFM-specific background/quantum splitting
 
+### 2026-04-06 to 2026-04-07: documentation pass and repeated-slot preparation
+
+What happened:
+
+- the README, setup scripts, requirements, and source docstrings were refreshed
+- the main walkthrough notebook was added and normalized under `notebooks/`
+- repeated index-slot handling started to be hardened in the model/compiler
+  path
+
+What this achieved:
+
+- made the repository easier to run and inspect
+- prepared the ground for the bislot covariant-derivative work that followed
+
 ### 2026-04-08: repeated-slot hardening, bislot covariant support, and walkthrough sync
 
 What happened:
@@ -463,6 +442,20 @@ What this achieved:
 - the next step became clearer:
   build the first BFM-specific layer on top of the ordinary gauge-fixed base
 
+### 2026-04-14 to 2026-04-15: first declarative Lagrangian transition
+
+What happened:
+
+- the first `lagrangian_decl` tests, examples, and transition notes were added
+- source-preserving declarations began lowering into the existing compiler path
+- partial-derivative and dressed-covariant examples were worked through in the
+  notebook
+
+What this achieved:
+
+- established the shape of the public declarative API
+- kept the new front end connected to the existing Symbolica/Spenso backend
+
 ### 2026-04-16: declarative Lagrangian front-end and API unification
 
 What happened:
@@ -521,69 +514,74 @@ What this achieved:
 - the codebase can now evolve toward broader usability without maintaining two
   symbolic engines or two divergent physics paths
 
-### Where the project stands now
+### 2026-04-17: package split and import cleanup
 
-Best current summary:
+What happened:
 
-- foundation phase: done
-- scalar and derivative phase: done
-- fermion combinatorics phase: done at prototype level
-- tensor-structured fermion/gauge-ready phase: working
-- model-layer phase: working and usable
-- minimal gauge-compiler phase: working
-- covariant-derivative compiler phase: working for covered matter-sector cases
-- ordinary pure-gauge field-strength phase: working for the covered abelian and
-  Yang-Mills cases
-- ordinary gauge-fixing and ghost phase: working for the covered unbroken cases
-- declarative Lagrangian front-end phase: working
-- gauge-complete / BFM phase: not implemented
-- full FeynRules-style completeness: not implemented
-- export/usability layer beyond the current declaration front-end: not
-  implemented
+- the old monolithic source files were split into `src/model/`,
+  `src/compiler/`, `src/lagrangian/`, and `src/symbolic/`
+- examples were moved under `examples/`
+- imports, tests, and notebook references were updated to the new layout
+- the symbolic engine was renamed around the vertex-extraction role
 
-### Current assessment
+What this achieved:
 
-The project now has a real core, not just experiments:
+- made the architecture easier to navigate
+- separated model declarations, compiler logic, Lagrangian helpers, and symbolic
+  extraction into clearer modules
 
-- one working contraction engine
-- one usable model/declaration layer
-- one reusable operator vocabulary
-- one minimal structural gauge compiler
-- one convention-fixed physical compiler for the covered matter, pure-gauge,
-  gauge-fixing, and ghost cases
-- one source-preserving declarative front-end with a lowering boundary
-- one growing dedicated `pytest` layer
-- one walkthrough notebook that tracks the live compiler/declaration story
-- runnable example and tensor-validation scripts
+### 2026-04-21: compiler refactor review, SU(2)L baseline, and docs sync
 
-The main remaining risks are now mostly about hardening and scope control:
+What happened:
 
-- broader direct/model regression still leans too heavily on `src/examples.py`
-- the new declarative public API needs to stay stable while legacy split slots
-  are phased out carefully
-- declaration/model validation is stronger than before, but still narrower than
-  a fuller library-quality API
-- raw pure-gauge, gauge-fixing, and ghost output still benefits from compact
-  readability rewrites
-- the ordinary gauge-fixed sector now works, but BFM-specific scaffolding is
-  still absent
+- the covariant assembly path in `src/compiler/gauge.py` was consolidated
+- shared fermion-current emission replaced duplicated compiler logic
+- spectator and no-spectator covariant paths were merged
+- lowering and declarative `CovD` expectations were cleaned up
+- SU(2)L and unbroken electroweak examples/tests were added
+- notes were synchronized with the package-based source layout
 
-### Immediate next milestone
+What this achieved:
 
-The next milestone should be:
+- the gauge/lowering stack became less duplicated and easier to test
+- the package layout, docs, examples, and tests moved back into alignment
+- the unbroken electroweak baseline gave the SU(2) x U(1) path a clearer
+  regression target
 
-"stabilize the declarative front-end while building the first BFM-specific
-layer on top of the ordinary gauge-fixed foundation"
+### 2026-04-22: broken electroweak and SSB baseline
 
-That means:
+What happened:
 
-1. keep the active conventions frozen across code, docs, and tests
-2. keep widening the dedicated `pytest` split so the new public API is covered
-   directly
-3. tighten the remaining declaration/model validation around the unified
-   Lagrangian entry point
-4. add background/quantum gauge-field splitting
-5. compile BFM gauge fixing on top of that split
-6. compile the corresponding BFM ghost sector
-7. keep improving canonical readability for pure-gauge, gauge-fixing, and ghost
-   output
+- standalone local Lagrangian declarations were restored
+- a broken-phase electroweak example was added
+- Higgs expansion, physical W/Z/A mixing, masses, self-couplings, gauge fixing,
+  ghosts, Yukawas, and CKM-style charged currents were covered
+- dedicated electroweak SSB tests were added
+
+What this achieved:
+
+- moved the project from unbroken electroweak examples into a first physical
+  broken-phase workflow
+- checked photon masslessness and Goldstone/gauge mixing cancellation in the
+  covered example
+
+### 2026-04-23: vertex discovery API and final walkthrough notebook
+
+What happened:
+
+- `feynman_rule()` without field arguments now discovers available vertices
+- explicit vertex extraction remains unchanged
+- name-keyed and object-keyed discovery are both supported
+- ambiguous readable names and invalid discovery options now fail explicitly
+- the final walkthrough notebook was created and exercised against the current
+  API
+- SSB tests and titles were refined
+
+What this achieved:
+
+- users can inspect a compiled Lagrangian before choosing a specific analytic
+  rule to study
+- the public API now supports both targeted extraction and exploratory
+  discovery
+- the latest notebook gives a compact demonstration of the current scalar,
+  fermion, derivative, gauge, ghost, QED, QCD, and electroweak-style workflows
