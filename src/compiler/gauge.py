@@ -500,6 +500,109 @@ class _ScalarContactActionData:
     active_slots: tuple[int, ...]
 
 
+@dataclass(frozen=True)
+class _GaugeAction:
+    """One resolved gauge action on one matter-field occurrence.
+
+    Abelian and non-abelian actions intentionally share this shape.  Abelian
+    actions have no active matter slot and carry the charge in ``coupling``.
+    Non-abelian actions carry the coupling constant here and insert the concrete
+    representation generator only when the caller has chosen matter-slot labels.
+    """
+
+    field: Field
+    piece: CovariantGaugePiece
+    lorentz_label: object
+    gauge_lorentz_slot: int
+    gauge_slot_labels: dict[int, object]
+    coupling: object
+    representation: GaugeRepresentation | None = None
+    representation_slot: Optional[int] = None
+    adjoint_label: object | None = None
+
+    @classmethod
+    def from_piece(
+        cls,
+        field: Field,
+        piece: CovariantGaugePiece,
+        *,
+        lorentz_label=None,
+        adjoint_label=None,
+        default_adjoint_qualifier: str = "",
+        purpose: str,
+    ) -> "_GaugeAction":
+        gauge_group = piece.metadata.gauge_group
+        gauge_field = piece.metadata.gauge_field
+        mu = lorentz_label or piece.lorentz_index
+        gauge_lorentz_slot = _unique_slot(
+            gauge_field,
+            LORENTZ_KIND,
+            purpose=purpose,
+        )
+        gauge_slot_labels = {gauge_lorentz_slot: mu}
+
+        if gauge_group.abelian:
+            return cls(
+                field=field,
+                piece=piece,
+                lorentz_label=mu,
+                gauge_lorentz_slot=gauge_lorentz_slot,
+                gauge_slot_labels=gauge_slot_labels,
+                coupling=gauge_group.coupling * _field_charge(field, gauge_group),
+            )
+
+        rep = piece.metadata.representation
+        rep_slot = piece.active_slot
+        if rep is None or rep_slot is None:
+            raise ValueError(
+                f"Non-abelian covariant action for field {field.name!r} is missing "
+                "representation metadata."
+            )
+
+        adj_kind, adj_slot = _adjoint_slot_info(gauge_field, purpose=purpose)
+        qualifier = f"_{default_adjoint_qualifier}" if default_adjoint_qualifier else ""
+        adjoint = adjoint_label or _symbol(
+            f"{adj_kind}_{gauge_field.name}_{gauge_group.name}{qualifier}"
+        )
+        gauge_slot_labels[adj_slot] = adjoint
+        return cls(
+            field=field,
+            piece=piece,
+            lorentz_label=mu,
+            gauge_lorentz_slot=gauge_lorentz_slot,
+            gauge_slot_labels=gauge_slot_labels,
+            coupling=gauge_group.coupling,
+            representation=rep,
+            representation_slot=rep_slot,
+            adjoint_label=adjoint,
+        )
+
+    @property
+    def gauge_field(self) -> Field:
+        return self.piece.metadata.gauge_field
+
+    def gauge_labels(self) -> dict:
+        return self.gauge_field.pack_slot_labels(self.gauge_slot_labels)
+
+    def default_matter_labels(self):
+        if self.representation is None or self.representation_slot is None:
+            raise ValueError("Abelian gauge actions do not select matter-slot labels.")
+        return _default_matter_labels(
+            self.field,
+            self.representation.index.prefix,
+            slot=self.representation_slot,
+        )
+
+    def generator(self, left_label, right_label):
+        if self.representation is None:
+            raise ValueError("Abelian gauge actions do not have representation generators.")
+        return self.representation.build_generator(
+            self.adjoint_label,
+            left_label,
+            right_label,
+        )
+
+
 def _validate_expandable_covariant_field(
     field: Field,
     *,
@@ -648,47 +751,26 @@ def _build_bilinear_gauge_action_data(
     adjoint_label=None,
     spectator_exclude_slots=(),
 ):
-    gauge_group = piece.metadata.gauge_group
-    gauge_field = piece.metadata.gauge_field
-    mu = lorentz_label or piece.lorentz_index
-    gauge_lorentz_slot = _unique_slot(
-        gauge_field,
-        LORENTZ_KIND,
+    action = _GaugeAction.from_piece(
+        field,
+        piece,
+        lorentz_label=lorentz_label,
+        adjoint_label=adjoint_label,
         purpose="Covariant gauge-action compilation",
     )
-
-    gauge_slot_labels = {gauge_lorentz_slot: mu}
     left_slot_labels: dict[int, object] = {}
     right_slot_labels: dict[int, object] = {}
     exclude_slots: set[int] = set(spectator_exclude_slots)
+    coupling = action.coupling
 
-    if gauge_group.abelian:
-        coupling = gauge_group.coupling * _field_charge(field, gauge_group)
-    else:
-        rep = piece.metadata.representation
-        rep_slot = piece.active_slot
-        if rep is None or rep_slot is None:
-            raise ValueError(
-                f"Non-abelian covariant action for field {field.name!r} is missing "
-                "representation metadata."
-            )
-
-        adj_kind, adj_slot = _adjoint_slot_info(
-            gauge_field,
-            purpose="Covariant gauge-action compilation",
-        )
-        adjoint = adjoint_label or _symbol(f"{adj_kind}_{gauge_field.name}_{gauge_group.name}")
-        gauge_slot_labels[adj_slot] = adjoint
-
-        left_label, right_label = matter_labels or _default_matter_labels(
-            field,
-            rep.index.prefix,
-            slot=rep_slot,
-        )
-        coupling = gauge_group.coupling * rep.build_generator(adjoint, left_label, right_label)
-        left_slot_labels[rep_slot] = left_label
-        right_slot_labels[rep_slot] = right_label
-        exclude_slots.add(rep_slot)
+    if action.representation is not None:
+        if action.representation_slot is None:
+            raise ValueError("Non-abelian gauge actions require an active matter slot.")
+        left_label, right_label = matter_labels or action.default_matter_labels()
+        coupling *= action.generator(left_label, right_label)
+        left_slot_labels[action.representation_slot] = left_label
+        right_slot_labels[action.representation_slot] = right_label
+        exclude_slots.add(action.representation_slot)
 
     spectator_factor, spectator_left_slots, spectator_right_slots = _spectator_identity_factor(
         field,
@@ -702,7 +784,7 @@ def _build_bilinear_gauge_action_data(
         coupling=coupling,
         left_slot_labels=left_slot_labels,
         right_slot_labels=right_slot_labels,
-        gauge_labels=gauge_field.pack_slot_labels(gauge_slot_labels),
+        gauge_labels=action.gauge_labels(),
     )
 
 
@@ -781,16 +863,6 @@ def _build_fermion_current_interaction(
         ),
         label=slot_label or f"{piece.metadata.gauge_group.name}: {fermion.name} gauge current",
     )
-    return InteractionTerm(
-        coupling=sign * coupling_prefactor * action.coupling,
-        fields=(
-            scalar.occurrence(conjugated=True, labels=scalar.pack_slot_labels(action.left_slot_labels)),
-            scalar.occurrence(labels=scalar.pack_slot_labels(action.right_slot_labels)),
-            piece.metadata.gauge_field.occurrence(labels=action.gauge_labels),
-        ),
-        derivatives=(DerivativeAction(target=derivative_target, lorentz_index=derivative_label),),
-        label=label,
-    )
 
 
 def _default_scalar_contact_internal_label(
@@ -828,135 +900,66 @@ def _build_scalar_contact_action_data(
     internal_label=None,
     contact_prefactor=1,
 ) -> _ScalarContactActionData:
-    left_group = left_piece.metadata.gauge_group
-    right_group = right_piece.metadata.gauge_group
-    left_gauge_field = left_piece.metadata.gauge_field
-    right_gauge_field = right_piece.metadata.gauge_field
-    mu = left_lorentz_label or left_piece.lorentz_index
-    nu = right_lorentz_label or right_piece.lorentz_index
-
-    left_gauge_lorentz_slot = _unique_slot(
-        left_gauge_field,
-        LORENTZ_KIND,
+    left_action = _GaugeAction.from_piece(
+        scalar,
+        left_piece,
+        lorentz_label=left_lorentz_label,
+        adjoint_label=left_adjoint_label,
+        default_adjoint_qualifier="mix",
         purpose="Scalar contact compilation (left gauge field)",
     )
-    right_gauge_lorentz_slot = _unique_slot(
-        right_gauge_field,
-        LORENTZ_KIND,
+    right_action = _GaugeAction.from_piece(
+        scalar,
+        right_piece,
+        lorentz_label=right_lorentz_label,
+        adjoint_label=right_adjoint_label,
+        default_adjoint_qualifier="mix",
         purpose="Scalar contact compilation (right gauge field)",
     )
-    left_gauge_slot_labels = {left_gauge_lorentz_slot: mu}
-    right_gauge_slot_labels = {right_gauge_lorentz_slot: nu}
 
-    left_rep = None
-    left_slot = None
-    if left_group.abelian:
-        coupling = contact_prefactor * left_group.coupling * _field_charge(scalar, left_group)
-    else:
-        left_rep = left_piece.metadata.representation
-        left_slot = left_piece.active_slot
-        if left_rep is None or left_slot is None:
-            raise ValueError("Missing non-abelian metadata for left scalar-contact action.")
-        left_adj_kind, left_adj_slot = _adjoint_slot_info(
-            left_gauge_field,
-            purpose="Scalar contact compilation (left gauge field)",
-        )
-        left_adj = left_adjoint_label or _symbol(
-            f"{left_adj_kind}_{left_gauge_field.name}_{left_group.name}_mix"
-        )
-        left_gauge_slot_labels[left_adj_slot] = left_adj
-        coupling = contact_prefactor * left_group.coupling
-
-    right_rep = None
-    right_slot = None
-    if right_group.abelian:
-        coupling *= right_group.coupling * _field_charge(scalar, right_group)
-    else:
-        right_rep = right_piece.metadata.representation
-        right_slot = right_piece.active_slot
-        if right_rep is None or right_slot is None:
-            raise ValueError("Missing non-abelian metadata for right scalar-contact action.")
-        right_adj_kind, right_adj_slot = _adjoint_slot_info(
-            right_gauge_field,
-            purpose="Scalar contact compilation (right gauge field)",
-        )
-        right_adj = right_adjoint_label or _symbol(
-            f"{right_adj_kind}_{right_gauge_field.name}_{right_group.name}_mix"
-        )
-        right_gauge_slot_labels[right_adj_slot] = right_adj
-        coupling *= right_group.coupling
-
+    coupling = contact_prefactor * left_action.coupling * right_action.coupling
     scalar_bar_slot_labels: dict[int, object] = {}
     scalar_slot_labels: dict[int, object] = {}
     active_slots: list[int] = []
     exclude_slots: set[int] = set()
 
-    if left_rep is not None and left_slot is not None:
-        active_slots.append(left_slot)
-        exclude_slots.add(left_slot)
-    if right_rep is not None and right_slot is not None:
-        active_slots.append(right_slot)
-        exclude_slots.add(right_slot)
+    if left_action.representation_slot is not None:
+        active_slots.append(left_action.representation_slot)
+        exclude_slots.add(left_action.representation_slot)
+    if right_action.representation_slot is not None:
+        active_slots.append(right_action.representation_slot)
+        exclude_slots.add(right_action.representation_slot)
 
     if (
-        left_rep is not None
-        and right_rep is not None
-        and left_slot == right_slot
+        left_action.representation is not None
+        and right_action.representation is not None
+        and left_action.representation_slot == right_action.representation_slot
     ):
-        left_label, right_label = matter_labels or _default_matter_labels(
-            scalar,
-            left_rep.index.prefix,
-            slot=left_slot,
-        )
+        active_slot = left_action.representation_slot
+        if active_slot is None:
+            raise ValueError("Same-slot scalar contacts require an active matter slot.")
+        left_label, right_label = matter_labels or left_action.default_matter_labels()
         middle = internal_label or _default_scalar_contact_internal_label(
             scalar,
             left_piece,
             right_piece,
         )
         coupling *= (
-            left_rep.build_generator(left_gauge_slot_labels[next(
-                slot for slot in left_gauge_slot_labels if slot != left_gauge_lorentz_slot
-            )], left_label, middle)
-            * right_rep.build_generator(right_gauge_slot_labels[next(
-                slot for slot in right_gauge_slot_labels if slot != right_gauge_lorentz_slot
-            )], middle, right_label)
+            left_action.generator(left_label, middle)
+            * right_action.generator(middle, right_label)
         )
-        scalar_bar_slot_labels[left_slot] = left_label
-        scalar_slot_labels[left_slot] = right_label
+        scalar_bar_slot_labels[active_slot] = left_label
+        scalar_slot_labels[active_slot] = right_label
     else:
-        if left_rep is not None and left_slot is not None:
-            left_label, right_label = matter_labels or _default_matter_labels(
-                scalar,
-                left_rep.index.prefix,
-                slot=left_slot,
-            )
-            left_adj_slot = next(
-                slot for slot in left_gauge_slot_labels if slot != left_gauge_lorentz_slot
-            )
-            coupling *= left_rep.build_generator(
-                left_gauge_slot_labels[left_adj_slot],
-                left_label,
-                right_label,
-            )
-            scalar_bar_slot_labels[left_slot] = left_label
-            scalar_slot_labels[left_slot] = right_label
-
-        if right_rep is not None and right_slot is not None:
-            left_label, right_label = matter_labels or _default_matter_labels(
-                scalar,
-                right_rep.index.prefix,
-                slot=right_slot,
-            )
-            right_adj_slot = next(
-                slot for slot in right_gauge_slot_labels if slot != right_gauge_lorentz_slot
-            )
-            coupling *= right_rep.build_generator(
-                right_gauge_slot_labels[right_adj_slot],
-                left_label,
-                right_label,
-            )
-            scalar_bar_slot_labels[right_slot] = left_label
-            scalar_slot_labels[right_slot] = right_label
+        for action in (left_action, right_action):
+            if action.representation is None:
+                continue
+            if action.representation_slot is None:
+                raise ValueError("Non-abelian scalar contacts require an active matter slot.")
+            left_label, right_label = matter_labels or action.default_matter_labels()
+            coupling *= action.generator(left_label, right_label)
+            scalar_bar_slot_labels[action.representation_slot] = left_label
+            scalar_slot_labels[action.representation_slot] = right_label
 
     spectator_factor, spectator_left_slots, spectator_right_slots = _spectator_identity_factor(
         scalar,
@@ -967,13 +970,91 @@ def _build_scalar_contact_action_data(
     scalar_slot_labels.update(spectator_right_slots)
 
     return _ScalarContactActionData(
-        coupling=coupling * scalar_gauge_contact(mu, nu),
+        coupling=coupling * scalar_gauge_contact(
+            left_action.lorentz_label,
+            right_action.lorentz_label,
+        ),
         scalar_bar_labels=scalar.pack_slot_labels(scalar_bar_slot_labels),
         scalar_labels=scalar.pack_slot_labels(scalar_slot_labels),
-        left_gauge_labels=left_gauge_field.pack_slot_labels(left_gauge_slot_labels),
-        right_gauge_labels=right_gauge_field.pack_slot_labels(right_gauge_slot_labels),
+        left_gauge_labels=left_action.gauge_labels(),
+        right_gauge_labels=right_action.gauge_labels(),
         active_slots=tuple(dict.fromkeys(active_slots)),
     )
+
+
+def _compile_scalar_contact_terms(
+    *,
+    scalar: Field,
+    left_pieces: tuple[CovariantGaugePiece, ...],
+    right_pieces: tuple[CovariantGaugePiece, ...],
+    left_lorentz_label,
+    right_lorentz_label,
+    matter_labels=None,
+    left_adjoint_label=None,
+    right_adjoint_label=None,
+    internal_label=None,
+    contact_prefactor=1,
+    label_prefix: str = "",
+    label_kind: str,
+) -> tuple[InteractionTerm, ...]:
+    """Build scalar two-gauge contacts from resolved gauge actions.
+
+    The same ordered product is used for both same-group contacts and mixed
+    cross-group contacts.  Only the human-facing label differs between the two
+    cases.
+    """
+
+    prefix = label_prefix + " " if label_prefix else ""
+    contact_terms: list[InteractionTerm] = []
+    for left_piece in left_pieces:
+        for right_piece in right_pieces:
+            contact_data = _build_scalar_contact_action_data(
+                scalar=scalar,
+                left_piece=left_piece,
+                right_piece=right_piece,
+                left_lorentz_label=left_lorentz_label,
+                right_lorentz_label=right_lorentz_label,
+                matter_labels=matter_labels,
+                left_adjoint_label=left_adjoint_label,
+                right_adjoint_label=right_adjoint_label,
+                internal_label=internal_label,
+                contact_prefactor=contact_prefactor,
+            )
+
+            if label_kind == "same_group":
+                gauge_group = left_piece.metadata.gauge_group
+                slot_label = ""
+                if not gauge_group.abelian:
+                    slot_label = (
+                        f" [slots {left_piece.active_slot + 1},"
+                        f"{right_piece.active_slot + 1}]"
+                    )
+                label = prefix + f"{gauge_group.name}: scalar contact{slot_label}"
+            elif label_kind == "mixed_group":
+                left_group = left_piece.metadata.gauge_group
+                right_group = right_piece.metadata.gauge_group
+                label = (
+                    prefix
+                    + f"{left_group.name} x {right_group.name}: scalar mixed contact"
+                    + _mixed_scalar_contact_slot_suffix(contact_data.active_slots)
+                )
+            else:
+                raise ValueError(f"Unknown scalar contact label kind: {label_kind!r}")
+
+            contact_terms.append(
+                InteractionTerm(
+                    coupling=contact_data.coupling,
+                    fields=(
+                        scalar.occurrence(conjugated=True, labels=contact_data.scalar_bar_labels),
+                        scalar.occurrence(labels=contact_data.scalar_labels),
+                        left_piece.metadata.gauge_field.occurrence(labels=contact_data.left_gauge_labels),
+                        right_piece.metadata.gauge_field.occurrence(labels=contact_data.right_gauge_labels),
+                    ),
+                    label=label,
+                )
+            )
+
+    return tuple(contact_terms)
 
 
 def compile_fermion_gauge_current(
@@ -1120,38 +1201,22 @@ def compile_complex_scalar_gauge_terms(
             )
         )
 
-    contact_terms: list[InteractionTerm] = []
-    for left_piece in left_pieces:
-        for right_piece in right_pieces:
-            contact_data = _build_scalar_contact_action_data(
-                scalar=scalar,
-                left_piece=left_piece,
-                right_piece=right_piece,
-                left_lorentz_label=mu,
-                right_lorentz_label=nu,
-                matter_labels=matter_labels,
-                left_adjoint_label=adjoint_mu,
-                right_adjoint_label=adjoint_nu,
-                internal_label=internal_label,
-                contact_prefactor=contact_prefactor,
-            )
-            slot_label = ""
-            if not gauge_group.abelian:
-                slot_label = f" [slots {left_piece.active_slot + 1},{right_piece.active_slot + 1}]"
-            contact_terms.append(
-                InteractionTerm(
-                    coupling=contact_data.coupling,
-                    fields=(
-                        scalar.occurrence(conjugated=True, labels=contact_data.scalar_bar_labels),
-                        scalar.occurrence(labels=contact_data.scalar_labels),
-                        gauge_field.occurrence(labels=contact_data.left_gauge_labels),
-                        gauge_field.occurrence(labels=contact_data.right_gauge_labels),
-                    ),
-                    label=prefix + f"{gauge_group.name}: scalar contact{slot_label}",
-                )
-            )
+    contact_terms = _compile_scalar_contact_terms(
+        scalar=scalar,
+        left_pieces=left_pieces,
+        right_pieces=right_pieces,
+        left_lorentz_label=mu,
+        right_lorentz_label=nu,
+        matter_labels=matter_labels,
+        left_adjoint_label=adjoint_mu,
+        right_adjoint_label=adjoint_nu,
+        internal_label=internal_label,
+        contact_prefactor=contact_prefactor,
+        label_prefix=label_prefix,
+        label_kind="same_group",
+    )
 
-    return tuple(current_terms + contact_terms)
+    return tuple(current_terms) + contact_terms
 
 
 def compile_mixed_complex_scalar_contact_terms(
@@ -1185,8 +1250,6 @@ def compile_mixed_complex_scalar_contact_terms(
         _default_vector_label(left_gauge_field, left_gauge_group, suffix="mu"),
         _default_vector_label(right_gauge_field, right_gauge_group, suffix="nu"),
     )
-    prefix = label_prefix + " " if label_prefix else ""
-
     left_pieces = _expand_field_gauge_pieces(
         field=scalar,
         gauge_group=left_gauge_group,
@@ -1204,37 +1267,18 @@ def compile_mixed_complex_scalar_contact_terms(
         purpose="Mixed scalar contact compilation",
     )
 
-    contact_terms: list[InteractionTerm] = []
-    for left_piece in left_pieces:
-        for right_piece in right_pieces:
-            contact_data = _build_scalar_contact_action_data(
-                scalar=scalar,
-                left_piece=left_piece,
-                right_piece=right_piece,
-                left_lorentz_label=mu,
-                right_lorentz_label=nu,
-                left_adjoint_label=left_adjoint_label,
-                right_adjoint_label=right_adjoint_label,
-                contact_prefactor=contact_prefactor,
-            )
-            contact_terms.append(
-                InteractionTerm(
-                    coupling=contact_data.coupling,
-                    fields=(
-                        scalar.occurrence(conjugated=True, labels=contact_data.scalar_bar_labels),
-                        scalar.occurrence(labels=contact_data.scalar_labels),
-                        left_gauge_field.occurrence(labels=contact_data.left_gauge_labels),
-                        right_gauge_field.occurrence(labels=contact_data.right_gauge_labels),
-                    ),
-                    label=(
-                        prefix
-                        + f"{left_gauge_group.name} x {right_gauge_group.name}: scalar mixed contact"
-                        + _mixed_scalar_contact_slot_suffix(contact_data.active_slots)
-                    ),
-                )
-            )
-
-    return tuple(contact_terms)
+    return _compile_scalar_contact_terms(
+        scalar=scalar,
+        left_pieces=left_pieces,
+        right_pieces=right_pieces,
+        left_lorentz_label=mu,
+        right_lorentz_label=nu,
+        left_adjoint_label=left_adjoint_label,
+        right_adjoint_label=right_adjoint_label,
+        contact_prefactor=contact_prefactor,
+        label_prefix=label_prefix,
+        label_kind="mixed_group",
+    )
 
 
 def compile_gauge_kinetic_bilinear_terms(
