@@ -603,6 +603,167 @@ class _GaugeAction:
         )
 
 
+@dataclass(frozen=True)
+class _GaugeFieldLayout:
+    """Slot layout for pure-gauge field occurrences."""
+
+    field: Field
+    lorentz_slot: int
+    adjoint_kind: str | None = None
+    adjoint_slot: Optional[int] = None
+
+    @classmethod
+    def from_field(
+        cls,
+        gauge_field: Field,
+        *,
+        purpose: str,
+        require_adjoint: bool = False,
+    ) -> "_GaugeFieldLayout":
+        if gauge_field.kind != "vector":
+            raise ValueError(f"{purpose} requires a vector field, got kind={gauge_field.kind!r}.")
+
+        lorentz_slot = _unique_slot(gauge_field, LORENTZ_KIND, purpose=purpose)
+        adjoint_kind = None
+        adjoint_slot = None
+        if require_adjoint:
+            adjoint_kind, adjoint_slot = _adjoint_slot_info(
+                gauge_field,
+                purpose=purpose,
+            )
+
+        return cls(
+            field=gauge_field,
+            lorentz_slot=lorentz_slot,
+            adjoint_kind=adjoint_kind,
+            adjoint_slot=adjoint_slot,
+        )
+
+    def occurrence(self, lorentz_label, adjoint_label=None):
+        slot_labels = {self.lorentz_slot: lorentz_label}
+        if adjoint_label is not None:
+            if self.adjoint_slot is None:
+                raise ValueError(f"Gauge field {self.field.name!r} has no resolved adjoint slot.")
+            slot_labels[self.adjoint_slot] = adjoint_label
+        return self.field.occurrence(labels=self.field.pack_slot_labels(slot_labels))
+
+    def bilinear_occurrences(self, left_lorentz_label, right_lorentz_label):
+        identity_factor, left_slots, right_slots = _spectator_identity_factor(
+            self.field,
+            exclude_slots={self.lorentz_slot},
+        )
+        return identity_factor, (
+            self.field.occurrence(
+                labels=self.field.pack_slot_labels({
+                    self.lorentz_slot: left_lorentz_label,
+                    **left_slots,
+                })
+            ),
+            self.field.occurrence(
+                labels=self.field.pack_slot_labels({
+                    self.lorentz_slot: right_lorentz_label,
+                    **right_slots,
+                })
+            ),
+        )
+
+
+def _gauge_piece_action_key(piece: CovariantGaugePiece) -> tuple[str, str, str, Optional[int]]:
+    """Stable key for matching the same gauge action across conjugate expansions."""
+    return (
+        piece.metadata.gauge_group.name,
+        piece.metadata.gauge_field.name,
+        piece.metadata.representation_name,
+        piece.active_slot,
+    )
+
+
+def _format_gauge_piece_action_key(key: tuple[str, str, str, Optional[int]]) -> str:
+    group_name, gauge_field_name, representation_name, active_slot = key
+    slot = "abelian" if active_slot is None else f"slot {active_slot + 1}"
+    return f"{group_name}/{gauge_field_name}/{representation_name}/{slot}"
+
+
+def _pair_gauge_pieces_by_action(
+    *,
+    right_pieces: tuple[CovariantGaugePiece, ...],
+    left_pieces: tuple[CovariantGaugePiece, ...],
+    purpose: str,
+) -> tuple[tuple[CovariantGaugePiece, CovariantGaugePiece], ...]:
+    """Pair ordinary and conjugated gauge actions by meaning, not tuple order."""
+    left_by_key: dict[tuple[str, str, str, Optional[int]], CovariantGaugePiece] = {}
+    for piece in left_pieces:
+        key = _gauge_piece_action_key(piece)
+        if key in left_by_key:
+            raise ValueError(
+                f"{purpose} found duplicate conjugated gauge action "
+                f"{_format_gauge_piece_action_key(key)}."
+            )
+        left_by_key[key] = piece
+
+    paired: list[tuple[CovariantGaugePiece, CovariantGaugePiece]] = []
+    missing_left: list[tuple[str, str, str, Optional[int]]] = []
+    for right_piece in right_pieces:
+        key = _gauge_piece_action_key(right_piece)
+        left_piece = left_by_key.pop(key, None)
+        if left_piece is None:
+            missing_left.append(key)
+            continue
+        paired.append((right_piece, left_piece))
+
+    if missing_left or left_by_key:
+        missing = ", ".join(_format_gauge_piece_action_key(key) for key in missing_left)
+        extra = ", ".join(_format_gauge_piece_action_key(key) for key in left_by_key)
+        details = []
+        if missing:
+            details.append(f"missing conjugated actions for: {missing}")
+        if extra:
+            details.append(f"unmatched conjugated actions: {extra}")
+        raise ValueError(f"{purpose} could not pair gauge actions; " + "; ".join(details))
+
+    return tuple(paired)
+
+
+def _active_representation_slots(
+    pieces: tuple[CovariantGaugePiece, ...],
+) -> tuple[int, ...]:
+    """Return active non-abelian matter slots in first-seen order."""
+    return tuple(
+        dict.fromkeys(piece.active_slot for piece in pieces if piece.active_slot is not None)
+    )
+
+
+def _reject_ambiguous_manual_label_overrides(
+    *,
+    field: Field,
+    pieces: tuple[CovariantGaugePiece, ...],
+    overrides: tuple[tuple[str, object], ...],
+    purpose: str,
+) -> None:
+    """Reject global manual labels when one declaration expands over many slots.
+
+    The public override parameters name one set of labels.  When a
+    slot_policy='sum' representation expands into several active slots, applying
+    that same override to every slot is ambiguous, so callers should either omit
+    the override or declare a single explicit GaugeRepresentation(slot=...).
+    """
+    provided = tuple(name for name, value in overrides if value is not None)
+    if not provided:
+        return
+
+    active_slots = _active_representation_slots(pieces)
+    if len(active_slots) <= 1:
+        return
+
+    slots = ", ".join(str(slot + 1) for slot in active_slots)
+    raise ValueError(
+        f"{purpose} received global manual label override(s) "
+        f"{', '.join(provided)} for field {field.name!r}, but the gauge action "
+        f"expands over multiple active representation slots ({slots}). Omit the "
+        "override, or declare a single explicit GaugeRepresentation(slot=...)."
+    )
+
+
 def _validate_expandable_covariant_field(
     field: Field,
     *,
@@ -1094,6 +1255,15 @@ def compile_fermion_gauge_current(
         conjugated=False,
         purpose="Fermion gauge-current compilation",
     )
+    _reject_ambiguous_manual_label_overrides(
+        field=fermion,
+        pieces=pieces,
+        overrides=(
+            ("matter_labels", matter_labels),
+            ("adjoint_label", adjoint_label),
+        ),
+        purpose="Fermion gauge-current compilation",
+    )
 
     interactions: list[InteractionTerm] = []
     for piece in pieces:
@@ -1173,9 +1343,23 @@ def compile_complex_scalar_gauge_terms(
         conjugated=True,
         purpose="Complex-scalar gauge-term compilation",
     )
+    _reject_ambiguous_manual_label_overrides(
+        field=scalar,
+        pieces=right_pieces,
+        overrides=(
+            ("matter_labels", matter_labels),
+            ("adjoint_labels", adjoint_labels),
+            ("internal_label", internal_label),
+        ),
+        purpose="Complex-scalar gauge-term compilation",
+    )
 
     current_terms: list[InteractionTerm] = []
-    for right_piece, left_piece in zip(right_pieces, left_pieces):
+    for right_piece, left_piece in _pair_gauge_pieces_by_action(
+        right_pieces=right_pieces,
+        left_pieces=left_pieces,
+        purpose="Complex-scalar gauge-term compilation",
+    ):
         current_terms.append(
             _compile_scalar_current_from_piece(
                 scalar=scalar,
@@ -1266,6 +1450,18 @@ def compile_mixed_complex_scalar_contact_terms(
         conjugated=False,
         purpose="Mixed scalar contact compilation",
     )
+    _reject_ambiguous_manual_label_overrides(
+        field=scalar,
+        pieces=left_pieces,
+        overrides=(("left_adjoint_label", left_adjoint_label),),
+        purpose="Mixed scalar contact compilation",
+    )
+    _reject_ambiguous_manual_label_overrides(
+        field=scalar,
+        pieces=right_pieces,
+        overrides=(("right_adjoint_label", right_adjoint_label),),
+        purpose="Mixed scalar contact compilation",
+    )
 
     return _compile_scalar_contact_terms(
         scalar=scalar,
@@ -1289,29 +1485,15 @@ def compile_gauge_kinetic_bilinear_terms(
     label_prefix: str = "",
 ):
     """Compile the two-point part of ``-1/4 F_{mu nu} F^{mu nu}``."""
-    if gauge_field.kind != "vector":
-        raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
-
+    layout = _GaugeFieldLayout.from_field(
+        gauge_field,
+        purpose="Gauge kinetic compilation",
+    )
     alpha, beta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 2)
     rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}")
     rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}")
     rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}")
-    gauge_lorentz_slot = _unique_slot(
-        gauge_field,
-        LORENTZ_KIND,
-        purpose="Gauge kinetic compilation",
-    )
-    identity_factor, left_slots, right_slots = _spectator_identity_factor(
-        gauge_field,
-        exclude_slots={gauge_lorentz_slot},
-    )
-
-    left_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, **left_slots})
-    right_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, **right_slots})
-    shared_fields = (
-        gauge_field.occurrence(labels=left_field_labels),
-        gauge_field.occurrence(labels=right_field_labels),
-    )
+    identity_factor, shared_fields = layout.bilinear_occurrences(alpha, beta)
     prefix = label_prefix + " " if label_prefix else ""
 
     return (
@@ -1352,21 +1534,13 @@ def compile_yang_mills_cubic_term(
     """Compile the cubic Yang-Mills term from ``-1/4 F^a_{mu nu} F^{a mu nu}``."""
     if gauge_group.abelian:
         raise ValueError("Abelian gauge groups do not have Yang-Mills cubic self-interactions.")
-    if gauge_field.kind != "vector":
-        raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
-
+    layout = _GaugeFieldLayout.from_field(
+        gauge_field,
+        purpose="Yang-Mills cubic compilation",
+        require_adjoint=True,
+    )
     alpha, beta, gamma = _default_gauge_lorentz_labels(gauge_field, gauge_group, 3)
     adj_left, adj_middle, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 3)
-    gauge_lorentz_slot = _unique_slot(
-        gauge_field,
-        LORENTZ_KIND,
-        purpose="Yang-Mills cubic compilation",
-    )
-    adj_slot = _adjoint_index_slot(gauge_field)
-    if adj_slot is None:
-        raise ValueError(
-            f"Gauge field {gauge_field.name!r} does not expose an adjoint slot."
-        )
     rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}_cubic")
     coupling = (
         coefficient
@@ -1379,15 +1553,9 @@ def compile_yang_mills_cubic_term(
     return InteractionTerm(
         coupling=coupling,
         fields=(
-            gauge_field.occurrence(
-                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, adj_slot: adj_left})
-            ),
-            gauge_field.occurrence(
-                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, adj_slot: adj_middle})
-            ),
-            gauge_field.occurrence(
-                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: gamma, adj_slot: adj_right})
-            ),
+            layout.occurrence(alpha, adj_left),
+            layout.occurrence(beta, adj_middle),
+            layout.occurrence(gamma, adj_right),
         ),
         derivatives=(DerivativeAction(target=0, lorentz_index=rho),),
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills cubic",
@@ -1404,21 +1572,13 @@ def compile_yang_mills_quartic_term(
     """Compile the quartic Yang-Mills term from ``-1/4 F^a_{mu nu} F^{a mu nu}``."""
     if gauge_group.abelian:
         raise ValueError("Abelian gauge groups do not have Yang-Mills quartic self-interactions.")
-    if gauge_field.kind != "vector":
-        raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
-
+    layout = _GaugeFieldLayout.from_field(
+        gauge_field,
+        purpose="Yang-Mills quartic compilation",
+        require_adjoint=True,
+    )
     alpha, beta, gamma, delta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 4)
     adj_left, adj_mid_left, adj_mid_right, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 4)
-    gauge_lorentz_slot = _unique_slot(
-        gauge_field,
-        LORENTZ_KIND,
-        purpose="Yang-Mills quartic compilation",
-    )
-    adj_slot = _adjoint_index_slot(gauge_field)
-    if adj_slot is None:
-        raise ValueError(
-            f"Gauge field {gauge_field.name!r} does not expose an adjoint slot."
-        )
     internal = _default_internal_adjoint_label(gauge_field, gauge_group)
     coupling = (
         -coefficient
@@ -1433,18 +1593,10 @@ def compile_yang_mills_quartic_term(
     return InteractionTerm(
         coupling=coupling,
         fields=(
-            gauge_field.occurrence(
-                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, adj_slot: adj_left})
-            ),
-            gauge_field.occurrence(
-                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, adj_slot: adj_mid_left})
-            ),
-            gauge_field.occurrence(
-                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: gamma, adj_slot: adj_mid_right})
-            ),
-            gauge_field.occurrence(
-                labels=gauge_field.pack_slot_labels({gauge_lorentz_slot: delta, adj_slot: adj_right})
-            ),
+            layout.occurrence(alpha, adj_left),
+            layout.occurrence(beta, adj_mid_left),
+            layout.occurrence(gamma, adj_mid_right),
+            layout.occurrence(delta, adj_right),
         ),
         label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills quartic",
     )
@@ -1466,34 +1618,29 @@ def compile_gauge_kinetic_term(model: Model, term: GaugeKineticTerm) -> tuple[In
     gauge_field = model.gauge_boson_field(gauge_group)
     label_prefix = term.label or f"-1/4 {gauge_group.name} field strength squared"
 
-    interactions = list(
-        compile_gauge_kinetic_bilinear_terms(
-            gauge_group=gauge_group,
-            gauge_field=gauge_field,
-            coefficient=term.coefficient,
-            label_prefix=label_prefix,
-        )
+    bilinear_terms = compile_gauge_kinetic_bilinear_terms(
+        gauge_group=gauge_group,
+        gauge_field=gauge_field,
+        coefficient=term.coefficient,
+        label_prefix=label_prefix,
     )
     if gauge_group.abelian:
-        return tuple(interactions)
+        return bilinear_terms
 
-    interactions.append(
+    return bilinear_terms + (
         compile_yang_mills_cubic_term(
             gauge_group=gauge_group,
             gauge_field=gauge_field,
             coefficient=term.coefficient,
             label_prefix=label_prefix,
-        )
-    )
-    interactions.append(
+        ),
         compile_yang_mills_quartic_term(
             gauge_group=gauge_group,
             gauge_field=gauge_field,
             coefficient=term.coefficient,
             label_prefix=label_prefix,
-        )
+        ),
     )
-    return tuple(interactions)
 
 
 def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[InteractionTerm, ...]:
@@ -1510,21 +1657,15 @@ def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[Inte
     if _is_explicit_zero(term.xi):
         raise ValueError("Gauge-fixing compilation requires xi to be non-zero.")
     gauge_field = model.gauge_boson_field(gauge_group)
-    if gauge_field.kind != "vector":
-        raise ValueError(f"Gauge-fixing compilation requires a vector field, got kind={gauge_field.kind!r}.")
-    gauge_lorentz_slot = _unique_slot(
+    layout = _GaugeFieldLayout.from_field(
         gauge_field,
-        LORENTZ_KIND,
         purpose="Gauge-fixing compilation",
     )
 
     alpha, beta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 2)
     rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}_gf")
     rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}_gf")
-    identity_factor, left_slots, right_slots = _spectator_identity_factor(
-        gauge_field,
-        exclude_slots={gauge_lorentz_slot},
-    )
+    identity_factor, fields = layout.bilinear_occurrences(alpha, beta)
 
     coupling = (
         -term.coefficient
@@ -1534,17 +1675,12 @@ def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[Inte
         * lorentz_metric(alpha, rho_left)
         * lorentz_metric(beta, rho_right)
     )
-    left_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: alpha, **left_slots})
-    right_field_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: beta, **right_slots})
     label = term.label or f"-(1/2 {term.xi}) ({gauge_group.name} gauge fixing)"
 
     return (
         InteractionTerm(
             coupling=coupling,
-            fields=(
-                gauge_field.occurrence(labels=left_field_labels),
-                gauge_field.occurrence(labels=right_field_labels),
-            ),
+            fields=fields,
             derivatives=(
                 DerivativeAction(target=0, lorentz_index=rho_left),
                 DerivativeAction(target=1, lorentz_index=rho_right),
@@ -1572,16 +1708,12 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
 
     gauge_field = model.gauge_boson_field(gauge_group)
     ghost_field = _ghost_field_for_group(model, gauge_group)
-
-    adj_kind, gauge_adj_slot = _adjoint_slot_info(
+    gauge_layout = _GaugeFieldLayout.from_field(
         gauge_field,
         purpose="Ghost compilation",
+        require_adjoint=True,
     )
-    gauge_lorentz_slot = _unique_slot(
-        gauge_field,
-        LORENTZ_KIND,
-        purpose="Ghost compilation",
-    )
+    adj_kind = gauge_layout.adjoint_kind
     ghost_adj_slot = _unique_slot(
         ghost_field,
         adj_kind,
@@ -1600,7 +1732,6 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
 
     ghost_bar_labels = ghost_field.pack_slot_labels({ghost_adj_slot: a_bar})
     ghost_labels = ghost_field.pack_slot_labels({ghost_adj_slot: a_ghost})
-    gauge_labels = gauge_field.pack_slot_labels({gauge_lorentz_slot: mu, gauge_adj_slot: a_gauge})
     label_prefix = term.label or f"{gauge_group.name} Faddeev-Popov ghosts"
 
     ghost_bilinear = InteractionTerm(
@@ -1629,7 +1760,7 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
         ),
         fields=(
             ghost_field.occurrence(conjugated=True, labels=ghost_bar_labels),
-            gauge_field.occurrence(labels=gauge_labels),
+            gauge_layout.occurrence(mu, a_gauge),
             ghost_field.occurrence(labels=ghost_labels),
         ),
         derivatives=(DerivativeAction(target=0, lorentz_index=rho),),
@@ -1660,12 +1791,8 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                 continue
 
             if field.kind == "fermion":
-                if gauge_group.abelian:
-                    if gauge_group.charge is None or field.quantum_numbers.get(gauge_group.charge, 0) == 0:
-                        continue
-                else:
-                    if gauge_group.matter_representation(field) is None:
-                        continue
+                if not _field_transforms_under_gauge_group(field, gauge_group):
+                    continue
 
                 interactions.extend(
                     compile_fermion_gauge_current(
@@ -1678,12 +1805,8 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                 continue
 
             if field.kind == "scalar" and not field.self_conjugate:
-                if gauge_group.abelian:
-                    if gauge_group.charge is None or field.quantum_numbers.get(gauge_group.charge, 0) == 0:
-                        continue
-                else:
-                    if gauge_group.matter_representation(field) is None:
-                        continue
+                if not _field_transforms_under_gauge_group(field, gauge_group):
+                    continue
                 interactions.extend(
                     compile_complex_scalar_gauge_terms(
                         scalar=field,
