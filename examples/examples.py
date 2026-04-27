@@ -672,14 +672,6 @@ QCD_GROUP = GaugeGroup(
     abelian=False,
     coupling=gS,
     gauge_boson=G0,
-    structure_constant=structure_constant,
-    representations=(COLOR_FUND_REP,),
-)
-QCD_GROUP_GHOST = GaugeGroup(
-    name="SU3C",
-    abelian=False,
-    coupling=gS,
-    gauge_boson=G0,
     ghost_field=ghG0,
     structure_constant=structure_constant,
     representations=(COLOR_FUND_REP,),
@@ -825,19 +817,19 @@ MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
 )
 MODEL_QCD_GHOST_COVARIANT = Model(
     name="QCDGhost-covariant",
-    gauge_groups=(QCD_GROUP_GHOST,),
+    gauge_groups=(QCD_GROUP,),
     fields=(GluonField, GhostGluonField),
-    lagrangian_decl=GhostLagrangian(QCD_GROUP_GHOST),
+    lagrangian_decl=GhostLagrangian(QCD_GROUP),
 )
 MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
     name="QCDGaugeFixed-covariant",
-    gauge_groups=(QCD_GROUP_GHOST,),
+    gauge_groups=(QCD_GROUP,),
     fields=(GluonField, GhostGluonField),
     lagrangian_decl=(
         -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(QCD_GROUP_GHOST, mu, nu) * FieldStrength(QCD_GROUP_GHOST, mu, nu)
-        + GaugeFixing(QCD_GROUP_GHOST, xi=xiQCD)
-        + GhostLagrangian(QCD_GROUP_GHOST)
+        * FieldStrength(QCD_GROUP, mu, nu) * FieldStrength(QCD_GROUP, mu, nu)
+        + GaugeFixing(QCD_GROUP, xi=xiQCD)
+        + GhostLagrangian(QCD_GROUP)
     ),
 )
 
