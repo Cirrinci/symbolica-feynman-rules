@@ -202,6 +202,7 @@ class InteractionTerm:
         leg_roles = [leg.role for leg in external_legs]
 
         field_index_labels = [_copy_index_labels(occ.labels) for occ in self.fields]
+        field_index_types = [occ.field.indices for occ in self.fields]
         leg_index_labels = [_copy_index_labels(leg.labels) for leg in external_legs]
 
         leg_spins = [leg.spin for leg in external_legs]
@@ -259,6 +260,7 @@ class InteractionTerm:
             field_roles=field_roles,
             leg_roles=leg_roles,
             field_index_labels=field_index_labels,
+            field_index_types=field_index_types,
             leg_index_labels=leg_index_labels,
             leg_spins=leg_spins,
             derivative_indices=derivative_indices,

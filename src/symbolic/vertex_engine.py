@@ -408,6 +408,7 @@ def contract_to_full_expression(
     field_roles=None,
     leg_roles=None,
     field_index_labels: Optional[Sequence[dict]] = None,
+    field_index_types: Optional[Sequence[Sequence]] = None,
     leg_index_labels: Optional[Sequence[dict]] = None,
     field_spinor_indices: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
@@ -455,6 +456,8 @@ def contract_to_full_expression(
 
     if field_index_labels is not None and len(field_index_labels) != n:
         raise ValueError("field_index_labels must have the same length as alphas")
+    if field_index_types is not None and len(field_index_types) != n:
+        raise ValueError("field_index_types must have the same length as alphas")
     if leg_index_labels is not None and len(leg_index_labels) != n:
         raise ValueError("leg_index_labels must have the same length as betas")
     if leg_spins is not None and len(leg_spins) != n:
@@ -493,10 +496,22 @@ def contract_to_full_expression(
     if coupling is not None and field_index_labels is not None:
         open_index_slots = _open_index_labels(field_index_labels, field_roles)
 
+    field_index_label_counts = Counter()
+    if field_index_labels is not None:
+        for slot_labels in field_index_labels:
+            for kind, _, label in _flatten_index_labels(slot_labels):
+                label_key = (
+                    label.to_canonical_string()
+                    if hasattr(label, "to_canonical_string")
+                    else str(label)
+                )
+                field_index_label_counts[(kind, label_key)] += 1
+
     total = Expression.num(0)
 
     for perm in permutations(range(n)):
         term = Expression.num(1)
+        paired_explicit_indices = {}
 
         coupling_term = coupling if coupling is not None else Expression.num(1)
         if open_index_slots and leg_index_labels is not None:
@@ -545,6 +560,39 @@ def contract_to_full_expression(
                     spin=spin,
                     spinor_index=spinor_index or S(f"si{i + 1}"),
                 )
+
+            if (
+                field_index_types is not None
+                and field_index_labels is not None
+                and leg_index_labels is not None
+            ):
+                kind_ordinals = Counter()
+                for index in field_index_types[i]:
+                    ordinal = kind_ordinals[index.kind]
+                    kind_ordinals[index.kind] += 1
+
+                    if _role_is_fermion(role) and index.kind == SPINOR_KIND:
+                        continue
+
+                    field_label = _get_label(field_index_labels[i], index.kind, ordinal)
+                    leg_label = _get_label(leg_index_labels[j], index.kind, ordinal)
+                    if field_label is None or leg_label is None:
+                        continue
+
+                    label_key = (
+                        field_label.to_canonical_string()
+                        if hasattr(field_label, "to_canonical_string")
+                        else str(field_label)
+                    )
+                    if field_index_label_counts[(index.kind, label_key)] <= 1:
+                        continue
+
+                    pair_key = (index.kind, label_key)
+                    if pair_key in paired_explicit_indices:
+                        prior_representation, prior_leg_label = paired_explicit_indices.pop(pair_key)
+                        term *= prior_representation.g(prior_leg_label, leg_label).to_expression()
+                    else:
+                        paired_explicit_indices[pair_key] = (index.representation, leg_label)
             p_sum += ps[j]
 
         if use_spinor_deltas:
@@ -603,6 +651,7 @@ def vertex_factor(
     field_roles=None,
     leg_roles=None,
     field_index_labels=None,
+    field_index_types=None,
     leg_index_labels=None,
     field_spinor_indices=None,
     leg_spinor_indices=None,
@@ -633,6 +682,7 @@ def vertex_factor(
         field_roles = kwargs["field_roles"]
         leg_roles = kwargs["leg_roles"]
         field_index_labels = kwargs["field_index_labels"]
+        field_index_types = kwargs["field_index_types"]
         leg_index_labels = kwargs["leg_index_labels"]
         leg_spins = kwargs["leg_spins"]
         derivative_indices = kwargs["derivative_indices"]
@@ -675,6 +725,7 @@ def vertex_factor(
         field_roles=field_roles,
         leg_roles=leg_roles,
         field_index_labels=field_index_labels,
+        field_index_types=field_index_types,
         leg_index_labels=leg_index_labels,
         leg_spins=leg_spins,
         coupling=coupling,

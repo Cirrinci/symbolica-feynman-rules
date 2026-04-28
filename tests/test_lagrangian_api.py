@@ -408,6 +408,29 @@ def test_lagrangian_accepts_declared_yukawa_product():
     assert _canon(got) == _canon(expected)
 
 
+def test_colored_fermion_bilinear_uses_explicit_color_identity():
+    quark = Field(
+        "q",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+
+    got = Lagrangian(quark.bar * quark).feynman_rule(
+        quark.bar, quark, simplify=True
+    )
+    canon = _canon(got)
+    spin_identity = _canon(SPINOR_INDEX.representation.g(S("i1"), S("i2")).to_expression())
+    color_identity = _canon(COLOR_FUND_INDEX.representation.g(S("c1"), S("c2")).to_expression())
+
+    assert spin_identity in canon
+    assert color_identity in canon
+    assert "delta(q,q)" not in canon
+    assert "delta(qbar,qbar)" not in canon
+
+
 def test_lagrangian_accepts_declared_vector_current():
     """A unique vector slot inherits the declared Lorentz label from Gamma(mu)."""
     psi = Field(
