@@ -306,10 +306,11 @@ def _materialize_spectator_occurrences(spectators: tuple[tuple[Field, bool], ...
     - any remaining spectator indices stay open on the final vertex
     """
     if not spectators:
-        return Expression.num(1), ()
+        return Expression.num(1), (), ()
 
     factor = Expression.num(1)
     slot_labels = [dict() for _ in spectators]
+    fermion_bilinears: list[tuple[int, int]] = []
     by_field: dict[int, tuple[Field, dict[bool, list[int]]]] = {}
 
     for pos, (field, conjugated) in enumerate(spectators):
@@ -338,6 +339,8 @@ def _materialize_spectator_occurrences(spectators: tuple[tuple[Field, bool], ...
         for pair_idx in range(pair_count):
             left_pos = conj_positions[pair_idx]
             right_pos = plain_positions[pair_idx]
+            if field.kind == "fermion":
+                fermion_bilinears.append((left_pos, right_pos))
             for slot, index in enumerate(field.indices):
                 if index.kind == LORENTZ_KIND:
                     continue
@@ -371,7 +374,7 @@ def _materialize_spectator_occurrences(spectators: tuple[tuple[Field, bool], ...
             )
         )
 
-    return factor, tuple(occurrences)
+    return factor, tuple(occurrences), tuple(fermion_bilinears)
 
 
 def _decorate_interactions_with_spectators(
@@ -379,12 +382,18 @@ def _decorate_interactions_with_spectators(
     *,
     spectator_factor,
     spectator_occurrences: tuple,
+    spectator_bilinears: tuple[tuple[int, int], ...] = (),
 ) -> tuple[InteractionTerm, ...]:
     return tuple(
         InteractionTerm(
             coupling=interaction.coupling * spectator_factor,
             fields=interaction.fields + spectator_occurrences,
             derivatives=interaction.derivatives,
+            closed_dirac_bilinears=interaction.closed_dirac_bilinears
+            + tuple(
+                (len(interaction.fields) + left, len(interaction.fields) + right)
+                for left, right in spectator_bilinears
+            ),
             label=interaction.label,
         )
         for interaction in interactions
@@ -1220,6 +1229,7 @@ def _build_fermion_current_interaction(
             fermion.occurrence(labels=psi_labels),
             piece.metadata.gauge_field.occurrence(labels=action.gauge_labels),
         ),
+        closed_dirac_bilinears=((0, 1),),
         label=slot_label or f"{piece.metadata.gauge_group.name}: {fermion.name} gauge current",
     )
 
@@ -2098,6 +2108,7 @@ def _compile_dirac_partial_term(fermion: Field, *, coefficient=1, label: str = "
             fermion.occurrence(labels=psi_labels),
         ),
         derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+        closed_dirac_bilinears=((0, 1),),
         label=label or f"i {fermion.name}bar gamma^mu d_mu {fermion.name}",
     )
 
@@ -2184,7 +2195,8 @@ def _assemble_full_covariant_operator(
     gauge_terms: tuple[InteractionTerm, ...],
     partial_term: InteractionTerm,
     spectator_factor: Expression,
-    spectator_occurrences: tuple[tuple[int, int], ...],
+    spectator_occurrences: tuple,
+    spectator_bilinears: tuple[tuple[int, int], ...],
 ) -> tuple[InteractionTerm, ...]:
     """Assemble the full covariant operator from gauge and partial-derivative terms.
 
@@ -2195,11 +2207,13 @@ def _assemble_full_covariant_operator(
         gauge_terms,
         spectator_factor=spectator_factor,
         spectator_occurrences=spectator_occurrences,
+        spectator_bilinears=spectator_bilinears,
     )
     partial_decorated = _decorate_interactions_with_spectators(
         (partial_term,),
         spectator_factor=spectator_factor,
         spectator_occurrences=spectator_occurrences,
+        spectator_bilinears=spectator_bilinears,
     )
     return gauge_decorated + partial_decorated
 
@@ -2220,7 +2234,7 @@ def _compile_declared_covariant_core(
     spectator-decorated declarative ``CovD`` monomials share the same
     semantics.
     """
-    spectator_factor, spectator_occurrences = _materialize_spectator_occurrences(spectators)
+    spectator_factor, spectator_occurrences, spectator_bilinears = _materialize_spectator_occurrences(spectators)
 
     if isinstance(core, DiracKineticTerm):
         fermion = _require_declared_field(
@@ -2243,6 +2257,7 @@ def _compile_declared_covariant_core(
             partial_term,
             spectator_factor,
             spectator_occurrences,
+            spectator_bilinears,
         )
 
     if isinstance(core, ComplexScalarKineticTerm):
@@ -2266,6 +2281,7 @@ def _compile_declared_covariant_core(
             partial_term,
             spectator_factor,
             spectator_occurrences,
+            spectator_bilinears,
         )
 
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")

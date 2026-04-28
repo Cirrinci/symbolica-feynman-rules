@@ -429,7 +429,7 @@ def _run_fermion_tests():
     expected_sp = (
         -I * g_psi4 * D4
         * (psi_bar_psi(S("i1"), S("i2")) * psi_bar_psi(S("i3"), S("i4"))
-           - psi_bar_psi(S("i1"), S("i4")) * psi_bar_psi(S("i3"), S("i2")))
+           + psi_bar_psi(S("i1"), S("i4")) * psi_bar_psi(S("i3"), S("i2")))
     )
     _check(got, expected_sp, "L-API: (psibar psi)^2")
 
@@ -441,7 +441,7 @@ def _run_fermion_tests():
     expected_jj = (
         2 * I * gJJ * D4
         * (gamma_matrix(S("i1"), S("i2"), mu) * gamma_matrix(S("i3"), S("i4"), mu)
-           - gamma_matrix(S("i1"), S("i4"), mu) * gamma_matrix(S("i3"), S("i2"), mu))
+           + gamma_matrix(S("i1"), S("i4"), mu) * gamma_matrix(S("i3"), S("i2"), mu))
     )
     _check(got, expected_jj, "L-API: current-current")
 

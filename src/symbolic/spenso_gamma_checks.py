@@ -125,7 +125,18 @@ def _show_raw_and_simplified(title, expr):
     print()
 
 
-def _vertex(coupling, *, strip_externals=True, alphas, betas, ps, field_roles, leg_roles, field_spinor_indices):
+def _vertex(
+    coupling,
+    *,
+    strip_externals=True,
+    alphas,
+    betas,
+    ps,
+    field_roles,
+    leg_roles,
+    field_spinor_indices,
+    closed_dirac_bilinears=(),
+):
     """Fermion bilinear vertex using the direct engine API (Delta stripped)."""
     field_index_labels = [
         {SPINOR_KIND: si} if si is not None else {}
@@ -141,6 +152,7 @@ def _vertex(coupling, *, strip_externals=True, alphas, betas, ps, field_roles, l
             field_roles=field_roles,
             leg_roles=leg_roles,
             field_index_labels=field_index_labels,
+            closed_dirac_bilinears=closed_dirac_bilinears,
             strip_externals=strip_externals,
             include_delta=False,
             x=x,
@@ -448,6 +460,7 @@ def test_current_current():
         field_roles=["psibar", "psi", "psibar", "psi"],
         leg_roles=["psibar", "psi", "psibar", "psi"],
         field_spinor_indices=[s1, s2, s3, s4],
+        closed_dirac_bilinears=((0, 1), (2, 3)),
     )
     _show("gBilin * (psibar gamma^mu psi)(psibar gamma_mu psi)  [stripped]", current_current)
 
@@ -463,6 +476,7 @@ def test_current_current():
         field_roles=["psibar", "psi", "psibar", "psi"],
         leg_roles=["psibar", "psi", "psibar", "psi"],
         field_spinor_indices=[s1, s2, s3, s4],
+        closed_dirac_bilinears=((0, 1), (2, 3)),
     )
     _show(
         "gBilin * (psibar gamma^mu gamma5 psi)(psibar gamma_mu gamma5 psi)  [stripped]",
@@ -481,6 +495,7 @@ def test_current_current():
         field_roles=["psibar", "psi", "psibar", "psi"],
         leg_roles=["psibar", "psi", "psibar", "psi"],
         field_spinor_indices=[s1, s2, s3, s4],
+        closed_dirac_bilinears=((0, 1), (2, 3)),
     )
     _show(
         "gBilin * (psibar gamma^mu P_L psi)(psibar gamma_mu P_L psi)  [stripped]",
@@ -492,7 +507,7 @@ def test_current_current():
         _gamma_simplified(current_current),
         2 * I * g_bilin * (
             gamma_matrix(i1_sym, i2_sym, mu) * gamma_matrix(i3_sym, i4_sym, mu)
-            - gamma_matrix(i1_sym, i4_sym, mu) * gamma_matrix(i3_sym, i2_sym, mu)
+            + gamma_matrix(i1_sym, i4_sym, mu) * gamma_matrix(i3_sym, i2_sym, mu)
         ),
         "stripped current-current",
     )

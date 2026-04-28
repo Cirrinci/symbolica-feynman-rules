@@ -467,6 +467,7 @@ L_psibar_psi_sq = dict(
     leg_roles=["psibar", "psi", "psibar", "psi"],
     field_spinor_indices=[alpha_s, alpha_s, beta_s, beta_s],
     leg_spins=[s1, s2, s3, s4],
+    closed_dirac_bilinears=((0, 1), (2, 3)),
 )
 
 L_psibar_psi_sq_spinor = dict(
@@ -484,6 +485,7 @@ L_current_current = dict(
     leg_roles=["psibar", "psi", "psibar", "psi"],
     field_spinor_indices=[a_bar, a_psi, b_bar, b_psi],
     leg_spins=[s1, s2, s3, s4],
+    closed_dirac_bilinears=((0, 1), (2, 3)),
 )
 
 L_quark_gluon = dict(
@@ -922,6 +924,7 @@ TERM_psibar_psi_sq = InteractionTerm(
         PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: beta_s}),
         PsiField.occurrence(labels={SPINOR_KIND: beta_s}),
     ),
+    closed_dirac_bilinears=((0, 1), (2, 3)),
     label="-(g/2)(psibar psi)^2",
 )
 LEGS_fermion4 = (
@@ -945,6 +948,7 @@ TERM_current_current = InteractionTerm(
         PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: b_bar}),
         PsiField.occurrence(labels={SPINOR_KIND: b_psi}),
     ),
+    closed_dirac_bilinears=((0, 1), (2, 3)),
     label="gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)",
 )
 
@@ -1980,7 +1984,7 @@ def _run_fermion_tests():
     expected_sp = (
         -I * g_psi4 * D4
         * (bis.g(i1, i2).to_expression() * bis.g(i3, i4).to_expression()
-           - bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
+           + bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
     )
     _check(V, expected_sp, "(psibar psi)^2 amputated")
 
@@ -1995,7 +1999,7 @@ def _run_fermion_tests():
     expected_jj = (
         2 * I * gJJ * D4
         * (gamma_matrix(i1, i2, mu) * gamma_matrix(i3, i4, mu)
-           - gamma_matrix(i1, i4, mu) * gamma_matrix(i3, i2, mu))
+           + gamma_matrix(i1, i4, mu) * gamma_matrix(i3, i2, mu))
     )
     _check(simplify_gamma_chain(V), expected_jj, "Current-current stripped")
 
@@ -2146,7 +2150,7 @@ def _run_model_tests():
     expected_sp = (
         -I * g_psi4 * D4
         * (psi_bar_psi(i1, i2) * psi_bar_psi(i3, i4)
-           - psi_bar_psi(i1, i4) * psi_bar_psi(i3, i2))
+           + psi_bar_psi(i1, i4) * psi_bar_psi(i3, i2))
     )
     _check(
         V_sp,
@@ -2160,7 +2164,7 @@ def _run_model_tests():
     expected_jj = (
         2 * I * gJJ * D4
         * (psi_bar_gamma_psi(i1, i2, mu) * psi_bar_gamma_psi(i3, i4, mu)
-           - psi_bar_gamma_psi(i1, i4, mu) * psi_bar_gamma_psi(i3, i2, mu))
+           + psi_bar_gamma_psi(i1, i4, mu) * psi_bar_gamma_psi(i3, i2, mu))
     )
     _check(
         simplify_gamma_chain(V_jj),
@@ -2735,7 +2739,17 @@ def _run_covariant_compiler_tests():
     V_photon = simplify_gamma_chain(V_photon)
     _check(
         V_photon,
-        I * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, photon_rho, photon_left, photon_right) * D2,
+        I
+        * gauge_kinetic_bilinear_raw(
+            mu3,
+            mu4,
+            p1,
+            p2,
+            S("mu_int_1"),
+            S("mu_int_1"),
+            S("mu_int_2"),
+        )
+        * D2,
         "Covariant compiler: abelian gauge bilinear",
         show_vertex=True,
         description=_model_decl_label(
@@ -2774,7 +2788,15 @@ def _run_covariant_compiler_tests():
     _check(
         V_ym_bilinear,
         I
-        * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, ym_rho, ym_left, ym_right)
+        * gauge_kinetic_bilinear_raw(
+            mu3,
+            mu4,
+            p1,
+            p2,
+            S("mu_int_1"),
+            S("mu_int_1"),
+            S("mu_int_2"),
+        )
         * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
         * D2,
         "Covariant compiler: non-abelian gauge bilinear",
@@ -2930,7 +2952,15 @@ def _run_gauge_fixed_compiler_tests():
         simplify_gamma_chain(
             I
             * (
-                gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, photon_rho, photon_left, photon_right)
+                gauge_kinetic_bilinear_raw(
+                    mu3,
+                    mu4,
+                    p1,
+                    p2,
+                    S("mu_int_1"),
+                    S("mu_int_1"),
+                    S("mu_int_2"),
+                )
                 + gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, photon_gf_left, photon_gf_right) / xiQED
             )
             * D2
@@ -3015,7 +3045,15 @@ def _run_gauge_fixed_compiler_tests():
         simplify_gamma_chain(
             I
             * (
-                gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, gluon_rho, gluon_left, gluon_right)
+                gauge_kinetic_bilinear_raw(
+                    mu3,
+                    mu4,
+                    p1,
+                    p2,
+                    S("mu_int_1"),
+                    S("mu_int_1"),
+                    S("mu_int_2"),
+                )
                 + gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, gluon_gf_left, gluon_gf_right) / xiQCD
             )
             * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()

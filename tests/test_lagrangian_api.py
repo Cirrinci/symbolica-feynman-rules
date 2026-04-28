@@ -75,6 +75,7 @@ from symbolic.spenso_structures import (  # noqa: E402
     gamma5_matrix,
     gamma_matrix,
     lorentz_metric,
+    simplify_gamma_chain,
     structure_constant,
 )
 from lagrangian.operators import (  # noqa: E402
@@ -521,9 +522,75 @@ def test_lagrangian_accepts_declared_current_current():
                 psi.occurrence(conjugated=True, labels={SPINOR_KIND: b_bar}),
                 psi.occurrence(labels={SPINOR_KIND: b_psi}),
             ),
+            closed_dirac_bilinears=((0, 1), (2, 3)),
         ),
     ))
     expected = ref.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_declared_psibar_psi_sq_uses_closed_bilinear_signs():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    g = S("g")
+    q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+    d = S("d")
+
+    got = Lagrangian(
+        g * psi.bar * psi * psi.bar * psi
+    ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+
+    expected = (
+        2
+        * I
+        * g
+        * (2 * pi) ** d
+        * Delta(q1 + q2 + q3 + q4)
+        * (
+            psi_bar_psi(S("i1"), S("i2")) * psi_bar_psi(S("i3"), S("i4"))
+            + psi_bar_psi(S("i1"), S("i4")) * psi_bar_psi(S("i3"), S("i2"))
+        )
+    )
+    assert _canon(got) == _canon(expected)
+
+
+def test_declared_current_current_uses_closed_bilinear_signs():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    g = S("g")
+    mu = S("mu")
+    q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+    d = S("d")
+
+    got = simplify_gamma_chain(
+        Lagrangian(
+        g * psi.bar * Gamma(mu) * psi * psi.bar * Gamma(mu) * psi
+        ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    )
+
+    expected = (
+        2
+        * I
+        * g
+        * (2 * pi) ** d
+        * Delta(q1 + q2 + q3 + q4)
+        * (
+            gamma_matrix(S("i1"), S("i2"), mu) * gamma_matrix(S("i3"), S("i4"), mu)
+            + gamma_matrix(S("i1"), S("i4"), mu) * gamma_matrix(S("i3"), S("i2"), mu)
+        )
+    )
     assert _canon(got) == _canon(expected)
 
 
@@ -2529,5 +2596,50 @@ def test_generic_declared_monomial_supports_same_species_quark_covd_product():
     )
     L = model.lagrangian()
 
-    assert L.feynman_rule(quark.bar, quark, quark.bar, quark, gluon, simplify=True) != 0
+    got_single_gluon = L.feynman_rule(
+        quark.bar, quark, quark.bar, quark, gluon, simplify=True
+    )
+
+    mu_int = S("mu_int_1")
+    q1, q2, q3, q4, q5 = S("q1", "q2", "q3", "q4", "q5")
+    c1, c2, c3, c4 = S("c1", "c2", "c3", "c4")
+    i1, i2, i3, i4 = S("i1", "i2", "i3", "i4")
+    mu5 = S("mu5")
+    a5 = S("a5")
+    color_metric = COLOR_FUND_INDEX.representation.g
+    expected_relative_signs = (
+        color_metric(c1, c2).to_expression()
+        * gamma_matrix(i1, i2, mu_int)
+        * gamma_matrix(i3, i4, mu5)
+        * gauge_generator(a5, c3, c4)
+        * pcomp(q2, mu_int)
+        + color_metric(c1, c4).to_expression()
+        * gamma_matrix(i1, i4, mu_int)
+        * gamma_matrix(i3, i2, mu5)
+        * gauge_generator(a5, c3, c2)
+        * pcomp(q4, mu_int)
+        + color_metric(c2, c3).to_expression()
+        * gamma_matrix(i1, i4, mu5)
+        * gamma_matrix(i3, i2, mu_int)
+        * gauge_generator(a5, c1, c4)
+        * pcomp(q2, mu_int)
+        + color_metric(c3, c4).to_expression()
+        * gamma_matrix(i1, i2, mu5)
+        * gamma_matrix(i3, i4, mu_int)
+        * gauge_generator(a5, c1, c2)
+        * pcomp(q4, mu_int)
+    )
+    expected_single_gluon = (
+        2
+        * gS
+        * (2 * pi) ** S("d")
+        * Delta(q1 + q2 + q3 + q4 + q5)
+        * expected_relative_signs
+    )
+
+    got_single_gluon_canon = _canon(got_single_gluon)
+    assert got_single_gluon_canon in {
+        _canon(expected_single_gluon),
+        _canon(-expected_single_gluon),
+    }
     assert L.feynman_rule(quark.bar, quark, quark.bar, quark, gluon, gluon, simplify=True) != 0

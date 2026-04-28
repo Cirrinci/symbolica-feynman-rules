@@ -414,6 +414,7 @@ def contract_to_full_expression(
     leg_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
     coupling=None,
+    closed_dirac_bilinears: Optional[Sequence[tuple[int, int]]] = None,
 ):
     """Sum over all Wick contractions to build the full vacuum matrix element.
 
@@ -491,6 +492,53 @@ def contract_to_full_expression(
         _fermion_slots_from_roles(field_roles)
         if statistics == "fermion" else []
     )
+    use_closed_dirac_bilinear_signs = False
+    if fermion_slots:
+        candidate_bilinears = []
+        for pair in closed_dirac_bilinears or ():
+            if len(pair) != 2:
+                raise ValueError(
+                    "closed_dirac_bilinears entries must be (psibar_slot, psi_slot) pairs."
+                )
+            normalized = (int(pair[0]), int(pair[1]))
+            if normalized not in candidate_bilinears:
+                candidate_bilinears.append(normalized)
+        for pair in fermion_chains:
+            if pair not in candidate_bilinears:
+                candidate_bilinears.append(pair)
+
+        if candidate_bilinears:
+            covered_slots = []
+            valid_dirac_roles = all(
+                _role_is_psibar(field_roles[slot]) or _role_is_psi(field_roles[slot])
+                for slot in fermion_slots
+            )
+            if valid_dirac_roles:
+                for left_slot, right_slot in candidate_bilinears:
+                    if (
+                        left_slot < 0
+                        or right_slot < 0
+                        or left_slot >= n
+                        or right_slot >= n
+                    ):
+                        raise ValueError(
+                            "closed_dirac_bilinears contains a slot outside the interaction arity."
+                        )
+                    if not (
+                        _role_is_psibar(field_roles[left_slot])
+                        and _role_is_psi(field_roles[right_slot])
+                    ):
+                        raise ValueError(
+                            "closed_dirac_bilinears must pair one psibar slot with one psi slot."
+                        )
+                    covered_slots.extend((left_slot, right_slot))
+
+                covered_counts = Counter(covered_slots)
+                use_closed_dirac_bilinear_signs = (
+                    len(covered_slots) == len(fermion_slots)
+                    and set(covered_slots) == set(fermion_slots)
+                    and all(count == 1 for count in covered_counts.values())
+                )
 
     open_index_slots = []
     if coupling is not None and field_index_labels is not None:
@@ -533,7 +581,7 @@ def contract_to_full_expression(
         if not valid:
             continue
 
-        if fermion_slots:
+        if fermion_slots and not use_closed_dirac_bilinear_signs:
             term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
 
         for mu, tgt in zip(derivative_indices, derivative_targets):
@@ -656,6 +704,7 @@ def vertex_factor(
     field_spinor_indices=None,
     leg_spinor_indices=None,
     leg_spins=None,
+    closed_dirac_bilinears: Optional[Sequence[tuple[int, int]]] = None,
     strip_externals: bool = True,
     include_delta: bool = True,
     d=None,
@@ -687,6 +736,7 @@ def vertex_factor(
         leg_spins = kwargs["leg_spins"]
         derivative_indices = kwargs["derivative_indices"]
         derivative_targets = kwargs["derivative_targets"]
+        closed_dirac_bilinears = kwargs["closed_dirac_bilinears"]
 
     if alphas is None or betas is None or ps is None:
         raise ValueError("alphas, betas, ps are required")
@@ -729,6 +779,7 @@ def vertex_factor(
         leg_index_labels=leg_index_labels,
         leg_spins=leg_spins,
         coupling=coupling,
+        closed_dirac_bilinears=closed_dirac_bilinears,
     )
     full = contracted
 

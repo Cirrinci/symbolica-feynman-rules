@@ -125,6 +125,7 @@ class InteractionTerm:
     coupling: object
     fields: tuple[FieldOccurrence, ...]
     derivatives: tuple[DerivativeAction, ...] = ()
+    closed_dirac_bilinears: tuple[tuple[int, int], ...] = ()
     label: str = ""
 
     @property
@@ -265,6 +266,7 @@ class InteractionTerm:
             leg_spins=leg_spins,
             derivative_indices=derivative_indices,
             derivative_targets=derivative_targets,
+            closed_dirac_bilinears=self.closed_dirac_bilinears,
         )
 
 

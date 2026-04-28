@@ -438,6 +438,9 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     interval_chain_factors: list[tuple[object, ...]] = [
         () for _ in range(max(len(field_entries) - 1, 0))
     ]
+    interval_supports_closed_dirac_bilinear = [
+        True for _ in range(max(len(field_entries) - 1, 0))
+    ]
     for interval_idx, (left_pos, right_pos) in enumerate(
         zip(field_token_positions, field_token_positions[1:])
     ):
@@ -452,6 +455,8 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
             interval_chain_factors[interval_idx] = tuple(
                 value for kind, value in between if kind == "chain"
             )
+            continue
+        interval_supports_closed_dirac_bilinear[interval_idx] = False
 
     coupling = term.coefficient
     for factor in free_tensor_factors:
@@ -523,6 +528,19 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         counters=counters,
     )
 
+    closed_dirac_bilinears = tuple(
+        (interval_idx, interval_idx + 1)
+        for interval_idx, (left, right) in enumerate(
+            zip(field_entries, field_entries[1:])
+        )
+        if interval_supports_closed_dirac_bilinear[interval_idx]
+        and left.field == right.field
+        and left.field.kind == "fermion"
+        and not left.field.self_conjugate
+        and bool(left.conjugated)
+        and not bool(right.conjugated)
+    )
+
     return InteractionTerm(
         coupling=coupling,
         fields=tuple(
@@ -537,6 +555,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
             for idx, entry in enumerate(field_entries)
             for lorentz_index in entry.derivative_indices
         ),
+        closed_dirac_bilinears=closed_dirac_bilinears,
     )
 
 
