@@ -429,7 +429,7 @@ def test_lagrangian_accepts_declared_vector_current():
     expected = (
         I
         * g
-        * gamma_matrix(S("i1"), S("i2"), S("i3"))
+        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * (2 * pi) ** S("d")
         * Delta(S("q1") + S("q2") + S("q3"))
     )
@@ -1337,7 +1337,7 @@ def test_model_lagrangian_qed_fermion():
     legs = (
         fermion.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1")}),
         fermion.leg(q2, labels={SPINOR_KIND: S("i2")}),
-        photon.leg(q3, labels={LORENTZ_KIND: S("i3")}),
+        photon.leg(q3, labels={LORENTZ_KIND: S("mu3")}),
     )
     ref = _ref_vertex(gauge_term, legs)
     assert _canon(got) == _canon(ref)
@@ -1428,9 +1428,9 @@ def test_model_lagrangian_qcd_fermion():
     assert len(compiled) == 2
     gauge_term = next(term for term in compiled if len(term.fields) == 3)
     legs = (
-        quark.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1"), COLOR_FUND_KIND: S("i2")}),
-        quark.leg(q2, labels={SPINOR_KIND: S("i3"), COLOR_FUND_KIND: S("i4")}),
-        gluon.leg(q3, labels={LORENTZ_KIND: S("i5"), COLOR_ADJ_KIND: S("i6")}),
+        quark.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1"), COLOR_FUND_KIND: S("c1")}),
+        quark.leg(q2, labels={SPINOR_KIND: S("i2"), COLOR_FUND_KIND: S("c2")}),
+        gluon.leg(q3, labels={LORENTZ_KIND: S("mu3"), COLOR_ADJ_KIND: S("a3")}),
     )
     ref = _ref_vertex(gauge_term, legs)
     assert _canon(got) == _canon(ref)
@@ -1752,8 +1752,8 @@ def test_lagrangian_abelian_gauge_kinetic():
     ref_sum = Expression.num(0)
     for term in compiled:
         legs = (
-            photon.leg(q1, labels={LORENTZ_KIND: S("i1")}),
-            photon.leg(q2, labels={LORENTZ_KIND: S("i2")}),
+            photon.leg(q1, labels={LORENTZ_KIND: S("mu1")}),
+            photon.leg(q2, labels={LORENTZ_KIND: S("mu2")}),
         )
         ref_sum += _ref_vertex(term, legs)
     assert _canon(got) == _canon(ref_sum)
@@ -1817,8 +1817,8 @@ def test_lagrangian_abelian_gauge_fixing():
 
     q1, q2 = S("q1", "q2")
     legs = (
-        photon.leg(q1, labels={LORENTZ_KIND: S("i1")}),
-        photon.leg(q2, labels={LORENTZ_KIND: S("i2")}),
+        photon.leg(q1, labels={LORENTZ_KIND: S("mu1")}),
+        photon.leg(q2, labels={LORENTZ_KIND: S("mu2")}),
     )
     ref = _ref_vertex(compiled[0], legs)
     assert _canon(got) == _canon(ref)
@@ -1844,8 +1844,8 @@ def test_lagrangian_nonabelian_gauge_fixing():
 
     q1, q2 = S("q1", "q2")
     legs = (
-        gluon.leg(q1, labels={LORENTZ_KIND: S("i1"), COLOR_ADJ_KIND: S("i2")}),
-        gluon.leg(q2, labels={LORENTZ_KIND: S("i3"), COLOR_ADJ_KIND: S("i4")}),
+        gluon.leg(q1, labels={LORENTZ_KIND: S("mu1"), COLOR_ADJ_KIND: S("a1")}),
+        gluon.leg(q2, labels={LORENTZ_KIND: S("mu2"), COLOR_ADJ_KIND: S("a2")}),
     )
     ref = _ref_vertex(compiled[0], legs)
     assert _canon(got) == _canon(ref)
@@ -1901,8 +1901,8 @@ def test_lagrangian_ghost_bilinear():
     q1, q2 = S("q1", "q2")
     bilinear = compiled[0]
     legs = (
-        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("i1")}),
-        ghost.leg(q2, labels={COLOR_ADJ_KIND: S("i2")}),
+        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("a1")}),
+        ghost.leg(q2, labels={COLOR_ADJ_KIND: S("a2")}),
     )
     ref = _ref_vertex(bilinear, legs)
     assert _canon(got) == _canon(ref)
@@ -1929,9 +1929,9 @@ def test_lagrangian_ghost_gauge_interaction():
 
     q1, q2, q3 = S("q1", "q2", "q3")
     legs = (
-        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("i1")}),
-        gluon.leg(q2, labels={LORENTZ_KIND: S("i2"), COLOR_ADJ_KIND: S("i3")}),
-        ghost.leg(q3, labels={COLOR_ADJ_KIND: S("i4")}),
+        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("a1")}),
+        gluon.leg(q2, labels={LORENTZ_KIND: S("mu2"), COLOR_ADJ_KIND: S("a2")}),
+        ghost.leg(q3, labels={COLOR_ADJ_KIND: S("a3")}),
     )
     ref = _ref_vertex(ghost_gauge_term, legs)
     assert _canon(got) == _canon(ref)

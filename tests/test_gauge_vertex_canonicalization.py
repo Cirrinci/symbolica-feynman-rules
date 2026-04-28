@@ -35,9 +35,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_qed_gauge_bilinear():
     vertex = MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField)
     contracted = contract_spenso_lorentz_metrics(vertex)
 
-    compiled = compile_covariant_terms(MODEL_QED_GAUGE_COVARIANT)
-    rho = compiled[0].derivatives[0].lorentz_index
-    expected = I * gauge_kinetic_bilinear(S("i1"), S("i2"), q1, q2, rho) * D2
+    expected = I * gauge_kinetic_bilinear(S("mu1"), S("mu2"), q1, q2, S("mu_int_1")) * D2
 
     assert _canon(contracted) == _canon(expected)
 
@@ -48,9 +46,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_ghost_bilinear():
     )
     contracted = contract_spenso_lorentz_metrics(vertex)
 
-    compiled = compile_covariant_terms(MODEL_QCD_GHOST_COVARIANT)
-    rho = compiled[0].derivatives[0].lorentz_index
-    expected = -I * ghost_kinetic(S("i1"), S("i2"), q1, q2, rho) * D2
+    expected = -I * ghost_kinetic(S("a1"), S("a2"), q1, q2, S("mu_int_1")) * D2
 
     assert _canon(contracted) == _canon(expected)
 
@@ -60,7 +56,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_ghost_gluon_vertex():
         GhostGluonField.bar, GluonField, GhostGluonField,
     )
     contracted = contract_spenso_lorentz_metrics(vertex)
-    expected = -gS * ghost_gauge(S("i1"), S("i3"), S("i4"), S("i2"), q1) * D3
+    expected = -gS * ghost_gauge(S("a1"), S("a2"), S("a3"), S("mu2"), q1) * D3
 
     assert _canon(contracted) == _canon(expected)
 
@@ -72,19 +68,19 @@ def test_contract_then_canonize_matches_compact_yang_mills_cubic():
     contracted = contract_spenso_lorentz_metrics(vertex)
     canon_got, _, _ = canonize_spenso_tensors(
         contracted,
-        lorentz_indices=(S("i1"), S("i3"), S("i5")),
-        adjoint_indices=(S("i2"), S("i4"), S("i6")),
+        lorentz_indices=(S("mu1"), S("mu2"), S("mu3")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3")),
     )
 
     expected = gS * yang_mills_three_vertex_raw(
-        S("i2"), S("i4"), S("i6"),
-        S("i1"), S("i3"), S("i5"),
+        S("a1"), S("a2"), S("a3"),
+        S("mu1"), S("mu2"), S("mu3"),
         q1, q2, q3,
     ) * D3
     canon_expected, _, _ = canonize_spenso_tensors(
         expected,
-        lorentz_indices=(S("i1"), S("i3"), S("i5")),
-        adjoint_indices=(S("i2"), S("i4"), S("i6")),
+        lorentz_indices=(S("mu1"), S("mu2"), S("mu3")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3")),
     )
 
     assert _canon(canon_got) == _canon(canon_expected)
@@ -96,8 +92,8 @@ def test_canonized_yang_mills_quartic_matches_grouped_color_channels():
     )
     canon_got, _, _ = canonize_spenso_tensors(
         vertex,
-        lorentz_indices=(S("i1"), S("i3"), S("i5"), S("i7")),
-        adjoint_indices=(S("i2"), S("i4"), S("i6"), S("i8"), S("color_adj_mid_G_SU3C")),
+        lorentz_indices=(S("mu1"), S("mu2"), S("mu3"), S("mu4")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("color_adj_mid_G_SU3C")),
     )
 
     compact = (
@@ -106,16 +102,16 @@ def test_canonized_yang_mills_quartic_matches_grouped_color_channels():
         / Expression.num(2)
         * (gS ** 2)
         * yang_mills_four_vertex_raw(
-            S("i2"), S("i4"), S("i6"), S("i8"),
-            S("i1"), S("i3"), S("i5"), S("i7"),
+            S("a1"), S("a2"), S("a3"), S("a4"),
+            S("mu1"), S("mu2"), S("mu3"), S("mu4"),
             S("color_adj_mid_G_SU3C"),
         )
         * D4
     )
     canon_compact, _, _ = canonize_spenso_tensors(
         compact,
-        lorentz_indices=(S("i1"), S("i3"), S("i5"), S("i7")),
-        adjoint_indices=(S("i2"), S("i4"), S("i6"), S("i8"), S("color_adj_mid_G_SU3C")),
+        lorentz_indices=(S("mu1"), S("mu2"), S("mu3"), S("mu4")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("color_adj_mid_G_SU3C")),
     )
 
     assert _canon(canon_got) == _canon(canon_compact)
