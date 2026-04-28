@@ -585,3 +585,123 @@ What this achieved:
   discovery
 - the latest notebook gives a compact demonstration of the current scalar,
   fermion, derivative, gauge, ghost, QED, QCD, and electroweak-style workflows
+
+### 2026-04-28: same-species Dirac-current products, bilinear identities, and FeynRules-style signs
+
+What happened:
+
+- the final walkthrough notebook case
+  `I * qbar * Gamma(mu) * CovD(q, mu) * qbar * Gamma(nu) * CovD(q, nu)` was
+  traced through the declarative lowering and covariant compiler paths
+- the generic local monomial lowering / covariant expansion path was exercised
+  on the same-species QCD current-current operator so that:
+  - `Gamma(qbar, q, qbar, q, G)` no longer fails structurally
+  - `Gamma(qbar, q, qbar, q, G, G)` is also emitted
+- the saved final notebook example cell in
+  `notebooks/final_walkthrough_capabilities_and_usage.ipynb` was inspected
+  against the actual `qbar, q, qbar, q, G` output and its simplification path
+- the failed whole-expression tensor canonicalization attempt on that notebook
+  cell was diagnosed:
+  - identical-quark Wick-contraction sums do not share one uniform external
+    index assignment across all terms
+  - `canonize_spenso_tensors(...)` therefore rejects the full 5-point sum
+    when asked to canonize it as if one fixed external index set applied to
+    every term
+- the surviving unsimplified `mu` / `nu` derivative labels in the same-species
+  current-current-gluon output were traced to derivative dummy labels being
+  carried through term-by-term instead of being normalized before comparison
+- auto-generated external leg labels were also inspected in that same notebook
+  example:
+  - the old generic numbering led to labels such as `i9`, `i10` on a 5-leg
+    vertex
+  - the current typed labeling now produces readable slots like `i1`, `c1`,
+    `mu5`, `a5`
+- the simplest fermion bilinear `Quark.bar * Quark` was debugged in the final
+  notebook / Lagrangian API path:
+  - spin contraction was already emitted as the bispinor metric
+  - color contraction was not being materialized as an explicit external color
+    identity
+  - the raw/simplified output was leaving only species deltas like
+    `delta(q,q) * delta(qbar,qbar)` instead of an external
+    `g(cof(3, c1), cof(3, c2))`
+- the vertex contraction engine was updated so repeated explicit non-spinor
+  field-slot labels now generate identity tensors by index
+  type/representation, while the existing spinor-chain handling was left intact
+- the multi-fermion sign mismatch with FeynRules was then traced carefully on
+  three benchmark operators:
+  - `(qbar q)(qbar q)`
+  - `(qbar Gamma(mu) q)(qbar Gamma(mu) q)`
+  - `(qbar Gamma(mu) CovD(q, mu))(qbar Gamma(nu) CovD(q, nu))`
+- the direct source of the mismatch was identified in the existing engine
+  design:
+  - fermion signs were always computed from the flat permutation of fermion
+    slots
+  - closed bilinear-current structure was either ignored or only partially
+    visible through repeated spinor labels
+  - this produced `direct - crossed` for identical-fermion current products
+    even when FeynRules gives `direct + crossed`
+- a targeted metadata path was implemented around
+  `InteractionTerm.closed_dirac_bilinears`:
+  - `src/model/lowering.py` now records explicitly known adjacent closed
+    `psibar ... psi` Dirac bilinears while lowering local monomials
+  - this covers:
+    - `qbar q`
+    - `qbar Gamma(mu) q`
+    - `qbar Gamma(mu) PartialD(q, mu)`
+    - `qbar Gamma(mu) CovD(q, mu)` after covariant expansion into local terms
+  - `src/compiler/gauge.py` now tags compiler-built fermion gauge currents and
+    Dirac partial terms with the same bilinear metadata
+  - spectator decoration now preserves and shifts those bilinear slot pairs
+    when explicit `psibar * psi` spectator pairs are appended to a covariant
+    core
+  - `src/symbolic/vertex_engine.py` now suppresses flat Grassmann permutation
+    signs only when all Dirac fermion slots are covered exactly once by closed
+    bilinear metadata; otherwise the old behavior is preserved
+- the existing repeated-spinor-label fermion-chain inference was kept as a
+  compatibility fallback for already explicit closed bilinears, but no new
+  generic field-order inference was introduced for open multi-fermion tensors
+- the declared-vs-explicit current-current reference test in
+  `tests/test_lagrangian_api.py` was updated so the explicit reference
+  `InteractionTerm(...)` carries the same closed-bilinear provenance as the
+  declared lowering path
+- concrete sign expectations were updated in the runnable examples looked at
+  during the investigation:
+  - `examples/examples_lagrangian.py`
+    - `DECL_psibar_psi_sq` now checks `direct + crossed`
+    - `DECL_current_current` now checks `direct + crossed`
+  - `examples/examples.py`
+    - `L_psibar_psi_sq`
+    - `L_current_current`
+    - `TERM_psibar_psi_sq`
+    - `TERM_current_current`
+    now all use the explicit closed-bilinear metadata and their expected signs
+    were flipped from `direct - crossed` to `direct + crossed`
+  - `src/symbolic/spenso_gamma_checks.py`
+    - the stripped current-current gamma check was updated to the same
+      all-plus bilinear-current convention
+- the specific same-species QCD 5-point benchmark from the final notebook was
+  locked down in `tests/test_lagrangian_api.py`:
+  - the four `qbar, q, qbar, q, G` direct/crossed structures are now checked
+    to carry the same relative sign
+  - the test still allows one common overall sign from the covariant-derivative
+    convention
+- focused validation was rerun on the updated paths:
+  - `PYTHONPATH=src ./.venv/bin/pytest tests -q`
+    - result: `182 passed`
+  - `PYTHONPATH=src ./.venv/bin/python examples/examples_lagrangian.py --no-demo`
+    - result: all Lagrangian API example checks passed
+
+What this achieved:
+
+- same-species multi-current Dirac operators now work as real declarative
+  inputs instead of remaining fragile notebook-only experiments
+- the engine now distinguishes a genuine product of closed Dirac bilinear
+  currents from a generic open multi-fermion tensor, which is the right
+  boundary for adopting the FeynRules-style sign convention without broadening
+  it too far
+- the simplest colored fermion bilinear now exposes explicit spin and color
+  identity structure at the vertex level instead of hiding the color identity
+  inside species deltas
+- the final notebook example and the fermion-current examples now reflect the
+  intended sign convention more faithfully for identical-fermion current
+  products
