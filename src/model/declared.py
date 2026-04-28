@@ -368,7 +368,7 @@ class _DeclaredMonomial:
         return " * ".join(pieces)
 
 
-def CovD(field, lorentz_index) -> CovariantDerivativeFactor:
+def CovD(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
     """Declarative covariant derivative factor for ``DeclaredLagrangian``.
 
     Accepts ``Field``, ``Field.bar``, or ``(Field, bool)`` and can be used in
@@ -376,15 +376,15 @@ def CovD(field, lorentz_index) -> CovariantDerivativeFactor:
     """
     from .interactions import _parse_field_arg
 
-    field_obj, conjugated = _parse_field_arg(field)
+    field_obj, parsed_conjugated = _parse_field_arg(field)
     return CovariantDerivativeFactor(
         field=field_obj,
         lorentz_index=lorentz_index,
-        conjugated=conjugated,
+        conjugated=bool(parsed_conjugated or conjugated),
     )
 
 
-def PartialD(field, lorentz_index) -> PartialDerivativeFactor:
+def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialDerivativeFactor:
     """Declarative partial derivative factor for local derivative monomials.
 
     Accepts ``Field``, ``Field.bar``, ``FieldOccurrence``, ``(Field, bool)``,
@@ -394,6 +394,10 @@ def PartialD(field, lorentz_index) -> PartialDerivativeFactor:
     from .interactions import _parse_field_arg
 
     if isinstance(field, PartialDerivativeFactor):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Nested PartialD(...) already carries field labels and conjugation."
+            )
         return PartialDerivativeFactor(
             field=field.field,
             lorentz_indices=field.lorentz_indices + (lorentz_index,),
@@ -401,17 +405,23 @@ def PartialD(field, lorentz_index) -> PartialDerivativeFactor:
             labels=field.labels,
         )
     if isinstance(field, FieldOccurrence):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Pass labels/conjugation either through FieldOccurrence(...) "
+                "or through PartialD(...), not both."
+            )
         return PartialDerivativeFactor(
             field=field.field,
             lorentz_indices=(lorentz_index,),
             conjugated=field.conjugated,
             labels=field.labels,
         )
-    field_obj, conjugated = _parse_field_arg(field)
+    field_obj, parsed_conjugated = _parse_field_arg(field)
     return PartialDerivativeFactor(
         field=field_obj,
         lorentz_indices=(lorentz_index,),
-        conjugated=conjugated,
+        conjugated=bool(parsed_conjugated or conjugated),
+        labels=labels or {},
     )
 
 

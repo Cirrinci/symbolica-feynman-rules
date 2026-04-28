@@ -173,6 +173,16 @@ class InteractionTerm:
             return DeclaredLagrangian(source_terms=decl_terms + (self,))
         return NotImplemented
 
+    def feynman_rule(self, *fields, momenta=None, simplify=True):
+        """Compute one vertex rule without manually wrapping this term."""
+        from .lagrangian import Lagrangian
+
+        return Lagrangian(terms=(self,)).feynman_rule(
+            *fields,
+            momenta=momenta,
+            simplify=simplify,
+        )
+
     def to_vertex_kwargs(self, external_legs: Sequence[ExternalLeg]) -> dict:
         """Generate the dict consumed by ``vertex_factor()``."""
 

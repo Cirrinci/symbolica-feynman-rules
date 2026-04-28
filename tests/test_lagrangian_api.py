@@ -262,6 +262,19 @@ def test_interaction_term_add_to_lagrangian():
     assert result.terms[0] is t
 
 
+def test_interaction_term_feynman_rule_matches_lagrangian_wrapper():
+    """InteractionTerm.feynman_rule() is a thin convenience wrapper."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    term = InteractionTerm(
+        coupling=S("lam4"),
+        fields=tuple(phi.occurrence() for _ in range(4)),
+    )
+
+    assert _canon(term.feynman_rule(phi, phi, phi, phi, simplify=True)) == _canon(
+        Lagrangian(terms=(term,)).feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+
+
 # ---------------------------------------------------------------------------
 # Scalar phi^4: self-conjugate bosonic vertex
 # ---------------------------------------------------------------------------
@@ -321,6 +334,47 @@ def test_lagrangian_accepts_declared_partiald_phi4_product():
     ))
     expected = ref.feynman_rule(phi, phi, phi, phi, simplify=True)
     assert _canon(got) == _canon(expected)
+
+
+def test_partiald_accepts_labels_and_conjugated_keywords():
+    """PartialD(..., labels=..., conjugated=...) matches the explicit FieldOccurrence form."""
+    ghost = _make_ghost()
+    mu = S("mu")
+    a_bar = S("a_bar")
+    a_ghost = S("a_ghost")
+
+    keyword_form = Lagrangian(
+        COLOR_ADJ_INDEX.representation.g(a_bar, a_ghost).to_expression()
+        * PartialD(
+            ghost,
+            mu,
+            conjugated=True,
+            labels={COLOR_ADJ_KIND: a_bar},
+        )
+        * PartialD(
+            ghost,
+            mu,
+            labels={COLOR_ADJ_KIND: a_ghost},
+        )
+    )
+    occurrence_form = Lagrangian(
+        COLOR_ADJ_INDEX.representation.g(a_bar, a_ghost).to_expression()
+        * PartialD(
+            ghost.occurrence(
+                conjugated=True,
+                labels={COLOR_ADJ_KIND: a_bar},
+            ),
+            mu,
+        )
+        * PartialD(
+            ghost.occurrence(labels={COLOR_ADJ_KIND: a_ghost}),
+            mu,
+        )
+    )
+
+    assert _canon(keyword_form.feynman_rule(ghost.bar, ghost, simplify=True)) == _canon(
+        occurrence_form.feynman_rule(ghost.bar, ghost, simplify=True)
+    )
 
 
 def test_lagrangian_accepts_declared_yukawa_product():
@@ -872,6 +926,39 @@ def test_model_accepts_declared_complex_scalar_mass_product():
     assert _canon(got) == _canon(expected)
 
 
+def test_covd_accepts_conjugated_keyword():
+    """CovD(..., conjugated=True) matches the existing Field.bar form."""
+    eQED, qPhi = S("eQED", "qPhi")
+    mu = S("mu")
+    phi = Field(
+        "PhiQED",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phiQED"),
+        conjugate_symbol=S("phiQEDbar"),
+        quantum_numbers={"Q": qPhi},
+    )
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    keyword_model = Model(
+        gauge_groups=(u1,),
+        fields=(phi, photon),
+        lagrangian_decl=CovD(phi, mu, conjugated=True) * CovD(phi, mu),
+    )
+    bar_model = Model(
+        gauge_groups=(u1,),
+        fields=(phi, photon),
+        lagrangian_decl=CovD(phi.bar, mu) * CovD(phi, mu),
+    )
+
+    assert _canon(
+        keyword_model.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    ) == _canon(
+        bar_model.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    )
+
+
 def test_complex_scalar_mass_term_tuple_input():
     """(Field, bool) input works the same as Field.bar."""
     phiC = Field("PhiC", spin=0, self_conjugate=False, symbol=S("phiC"), conjugate_symbol=S("phiCdag"))
@@ -1036,6 +1123,73 @@ def test_feynman_rule_no_args_can_return_field_keys():
     assert tuple(rules) == (key,)
     assert _canon(rules[key]) == _canon(
         L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+
+
+def test_feynman_rules_returns_all_vertices():
+    """feynman_rules() exposes the same grouped mapping as zero-arg feynman_rule()."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+        InteractionTerm(
+            coupling=S("lam"),
+            fields=tuple(phi.occurrence() for _ in range(4)),
+        ),
+    ))
+
+    assert {
+        key: _canon(value) for key, value in L.feynman_rules(simplify=True).items()
+    } == {
+        key: _canon(value) for key, value in L.feynman_rule(simplify=True).items()
+    }
+
+
+def test_feynman_rules_filters_by_arity():
+    """arity=... keeps only the requested vertex size."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+        InteractionTerm(
+            coupling=S("lam"),
+            fields=tuple(phi.occurrence() for _ in range(4)),
+        ),
+    ))
+
+    rules = L.feynman_rules(arity=3, simplify=True, key_format="fields")
+
+    assert tuple(rules) == ((phi, chi, chi),)
+    assert _canon(rules[(phi, chi, chi)]) == _canon(
+        L.feynman_rule(phi, chi, chi, simplify=True)
+    )
+
+
+def test_feynman_rules_select_uses_requested_field_tuples():
+    """select=[...] reuses the single-vertex path for exactly the requested tuples."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("g"), fields=(phi.occurrence(), chi.occurrence(), chi.occurrence())),
+    ))
+
+    rules = L.feynman_rules(
+        select=[(chi, phi, chi)],
+        simplify=True,
+        key_format="fields",
+    )
+
+    assert tuple(rules) == ((chi, phi, chi),)
+    assert _canon(rules[(chi, phi, chi)]) == _canon(
+        L.feynman_rule(chi, phi, chi, simplify=True)
     )
 
 

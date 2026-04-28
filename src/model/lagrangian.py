@@ -136,6 +136,41 @@ class CompiledLagrangian:
                 vertices[key] = _term_vertex_fields(term)
         return tuple(vertices.values())
 
+    def feynman_rules(self, *, arity=None, select=None, simplify=True, key_format="names"):
+        """Compute multiple Feynman rules grouped by field content."""
+        if key_format not in ("names", "fields"):
+            raise ValueError("key_format must be either 'names' or 'fields'.")
+
+        if select is None:
+            vertex_fields_list = self._vertex_field_tuples()
+        else:
+            vertex_fields_list = tuple(tuple(fields) for fields in select)
+
+        if arity is not None:
+            vertex_fields_list = tuple(
+                vertex_fields
+                for vertex_fields in vertex_fields_list
+                if len(vertex_fields) == arity
+            )
+
+        rules_by_field = {
+            tuple(vertex_fields): self.feynman_rule(*vertex_fields, simplify=simplify)
+            for vertex_fields in vertex_fields_list
+        }
+        if key_format == "fields":
+            return rules_by_field
+
+        rules_by_name = {}
+        for vertex_fields, expression in rules_by_field.items():
+            name_key = _vertex_name_tuple(vertex_fields)
+            if name_key in rules_by_name:
+                raise ValueError(
+                    "Name-keyed vertex signatures are ambiguous; "
+                    "use key_format='fields'."
+                )
+            rules_by_name[name_key] = expression
+        return rules_by_name
+
     def feynman_rule(self, *fields, momenta=None, simplify=True, key_format="names"):
         """Compute Feynman vertex rules.
 
@@ -156,23 +191,7 @@ class CompiledLagrangian:
         if n == 0:
             if momenta is not None:
                 raise ValueError("`momenta=` is only supported for explicit vertex extraction.")
-            rules_by_field = {
-                vertex_fields: self.feynman_rule(*vertex_fields, simplify=simplify)
-                for vertex_fields in self._vertex_field_tuples()
-            }
-            if key_format == "fields":
-                return rules_by_field
-
-            rules_by_name = {}
-            for vertex_fields, expression in rules_by_field.items():
-                name_key = _vertex_name_tuple(vertex_fields)
-                if name_key in rules_by_name:
-                    raise ValueError(
-                        "Name-keyed vertex signatures are ambiguous; "
-                        "use key_format='fields'."
-                    )
-                rules_by_name[name_key] = expression
-            return rules_by_name
+            return self.feynman_rules(simplify=simplify, key_format=key_format)
 
         if momenta is None:
             momenta_list = [S(f"q{k + 1}") for k in range(n)]
