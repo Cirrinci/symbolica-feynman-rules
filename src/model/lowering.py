@@ -147,6 +147,7 @@ class _LocalFieldEntry:
     field: Field
     conjugated: bool
     derivative_indices: tuple[object, ...]
+    labels: dict
 
 
 def _local_field_entry_from_factor(factor) -> _LocalFieldEntry | None:
@@ -155,12 +156,14 @@ def _local_field_entry_from_factor(factor) -> _LocalFieldEntry | None:
             field=factor.field,
             conjugated=factor.conjugated,
             derivative_indices=(),
+            labels=factor.labels,
         )
     if isinstance(factor, PartialDerivativeFactor):
         return _LocalFieldEntry(
             field=factor.field,
             conjugated=factor.conjugated,
             derivative_indices=tuple(factor.lorentz_indices),
+            labels=factor.labels,
         )
     return None
 
@@ -429,7 +432,11 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     for factor in free_tensor_factors:
         coupling *= _build_local_free_tensor_expression(factor)
 
-    slot_labels: list[dict[int, object]] = [{} for _ in field_entries]
+    # Explicit labels seed lowering; auto-generated labels only fill the gaps.
+    slot_labels: list[dict[int, object]] = [
+        entry.field.unpack_slot_labels(entry.labels)
+        for entry in field_entries
+    ]
     counters: dict[str, int] = {}
 
     for interval_idx, factors in enumerate(interval_chain_factors):

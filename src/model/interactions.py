@@ -42,6 +42,50 @@ class FieldOccurrence:
             return spinor[0] if spinor else None
         return spinor
 
+    def __mul__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__mul__(other)
+
+    def __rmul__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__rmul__(other)
+
+    def __add__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__add__(other)
+
+    def __radd__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__radd__(other)
+
 
 @dataclass(frozen=True)
 class ExternalLeg:

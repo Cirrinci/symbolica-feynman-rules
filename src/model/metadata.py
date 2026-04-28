@@ -426,6 +426,39 @@ class Field:
 
         return packed
 
+    def unpack_slot_labels(self, labels: Mapping | None) -> dict[int, object]:
+        """Invert ``pack_slot_labels`` back to slot-indexed labels."""
+        normalized = _normalize_index_labels(self, labels)
+        if not normalized:
+            return {}
+
+        unpacked: dict[int, object] = {}
+        for kind, value in normalized.items():
+            slots = self.index_positions(kind=kind)
+            if len(slots) == 1:
+                label = value
+                if isinstance(label, tuple):
+                    if len(label) != 1:
+                        raise ValueError(
+                            f"Field {self.name!r} carries one index of kind {kind!r}; "
+                            f"got {len(label)} labels."
+                        )
+                    label = label[0]
+                if label is not None:
+                    unpacked[slots[0]] = label
+                continue
+
+            if not isinstance(value, tuple):
+                raise ValueError(
+                    f"Field {self.name!r} carries repeated index kind {kind!r}; "
+                    "provide labels as a tuple/list in slot order."
+                )
+            for slot, label in zip(slots, value):
+                if label is not None:
+                    unpacked[slot] = label
+
+        return unpacked
+
     def occurrence(self, *, conjugated: bool = False, labels: dict | None = None):
         """Create a FieldOccurrence of this field in an interaction term."""
         from .interactions import FieldOccurrence

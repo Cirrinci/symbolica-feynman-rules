@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field as dataclass_field, replace
 
 from .metadata import ConjugateField, Field
 # ---------------------------------------------------------------------------
 # Declarative Lagrangian factors  (CovD / Gamma / FieldStrength DSL)
 # ---------------------------------------------------------------------------
+
+
+def _declared_source_terms_from_item(item):
+    from .lowering import _declared_source_terms_from_item as impl
+
+    return impl(item)
 
 
 class _DeclaredFactorMixin:
@@ -28,6 +34,7 @@ class _DeclaredFactorMixin:
 class _FieldFactor(_DeclaredFactorMixin):
     field: Field
     conjugated: bool = False
+    labels: dict = dataclass_field(default_factory=dict)
 
     def __str__(self):
         if self.conjugated and not self.field.self_conjugate:
@@ -61,6 +68,7 @@ class PartialDerivativeFactor(_DeclaredFactorMixin):
     field: Field
     lorentz_indices: tuple[object, ...]
     conjugated: bool = False
+    labels: dict = dataclass_field(default_factory=dict)
 
     @property
     def bar(self) -> "PartialDerivativeFactor":
@@ -70,6 +78,7 @@ class PartialDerivativeFactor(_DeclaredFactorMixin):
             field=self.field,
             lorentz_indices=self.lorentz_indices,
             conjugated=not self.conjugated,
+            labels=self.labels,
         )
 
     def __str__(self):
@@ -141,12 +150,16 @@ class GaugeFixingDeclaration:
     label: str = ""
 
     def __add__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         if other == 0:
             return DeclaredLagrangian(source_terms=(self,))
         terms = _declared_source_terms_from_item(other)
@@ -182,12 +195,16 @@ class GhostLagrangianDeclaration:
     label: str = ""
 
     def __add__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         if other == 0:
             return DeclaredLagrangian(source_terms=(self,))
         terms = _declared_source_terms_from_item(other)
@@ -217,7 +234,7 @@ class GhostLagrangianDeclaration:
 
 
 def _is_decl_scalar(value) -> bool:
-    from .interactions import InteractionTerm
+    from .interactions import FieldOccurrence, InteractionTerm
     from .lagrangian import (
         CompiledLagrangian,
         ComplexScalarKineticTerm,
@@ -233,6 +250,7 @@ def _is_decl_scalar(value) -> bool:
         (
             Field,
             ConjugateField,
+            FieldOccurrence,
             _FieldFactor,
             CovariantDerivativeFactor,
             PartialDerivativeFactor,
@@ -258,10 +276,18 @@ def _is_decl_scalar(value) -> bool:
 
 
 def _coerce_decl_factor(value):
+    from .interactions import FieldOccurrence
+
     if isinstance(value, Field):
         return _FieldFactor(value)
     if isinstance(value, ConjugateField):
         return _FieldFactor(value.field, conjugated=True)
+    if isinstance(value, FieldOccurrence):
+        return _FieldFactor(
+            value.field,
+            conjugated=value.conjugated,
+            labels=value.labels,
+        )
     if isinstance(
         value,
         (
@@ -361,9 +387,10 @@ def CovD(field, lorentz_index) -> CovariantDerivativeFactor:
 def PartialD(field, lorentz_index) -> PartialDerivativeFactor:
     """Declarative partial derivative factor for local derivative monomials.
 
-    Accepts ``Field``, ``Field.bar``, ``(Field, bool)``, or another
-    ``PartialD(...)`` factor to build higher derivatives.
+    Accepts ``Field``, ``Field.bar``, ``FieldOccurrence``, ``(Field, bool)``,
+    or another ``PartialD(...)`` factor to build higher derivatives.
     """
+    from .interactions import FieldOccurrence
     from .interactions import _parse_field_arg
 
     if isinstance(field, PartialDerivativeFactor):
@@ -371,6 +398,14 @@ def PartialD(field, lorentz_index) -> PartialDerivativeFactor:
             field=field.field,
             lorentz_indices=field.lorentz_indices + (lorentz_index,),
             conjugated=field.conjugated,
+            labels=field.labels,
+        )
+    if isinstance(field, FieldOccurrence):
+        return PartialDerivativeFactor(
+            field=field.field,
+            lorentz_indices=(lorentz_index,),
+            conjugated=field.conjugated,
+            labels=field.labels,
         )
     field_obj, conjugated = _parse_field_arg(field)
     return PartialDerivativeFactor(

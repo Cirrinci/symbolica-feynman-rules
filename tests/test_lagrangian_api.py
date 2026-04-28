@@ -1783,6 +1783,101 @@ def test_lagrangian_ghost_gauge_interaction():
     assert _canon(got) == _canon(ref)
 
 
+def test_manual_raw_spenso_gauge_fixing_and_ghost_sources():
+    """Raw Spenso tensors plus labeled FieldOccurrence factors match built-in wrappers."""
+    gS, xiQCD = S("gS", "xiQCD")
+    gluon = _make_gluon()
+    ghost = _make_ghost()
+    su3 = _make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol)
+
+    mu_left = S("mu_left")
+    mu_right = S("mu_right")
+    rho_left = S("rho_left")
+    rho_right = S("rho_right")
+    mu = S("mu")
+    rho_ghost = S("rho_ghost")
+
+    a_left = S("a_left")
+    a_right = S("a_right")
+    a_bar = S("a_bar")
+    a_gluon = S("a_gluon")
+    a_ghost = S("a_ghost")
+
+    manual = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xiQCD))
+            * COLOR_ADJ_INDEX.representation.g(a_left, a_right).to_expression()
+            * LORENTZ_INDEX.representation.g(mu_left, rho_left).to_expression()
+            * LORENTZ_INDEX.representation.g(mu_right, rho_right).to_expression()
+            * PartialD(
+                gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_left, COLOR_ADJ_KIND: a_left}
+                ),
+                rho_left,
+            )
+            * PartialD(
+                gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_right, COLOR_ADJ_KIND: a_right}
+                ),
+                rho_right,
+            )
+            + COLOR_ADJ_INDEX.representation.g(a_bar, a_ghost).to_expression()
+            * PartialD(
+                ghost.occurrence(
+                    conjugated=True,
+                    labels={COLOR_ADJ_KIND: a_bar},
+                ),
+                mu,
+            )
+            * PartialD(
+                ghost.occurrence(labels={COLOR_ADJ_KIND: a_ghost}),
+                mu,
+            )
+            + (
+                -gS
+                * structure_constant(a_bar, a_gluon, a_ghost)
+                * LORENTZ_INDEX.representation.g(rho_ghost, mu_left).to_expression()
+                * PartialD(
+                    ghost.occurrence(
+                        conjugated=True,
+                        labels={COLOR_ADJ_KIND: a_bar},
+                    ),
+                    rho_ghost,
+                )
+                * gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_left, COLOR_ADJ_KIND: a_gluon}
+                )
+                * ghost.occurrence(labels={COLOR_ADJ_KIND: a_ghost})
+            )
+        ),
+    )
+    wrapped = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=GaugeFixing(su3, xi=xiQCD) + GhostLagrangian(su3),
+    )
+
+    manual_lagrangian = manual.lagrangian()
+    wrapped_lagrangian = wrapped.lagrangian()
+
+    assert len(manual_lagrangian.terms) == 3
+    assert _canon(manual_lagrangian.feynman_rule(gluon, gluon, simplify=True)) == _canon(
+        wrapped_lagrangian.feynman_rule(gluon, gluon, simplify=True)
+    )
+    assert _canon(
+        manual_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True)
+    ) == _canon(
+        wrapped_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True)
+    )
+    assert _canon(
+        manual_lagrangian.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    ) == _canon(
+        wrapped_lagrangian.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    )
+
+
 def test_ghost_lagrangian_wrapper_preserves_source_and_scalar_prefactor():
     """GhostLagrangian(...) stays visible in the source declaration and scales naturally."""
     gS = S("gS")
