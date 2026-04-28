@@ -13,6 +13,7 @@ from .metadata import (
     ConjugateField,
     Field,
     FieldRole,
+    LORENTZ_KIND,
     SPINOR_KIND,
     Statistics,
     _copy_index_labels,
@@ -207,9 +208,50 @@ class InteractionTerm:
 
         derivative_indices = [d.lorentz_index for d in self.derivatives]
         derivative_targets = [d.target for d in self.derivatives]
+        coupling = self.coupling
+
+        if derivative_indices:
+            external_lorentz_labels = set()
+            for slot_labels in field_index_labels:
+                value = slot_labels.get(LORENTZ_KIND)
+                if isinstance(value, tuple):
+                    external_lorentz_labels.update(
+                        label for label in value if label is not None
+                    )
+                elif value is not None:
+                    external_lorentz_labels.add(value)
+
+            internal_lorentz_map: dict[str, object] = {}
+            original_lorentz_map: dict[str, object] = {}
+            normalized_derivatives = []
+            next_internal = 1
+
+            for lorentz_index in derivative_indices:
+                if lorentz_index in external_lorentz_labels:
+                    normalized_derivatives.append(lorentz_index)
+                    continue
+
+                key = (
+                    lorentz_index.to_canonical_string()
+                    if hasattr(lorentz_index, "to_canonical_string")
+                    else str(lorentz_index)
+                )
+                mapped = internal_lorentz_map.get(key)
+                if mapped is None:
+                    mapped = S(f"mu_int_{next_internal}")
+                    internal_lorentz_map[key] = mapped
+                    original_lorentz_map[key] = lorentz_index
+                    next_internal += 1
+                normalized_derivatives.append(mapped)
+
+            if internal_lorentz_map:
+                if hasattr(coupling, "replace"):
+                    for key, mapped in internal_lorentz_map.items():
+                        coupling = coupling.replace(original_lorentz_map[key], mapped)
+                derivative_indices = normalized_derivatives
 
         return dict(
-            coupling=self.coupling,
+            coupling=coupling,
             alphas=alphas,
             betas=betas,
             ps=ps,
@@ -268,19 +310,21 @@ def _parse_field_arg(arg) -> tuple[Field, bool]:
 
 
 def _auto_leg_labels(field_obj: Field, counter: list[int]) -> dict:
-    """Generate sequential index labels ``i1``, ``i2``, ... for one leg."""
+    """Generate readable default labels for one leg."""
+
+    leg_number = counter[0]
+    counter[0] += 1
 
     kind_counts = Counter(idx.kind for idx in field_obj.indices)
     kind_ordinals: dict[str, int] = {}
     labels: dict[str, object] = {}
 
     for idx in field_obj.indices:
-        label = S(f"i{counter[0]}")
-        counter[0] += 1
-
         ordinal = kind_ordinals.get(idx.kind, 0)
         kind_ordinals[idx.kind] = ordinal + 1
         count = kind_counts[idx.kind]
+        base = f"{idx.prefix}{leg_number}"
+        label = S(base if ordinal == 0 else f"{base}_{ordinal + 1}")
 
         if count > 1:
             if idx.kind not in labels:
