@@ -70,6 +70,7 @@ class AnalyzedSourceTerm:
     interaction: InteractionTerm | None = None
     covariant_core: DiracKineticTerm | ComplexScalarKineticTerm | None = None
     covariant_spectators: tuple[tuple[object, bool], ...] = ()
+    generic_covariant_monomial: _DeclaredMonomial | None = None
     gauge_kinetic: GaugeKineticTerm | None = None
     gauge_fixing: GaugeFixingTerm | None = None
     ghost: GhostTerm | None = None
@@ -79,6 +80,7 @@ class AnalyzedSourceTerm:
         return any(
             (
                 self.covariant_core is not None,
+                self.generic_covariant_monomial is not None,
                 self.gauge_kinetic is not None,
                 self.gauge_fixing is not None,
                 self.ghost is not None,
@@ -229,6 +231,21 @@ def _single_slot_position(field_obj: Field, kind: str) -> int | None:
     return positions[0]
 
 
+def _resolve_endpoint_slot(
+    field_obj: Field,
+    slot_label_map: Mapping[int, object],
+    kind: str,
+) -> int | None:
+    positions = field_obj.index_positions(kind=kind)
+    if len(positions) == 1:
+        return positions[0]
+
+    labeled_positions = [slot for slot in positions if slot in slot_label_map]
+    if len(labeled_positions) == 1:
+        return labeled_positions[0]
+    return None
+
+
 def _ensure_endpoint_labels(
     *,
     field_entries: Sequence[_LocalFieldEntry],
@@ -239,8 +256,16 @@ def _ensure_endpoint_labels(
     counters: dict[str, int],
     distinct: bool,
 ) -> tuple[object, object] | None:
-    left_slot = _single_slot_position(field_entries[left_idx].field, kind)
-    right_slot = _single_slot_position(field_entries[right_idx].field, kind)
+    left_slot = _resolve_endpoint_slot(
+        field_entries[left_idx].field,
+        slot_labels[left_idx],
+        kind,
+    )
+    right_slot = _resolve_endpoint_slot(
+        field_entries[right_idx].field,
+        slot_labels[right_idx],
+        kind,
+    )
     if left_slot is None or right_slot is None:
         return None
 
@@ -564,6 +589,9 @@ def _analyze_declared_source_term(term) -> AnalyzedSourceTerm | None:
     if ghost is not None:
         return AnalyzedSourceTerm(term=term, ghost=ghost)
 
+    if isinstance(term, _DeclaredMonomial) and _is_generic_covariant_monomial_candidate(term):
+        return AnalyzedSourceTerm(term=term, generic_covariant_monomial=term)
+
     return None
 
 
@@ -573,6 +601,8 @@ def _unsupported_declared_source_term_error():
         "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
         "CovD(Phi.bar, mu) * CovD(Phi, mu), "
         "either optionally multiplied by local spectator fields, "
+        "more general local monomials with one or more CovD(...) factors that can be "
+        "expanded using model gauge metadata, "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
@@ -584,6 +614,8 @@ def _unsupported_declared_source_term_error():
 def _validate_declared_monomial(term: _DeclaredMonomial):
     if _match_covariant_monomial(term) is not None:
         return
+    if _is_generic_covariant_monomial_candidate(term):
+        return
     if _lower_field_strength_monomial(term) is not None:
         return
     if _lower_local_interaction_monomial(term) is not None:
@@ -593,6 +625,8 @@ def _validate_declared_monomial(term: _DeclaredMonomial):
         "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
         "CovD(Phi.bar, mu) * CovD(Phi, mu), "
         "either optionally multiplied by local spectator fields, "
+        "more general local monomials with one or more CovD(...) factors that can be "
+        "expanded using model gauge metadata, "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
@@ -762,9 +796,34 @@ def _source_term_needs_compilation(term) -> bool:
     if isinstance(term, _DeclaredMonomial):
         if _match_covariant_monomial(term) is not None:
             return True
+        if _is_generic_covariant_monomial_candidate(term):
+            return True
         if _lower_field_strength_monomial(term) is not None:
             return True
     return False
+
+
+def _declared_monomial_has_covd(term: _DeclaredMonomial) -> bool:
+    return any(isinstance(factor, CovariantDerivativeFactor) for factor in term.factors)
+
+
+def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
+    if not _declared_monomial_has_covd(term):
+        return False
+
+    field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
+    gamma_factors = [factor for factor in term.factors if isinstance(factor, GammaFactor)]
+    covd_factors = [
+        factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)
+    ]
+
+    # Keep malformed bare kinetic cores on the old strict-validation path.
+    if len(covd_factors) == 1 and len(gamma_factors) == 1 and len(field_factors) == 1:
+        return False
+    if len(covd_factors) == 2 and len(gamma_factors) == 0 and len(field_factors) == 0:
+        return False
+
+    return True
 
 
 def _validate_declared_source_term(term):

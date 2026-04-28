@@ -41,6 +41,13 @@ from model import (
     InteractionTerm,
     Model,
 )
+from model.declared import (
+    _DeclaredMonomial,
+    _FieldFactor,
+    GeneratorFactor,
+    PartialDerivativeFactor,
+)
+from model.lowering import _lower_local_interaction_monomial
 from lagrangian.operators import psi_bar_gamma_psi, scalar_gauge_contact
 from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND, lorentz_metric
 
@@ -668,6 +675,15 @@ class _GaugeFieldLayout:
         )
 
 
+@dataclass(frozen=True)
+class _GenericCovariantBranch:
+    """One branch in a generic ``CovD(...)`` monomial expansion."""
+
+    coefficient: object = 1
+    inline_factors: tuple[object, ...] = ()
+    tail_factors: tuple[object, ...] = ()
+
+
 def _gauge_piece_action_key(piece: CovariantGaugePiece) -> tuple[str, str, str, Optional[int]]:
     """Stable key for matching the same gauge action across conjugate expansions."""
     return (
@@ -901,6 +917,188 @@ def expand_cov_der(
         gauge_current_pieces=tuple(gauge_pieces),
         contact_ready_data=tuple(gauge_pieces),
     )
+
+
+def _fresh_generic_covd_label(prefix: str, counters: dict[str, int], stem: str) -> object:
+    counters[prefix] = counters.get(prefix, 0) + 1
+    return _symbol(f"{prefix}_{stem}_{counters[prefix]}")
+
+
+def _generic_covd_piece_prefactor(field: Field, *, conjugated: bool, coupling):
+    if field.kind == "fermion":
+        sign = -1 if conjugated else 1
+    elif field.kind == "scalar":
+        sign = 1 if conjugated else -1
+    else:
+        raise ValueError(
+            "Generic CovD monomial expansion currently supports only fermion "
+            f"or scalar matter fields, got kind={field.kind!r}."
+        )
+    return sign * Expression.I * coupling
+
+
+def _generic_covd_matter_factor(
+    field: Field,
+    *,
+    conjugated: bool,
+    action: _GaugeAction,
+    counters: dict[str, int],
+) -> _FieldFactor:
+    labels = {}
+    if action.representation is not None and action.representation_slot is not None:
+        label = _fresh_generic_covd_label(
+            action.representation.index.prefix,
+            counters,
+            f"{field.name}_slot{action.representation_slot + 1}_covd",
+        )
+        labels = field.pack_slot_labels({action.representation_slot: label})
+    return _FieldFactor(
+        field=field,
+        conjugated=conjugated,
+        labels=labels,
+    )
+
+
+def _expand_generic_covd_factor(
+    model: Model,
+    cov_factor: CovariantDerivativeFactor,
+    *,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    expanded = expand_cov_der(model, cov_factor)
+    branches = [
+        _GenericCovariantBranch(
+            coefficient=Expression.num(1),
+            inline_factors=(
+                PartialDerivativeFactor(
+                    field=expanded.field,
+                    lorentz_indices=(expanded.derivative_piece.lorentz_index,),
+                    conjugated=expanded.conjugated,
+                    labels={},
+                ),
+            ),
+        )
+    ]
+
+    for piece in expanded.gauge_current_pieces:
+        adjoint_label = None
+        if not piece.metadata.gauge_group.abelian:
+            adj_kind, _ = _adjoint_slot_info(
+                piece.metadata.gauge_field,
+                purpose="Generic declared CovD lowering",
+            )
+            adjoint_label = _fresh_generic_covd_label(
+                adj_kind,
+                counters,
+                f"{piece.metadata.gauge_field.name}_{piece.metadata.gauge_group.name}_covd",
+            )
+
+        action = _GaugeAction.from_piece(
+            expanded.field,
+            piece,
+            lorentz_label=piece.lorentz_index,
+            adjoint_label=adjoint_label,
+            purpose="Generic declared CovD lowering",
+        )
+        matter_factor = _generic_covd_matter_factor(
+            expanded.field,
+            conjugated=expanded.conjugated,
+            action=action,
+            counters=counters,
+        )
+        inline_factors: list[object] = []
+        if expanded.conjugated:
+            inline_factors.append(matter_factor)
+            if action.representation is not None:
+                inline_factors.append(GeneratorFactor(action.adjoint_label))
+        else:
+            if action.representation is not None:
+                inline_factors.append(GeneratorFactor(action.adjoint_label))
+            inline_factors.append(matter_factor)
+
+        branches.append(
+            _GenericCovariantBranch(
+                coefficient=_generic_covd_piece_prefactor(
+                    expanded.field,
+                    conjugated=expanded.conjugated,
+                    coupling=action.coupling,
+                ),
+                inline_factors=tuple(inline_factors),
+                tail_factors=(
+                    _FieldFactor(
+                        field=action.gauge_field,
+                        labels=action.gauge_labels(),
+                    ),
+                ),
+            )
+        )
+
+    return tuple(branches)
+
+
+def _expand_generic_declared_covariant_monomial(
+    model: Model,
+    term: _DeclaredMonomial,
+) -> tuple[_DeclaredMonomial, ...]:
+    counters: dict[str, int] = {}
+    branches = (_GenericCovariantBranch(),)
+
+    for factor in term.factors:
+        if not isinstance(factor, CovariantDerivativeFactor):
+            branches = tuple(
+                _GenericCovariantBranch(
+                    coefficient=branch.coefficient,
+                    inline_factors=branch.inline_factors + (factor,),
+                    tail_factors=branch.tail_factors,
+                )
+                for branch in branches
+            )
+            continue
+
+        replacements = _expand_generic_covd_factor(
+            model,
+            factor,
+            counters=counters,
+        )
+        next_branches: list[_GenericCovariantBranch] = []
+        for branch in branches:
+            for replacement in replacements:
+                coefficient = branch.coefficient * replacement.coefficient
+                if _is_explicit_zero(coefficient):
+                    continue
+                next_branches.append(
+                    _GenericCovariantBranch(
+                        coefficient=coefficient,
+                        inline_factors=branch.inline_factors + replacement.inline_factors,
+                        tail_factors=branch.tail_factors + replacement.tail_factors,
+                    )
+                )
+        branches = tuple(next_branches)
+
+    return tuple(
+        _DeclaredMonomial(
+            coefficient=term.coefficient * branch.coefficient,
+            factors=branch.inline_factors + branch.tail_factors,
+        )
+        for branch in branches
+        if not _is_explicit_zero(term.coefficient * branch.coefficient)
+    )
+
+
+def _compile_generic_declared_covariant_monomial(
+    model: Model,
+    term: _DeclaredMonomial,
+) -> tuple[InteractionTerm, ...]:
+    interactions: list[InteractionTerm] = []
+    for expanded_term in _expand_generic_declared_covariant_monomial(model, term):
+        interaction = _lower_local_interaction_monomial(expanded_term)
+        if interaction is None:
+            raise ValueError(
+                "Could not lower a declarative monomial after expanding CovD(...). "
+                "Use InteractionTerm(...) for unsupported non-local orderings."
+            )
+        interactions.append(interaction)
+    return tuple(interactions)
 
 
 def _build_bilinear_gauge_action_data(
@@ -2099,6 +2297,15 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
                     model,
                     analyzed.covariant_core,
                     analyzed.covariant_spectators,
+                )
+            )
+            continue
+
+        if analyzed.generic_covariant_monomial is not None:
+            interactions.extend(
+                _compile_generic_declared_covariant_monomial(
+                    model,
+                    analyzed.generic_covariant_monomial,
                 )
             )
             continue

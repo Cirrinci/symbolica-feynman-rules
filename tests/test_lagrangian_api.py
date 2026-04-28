@@ -2396,3 +2396,115 @@ def test_dressed_dirac_covd_with_fermion_spectator_bilinear():
     assert _canon(L.feynman_rule(psi.bar, psi, A, xi.bar, xi)) == _canon(
         ref.feynman_rule(psi.bar, psi, A, xi.bar, xi)
     )
+
+
+def test_generic_declared_monomial_supports_multiple_dirac_covd_chains():
+    gS = S("gS")
+    mu = S("mu")
+    nu = S("nu")
+    a = S("a")
+    b = S("b")
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    chi = Field(
+        "Chi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("chi"),
+        conjugate_symbol=S("chibar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(psi, chi, gluon),
+        lagrangian_decl=(
+            I
+            * psi.bar
+            * Gamma(mu)
+            * CovD(psi, mu)
+            * chi.bar
+            * Gamma(nu)
+            * CovD(chi, nu)
+        ),
+    )
+    L = model.lagrangian()
+
+    gluon_mu = gluon.occurrence(labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a})
+    gluon_nu = gluon.occurrence(labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: a})
+    ref_single_gluon = Lagrangian(
+        (-gS) * psi.bar * Gamma(mu) * T(a) * psi * chi.bar * Gamma(nu) * PartialD(chi, nu) * gluon_mu
+        + (-gS) * psi.bar * Gamma(mu) * PartialD(psi, mu) * chi.bar * Gamma(nu) * T(a) * chi * gluon_nu
+    )
+    assert _canon(
+        L.feynman_rule(psi.bar, psi, chi.bar, chi, gluon, simplify=True)
+    ) == _canon(
+        ref_single_gluon.feynman_rule(
+            psi.bar, psi, chi.bar, chi, gluon, simplify=True
+        )
+    )
+
+    gluon_mu_a = gluon.occurrence(labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a})
+    gluon_nu_b = gluon.occurrence(labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: b})
+    ref_double_gluon = Lagrangian(
+        -(I * gS * gS)
+        * psi.bar
+        * Gamma(mu)
+        * T(a)
+        * psi
+        * chi.bar
+        * Gamma(nu)
+        * T(b)
+        * chi
+        * gluon_mu_a
+        * gluon_nu_b
+    )
+    assert _canon(
+        L.feynman_rule(psi.bar, psi, chi.bar, chi, gluon, gluon, simplify=True)
+    ) == _canon(
+        ref_double_gluon.feynman_rule(
+            psi.bar, psi, chi.bar, chi, gluon, gluon, simplify=True
+        )
+    )
+
+
+def test_generic_declared_monomial_supports_same_species_quark_covd_product():
+    gS = S("gS")
+    mu = S("mu")
+    nu = S("nu")
+    quark = Field(
+        "q",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(quark, gluon),
+        lagrangian_decl=(
+            I
+            * quark.bar
+            * Gamma(mu)
+            * CovD(quark, mu)
+            * quark.bar
+            * Gamma(nu)
+            * CovD(quark, nu)
+        ),
+    )
+    L = model.lagrangian()
+
+    assert L.feynman_rule(quark.bar, quark, quark.bar, quark, gluon, simplify=True) != 0
+    assert L.feynman_rule(quark.bar, quark, quark.bar, quark, gluon, gluon, simplify=True) != 0
