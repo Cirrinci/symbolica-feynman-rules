@@ -33,9 +33,15 @@ Implemented:
 
 - declarative front-end objects
 - lowering to existing backend term classes
+- generic local monomials with one or more `CovD(...)` factors can now be
+  expanded and lowered when they reduce to supported local interaction terms
 - coexistence with legacy slots during transition
 - preservation of the source declarative objects for examples and introspection
 - examples using declarative flow
+- lowering/compiler paths now preserve explicit closed Dirac bilinear
+  provenance for identical-fermion current products, so
+  `(psibar ... psi)(psibar ... psi)` follows the intended bilinear-current
+  sign convention without changing generic open multi-fermion behavior
 
 Open points:
 

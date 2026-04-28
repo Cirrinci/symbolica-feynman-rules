@@ -53,6 +53,7 @@ The intended split is:
    - typed model declarations
    - canonical source-term analysis
    - lowering to normalized backend terms
+   - provenance for structures that should affect extraction semantics
 3. compiler
    - covariant expansion
    - gauge-structure assembly
@@ -60,6 +61,24 @@ The intended split is:
 
 This note exists to keep physics structure out of ad hoc example code and to
 keep model-specific semantics out of the generic symbolic engine.
+
+## Current sign boundary
+
+The identical-fermion bilinear-current sign convention now follows a strict
+layer split:
+
+- lowering / compiler code marks complete closed Dirac bilinears
+  `psibar ... psi` on `InteractionTerm`
+- the symbolic engine consumes that metadata and uses the FeynRules-style
+  common-`+` relative signs only when those bilinears cover all Dirac fermion
+  slots exactly once
+- generic open multi-fermion tensors still use flat Grassmann permutation
+  parity
+
+This is the intended pattern for similar future exceptions: declaration or
+compiler layers identify the semantic structure, while the symbolic engine only
+consumes normalized metadata and does not infer model-specific meaning from ad
+hoc field order alone.
 
 ## Near-term strategy
 
