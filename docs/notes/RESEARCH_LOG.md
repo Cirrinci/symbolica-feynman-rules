@@ -706,46 +706,60 @@ What this achieved:
   intended sign convention more faithfully for identical-fermion current
   products
 
+Here is the clean version in plain markdown text:
+
+---
+
 ### 2026-04-29: output-policy API, documentation sync, and model validation diagnostics
 
 What happened:
 
 - the high-level `feynman_rule(...)` API was extended to expose vertex
   postprocessing options:
+
   - `include_delta` (default `True`) to control delta-function removal
-  - `strip_externals` (default `False`) to toggle amputated spinor removal
+  - `strip_externals` (default `True`) to toggle removal of external wavefunctions (amputated vs unamputated form)
   - `simplify_gamma` (default `False`) to enable gamma-matrix chain cleanup
 - these options now wire into the existing lower-level vertex postprocessing
   layer rather than introducing new processing logic
-- dedicated test coverage was added for delta removal, external spinor
+- dedicated test coverage was added for delta removal, external wavefunction
   stripping, and gamma simplification paths
 - the final walkthrough notebook was updated to demonstrate the new output
   policy options in practice
-- external spinor (unstripped wavefunction) notation was formally documented
-  to clarify the distinction between amputated and on-shell representations
+- external wavefunction notation was clarified:
+
+  - `strip_externals=False` exposes explicit external factors
+  - default behavior returns amputated vertices
 - the high-level API boundary between `Lagrangian(...)` and
   `Model(..., lagrangian_decl=...)` was clarified in documentation:
+
   - `Lagrangian(...)` takes local/operator-level terms as input
   - `Model(..., lagrangian_decl=...)` takes declarations that depend on model
     metadata (gauge groups, fields, representations)
   - `T(...)` and `StructureConstant(...)` are currently local-scope only
 - README and core module docstrings were updated to reflect this boundary
 - a new model validation layer was implemented:
+
   - `ValidationIssue` and `ValidationReport` classes capture validation state
   - `Model.validate()` now performs focused cross-checks on declared model
     metadata
   - the validator detects:
+
     - undeclared gauge-fixing or ghost term group references
     - abelian gauge sectors with ghost declarations (invalid)
     - missing ghost fields referenced in ghost terms
     - missing structure constants for non-abelian gauge groups used in ghosts
+  - the validation layer is intentionally narrow and diagnostic-only (no physics normalization or hermiticity checks yet)
 - focused `pytest` coverage was added for these validation rules in
   `tests/test_model_validation.py`
 - the final notebook was updated to show the new validation diagnostics
 - the live validation paths were rerun successfully:
+
   - `PYTHONPATH=src ./.venv/bin/pytest tests -q`
+
     - result: `182 passed`
   - `PYTHONPATH=src ./.venv/bin/python examples/examples_lagrangian.py --no-demo`
+
     - result: all Lagrangian API example checks passed
 
 What this achieved:
@@ -758,5 +772,7 @@ What this achieved:
 - common model metadata mistakes (missing ghosts, undeclared groups, invalid
   abelian ghosts) are now caught early by validation instead of producing
   silent zero-coupling output later
+- the validation layer establishes a foundation for future physics checks
+  (kinetic normalization, hermiticity, mass structure)
 - the final walkthrough notebook now demonstrates the full declarative
   workflow including diagnostic validation
