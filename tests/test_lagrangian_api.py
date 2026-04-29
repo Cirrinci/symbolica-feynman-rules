@@ -1668,6 +1668,102 @@ def test_feynman_rule_no_args_nontrivial_model_summary_is_usable():
 
 
 # ---------------------------------------------------------------------------
+# High-level output-policy options
+# ---------------------------------------------------------------------------
+
+def test_feynman_rule_default_output_policy_is_unchanged():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(S("lam4") * phi * phi * phi * phi)
+
+    got_default = lagrangian.feynman_rule(phi, phi, phi, phi, simplify=True)
+    got_explicit = lagrangian.feynman_rule(
+        phi,
+        phi,
+        phi,
+        phi,
+        simplify=True,
+        include_delta=True,
+        strip_externals=True,
+        simplify_gamma=False,
+    )
+
+    assert _canon(got_default) == _canon(got_explicit)
+
+
+def test_feynman_rule_include_delta_false_omits_delta():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(S("lam4") * phi * phi * phi * phi)
+
+    with_delta = lagrangian.feynman_rule(phi, phi, phi, phi, simplify=False)
+    without_delta = lagrangian.feynman_rule(
+        phi,
+        phi,
+        phi,
+        phi,
+        simplify=False,
+        include_delta=False,
+    )
+
+    assert "Delta" in with_delta.to_canonical_string()
+    assert "Delta" not in without_delta.to_canonical_string()
+
+
+def test_feynman_rule_strip_externals_false_preserves_external_spinors():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(S("y") * psi.bar * psi * phi)
+
+    stripped = lagrangian.feynman_rule(psi.bar, psi, phi, simplify=False)
+    unstripped = lagrangian.feynman_rule(
+        psi.bar,
+        psi,
+        phi,
+        simplify=False,
+        strip_externals=False,
+    )
+
+    assert "U(" not in stripped.to_canonical_string()
+    assert "U(" in unstripped.to_canonical_string()
+    assert _canon(stripped) != _canon(unstripped)
+
+
+def test_feynman_rule_simplify_gamma_forwards_to_cleanup_path():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    g = S("g")
+    mu, nu = S("mu", "nu")
+    lagrangian = Lagrangian(
+        g * psi.bar * Gamma(mu) * Gamma(nu) * psi
+        + g * psi.bar * Gamma(nu) * Gamma(mu) * psi
+    )
+
+    default = lagrangian.feynman_rule(psi.bar, psi, simplify=True)
+    with_gamma = lagrangian.feynman_rule(
+        psi.bar,
+        psi,
+        simplify=True,
+        simplify_gamma=True,
+    )
+    manual = simplify_gamma_chain(default)
+
+    assert _canon(with_gamma) == _canon(manual)
+    assert _canon(with_gamma) != _canon(default)
+
+
+# ---------------------------------------------------------------------------
 # Model.lagrangian() integration: QED Dirac kinetic term
 # ---------------------------------------------------------------------------
 

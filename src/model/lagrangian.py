@@ -314,7 +314,17 @@ class CompiledLagrangian:
             total_signatures=len(all_signatures),
         )
 
-    def feynman_rules(self, *, arity=None, select=None, simplify=True, key_format="names"):
+    def feynman_rules(
+        self,
+        *,
+        arity=None,
+        select=None,
+        simplify=True,
+        key_format="names",
+        include_delta: bool = True,
+        strip_externals: bool = True,
+        simplify_gamma: bool = False,
+    ):
         """Compute multiple Feynman rules grouped by field content."""
         if key_format not in ("names", "fields"):
             raise ValueError("key_format must be either 'names' or 'fields'.")
@@ -332,7 +342,13 @@ class CompiledLagrangian:
             )
 
         rules_by_field = {
-            tuple(vertex_fields): self.feynman_rule(*vertex_fields, simplify=simplify)
+            tuple(vertex_fields): self.feynman_rule(
+                *vertex_fields,
+                simplify=simplify,
+                include_delta=include_delta,
+                strip_externals=strip_externals,
+                simplify_gamma=simplify_gamma,
+            )
             for vertex_fields in vertex_fields_list
         }
         if key_format == "fields":
@@ -349,7 +365,16 @@ class CompiledLagrangian:
             rules_by_name[name_key] = expression
         return rules_by_name
 
-    def feynman_rule(self, *fields, momenta=None, simplify=True, key_format="names"):
+    def feynman_rule(
+        self,
+        *fields,
+        momenta=None,
+        simplify=True,
+        key_format="names",
+        include_delta: bool = True,
+        strip_externals: bool = True,
+        simplify_gamma: bool = False,
+    ):
         """Compute Feynman vertex rules.
 
         With explicit fields, return the vertex rule for that field content.
@@ -369,7 +394,13 @@ class CompiledLagrangian:
         if n == 0:
             if momenta is not None:
                 raise ValueError("`momenta=` is only supported for explicit vertex extraction.")
-            return self.feynman_rules(simplify=simplify, key_format=key_format)
+            return self.feynman_rules(
+                simplify=simplify,
+                key_format=key_format,
+                include_delta=include_delta,
+                strip_externals=strip_externals,
+                simplify_gamma=simplify_gamma,
+            )
 
         if momenta is None:
             momenta_list = [S(f"q{k + 1}") for k in range(n)]
@@ -404,8 +435,8 @@ class CompiledLagrangian:
                 external_legs=legs,
                 x=x,
                 d=d,
-                strip_externals=True,
-                include_delta=True,
+                strip_externals=strip_externals,
+                include_delta=include_delta,
             )
 
         if simplify:
@@ -419,6 +450,7 @@ class CompiledLagrangian:
                 total,
                 species_map=species_map,
                 external_legs=legs,
+                simplify_gamma=simplify_gamma,
             )
 
         return total

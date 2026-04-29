@@ -544,13 +544,36 @@ Suggested rollout order:
 
 ## 7. API / UX Improvements
 
-- [ ] Expose `include_delta` and `strip_externals` on the high-level `feynman_rule(...)` API.
+- [x] Expose `include_delta` and `strip_externals` on the high-level `feynman_rule(...)` API.
   - Example:
     - `L.feynman_rule(psi.bar, psi, A, include_delta=False, strip_externals=True)`
+  - Implemented behavior:
+    - `CompiledLagrangian.feynman_rule(...)`, `Lagrangian.feynman_rule(...)`, and the grouped `feynman_rules(...)` path now accept:
+      - `include_delta: bool = True`
+      - `strip_externals: bool = True`
+    - The same options are also forwarded by `InteractionTerm.feynman_rule(...)`.
+  - Tests:
+    - `tests/test_lagrangian_api.py::test_feynman_rule_default_output_policy_is_unchanged`
+      - Passes.
+      - Confirms the explicit default kwargs reproduce the existing behavior exactly.
+    - `tests/test_lagrangian_api.py::test_feynman_rule_include_delta_false_omits_delta`
+      - Passes.
+      - Confirms `include_delta=False` removes the momentum-conservation `Delta(...)` factor from the high-level output.
+    - `tests/test_lagrangian_api.py::test_feynman_rule_strip_externals_false_preserves_external_spinors`
+      - Passes.
+      - Confirms `strip_externals=False` preserves the external-wavefunction layer in the high-level Yukawa path instead of returning the stripped default output.
 
-- [ ] Add optional high-level gamma simplification.
+- [x] Add optional high-level gamma simplification.
   - Example:
     - `L.feynman_rule(psi.bar, psi, A, simplify=True, simplify_gamma=True)`
+  - Implemented behavior:
+    - `CompiledLagrangian.feynman_rule(...)` and `feynman_rules(...)` now accept `simplify_gamma: bool = False`.
+    - When `simplify=True` and `simplify_gamma=True`, the high-level API forwards the request into the existing `simplify_vertex(..., simplify_gamma=True)` cleanup path.
+    - Default behavior remains unchanged when `simplify_gamma=False`.
+  - Tests:
+    - `tests/test_lagrangian_api.py::test_feynman_rule_simplify_gamma_forwards_to_cleanup_path`
+      - Passes.
+      - Confirms the high-level API matches the manual `simplify_gamma_chain(...)` result on a gamma-anticommutator bilinear and differs from the unsimplified default output.
 
 - [x] Improve “no matching interaction” errors.
   - Current issue:
