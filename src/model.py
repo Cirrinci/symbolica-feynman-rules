@@ -1,4 +1,4 @@
-e"""
+"""
 FeynRules-style model declarations for the Symbolica vertex engine.
 
 This module provides thin, declarative objects that mirror the structure of
@@ -304,13 +304,13 @@ def _copy_index_label_value(value):
     return value
 
 
-def _copy_index_labels(labels: Mapping | None) -> dict:
+def _copy_index_labels(labels: Mapping or None) -> dict:
     if not labels:
         return {}
     return {kind: _copy_index_label_value(value) for kind, value in labels.items()}
 
 
-def _normalize_index_labels(field: "Field", labels: Mapping | None) -> dict:
+def _normalize_index_labels(field: "Field", labels: Mapping or None) -> dict:
     normalized = _copy_index_labels(labels)
     if not normalized:
         return {}
@@ -420,7 +420,7 @@ class Field:
 
         return packed
 
-    def occurrence(self, *, conjugated: bool = False, labels: dict | None = None):
+    def occurrence(self, *, conjugated: bool = False, labels: dict or None = None):
         """Create a FieldOccurrence of this field in an interaction term."""
         return FieldOccurrence(
             field=self,
@@ -440,7 +440,7 @@ class Field:
         conjugated: bool = False,
         species=None,
         spin=None,
-        labels: dict | None = None,
+        labels: dict or None = None,
     ):
         """Create an ExternalLeg for this field."""
         return ExternalLeg(
@@ -1320,7 +1320,7 @@ class GhostTerm:
 
 def _match_covariant_monomial(
     term: _DeclaredMonomial,
-) -> tuple[DiracKineticTerm | ComplexScalarKineticTerm, tuple[tuple[object, bool], ...]] | None:
+) -> tuple[DiracKineticTerm or ComplexScalarKineticTerm, tuple[tuple[object, bool], ...]] or None:
     field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
     gamma_factors = [factor for factor in term.factors if isinstance(factor, GammaFactor)]
     covd_factors = [factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)]
@@ -1503,7 +1503,7 @@ def _declared_source_terms_from_item(item):
     return None
 
 
-def _source_term_interaction(term) -> InteractionTerm | None:
+def _source_term_interaction(term) -> InteractionTerm or None:
     if isinstance(term, InteractionTerm):
         return term
     if isinstance(term, _DeclaredMonomial):
@@ -1511,7 +1511,7 @@ def _source_term_interaction(term) -> InteractionTerm | None:
     return None
 
 
-def _source_term_covariant_core(term) -> DiracKineticTerm or ComplexScalarKineticTerm | None:
+def _source_term_covariant_core(term) -> DiracKineticTerm or ComplexScalarKineticTerm or None:
     if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
         return term
     if isinstance(term, _DeclaredMonomial):
@@ -1522,7 +1522,7 @@ def _source_term_covariant_core(term) -> DiracKineticTerm or ComplexScalarKineti
     return None
 
 
-def _source_term_gauge_kinetic(term) -> GaugeKineticTerm | None:
+def _source_term_gauge_kinetic(term) -> GaugeKineticTerm or None:
     if isinstance(term, GaugeKineticTerm):
         return term
     if isinstance(term, _DeclaredMonomial):
@@ -1530,7 +1530,7 @@ def _source_term_gauge_kinetic(term) -> GaugeKineticTerm | None:
     return None
 
 
-def _source_term_gauge_fixing(term) -> GaugeFixingTerm | None:
+def _source_term_gauge_fixing(term) -> GaugeFixingTerm or None:
     if isinstance(term, GaugeFixingTerm):
         return term
     if isinstance(term, GaugeFixingDeclaration):
@@ -1543,7 +1543,7 @@ def _source_term_gauge_fixing(term) -> GaugeFixingTerm | None:
     return None
 
 
-def _source_term_ghost(term) -> GhostTerm | None:
+def _source_term_ghost(term) -> GhostTerm or None:
     if isinstance(term, GhostTerm):
         return term
     if isinstance(term, GhostLagrangianDeclaration):
@@ -1629,7 +1629,7 @@ class DeclaredLagrangian:
 
 CovariantTerm = (
     DiracKineticTerm
-    | ComplexScalarKineticTerm
+    or ComplexScalarKineticTerm
 )
 
 
@@ -1650,7 +1650,7 @@ class Model:
     fields: tuple[Field, ...] = ()
     parameters: tuple[Parameter, ...] = ()
     interactions: tuple[InteractionTerm, ...] = ()
-    lagrangian_decl: DeclaredLagrangian | None = None
+    lagrangian_decl: DeclaredLagrangian or None = None
     covariant_terms: tuple[CovariantTerm, ...] = ()
     gauge_kinetic_terms: tuple[GaugeKineticTerm, ...] = ()
     gauge_fixing_terms: tuple[GaugeFixingTerm, ...] = ()
