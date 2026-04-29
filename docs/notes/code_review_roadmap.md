@@ -189,15 +189,33 @@ The near-term goal should be to make the system fail closed on ambiguous physics
   - [x] Moved `_spectator_identity_factor(...)`, `_materialize_spectator_occurrences(...)`, and `_decorate_interactions_with_spectators(...)` out of `src/compiler/gauge.py`.
   - [x] Moved the private spectator label builders used by those helpers into the same module.
   - [x] Simplified `src/compiler/covariant_core.py` so it imports spectator helpers directly instead of receiving them through wrapper injection.
+- Final extraction step completed:
+  - [x] Created `src/compiler/matter_actions.py` for bilinear gauge-action helpers used by matter currents and scalar contacts.
+  - [x] Moved `_build_bilinear_gauge_action_data(...)`, `_compile_scalar_current_from_piece(...)`, `_build_fermion_current_interaction(...)`, `_default_scalar_contact_internal_label(...)`, `_build_scalar_contact_action_data(...)`, and `_compile_scalar_contact_terms(...)` out of `src/compiler/gauge.py`.
+  - [x] Moved the private `_BilinearGaugeActionData` and `_ScalarContactActionData` dataclasses into the same module.
+  - [x] Kept `_GaugeAction` in `src/compiler/gauge.py` because it is still shared with generic declared `CovD(...)` expansion and broader covariant metadata logic.
 - Behavior parity validation:
   - Existing parity checks around declarative-vs-legacy covariant compilation were preserved and still pass.
   - Focused checks covering declarative free bilinears, legacy gauge-only behavior, and `with_compiled_covariant_terms(...)` parity were run after extraction.
   - Focused spectator-decorated declarative `CovD(...)` tests also pass after the second extraction.
+  - Focused matter-current / scalar-contact parity checks now also pass after the final extraction:
+    - `tests/test_covariant_bislot_sum.py`
+    - `tests/test_covariant_mixed_scalar.py`
+    - `tests/test_covariant_compiler_matrix.py`
+    - legacy gauge-only kinetic diagnostics in `tests/test_lagrangian_api.py`
+  - Full suite still passes after the three-step split.
+- Current responsibility split:
+  - `src/compiler/covariant_core.py`: full-operator vs gauge-only covariant-core policy
+  - `src/compiler/spectators.py`: spectator labels and spectator decoration
+  - `src/compiler/matter_actions.py`: matter-current and scalar-contact action builders
+  - `src/compiler/gauge.py`: public compiler entry points plus remaining generic gauge-sector logic
+- Status:
+  - `4.1` is now substantially complete as an incremental split of the highest-density helper clusters out of `src/compiler/gauge.py`, without touching Yang-Mills, ghosts, gauge fixing, or SSB.
 - Status checklist:
   - [x] understood
   - [x] refactor plan written
-  - [ ] split implemented
-  - [ ] behavior parity validated
+  - [x] split implemented
+  - [x] behavior parity validated
 
 ### 4.2 `vertex_engine.py` mixes core contraction with output-policy and cleanup logic
 
