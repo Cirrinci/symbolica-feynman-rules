@@ -85,11 +85,25 @@ The near-term goal should be to make the system fail closed on ambiguous physics
   - Make “full operator” vs “interaction-only piece” explicit in the API and naming.
   - Either unify semantics or add explicit entry points for both modes.
   - Add parity tests that fail if the distinction is applied implicitly.
+- Findings from implementation:
+  - The split is currently intentional in behavior but was only partially explicit in code.
+  - Declarative `CovD(...)` monomials are routed through analyzed source terms and compiled as full operators.
+  - Legacy `DiracKineticTerm` / `ComplexScalarKineticTerm` declarations are routed through `model.covariant_terms` and compile only gauge-generated interactions.
+  - The ambiguity came from both paths sharing the same normalized core types while relying on different compiler entry points.
+- Design decision:
+  - Keep legacy kinetic declarations gauge-only for backward compatibility.
+  - Make the split explicit with an internal `include_free_bilinear` policy in `src/compiler/gauge.py` rather than changing public APIs.
+- Tests added:
+  - `test_legacy_qed_fermion_kinetic_term_is_gauge_only`
+    - Proves legacy `DiracKineticTerm` does not create a 2-point free bilinear.
+  - `test_legacy_scalar_qed_kinetic_term_is_gauge_only`
+    - Proves legacy `ComplexScalarKineticTerm` does not create a 2-point free bilinear.
+  - Existing declarative free-bilinear tests were tightened to assert that compiled output contains an actual 2-field term for both fermion and scalar cases.
 - Status checklist:
-  - [ ] understood
-  - [ ] test written
-  - [ ] fix implemented
-  - [ ] validated
+  - [x] understood
+  - [x] test written
+  - [x] fix implemented
+  - [x] validated
 
 ### 3.4 Fermion sign handling is only semantically safe for a narrow class of operators
 

@@ -1506,6 +1506,7 @@ def test_declared_lagrangian_qed_fermion_includes_free_bilinear():
 
     compiled = compile_covariant_terms(model)
     assert len(compiled) == 2
+    assert any(len(term.fields) == 2 for term in compiled)
 
     L = model.lagrangian()
     got = L.feynman_rule(fermion.bar, fermion, simplify=True)
@@ -1523,6 +1524,30 @@ def test_declared_lagrangian_qed_fermion_includes_free_bilinear():
     ))
 
     assert _canon(got) == _canon(ref.feynman_rule(fermion.bar, fermion, simplify=True))
+
+
+def test_legacy_qed_fermion_kinetic_term_is_gauge_only():
+    """Legacy DiracKineticTerm keeps only gauge-generated interactions."""
+    eQED, qPsi = S("eQED", "qPsi")
+    fermion = Field("PsiQED", spin=Fraction(1, 2), self_conjugate=False,
+                     symbol=S("psi"), conjugate_symbol=S("psibar"),
+                     indices=(SPINOR_INDEX,), quantum_numbers={"Q": qPsi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        legacy = Model(
+            gauge_groups=(u1,),
+            fields=(fermion, photon),
+            covariant_terms=(DiracKineticTerm(field=fermion),),
+        )
+
+    compiled = compile_covariant_terms(legacy)
+    assert compiled
+    assert all(len(term.fields) != 2 for term in compiled)
+
+    with pytest.raises(ValueError, match="No matching interaction terms"):
+        legacy.lagrangian().feynman_rule(fermion.bar, fermion, simplify=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1597,6 +1622,7 @@ def test_declared_lagrangian_scalar_qed_includes_free_bilinear():
 
     compiled = compile_covariant_terms(model)
     assert len(compiled) == 4
+    assert any(len(term.fields) == 2 for term in compiled)
 
     L = model.lagrangian()
     got = L.feynman_rule(phi.bar, phi, simplify=True)
@@ -1616,6 +1642,30 @@ def test_declared_lagrangian_scalar_qed_includes_free_bilinear():
     ))
 
     assert _canon(got) == _canon(ref.feynman_rule(phi.bar, phi, simplify=True))
+
+
+def test_legacy_scalar_qed_kinetic_term_is_gauge_only():
+    """Legacy ComplexScalarKineticTerm keeps only gauge-generated interactions."""
+    eQED, qPhi = S("eQED", "qPhi")
+    phi = Field("PhiQED", spin=0, self_conjugate=False,
+                symbol=S("phiQED"), conjugate_symbol=S("phiQEDbar"),
+                quantum_numbers={"Q": qPhi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        legacy = Model(
+            gauge_groups=(u1,),
+            fields=(phi, photon),
+            covariant_terms=(ComplexScalarKineticTerm(field=phi),),
+        )
+
+    compiled = compile_covariant_terms(legacy)
+    assert compiled
+    assert all(len(term.fields) != 2 for term in compiled)
+
+    with pytest.raises(ValueError, match="No matching interaction terms"):
+        legacy.lagrangian().feynman_rule(phi.bar, phi, simplify=True)
 
 
 def test_declared_lagrangian_field_strength_matches_legacy():

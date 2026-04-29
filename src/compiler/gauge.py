@@ -2038,7 +2038,9 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
     """Compile the gauge-interaction part of ``psibar i gamma^mu D_mu psi``.
 
     One model declaration can expand into several interactions when the same
-    fermion transforms under multiple declared gauge groups.
+    fermion transforms under multiple declared gauge groups. This intentionally
+    omits the free ``psibar i gamma^mu partial_mu psi`` bilinear; declarative
+    ``CovD(...)`` monomials add that piece separately.
     """
     fermion = _require_declared_field(
         model,
@@ -2120,7 +2122,9 @@ def compile_complex_scalar_kinetic_term(
     """Compile the gauge-interaction part of ``(D_mu phi)^dagger (D^mu phi)``.
 
     The output contains both the current term and the two-gauge contact term
-    for each applicable gauge group.
+    for each applicable gauge group. This intentionally omits the free
+    ``(partial_mu phi)^dagger (partial^mu phi)`` bilinear; declarative
+    ``CovD(...)`` monomials add that piece separately.
     """
     scalar = _require_declared_field(
         model,
@@ -2217,22 +2221,23 @@ def _assemble_full_covariant_operator(
     )
     return gauge_decorated + partial_decorated
 
-def _compile_declared_covariant_core(
+
+def _compile_covariant_core(
     model: Model,
     core: DiracKineticTerm | ComplexScalarKineticTerm,
+    *,
+    include_free_bilinear: bool,
     spectators: tuple[tuple[Field, bool], ...] = (),
 ) -> tuple[InteractionTerm, ...]:
-    """Compile one declared ``CovD`` monomial as the full kinetic operator.
+    """Compile one covariant kinetic core with explicit free-bilinear policy.
 
-    Declarative covariant-derivative monomials represent the full source
-    operator, not only the gauge-current part.  The lowering therefore always
-    emits both pieces:
-    - the free partial-derivative bilinear
-    - the gauge-interaction terms generated from the same core
+    The same normalized core types appear in two front-end paths:
+    - declarative ``CovD(...)`` monomials, which denote the full operator
+    - legacy ``DiracKineticTerm`` / ``ComplexScalarKineticTerm`` declarations,
+      which are preserved as gauge-interaction-only for backward compatibility
 
-    Any spectator fields are attached uniformly to both pieces so that plain and
-    spectator-decorated declarative ``CovD`` monomials share the same
-    semantics.
+    ``include_free_bilinear`` makes that policy explicit at the compiler
+    boundary instead of relying on which caller happened to invoke which helper.
     """
     spectator_factor, spectator_occurrences, spectator_bilinears = _materialize_spectator_occurrences(spectators)
 
@@ -2247,6 +2252,13 @@ def _compile_declared_covariant_core(
                 f"Covariant Dirac monomial requires a fermion field, got kind={fermion.kind!r}."
             )
         gauge_terms = compile_dirac_kinetic_term(model, core)
+        if not include_free_bilinear:
+            return _decorate_interactions_with_spectators(
+                gauge_terms,
+                spectator_factor=spectator_factor,
+                spectator_occurrences=spectator_occurrences,
+                spectator_bilinears=spectator_bilinears,
+            )
         partial_term = _compile_dirac_partial_term(
             fermion,
             coefficient=core.coefficient,
@@ -2271,6 +2283,13 @@ def _compile_declared_covariant_core(
                 "Covariant complex-scalar monomials require a non-self-conjugate scalar field."
             )
         gauge_terms = compile_complex_scalar_kinetic_term(model, core)
+        if not include_free_bilinear:
+            return _decorate_interactions_with_spectators(
+                gauge_terms,
+                spectator_factor=spectator_factor,
+                spectator_occurrences=spectator_occurrences,
+                spectator_bilinears=spectator_bilinears,
+            )
         partial_term = _compile_complex_scalar_partial_term(
             scalar,
             coefficient=core.coefficient,
@@ -2287,6 +2306,32 @@ def _compile_declared_covariant_core(
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
 
 
+def _compile_declared_covariant_core(
+    model: Model,
+    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    spectators: tuple[tuple[Field, bool], ...] = (),
+) -> tuple[InteractionTerm, ...]:
+    """Compile one declarative ``CovD`` monomial as the full kinetic operator."""
+    return _compile_covariant_core(
+        model,
+        core,
+        include_free_bilinear=True,
+        spectators=spectators,
+    )
+
+
+def _compile_legacy_covariant_core(
+    model: Model,
+    core: DiracKineticTerm | ComplexScalarKineticTerm,
+) -> tuple[InteractionTerm, ...]:
+    """Compile one legacy kinetic declaration as gauge-interaction-only."""
+    return _compile_covariant_core(
+        model,
+        core,
+        include_free_bilinear=False,
+    )
+
+
 def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     """Compile all declared non-local / structured source terms in a model.
 
@@ -2298,8 +2343,8 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     Declarative ``CovD(...)`` monomials are compiled as full operators, so their
     output includes the free bilinear partial-derivative contribution alongside
     the gauge-interaction pieces.  Legacy ``DiracKineticTerm`` and
-    ``ComplexScalarKineticTerm`` declarations keep their existing gauge-only
-    behavior.
+    ``ComplexScalarKineticTerm`` declarations intentionally keep their existing
+    gauge-only behavior for backward compatibility.
     """
     interactions: list[InteractionTerm] = []
 
@@ -2339,10 +2384,10 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
 
     for term in model.covariant_terms:
         if isinstance(term, DiracKineticTerm):
-            interactions.extend(compile_dirac_kinetic_term(model, term))
+            interactions.extend(_compile_legacy_covariant_core(model, term))
             continue
         if isinstance(term, ComplexScalarKineticTerm):
-            interactions.extend(compile_complex_scalar_kinetic_term(model, term))
+            interactions.extend(_compile_legacy_covariant_core(model, term))
             continue
         raise TypeError(f"Unsupported covariant term type: {type(term)!r}")
 
