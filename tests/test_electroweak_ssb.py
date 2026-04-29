@@ -70,7 +70,7 @@ def _ghost_kinetic_lorentz_index(lagrangian, ghost: Field):
             (ghost, True),
             (ghost, False),
         ):
-            return S("mu_int_1")
+            return S("mu1_int")
     raise AssertionError(f"Missing ghost kinetic term for {ghost.name}.")
 
 
@@ -310,7 +310,7 @@ def test_higgs_potential_derives_higgs_mass_and_self_couplings():
     assert _canon(FULL_BROKEN.higgs_potential.mh_sq) == _canon(mh_sq)
 
     got_hh = FULL_L.feynman_rule(h, h, simplify=True)
-    expected_hh = -I * (pcomp(q1, S("mu_int_1")) * pcomp(q2, S("mu_int_1")) + mh_sq) * D2
+    expected_hh = -I * (pcomp(q1, S("mu1_int")) * pcomp(q2, S("mu1_int")) + mh_sq) * D2
     assert _canon(got_hh) == _canon(expected_hh)
 
     got_hhh = FULL_L.feynman_rule(h, h, h, simplify=True)
@@ -332,11 +332,11 @@ def test_rxi_gauge_fixing_cancels_goldstone_vector_mixing_and_sets_goldstone_mas
     assert _canon(FULL_L.feynman_rule(gp, wp.bar, simplify=True)) == _canon(ZERO)
 
     got_g0 = FULL_L.feynman_rule(g0, g0, simplify=True)
-    expected_g0 = -I * (pcomp(q1, S("mu_int_1")) * pcomp(q2, S("mu_int_1")) + xiZ * (electroweak_mz(g1, g2, v) ** 2)) * D2
+    expected_g0 = -I * (pcomp(q1, S("mu1_int")) * pcomp(q2, S("mu1_int")) + xiZ * (electroweak_mz(g1, g2, v) ** 2)) * D2
     assert _canon(got_g0) == _canon(expected_g0)
 
     got_gp = FULL_L.feynman_rule(gp.bar, gp, simplify=True)
-    expected_gp = -I * (pcomp(q1, S("mu_int_1")) * pcomp(q2, S("mu_int_1")) + xiW * (electroweak_mw(g2, v) ** 2)) * D2
+    expected_gp = -I * (pcomp(q1, S("mu1_int")) * pcomp(q2, S("mu1_int")) + xiW * (electroweak_mw(g2, v) ** 2)) * D2
     assert _canon(got_gp) == _canon(expected_gp)
 
 

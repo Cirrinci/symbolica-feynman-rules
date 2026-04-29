@@ -350,7 +350,7 @@ def _run_scalar_tests():
     expected_d = compact_vertex_sum_form(
         coupling=gD,
         ps=[q1, q2, q3, q4],
-        derivative_indices=[S("mu_int_1"), S("mu_int_2")],
+        derivative_indices=[S("mu1_int"), S("mu2_int")],
         derivative_targets=[0, 1],
         d=d,
         field_species=[PhiField.symbol] * 4,
@@ -363,7 +363,7 @@ def _run_scalar_tests():
     expected_d2 = compact_vertex_sum_form(
         coupling=gD2,
         ps=[q1, q2, q3, q4],
-        derivative_indices=[S("mu_int_1"), S("mu_int_1")],
+        derivative_indices=[S("mu1_int"), S("mu1_int")],
         derivative_targets=[0, 1],
         d=d,
         field_species=[PhiField.symbol] * 4,
@@ -460,19 +460,19 @@ def _run_mixed_derivative_tests():
     # d_mu psibar
     L = _local_lagrangian(DECL_dpsibar)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
-    _check(got, yF * pcomp(q1, S("mu_int_1")) * G12 * D4, "L-API: d_mu psibar * psi * phi * chi")
+    _check(got, yF * pcomp(q1, S("mu1_int")) * G12 * D4, "L-API: d_mu psibar * psi * phi * chi")
 
     # d_nu psi
     L = _local_lagrangian(DECL_dpsi)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
-    _check(got, yF * pcomp(q2, S("mu_int_1")) * G12 * D4, "L-API: psibar * d_nu psi * phi * chi")
+    _check(got, yF * pcomp(q2, S("mu1_int")) * G12 * D4, "L-API: psibar * d_nu psi * phi * chi")
 
     # (d_mu phi)(d_nu chi)
     L = _local_lagrangian(DECL_dphi_dchi)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(
         got,
-        -I * yF * pcomp(q3, S("mu_int_1")) * pcomp(q4, S("mu_int_2")) * G12 * D4,
+        -I * yF * pcomp(q3, S("mu1_int")) * pcomp(q4, S("mu2_int")) * G12 * D4,
         "L-API: psibar * psi * (d_mu phi)(d_nu chi)",
     )
 
@@ -481,7 +481,7 @@ def _run_mixed_derivative_tests():
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(
         got,
-        -I * g1 * G12 * D4 * pcomp(q3, S("mu_int_1")) * pcomp(q3, S("mu_int_1")),
+        -I * g1 * G12 * D4 * pcomp(q3, S("mu1_int")) * pcomp(q3, S("mu1_int")),
         "L-API: g1 * psibar psi (d^2 phi) chi",
     )
 
@@ -491,8 +491,8 @@ def _run_mixed_derivative_tests():
     _check(
         got,
         2 * I * g2 * G12 * D4
-        * pcomp(q3, S("mu_int_1")) * pcomp(q3, S("mu_int_2"))
-        * pcomp(q4, S("mu_int_1")) * pcomp(q4, S("mu_int_2")),
+        * pcomp(q3, S("mu1_int")) * pcomp(q3, S("mu2_int"))
+        * pcomp(q4, S("mu1_int")) * pcomp(q4, S("mu2_int")),
         "L-API: g2 * psibar psi (d_mu d_nu phi)^2",
     )
 

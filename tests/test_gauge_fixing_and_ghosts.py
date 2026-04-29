@@ -127,7 +127,7 @@ def test_compile_abelian_gauge_fixing_term():
     )
     expected = (
         (I / xi_qed)
-        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, S("mu_int_1"), S("mu_int_2"))
+        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, S("mu1_int"), S("mu2_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2)
     )
@@ -172,7 +172,7 @@ def test_compile_nonabelian_gauge_fixing_term():
     expected = (
         (I / xi_qcd)
         * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
-        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, S("mu_int_1"), S("mu_int_2"))
+        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, S("mu1_int"), S("mu2_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2)
     )
@@ -222,7 +222,7 @@ def test_compile_nonabelian_ghost_terms():
     )
     expected_bilinear = (
         -I
-        * ghost_kinetic_raw(a1, a2, p1, p2, S("mu_int_1"), S("mu_int_2"))
+        * ghost_kinetic_raw(a1, a2, p1, p2, S("mu1_int"), S("mu2_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2)
     )
@@ -240,7 +240,7 @@ def test_compile_nonabelian_ghost_terms():
     )
     expected_cubic = (
         -gS
-        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu_int_1"), p1)
+        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )
@@ -535,7 +535,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
     )
     expected_ghost_gauge = (
         -gS
-        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu_int_1"), p1)
+        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )
@@ -666,7 +666,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
     )
     expected_ghost_gauge = (
         -gS
-        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu_int_1"), p1)
+        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )

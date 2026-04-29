@@ -2600,7 +2600,7 @@ def test_generic_declared_monomial_supports_same_species_quark_covd_product():
         quark.bar, quark, quark.bar, quark, gluon, simplify=True
     )
 
-    mu_int = S("mu_int_1")
+    mu_int = S("mu1_int")
     q1, q2, q3, q4, q5 = S("q1", "q2", "q3", "q4", "q5")
     c1, c2, c3, c4 = S("c1", "c2", "c3", "c4")
     i1, i2, i3, i4 = S("i1", "i2", "i3", "i4")

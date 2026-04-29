@@ -2745,9 +2745,9 @@ def _run_covariant_compiler_tests():
             mu4,
             p1,
             p2,
-            S("mu_int_1"),
-            S("mu_int_1"),
-            S("mu_int_2"),
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
         )
         * D2,
         "Covariant compiler: abelian gauge bilinear",
@@ -2793,9 +2793,9 @@ def _run_covariant_compiler_tests():
             mu4,
             p1,
             p2,
-            S("mu_int_1"),
-            S("mu_int_1"),
-            S("mu_int_2"),
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
         )
         * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
         * D2,
@@ -2832,7 +2832,7 @@ def _run_covariant_compiler_tests():
                 p1,
                 p2,
                 p3,
-                S("mu_int_1"),
+                S("mu1_int"),
             )
             * D3
         ),
@@ -2898,8 +2898,8 @@ def _run_gauge_fixed_compiler_tests():
             mu4,
             p1,
             p2,
-            S("mu_int_1"),
-            S("mu_int_2"),
+            S("mu1_int"),
+            S("mu2_int"),
         )
         * D2,
         "Gauge-fixed compiler: abelian gauge fixing",
@@ -2929,8 +2929,8 @@ def _run_gauge_fixed_compiler_tests():
                 mu4,
                 p1,
                 p2,
-                S("mu_int_1"),
-                S("mu_int_2"),
+                S("mu1_int"),
+                S("mu2_int"),
             )
             * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
             * D2
@@ -2984,17 +2984,17 @@ def _run_gauge_fixed_compiler_tests():
                     mu4,
                     p1,
                     p2,
-                    S("mu_int_1"),
-                    S("mu_int_1"),
-                    S("mu_int_2"),
+                    S("mu1_int"),
+                    S("mu1_int"),
+                    S("mu2_int"),
                 )
                 + gauge_fixing_bilinear_raw(
                     mu3,
                     mu4,
                     p1,
                     p2,
-                    S("mu_int_1"),
-                    S("mu_int_2"),
+                    S("mu1_int"),
+                    S("mu2_int"),
                 )
                 / xiQED
             )
@@ -3023,7 +3023,7 @@ def _run_gauge_fixed_compiler_tests():
             external_legs=LEGS_ghost_bilinear,
             species_map={b1: ghGbar0, b2: ghG0},
         ),
-        -I * ghost_kinetic_raw(a3, a4, p1, p2, S("mu_int_1"), S("mu_int_2")) * D2,
+        -I * ghost_kinetic_raw(a3, a4, p1, p2, S("mu1_int"), S("mu2_int")) * D2,
         "Gauge-fixed compiler: ghost bilinear",
         show_vertex=True,
         description=qcd_ghost_bilinear.label,
@@ -3037,7 +3037,7 @@ def _run_gauge_fixed_compiler_tests():
             external_legs=LEGS_ghost_gluon,
             species_map={b1: ghGbar0, b2: G0, b3: ghG0},
         ),
-        -gS * ghost_gauge_raw(a3, a4, a5, mu3, S("mu_int_1"), p1) * D3,
+        -gS * ghost_gauge_raw(a3, a4, a5, mu3, S("mu1_int"), p1) * D3,
         "Gauge-fixed compiler: ghost-gluon interaction",
         show_vertex=True,
         description=qcd_ghost_gauge.label,
@@ -3085,17 +3085,17 @@ def _run_gauge_fixed_compiler_tests():
                     mu4,
                     p1,
                     p2,
-                    S("mu_int_1"),
-                    S("mu_int_1"),
-                    S("mu_int_2"),
+                    S("mu1_int"),
+                    S("mu1_int"),
+                    S("mu2_int"),
                 )
                 + gauge_fixing_bilinear_raw(
                     mu3,
                     mu4,
                     p1,
                     p2,
-                    S("mu_int_1"),
-                    S("mu_int_2"),
+                    S("mu1_int"),
+                    S("mu2_int"),
                 )
                 / xiQCD
             )

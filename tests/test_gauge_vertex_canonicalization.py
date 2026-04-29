@@ -35,7 +35,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_qed_gauge_bilinear():
     vertex = MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField)
     contracted = contract_spenso_lorentz_metrics(vertex)
 
-    expected = I * gauge_kinetic_bilinear(S("mu1"), S("mu2"), q1, q2, S("mu_int_1")) * D2
+    expected = I * gauge_kinetic_bilinear(S("mu1"), S("mu2"), q1, q2, S("mu1_int")) * D2
 
     assert _canon(contracted) == _canon(expected)
 
@@ -46,7 +46,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_ghost_bilinear():
     )
     contracted = contract_spenso_lorentz_metrics(vertex)
 
-    expected = -I * ghost_kinetic(S("a1"), S("a2"), q1, q2, S("mu_int_1")) * D2
+    expected = -I * ghost_kinetic(S("a1"), S("a2"), q1, q2, S("mu1_int")) * D2
 
     assert _canon(contracted) == _canon(expected)
 

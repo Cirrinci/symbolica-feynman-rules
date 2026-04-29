@@ -611,9 +611,9 @@ def test_covariant_abelian_gauge_bilinear():
             mu4,
             p1,
             p2,
-            S("mu_int_1"),
-            S("mu_int_1"),
-            S("mu_int_2"),
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
         )
         * (2 * pi) ** d
         * Delta(p1 + p2)
@@ -667,9 +667,9 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
             mu4,
             p1,
             p2,
-            S("mu_int_1"),
-            S("mu_int_1"),
-            S("mu_int_2"),
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
         )
         * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
         * (2 * pi) ** d
@@ -691,7 +691,7 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
     )
     expected_cubic = simplify_gamma_chain(
         gS
-        * yang_mills_three_vertex_metric_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3, S("mu_int_1"))
+        * yang_mills_three_vertex_metric_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3, S("mu1_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )

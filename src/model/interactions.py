@@ -240,7 +240,7 @@ class InteractionTerm:
                 )
                 mapped = internal_lorentz_map.get(key)
                 if mapped is None:
-                    mapped = S(f"mu_int_{next_internal}")
+                    mapped = S(f"mu{next_internal}_int")
                     internal_lorentz_map[key] = mapped
                     original_lorentz_map[key] = lorentz_index
                     next_internal += 1
