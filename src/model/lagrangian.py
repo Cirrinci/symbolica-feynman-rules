@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 
 from symbolica import Expression, S
@@ -90,6 +91,68 @@ def _term_vertex_fields(term: InteractionTerm):
     return tuple(_field_arg_from_occurrence(occ) for occ in term.fields)
 
 
+def _normalize_field_filter_args(field_args, *, parameter_name: str) -> tuple[tuple[object, bool], ...] | None:
+    if field_args is None:
+        return None
+    try:
+        return (_parse_field_arg(field_args),)
+    except TypeError:
+        pass
+
+    try:
+        items = tuple(field_args)
+    except TypeError as exc:
+        raise TypeError(
+            f"`{parameter_name}` must be a field argument or an iterable of field arguments."
+        ) from exc
+
+    return tuple(_parse_field_arg(item) for item in items)
+
+
+def _parsed_field_counter(parsed_fields) -> Counter:
+    return Counter(_field_match_key(field, conjugated) for field, conjugated in parsed_fields)
+
+
+def _counter_contains(counter: Counter, required: Counter) -> bool:
+    return all(counter.get(key, 0) >= count for key, count in required.items())
+
+
+def _vertex_signature_sort_key(field_args):
+    parsed = tuple(_parse_field_arg(field_arg) for field_arg in field_args)
+    return (
+        len(field_args),
+        _vertex_name_tuple(field_args),
+        tuple(repr(_field_match_key(field, conjugated)) for field, conjugated in parsed),
+    )
+
+
+@dataclass(frozen=True)
+class VertexSignature:
+    """One grouped interaction signature available in a compiled Lagrangian."""
+
+    fields: tuple[object, ...]
+    names: tuple[str, ...]
+    arity: int
+    term_count: int
+
+
+@dataclass(frozen=True)
+class VertexReport:
+    """Structured, filterable report of available compiled interaction signatures."""
+
+    signatures: tuple[VertexSignature, ...]
+    total_terms: int
+    total_signatures: int
+
+    @property
+    def matched_signatures(self) -> int:
+        return len(self.signatures)
+
+    @property
+    def matched_terms(self) -> int:
+        return sum(signature.term_count for signature in self.signatures)
+
+
 @dataclass(init=False)
 class CompiledLagrangian:
     """Collection of compiled ``InteractionTerm`` objects."""
@@ -135,6 +198,89 @@ class CompiledLagrangian:
             if key not in vertices:
                 vertices[key] = _term_vertex_fields(term)
         return tuple(vertices.values())
+
+    def _vertex_signature_entries(self):
+        grouped = {}
+        for term in self.terms:
+            key = _term_vertex_key(term)
+            entry = grouped.get(key)
+            if entry is None:
+                grouped[key] = {
+                    "fields": _term_vertex_fields(term),
+                    "term_count": 1,
+                }
+            else:
+                entry["term_count"] += 1
+
+        entries = []
+        for entry in grouped.values():
+            fields = entry["fields"]
+            entries.append(
+                VertexSignature(
+                    fields=fields,
+                    names=_vertex_name_tuple(fields),
+                    arity=len(fields),
+                    term_count=entry["term_count"],
+                )
+            )
+        return tuple(sorted(entries, key=lambda entry: _vertex_signature_sort_key(entry.fields)))
+
+    def vertex_signatures(self, *, arity=None, signature=None, contains_fields=None):
+        """Enumerate grouped compiled interaction signatures without extracting vertices.
+
+        Filters:
+        - ``arity=...`` keeps only vertices with that many legs.
+        - ``signature=(...)`` matches one exact field-content signature using the same
+          field-argument syntax accepted by ``feynman_rule(...)``.
+        - ``contains_fields=...`` keeps signatures containing at least the requested
+          field multiset.
+        """
+
+        exact_signature = _normalize_field_filter_args(signature, parameter_name="signature")
+        contains_signature = _normalize_field_filter_args(
+            contains_fields,
+            parameter_name="contains_fields",
+        )
+        exact_counter = (
+            _parsed_field_counter(exact_signature) if exact_signature is not None else None
+        )
+        contains_counter = (
+            _parsed_field_counter(contains_signature)
+            if contains_signature is not None
+            else None
+        )
+
+        signatures = []
+        for vertex_signature in self._vertex_signature_entries():
+            if arity is not None and vertex_signature.arity != arity:
+                continue
+
+            parsed_fields = tuple(_parse_field_arg(field_arg) for field_arg in vertex_signature.fields)
+            parsed_counter = _parsed_field_counter(parsed_fields)
+
+            if exact_counter is not None and parsed_counter != exact_counter:
+                continue
+            if contains_counter is not None and not _counter_contains(parsed_counter, contains_counter):
+                continue
+
+            signatures.append(vertex_signature)
+
+        return tuple(signatures)
+
+    def vertex_report(self, *, arity=None, signature=None, contains_fields=None) -> VertexReport:
+        """Return a structured summary of available compiled interaction signatures."""
+
+        all_signatures = self._vertex_signature_entries()
+        filtered = self.vertex_signatures(
+            arity=arity,
+            signature=signature,
+            contains_fields=contains_fields,
+        )
+        return VertexReport(
+            signatures=filtered,
+            total_terms=len(self.terms),
+            total_signatures=len(all_signatures),
+        )
 
     def feynman_rules(self, *, arity=None, select=None, simplify=True, key_format="names"):
         """Compute multiple Feynman rules grouped by field content."""
