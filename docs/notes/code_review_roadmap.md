@@ -173,9 +173,23 @@ The near-term goal should be to make the system fail closed on ambiguous physics
 - Proposed fix strategy:
   - Split by responsibility into small internal modules without changing public behavior.
   - Keep current function names re-exported if needed.
+- First extraction step completed:
+  - [x] Created `src/compiler/covariant_core.py` as a small internal module for covariant-core compilation helpers.
+  - [x] Moved the covariant-core implementation and tightly coupled free-bilinear builders out of `src/compiler/gauge.py`.
+  - [x] Kept thin wrapper functions in `src/compiler/gauge.py` for `_compile_covariant_core(...)`, `_compile_declared_covariant_core(...)`, and `_compile_legacy_covariant_core(...)` so the old internal call sites still work.
+  - [x] Left Yang-Mills, ghosts, gauge fixing, generic covariant expansion, and SSB code untouched.
+- Module contents moved:
+  - `src/compiler/covariant_core.py`
+  - moved `_compile_covariant_core(...)`
+  - moved `_compile_declared_covariant_core(...)`
+  - moved `_compile_legacy_covariant_core(...)`
+  - moved the related partial-term builders and full-operator assembly helper
+- Behavior parity validation:
+  - Existing parity checks around declarative-vs-legacy covariant compilation were preserved and still pass.
+  - Focused checks covering declarative free bilinears, legacy gauge-only behavior, and `with_compiled_covariant_terms(...)` parity were run after extraction.
 - Status checklist:
-  - [ ] understood
-  - [ ] refactor plan written
+  - [x] understood
+  - [x] refactor plan written
   - [ ] split implemented
   - [ ] behavior parity validated
 

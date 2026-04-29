@@ -26,6 +26,11 @@ from typing import Optional
 
 from symbolica import S, Expression
 
+from .covariant_core import (
+    _compile_covariant_core as _compile_covariant_core_impl,
+    _compile_declared_covariant_core as _compile_declared_covariant_core_impl,
+    _compile_legacy_covariant_core as _compile_legacy_covariant_core_impl,
+)
 from model import (
     CovD,
     CovariantDerivativeFactor,
@@ -2084,37 +2089,6 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
     return tuple(interactions)
 
 
-def _compile_dirac_partial_term(fermion: Field, *, coefficient=1, label: str = "") -> InteractionTerm:
-    mu = _symbol("mu")
-    i_bar = _symbol(f"i_bar_{fermion.name}_covd")
-    i_psi = _symbol(f"i_{fermion.name}_covd")
-    fermion_spinor_slot = _unique_slot(
-        fermion,
-        SPINOR_KIND,
-        purpose="Dirac kinetic partial-term compilation",
-    )
-    bar_slot_labels = {fermion_spinor_slot: i_bar}
-    psi_slot_labels = {fermion_spinor_slot: i_psi}
-    core_factor, core_bar_slots, core_psi_slots = _spectator_identity_factor(
-        fermion,
-        exclude_slots={fermion_spinor_slot},
-    )
-    bar_slot_labels.update(core_bar_slots)
-    psi_slot_labels.update(core_psi_slots)
-    bar_labels = fermion.pack_slot_labels(bar_slot_labels)
-    psi_labels = fermion.pack_slot_labels(psi_slot_labels)
-    return InteractionTerm(
-        coupling=Expression.I * coefficient * core_factor * psi_bar_gamma_psi(i_bar, i_psi, mu),
-        fields=(
-            fermion.occurrence(conjugated=True, labels=bar_labels),
-            fermion.occurrence(labels=psi_labels),
-        ),
-        derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
-        closed_dirac_bilinears=((0, 1),),
-        label=label or f"i {fermion.name}bar gamma^mu d_mu {fermion.name}",
-    )
-
-
 def compile_complex_scalar_kinetic_term(
     model: Model,
     term: ComplexScalarKineticTerm,
@@ -2177,51 +2151,6 @@ def compile_complex_scalar_kinetic_term(
     return tuple(interactions)
 
 
-def _compile_complex_scalar_partial_term(scalar: Field, *, coefficient=1, label: str = "") -> InteractionTerm:
-    mu = _symbol("mu")
-    core_factor, scalar_bar_slots, scalar_slots = _spectator_identity_factor(scalar, exclude_slots=())
-    scalar_bar_labels = scalar.pack_slot_labels(scalar_bar_slots)
-    scalar_labels = scalar.pack_slot_labels(scalar_slots)
-    return InteractionTerm(
-        coupling=coefficient * core_factor,
-        fields=(
-            scalar.occurrence(conjugated=True, labels=scalar_bar_labels),
-            scalar.occurrence(labels=scalar_labels),
-        ),
-        derivatives=(
-            DerivativeAction(target=0, lorentz_index=mu),
-            DerivativeAction(target=1, lorentz_index=mu),
-        ),
-        label=label or f"(d_mu {scalar.name})^dagger (d^mu {scalar.name})",
-    )
-
-def _assemble_full_covariant_operator(
-    gauge_terms: tuple[InteractionTerm, ...],
-    partial_term: InteractionTerm,
-    spectator_factor: Expression,
-    spectator_occurrences: tuple,
-    spectator_bilinears: tuple[tuple[int, int], ...],
-) -> tuple[InteractionTerm, ...]:
-    """Assemble the full covariant operator from gauge and partial-derivative terms.
-
-    Both gauge and partial terms are decorated with spectators (if any) and
-    combined to form the complete declared CovD monomial semantics.
-    """
-    gauge_decorated = _decorate_interactions_with_spectators(
-        gauge_terms,
-        spectator_factor=spectator_factor,
-        spectator_occurrences=spectator_occurrences,
-        spectator_bilinears=spectator_bilinears,
-    )
-    partial_decorated = _decorate_interactions_with_spectators(
-        (partial_term,),
-        spectator_factor=spectator_factor,
-        spectator_occurrences=spectator_occurrences,
-        spectator_bilinears=spectator_bilinears,
-    )
-    return gauge_decorated + partial_decorated
-
-
 def _compile_covariant_core(
     model: Model,
     core: DiracKineticTerm | ComplexScalarKineticTerm,
@@ -2229,81 +2158,21 @@ def _compile_covariant_core(
     include_free_bilinear: bool,
     spectators: tuple[tuple[Field, bool], ...] = (),
 ) -> tuple[InteractionTerm, ...]:
-    """Compile one covariant kinetic core with explicit free-bilinear policy.
-
-    The same normalized core types appear in two front-end paths:
-    - declarative ``CovD(...)`` monomials, which denote the full operator
-    - legacy ``DiracKineticTerm`` / ``ComplexScalarKineticTerm`` declarations,
-      which are preserved as gauge-interaction-only for backward compatibility
-
-    ``include_free_bilinear`` makes that policy explicit at the compiler
-    boundary instead of relying on which caller happened to invoke which helper.
-    """
-    spectator_factor, spectator_occurrences, spectator_bilinears = _materialize_spectator_occurrences(spectators)
-
-    if isinstance(core, DiracKineticTerm):
-        fermion = _require_declared_field(
-            model,
-            core.field,
-            purpose="Covariant monomial compilation",
-        )
-        if fermion.kind != "fermion":
-            raise ValueError(
-                f"Covariant Dirac monomial requires a fermion field, got kind={fermion.kind!r}."
-            )
-        gauge_terms = compile_dirac_kinetic_term(model, core)
-        if not include_free_bilinear:
-            return _decorate_interactions_with_spectators(
-                gauge_terms,
-                spectator_factor=spectator_factor,
-                spectator_occurrences=spectator_occurrences,
-                spectator_bilinears=spectator_bilinears,
-            )
-        partial_term = _compile_dirac_partial_term(
-            fermion,
-            coefficient=core.coefficient,
-            label=core.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} partial",
-        )
-        return _assemble_full_covariant_operator(
-            gauge_terms,
-            partial_term,
-            spectator_factor,
-            spectator_occurrences,
-            spectator_bilinears,
-        )
-
-    if isinstance(core, ComplexScalarKineticTerm):
-        scalar = _require_declared_field(
-            model,
-            core.field,
-            purpose="Covariant monomial compilation",
-        )
-        if scalar.kind != "scalar" or scalar.self_conjugate:
-            raise ValueError(
-                "Covariant complex-scalar monomials require a non-self-conjugate scalar field."
-            )
-        gauge_terms = compile_complex_scalar_kinetic_term(model, core)
-        if not include_free_bilinear:
-            return _decorate_interactions_with_spectators(
-                gauge_terms,
-                spectator_factor=spectator_factor,
-                spectator_occurrences=spectator_occurrences,
-                spectator_bilinears=spectator_bilinears,
-            )
-        partial_term = _compile_complex_scalar_partial_term(
-            scalar,
-            coefficient=core.coefficient,
-            label=core.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name}) derivative",
-        )
-        return _assemble_full_covariant_operator(
-            gauge_terms,
-            partial_term,
-            spectator_factor,
-            spectator_occurrences,
-            spectator_bilinears,
-        )
-
-    raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
+    """Compile one covariant kinetic core with explicit free-bilinear policy."""
+    return _compile_covariant_core_impl(
+        model,
+        core,
+        include_free_bilinear=include_free_bilinear,
+        spectators=spectators,
+        require_declared_field=_require_declared_field,
+        compile_dirac_kinetic_term=compile_dirac_kinetic_term,
+        compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
+        materialize_spectator_occurrences=_materialize_spectator_occurrences,
+        decorate_interactions_with_spectators=_decorate_interactions_with_spectators,
+        spectator_identity_factor=_spectator_identity_factor,
+        unique_slot=_unique_slot,
+        symbol=_symbol,
+    )
 
 
 def _compile_declared_covariant_core(
@@ -2312,11 +2181,18 @@ def _compile_declared_covariant_core(
     spectators: tuple[tuple[Field, bool], ...] = (),
 ) -> tuple[InteractionTerm, ...]:
     """Compile one declarative ``CovD`` monomial as the full kinetic operator."""
-    return _compile_covariant_core(
+    return _compile_declared_covariant_core_impl(
         model,
         core,
-        include_free_bilinear=True,
         spectators=spectators,
+        require_declared_field=_require_declared_field,
+        compile_dirac_kinetic_term=compile_dirac_kinetic_term,
+        compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
+        materialize_spectator_occurrences=_materialize_spectator_occurrences,
+        decorate_interactions_with_spectators=_decorate_interactions_with_spectators,
+        spectator_identity_factor=_spectator_identity_factor,
+        unique_slot=_unique_slot,
+        symbol=_symbol,
     )
 
 
@@ -2325,10 +2201,17 @@ def _compile_legacy_covariant_core(
     core: DiracKineticTerm | ComplexScalarKineticTerm,
 ) -> tuple[InteractionTerm, ...]:
     """Compile one legacy kinetic declaration as gauge-interaction-only."""
-    return _compile_covariant_core(
+    return _compile_legacy_covariant_core_impl(
         model,
         core,
-        include_free_bilinear=False,
+        require_declared_field=_require_declared_field,
+        compile_dirac_kinetic_term=compile_dirac_kinetic_term,
+        compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
+        materialize_spectator_occurrences=_materialize_spectator_occurrences,
+        decorate_interactions_with_spectators=_decorate_interactions_with_spectators,
+        spectator_identity_factor=_spectator_identity_factor,
+        unique_slot=_unique_slot,
+        symbol=_symbol,
     )
 
 
