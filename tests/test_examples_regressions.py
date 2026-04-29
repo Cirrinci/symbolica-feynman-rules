@@ -12,7 +12,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import Expression  # noqa: E402
 
-from examples.examples import (  # noqa: E402
+from tests.support.direct_api_cases import (  # noqa: E402
     A0,
     L_4fermion,
     L_yukawa,

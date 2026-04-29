@@ -328,6 +328,8 @@ The near-term goal should be to make the system fail closed on ambiguous physics
 - Completed extraction:
   - [x] Both example CLIs now run demos only; the `--skip-tests` flag remains as a no-op compatibility flag and no longer triggers embedded test runners.
   - [x] Added `tests/test_examples_regressions.py` for focused checks that had been living only in the example scripts.
+  - [x] Moved reusable test-only symbols and low-level builders under `tests/support/` so the test suite no longer imports `examples.examples`.
+  - [x] Avoided keeping a copied `examples/examples.py` mirror under `tests/support/`; the larger integration model cases now live in their owning test modules, while `tests/support/` stays limited to shared direct-API cases and generic constructors.
   - [x] Moved direct-API example regressions into tests:
     - unstripped Yukawa keeps external spinors,
     - underspecified multi-fermion direct API raises,

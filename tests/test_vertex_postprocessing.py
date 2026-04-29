@@ -1,5 +1,4 @@
 import sys
-from fractions import Fraction
 from pathlib import Path
 
 
@@ -9,9 +8,15 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S  # noqa: E402
 
-from examples.examples import MODEL_QCD_GAUGE_COVARIANT, GluonField  # noqa: E402
-from model import Field, Gamma, Lagrangian, SPINOR_INDEX  # noqa: E402
+from model import Field, Gamma, Lagrangian, Model  # noqa: E402
 from model.interactions import ExternalLeg, _auto_leg_labels  # noqa: E402
+from tests.support.builders import (  # noqa: E402
+    canon as _canon,
+    gauge_kinetic_decl,
+    make_dirac_fermion as _make_dirac_fermion,
+    make_gluon,
+    make_su3,
+)
 from symbolic.tensor_canonicalization import contract_spenso_lorentz_metrics  # noqa: E402
 from symbolic.vertex_engine import (  # noqa: E402
     Delta,
@@ -35,20 +40,15 @@ from symbolic.vertex_postprocessing import (  # noqa: E402
 from symbolic.spenso_structures import gamma_anticommutator, simplify_gamma_chain  # noqa: E402
 
 
-def _canon(expr):
-    return expr.expand().to_canonical_string()
-
-
-def _make_dirac_fermion(name: str):
-    base = name.lower()
-    return Field(
-        name,
-        spin=Fraction(1, 2),
-        self_conjugate=False,
-        symbol=S(base),
-        conjugate_symbol=S(f"{base}bar"),
-        indices=(SPINOR_INDEX,),
-    )
+gS = S("gS")
+mu, nu = S("mu", "nu")
+GluonField = make_gluon(name="G", symbol=S("G0"))
+QCD_GROUP = make_su3(gS, GluonField.symbol, name="SU3C")
+MODEL_QCD_GAUGE_COVARIANT = Model(
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    lagrangian_decl=gauge_kinetic_decl(QCD_GROUP, mu=mu, nu=nu),
+)
 
 
 def test_vertex_factor_output_policy_matches_manual_postprocessing_for_quartic_scalar():

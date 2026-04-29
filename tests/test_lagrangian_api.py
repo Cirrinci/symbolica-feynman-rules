@@ -85,38 +85,24 @@ from lagrangian.operators import (  # noqa: E402
     quark_gluon_current,
     scalar_gauge_contact,
 )
-from examples.examples import (  # noqa: E402
-    MODEL_QCD_COVARIANT,
-    MODEL_QED_FERMION_COVARIANT,
-    MODEL_SCALAR_QED_COVARIANT,
-    MODEL_SCALAR_QCD_COVARIANT,
-    MODEL_MIXED_FERMION_COVARIANT,
-    MODEL_MIXED_SCALAR_COVARIANT,
-    MODEL_QED_GAUGE_COVARIANT,
-    MODEL_QCD_GAUGE_COVARIANT,
-    MODEL_QED_GAUGE_FIXING_COVARIANT,
-    MODEL_QCD_GAUGE_FIXING_COVARIANT,
-    MODEL_QED_ORDINARY_GAUGE_FIXED,
-    MODEL_QCD_GHOST_COVARIANT,
-    MODEL_QCD_ORDINARY_GAUGE_FIXED,
-    QuarkField,
-    GluonField,
-    GaugeField,
-    PsiQEDField,
-    PsiMixField,
-    PhiQEDField,
-    PhiQCDField,
-    PhiMixField,
-    GhostGluonField,
+from tests.support.builders import (  # noqa: E402
+    canon as _canon,
+    dirac_covd_decl as _dirac_decl,
+    gauge_kinetic_decl as _gauge_decl,
+    make_complex_scalar,
+    make_dirac_fermion as _make_dirac_fermion,
+    make_ghost as _make_ghost,
+    make_gluon as _make_gluon,
+    make_photon as _make_photon,
+    make_su3 as _make_su3,
+    make_u1 as _make_u1,
+    scalar_covd_decl as _scalar_decl,
 )
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _canon(expr):
-    return expr.expand().to_canonical_string()
 
 
 def _ref_vertex(interaction, legs, d=None):
@@ -132,68 +118,156 @@ def _ref_vertex(interaction, legs, d=None):
         include_delta=True,
     ), external_legs=legs)
 
+# ---------------------------------------------------------------------------
+# Shared sample model cases
+# ---------------------------------------------------------------------------
 
-def _make_photon():
-    return Field("A", spin=1, self_conjugate=True, symbol=S("A"),
-                 indices=(LORENTZ_INDEX,))
+gS, eQED, xiQED, xiQCD = S("gS", "eQED", "xiQED", "xiQCD")
+qPhi, qPsi, qMix, qPhiMix = S("qPhi", "qPsi", "qMix", "qPhiMix")
+phiC0, phiCdag0 = S("phiC0", "phiCdag0")
+phiQCD0, phiQCDdag0 = S("phiQCD0", "phiQCDdag0")
+phiMix0, phiMixdag0 = S("phiMix0", "phiMixdag0")
+ghG0, ghGbar0 = S("ghG0", "ghGbar0")
+psibar0, psi0 = S("psibar0", "psi0")
+psibarQED0, psiQED0 = S("psibarQED0", "psiQED0")
+psibarMix0, psiMix0 = S("psibarMix0", "psiMix0")
+A0, G0 = S("A0", "G0")
+mu_sample, nu_sample = S("mu", "nu")
 
+PhiQEDField = make_complex_scalar(
+    "PhiQED",
+    symbol=phiC0,
+    conjugate_symbol=phiCdag0,
+    charge=qPhi,
+)
+PhiQCDField = make_complex_scalar(
+    "PhiQCD",
+    symbol=phiQCD0,
+    conjugate_symbol=phiQCDdag0,
+    color=True,
+)
+PhiMixField = make_complex_scalar(
+    "PhiMix",
+    symbol=phiMix0,
+    conjugate_symbol=phiMixdag0,
+    color=True,
+    charge=qPhiMix,
+)
+PsiQEDField = _make_dirac_fermion(
+    "PsiQED",
+    symbol=psiQED0,
+    conjugate_symbol=psibarQED0,
+    charge=qPsi,
+)
+PsiMixField = _make_dirac_fermion(
+    "PsiMix",
+    symbol=psiMix0,
+    conjugate_symbol=psibarMix0,
+    color=True,
+    charge=qMix,
+)
+GaugeField = _make_photon(name="A", symbol=A0)
+QuarkField = _make_dirac_fermion(
+    "q",
+    symbol=psi0,
+    conjugate_symbol=psibar0,
+    color=True,
+)
+GluonField = _make_gluon(name="G", symbol=G0)
+GhostGluonField = _make_ghost(
+    name="ghG",
+    symbol=ghG0,
+    conjugate_symbol=ghGbar0,
+)
 
-def _make_gluon():
-    return Field("G", spin=1, self_conjugate=True, symbol=S("G"),
-                 indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
+QCD_GROUP = _make_su3(gS, GluonField.symbol, ghost_sym=GhostGluonField.symbol, name="SU3C")
+QED_GROUP = _make_u1(eQED, GaugeField.symbol, name="U1QED")
 
-
-def _make_dirac_fermion(name: str):
-    base = name.lower()
-    return Field(
-        name,
-        spin=Fraction(1, 2),
-        self_conjugate=False,
-        symbol=S(base),
-        conjugate_symbol=S(f"{base}bar"),
-        indices=(SPINOR_INDEX,),
-    )
-
-
-def _make_ghost():
-    return Field("ghG", spin=0, kind="ghost", self_conjugate=False,
-                 symbol=S("ghG"), conjugate_symbol=S("ghGbar"),
-                 indices=(COLOR_ADJ_INDEX,))
-
-
-def _make_u1(coupling, gauge_boson_sym, name="U1", charge="Q"):
-    return GaugeGroup(name=name, abelian=True, coupling=coupling,
-                      gauge_boson=gauge_boson_sym, charge=charge)
-
-
-def _make_su3(coupling, gauge_boson_sym, ghost_sym=None, name="SU3"):
-    return GaugeGroup(
-        name=name, abelian=False, coupling=coupling,
-        gauge_boson=gauge_boson_sym,
-        ghost_field=ghost_sym,
-        structure_constant=structure_constant,
-        representations=(
-            GaugeRepresentation(index=COLOR_FUND_INDEX,
-                                generator_builder=gauge_generator, name="fund"),
-        ),
-    )
-
-
-def _dirac_decl(field):
-    return I * field.bar * Gamma(S("mu_decl")) * CovD(field, S("mu_decl"))
-
-
-def _scalar_decl(field):
-    return CovD(field.bar, S("mu_decl")) * CovD(field, S("mu_decl"))
-
-
-def _gauge_decl(group):
-    mu_decl, nu_decl = S("mu_decl", "nu_decl")
-    return (
-        -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(group, mu_decl, nu_decl)
-        * FieldStrength(group, mu_decl, nu_decl)
-    )
+MODEL_QCD_COVARIANT = Model(
+    name="QCD-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(QuarkField, GluonField),
+    lagrangian_decl=_dirac_decl(QuarkField, mu=mu_sample),
+)
+MODEL_SCALAR_QED_COVARIANT = Model(
+    name="ScalarQED-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(PhiQEDField, GaugeField),
+    lagrangian_decl=_scalar_decl(PhiQEDField, mu=mu_sample),
+)
+MODEL_SCALAR_QCD_COVARIANT = Model(
+    name="ScalarQCD-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(PhiQCDField, GluonField),
+    lagrangian_decl=_scalar_decl(PhiQCDField, mu=mu_sample),
+)
+MODEL_QED_FERMION_COVARIANT = Model(
+    name="FermionQED-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(PsiQEDField, GaugeField),
+    lagrangian_decl=_dirac_decl(PsiQEDField, mu=mu_sample),
+)
+MODEL_MIXED_FERMION_COVARIANT = Model(
+    name="MixedQCDQED-covariant",
+    gauge_groups=(QCD_GROUP, QED_GROUP),
+    fields=(PsiMixField, GluonField, GaugeField),
+    lagrangian_decl=_dirac_decl(PsiMixField, mu=mu_sample),
+)
+MODEL_MIXED_SCALAR_COVARIANT = Model(
+    name="MixedScalarQCDQED-covariant",
+    gauge_groups=(QCD_GROUP, QED_GROUP),
+    fields=(PhiMixField, GluonField, GaugeField),
+    lagrangian_decl=_scalar_decl(PhiMixField, mu=mu_sample),
+)
+MODEL_QED_GAUGE_COVARIANT = Model(
+    name="QEDGauge-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    lagrangian_decl=_gauge_decl(QED_GROUP, mu=mu_sample, nu=nu_sample),
+)
+MODEL_QCD_GAUGE_COVARIANT = Model(
+    name="QCDGauge-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    lagrangian_decl=_gauge_decl(QCD_GROUP, mu=mu_sample, nu=nu_sample),
+)
+MODEL_QED_GAUGE_FIXING_COVARIANT = Model(
+    name="QEDGaugeFixing-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    lagrangian_decl=GaugeFixing(QED_GROUP, xi=xiQED),
+)
+MODEL_QCD_GAUGE_FIXING_COVARIANT = Model(
+    name="QCDGaugeFixing-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    lagrangian_decl=GaugeFixing(QCD_GROUP, xi=xiQCD),
+)
+MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
+    name="QEDGaugeFixed-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    lagrangian_decl=(
+        _gauge_decl(QED_GROUP, mu=mu_sample, nu=nu_sample)
+        + GaugeFixing(QED_GROUP, xi=xiQED)
+    ),
+)
+MODEL_QCD_GHOST_COVARIANT = Model(
+    name="QCDGhost-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField, GhostGluonField),
+    lagrangian_decl=GhostLagrangian(QCD_GROUP),
+)
+MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
+    name="QCDGaugeFixed-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField, GhostGluonField),
+    lagrangian_decl=(
+        _gauge_decl(QCD_GROUP, mu=mu_sample, nu=nu_sample)
+        + GaugeFixing(QCD_GROUP, xi=xiQCD)
+        + GhostLagrangian(QCD_GROUP)
+    ),
+)
 
 
 # ---------------------------------------------------------------------------

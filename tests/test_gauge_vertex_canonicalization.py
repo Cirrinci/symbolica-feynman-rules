@@ -1,16 +1,15 @@
 from symbolic.vertex_engine import Delta, Expression, I, S, pi
 
-from examples.examples import (
-    d,
-    gS,
-    GaugeField,
-    GhostGluonField,
-    GluonField,
-    MODEL_QCD_GAUGE_COVARIANT,
-    MODEL_QCD_GHOST_COVARIANT,
-    MODEL_QED_GAUGE_COVARIANT,
+from model import GhostLagrangian, Model
+from tests.support.builders import (
+    canon as _canon,
+    gauge_kinetic_decl,
+    make_ghost,
+    make_gluon,
+    make_photon,
+    make_su3,
+    make_u1,
 )
-from compiler.gauge import compile_covariant_terms
 from lagrangian.operators import (
     gauge_kinetic_bilinear,
     ghost_gauge,
@@ -22,13 +21,36 @@ from symbolic.tensor_canonicalization import canonize_spenso_tensors, contract_s
 
 
 q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+d, gS = S("d", "gS")
+eQED = S("eQED")
+mu, nu = S("mu", "nu")
+
+GaugeField = make_photon(name="A", symbol=S("A0"))
+GluonField = make_gluon(name="G", symbol=S("G0"))
+GhostGluonField = make_ghost(name="ghG", symbol=S("ghG0"), conjugate_symbol=S("ghGbar0"))
+
+QED_GROUP = make_u1(eQED, GaugeField.symbol, name="U1QED")
+QCD_GROUP = make_su3(gS, GluonField.symbol, ghost_sym=GhostGluonField.symbol, name="SU3C")
+
+MODEL_QED_GAUGE_COVARIANT = Model(
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    lagrangian_decl=gauge_kinetic_decl(QED_GROUP, mu=mu, nu=nu),
+)
+MODEL_QCD_GAUGE_COVARIANT = Model(
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    lagrangian_decl=gauge_kinetic_decl(QCD_GROUP, mu=mu, nu=nu),
+)
+MODEL_QCD_GHOST_COVARIANT = Model(
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField, GhostGluonField),
+    lagrangian_decl=GhostLagrangian(QCD_GROUP),
+)
+
 D2 = (2 * pi) ** d * Delta(q1 + q2)
 D3 = (2 * pi) ** d * Delta(q1 + q2 + q3)
 D4 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
-
-
-def _canon(expr):
-    return expr.expand().to_canonical_string()
 
 
 def test_contract_spenso_lorentz_metrics_simplifies_qed_gauge_bilinear():
