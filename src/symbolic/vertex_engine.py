@@ -20,10 +20,16 @@ from typing import Literal, Optional, Sequence
 
 from symbolica import S, Expression
 from symbolica.community.spenso import Representation
-from symbolica.community.idenso import simplify_metrics
 
-from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND
-from symbolic.tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
+from symbolic.spenso_structures import SPINOR_KIND
+from symbolic.vertex_postprocessing import (
+    _species_key,
+    apply_vertex_output_policy as _apply_vertex_output_policy,
+    canonicalize_vector_vertex as _canonicalize_vector_vertex_impl,
+    simplify_deltas as _simplify_deltas_impl,
+    simplify_spinor_indices as _simplify_spinor_indices_impl,
+    simplify_vertex as _simplify_vertex_impl,
+)
 
 # ---------------------------------------------------------------------------
 # Module-level Symbolica symbols + Spenso bispinor representation
@@ -781,26 +787,23 @@ def vertex_factor(
         coupling=coupling,
         closed_dirac_bilinears=closed_dirac_bilinears,
     )
-    full = contracted
-
-    if include_delta:
-        if d is None:
-            d = S("d")
-        p_sum = Expression.num(0)
-        for p in ps:
-            p_sum += p
-        full = full.replace(plane_wave(p_sum, x), (2 * pi) ** d * Delta(p_sum))
-
-    if strip_externals:
-        beta_, p_ = S("beta_", "p_")
-        full = full.replace(U(beta_, p_), 1)
-        if leg_index_labels is None:
-            spin_, si_ = S("spin_", "si_")
-            full = full.replace(UF(beta_, p_, spin_, si_), 1)
-            full = full.replace(UbarF(beta_, p_, spin_, si_), 1)
-        q_, x_ = S("q_", "x_")
-        full = full.replace(Expression.EXP(-I * Dot(q_, x_)), 1)
-
+    full = _apply_vertex_output_policy(
+        contracted,
+        ps=ps,
+        x=x,
+        include_delta=include_delta,
+        strip_externals=strip_externals,
+        leg_index_labels=leg_index_labels,
+        d=d,
+        plane_wave=plane_wave,
+        delta_symbol=Delta,
+        pi_symbol=pi,
+        u_symbol=U,
+        uf_symbol=UF,
+        ubarf_symbol=UbarF,
+        dot_symbol=Dot,
+        i_symbol=I,
+    )
     return I * full
 
 
@@ -808,95 +811,27 @@ def vertex_factor(
 # Simplification helpers
 # ---------------------------------------------------------------------------
 
-def _species_key(x):
-    return x.to_canonical_string() if hasattr(x, 'to_canonical_string') else str(x)
-
-
 def simplify_deltas(expr, species_map=None):
     """Simplify species Kronecker deltas."""
-    a_ = S("a_")
-
-    if species_map is not None:
-        for beta_sym, species_sym in species_map.items():
-            expr = expr.replace(beta_sym, species_sym)
-        expr = expr.replace(delta(a_, a_), Expression.num(1))
-
-        known_species = sorted(
-            set(species_map.values()),
-            key=lambda s: _species_key(s),
-        )
-        for i in range(len(known_species)):
-            for j in range(i + 1, len(known_species)):
-                expr = expr.replace(
-                    delta(known_species[i], known_species[j]),
-                    Expression.num(0),
-                )
-    else:
-        expr = expr.replace(delta(a_, a_), Expression.num(1))
-
-    return expr
+    return _simplify_deltas_impl(expr, species_map=species_map)
 
 
 def simplify_spinor_indices(expr):
     """Contract repeated bispinor indices using Spenso's metric simplification."""
-    return simplify_metrics(expr)
-
-
-def _vector_leg_lorentz_labels(external_legs):
-    labels = []
-    for leg in external_legs:
-        label = _get_label(getattr(leg, "labels", None), LORENTZ_KIND)
-        if label is None:
-            return ()
-        labels.append(label)
-    return tuple(labels)
-
-
-def _vector_leg_internal_labels(external_legs):
-    labels = []
-    for leg in external_legs:
-        label = None
-        for index in getattr(leg.field, "indices", ()):
-            if index.kind == LORENTZ_KIND:
-                continue
-            label = _get_label(getattr(leg, "labels", None), index.kind)
-            if label is not None:
-                labels.append(label)
-                break
-        if label is None:
-            return ()
-    return tuple(labels)
+    return _simplify_spinor_indices_impl(expr)
 
 
 def _canonicalize_vector_vertex(expr, external_legs):
-    if external_legs is None or len(external_legs) not in (3, 4):
-        return expr
-    if not all(getattr(getattr(leg, "field", None), "kind", None) == "vector" for leg in external_legs):
-        return expr
-
-    lorentz_labels = _vector_leg_lorentz_labels(external_legs)
-    if not lorentz_labels:
-        return expr
-
-    internal_labels = _vector_leg_internal_labels(external_legs)
-    if not internal_labels:
-        return expr
-
-    canonical_expr, _, _ = canonize_spenso_tensors(
-        expr,
-        lorentz_indices=lorentz_labels,
-        adjoint_indices=internal_labels,
-    )
-    return canonical_expr
+    return _canonicalize_vector_vertex_impl(expr, external_legs)
 
 
 def simplify_vertex(expr, species_map=None, external_legs=None):
     """Simplify a vertex factor expression in one call."""
-    expr = simplify_deltas(expr, species_map=species_map)
-    expr = simplify_spinor_indices(expr)
-    expr = contract_spenso_lorentz_metrics(expr)
-    expr = _canonicalize_vector_vertex(expr, external_legs)
-    return expr
+    return _simplify_vertex_impl(
+        expr,
+        species_map=species_map,
+        external_legs=external_legs,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -233,11 +233,38 @@ The near-term goal should be to make the system fail closed on ambiguous physics
 - Proposed fix strategy:
   - Separate core contraction from output post-processing.
   - Keep `vertex_factor(...)` as the public façade, but delegate to smaller internal layers.
+- First extraction step completed:
+  - [x] Created `src/symbolic/vertex_postprocessing.py` for post-contraction cleanup and output-policy helpers.
+  - [x] Moved delta replacement / output-policy helpers out of `src/symbolic/vertex_engine.py`.
+  - [x] Moved external wavefunction stripping helpers out of `src/symbolic/vertex_engine.py`.
+  - [x] Moved simplification helpers and vector canonicalization helpers out of `src/symbolic/vertex_engine.py`.
+- Module contents moved:
+  - `src/symbolic/vertex_postprocessing.py`
+  - moved `apply_vertex_output_policy(...)`
+  - moved `replace_plane_wave_with_delta(...)`
+  - moved `strip_external_wavefunctions(...)`
+  - moved `simplify_deltas(...)`
+  - moved `simplify_spinor_indices(...)`
+  - moved `canonicalize_vector_vertex(...)`
+  - moved `simplify_vertex(...)`
+- Contraction core left untouched:
+  - `contract_to_full_expression(...)` was not moved or edited semantically.
+  - Fermion sign logic, permutation sums, derivative assignment, and contraction combinatorics remain in `src/symbolic/vertex_engine.py`.
+- Behavior parity validation:
+  - Added `tests/test_vertex_postprocessing.py`.
+  - `test_vertex_factor_output_policy_matches_manual_postprocessing_for_quartic_scalar`
+    - Passes.
+    - Confirms `vertex_factor(...)` still matches the explicit post-contraction output-policy pipeline.
+  - `test_simplify_vertex_matches_explicit_chain_for_four_gluon_vertex`
+    - Passes.
+    - Confirms `simplify_vertex(...)` still matches the explicit simplification/canonicalization chain on a nontrivial 4-vector vertex.
+  - Focused regression checks in `tests/test_gauge_vertex_canonicalization.py` also still pass.
+  - Full suite still passes after the extraction.
 - Status checklist:
-  - [ ] understood
-  - [ ] refactor plan written
-  - [ ] split implemented
-  - [ ] behavior parity validated
+  - [x] understood
+  - [x] refactor plan written
+  - [x] split implemented
+  - [x] behavior parity validated
 
 ### 4.3 The lowering layer still relies on central dispatch and large conditional chains
 
