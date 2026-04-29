@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Optional
+from typing import Literal, Optional
 import warnings
 
 from .declared import _DeclaredMonomial
@@ -24,6 +24,37 @@ from .lowering import (
     _unsupported_declared_source_term_error,
 )
 from .metadata import Field, GaugeGroup, Parameter
+
+
+ValidationSeverity = Literal["error", "warning"]
+
+
+@dataclass(frozen=True)
+class ValidationIssue:
+    """One model-validation diagnostic."""
+
+    code: str
+    message: str
+    severity: ValidationSeverity = "error"
+
+
+@dataclass(frozen=True)
+class ValidationReport:
+    """Structured validation result returned by ``Model.validate()``."""
+
+    issues: tuple[ValidationIssue, ...] = ()
+
+    @property
+    def errors(self) -> tuple[ValidationIssue, ...]:
+        return tuple(issue for issue in self.issues if issue.severity == "error")
+
+    @property
+    def warnings(self) -> tuple[ValidationIssue, ...]:
+        return tuple(issue for issue in self.issues if issue.severity == "warning")
+
+    @property
+    def ok(self) -> bool:
+        return not self.errors
 # ---------------------------------------------------------------------------
 # Model container
 # ---------------------------------------------------------------------------
@@ -193,6 +224,73 @@ class Model:
                 f"for gauge group {gauge_group.name!r}."
             )
         return field
+
+    def validate(self) -> ValidationReport:
+        """Return structured model diagnostics without changing compilation behavior.
+
+        The initial validation pass focuses on gauge-sector consistency checks
+        that can be established directly from model metadata and source
+        declarations before any vertex extraction is attempted.
+        """
+        issues: list[ValidationIssue] = []
+
+        def add_issue(code: str, message: str, *, severity: ValidationSeverity = "error"):
+            issue = ValidationIssue(code=code, message=message, severity=severity)
+            if issue not in issues:
+                issues.append(issue)
+
+        for term in self.all_gauge_fixing_terms():
+            gauge_group = self.find_gauge_group(term.gauge_group)
+            if gauge_group is None:
+                add_issue(
+                    "undeclared_gauge_group",
+                    "Gauge-fixing validation could not resolve gauge group "
+                    f"{term.gauge_group!r} in model.gauge_groups.",
+                )
+
+        for term in self.all_ghost_terms():
+            gauge_group = self.find_gauge_group(term.gauge_group)
+            if gauge_group is None:
+                add_issue(
+                    "undeclared_gauge_group",
+                    "Ghost validation could not resolve gauge group "
+                    f"{term.gauge_group!r} in model.gauge_groups.",
+                )
+                continue
+
+            if gauge_group.abelian:
+                add_issue(
+                    "abelian_ghost_sector",
+                    "Ghost validation only supports non-abelian gauge groups; "
+                    f"got {gauge_group.name!r}.",
+                )
+                continue
+
+            if gauge_group.structure_constant is None or not callable(gauge_group.structure_constant):
+                add_issue(
+                    "missing_structure_constant",
+                    "Ghost validation requires non-abelian gauge group "
+                    f"{gauge_group.name!r} to declare a callable structure_constant.",
+                )
+
+            if gauge_group.ghost_field is None:
+                add_issue(
+                    "missing_ghost_field",
+                    "Ghost validation requires gauge group "
+                    f"{gauge_group.name!r} to declare ghost_field.",
+                )
+                continue
+
+            ghost_field = self.find_field(gauge_group.ghost_field)
+            if ghost_field is None:
+                add_issue(
+                    "missing_ghost_field",
+                    "Ghost validation could not resolve ghost_field "
+                    f"{gauge_group.ghost_field!r} for gauge group {gauge_group.name!r} "
+                    "in model.fields.",
+                )
+
+        return ValidationReport(issues=tuple(issues))
 
     def lagrangian(self) -> CompiledLagrangian:
         """Compile all declared terms and return a ``CompiledLagrangian``."""

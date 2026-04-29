@@ -468,7 +468,7 @@ Recommended implementation shape:
 
 ### 6.4 Gauge Consistency
 
-- [ ] Check that gauge-sector declarations are mutually consistent.
+- [x] Add an initial gauge-sector consistency validation pass.
 - Why it matters:
   - Gauge-fixing, ghost, and gauge-kinetic sectors are tightly coupled; inconsistency here can generate formally valid but physically meaningless vertices.
 - Minimum viable check:
@@ -483,6 +483,32 @@ Recommended implementation shape:
   - missing ghost field for a ghost Lagrangian fails;
   - abelian ghost sector request fails cleanly;
   - mismatched representation slots are reported before extraction.
+- Implemented API:
+  - `Model.validate() -> ValidationReport`
+    - returns structured `ValidationIssue` entries
+    - does not raise by default
+    - does not compile vertices or change extraction behavior
+- Implemented checks:
+  - [x] ghost lagrangian declared for an undeclared gauge group
+  - [x] gauge-fixing term declared for an undeclared gauge group
+  - [x] ghost lagrangian declared for an abelian gauge group
+  - [x] non-abelian ghost lagrangian declared without a callable `structure_constant`
+  - [x] ghost lagrangian declared without a declared `ghost_field`
+  - [ ] representation-slot / representation-mismatch diagnostics before extraction
+- Example diagnostics:
+  - `ValidationIssue(code='missing_ghost_field', message=\"Ghost validation requires gauge group 'SU3C' to declare ghost_field.\")`
+  - `ValidationIssue(code='abelian_ghost_sector', message=\"Ghost validation only supports non-abelian gauge groups; got 'U1QED'.\")`
+- Tests:
+  - `tests/test_model_validation.py::test_model_validate_reports_missing_ghost_field`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_reports_abelian_ghost_sector`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_reports_undeclared_gauge_group_references`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_reports_missing_structure_constant_for_nonabelian_ghosts`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_accepts_valid_nonabelian_ghost_and_gauge_fixing_setup`
+    - Passes.
 
 ### 6.5 Mass-Spectrum Consistency
 
