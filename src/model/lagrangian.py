@@ -75,6 +75,12 @@ def _vertex_name_tuple(vertex_fields):
     return tuple(_field_arg_name(field_arg) for field_arg in vertex_fields)
 
 
+def _parsed_field_arg_name(field_obj, conjugated: bool) -> str:
+    if conjugated and not field_obj.self_conjugate:
+        return f"{field_obj.name}.bar"
+    return field_obj.name
+
+
 def _term_vertex_key(term: InteractionTerm):
     return tuple(
         sorted(
@@ -124,6 +130,10 @@ def _vertex_signature_sort_key(field_args):
         _vertex_name_tuple(field_args),
         tuple(repr(_field_match_key(field, conjugated)) for field, conjugated in parsed),
     )
+
+
+def _format_signature_names(signature_names: tuple[str, ...]) -> str:
+    return ", ".join(signature_names)
 
 
 @dataclass(frozen=True)
@@ -224,6 +234,28 @@ class CompiledLagrangian:
                 )
             )
         return tuple(sorted(entries, key=lambda entry: _vertex_signature_sort_key(entry.fields)))
+
+    def _no_matching_interaction_terms_error(self, parsed_fields, *, max_signatures: int = 8) -> ValueError:
+        requested = ", ".join(
+            _parsed_field_arg_name(field_obj, conjugated)
+            for field_obj, conjugated in parsed_fields
+        )
+        available_signatures = self.vertex_signatures()
+
+        lines = [f"No matching interaction terms for: {requested}.", "Available signatures:"]
+        if not available_signatures:
+            lines.append("  - (none)")
+            return ValueError("\n".join(lines))
+
+        displayed_signatures = available_signatures[:max_signatures]
+        for signature in displayed_signatures:
+            lines.append(f"  - {_format_signature_names(signature.names)}")
+
+        omitted = len(available_signatures) - len(displayed_signatures)
+        if omitted > 0:
+            lines.append(f"  - ... (+ {omitted} more)")
+
+        return ValueError("\n".join(lines))
 
     def vertex_signatures(self, *, arity=None, signature=None, contains_fields=None):
         """Enumerate grouped compiled interaction signatures without extracting vertices.
@@ -361,10 +393,7 @@ class CompiledLagrangian:
 
         matching = [term for term in self.terms if _term_matches_fields(term, parsed)]
         if not matching:
-            desc = ", ".join(
-                f"{fld.name}{'bar' if conj else ''}" for fld, conj in parsed
-            )
-            raise ValueError(f"No matching interaction terms for: {desc}")
+            raise self._no_matching_interaction_terms_error(parsed)
 
         x = S("x_")
         d = S("d")

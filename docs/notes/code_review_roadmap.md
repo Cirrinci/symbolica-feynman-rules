@@ -552,11 +552,32 @@ Suggested rollout order:
   - Example:
     - `L.feynman_rule(psi.bar, psi, A, simplify=True, simplify_gamma=True)`
 
-- [ ] Improve “no matching interaction” errors.
+- [x] Improve “no matching interaction” errors.
   - Current issue:
     - `No matching interaction terms for: ...` is often too generic.
   - Concrete improvement:
     - Show available matching signatures from the compiled Lagrangian.
+  - Implemented behavior:
+    - `CompiledLagrangian.feynman_rule(...)` now reuses `vertex_signatures()` when no match is found.
+    - The error lists available grouped signatures in deterministic order.
+    - Empty Lagrangians report `Available signatures: - (none)` instead of failing opaquely.
+  - Example:
+    - Before:
+      - `No matching interaction terms for: Phi, Phi`
+    - After:
+      - `No matching interaction terms for: Phi, Phi.`
+      - `Available signatures:`
+      - `  - Phi, Phi, Phi, Phi`
+  - Tests:
+    - `tests/test_lagrangian_api.py::test_no_match_lists_available_higher_arity_signatures`
+      - Passes.
+      - Confirms a missing lower-arity request shows the available higher-arity signature.
+    - `tests/test_lagrangian_api.py::test_no_match_lists_useful_available_signatures_for_unrelated_request`
+      - Passes.
+      - Confirms unrelated requests still get useful available signatures.
+    - `tests/test_lagrangian_api.py::test_no_match_on_empty_lagrangian_is_clear`
+      - Passes.
+      - Confirms the empty-Lagrangian case stays clear and does not crash.
 
 - [ ] Make the `Lagrangian(...)` vs `Model(..., lagrangian_decl=...)` boundary more obvious.
   - Current issue:

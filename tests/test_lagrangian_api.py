@@ -1335,6 +1335,66 @@ def test_no_match_raises():
         L.feynman_rule(phi, phi, chi, chi)
 
 
+def test_no_match_lists_available_higher_arity_signatures():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("lam4"),
+            fields=tuple(phi.occurrence() for _ in range(4)),
+        ),
+    ))
+
+    with pytest.raises(ValueError) as excinfo:
+        lagrangian.feynman_rule(phi, phi, simplify=True)
+
+    message = str(excinfo.value)
+    assert "No matching interaction terms for: Phi, Phi." in message
+    assert "Available signatures:" in message
+    assert "Phi, Phi, Phi, Phi" in message
+
+
+def test_no_match_lists_useful_available_signatures_for_unrelated_request():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+    ))
+
+    with pytest.raises(ValueError) as excinfo:
+        lagrangian.feynman_rule(psi.bar, psi, simplify=True)
+
+    message = str(excinfo.value)
+    assert "No matching interaction terms for: Psi.bar, Psi." in message
+    assert "Available signatures:" in message
+    assert "Phi, Phi" in message
+    assert "Phi, Chi, Chi" in message
+
+
+def test_no_match_on_empty_lagrangian_is_clear():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian()
+
+    with pytest.raises(ValueError) as excinfo:
+        lagrangian.feynman_rule(phi, simplify=True)
+
+    message = str(excinfo.value)
+    assert "No matching interaction terms for: Phi." in message
+    assert "Available signatures:" in message
+    assert "  - (none)" in message
+
+
 def test_same_symbol_different_kind_does_not_match():
     """Distinct field kinds sharing one symbol must not silently match."""
     scalar = Field("S", spin=0, self_conjugate=True, symbol=S("X"))
