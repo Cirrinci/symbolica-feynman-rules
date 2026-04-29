@@ -10,6 +10,11 @@ from typing import Callable
 
 from symbolica import Expression
 
+from .spectators import (
+    _decorate_interactions_with_spectators,
+    _materialize_spectator_occurrences,
+    _spectator_identity_factor,
+)
 from lagrangian.operators import psi_bar_gamma_psi
 from model import (
     ComplexScalarKineticTerm,
@@ -27,7 +32,6 @@ def _compile_dirac_partial_term(
     *,
     coefficient=1,
     label: str = "",
-    spectator_identity_factor: Callable,
     unique_slot: Callable,
     symbol: Callable,
 ) -> InteractionTerm:
@@ -41,7 +45,7 @@ def _compile_dirac_partial_term(
     )
     bar_slot_labels = {fermion_spinor_slot: i_bar}
     psi_slot_labels = {fermion_spinor_slot: i_psi}
-    core_factor, core_bar_slots, core_psi_slots = spectator_identity_factor(
+    core_factor, core_bar_slots, core_psi_slots = _spectator_identity_factor(
         fermion,
         exclude_slots={fermion_spinor_slot},
     )
@@ -66,11 +70,10 @@ def _compile_complex_scalar_partial_term(
     *,
     coefficient=1,
     label: str = "",
-    spectator_identity_factor: Callable,
     symbol: Callable,
 ) -> InteractionTerm:
     mu = symbol("mu")
-    core_factor, scalar_bar_slots, scalar_slots = spectator_identity_factor(
+    core_factor, scalar_bar_slots, scalar_slots = _spectator_identity_factor(
         scalar,
         exclude_slots=(),
     )
@@ -96,17 +99,15 @@ def _assemble_full_covariant_operator(
     spectator_factor,
     spectator_occurrences: tuple,
     spectator_bilinears: tuple[tuple[int, int], ...],
-    *,
-    decorate_interactions_with_spectators: Callable,
 ) -> tuple[InteractionTerm, ...]:
     """Assemble one declarative ``CovD`` operator from gauge and partial pieces."""
-    gauge_decorated = decorate_interactions_with_spectators(
+    gauge_decorated = _decorate_interactions_with_spectators(
         gauge_terms,
         spectator_factor=spectator_factor,
         spectator_occurrences=spectator_occurrences,
         spectator_bilinears=spectator_bilinears,
     )
-    partial_decorated = decorate_interactions_with_spectators(
+    partial_decorated = _decorate_interactions_with_spectators(
         (partial_term,),
         spectator_factor=spectator_factor,
         spectator_occurrences=spectator_occurrences,
@@ -124,15 +125,12 @@ def _compile_covariant_core(
     require_declared_field: Callable,
     compile_dirac_kinetic_term: Callable,
     compile_complex_scalar_kinetic_term: Callable,
-    materialize_spectator_occurrences: Callable,
-    decorate_interactions_with_spectators: Callable,
-    spectator_identity_factor: Callable,
     unique_slot: Callable,
     symbol: Callable,
 ) -> tuple[InteractionTerm, ...]:
     """Compile one covariant kinetic core with explicit free-bilinear policy."""
     spectator_factor, spectator_occurrences, spectator_bilinears = (
-        materialize_spectator_occurrences(spectators)
+        _materialize_spectator_occurrences(spectators)
     )
 
     if isinstance(core, DiracKineticTerm):
@@ -147,7 +145,7 @@ def _compile_covariant_core(
             )
         gauge_terms = compile_dirac_kinetic_term(model, core)
         if not include_free_bilinear:
-            return decorate_interactions_with_spectators(
+            return _decorate_interactions_with_spectators(
                 gauge_terms,
                 spectator_factor=spectator_factor,
                 spectator_occurrences=spectator_occurrences,
@@ -157,7 +155,6 @@ def _compile_covariant_core(
             fermion,
             coefficient=core.coefficient,
             label=core.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} partial",
-            spectator_identity_factor=spectator_identity_factor,
             unique_slot=unique_slot,
             symbol=symbol,
         )
@@ -167,7 +164,6 @@ def _compile_covariant_core(
             spectator_factor,
             spectator_occurrences,
             spectator_bilinears,
-            decorate_interactions_with_spectators=decorate_interactions_with_spectators,
         )
 
     if isinstance(core, ComplexScalarKineticTerm):
@@ -182,7 +178,7 @@ def _compile_covariant_core(
             )
         gauge_terms = compile_complex_scalar_kinetic_term(model, core)
         if not include_free_bilinear:
-            return decorate_interactions_with_spectators(
+            return _decorate_interactions_with_spectators(
                 gauge_terms,
                 spectator_factor=spectator_factor,
                 spectator_occurrences=spectator_occurrences,
@@ -192,7 +188,6 @@ def _compile_covariant_core(
             scalar,
             coefficient=core.coefficient,
             label=core.label or f"(D_mu {scalar.name})^dagger (D^mu {scalar.name}) derivative",
-            spectator_identity_factor=spectator_identity_factor,
             symbol=symbol,
         )
         return _assemble_full_covariant_operator(
@@ -201,7 +196,6 @@ def _compile_covariant_core(
             spectator_factor,
             spectator_occurrences,
             spectator_bilinears,
-            decorate_interactions_with_spectators=decorate_interactions_with_spectators,
         )
 
     raise TypeError(f"Unsupported covariant monomial core type: {type(core)!r}")
@@ -215,9 +209,6 @@ def _compile_declared_covariant_core(
     require_declared_field: Callable,
     compile_dirac_kinetic_term: Callable,
     compile_complex_scalar_kinetic_term: Callable,
-    materialize_spectator_occurrences: Callable,
-    decorate_interactions_with_spectators: Callable,
-    spectator_identity_factor: Callable,
     unique_slot: Callable,
     symbol: Callable,
 ) -> tuple[InteractionTerm, ...]:
@@ -230,9 +221,6 @@ def _compile_declared_covariant_core(
         require_declared_field=require_declared_field,
         compile_dirac_kinetic_term=compile_dirac_kinetic_term,
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        materialize_spectator_occurrences=materialize_spectator_occurrences,
-        decorate_interactions_with_spectators=decorate_interactions_with_spectators,
-        spectator_identity_factor=spectator_identity_factor,
         unique_slot=unique_slot,
         symbol=symbol,
     )
@@ -245,9 +233,6 @@ def _compile_legacy_covariant_core(
     require_declared_field: Callable,
     compile_dirac_kinetic_term: Callable,
     compile_complex_scalar_kinetic_term: Callable,
-    materialize_spectator_occurrences: Callable,
-    decorate_interactions_with_spectators: Callable,
-    spectator_identity_factor: Callable,
     unique_slot: Callable,
     symbol: Callable,
 ) -> tuple[InteractionTerm, ...]:
@@ -259,9 +244,6 @@ def _compile_legacy_covariant_core(
         require_declared_field=require_declared_field,
         compile_dirac_kinetic_term=compile_dirac_kinetic_term,
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        materialize_spectator_occurrences=materialize_spectator_occurrences,
-        decorate_interactions_with_spectators=decorate_interactions_with_spectators,
-        spectator_identity_factor=spectator_identity_factor,
         unique_slot=unique_slot,
         symbol=symbol,
     )

@@ -184,9 +184,15 @@ The near-term goal should be to make the system fail closed on ambiguous physics
   - moved `_compile_declared_covariant_core(...)`
   - moved `_compile_legacy_covariant_core(...)`
   - moved the related partial-term builders and full-operator assembly helper
+- Additional extraction step completed:
+  - [x] Created `src/compiler/spectators.py` for spectator-label and spectator-decoration helpers.
+  - [x] Moved `_spectator_identity_factor(...)`, `_materialize_spectator_occurrences(...)`, and `_decorate_interactions_with_spectators(...)` out of `src/compiler/gauge.py`.
+  - [x] Moved the private spectator label builders used by those helpers into the same module.
+  - [x] Simplified `src/compiler/covariant_core.py` so it imports spectator helpers directly instead of receiving them through wrapper injection.
 - Behavior parity validation:
   - Existing parity checks around declarative-vs-legacy covariant compilation were preserved and still pass.
   - Focused checks covering declarative free bilinears, legacy gauge-only behavior, and `with_compiled_covariant_terms(...)` parity were run after extraction.
+  - Focused spectator-decorated declarative `CovD(...)` tests also pass after the second extraction.
 - Status checklist:
   - [x] understood
   - [x] refactor plan written
