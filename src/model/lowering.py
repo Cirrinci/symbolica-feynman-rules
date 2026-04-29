@@ -363,25 +363,102 @@ def _assign_default_pair_labels(
             slot_labels[interval_idx + 1][right_slot] = label
 
 
-def _bind_declared_indices_to_field_slots(
+def _ambiguous_local_attachment_error(
     *,
+    factor,
+    kind: str,
+    labels: Sequence[object],
+    available_slots: Sequence[tuple[int, int]],
+) -> ValueError:
+    rendered_labels = ", ".join(str(label) for label in labels)
+    rendered_slots = ", ".join(
+        f"{field_idx}:{slot_idx}" for field_idx, slot_idx in available_slots
+    ) or "none"
+    return ValueError(
+        "Ambiguous local tensor attachment in declarative local monomial: "
+        f"{factor} cannot uniquely bind {kind} label(s) [{rendered_labels}] "
+        f"to available field slots [{rendered_slots}]."
+    )
+
+
+def _bind_declared_factor_indices_to_field_slots(
+    *,
+    factor,
     field_entries: Sequence[_LocalFieldEntry],
     slot_labels: Sequence[dict[int, object]],
-    declared_refs: Sequence[tuple[str, object]],
 ):
+    declared_refs = _local_declared_index_refs(factor)
+    if not declared_refs:
+        return
+
     by_kind: dict[str, list[object]] = {}
     for kind, label in declared_refs:
         by_kind.setdefault(kind, []).append(label)
 
     for kind, labels in by_kind.items():
-        candidates: list[tuple[int, int]] = []
+        used_slots: set[tuple[int, int]] = set()
+        unresolved_labels: list[object] = []
+
+        for label in labels:
+            matches: list[tuple[int, int]] = []
+            for field_idx, entry in enumerate(field_entries):
+                for slot in entry.field.index_positions(kind=kind):
+                    key = (field_idx, slot)
+                    if key in used_slots:
+                        continue
+                    slot_label = slot_labels[field_idx].get(slot)
+                    if slot_label is not None and _expr_equal_impl(slot_label, label):
+                        matches.append(key)
+
+            if len(matches) > 1:
+                raise _ambiguous_local_attachment_error(
+                    factor=factor,
+                    kind=kind,
+                    labels=(label,),
+                    available_slots=matches,
+                )
+            if len(matches) == 1:
+                used_slots.add(matches[0])
+                continue
+            unresolved_labels.append(label)
+
+        if not unresolved_labels:
+            continue
+
+        available_slots: list[tuple[int, int]] = []
         for field_idx, entry in enumerate(field_entries):
             for slot in entry.field.index_positions(kind=kind):
-                if slot in slot_labels[field_idx]:
+                key = (field_idx, slot)
+                if key in used_slots or slot in slot_labels[field_idx]:
                     continue
-                candidates.append((field_idx, slot))
-        for (field_idx, slot), label in zip(candidates, labels):
+                available_slots.append(key)
+
+        if not available_slots:
+            continue
+        if len(available_slots) != len(unresolved_labels):
+            raise _ambiguous_local_attachment_error(
+                factor=factor,
+                kind=kind,
+                labels=tuple(unresolved_labels),
+                available_slots=available_slots,
+            )
+
+        for (field_idx, slot), label in zip(available_slots, unresolved_labels):
             slot_labels[field_idx][slot] = label
+
+
+def _bind_declared_indices_to_field_slots(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    declared_factors: Sequence[object],
+):
+    for factor in declared_factors:
+        _bind_declared_factor_indices_to_field_slots(
+            factor=factor,
+            field_entries=field_entries,
+            slot_labels=slot_labels,
+        )
 
 
 def _fill_unassigned_local_slot_labels(
@@ -401,7 +478,7 @@ def _fill_unassigned_local_slot_labels(
 def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     tokens: list[tuple[str, object]] = []
     field_entries: list[_LocalFieldEntry] = []
-    declared_refs: list[tuple[str, object]] = []
+    declared_factors: list[object] = []
     free_tensor_factors: list[object] = []
 
     for factor in term.factors:
@@ -409,16 +486,19 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         if field_entry is not None:
             field_entries.append(field_entry)
             tokens.append(("field", len(field_entries) - 1))
-            declared_refs.extend(_local_declared_index_refs(factor))
+            if _local_declared_index_refs(factor):
+                declared_factors.append(factor)
             continue
         if _is_local_chain_factor(factor):
             tokens.append(("chain", factor))
-            declared_refs.extend(_local_declared_index_refs(factor))
+            if _local_declared_index_refs(factor):
+                declared_factors.append(factor)
             continue
         if _is_local_free_tensor_factor(factor):
             tokens.append(("tensor", factor))
             free_tensor_factors.append(factor)
-            declared_refs.extend(_local_declared_index_refs(factor))
+            if _local_declared_index_refs(factor):
+                declared_factors.append(factor)
             continue
         return None
 
@@ -520,7 +600,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     _bind_declared_indices_to_field_slots(
         field_entries=field_entries,
         slot_labels=slot_labels,
-        declared_refs=declared_refs,
+        declared_factors=declared_factors,
     )
     _fill_unassigned_local_slot_labels(
         field_entries=field_entries,

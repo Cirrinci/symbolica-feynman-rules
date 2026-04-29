@@ -88,6 +88,11 @@ def lower_field_strength_monomial(
     left, right = fs_factors
     if left.gauge_group != right.gauge_group:
         return None
+    if expr_equal(left.left_index, left.right_index):
+        raise ValueError(
+            "FieldStrength indices must be distinct within one factor; "
+            f"got {left.left_index} twice in {left}."
+        )
     if left.left_index != right.left_index or left.right_index != right.right_index:
         return None
 
@@ -96,4 +101,3 @@ def lower_field_strength_monomial(
         gauge_group=left.gauge_group,
         coefficient=normalized,
     )
-

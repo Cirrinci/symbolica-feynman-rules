@@ -666,6 +666,36 @@ def test_lagrangian_accepts_declared_local_scalar_contact():
     assert _canon(got) == _canon(expected)
 
 
+def test_lagrangian_rejects_ambiguous_local_metric_attachment():
+    """Metric(mu, rho) must not guess which vector fields carry its endpoints."""
+    A = Field(
+        "A",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("A"),
+        indices=(LORENTZ_INDEX,),
+    )
+    B = Field(
+        "B",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("B"),
+        indices=(LORENTZ_INDEX,),
+    )
+    C = Field(
+        "C",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("C"),
+        indices=(LORENTZ_INDEX,),
+    )
+    mu = S("mu")
+    rho = S("rho")
+
+    with pytest.raises(ValueError, match="Ambiguous local tensor attachment"):
+        Lagrangian(A * B * C * Metric(mu, rho))
+
+
 def test_lagrangian_accepts_declared_two_fermion_partiald_operator():
     """Two-fermion local derivative operators lower without explicit InteractionTerm."""
     psi = Field(
@@ -1671,6 +1701,23 @@ def test_declared_lagrangian_rejects_field_strength_index_mismatch():
             lagrangian_decl=-(Expression.num(1) / Expression.num(4))
             * FieldStrength(su3, mu, nu)
             * FieldStrength(su3, nu, mu),
+        )
+
+
+def test_declared_lagrangian_rejects_field_strength_repeated_lorentz_index():
+    """FieldStrength(G, mu, mu) must be rejected before gauge compilation."""
+    e = S("e")
+    mu = S("mu")
+    photon = _make_photon()
+    u1 = _make_u1(e, photon.symbol)
+
+    with pytest.raises(ValueError, match="FieldStrength indices must be distinct"):
+        Model(
+            gauge_groups=(u1,),
+            fields=(photon,),
+            lagrangian_decl=-(Expression.num(1) / Expression.num(4))
+            * FieldStrength(u1, mu, mu)
+            * FieldStrength(u1, mu, mu),
         )
 
 
