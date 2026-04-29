@@ -143,6 +143,18 @@ def _make_gluon():
                  indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
 
 
+def _make_dirac_fermion(name: str):
+    base = name.lower()
+    return Field(
+        name,
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S(base),
+        conjugate_symbol=S(f"{base}bar"),
+        indices=(SPINOR_INDEX,),
+    )
+
+
 def _make_ghost():
     return Field("ghG", spin=0, kind="ghost", self_conjugate=False,
                  symbol=S("ghG"), conjugate_symbol=S("ghGbar"),
@@ -592,6 +604,95 @@ def test_declared_current_current_uses_closed_bilinear_signs():
         )
     )
     assert _canon(got) == _canon(expected)
+
+
+def test_distinct_species_closed_bilinear_product_is_stable_and_nonzero():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    L = Lagrangian(g4 * psi.bar * psi * chi.bar * chi)
+    assert len(L.terms) == 1
+    assert L.terms[0].closed_dirac_bilinears == ((0, 1), (2, 3))
+
+    got_1 = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    got_2 = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+
+    assert _canon(got_1) == _canon(got_2)
+    assert _canon(got_1) != _canon(Expression.num(0))
+
+
+def test_distinct_species_closed_bilinear_order_is_bosonic():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    got_1 = Lagrangian(
+        g4 * psi.bar * psi * chi.bar * chi
+    ).feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    got_2 = Lagrangian(
+        g4 * chi.bar * chi * psi.bar * psi
+    ).feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+
+    assert _canon(got_1) == _canon(got_2)
+
+
+def test_reversed_fields_inside_bilinear_are_rejected():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    with pytest.raises(ValueError, match="Unsupported fermion ordering in local monomial"):
+        Lagrangian(
+            g4 * psi * psi.bar * chi.bar * chi
+        )
+
+
+def test_partially_recognized_multi_fermion_chain_is_rejected():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    with pytest.raises(ValueError, match="Unsupported fermion ordering in local monomial"):
+        Lagrangian(g4 * psi.bar * psi * chi * chi.bar)
+
+
+def test_identical_closed_bilinear_square_is_deterministic_and_nonzero():
+    psi = _make_dirac_fermion("Psi")
+    g4 = S("g4")
+
+    L = Lagrangian(g4 * psi.bar * psi * psi.bar * psi)
+    assert len(L.terms) == 1
+    assert L.terms[0].closed_dirac_bilinears == ((0, 1), (2, 3))
+
+    got_1 = L.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    got_2 = L.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+
+    assert _canon(got_1) == _canon(got_2)
+    assert _canon(got_1) != _canon(Expression.num(0))
+
+
+def test_distinct_species_vector_bilinear_order_is_stable():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    gV = S("gV")
+    mu = S("mu")
+
+    L = Lagrangian(gV * psi.bar * Gamma(mu) * psi * chi.bar * Gamma(mu) * chi)
+    assert len(L.terms) == 1
+    assert L.terms[0].closed_dirac_bilinears == ((0, 1), (2, 3))
+
+    got_1 = simplify_gamma_chain(
+        L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    )
+    got_2 = simplify_gamma_chain(
+        Lagrangian(
+            gV * chi.bar * Gamma(mu) * chi * psi.bar * Gamma(mu) * psi
+        ).feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    )
+
+    assert _canon(got_1) == _canon(got_2)
+    assert _canon(got_1) != _canon(Expression.num(0))
 
 
 def test_lagrangian_accepts_declared_local_quark_gluon_current():

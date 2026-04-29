@@ -475,6 +475,50 @@ def _fill_unassigned_local_slot_labels(
             slot_labels[field_idx][slot] = _fresh_local_label(prefix, counters)
 
 
+def _unsupported_local_fermion_ordering_error() -> ValueError:
+    return ValueError(
+        "Unsupported fermion ordering in local monomial. "
+        "Local fermion terms must decompose into disjoint ordered closed Dirac "
+        "bilinears of the form fermion.bar ... fermion."
+    )
+
+
+def _infer_closed_local_dirac_bilinears(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    interval_supports_closed_dirac_bilinear: Sequence[bool],
+) -> tuple[tuple[int, int], ...]:
+    closed_dirac_bilinears = tuple(
+        (interval_idx, interval_idx + 1)
+        for interval_idx, (left, right) in enumerate(
+            zip(field_entries, field_entries[1:])
+        )
+        if interval_supports_closed_dirac_bilinear[interval_idx]
+        and left.field == right.field
+        and left.field.kind == "fermion"
+        and not left.field.self_conjugate
+        and bool(left.conjugated)
+        and not bool(right.conjugated)
+    )
+
+    fermion_slots = tuple(
+        idx for idx, entry in enumerate(field_entries) if entry.field.kind == "fermion"
+    )
+    if not fermion_slots:
+        return closed_dirac_bilinears
+
+    covered_slots = [slot for pair in closed_dirac_bilinears for slot in pair]
+    covered_counts = Counter(covered_slots)
+    if (
+        len(covered_slots) != len(fermion_slots)
+        or set(covered_slots) != set(fermion_slots)
+        or any(count != 1 for count in covered_counts.values())
+    ):
+        raise _unsupported_local_fermion_ordering_error()
+
+    return closed_dirac_bilinears
+
+
 def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     tokens: list[tuple[str, object]] = []
     field_entries: list[_LocalFieldEntry] = []
@@ -608,17 +652,9 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         counters=counters,
     )
 
-    closed_dirac_bilinears = tuple(
-        (interval_idx, interval_idx + 1)
-        for interval_idx, (left, right) in enumerate(
-            zip(field_entries, field_entries[1:])
-        )
-        if interval_supports_closed_dirac_bilinear[interval_idx]
-        and left.field == right.field
-        and left.field.kind == "fermion"
-        and not left.field.self_conjugate
-        and bool(left.conjugated)
-        and not bool(right.conjugated)
+    closed_dirac_bilinears = _infer_closed_local_dirac_bilinears(
+        field_entries=field_entries,
+        interval_supports_closed_dirac_bilinear=interval_supports_closed_dirac_bilinear,
     )
 
     return InteractionTerm(

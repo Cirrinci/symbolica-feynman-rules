@@ -123,11 +123,40 @@ The near-term goal should be to make the system fail closed on ambiguous physics
   - Expand provenance marking for more supported multi-fermion structures.
   - Add focused sign tests for identical-fermion and mixed-species four-fermion operators.
   - Fail closed on structures whose sign semantics are not yet represented.
+- Findings from diagnostics:
+  - `src/model/lowering.py` currently marks `closed_dirac_bilinears` only for adjacent same-species `psibar ... psi` intervals.
+  - `src/symbolic/vertex_engine.py` uses closed-bilinear sign handling only when those bilinears cover every fermion slot exactly once; otherwise it falls back to generic permutation parity.
+  - Ordered four-fermion products built from disjoint closed bilinears are stable for both scalar and vector bilinears, including swapped bilinear order.
+  - The reversed-order case `psi * psibar * chibar * chi` is suspicious: it is accepted, but it is not treated as a full closed-bilinear product and does not behave like a clean minus of `psibar * psi * chibar * chi`.
+- Follow-up implementation:
+  - `src/model/lowering.py` now infers local `closed_dirac_bilinears` and requires every fermion slot in a local monomial to be covered exactly once by those recognized ordered bilinears.
+  - Unsupported local fermion orderings now fail closed with `ValueError("Unsupported fermion ordering in local monomial ...")`.
+  - The previously suspicious reversed-order case `psi * psibar * chibar * chi` now rejects during lowering instead of producing a misleading vertex.
+  - Partially recognized multi-fermion chains such as `psibar * psi * chi * chibar` also reject during lowering.
+- Tests added:
+  - `test_distinct_species_closed_bilinear_product_is_stable_and_nonzero`
+    - Passes.
+    - Distinct-species scalar bilinear products are deterministic, nonzero, and lower with `closed_dirac_bilinears=((0, 1), (2, 3))`.
+  - `test_distinct_species_closed_bilinear_order_is_bosonic`
+    - Passes.
+    - Swapping `(psibar psi)` with `(chibar chi)` leaves the extracted vertex unchanged.
+  - `test_reversed_fields_inside_bilinear_are_rejected`
+    - Passes.
+    - Converts the previous `xfail` into a normal rejection test for reversed `psi * psibar` ordering.
+  - `test_partially_recognized_multi_fermion_chain_is_rejected`
+    - Passes.
+    - Confirms that partially covered multi-fermion local monomials fail closed.
+  - `test_identical_closed_bilinear_square_is_deterministic_and_nonzero`
+    - Passes.
+    - Complements the existing exact same-species square test with a deterministic/nonzero diagnostic.
+  - `test_distinct_species_vector_bilinear_order_is_stable`
+    - Passes.
+    - Distinct-species vector bilinears keep stable Lorentz contraction and fermion ordering under bilinear reordering.
 - Status checklist:
-  - [ ] understood
-  - [ ] test written
-  - [ ] fix implemented
-  - [ ] validated
+  - [x] understood
+  - [x] test written
+  - [x] fix implemented
+  - [x] validated
 
 ## 4. Important Design / Consistency Issues
 
