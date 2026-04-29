@@ -336,13 +336,24 @@ The near-term goal should be to make the system fail closed on ambiguous physics
   - Concrete action:
     - Centralize expression/species/index comparison helpers and prefer structural comparison where Symbolica supports it.
 
-- [ ] Apply gamma simplification in the standard high-level vertex cleanup path.
+- [x] Apply gamma simplification in the standard high-level vertex cleanup path.
   - Current hotspot:
-    - `src/symbolic/vertex_engine.py`
+    - `src/symbolic/vertex_postprocessing.py`
     - `simplify_vertex(...)`
   - Concrete action:
-    - Add an optional gamma-simplification pass using `simplify_gamma_chain(...)`.
-    - Keep it configurable if performance becomes an issue.
+    - Added optional `simplify_gamma: bool = False` to `simplify_vertex(...)`.
+    - When enabled, the cleanup path applies `simplify_gamma_chain(...)` before the existing metric / canonicalization passes.
+    - Default behavior remains unchanged when `simplify_gamma=False`.
+  - Tests:
+    - `tests/test_vertex_postprocessing.py::test_simplify_vertex_default_behavior_is_unchanged`
+      - Passes.
+      - Confirms the default `simplify_vertex(...)` chain is unchanged.
+    - `tests/test_vertex_postprocessing.py::test_simplify_vertex_with_simplify_gamma_applies_gamma_chain`
+      - Passes.
+      - Confirms the opt-in flag changes the output and matches the explicit manual `simplify_gamma_chain(...)` pipeline.
+    - `tests/test_vertex_postprocessing.py::test_lagrangian_feynman_rule_default_simplify_is_unchanged`
+      - Passes.
+      - Confirms `L.feynman_rule(..., simplify=True)` still uses the default non-gamma-simplifying behavior.
 
 - [ ] Replace handwritten Lorentz cleanup where possible with more library-native tensor handling.
   - Current hotspot:

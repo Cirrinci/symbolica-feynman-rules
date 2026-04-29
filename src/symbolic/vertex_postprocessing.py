@@ -5,7 +5,7 @@ from __future__ import annotations
 from symbolica import Expression, S
 from symbolica.community.idenso import simplify_metrics
 
-from symbolic.spenso_structures import LORENTZ_KIND
+from symbolic.spenso_structures import LORENTZ_KIND, simplify_gamma_chain
 from symbolic.tensor_canonicalization import (
     canonize_spenso_tensors,
     contract_spenso_lorentz_metrics,
@@ -192,9 +192,11 @@ def canonicalize_vector_vertex(expr, external_legs):
     return canonical_expr
 
 
-def simplify_vertex(expr, species_map=None, external_legs=None):
+def simplify_vertex(expr, species_map=None, external_legs=None, simplify_gamma: bool = False):
     """Simplify a vertex factor expression in one call."""
     expr = simplify_deltas(expr, species_map=species_map)
+    if simplify_gamma:
+        expr = simplify_gamma_chain(expr)
     expr = simplify_spinor_indices(expr)
     expr = contract_spenso_lorentz_metrics(expr)
     expr = canonicalize_vector_vertex(expr, external_legs)

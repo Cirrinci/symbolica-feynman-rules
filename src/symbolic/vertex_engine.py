@@ -825,12 +825,13 @@ def _canonicalize_vector_vertex(expr, external_legs):
     return _canonicalize_vector_vertex_impl(expr, external_legs)
 
 
-def simplify_vertex(expr, species_map=None, external_legs=None):
+def simplify_vertex(expr, species_map=None, external_legs=None, simplify_gamma: bool = False):
     """Simplify a vertex factor expression in one call."""
     return _simplify_vertex_impl(
         expr,
         species_map=species_map,
         external_legs=external_legs,
+        simplify_gamma=simplify_gamma,
     )
 
 
