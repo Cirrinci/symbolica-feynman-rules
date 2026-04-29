@@ -1,11 +1,9 @@
 """
-Vertex-factor examples and tests.
+Vertex-factor examples.
 
 Covers both the direct parallel-list API and the FeynRules-style model layer.
-This file currently plays two roles:
-
-- readable showcase of the implemented physics structures
-- integration-style regression script for the live source tree
+Behavioral validation now lives under ``tests/``; this file is kept runnable as
+an interactive/demo entry point.
 """
 
 import argparse
@@ -3339,13 +3337,17 @@ def _run_all_tests():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run vertex examples and tests.")
+    parser = argparse.ArgumentParser(description="Run vertex examples.")
     parser.add_argument(
         "--suite",
         choices=("scalar", "fermion", "gauge", "gaugefix", "model", "covariant", "cross", "role", "all"),
         default="all",
     )
-    parser.add_argument("--skip-tests", action="store_true")
+    parser.add_argument(
+        "--skip-tests",
+        action="store_true",
+        help="Ignored compatibility flag; validation now lives under tests/.",
+    )
     parser.add_argument(
         "--no-demo",
         action="store_true",
@@ -3355,26 +3357,3 @@ if __name__ == "__main__":
 
     if not args.no_demo:
         _run_demo_output(args.suite)
-
-    if not args.skip_tests:
-        if args.suite == "all":
-            _run_all_tests()
-        elif args.suite == "scalar":
-            _run_scalar_tests()
-        elif args.suite == "fermion":
-            _run_fermion_tests()
-            _run_fermion_derivative_mixed_tests()
-        elif args.suite == "gauge":
-            _run_gauge_ready_tests()
-        elif args.suite == "gaugefix":
-            _run_gauge_fixed_compiler_tests()
-        elif args.suite == "model":
-            _run_model_tests()
-            _run_compiled_gauge_tests()
-        elif args.suite == "covariant":
-            _run_covariant_compiler_tests()
-            _run_tensor_canonicalization_tests()
-        elif args.suite == "cross":
-            _run_cross_checks()
-        elif args.suite == "role":
-            _run_role_regression_tests()

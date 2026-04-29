@@ -325,11 +325,27 @@ The near-term goal should be to make the system fail closed on ambiguous physics
 - Proposed fix strategy:
   - Move remaining behavioral assertions into focused `tests/`.
   - Keep `examples/` primarily demonstrative.
+- Completed extraction:
+  - [x] Both example CLIs now run demos only; the `--skip-tests` flag remains as a no-op compatibility flag and no longer triggers embedded test runners.
+  - [x] Added `tests/test_examples_regressions.py` for focused checks that had been living only in the example scripts.
+  - [x] Moved direct-API example regressions into tests:
+    - unstripped Yukawa keeps external spinors,
+    - underspecified multi-fermion direct API raises,
+    - partial fermion leg-spinor labels raise,
+    - role-based complex-scalar filtering and reversed-leg matching remain stable,
+    - vector/scalar role mismatch stays filtered,
+    - `FieldRole` compatibility semantics stay stable.
+  - [x] Moved Lagrangian matcher regressions into tests:
+    - tuple field syntax matches the complex-scalar bilinear,
+    - same-symbol distinct scalar fields do not silently match,
+    - same-symbol scalar/vector declarations do not silently match.
+  - [x] Validated that `examples/examples.py --suite scalar` and `examples/examples_lagrangian.py --suite scalar` remain runnable as demos after the cleanup.
+  - [x] The legacy `_run_*_tests()` helpers are no longer part of the example entry points; they remain as dormant internal code and can be deleted in a later cleanup without changing runtime behavior.
 - Status checklist:
-  - [ ] understood
-  - [ ] example-only assertions identified
-  - [ ] tests extracted
-  - [ ] examples simplified
+  - [x] understood
+  - [x] example-only assertions identified
+  - [x] tests extracted
+  - [x] examples simplified
 
 ## 5. Symbolica / Spenso Usage Improvements
 

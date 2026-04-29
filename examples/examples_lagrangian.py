@@ -1,8 +1,8 @@
 """
-Lagrangian API examples and regression tests.
+Lagrangian API examples.
 
-This file mirrors src/examples.py but uses exclusively the FeynRules-style
-Lagrangian API (Model.lagrangian().feynman_rule(...)).
+This file mirrors `examples/examples.py` but uses exclusively the FeynRules-style
+Lagrangian API (`Model.lagrangian().feynman_rule(...)`).
 
 Conventions (automatic):
   - Momenta: q1, q2, q3, ...
@@ -1668,7 +1668,7 @@ def _run_all_tests():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run Lagrangian API examples and tests.")
+    parser = argparse.ArgumentParser(description="Run Lagrangian API examples.")
     parser.add_argument(
         "--suite",
         choices=(
@@ -1677,7 +1677,11 @@ if __name__ == "__main__":
         ),
         default="all",
     )
-    parser.add_argument("--skip-tests", action="store_true")
+    parser.add_argument(
+        "--skip-tests",
+        action="store_true",
+        help="Ignored compatibility flag; validation now lives under tests/.",
+    )
     parser.add_argument(
         "--no-demo",
         action="store_true",
@@ -1687,33 +1691,3 @@ if __name__ == "__main__":
 
     if not args.no_demo:
         _run_demo(args.suite)
-
-    if not args.skip_tests:
-        if args.suite == "all":
-            _run_all_tests()
-        elif args.suite == "scalar":
-            _run_scalar_tests()
-        elif args.suite == "fermion":
-            _run_fermion_tests()
-        elif args.suite == "mixed":
-            _run_mixed_derivative_tests()
-        elif args.suite == "gauge":
-            _run_gauge_ready_tests()
-        elif args.suite == "minimal":
-            _run_compiled_minimal_tests()
-        elif args.suite == "covariant":
-            _run_covariant_tests()
-        elif args.suite == "puregauge":
-            _run_pure_gauge_tests()
-        elif args.suite == "gaugefix":
-            _run_gauge_fixing_tests()
-        elif args.suite == "ghost":
-            _run_ghost_tests()
-        elif args.suite == "full":
-            _run_full_gauge_fixed_tests()
-        elif args.suite == "cross":
-            _run_cross_checks()
-        elif args.suite == "tensor":
-            _run_tensor_canonicalization_tests()
-        elif args.suite == "role":
-            _run_role_regression_tests()
