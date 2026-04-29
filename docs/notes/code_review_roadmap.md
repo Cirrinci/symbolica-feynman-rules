@@ -300,11 +300,16 @@ The near-term goal should be to make the system fail closed on ambiguous physics
   - A contributor reading the README looks for `src/model_symbolica.py` and `src/model.py`, but the actual code is now in `src/model/*`, `src/compiler/*`, and `src/symbolic/*`.
 - Proposed fix strategy:
   - Update README structure and status sections to match the live package layout and current API.
+- Completed alignment:
+  - [x] Replaced the old flat-file repository map with the live split-package layout.
+  - [x] Updated the documented engine entry points to `symbolic.vertex_engine(...)` and the current high-level workflow around `Lagrangian(...)` and `Model(..., lagrangian_decl=...)`.
+  - [x] Corrected example and validation commands to use `examples/` and the live `src/symbolic/spenso_gamma_checks.py` path.
+  - [x] Pointed day-to-day implementation priorities at `docs/notes/code_review_roadmap.md` instead of keeping a second stale priority list in the README.
 - Status checklist:
-  - [ ] understood
-  - [ ] stale sections identified
-  - [ ] README updated
-  - [ ] cross-checked against source tree
+  - [x] understood
+  - [x] stale sections identified
+  - [x] README updated
+  - [x] cross-checked against source tree
 
 ### 4.5 Example scripts are still too close to the validation surface
 
