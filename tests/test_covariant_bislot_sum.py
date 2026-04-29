@@ -12,7 +12,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms  # noqa: E402
+from compiler.gauge import compile_covariant_terms, expand_cov_der  # noqa: E402
 from model import (  # noqa: E402
     COLOR_FUND_INDEX,
     COLOR_ADJ_INDEX,
@@ -26,10 +26,10 @@ from model import (  # noqa: E402
     COLOR_ADJ_KIND,
     LORENTZ_KIND,
 )
-from model_symbolica import Delta, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
-from operators import scalar_gauge_contact  # noqa: E402
-from spenso_structures import gauge_generator, structure_constant  # noqa: E402
-from tensor_canonicalization import canonize_spenso_tensors  # noqa: E402
+from symbolic.vertex_engine import Delta, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
+from lagrangian.operators import scalar_gauge_contact  # noqa: E402
+from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
+from symbolic.tensor_canonicalization import canonize_spenso_tensors  # noqa: E402
 
 
 def _make_bislot_scalar():
@@ -153,6 +153,26 @@ def test_slot_policy_sum_expands_currents_and_contacts_over_slots():
     # Sanity: each contact term must contain two gauge fields in its InteractionTerm fields.
     for term in contact_terms:
         assert len(term.fields) == 4
+
+
+def test_expand_cov_der_exposes_repeated_slot_metadata():
+    model, scalar, _, su3 = _make_bislot_sum_model()
+
+    expanded = expand_cov_der(model, CovD(scalar, S("mu_decl")))
+
+    assert len(expanded.gauge_current_pieces) == 2
+    assert expanded.contact_ready_data == expanded.gauge_current_pieces
+
+    active_slots = tuple(piece.active_slot for piece in expanded.gauge_current_pieces)
+    assert active_slots == (0, 1)
+
+    for piece in expanded.gauge_current_pieces:
+        assert piece.metadata.gauge_group is su3
+        assert piece.metadata.representation is not None
+        assert piece.metadata.representation.name == "fund_sum"
+        assert piece.metadata.representation_slots == (0, 1)
+        assert piece.metadata.repeated_index is True
+        assert piece.metadata.conjugated is False
 
 
 def test_slot_policy_sum_current_matches_expected_bislot_vertex():

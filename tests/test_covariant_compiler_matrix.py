@@ -10,7 +10,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
+from compiler.gauge import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -27,8 +27,8 @@ from model import (  # noqa: E402
     GaugeRepresentation,
     Model,
 )
-from model_symbolica import Delta, Expression, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
-from operators import (  # noqa: E402
+from symbolic.vertex_engine import Delta, Expression, I, pi, pcomp, simplify_deltas, vertex_factor  # noqa: E402
+from lagrangian.operators import (  # noqa: E402
     gauge_kinetic_bilinear_raw,
     psi_bar_gamma_psi,
     quark_gluon_current,
@@ -36,7 +36,7 @@ from operators import (  # noqa: E402
     yang_mills_four_vertex_raw,
     yang_mills_three_vertex_metric_raw,
 )
-from spenso_structures import gauge_generator, structure_constant, simplify_gamma_chain  # noqa: E402
+from symbolic.spenso_structures import gauge_generator, structure_constant, simplify_gamma_chain  # noqa: E402
 
 
 def _model_vertex(*, interaction, external_legs, species_map):
@@ -153,7 +153,7 @@ def test_covariant_dirac_qcd_current():
 
     compiled = compile_covariant_terms(model)
     assert with_compiled_covariant_terms(model).interactions == compiled
-    assert len(compiled) == 1
+    assert len(compiled) == 2
 
     legs = (
         quark.leg(p1, conjugated=True, species=b1, labels={"spinor": i1, COLOR_FUND_KIND: c1}),
@@ -199,7 +199,7 @@ def test_covariant_dirac_qed_current():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 1
+    assert len(compiled) == 2
 
     legs = (
         fermion.leg(p1, conjugated=True, species=b1, labels={"spinor": i1}),
@@ -251,10 +251,10 @@ def test_covariant_mixed_fermion_expands_over_qcd_and_qed():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 2
+    assert len(compiled) == 3
 
     # The compiler emits contributions in model.gauge_groups order.
-    qcd_term, qed_term = compiled
+    qcd_term, qed_term, _partial_term = compiled
 
     qcd_legs = (
         fermion.leg(p1, conjugated=True, species=b1, labels={"spinor": i1, COLOR_FUND_KIND: c1}),
@@ -319,8 +319,8 @@ def test_covariant_scalar_qed_current_and_contact():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 3
-    current_plus, current_minus, contact = compiled
+    assert len(compiled) == 4
+    current_plus, current_minus, contact, _partial_term = compiled
     current_index = current_plus.derivatives[0].lorentz_index
 
     current_legs = (
@@ -387,8 +387,8 @@ def test_covariant_scalar_qcd_current_and_contact():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 3
-    current_plus, current_minus, contact = compiled
+    assert len(compiled) == 4
+    current_plus, current_minus, contact, _partial_term = compiled
     current_index = current_plus.derivatives[0].lorentz_index
 
     current_legs = (
@@ -475,7 +475,7 @@ def test_covariant_mixed_scalar_currents_and_contact():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 8
+    assert len(compiled) == 9
 
     qcd_terms = [term for term in compiled if "SU3C: scalar current" in term.label]
     qed_terms = [term for term in compiled if "U1QED: scalar current" in term.label]

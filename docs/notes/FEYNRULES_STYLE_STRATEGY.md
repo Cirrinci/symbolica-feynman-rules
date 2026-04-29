@@ -1,35 +1,26 @@
-# FeynRules-Style Strategy for Symbolica + Spenso
+# FeynRules-Style Strategy
 
-## Why this strategy
+Purpose: architecture principles, not timeline/status.
 
-The repository already has the right split in outline:
+## Design principles
 
-- `src/model_symbolica.py` as the engine
-- `src/model.py` as the declaration layer
-- `src/spenso_structures.py` as the tensor vocabulary
+1. One engine, one declarative front end
+- keep symbolic contraction logic isolated from declaration semantics.
 
-The problem is that this split is not complete yet. Some engine decisions still
-depend on stringified symbols, and too much physics structure is still assembled
-inside `src/examples.py`.
+2. Metadata-driven compilation
+- gauge action, index slots, and representation behavior come from model metadata.
 
-The next step is not another wave of examples. It is to make the current split
-real and durable.
+3. Test-first evolution
+- any new declaration family must ship with parity tests before broad examples.
 
-## Design target
+4. Explicit boundary between layers
+- declaration/lowering emits normalized terms.
+- compiler assembles physics terms.
+- vertex extraction consumes normalized terms.
 
-The long-term target remains FeynRules-like:
+## Current front end
 
-1. gauge groups
-2. index declarations
-3. particle classes
-4. parameters
-5. Lagrangian terms
-6. compilation into normalized interaction objects
-7. vertex extraction through one engine
-
-## Current implemented front-end
-
-The repository now has a real declarative entry point:
+The intended public direction is:
 
 - `Model(..., lagrangian_decl=...)`
 - `CovD(...)`
@@ -38,138 +29,46 @@ The repository now has a real declarative entry point:
 - `GaugeFixing(...)`
 - `GhostLagrangian(...)`
 
-These source declarations are preserved for demos and notebooks, then lowered
-to the existing `DiracKineticTerm` / `ComplexScalarKineticTerm` /
-`GaugeKineticTerm` / `GaugeFixingTerm` / `GhostTerm` backend.
+These are typed source declarations. They should lower onto the existing
+backend rather than create a second symbolic execution path.
 
-That is the right boundary for this codebase: a typed public front-end over the
-current Symbolica + Spenso execution path, not a second symbolic engine.
+## Practical architecture in this repo
 
-## Recommended architecture
+- declaration and metadata: `src/model/*`
+- declarative helpers: `src/lagrangian/*`
+- compilation: `src/compiler/gauge.py`
+- symbolic/tensor utilities: `src/symbolic/*`
+- behavior locks: `tests/*`
 
-## 1) Keep `src/model_symbolica.py` as a pure engine
+## Layer responsibilities
 
-`src/model_symbolica.py` should remain responsible for:
+The intended split is:
 
-- contraction permutations
-- fermion signs
-- derivative momentum factors
-- open-index remapping
-- low-level simplification calls
+1. symbolic engine
+   - contraction permutations
+   - fermion signs
+   - derivative-to-momentum replacement
+   - open-index remapping
+2. declaration/lowering
+   - typed model declarations
+   - canonical source-term analysis
+   - lowering to normalized backend terms
+3. compiler
+   - covariant expansion
+   - gauge-structure assembly
+   - normalization/convention application
 
-It should not absorb more model-specific branching.
+This note exists to keep physics structure out of ad hoc example code and to
+keep model-specific semantics out of the generic symbolic engine.
 
-Most important cleanup here:
+## Near-term strategy
 
-- remove string-based species/index matching
-- rely on exact symbolic objects and structural inspection instead
+1. stabilize the recent gauge/lowering refactors with focused tests
+2. finish API ergonomics for whole-Lagrangian extraction
+3. enter BFM split only after step 1 and 2 are stable
 
-## 2) Strengthen `src/model.py` into a stricter declaration layer
+## Architectural constraint
 
-`src/model.py` already has the right core objects:
-
-- `Field`
-- `FieldOccurrence`
-- `ExternalLeg`
-- `DerivativeAction`
-- `InteractionTerm`
-- `Model`
-
-The next step is to make this layer carry more meaning:
-
-- distinguish scalar, vector, and gauge-field roles properly
-- make abelian charges and non-abelian representation slots first-class field metadata
-- make index signatures more central to compatibility checks
-- make covariant-derivative construction depend on that metadata rather than one hard-coded universal `D_mu`
-- reduce the amount of parallel-list logic that leaks into calling code
-
-## 3) Centralize operator builders
-
-Create a dedicated operator vocabulary, either by extending
-`src/spenso_structures.py` or by adding a new module such as `src/operators.py`.
-
-That module should provide builders for common structures:
-
-- `psi_bar_psi(...)`
-- `psi_bar_gamma_psi(...)`
-- `psi_bar_gamma5_psi(...)`
-- gauge-current structures
-- scalar current structures
-- later covariant derivatives and field strengths
-
-This avoids hand-building the same structures differently across examples.
-
-## 4) Add a compiler layer when the current pieces are stable
-
-After the engine/model/tensor boundary is cleaned up, add a higher-level
-compiler layer:
-
-- input: model declarations and operator builders
-- output: normalized `InteractionTerm` objects
-
-Responsibilities:
-
-- canonicalize dummy labels
-- expand covariant-derivative structures
-- insert generators and other gauge tensors
-- apply normalization conventions consistently
-
-That is the correct place for FeynRules-style compilation logic.
-
-## 5) Make index growth declarative
-
-For every field occurrence, index slots should come from metadata, not from
-hard-coded branches.
-
-The intended rule is:
-
-1. field declaration defines intrinsic slots
-2. occurrence defines concrete labels
-3. engine consumes those slots generically
-
-If a future field or index type requires touching multiple engine conditionals,
-the layering is still too weak.
-
-## Suggested implementation order
-
-The last hardening cycle reached the earlier ordinary-gauge goals:
-
-1. a first real regression split now exists in `tests/`
-2. one long-lived conventions reference now exists across code/docs/tests
-3. repeated same-kind slot handling now works for the covered compiler paths
-4. the minimal compiler remains the structural helper and the physical compiler remains the user-facing path
-5. ordinary gauge-fixing and ghost sectors now compile through that physical compiler
-
-So the next implementation order is:
-
-1. keep widening the dedicated test split
-2. tighten the remaining model/declaration validation outside the current compiler entry points
-3. add background/quantum splitting
-4. add BFM gauge fixing and ghosts on top of that split
-5. only then continue toward broader FeynRules-style workflows
-
-## Immediate concrete next task
-
-The next concrete step should not be another ordinary-gauge feature.
-
-It should be the first clean BFM design pass built on the now-working ordinary
-gauge-fixed baseline.
-
-In practice, that means:
-
-1. draft the declaration/model API for ordinary, background, and quantum gauge fields
-2. extend the pure-gauge compiler with `A -> B + Q` while preserving the ordinary path
-3. add a small BFM-oriented demo/test matrix for the split pure-gauge sector
-4. keep the raw-vs-compact display distinction explicit for the resulting gauge-sector output
-
-## Priority after that
-
-Once that hardening step is done, the next physics order should be:
-
-1. background/quantum splitting
-2. BFM gauge fixing
-3. BFM ghosts
-4. broader fermion and symmetry-breaking support
-
-That order is safer because the ordinary gauge-fixed sector is already working
-and should remain the base that everything else builds on top of.
+If a new feature requires parallel handwritten logic in examples and compiler
+code, or requires adding field-specific branching into the symbolic engine, the
+layering has regressed.

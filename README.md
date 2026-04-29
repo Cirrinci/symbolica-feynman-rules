@@ -164,6 +164,15 @@ vertex = model.lagrangian().feynman_rule(q.bar, q, G)
 This keeps the front-end close to the structure of a FeynRules model file while
 still lowering into the existing Symbolica + Spenso compiler back-end.
 
+`Lagrangian(...)` remains the convenient front door for metadata-free local
+operators built from fields, `PartialD(...)`, and local tensor/spinor
+structures. `Model(..., lagrangian_decl=...)` is the source-level entry point
+for declarations that need model metadata, such as `CovD(...)`,
+`FieldStrength(...)`, gauge fixing, and ghosts. `Model.lagrangian()` returns
+the compiled extraction object used for `feynman_rule(...)`, and explicit
+compiled-term workflows can still construct `CompiledLagrangian(terms=...)`
+directly from `InteractionTerm` tuples.
+
 The old split declaration slots (`covariant_terms`, `gauge_kinetic_terms`,
 `gauge_fixing_terms`, `ghost_terms`) are still supported for compatibility, but
 they are now legacy API.

@@ -11,7 +11,7 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from gauge_compiler import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
+from compiler.gauge import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -30,9 +30,9 @@ from model import (  # noqa: E402
     GhostLagrangian,
     Model,
 )
-from model_symbolica import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
-from operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw, psi_bar_gamma_psi, quark_gluon_current  # noqa: E402
-from spenso_structures import gauge_generator, structure_constant  # noqa: E402
+from symbolic.vertex_engine import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
+from lagrangian.operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw, psi_bar_gamma_psi, quark_gluon_current  # noqa: E402
+from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 
 
 def _model_vertex(*, interaction, external_legs, species_map):
@@ -501,7 +501,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
 
     compiled = compile_covariant_terms(model)
     assert with_compiled_covariant_terms(model).interactions == compiled
-    assert len(compiled) == 8
+    assert len(compiled) == 9
     labels = [interaction.label for interaction in compiled]
     assert any("gamma^mu D_mu" in label for label in labels)
     assert sum("gauge kinetic bilinear" in label for label in labels) == 2
@@ -615,15 +615,15 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
 
     compiled = compile_covariant_terms(model)
     assert with_compiled_covariant_terms(model).interactions == compiled
-    assert len(compiled) == 5
+    assert len(compiled) == 6
 
-    qcd_term, qed_term, gauge_fixing_term, ghost_bilinear_term, ghost_gauge_term = compiled
+    qcd_term, qed_term, _partial_term, gauge_fixing_term, ghost_bilinear_term, ghost_gauge_term = compiled
     assert qcd_term.fields[-1].field is gluon
     assert qed_term.fields[-1].field is photon
     assert gauge_fixing_term.fields[0].field is gluon and gauge_fixing_term.fields[1].field is gluon
     assert ghost_bilinear_term.fields[0].field is ghost and ghost_bilinear_term.fields[1].field is ghost
     assert ghost_gauge_term.fields[0].field is ghost and ghost_gauge_term.fields[1].field is gluon
-    assert all(photon not in tuple(field.field for field in term.fields) for term in compiled[2:])
+    assert all(photon not in tuple(field.field for field in term.fields) for term in compiled[3:])
 
     got_qcd = _model_vertex(
         interaction=qcd_term,

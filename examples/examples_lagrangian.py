@@ -12,8 +12,17 @@ Conventions (automatic):
 
 import argparse
 import re
+import sys
+from pathlib import Path
 
-from model_symbolica import (
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC = REPO_ROOT / "src"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from symbolic.vertex_engine import (
     S,
     Expression,
     I,
@@ -23,8 +32,7 @@ from model_symbolica import (
     pcomp,
     compact_vertex_sum_form,
 )
-from spenso_structures import (
-    SPINOR_KIND,
+from symbolic.spenso_structures import (
     gauge_generator,
     gamma_matrix,
     gamma5_matrix,
@@ -33,23 +41,24 @@ from spenso_structures import (
 )
 from model import (
     COLOR_FUND_INDEX,
-    InteractionTerm,
-    DerivativeAction,
     Field,
+    Gamma,
+    Gamma5,
     Lagrangian,
+    Metric,
+    PartialD,
+    T,
 )
-from operators import (
+from lagrangian.operators import (
     psi_bar_psi,
     quark_gluon_current,
     scalar_gauge_contact,
 )
-from gauge_compiler import (
-    compile_covariant_terms,
-    compile_minimal_gauge_interactions,
-)
-from tensor_canonicalization import canonize_spenso_tensors
+from compiler.gauge import compile_minimal_gauge_interactions
+from compiler.gauge import compile_covariant_terms
+from symbolic.tensor_canonicalization import canonize_spenso_tensors
 
-from examples import (
+from examples.examples import (
     # symbols
     d,
     lam4, lam6, g_sym, lamC, yF, gV, gS, eQED, xiQED, xiQCD,
@@ -64,13 +73,6 @@ from examples import (
     PsiField, PsiQEDField, PsiMixField,
     QuarkField, GluonField, GhostGluonField,
     GaugeField,
-    # interaction terms
-    TERM_phi4, TERM_phi2chi2, TERM_phiCdag_phiC,
-    TERM_yukawa, TERM_vec_current, TERM_axial_current,
-    TERM_psibar_psi_sq, TERM_current_current,
-    TERM_quark_gluon,
-    TERM_complex_scalar_current_phi, TERM_complex_scalar_current_phidag,
-    TERM_complex_scalar_contact,
     # models
     MODEL_QCD_BASE, MODEL_QED_FERMION_BASE,
     MODEL_SCALAR_QED_BASE, MODEL_SCALAR_QCD_BASE,
@@ -134,9 +136,8 @@ def _lagrangian_vertex(compiled_terms, *fields, filter_fn=None):
     return L.feynman_rule(*fields)
 
 
-def _lagrangian_from_terms(terms):
-    """Build a Lagrangian from a sequence of InteractionTerm objects."""
-    return Lagrangian(terms=tuple(terms))
+def _local_lagrangian(*items):
+    return Lagrangian(*items)
 
 
 def _print_demo_header(title):
@@ -278,6 +279,49 @@ D3 = (2 * pi) ** d * Delta(q1 + q2 + q3)
 D4 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
 
 
+# ---------------------------------------------------------------------------
+# Local declarative source terms used by the standalone Lagrangian API
+# ---------------------------------------------------------------------------
+
+DECL_phi4 = lam4 * PhiField * PhiField * PhiField * PhiField
+DECL_phi2chi2 = g_sym * PhiField * PhiField * ChiField * ChiField
+DECL_phiCdag_phiC = lamC * PhiCField.bar * PhiCField
+DECL_phi4_deriv = gD * PartialD(PhiField, mu) * PartialD(PhiField, nu) * PhiField * PhiField
+DECL_phi4_deriv_contracted = gD2 * PartialD(PhiField, mu) * PartialD(PhiField, mu) * PhiField * PhiField
+DECL_phi6 = lam6 * PhiField * PhiField * PhiField * PhiField * PhiField * PhiField
+
+DECL_yukawa = yF * PsiField.bar * PsiField * PhiField
+DECL_vec_current = gV * PsiField.bar * Gamma(mu) * PsiField * GaugeField
+DECL_axial_current = gV * PsiField.bar * Gamma(mu) * Gamma5() * PsiField * GaugeField
+DECL_psibar_psi_sq = -(g_psi4 / Expression.num(2)) * PsiField.bar * PsiField * PsiField.bar * PsiField
+DECL_current_current = (
+    gJJ
+    * PsiField.bar
+    * Gamma(mu)
+    * PsiField
+    * PsiField.bar
+    * Gamma(mu)
+    * PsiField
+)
+
+DECL_dpsibar = yF * PartialD(PsiField.bar, mu) * PsiField * PhiField * ChiField
+DECL_dpsi = yF * PsiField.bar * PartialD(PsiField, nu) * PhiField * ChiField
+DECL_dphi_dchi = yF * PsiField.bar * PsiField * PartialD(PhiField, mu) * PartialD(ChiField, nu)
+DECL_d2phi_chi = g1 * PsiField.bar * PsiField * PartialD(PartialD(PhiField, mu), mu) * ChiField
+DECL_d2phi2 = (
+    g2
+    * PsiField.bar
+    * PsiField
+    * PartialD(PartialD(PhiField, mu), nu)
+    * PartialD(PartialD(PhiField, mu), nu)
+)
+
+DECL_complex_scalar_current_phi = gPhiA * PhiCField.bar * PartialD(PhiCField, mu) * GaugeField
+DECL_complex_scalar_current_phidag = -gPhiA * PartialD(PhiCField.bar, mu) * PhiCField * GaugeField
+DECL_quark_gluon = gS * QuarkField.bar * Gamma(mu) * T(S("a_decl")) * QuarkField * GluonField
+DECL_complex_scalar_contact = gPhiAA * Metric(mu, nu) * PhiCField.bar * PhiCField * GaugeField * GaugeField
+
+
 # ===================================================================
 # 1. Scalar vertices
 # ===================================================================
@@ -286,28 +330,22 @@ def _run_scalar_tests():
     print("\n  --- Scalar vertices (Lagrangian API) ---")
 
     # phi^4
-    L = Lagrangian(terms=(TERM_phi4,))
+    L = _local_lagrangian(DECL_phi4)
     got = L.feynman_rule(PhiField, PhiField, PhiField, PhiField)
     _check(got, 24 * I * lam4 * D4, "L-API: phi^4")
 
     # phi^2 chi^2
-    L = Lagrangian(terms=(TERM_phi2chi2,))
+    L = _local_lagrangian(DECL_phi2chi2)
     got = L.feynman_rule(PhiField, PhiField, ChiField, ChiField)
     _check(got, 4 * I * g_sym * D4, "L-API: phi^2 chi^2")
 
     # phi^dag phi
-    L = Lagrangian(terms=(TERM_phiCdag_phiC,))
+    L = _local_lagrangian(DECL_phiCdag_phiC)
     got = L.feynman_rule(PhiCField.bar, PhiCField)
     _check(got, I * lamC * D2, "L-API: phi^dag phi")
 
     # phi^4 with derivatives: just test non-zero
-    TERM_deriv = InteractionTerm(
-        coupling=gD,
-        fields=tuple(PhiField.occurrence() for _ in range(4)),
-        derivatives=(DerivativeAction(target=0, lorentz_index=mu), DerivativeAction(target=1, lorentz_index=nu)),
-        label="gD * (d_mu phi)(d_nu phi) phi phi",
-    )
-    L_d = Lagrangian(terms=(TERM_deriv,))
+    L_d = _local_lagrangian(DECL_phi4_deriv)
     got_d = L_d.feynman_rule(PhiField, PhiField, PhiField, PhiField)
     expected_d = compact_vertex_sum_form(
         coupling=gD,
@@ -320,13 +358,7 @@ def _run_scalar_tests():
     )
     _check(got_d, expected_d, "L-API: phi^4 derivative (mu,nu)")
 
-    TERM_deriv2 = InteractionTerm(
-        coupling=gD2,
-        fields=tuple(PhiField.occurrence() for _ in range(4)),
-        derivatives=(DerivativeAction(target=0, lorentz_index=mu), DerivativeAction(target=1, lorentz_index=mu)),
-        label="gD2 * (d_mu phi)(d^mu phi) phi phi",
-    )
-    L_d2 = Lagrangian(terms=(TERM_deriv2,))
+    L_d2 = _local_lagrangian(DECL_phi4_deriv_contracted)
     got_d2 = L_d2.feynman_rule(PhiField, PhiField, PhiField, PhiField)
     expected_d2 = compact_vertex_sum_form(
         coupling=gD2,
@@ -341,18 +373,13 @@ def _run_scalar_tests():
 
     # phi^6: 6-point scalar vertex
     D6 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4 + q5 + q6)
-    TERM_phi6 = InteractionTerm(
-        coupling=lam6,
-        fields=tuple(PhiField.occurrence() for _ in range(6)),
-        label="lam6 * phi^6",
-    )
-    L6 = Lagrangian(terms=(TERM_phi6,))
+    L6 = _local_lagrangian(DECL_phi6)
     got6 = L6.feynman_rule(PhiField, PhiField, PhiField, PhiField, PhiField, PhiField)
     _check(got6, 720 * I * lam6 * D6, "L-API: phi^6")
 
-    # Composition: InteractionTerm + InteractionTerm → Lagrangian
-    L_composed = TERM_phi4 + TERM_phi2chi2
-    assert isinstance(L_composed, Lagrangian), "InteractionTerm + InteractionTerm should produce Lagrangian"
+    # Source declarations now compose before compilation.
+    L_composed = _local_lagrangian(DECL_phi4, DECL_phi2chi2)
+    assert isinstance(L_composed, Lagrangian), "Lagrangian + declarative monomial should produce Lagrangian"
     got_phi4 = L_composed.feynman_rule(PhiField, PhiField, PhiField, PhiField)
     _check(got_phi4, 24 * I * lam4 * D4, "L-API: composed L phi^4")
     got_mixed = L_composed.feynman_rule(PhiField, PhiField, ChiField, ChiField)
@@ -371,27 +398,33 @@ def _run_fermion_tests():
     # Auto indices for PsiField.bar → i1=spinor, PsiField → i2=spinor
 
     # Yukawa: psibar psi phi → I*yF*bis(i1,i2)*D3
-    L = Lagrangian(terms=(TERM_yukawa,))
+    L = _local_lagrangian(DECL_yukawa)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField)
     G12 = bis.g(S("i1"), S("i2")).to_expression()
     _check(got, I * yF * G12 * D3, "L-API: Yukawa")
 
     # Vector current: psibar psi A → I*gV*gamma(i1,i2,i3)*D3
-    L = Lagrangian(terms=(TERM_vec_current,))
+    L = _local_lagrangian(DECL_vec_current)
     got = L.feynman_rule(PsiField.bar, PsiField, GaugeField)
     expected_vec = I * gV * gamma_matrix(S("i1"), S("i2"), S("i3")) * D3
     _check(got, expected_vec, "L-API: vector current")
 
     # Axial current: psibar gamma^mu gamma5 psi A
-    L = Lagrangian(terms=(TERM_axial_current,))
+    L = _local_lagrangian(DECL_axial_current)
     got = L.feynman_rule(PsiField.bar, PsiField, GaugeField)
-    expected_axial = I * gV * gamma_matrix(S("i1"), alpha_s, S("i3")) * gamma5_matrix(alpha_s, S("i2")) * D3
+    expected_axial = (
+        I
+        * gV
+        * gamma_matrix(S("i1"), S("spinor_decl_3"), S("i3"))
+        * gamma5_matrix(S("spinor_decl_3"), S("i2"))
+        * D3
+    )
     _check(got, expected_axial, "L-API: axial current")
 
     # (psibar psi)^2: 4 fermion legs
     # PsiField.bar → i1=spinor, PsiField → i2=spinor,
     # PsiField.bar → i3=spinor, PsiField → i4=spinor
-    L = Lagrangian(terms=(TERM_psibar_psi_sq,))
+    L = _local_lagrangian(DECL_psibar_psi_sq)
     got = L.feynman_rule(PsiField.bar, PsiField, PsiField.bar, PsiField)
     expected_sp = (
         -I * g_psi4 * D4
@@ -401,7 +434,7 @@ def _run_fermion_tests():
     _check(got, expected_sp, "L-API: (psibar psi)^2")
 
     # Current-current: test after gamma chain simplification
-    L = Lagrangian(terms=(TERM_current_current,))
+    L = _local_lagrangian(DECL_current_current)
     got = simplify_gamma_chain(
         L.feynman_rule(PsiField.bar, PsiField, PsiField.bar, PsiField)
     )
@@ -421,66 +454,21 @@ def _run_fermion_tests():
 
 def _run_mixed_derivative_tests():
     print("\n  --- Mixed fermion+scalar derivatives (Lagrangian API) ---")
-
-    # Build interaction terms with derivatives on different fields
-    _MIX_FIELDS = (
-        PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: alpha_s}),
-        PsiField.occurrence(labels={SPINOR_KIND: alpha_s}),
-        PhiField.occurrence(),
-        ChiField.occurrence(),
-    )
-
-    TERM_dpsibar = InteractionTerm(
-        coupling=yF, fields=_MIX_FIELDS,
-        derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
-        label="yF * (d_mu psibar) psi phi chi",
-    )
-    TERM_dpsi = InteractionTerm(
-        coupling=yF, fields=_MIX_FIELDS,
-        derivatives=(DerivativeAction(target=1, lorentz_index=nu),),
-        label="yF * psibar (d_nu psi) phi chi",
-    )
-    TERM_dphi_dchi = InteractionTerm(
-        coupling=yF, fields=_MIX_FIELDS,
-        derivatives=(DerivativeAction(target=2, lorentz_index=mu), DerivativeAction(target=3, lorentz_index=nu)),
-        label="yF * psibar psi (d_mu phi)(d_nu chi)",
-    )
-    TERM_d2phi_chi = InteractionTerm(
-        coupling=g1, fields=_MIX_FIELDS,
-        derivatives=(DerivativeAction(target=2, lorentz_index=mu), DerivativeAction(target=2, lorentz_index=mu)),
-        label="g1 * psibar psi (d^2 phi) chi",
-    )
-    TERM_d2phi2 = InteractionTerm(
-        coupling=g2,
-        fields=(
-            PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: alpha_s}),
-            PsiField.occurrence(labels={SPINOR_KIND: alpha_s}),
-            PhiField.occurrence(),
-            PhiField.occurrence(),
-        ),
-        derivatives=(
-            DerivativeAction(target=2, lorentz_index=mu),
-            DerivativeAction(target=2, lorentz_index=nu),
-            DerivativeAction(target=3, lorentz_index=mu),
-            DerivativeAction(target=3, lorentz_index=nu),
-        ),
-        label="g2 * psibar psi (d_mu d_nu phi)^2",
-    )
     G12 = bis.g(S("i1"), S("i2")).to_expression()
     D4 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
 
     # d_mu psibar
-    L = Lagrangian(terms=(TERM_dpsibar,))
+    L = _local_lagrangian(DECL_dpsibar)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(got, yF * pcomp(q1, mu) * G12 * D4, "L-API: d_mu psibar * psi * phi * chi")
 
     # d_nu psi
-    L = Lagrangian(terms=(TERM_dpsi,))
+    L = _local_lagrangian(DECL_dpsi)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(got, yF * pcomp(q2, nu) * G12 * D4, "L-API: psibar * d_nu psi * phi * chi")
 
     # (d_mu phi)(d_nu chi)
-    L = Lagrangian(terms=(TERM_dphi_dchi,))
+    L = _local_lagrangian(DECL_dphi_dchi)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(
         got,
@@ -489,7 +477,7 @@ def _run_mixed_derivative_tests():
     )
 
     # g1 * psibar psi (d^2 phi) chi
-    L = Lagrangian(terms=(TERM_d2phi_chi,))
+    L = _local_lagrangian(DECL_d2phi_chi)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(
         got,
@@ -498,7 +486,7 @@ def _run_mixed_derivative_tests():
     )
 
     # g2 * psibar psi (d_mu d_nu phi)^2
-    L = Lagrangian(terms=(TERM_d2phi2,))
+    L = _local_lagrangian(DECL_d2phi2)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, PhiField)
     _check(
         got,
@@ -522,19 +510,19 @@ def _run_gauge_ready_tests():
     # QuarkField.bar → i1=spinor, i2=color_fund
     # QuarkField     → i3=spinor, i4=color_fund
     # GluonField     → i5=lorentz, i6=color_adj
-    L = Lagrangian(terms=(TERM_quark_gluon,))
+    L = _local_lagrangian(DECL_quark_gluon)
     got = L.feynman_rule(QuarkField.bar, QuarkField, GluonField)
     expected_qg = I * gS * quark_gluon_current(S("i1"), S("i3"), S("i5"), S("i6"), S("i2"), S("i4")) * D3
     _check(got, expected_qg, "L-API: quark-gluon")
 
     # Complex scalar current: phiC^dag, phiC, A → non-zero
-    L_sc = Lagrangian(terms=(TERM_complex_scalar_current_phi, TERM_complex_scalar_current_phidag))
+    L_sc = _local_lagrangian(DECL_complex_scalar_current_phi, DECL_complex_scalar_current_phidag)
     got_sc = L_sc.feynman_rule(PhiCField.bar, PhiCField, GaugeField)
     expected_sc = gPhiA * (pcomp(q2, mu) - pcomp(q1, mu)) * D3
     _check(got_sc, expected_sc, "L-API: complex scalar current")
 
     # Complex scalar contact: phiC^dag, phiC, A, A
-    L_ct = Lagrangian(terms=(TERM_complex_scalar_contact,))
+    L_ct = _local_lagrangian(DECL_complex_scalar_contact)
     got_ct = L_ct.feynman_rule(PhiCField.bar, PhiCField, GaugeField, GaugeField)
     expected_ct = 2 * I * gPhiAA * scalar_gauge_contact(S("i1"), S("i2")) * D4
     _check(got_ct, expected_ct, "L-API: complex scalar contact")
@@ -554,7 +542,7 @@ def _run_compiled_minimal_tests():
     L_qcd = Lagrangian(terms=compiled_qcd)
     got = L_qcd.feynman_rule(QuarkField.bar, QuarkField, GluonField)
     expected_qcd = (
-        I * gS
+        -I * gS
         * quark_gluon_current(S("i1"), S("i3"), S("i5"), S("i6"), S("i2"), S("i4"))
         * D3
     )
@@ -564,14 +552,14 @@ def _run_compiled_minimal_tests():
     compiled_qed = compile_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
     L_qed = Lagrangian(terms=compiled_qed)
     got = L_qed.feynman_rule(PsiQEDField.bar, PsiQEDField, GaugeField)
-    expected_qed = I * eQED * qPsi * gamma_matrix(S("i1"), S("i2"), S("i3")) * D3
+    expected_qed = -I * eQED * qPsi * gamma_matrix(S("i1"), S("i2"), S("i3")) * D3
     _check(got, expected_qed, "L-API minimal: QED fermion")
 
     # Scalar QED current (3pt) and contact (4pt)
     compiled_sc_qed = compile_minimal_gauge_interactions(MODEL_SCALAR_QED_BASE)
     L_sc_qed = Lagrangian(terms=compiled_sc_qed)
     got_3pt = L_sc_qed.feynman_rule(PhiQEDField.bar, PhiQEDField, GaugeField)
-    expected_sc_qed_3pt = eQED * qPhi * (pcomp(q2, mu) - pcomp(q1, mu)) * D3
+    expected_sc_qed_3pt = I * eQED * qPhi * (pcomp(q2, mu) - pcomp(q1, mu)) * D3
     _check(got_3pt, expected_sc_qed_3pt, "L-API minimal: scalar QED current")
     got_4pt = L_sc_qed.feynman_rule(PhiQEDField.bar, PhiQEDField, GaugeField, GaugeField)
     expected_sc_qed_4pt = 2 * I * (eQED ** 2) * (qPhi ** 2) * scalar_gauge_contact(S("i1"), S("i2")) * D4
@@ -582,7 +570,7 @@ def _run_compiled_minimal_tests():
     L_sc_qcd = Lagrangian(terms=compiled_sc_qcd)
     got_3pt = L_sc_qcd.feynman_rule(PhiQCDField.bar, PhiQCDField, GluonField)
     expected_sc_qcd_3pt = (
-        gS * gauge_generator(S("i4"), S("i1"), S("i2"))
+        I * gS * gauge_generator(S("i4"), S("i1"), S("i2"))
         * (pcomp(q2, mu) - pcomp(q1, mu))
         * D3
     )
@@ -611,7 +599,7 @@ def _run_compiled_minimal_tests():
     spectator_identity = COLOR_FUND_INDEX.representation.g(S("i2"), S("i4")).to_expression()
     got_bislot = L_bislot.feynman_rule(PhiBiField.bar, PhiBiField, GluonField)
     expected_bislot = (
-        gS
+        I * gS
         * gauge_generator(S("i6"), S("i1"), S("i3"))
         * spectator_identity
         * (pcomp(q2, mu) - pcomp(q1, mu))
@@ -948,7 +936,7 @@ def _run_tensor_canonicalization_tests():
 def _run_role_regression_tests():
     print("\n  --- Role / matcher regressions (Lagrangian API) ---")
 
-    L_complex = Lagrangian(terms=(TERM_phiCdag_phiC,))
+    L_complex = _local_lagrangian(DECL_phiCdag_phiC)
     expected_complex = I * lamC * D2
     _check(L_complex.feynman_rule(PhiCField.bar, PhiCField), expected_complex, "Regression: complex boson exact")
     _check(L_complex.feynman_rule(PhiCField, PhiCField.bar), expected_complex, "Regression: reversed legs still works")
@@ -957,7 +945,7 @@ def _run_role_regression_tests():
     shared_symbol = S("X_shared")
     scalar = Field("ScalarShared", spin=0, self_conjugate=True, symbol=shared_symbol)
     vector = Field("VectorShared", spin=1, self_conjugate=True, symbol=shared_symbol)
-    L_scalar = Lagrangian(terms=(InteractionTerm(coupling=lamC, fields=(scalar.occurrence(),)),))
+    L_scalar = _local_lagrangian(lamC * scalar)
     try:
         L_scalar.feynman_rule(vector)
     except ValueError as exc:
@@ -968,7 +956,7 @@ def _run_role_regression_tests():
 
     phi_alias = Field("PhiAlias", spin=0, self_conjugate=True, symbol=S("Y_shared"))
     chi_alias = Field("ChiAlias", spin=0, self_conjugate=True, symbol=S("Y_shared"))
-    L_alias = Lagrangian(terms=(InteractionTerm(coupling=lamC, fields=(phi_alias.occurrence(),)),))
+    L_alias = _local_lagrangian(lamC * phi_alias)
     try:
         L_alias.feynman_rule(chi_alias)
     except ValueError as exc:
@@ -990,42 +978,31 @@ def _run_scalar_demo():
 
     _print_vertex_block(
         "scalar: phi^4",
-        lagrangian_terms=(TERM_phi4,),
-        vertex=Lagrangian(terms=(TERM_phi4,)).feynman_rule(PhiField, PhiField, PhiField, PhiField),
+        lagrangian_terms=(DECL_phi4,),
+        vertex=_local_lagrangian(DECL_phi4).feynman_rule(PhiField, PhiField, PhiField, PhiField),
     )
     _print_vertex_block(
         "scalar: phi^2 chi^2",
-        lagrangian_terms=(TERM_phi2chi2,),
-        vertex=Lagrangian(terms=(TERM_phi2chi2,)).feynman_rule(PhiField, PhiField, ChiField, ChiField),
+        lagrangian_terms=(DECL_phi2chi2,),
+        vertex=_local_lagrangian(DECL_phi2chi2).feynman_rule(PhiField, PhiField, ChiField, ChiField),
     )
     _print_vertex_block(
         "scalar: complex scalar bilinear",
-        lagrangian_terms=(TERM_phiCdag_phiC,),
-        vertex=Lagrangian(terms=(TERM_phiCdag_phiC,)).feynman_rule(PhiCField.bar, PhiCField),
+        lagrangian_terms=(DECL_phiCdag_phiC,),
+        vertex=_local_lagrangian(DECL_phiCdag_phiC).feynman_rule(PhiCField.bar, PhiCField),
     )
 
-    term_deriv2 = InteractionTerm(
-        coupling=gD2,
-        fields=tuple(PhiField.occurrence() for _ in range(4)),
-        derivatives=(DerivativeAction(target=0, lorentz_index=mu), DerivativeAction(target=1, lorentz_index=mu)),
-        label="gD2 * (d_mu phi)(d^mu phi) phi phi",
-    )
     _print_vertex_block(
         "scalar: derivative-contracted phi^4",
-        lagrangian_terms=(term_deriv2,),
+        lagrangian_terms=(DECL_phi4_deriv_contracted,),
         description="Lorentz-contracted derivative interaction.",
-        vertex=Lagrangian(terms=(term_deriv2,)).feynman_rule(PhiField, PhiField, PhiField, PhiField),
+        vertex=_local_lagrangian(DECL_phi4_deriv_contracted).feynman_rule(PhiField, PhiField, PhiField, PhiField),
     )
 
-    term_phi6 = InteractionTerm(
-        coupling=lam6,
-        fields=tuple(PhiField.occurrence() for _ in range(6)),
-        label="lam6 * phi^6",
-    )
     _print_vertex_block(
         "scalar: phi^6",
-        lagrangian_terms=(term_phi6,),
-        vertex=Lagrangian(terms=(term_phi6,)).feynman_rule(
+        lagrangian_terms=(DECL_phi6,),
+        vertex=_local_lagrangian(DECL_phi6).feynman_rule(
             PhiField, PhiField, PhiField, PhiField, PhiField, PhiField,
         ),
     )
@@ -1037,31 +1014,31 @@ def _run_fermion_demo():
 
     _print_vertex_block(
         "fermion: Yukawa",
-        lagrangian_terms=(TERM_yukawa,),
-        vertex=Lagrangian(terms=(TERM_yukawa,)).feynman_rule(PsiField.bar, PsiField, PhiField),
+        lagrangian_terms=(DECL_yukawa,),
+        vertex=_local_lagrangian(DECL_yukawa).feynman_rule(PsiField.bar, PsiField, PhiField),
     )
     _print_vertex_block(
         "fermion: vector current",
-        lagrangian_terms=(TERM_vec_current,),
-        vertex=Lagrangian(terms=(TERM_vec_current,)).feynman_rule(PsiField.bar, PsiField, GaugeField),
+        lagrangian_terms=(DECL_vec_current,),
+        vertex=_local_lagrangian(DECL_vec_current).feynman_rule(PsiField.bar, PsiField, GaugeField),
     )
     _print_vertex_block(
         "fermion: axial current",
-        lagrangian_terms=(TERM_axial_current,),
-        vertex=Lagrangian(terms=(TERM_axial_current,)).feynman_rule(PsiField.bar, PsiField, GaugeField),
+        lagrangian_terms=(DECL_axial_current,),
+        vertex=_local_lagrangian(DECL_axial_current).feynman_rule(PsiField.bar, PsiField, GaugeField),
     )
     _print_vertex_block(
         "fermion: -(g/2)(psibar psi)^2",
-        lagrangian_terms=(TERM_psibar_psi_sq,),
-        vertex=Lagrangian(terms=(TERM_psibar_psi_sq,)).feynman_rule(
+        lagrangian_terms=(DECL_psibar_psi_sq,),
+        vertex=_local_lagrangian(DECL_psibar_psi_sq).feynman_rule(
             PsiField.bar, PsiField, PsiField.bar, PsiField,
         ),
     )
     _print_vertex_block(
         "fermion: current-current operator",
-        lagrangian_terms=(TERM_current_current,),
+        lagrangian_terms=(DECL_current_current,),
         vertex=simplify_gamma_chain(
-            Lagrangian(terms=(TERM_current_current,)).feynman_rule(
+            _local_lagrangian(DECL_current_current).feynman_rule(
                 PsiField.bar, PsiField, PsiField.bar, PsiField,
             )
         ),
@@ -1072,77 +1049,30 @@ def _run_mixed_demo():
     print("# " + "=" * 79)
     print("Demo: fermion+scalar (Lagrangian API)\n")
 
-    mix_fields = (
-        PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: alpha_s}),
-        PsiField.occurrence(labels={SPINOR_KIND: alpha_s}),
-        PhiField.occurrence(),
-        ChiField.occurrence(),
-    )
-    term_dpsibar = InteractionTerm(
-        coupling=yF,
-        fields=mix_fields,
-        derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
-        label="yF * (d_mu psibar) psi phi chi",
-    )
-    term_dpsi = InteractionTerm(
-        coupling=yF,
-        fields=mix_fields,
-        derivatives=(DerivativeAction(target=1, lorentz_index=nu),),
-        label="yF * psibar (d_nu psi) phi chi",
-    )
-    term_dphi_dchi = InteractionTerm(
-        coupling=yF,
-        fields=mix_fields,
-        derivatives=(DerivativeAction(target=2, lorentz_index=mu), DerivativeAction(target=3, lorentz_index=nu)),
-        label="yF * psibar psi (d_mu phi)(d_nu chi)",
-    )
-    term_d2phi_chi = InteractionTerm(
-        coupling=g1,
-        fields=mix_fields,
-        derivatives=(DerivativeAction(target=2, lorentz_index=mu), DerivativeAction(target=2, lorentz_index=mu)),
-        label="g1 * psibar psi (d^2 phi) chi",
-    )
-    term_d2phi2 = InteractionTerm(
-        coupling=g2,
-        fields=(
-            PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: alpha_s}),
-            PsiField.occurrence(labels={SPINOR_KIND: alpha_s}),
-            PhiField.occurrence(),
-            PhiField.occurrence(),
-        ),
-        derivatives=(
-            DerivativeAction(target=2, lorentz_index=mu),
-            DerivativeAction(target=2, lorentz_index=nu),
-            DerivativeAction(target=3, lorentz_index=mu),
-            DerivativeAction(target=3, lorentz_index=nu),
-        ),
-        label="g2 * psibar psi (d_mu d_nu phi)^2",
-    )
-
     _print_vertex_block(
         "fermion+scalar: mixed derivatives",
-        lagrangian_terms=(term_dpsibar,),
-        vertex=Lagrangian(terms=(term_dpsibar,)).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
+        lagrangian_terms=(DECL_dpsibar,),
+        vertex=_local_lagrangian(DECL_dpsibar).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
     )
     _print_vertex_block(
         "fermion+scalar: mixed derivatives",
-        lagrangian_terms=(term_dpsi,),
-        vertex=Lagrangian(terms=(term_dpsi,)).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
+        lagrangian_terms=(DECL_dpsi,),
+        vertex=_local_lagrangian(DECL_dpsi).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
     )
     _print_vertex_block(
         "fermion+scalar: mixed derivatives",
-        lagrangian_terms=(term_dphi_dchi,),
-        vertex=Lagrangian(terms=(term_dphi_dchi,)).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
+        lagrangian_terms=(DECL_dphi_dchi,),
+        vertex=_local_lagrangian(DECL_dphi_dchi).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
     )
     _print_vertex_block(
         "fermion+scalar: higher derivatives",
-        lagrangian_terms=(term_d2phi_chi,),
-        vertex=Lagrangian(terms=(term_d2phi_chi,)).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
+        lagrangian_terms=(DECL_d2phi_chi,),
+        vertex=_local_lagrangian(DECL_d2phi_chi).feynman_rule(PsiField.bar, PsiField, PhiField, ChiField),
     )
     _print_vertex_block(
         "fermion+scalar: higher derivatives",
-        lagrangian_terms=(term_d2phi2,),
-        vertex=Lagrangian(terms=(term_d2phi2,)).feynman_rule(PsiField.bar, PsiField, PhiField, PhiField),
+        lagrangian_terms=(DECL_d2phi2,),
+        vertex=_local_lagrangian(DECL_d2phi2).feynman_rule(PsiField.bar, PsiField, PhiField, PhiField),
     )
 
 
@@ -1152,19 +1082,19 @@ def _run_gauge_demo():
 
     _print_vertex_block(
         "gauge-ready: non-abelian fermion current",
-        lagrangian_terms=(TERM_quark_gluon,),
-        vertex=Lagrangian(terms=(TERM_quark_gluon,)).feynman_rule(QuarkField.bar, QuarkField, GluonField),
+        lagrangian_terms=(DECL_quark_gluon,),
+        vertex=_local_lagrangian(DECL_quark_gluon).feynman_rule(QuarkField.bar, QuarkField, GluonField),
     )
-    scalar_current_terms = (TERM_complex_scalar_current_phi, TERM_complex_scalar_current_phidag)
+    scalar_current_terms = (DECL_complex_scalar_current_phi, DECL_complex_scalar_current_phidag)
     _print_vertex_block(
         "gauge-ready: complex scalar current",
         lagrangian_terms=scalar_current_terms,
-        vertex=Lagrangian(terms=scalar_current_terms).feynman_rule(PhiCField.bar, PhiCField, GaugeField),
+        vertex=_local_lagrangian(*scalar_current_terms).feynman_rule(PhiCField.bar, PhiCField, GaugeField),
     )
     _print_vertex_block(
         "gauge-ready: complex scalar contact",
-        lagrangian_terms=(TERM_complex_scalar_contact,),
-        vertex=Lagrangian(terms=(TERM_complex_scalar_contact,)).feynman_rule(
+        lagrangian_terms=(DECL_complex_scalar_contact,),
+        vertex=_local_lagrangian(DECL_complex_scalar_contact).feynman_rule(
             PhiCField.bar, PhiCField, GaugeField, GaugeField,
         ),
     )
@@ -1628,10 +1558,10 @@ def _run_role_demo():
 
     _print_vertex_block(
         "role: complex scalar conjugation filtering",
-        lagrangian_terms=(TERM_phiCdag_phiC,),
+        lagrangian_terms=(DECL_phiCdag_phiC,),
         description="The same term should match both Phi.bar,Phi and reversed external order.",
-        vertex=Lagrangian(terms=(TERM_phiCdag_phiC,)).feynman_rule(PhiCField.bar, PhiCField),
-        compact_override=Lagrangian(terms=(TERM_phiCdag_phiC,)).feynman_rule(PhiCField, PhiCField.bar),
+        vertex=_local_lagrangian(DECL_phiCdag_phiC).feynman_rule(PhiCField.bar, PhiCField),
+        compact_override=_local_lagrangian(DECL_phiCdag_phiC).feynman_rule(PhiCField, PhiCField.bar),
         interpretation="Compact form shows the reversed-leg query, which must agree with the primary vertex.",
     )
 
