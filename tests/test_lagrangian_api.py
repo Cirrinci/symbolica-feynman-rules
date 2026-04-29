@@ -1708,7 +1708,7 @@ def test_feynman_rule_include_delta_false_omits_delta():
     assert "Delta" not in without_delta.to_canonical_string()
 
 
-def test_feynman_rule_strip_externals_false_preserves_external_spinors():
+def test_feynman_rule_strip_externals_false_preserves_generic_external_factors():
     psi = Field(
         "Psi",
         spin=Fraction(1, 2),
@@ -1729,9 +1729,73 @@ def test_feynman_rule_strip_externals_false_preserves_external_spinors():
         strip_externals=False,
     )
 
+    text = unstripped.to_canonical_string()
     assert "U(" not in stripped.to_canonical_string()
-    assert "U(" in unstripped.to_canonical_string()
+    assert "U(" in text
+    assert "UF(" not in text
+    assert "UbarF(" not in text
     assert _canon(stripped) != _canon(unstripped)
+
+
+def test_high_level_unstripped_external_placeholders_by_field_type():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    photon = _make_photon(name="A", symbol=S("A0"))
+    ghost = _make_ghost(name="ghG", symbol=S("ghG0"), conjugate_symbol=S("ghGbar0"))
+    mu = S("mu")
+
+    scalar_text = Lagrangian(S("y") * psi.bar * psi * phi).feynman_rule(
+        psi.bar,
+        psi,
+        phi,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+    fermion_text = Lagrangian(S("m") * psi.bar * psi).feynman_rule(
+        psi.bar,
+        psi,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+    vector_text = Lagrangian(S("e") * psi.bar * Gamma(mu) * psi * photon).feynman_rule(
+        psi.bar,
+        psi,
+        photon,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+    ghost_text = Lagrangian(S("mgh") * ghost.bar * ghost).feynman_rule(
+        ghost.bar,
+        ghost,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+
+    assert scalar_text.count("U(") == 1
+    assert "UF(" not in scalar_text
+    assert "UbarF(" not in scalar_text
+
+    assert "U(" not in fermion_text
+    assert "UF(" not in fermion_text
+    assert "UbarF(" not in fermion_text
+    assert "spenso::{symmetric,real}::g(" in fermion_text
+
+    assert vector_text.count("U(") == 1
+    assert "UF(" not in vector_text
+    assert "UbarF(" not in vector_text
+    assert "gamma(" in vector_text
+    assert "mu3" in vector_text
+
+    assert ghost_text.count("U(") == 2
+    assert "ghG0" in ghost_text
+    assert "ghGbar0" in ghost_text
 
 
 def test_feynman_rule_simplify_gamma_forwards_to_cleanup_path():

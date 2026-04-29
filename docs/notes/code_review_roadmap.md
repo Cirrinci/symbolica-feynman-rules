@@ -614,6 +614,21 @@ Suggested rollout order:
     - `mu1_int`, `canon_dummy_*`, and similar names are acceptable for debugging but not ideal for daily reading.
   - Concrete improvement:
     - Standardize internal naming policy and keep it deterministic.
+  - Diagnostic finding:
+    - High-level unstripped output currently uses generic `U(field, p)` placeholders for non-fermion external legs.
+    - This appears for scalar, vector, and ghost legs in `L.feynman_rule(..., strip_externals=False)`.
+    - High-level fermion extraction does not expose `UF(...)` / `UbarF(...)` in that path because the auto-leg spinor-delta mode contracts fermion legs into explicit spinor metrics instead.
+    - The low-level direct API still exposes `UF(...)` / `UbarF(...)` when explicit open fermion legs are used.
+  - Assessment:
+    - This is currently output-notation / readability debt, not a confirmed physics error.
+    - The symbol `U(...)` is functioning as a generic external-wavefunction placeholder, but the name can mislead physics users because it reads spinor-specific.
+  - Tests:
+    - `tests/test_lagrangian_api.py::test_feynman_rule_strip_externals_false_preserves_generic_external_factors`
+      - Passes.
+      - Confirms the high-level path preserves a generic `U(...)` factor and does not expose `UF(...)` / `UbarF(...)`.
+    - `tests/test_lagrangian_api.py::test_high_level_unstripped_external_placeholders_by_field_type`
+      - Passes.
+      - Documents current high-level behavior for scalar, fermion, vector, and ghost external legs.
 
 - [ ] Clarify that `T(...)` and `StructureConstant(...)` in the local DSL are not yet fully generic group objects.
   - Current issue:
