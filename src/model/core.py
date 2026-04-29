@@ -38,9 +38,20 @@ from .metadata import Field, GaugeGroup, Parameter
 class Model:
     """Top-level model container (mirrors the full .fr file).
 
-    The model layer stores declarations.  The actual vertex evaluation still
-    happens in ``symbolic/vertex_engine.py`` after these declarations are translated
-    into ``InteractionTerm`` objects and then into engine kwargs.
+    Use ``Model`` when declarations depend on model metadata such as declared
+    fields, gauge groups, charges, representations, or ghost assignments.
+    The recommended source entry point is ``lagrangian_decl=...`` with
+    declarative factors such as ``CovD(...)``, ``FieldStrength(...)``,
+    ``GaugeFixing(...)``, and ``GhostLagrangian(...)``. Call
+    ``model.lagrangian()`` to compile those source declarations into a
+    ``CompiledLagrangian`` before vertex extraction.
+
+    For metadata-free local operators that are already expanded, prefer
+    ``Lagrangian(...)`` directly instead of wrapping them in a ``Model``.
+
+    The actual vertex evaluation still happens in ``symbolic/vertex_engine.py``
+    after declarations are translated into ``InteractionTerm`` objects and then
+    into engine kwargs.
     """
     name: str = ""
     gauge_groups: tuple[GaugeGroup, ...] = ()

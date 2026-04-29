@@ -458,11 +458,18 @@ class CompiledLagrangian:
 
 @dataclass(init=False)
 class Lagrangian(CompiledLagrangian):
-    """User-facing extraction object with a convenience local source front door.
+    """User-facing extraction object for local, already-expanded terms.
 
-    ``Lagrangian(...)`` accepts metadata-free local declarations directly.
-    Declarations that require model metadata still belong in
-    ``Model(lagrangian_decl=...)``.
+    Use ``Lagrangian(...)`` when the interaction is already written as a local
+    operator built directly from fields and local placeholders such as
+    ``PartialD(...)``, ``Gamma(...)``, ``Metric(...)``, ``T(...)``, and
+    ``StructureConstant(...)``.
+
+    ``Lagrangian(...)`` does not look up gauge-group metadata and does not
+    perform gauge-sector compilation. Metadata-dependent source declarations
+    such as ``CovD(...)``, ``FieldStrength(...)``, ``GaugeFixing(...)``, and
+    ``GhostLagrangian(...)`` belong in ``Model(..., lagrangian_decl=...)`` and
+    should be compiled through ``model.lagrangian()``.
     """
 
     source_terms: tuple[object, ...] = ()

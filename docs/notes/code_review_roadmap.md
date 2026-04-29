@@ -602,12 +602,21 @@ Suggested rollout order:
       - Passes.
       - Confirms the empty-Lagrangian case stays clear and does not crash.
 
-- [ ] Make the `Lagrangian(...)` vs `Model(..., lagrangian_decl=...)` boundary more obvious.
+- [x] Make the `Lagrangian(...)` vs `Model(..., lagrangian_decl=...)` boundary more obvious.
   - Current issue:
     - The distinction is learned by hitting runtime errors.
   - Concrete improvement:
     - Tighten docstrings and top-level docs.
     - Consider helper wording that explicitly says “local-only” vs “metadata-dependent”.
+  - Implemented documentation:
+    - `src/model/lagrangian.py::Lagrangian`
+      - Now states that `Lagrangian(...)` is for local, already-expanded operators and does not perform gauge-metadata lookup or gauge-sector compilation.
+    - `src/model/core.py::Model`
+      - Now states that `Model(..., lagrangian_decl=...)` is the metadata-dependent declaration front door for `CovD(...)`, `FieldStrength(...)`, `GaugeFixing(...)`, and `GhostLagrangian(...)`.
+    - `README.md`
+      - Now includes an explicit “Choose the front door” workflow split and examples for both APIs.
+  - Result:
+    - Users no longer need to infer this boundary only from standalone-lowering runtime errors.
 
 - [ ] Keep generated internal names readable but less noisy.
   - Current issue:
@@ -630,11 +639,20 @@ Suggested rollout order:
       - Passes.
       - Documents current high-level behavior for scalar, fermion, vector, and ghost external legs.
 
-- [ ] Clarify that `T(...)` and `StructureConstant(...)` in the local DSL are not yet fully generic group objects.
+- [x] Clarify that `T(...)` and `StructureConstant(...)` in the local DSL are not yet fully generic group objects.
   - Current issue:
     - A physics user can naturally read them as universal group syntax.
   - Concrete improvement:
     - Document current scope explicitly and avoid overpromising in examples.
+  - Implemented documentation:
+    - `src/model/declared.py::T`
+      - Now states that `T(...)` is a local generator placeholder for already-expanded monomials, not a generic group-aware representation object.
+    - `src/model/declared.py::StructureConstant`
+      - Now states that `StructureConstant(...)` is a local tensor helper that does not choose a gauge group or infer normalization conventions.
+    - `README.md`
+      - Now includes a “Local DSL scope” section describing what `T(...)` / `StructureConstant(...)` support today and when to prefer `Model(..., lagrangian_decl=...)`.
+  - Result:
+    - The local DSL is documented as an explicit local-tensor convenience layer rather than a full generic gauge-language.
 
 ## 8. Long-Term Features
 

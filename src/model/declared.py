@@ -373,6 +373,9 @@ def CovD(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor
 
     Accepts ``Field``, ``Field.bar``, or ``(Field, bool)`` and can be used in
     expressions such as ``I * Psi.bar * Gamma(mu) * CovD(Psi, mu)``.
+
+    ``CovD(...)`` is metadata-dependent: it belongs in
+    ``Model(..., lagrangian_decl=...)``, not standalone ``Lagrangian(...)``.
     """
     from .interactions import _parse_field_arg
 
@@ -441,12 +444,31 @@ def Metric(left_index, right_index) -> MetricFactor:
 
 
 def T(adjoint_index) -> GeneratorFactor:
-    """Declarative fundamental-representation generator placeholder."""
+    """Local generator placeholder for already-expanded tensor monomials.
+
+    ``T(...)`` is currently a lightweight helper for local terms that already
+    spell out the desired slot structure. It does not by itself resolve a gauge
+    group, choose a representation, or infer normalization conventions from
+    ``GaugeGroup`` metadata.
+
+    For gauge-aware matter currents and covariant derivatives, prefer
+    ``Model(..., lagrangian_decl=...)`` with declared ``GaugeGroup`` metadata.
+    """
     return GeneratorFactor(adjoint_index=adjoint_index)
 
 
 def StructureConstant(left_index, middle_index, right_index) -> StructureConstantFactor:
-    """Declarative structure-constant placeholder for local tensor monomials."""
+    """Local structure-constant placeholder for already-expanded monomials.
+
+    ``StructureConstant(...)`` is a local tensor helper, not a fully generic
+    group object. It does not determine which gauge group is meant, does not
+    validate normalization conventions, and does not infer adjoint slots from
+    model metadata.
+
+    Use it for explicit local tensor terms only. For gauge-aware Yang-Mills or
+    covariant constructions, prefer ``Model(..., lagrangian_decl=...)`` with a
+    declared ``GaugeGroup``.
+    """
     return StructureConstantFactor(
         left_index=left_index,
         middle_index=middle_index,
@@ -455,7 +477,12 @@ def StructureConstant(left_index, middle_index, right_index) -> StructureConstan
 
 
 def FieldStrength(gauge_group, left_index, right_index) -> FieldStrengthFactor:
-    """Declarative field-strength placeholder for ``DeclaredLagrangian``."""
+    """Declarative field-strength placeholder for ``DeclaredLagrangian``.
+
+    ``FieldStrength(...)`` participates in metadata-dependent gauge-sector
+    lowering and should be declared through ``Model(..., lagrangian_decl=...)``
+    rather than standalone ``Lagrangian(...)``.
+    """
     return FieldStrengthFactor(
         gauge_group=gauge_group,
         left_index=left_index,

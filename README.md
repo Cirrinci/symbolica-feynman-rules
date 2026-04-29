@@ -119,6 +119,21 @@ Gauge/compiler conventions:
 
 ### Recommended workflows
 
+Choose the front door based on whether the source term is already local and
+expanded, or whether it still needs model metadata:
+
+- Use `Lagrangian(...)` for local/already-expanded operators.
+  - Good fit: explicit products of fields, `PartialD(...)`, `Gamma(...)`,
+    `Metric(...)`, `T(...)`, and `StructureConstant(...)`.
+  - `Lagrangian(...)` does not consult `GaugeGroup` metadata and does not
+    compile covariant derivatives, gauge kinetic terms, gauge fixing, or ghost
+    sectors.
+- Use `Model(..., lagrangian_decl=...)` for metadata-dependent declarations.
+  - Good fit: `CovD(...)`, `FieldStrength(...)`, gauge kinetic terms,
+    `GaugeFixing(...)`, `GhostLagrangian(...)`, and any declaration that needs
+    charges, representations, gauge-boson assignments, or ghost-field
+    metadata.
+
 For metadata-free local operators, use `Lagrangian(...)` directly:
 
 ```python
@@ -128,6 +143,10 @@ L = Lagrangian(
 
 vertex = L.feynman_rule(psi.bar, psi, chi.bar, chi)
 ```
+
+This path is intended for terms that are already written in local form. It is
+not the right entry point for `CovD(...)`, `FieldStrength(...)`,
+`GaugeFixing(...)`, or `GhostLagrangian(...)`.
 
 For model declarations that need gauge metadata, use `Model(..., lagrangian_decl=...)`:
 
@@ -146,6 +165,21 @@ model = Model(
 
 vertex = model.lagrangian().feynman_rule(q.bar, q, G)
 ```
+
+### Local DSL scope
+
+The local tensor helpers `T(...)` and `StructureConstant(...)` are currently
+limited placeholders for already-expanded monomials:
+
+- they are useful when you want to write an explicit local color / gauge tensor
+  structure by hand,
+- they do not by themselves select a gauge group or representation,
+- they do not infer normalization conventions from `GaugeGroup` metadata,
+- they should not be read as fully generic group-aware objects yet.
+
+When the interaction should be derived from declared gauge data, prefer
+`Model(..., lagrangian_decl=...)` and let the compiler build the corresponding
+generator or structure-constant insertions from `GaugeGroup` metadata.
 
 Use the lower-level direct engine only when you explicitly want to supply the
 parallel-list contraction input (`coupling`, `alphas`, `betas`, `ps`, roles,
