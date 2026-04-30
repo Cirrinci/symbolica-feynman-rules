@@ -13,6 +13,10 @@ from model import ComplexScalarKineticTerm, Model, Parameter  # noqa: E402
 from tests.support.builders import make_complex_scalar  # noqa: E402
 
 
+def _canon(expr):
+    return expr.expand().to_canonical_string()
+
+
 def test_model_find_parameter_by_name_symbol_and_identity():
     g_strong = Parameter(name="gStrong", symbol=S("gS"))
     lambda_h = Parameter(name="lambdaH", symbol=S("lamH"))
@@ -82,3 +86,40 @@ def test_validation_accepts_declared_parameter_metadata_without_behavior_change(
     assert assumptions is not None
     assert assumptions.real is True
     assert assumptions.external is True
+
+
+def test_parameter_object_can_be_used_directly_as_declared_coupling():
+    phi = make_complex_scalar("Phi4", symbol=S("phi4"), conjugate_symbol=S("phi4dag"))
+    g4 = Parameter(name="g4", symbol=S("g4"))
+    model = Model(
+        fields=(phi,),
+        parameters=(g4,),
+        lagrangian_decl=g4 * phi * phi.bar * phi * phi.bar,
+    )
+
+    expr = model.lagrangian().feynman_rule(phi.bar, phi, phi.bar, phi, simplify=True)
+
+    assert "Parameter(" not in str(expr)
+    assert "g4" in str(expr)
+    assert _canon(expr) == _canon(expr.expand())
+
+
+def test_parameter_object_matches_symbol_path_in_feynman_rule():
+    phi = make_complex_scalar("PhiSym", symbol=S("phi_sym"), conjugate_symbol=S("phi_symdag"))
+    g4 = Parameter(name="g4sym", symbol=S("g4sym"))
+
+    model_parameter = Model(
+        fields=(phi,),
+        parameters=(g4,),
+        lagrangian_decl=g4 * phi.bar * phi * phi.bar * phi,
+    )
+    model_symbol = Model(
+        fields=(phi,),
+        parameters=(g4,),
+        lagrangian_decl=g4.symbol * phi.bar * phi * phi.bar * phi,
+    )
+
+    got_parameter = model_parameter.lagrangian().feynman_rule(phi.bar, phi, phi.bar, phi, simplify=True)
+    got_symbol = model_symbol.lagrangian().feynman_rule(phi.bar, phi, phi.bar, phi, simplify=True)
+
+    assert _canon(got_parameter) == _canon(got_symbol)

@@ -964,11 +964,26 @@ Suggested rollout order:
         parameter coefficients in a behavior-neutral way. This does not
         evaluate or rewrite coefficients; it only makes the metadata available
         to future checks.
+  - Small API follow-up completed:
+    - `Parameter` behaves like its Symbolica symbol in algebraic expressions:
+      - `g * phi * phi * phi * phi`
+      - `-g * psi.bar * psi * Phi`
+      - `g1 + g2` and `g**2` in coefficient expressions
+      all forward to the underlying Symbolica symbol.
+    - This keeps the easy current API working:
+      - plain Symbolica symbols are still accepted unchanged
+      - direct `Parameter` objects now also work where scalar coefficients are
+        expected
+    - `feynman_rule(...)` still emits only the Symbolica symbol, not a Python
+      `Parameter(...)` object, and the resulting expressions still expand and
+      canonicalize normally.
   - Tests added:
     - `tests/test_parameters.py::test_model_find_parameter_by_name_symbol_and_identity`
     - `tests/test_parameters.py::test_parameter_assumptions_expose_real_complex_external_internal_and_value`
     - `tests/test_parameters.py::test_parameter_properties_preserve_basic_metadata`
     - `tests/test_parameters.py::test_validation_accepts_declared_parameter_metadata_without_behavior_change`
+    - `tests/test_parameters.py::test_parameter_object_can_be_used_directly_as_declared_coupling`
+    - `tests/test_parameters.py::test_parameter_object_matches_symbol_path_in_feynman_rule`
   - Still open:
     - dependency evaluation for internal parameters
     - numerical substitution / parameter cards

@@ -268,6 +268,8 @@ class ParameterAssumptions:
 class Parameter:
     """Model parameter (coupling constant, mass, Yukawa matrix, ...).
 
+    Parameter behaves like its Symbolica symbol in algebraic expressions.
+
     ``complex_param`` records whether the parameter should be treated as
     complex-valued by default. ``internal`` distinguishes derived/internal
     parameters from external user inputs. ``value`` is optional and may be
@@ -319,6 +321,36 @@ class Parameter:
             has_value=self.has_value,
             value=self.value,
         )
+
+    def __mul__(self, other):
+        return self.symbol * other
+
+    def __rmul__(self, other):
+        return other * self.symbol
+
+    def __add__(self, other):
+        return self.symbol + other
+
+    def __radd__(self, other):
+        return other + self.symbol
+
+    def __sub__(self, other):
+        return self.symbol - other
+
+    def __rsub__(self, other):
+        return other - self.symbol
+
+    def __truediv__(self, other):
+        return self.symbol / other
+
+    def __rtruediv__(self, other):
+        return other / self.symbol
+
+    def __pow__(self, other):
+        return self.symbol ** other
+
+    def __neg__(self):
+        return -self.symbol
 
 
 # ---------------------------------------------------------------------------
