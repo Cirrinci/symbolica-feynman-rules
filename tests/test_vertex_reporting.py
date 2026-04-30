@@ -186,8 +186,8 @@ def test_vertex_signatures_qcd_sector_split():
 
     gauge_fixing_signatures = compiled.vertex_signatures(sector="gauge_fixing")
     assert [sig.names for sig in gauge_fixing_signatures] == [("G", "G")]
-    assert "gauge_fixing" in gauge_fixing_signatures[0].sectors
-    assert "pure_gauge" in gauge_fixing_signatures[0].sectors
+    assert gauge_fixing_signatures[0].term_count == 1
+    assert gauge_fixing_signatures[0].sectors == ("gauge_fixing",)
 
     ghost_signatures = compiled.vertex_signatures(sector="ghost")
     ghost_names = sorted(sig.names for sig in ghost_signatures)
@@ -282,12 +282,32 @@ def test_vertex_report_sector_filter_preserves_total_counts():
     compiled, _ = _qcd_with_quark_and_ghost_compiled()
     full_report = compiled.vertex_report()
     pure_gauge_report = compiled.vertex_report(sector="pure_gauge")
+    gauge_fixing_report = compiled.vertex_report(sector="gauge_fixing")
 
     assert pure_gauge_report.total_terms == full_report.total_terms
     assert pure_gauge_report.total_signatures == full_report.total_signatures
     assert pure_gauge_report.matched_signatures < full_report.matched_signatures
+    assert pure_gauge_report.matched_terms == 4
+    assert gauge_fixing_report.matched_terms == 1
     for signature in pure_gauge_report.signatures:
-        assert "pure_gauge" in signature.sectors
+        assert signature.sectors == ("pure_gauge",)
+
+
+def test_vertex_signatures_mixed_sector_bilinear_has_local_counts_per_filter():
+    compiled, _ = _qcd_with_quark_and_ghost_compiled()
+
+    all_signatures = {sig.names: sig for sig in compiled.vertex_signatures()}
+    pure_gauge_signatures = {sig.names: sig for sig in compiled.vertex_signatures(sector="pure_gauge")}
+    gauge_fixing_signatures = {sig.names: sig for sig in compiled.vertex_signatures(sector="gauge_fixing")}
+
+    assert all_signatures[("G", "G")].term_count == 3
+    assert all_signatures[("G", "G")].sectors == ("gauge_fixing", "pure_gauge")
+
+    assert pure_gauge_signatures[("G", "G")].term_count == 2
+    assert pure_gauge_signatures[("G", "G")].sectors == ("pure_gauge",)
+
+    assert gauge_fixing_signatures[("G", "G")].term_count == 1
+    assert gauge_fixing_signatures[("G", "G")].sectors == ("gauge_fixing",)
 
 
 def test_vertex_signature_records_sector_tags_for_each_entry():

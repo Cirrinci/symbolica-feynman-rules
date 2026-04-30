@@ -388,6 +388,25 @@ def test_compiled_validate_reports_scalar_mass_mixing():
     assert "scalar" in issue.message
 
 
+def test_compiled_validate_reports_scalar_mass_mixing_for_same_name_distinct_fields():
+    from model import InteractionTerm, Lagrangian
+
+    phi1 = make_complex_scalar("Phi", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
+    phi2 = make_complex_scalar("Phi", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("m12_same_name"),
+            fields=(phi1.occurrence(conjugated=True), phi2.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert [issue.code for issue in report.issues] == ["mass_structure_mixing"]
+    assert "scalar" in report.issues[0].message
+
+
 def test_compiled_validate_reports_fermion_mass_mixing():
     from model import InteractionTerm, Lagrangian
 
@@ -409,6 +428,42 @@ def test_compiled_validate_reports_fermion_mass_mixing():
     assert "Psi" in issue.message
     assert "Chi" in issue.message
     assert "fermion" in issue.message
+
+
+def test_compiled_validate_skips_noncanonical_complex_scalar_pair():
+    from model import InteractionTerm, Lagrangian
+
+    phi1 = make_complex_scalar("Phi1", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
+    phi2 = make_complex_scalar("Phi2", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("c_noncanon"),
+            fields=(phi1.occurrence(), phi2.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert all(issue.code != "mass_structure_mixing" for issue in report.issues)
+
+
+def test_compiled_validate_skips_noncanonical_fermion_pair():
+    from model import InteractionTerm, Lagrangian
+
+    psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
+    chi = make_dirac_fermion("Chi", symbol=S("chi"), conjugate_symbol=S("chibar"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("c_noncanon_f"),
+            fields=(psi.occurrence(), chi.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert all(issue.code != "mass_structure_mixing" for issue in report.issues)
 
 
 def test_compiled_validate_skips_kinetic_bilinears_with_derivatives():

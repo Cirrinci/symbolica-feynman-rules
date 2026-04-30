@@ -186,9 +186,47 @@ def _classify_term_sector(term) -> str:
     return "unknown"
 
 
+def _base_field_match_key(field_obj):
+    """Stable field key that ignores external conjugation status."""
+
+    return _field_match_key(field_obj, False)
+
+
+def _is_canonical_mass_like_pair(first_occ, second_occ) -> bool:
+    """Return whether a compiled 2-point term has the conservative mass shape.
+
+    Supported mass-like patterns:
+    - complex scalar: ``phi.bar * chi``
+    - Dirac fermion: ``psibar * chi``
+
+    Real-scalar off-diagonal bilinears and non-canonical ordering/conjugation
+    patterns are intentionally ignored rather than guessed.
+    """
+
+    first_field = first_occ.field
+    second_field = second_occ.field
+    if first_field.kind != second_field.kind:
+        return False
+
+    if first_field.kind == "scalar":
+        if first_field.self_conjugate or second_field.self_conjugate:
+            return False
+        return bool(first_occ.conjugated and not second_occ.conjugated)
+
+    if first_field.kind == "fermion":
+        return bool(first_occ.conjugated and not second_occ.conjugated)
+
+    return False
+
+
 @dataclass(frozen=True)
 class VertexSignature:
-    """One grouped interaction signature available in a compiled Lagrangian."""
+    """One grouped interaction signature available in a compiled Lagrangian.
+
+    ``term_count`` counts the compiled terms contributing to this signature in
+    the current query context. For unfiltered listings this is the full grouped
+    count. For ``sector=...`` listings it is the sector-local grouped count.
+    """
 
     fields: tuple[object, ...]
     names: tuple[str, ...]
@@ -199,7 +237,12 @@ class VertexSignature:
 
 @dataclass(frozen=True)
 class VertexReport:
-    """Structured, filterable report of available compiled interaction signatures."""
+    """Structured, filterable report of available compiled interaction signatures.
+
+    ``total_terms`` / ``total_signatures`` always describe the full compiled
+    Lagrangian. ``signatures`` and ``matched_terms`` describe only the current
+    filtered view.
+    """
 
     signatures: tuple[VertexSignature, ...]
     total_terms: int
@@ -260,21 +303,23 @@ class CompiledLagrangian:
                 vertices[key] = _term_vertex_fields(term)
         return tuple(vertices.values())
 
-    def _vertex_signature_entries(self):
+    def _vertex_signature_entries(self, *, sector=None):
         grouped = {}
         for term in self.terms:
+            term_sector = _classify_term_sector(term)
+            if sector is not None and term_sector != sector:
+                continue
             key = _term_vertex_key(term)
-            sector = _classify_term_sector(term)
             entry = grouped.get(key)
             if entry is None:
                 grouped[key] = {
                     "fields": _term_vertex_fields(term),
                     "term_count": 1,
-                    "sectors": {sector},
+                    "sectors": {term_sector},
                 }
             else:
                 entry["term_count"] += 1
-                entry["sectors"].add(sector)
+                entry["sectors"].add(term_sector)
 
         entries = []
         for entry in grouped.values():
@@ -329,12 +374,15 @@ class CompiledLagrangian:
           field-argument syntax accepted by ``feynman_rule(...)``.
         - ``contains_fields=...`` keeps signatures containing at least the requested
           field multiset.
-        - ``sector=...`` keeps only signatures whose constituent terms include
-          the requested sector tag. Supported sectors are listed in
+        - ``sector=...`` keeps only terms in the requested sector before
+          regrouping them into signatures. Supported sectors are listed in
           ``KNOWN_VERTEX_SECTORS``: ``'matter'``, ``'pure_gauge'``,
           ``'gauge_fixing'``, ``'ghost'``, ``'unknown'``. Sector classification
           is intentionally narrow (see ``_classify_term_sector``); ambiguous
-          terms degrade to ``'unknown'`` rather than guessing.
+          terms degrade to ``'unknown'`` rather than guessing. In particular,
+          ``VertexSignature.term_count`` in a sector-filtered query is the
+          sector-local grouped count, not the aggregate grouped count across all
+          sectors for the same field signature.
         """
 
         if sector is not None and sector not in KNOWN_VERTEX_SECTORS:
@@ -358,7 +406,7 @@ class CompiledLagrangian:
         )
 
         signatures = []
-        for vertex_signature in self._vertex_signature_entries():
+        for vertex_signature in self._vertex_signature_entries(sector=sector):
             if arity is not None and vertex_signature.arity != arity:
                 continue
 
@@ -368,8 +416,6 @@ class CompiledLagrangian:
             if exact_counter is not None and parsed_counter != exact_counter:
                 continue
             if contains_counter is not None and not _counter_contains(parsed_counter, contains_counter):
-                continue
-            if sector is not None and sector not in vertex_signature.sectors:
                 continue
 
             signatures.append(vertex_signature)
@@ -384,7 +430,12 @@ class CompiledLagrangian:
         contains_fields=None,
         sector=None,
     ) -> VertexReport:
-        """Return a structured summary of available compiled interaction signatures."""
+        """Return a structured summary of available compiled interaction signatures.
+
+        ``total_terms`` and ``total_signatures`` refer to the full compiled
+        Lagrangian. Filtered views affect ``signatures``, ``matched_signatures``,
+        and ``matched_terms`` only.
+        """
 
         all_signatures = self._vertex_signature_entries()
         filtered = self.vertex_signatures(
@@ -405,9 +456,10 @@ class CompiledLagrangian:
         The check is intentionally narrow:
 
         - It inspects only 2-field, derivative-free interaction terms whose
-          fields are matter (scalar or fermion) of the same statistics.
-        - It reports off-diagonal terms (different field species) as
-          ``mass_structure_mixing`` warnings.
+          fields are matter (scalar or fermion) and whose ordering matches a
+          conservative mass-like pattern.
+        - It reports off-diagonal canonical pairs as ``mass_structure_mixing``
+          warnings.
         - Diagonal terms are silent (they are the expected canonical case).
 
         The check intentionally does not try to detect malformed mass terms
@@ -441,9 +493,9 @@ class CompiledLagrangian:
                 continue
             if second_field.kind not in ("scalar", "fermion"):
                 continue
-            if first_field.kind != second_field.kind:
+            if not _is_canonical_mass_like_pair(first, second):
                 continue
-            if first_field.name == second_field.name:
+            if _base_field_match_key(first_field) == _base_field_match_key(second_field):
                 continue
 
             kind_label = "fermion" if first_field.kind == "fermion" else "scalar"

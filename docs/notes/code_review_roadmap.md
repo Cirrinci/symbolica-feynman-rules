@@ -573,11 +573,13 @@ Recommended implementation shape:
   - [x] diagonal complex-scalar bilinears (`m * phi.bar * phi`) pass silently
   - [x] diagonal real-scalar bilinears (`m * phi * phi` for self-conjugate `phi`) pass silently
   - [x] diagonal Dirac-fermion bilinears (`m * psi.bar * psi`) pass silently
-  - [x] off-diagonal scalar bilinears (`m12 * phi1.bar * phi2`) report `mass_structure_mixing` (warning)
-  - [x] off-diagonal fermion bilinears (`m * psi.bar * chi`) report `mass_structure_mixing` (warning)
+  - [x] off-diagonal complex-scalar bilinears in canonical order (`m12 * phi1.bar * phi2`) report `mass_structure_mixing` (warning)
+  - [x] off-diagonal fermion bilinears in canonical order (`m * psi.bar * chi`) report `mass_structure_mixing` (warning)
   - [x] kinetic / gauge-fixing / ghost / Yang-Mills bilinears with derivatives are intentionally ignored, so compiled QCD/QED models do not generate false positives
   - [x] higher-arity interactions (3+ field) are intentionally ignored
   - [x] mixed-statistics 2-point structures (e.g. one scalar + one fermion) are intentionally ignored rather than flagged as malformed
+  - [x] non-canonical bilinear orderings such as `phi1 * phi2` or `psi * chi` are intentionally ignored rather than guessed to be mass mixing
+  - [x] diagonal vs off-diagonal detection uses stable field-match keys rather than `field.name`, so same-name distinct fields are still diagnosed correctly
 - Intentionally NOT implemented (out of scope for this pass):
   - "malformed" classification: detecting a 2-field bilinear whose Lorentz
     or gauge contraction is internally inconsistent would require reliable
@@ -599,7 +601,14 @@ Recommended implementation shape:
     - Passes.
   - `tests/test_model_validation.py::test_compiled_validate_reports_scalar_mass_mixing`
     - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_reports_scalar_mass_mixing_for_same_name_distinct_fields`
+    - Passes.
+    - Confirms distinct fields that only share a display name are still treated as off-diagonal.
   - `tests/test_model_validation.py::test_compiled_validate_reports_fermion_mass_mixing`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_skips_noncanonical_complex_scalar_pair`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_skips_noncanonical_fermion_pair`
     - Passes.
   - `tests/test_model_validation.py::test_compiled_validate_skips_kinetic_bilinears_with_derivatives`
     - Passes.
@@ -741,16 +750,27 @@ Recommended implementation shape:
     3. all field occurrences are spin-1 self-conjugate vectors -> `'pure_gauge'`,
     4. at least one matter (scalar or fermion) field present -> `'matter'`,
     5. otherwise -> `'unknown'`.
-  - One signature can carry multiple sector tags. For example, a compiled
-    QCD model groups three `('G', 'G')` terms (two gauge-kinetic-bilinear
-    pieces plus one gauge-fixing bilinear) into a single signature whose
-    `sectors == ('gauge_fixing', 'pure_gauge')`. Filtering by either sector
-    keeps that signature.
+  - One unfiltered signature can carry multiple sector tags. For example, a
+    compiled QCD model groups three `('G', 'G')` terms (two
+    gauge-kinetic-bilinear pieces plus one gauge-fixing bilinear) into a
+    single unfiltered signature whose `sectors == ('gauge_fixing',
+    'pure_gauge')`.
   - The classifier is intentionally label-aware only for `'gauge_fixing'`.
     Pure-gauge / matter / ghost classification is metadata-driven and
     does not depend on label string matching, so user-supplied
     `InteractionTerm`s without labels still classify correctly when the
     field metadata is well-formed.
+- Sector-count semantics:
+  - Unfiltered `vertex_signatures()` groups all compiled terms sharing the same
+    field signature. In that view, `VertexSignature.term_count` is the full
+    grouped count and `VertexSignature.sectors` lists every contributing sector.
+  - Sector-filtered `vertex_signatures(sector=...)` first keeps only terms in
+    the requested sector and then regroups them. In that view,
+    `VertexSignature.term_count` is sector-local and `VertexSignature.sectors`
+    contains only the sector tags that survived the filter.
+  - `vertex_report(sector=...)` keeps `total_terms` / `total_signatures` as
+    full-Lagrangian totals for context, while `matched_terms` and
+    `matched_signatures` describe only the filtered view.
 - Tests:
   - [x] `tests/test_vertex_reporting.py::test_vertex_report_enumerates_scalar_signatures_deterministically`
     - Passes.
@@ -781,10 +801,13 @@ Recommended implementation shape:
     - Local scalar `Lagrangian(...)` model classifies all signatures as `matter` and not as `pure_gauge`/`ghost`/`gauge_fixing`.
   - [x] `tests/test_vertex_reporting.py::test_vertex_report_sector_filter_preserves_total_counts`
     - Passes.
-    - `total_terms` and `total_signatures` of the full report are preserved when a sector filter is applied.
+    - `total_terms` and `total_signatures` of the full report are preserved when a sector filter is applied, while `matched_terms` becomes sector-local.
   - [x] `tests/test_vertex_reporting.py::test_vertex_signature_records_sector_tags_for_each_entry`
     - Passes.
     - Every emitted `VertexSignature.sectors` value is one of `KNOWN_VERTEX_SECTORS`.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_signatures_mixed_sector_bilinear_has_local_counts_per_filter`
+    - Passes.
+    - Confirms the grouped `('G', 'G')` signature reports `(term_count=3, sectors=('gauge_fixing', 'pure_gauge'))` unfiltered, `(term_count=2, sectors=('pure_gauge',))` under `sector='pure_gauge'`, and `(term_count=1, sectors=('gauge_fixing',))` under `sector='gauge_fixing'`.
 - Good first tests:
   - [x] QCD model lists quark-gluon, 3-gluon, 4-gluon, ghost-gluon, and bilinear sectors distinctly by sector.
   - [x] Filtering by arity and field content returns stable deterministic results.
