@@ -426,6 +426,39 @@ Recommended implementation shape:
 - Good first tests:
   - `y * phi * psibar * psi` without its conjugate partner should fail.
   - `lam * phi.bar * phi` and manifestly real gauge bilinears should pass.
+- Investigation (current pass) — NOT IMPLEMENTED, intentionally left open:
+  - A truly correct Hermiticity check needs more than structural field-content matching.
+    The narrow structural variant ("flip the conjugation status of the
+    non-self-conjugate scalar in a same-species fermion bilinear") only catches
+    one specific flavor of missing-h.c. mistake while missing or misclassifying
+    several legitimate cases.
+  - Concrete reasons the structural-only variant is unsafe right now:
+    - Coupling reality is undecidable from a symbolic coupling expression. A
+      term with a self-conjugate scalar (real bilinear) is Hermitian only if
+      its coupling is real, and the engine has no general way to assert that
+      a Symbolica symbol is real.
+    - Mixed-species (CKM-style) Yukawas have a partner that flips both the
+      scalar conjugation **and** the fermion species. The simple "flip scalar"
+      heuristic does not match those partners and would falsely flag standard
+      flavor-mixing Yukawas in models that are perfectly Hermitian.
+    - Compiled SSB output (electroweak symmetry breaking) lowers Yukawa
+      structures into broken-phase mass-eigenstate terms whose pairing is no
+      longer expressible as a simple "flip the scalar" mirror. Without an SSB-
+      aware partner search this would generate false positives for working
+      EWSB tests.
+    - The current canonicalization layer does not yet provide a robust
+      structural-equality check on couplings under conjugation, so even a
+      narrow detection that did look at couplings would be at the mercy of
+      string-level comparison fragility.
+  - Decision: do not add a hermiticity diagnostic until the codebase has either:
+    1. real-vs-complex parameter metadata threaded through the coupling layer,
+       so coupling reality can be asserted instead of guessed, or
+    2. an explicit Hermitian-conjugate canonicalizer that handles same-species
+       and cross-species fermion bilinears together with their scalar partners.
+  - Status: 6.1 stays open; the current `Model.validate()` and
+    `CompiledLagrangian.validate()` deliberately do not emit any
+    `hermiticity` diagnostics so that valid models do not accumulate spurious
+    warnings.
 
 ### 6.2 Kinetic Normalization
 
@@ -468,6 +501,35 @@ Recommended implementation shape:
     - recognizing compiled two-point kinetic structures,
     - recognizing arbitrary local kinetic monomials built directly from `PartialD(...)`,
     - validating real-scalar `1/2` normalization unless a dedicated supported declaration path is added for it.
+- Compiled two-point pattern matching investigation (current pass) — NOT IMPLEMENTED, intentionally left open:
+  - The compiled output for canonical kinetic terms is not yet expressible as
+    a stable template that a pattern check can reliably compare against.
+    Concrete obstacles observed during this investigation:
+    - Compiled kinetic couplings carry randomized internal labels (e.g.
+      `mu1_int`, `canon_dummy_*`, gauge-group-specific Lorentz/adjoint dummy
+      symbols generated per call site). Two compiles of the same canonical
+      kinetic operator therefore yield couplings that are equal in physics
+      but unequal as `to_canonical_string()` outputs.
+    - The compiled scalar / fermion / vector kinetic bilinears split across
+      multiple `InteractionTerm` entries (for example, `gauge kinetic
+      bilinear (metric)` and `gauge kinetic bilinear (cross)` for one gauge
+      sector, plus the partial free-bilinear piece for declarative
+      `CovD(...)` paths). Reliable pattern matching has to know how to
+      reassemble those pieces, which is currently the compiler's job, not
+      the validation layer's.
+    - Spectator-decorated compiled couplings carry extra identity-style
+      tensor factors that are correct but make string-level template matching
+      generate spurious mismatches.
+  - The narrow check that *would* be safe (counting compiled 2-point kinetic
+    pieces per declared field and asserting the count is what the compiler
+    promises) does not catch user errors; it would only catch compiler-side
+    regressions, which are already covered by direct compilation tests.
+  - Decision: leave compiled two-point pattern matching open until either:
+    1. compiled kinetic couplings are normalized through a deterministic
+       canonicalization layer that erases per-call-site dummy labels, or
+    2. the compiler exposes a reusable "canonical kinetic template" object
+       that the validation layer can compare against without rebuilding the
+       template inside the validator.
 - Example diagnostics:
   - `ValidationIssue(code='kinetic_normalization', message=\"Complex-scalar kinetic term for field 'Phi' has non-canonical coefficient 2; expected 1.\")`
   - `ValidationIssue(code='duplicate_kinetic_term', message=\"Duplicate complex-scalar kinetic declarations found for field 'Phi' with gauge-group selection ('__auto__',).\")`
@@ -485,7 +547,7 @@ Recommended implementation shape:
 
 ### 6.3 Mass Structure / Diagonalization
 
-- [ ] Detect non-diagonal, partially diagonal, or malformed mass terms.
+- [x] Detect non-diagonal mass-like bilinears at compiled-term level.
 - Why it matters:
   - Off-diagonal mass terms are not automatically wrong, but they must be recognized explicitly rather than silently treated as a finished physical basis.
   - Mass mixing changes field interpretation and therefore the meaning of extracted vertices.
@@ -501,6 +563,51 @@ Recommended implementation shape:
   - `m * phi.bar * phi` passes as diagonal;
   - `m12 * phi1.bar * phi2` is reported as mixing;
   - incompatible bilinear structures are rejected.
+- Implemented API:
+  - `CompiledLagrangian.validate() -> ValidationReport`
+    - returns structured `ValidationIssue` entries (warning severity for
+      mixing terms, no error for diagonal terms)
+    - does not raise by default
+    - does not change compilation or `feynman_rule(...)` behavior
+- Implemented checks:
+  - [x] diagonal complex-scalar bilinears (`m * phi.bar * phi`) pass silently
+  - [x] diagonal real-scalar bilinears (`m * phi * phi` for self-conjugate `phi`) pass silently
+  - [x] diagonal Dirac-fermion bilinears (`m * psi.bar * psi`) pass silently
+  - [x] off-diagonal scalar bilinears (`m12 * phi1.bar * phi2`) report `mass_structure_mixing` (warning)
+  - [x] off-diagonal fermion bilinears (`m * psi.bar * chi`) report `mass_structure_mixing` (warning)
+  - [x] kinetic / gauge-fixing / ghost / Yang-Mills bilinears with derivatives are intentionally ignored, so compiled QCD/QED models do not generate false positives
+  - [x] higher-arity interactions (3+ field) are intentionally ignored
+  - [x] mixed-statistics 2-point structures (e.g. one scalar + one fermion) are intentionally ignored rather than flagged as malformed
+- Intentionally NOT implemented (out of scope for this pass):
+  - "malformed" classification: detecting a 2-field bilinear whose Lorentz
+    or gauge contraction is internally inconsistent would require reliable
+    canonicalization of the coupling and index structure, which the current
+    canonicalization layer does not yet guarantee. Reporting "malformed"
+    today would risk false positives for legitimate gauge / spinor
+    contractions that simply use unfamiliar dummy labels.
+  - Diagonalization: explicitly excluded by the user-facing requirement and
+    by the conservative-diagnostics-first design of this validation layer.
+- Example diagnostics:
+  - `ValidationIssue(code='mass_structure_mixing', severity='warning', message=\"Off-diagonal scalar mass-like bilinear detected between fields 'Phi1' and 'Phi2'; compiled term has 0 derivatives and only 2 matter fields.\")`
+  - `ValidationIssue(code='mass_structure_mixing', severity='warning', message=\"Off-diagonal fermion mass-like bilinear detected between fields 'Psi' and 'Chi'; compiled term has 0 derivatives and only 2 matter fields.\")`
+- Tests:
+  - `tests/test_model_validation.py::test_compiled_validate_diagonal_complex_scalar_mass_term_passes_silently`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_diagonal_real_scalar_mass_term_passes_silently`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_diagonal_dirac_mass_term_passes_silently`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_reports_scalar_mass_mixing`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_reports_fermion_mass_mixing`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_skips_kinetic_bilinears_with_derivatives`
+    - Passes.
+    - Confirms that compiled QCD output (gauge kinetic, gauge fixing, ghost, fermion-current bilinears with derivatives) does not produce false-positive `mass_structure_mixing` warnings.
+  - `tests/test_model_validation.py::test_compiled_validate_ignores_higher_arity_interactions`
+    - Passes.
+  - `tests/test_model_validation.py::test_compiled_validate_skips_mixed_statistics_bilinears`
+    - Passes.
 
 ### 6.4 Gauge Consistency
 
@@ -571,6 +678,38 @@ Recommended implementation shape:
   - declared scalar mass matching the bilinear passes;
   - declared mass differing from compiled coefficient fails with a concrete diagnostic;
   - SSB-only unresolved masses are reported as unsupported, not incorrect.
+- Investigation (current pass) — NOT IMPLEMENTED, intentionally left open:
+  - The `Field.mass` attribute exists in `src/model/metadata.py`, but it is
+    not yet integrated into the rest of the system: `Parameter` is still a
+    placeholder (see Section 8 follow-up), the SSB layer derives mass
+    eigenstates without writing them back into `Field.mass`, and the
+    compiled-coupling representation does not yet expose a stable extraction
+    point for a "scalar mass coefficient" comparable to a declared symbol.
+  - Concrete obstacles for a safe diagnostic right now:
+    - There is no robust way to compare a compiled coupling against a
+      declared mass symbol. The coupling is an arbitrary Symbolica
+      expression; equality through `to_canonical_string()` is fragile and
+      depends on coefficient placement, internal label naming, and any
+      identity-style spectator factors decorated by the compiler.
+    - The "not yet derivable" status (broken-phase masses derived from SSB,
+      EFT-style induced masses, RG-running masses) is currently
+      indistinguishable from "compiled mass term genuinely missing"
+      because the metadata layer does not yet record where a mass is
+      expected to come from. Emitting any diagnostic in this state would
+      produce false positives for the working SSB tests.
+    - There is no central "mass extraction" helper; recreating one in the
+      validation layer would duplicate compiler-internal coupling layout
+      assumptions.
+  - Decision: leave 6.5 open until either:
+    1. `Parameter` is promoted to a real model component (see Section 8,
+       "Turn `Parameter` into a real model component"), so declared masses
+       can be tracked alongside the compiled coupling that is supposed to
+       realize them, or
+    2. a deterministic mass-coefficient extractor is added to the compiler
+       layer that the validation layer can call without re-deriving compiler
+       conventions.
+  - Status: `Model.validate()` and `CompiledLagrangian.validate()`
+    deliberately do not emit `mass_spectrum_consistency` diagnostics.
 
 ### 6.6 Vertex Selection / Filtering
 
@@ -581,17 +720,37 @@ Recommended implementation shape:
 - Implemented entry points:
   - [x] Added `CompiledLagrangian.vertex_signatures(...)` for deterministic grouped signature enumeration.
   - [x] Added `CompiledLagrangian.vertex_report(...)` plus structured `VertexSignature` / `VertexReport` diagnostics.
+  - [x] Added `KNOWN_VERTEX_SECTORS` and per-signature `sectors: tuple[str, ...]` metadata.
 - Minimum viable feature:
   - [x] Enumerate compiled interaction signatures by field content and arity.
   - [x] Filter by exact field-content signature.
   - [x] Filter by “contains field(s)” with multiplicity awareness.
-  - [ ] Filter by sector:
+  - [x] Filter by sector:
     - matter,
-    - pure gauge,
-    - gauge fixing,
-    - ghosts.
+    - pure_gauge,
+    - gauge_fixing,
+    - ghost,
+    - unknown.
 - First implementation target:
   - [x] Build on `CompiledLagrangian` / compiled interaction-term metadata rather than re-deriving categories from final expressions.
+- Sector classification (intentionally narrow):
+  - The classifier is implemented in `src/model/lagrangian.py::_classify_term_sector` and applied to every compiled term before it is grouped into a `VertexSignature`.
+  - Classification rules in priority order:
+    1. any field with `kind == 'ghost'` -> `'ghost'`,
+    2. compiled label contains `'gauge fixing'` -> `'gauge_fixing'`,
+    3. all field occurrences are spin-1 self-conjugate vectors -> `'pure_gauge'`,
+    4. at least one matter (scalar or fermion) field present -> `'matter'`,
+    5. otherwise -> `'unknown'`.
+  - One signature can carry multiple sector tags. For example, a compiled
+    QCD model groups three `('G', 'G')` terms (two gauge-kinetic-bilinear
+    pieces plus one gauge-fixing bilinear) into a single signature whose
+    `sectors == ('gauge_fixing', 'pure_gauge')`. Filtering by either sector
+    keeps that signature.
+  - The classifier is intentionally label-aware only for `'gauge_fixing'`.
+    Pure-gauge / matter / ghost classification is metadata-driven and
+    does not depend on label string matching, so user-supplied
+    `InteractionTerm`s without labels still classify correctly when the
+    field metadata is well-formed.
 - Tests:
   - [x] `tests/test_vertex_reporting.py::test_vertex_report_enumerates_scalar_signatures_deterministically`
     - Passes.
@@ -605,8 +764,29 @@ Recommended implementation shape:
   - [x] `tests/test_vertex_reporting.py::test_vertex_signatures_contains_fields_is_multiplicity_aware_for_qcd`
     - Passes.
     - Confirms multiplicity-aware `contains_fields` filtering on a compiled QCD gauge model.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_signatures_invalid_sector_is_rejected`
+    - Passes.
+    - Confirms an unknown sector value raises `ValueError` listing the supported tags.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_signatures_qcd_sector_split`
+    - Passes.
+    - Compiled QCD model lists quark-gluon, 3-gluon, 4-gluon, gauge-kinetic, gauge-fixing, ghost-bilinear, and ghost-gluon vertices distinctly by sector.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_signatures_every_signature_is_covered_by_some_sector`
+    - Passes.
+    - Confirms every compiled signature in a QCD model is reachable via at least one supported sector tag.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_signatures_qed_sector_split`
+    - Passes.
+    - Compiled QED model splits into pure-gauge gauge-kinetic bilinear and matter `psibar`/`psi`/`A` interactions.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_signatures_local_scalar_sector_is_matter`
+    - Passes.
+    - Local scalar `Lagrangian(...)` model classifies all signatures as `matter` and not as `pure_gauge`/`ghost`/`gauge_fixing`.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_report_sector_filter_preserves_total_counts`
+    - Passes.
+    - `total_terms` and `total_signatures` of the full report are preserved when a sector filter is applied.
+  - [x] `tests/test_vertex_reporting.py::test_vertex_signature_records_sector_tags_for_each_entry`
+    - Passes.
+    - Every emitted `VertexSignature.sectors` value is one of `KNOWN_VERTEX_SECTORS`.
 - Good first tests:
-  - [ ] QCD model lists quark-gluon, 3-gluon, 4-gluon, ghost-gluon, and bilinear sectors distinctly by sector.
+  - [x] QCD model lists quark-gluon, 3-gluon, 4-gluon, ghost-gluon, and bilinear sectors distinctly by sector.
   - [x] Filtering by arity and field content returns stable deterministic results.
 
 Suggested rollout order:

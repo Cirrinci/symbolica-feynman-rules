@@ -310,3 +310,173 @@ def test_model_validate_reports_missing_nonabelian_representation_for_explicit_t
     assert [issue.code for issue in report.issues] == ["missing_gauge_representation"]
     assert "PhiSinglet" in report.issues[0].message
     assert "ColorFund" in report.issues[0].message
+
+
+# ---------------------------------------------------------------------------
+# 6.3 mass-structure compiled-term diagnostics
+# ---------------------------------------------------------------------------
+
+
+def test_compiled_validate_diagonal_complex_scalar_mass_term_passes_silently():
+    from model import InteractionTerm, Lagrangian
+
+    scalar = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("m"),
+            fields=(scalar.occurrence(conjugated=True), scalar.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_compiled_validate_diagonal_real_scalar_mass_term_passes_silently():
+    from model import InteractionTerm, Lagrangian
+
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_compiled_validate_diagonal_dirac_mass_term_passes_silently():
+    from model import InteractionTerm, Lagrangian
+
+    psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("mPsi"),
+            fields=(psi.occurrence(conjugated=True), psi.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_compiled_validate_reports_scalar_mass_mixing():
+    from model import InteractionTerm, Lagrangian
+
+    phi1 = make_complex_scalar("Phi1", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
+    phi2 = make_complex_scalar("Phi2", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("m12"),
+            fields=(phi1.occurrence(conjugated=True), phi2.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok  # warning-only, not an error
+    assert [issue.code for issue in report.issues] == ["mass_structure_mixing"]
+    issue = report.issues[0]
+    assert issue.severity == "warning"
+    assert "Phi1" in issue.message
+    assert "Phi2" in issue.message
+    assert "scalar" in issue.message
+
+
+def test_compiled_validate_reports_fermion_mass_mixing():
+    from model import InteractionTerm, Lagrangian
+
+    psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
+    chi = make_dirac_fermion("Chi", symbol=S("chi"), conjugate_symbol=S("chibar"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("mMix"),
+            fields=(psi.occurrence(conjugated=True), chi.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert [issue.code for issue in report.issues] == ["mass_structure_mixing"]
+    issue = report.issues[0]
+    assert issue.severity == "warning"
+    assert "Psi" in issue.message
+    assert "Chi" in issue.message
+    assert "fermion" in issue.message
+
+
+def test_compiled_validate_skips_kinetic_bilinears_with_derivatives():
+    from symbolica import Expression
+    from model import CovD, FieldStrength, GaugeFixing, GhostLagrangian
+    from tests.support.builders import dirac_covd_decl, make_su3
+
+    gluon = make_gluon(name="G", symbol=S("G0"))
+    ghost = make_ghost(name="ghG", symbol=S("ghG"), conjugate_symbol=S("ghGbar"))
+    quark = make_dirac_fermion("q", symbol=S("q0"), conjugate_symbol=S("qbar0"), color=True)
+    su3 = make_su3(S("gS"), gluon.symbol, ghost_sym=ghost.symbol, name="SU3C")
+    mu, nu = S("mu_d"), S("nu_d")
+    decl = (
+        -(Expression.num(1) / Expression.num(4))
+        * FieldStrength(su3, mu, nu)
+        * FieldStrength(su3, mu, nu)
+        + GaugeFixing(su3, xi=S("xiQCD"))
+        + GhostLagrangian(su3)
+        + dirac_covd_decl(quark, mu=mu)
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(quark, gluon, ghost),
+        lagrangian_decl=decl,
+    )
+
+    compiled = model.lagrangian()
+    report = compiled.validate()
+
+    assert report.ok
+    assert all(issue.code != "mass_structure_mixing" for issue in report.issues)
+
+
+def test_compiled_validate_ignores_higher_arity_interactions():
+    from model import InteractionTerm, Lagrangian
+
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+        InteractionTerm(
+            coupling=S("lam"),
+            fields=tuple(phi.occurrence() for _ in range(4)),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_compiled_validate_skips_mixed_statistics_bilinears():
+    from model import InteractionTerm, Lagrangian
+
+    phi = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
+    psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("c"),
+            fields=(phi.occurrence(), psi.occurrence()),
+        ),
+    ))
+
+    report = lagrangian.validate()
+
+    assert report.ok
+    assert all(issue.code != "mass_structure_mixing" for issue in report.issues)
