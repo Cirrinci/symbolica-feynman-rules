@@ -588,10 +588,6 @@ def test_covariant_abelian_gauge_bilinear():
     compiled = compile_covariant_terms(model)
     assert len(compiled) == 2
     metric_term, cross_term = compiled
-    rho = metric_term.derivatives[0].lorentz_index
-    left = cross_term.derivatives[0].lorentz_index
-    right = cross_term.derivatives[1].lorentz_index
-
     legs = (
         photon.leg(p1, species=b1, labels={LORENTZ_KIND: mu3}),
         photon.leg(p2, species=b2, labels={LORENTZ_KIND: mu4}),
@@ -608,7 +604,20 @@ def test_covariant_abelian_gauge_bilinear():
             species_map={b1: photon_symbol, b2: photon_symbol},
         )
     )
-    expected = I * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, rho, left, right) * (2 * pi) ** d * Delta(p1 + p2)
+    expected = (
+        I
+        * gauge_kinetic_bilinear_raw(
+            mu3,
+            mu4,
+            p1,
+            p2,
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
+        )
+        * (2 * pi) ** d
+        * Delta(p1 + p2)
+    )
     assert got.expand().to_canonical_string() == expected.expand().to_canonical_string()
 
 
@@ -639,9 +648,6 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
         gluon.leg(p1, species=b1, labels={LORENTZ_KIND: mu3, COLOR_ADJ_KIND: a3}),
         gluon.leg(p2, species=b2, labels={LORENTZ_KIND: mu4, COLOR_ADJ_KIND: a4}),
     )
-    bilinear_rho = metric_term.derivatives[0].lorentz_index
-    bilinear_left = cross_term.derivatives[0].lorentz_index
-    bilinear_right = cross_term.derivatives[1].lorentz_index
     got_bilinear = simplify_gamma_chain(
         _model_vertex(
             interaction=metric_term,
@@ -656,14 +662,21 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
     )
     expected_bilinear = (
         I
-        * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, bilinear_rho, bilinear_left, bilinear_right)
+        * gauge_kinetic_bilinear_raw(
+            mu3,
+            mu4,
+            p1,
+            p2,
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
+        )
         * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
         * (2 * pi) ** d
         * Delta(p1 + p2)
     )
     assert got_bilinear.expand().to_canonical_string() == expected_bilinear.expand().to_canonical_string()
 
-    cubic_rho = cubic_term.derivatives[0].lorentz_index
     cubic_legs = (
         gluon.leg(p1, species=b1, labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a3}),
         gluon.leg(p2, species=b2, labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: a4}),
@@ -678,7 +691,7 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
     )
     expected_cubic = simplify_gamma_chain(
         gS
-        * yang_mills_three_vertex_metric_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3, cubic_rho)
+        * yang_mills_three_vertex_metric_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3, S("mu1_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )

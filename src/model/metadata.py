@@ -250,8 +250,32 @@ class GaugeGroup:
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
+class ParameterAssumptions:
+    """Structured parameter metadata exposed to validation and reporting."""
+
+    name: str
+    symbol: object
+    indices: tuple[IndexType, ...]
+    real: bool
+    complex: bool
+    internal: bool
+    external: bool
+    has_value: bool
+    value: object = None
+
+
+@dataclass(frozen=True)
 class Parameter:
-    """Model parameter (coupling constant, mass, Yukawa matrix, ...)."""
+    """Model parameter (coupling constant, mass, Yukawa matrix, ...).
+
+    Parameter behaves like its Symbolica symbol in algebraic expressions.
+
+    ``complex_param`` records whether the parameter should be treated as
+    complex-valued by default. ``internal`` distinguishes derived/internal
+    parameters from external user inputs. ``value`` is optional and may be
+    numeric or symbolic; this first pass only stores it as metadata and does
+    not trigger automatic evaluation.
+    """
     name: str
     symbol: object = None
     indices: tuple[IndexType, ...] = ()
@@ -262,6 +286,71 @@ class Parameter:
     def __post_init__(self):
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
+
+    @property
+    def is_real(self) -> bool:
+        return not self.complex_param
+
+    @property
+    def is_complex(self) -> bool:
+        return bool(self.complex_param)
+
+    @property
+    def is_internal(self) -> bool:
+        return bool(self.internal)
+
+    @property
+    def is_external(self) -> bool:
+        return not self.internal
+
+    @property
+    def has_value(self) -> bool:
+        return self.value is not None
+
+    def assumptions(self) -> ParameterAssumptions:
+        """Return a structured summary of the parameter metadata."""
+
+        return ParameterAssumptions(
+            name=self.name,
+            symbol=self.symbol,
+            indices=self.indices,
+            real=self.is_real,
+            complex=self.is_complex,
+            internal=self.is_internal,
+            external=self.is_external,
+            has_value=self.has_value,
+            value=self.value,
+        )
+
+    def __mul__(self, other):
+        return self.symbol * other
+
+    def __rmul__(self, other):
+        return other * self.symbol
+
+    def __add__(self, other):
+        return self.symbol + other
+
+    def __radd__(self, other):
+        return other + self.symbol
+
+    def __sub__(self, other):
+        return self.symbol - other
+
+    def __rsub__(self, other):
+        return other - self.symbol
+
+    def __truediv__(self, other):
+        return self.symbol / other
+
+    def __rtruediv__(self, other):
+        return other / self.symbol
+
+    def __pow__(self, other):
+        return self.symbol ** other
+
+    def __neg__(self):
+        return -self.symbol
 
 
 # ---------------------------------------------------------------------------
@@ -344,6 +433,23 @@ class Field:
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
 
+    def __hash__(self):
+        quantum_numbers = tuple(
+            sorted((str(key), str(value)) for key, value in self.quantum_numbers.items())
+        )
+        return hash((
+            self.name,
+            str(Fraction(self.spin)),
+            self.self_conjugate,
+            tuple((index.name, index.kind, index.prefix) for index in self.indices),
+            self.kind,
+            self.statistics,
+            str(self.symbol),
+            str(self.conjugate_symbol),
+            str(self.mass),
+            quantum_numbers,
+        ))
+
     def role_for(self, conjugated: bool = False) -> FieldRole:
         """Return the interaction/external-leg role implied by this field slot."""
         if self.kind == "fermion":
@@ -408,6 +514,39 @@ class Field:
             packed[kind] = tuple(labels)
 
         return packed
+
+    def unpack_slot_labels(self, labels: Mapping | None) -> dict[int, object]:
+        """Invert ``pack_slot_labels`` back to slot-indexed labels."""
+        normalized = _normalize_index_labels(self, labels)
+        if not normalized:
+            return {}
+
+        unpacked: dict[int, object] = {}
+        for kind, value in normalized.items():
+            slots = self.index_positions(kind=kind)
+            if len(slots) == 1:
+                label = value
+                if isinstance(label, tuple):
+                    if len(label) != 1:
+                        raise ValueError(
+                            f"Field {self.name!r} carries one index of kind {kind!r}; "
+                            f"got {len(label)} labels."
+                        )
+                    label = label[0]
+                if label is not None:
+                    unpacked[slots[0]] = label
+                continue
+
+            if not isinstance(value, tuple):
+                raise ValueError(
+                    f"Field {self.name!r} carries repeated index kind {kind!r}; "
+                    "provide labels as a tuple/list in slot order."
+                )
+            for slot, label in zip(slots, value):
+                if label is not None:
+                    unpacked[slot] = label
+
+        return unpacked
 
     def occurrence(self, *, conjugated: bool = False, labels: dict | None = None):
         """Create a FieldOccurrence of this field in an interaction term."""

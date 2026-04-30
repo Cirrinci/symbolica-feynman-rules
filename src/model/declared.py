@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field as dataclass_field, replace
 
 from .metadata import ConjugateField, Field
 # ---------------------------------------------------------------------------
 # Declarative Lagrangian factors  (CovD / Gamma / FieldStrength DSL)
 # ---------------------------------------------------------------------------
+
+
+def _declared_source_terms_from_item(item):
+    from .lowering import _declared_source_terms_from_item as impl
+
+    return impl(item)
 
 
 class _DeclaredFactorMixin:
@@ -28,6 +34,7 @@ class _DeclaredFactorMixin:
 class _FieldFactor(_DeclaredFactorMixin):
     field: Field
     conjugated: bool = False
+    labels: dict = dataclass_field(default_factory=dict)
 
     def __str__(self):
         if self.conjugated and not self.field.self_conjugate:
@@ -61,6 +68,7 @@ class PartialDerivativeFactor(_DeclaredFactorMixin):
     field: Field
     lorentz_indices: tuple[object, ...]
     conjugated: bool = False
+    labels: dict = dataclass_field(default_factory=dict)
 
     @property
     def bar(self) -> "PartialDerivativeFactor":
@@ -70,6 +78,7 @@ class PartialDerivativeFactor(_DeclaredFactorMixin):
             field=self.field,
             lorentz_indices=self.lorentz_indices,
             conjugated=not self.conjugated,
+            labels=self.labels,
         )
 
     def __str__(self):
@@ -141,12 +150,16 @@ class GaugeFixingDeclaration:
     label: str = ""
 
     def __add__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         if other == 0:
             return DeclaredLagrangian(source_terms=(self,))
         terms = _declared_source_terms_from_item(other)
@@ -182,12 +195,16 @@ class GhostLagrangianDeclaration:
     label: str = ""
 
     def __add__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         terms = _declared_source_terms_from_item(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(source_terms=(self,) + terms)
 
     def __radd__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
         if other == 0:
             return DeclaredLagrangian(source_terms=(self,))
         terms = _declared_source_terms_from_item(other)
@@ -217,7 +234,7 @@ class GhostLagrangianDeclaration:
 
 
 def _is_decl_scalar(value) -> bool:
-    from .interactions import InteractionTerm
+    from .interactions import FieldOccurrence, InteractionTerm
     from .lagrangian import (
         CompiledLagrangian,
         ComplexScalarKineticTerm,
@@ -233,6 +250,7 @@ def _is_decl_scalar(value) -> bool:
         (
             Field,
             ConjugateField,
+            FieldOccurrence,
             _FieldFactor,
             CovariantDerivativeFactor,
             PartialDerivativeFactor,
@@ -258,10 +276,18 @@ def _is_decl_scalar(value) -> bool:
 
 
 def _coerce_decl_factor(value):
+    from .interactions import FieldOccurrence
+
     if isinstance(value, Field):
         return _FieldFactor(value)
     if isinstance(value, ConjugateField):
         return _FieldFactor(value.field, conjugated=True)
+    if isinstance(value, FieldOccurrence):
+        return _FieldFactor(
+            value.field,
+            conjugated=value.conjugated,
+            labels=value.labels,
+        )
     if isinstance(
         value,
         (
@@ -342,41 +368,63 @@ class _DeclaredMonomial:
         return " * ".join(pieces)
 
 
-def CovD(field, lorentz_index) -> CovariantDerivativeFactor:
+def CovD(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
     """Declarative covariant derivative factor for ``DeclaredLagrangian``.
 
     Accepts ``Field``, ``Field.bar``, or ``(Field, bool)`` and can be used in
     expressions such as ``I * Psi.bar * Gamma(mu) * CovD(Psi, mu)``.
+
+    ``CovD(...)`` is metadata-dependent: it belongs in
+    ``Model(..., lagrangian_decl=...)``, not standalone ``Lagrangian(...)``.
     """
     from .interactions import _parse_field_arg
 
-    field_obj, conjugated = _parse_field_arg(field)
+    field_obj, parsed_conjugated = _parse_field_arg(field)
     return CovariantDerivativeFactor(
         field=field_obj,
         lorentz_index=lorentz_index,
-        conjugated=conjugated,
+        conjugated=bool(parsed_conjugated or conjugated),
     )
 
 
-def PartialD(field, lorentz_index) -> PartialDerivativeFactor:
+def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialDerivativeFactor:
     """Declarative partial derivative factor for local derivative monomials.
 
-    Accepts ``Field``, ``Field.bar``, ``(Field, bool)``, or another
-    ``PartialD(...)`` factor to build higher derivatives.
+    Accepts ``Field``, ``Field.bar``, ``FieldOccurrence``, ``(Field, bool)``,
+    or another ``PartialD(...)`` factor to build higher derivatives.
     """
+    from .interactions import FieldOccurrence
     from .interactions import _parse_field_arg
 
     if isinstance(field, PartialDerivativeFactor):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Nested PartialD(...) already carries field labels and conjugation."
+            )
         return PartialDerivativeFactor(
             field=field.field,
             lorentz_indices=field.lorentz_indices + (lorentz_index,),
             conjugated=field.conjugated,
+            labels=field.labels,
         )
-    field_obj, conjugated = _parse_field_arg(field)
+    if isinstance(field, FieldOccurrence):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Pass labels/conjugation either through FieldOccurrence(...) "
+                "or through PartialD(...), not both."
+            )
+        return PartialDerivativeFactor(
+            field=field.field,
+            lorentz_indices=(lorentz_index,),
+            conjugated=field.conjugated,
+            labels=field.labels,
+        )
+    field_obj, parsed_conjugated = _parse_field_arg(field)
     return PartialDerivativeFactor(
         field=field_obj,
         lorentz_indices=(lorentz_index,),
-        conjugated=conjugated,
+        conjugated=bool(parsed_conjugated or conjugated),
+        labels=labels or {},
     )
 
 
@@ -396,12 +444,31 @@ def Metric(left_index, right_index) -> MetricFactor:
 
 
 def T(adjoint_index) -> GeneratorFactor:
-    """Declarative fundamental-representation generator placeholder."""
+    """Local generator placeholder for already-expanded tensor monomials.
+
+    ``T(...)`` is currently a lightweight helper for local terms that already
+    spell out the desired slot structure. It does not by itself resolve a gauge
+    group, choose a representation, or infer normalization conventions from
+    ``GaugeGroup`` metadata.
+
+    For gauge-aware matter currents and covariant derivatives, prefer
+    ``Model(..., lagrangian_decl=...)`` with declared ``GaugeGroup`` metadata.
+    """
     return GeneratorFactor(adjoint_index=adjoint_index)
 
 
 def StructureConstant(left_index, middle_index, right_index) -> StructureConstantFactor:
-    """Declarative structure-constant placeholder for local tensor monomials."""
+    """Local structure-constant placeholder for already-expanded monomials.
+
+    ``StructureConstant(...)`` is a local tensor helper, not a fully generic
+    group object. It does not determine which gauge group is meant, does not
+    validate normalization conventions, and does not infer adjoint slots from
+    model metadata.
+
+    Use it for explicit local tensor terms only. For gauge-aware Yang-Mills or
+    covariant constructions, prefer ``Model(..., lagrangian_decl=...)`` with a
+    declared ``GaugeGroup``.
+    """
     return StructureConstantFactor(
         left_index=left_index,
         middle_index=middle_index,
@@ -410,7 +477,12 @@ def StructureConstant(left_index, middle_index, right_index) -> StructureConstan
 
 
 def FieldStrength(gauge_group, left_index, right_index) -> FieldStrengthFactor:
-    """Declarative field-strength placeholder for ``DeclaredLagrangian``."""
+    """Declarative field-strength placeholder for ``DeclaredLagrangian``.
+
+    ``FieldStrength(...)`` participates in metadata-dependent gauge-sector
+    lowering and should be declared through ``Model(..., lagrangian_decl=...)``
+    rather than standalone ``Lagrangian(...)``.
+    """
     return FieldStrengthFactor(
         gauge_group=gauge_group,
         left_index=left_index,

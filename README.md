@@ -10,108 +10,90 @@ model layer that maps FeynRules-style declarations into that engine.
 
 ### Repository layout
 
-Main source files:
+Live source code is organized as split packages rather than flat top-level files:
 
-- `src/model_symbolica.py`
-  - core contraction engine
-  - direct parallel-list API
-  - simplification helpers
-  - compact derivative-sum helpers
-- `src/model.py`
-  - model-layer dataclasses
-  - `Field`, `FieldOccurrence`, `ExternalLeg`, `DerivativeAction`,
-    `InteractionTerm`, `Model`
-  - bridge from model declarations to `vertex_factor(...)`
-- `src/spenso_structures.py`
-  - Spenso-backed wrappers for gamma matrices, metrics, and gauge generators
-- `src/operators.py`
-  - reusable operator builders for bilinears, currents, and scalar-gauge structures
-- `src/gauge_compiler.py`
-  - minimal structural gauge compiler plus convention-fixed physical compiler
-  - covers minimal matter currents/contact terms, matter covariant derivatives,
-    and pure-gauge kinetic / Yang-Mills self-interactions
-- `src/examples.py`
-  - runnable examples and regression checks
-  - covers both the direct API and the model layer
-- `src/examples_lagrangian.py`
-  - runnable examples centered on the declarative `lagrangian_decl=` API
-  - prints source Lagrangian declarations and the corresponding vertices
-- `src/spenso_gamma_checks.py`
-  - focused gamma/tensor sandbox
-  - runnable against the live source tree
+- `src/model/`
+  - model metadata and declarations
+  - `Field`, `GaugeGroup`, `GaugeRepresentation`, `Model`
+  - compiled interaction objects, `Lagrangian`, and lowering from declarative source terms
+  - electroweak symmetry-breaking helpers in `ssb.py`
+- `src/compiler/`
+  - convention-fixed gauge / covariant compilation
+  - public compiler entry points in `gauge.py`
+  - internal helper modules for covariant cores, spectators, and matter-action builders
+- `src/symbolic/`
+  - Symbolica contraction engine in `vertex_engine.py`
+  - post-processing helpers in `vertex_postprocessing.py`
+  - Spenso-backed tensor wrappers in `spenso_structures.py`
+  - tensor canonicalization helpers in `tensor_canonicalization.py`
+- `src/lagrangian/`
+  - reusable operator builders such as bilinears, currents, and gauge-contact structures
+- `examples/`
+  - runnable example/regression scripts
+  - includes the general examples, the declarative Lagrangian examples, SU(2), and electroweak examples
+- `tests/`
+  - the main regression suite
+- `docs/notes/`
+  - conventions, roadmap material, and project notes
 
-Supporting notes live under `docs/notes/`.
-
-Walkthrough material:
-
-- `notebooks/codebase_workflow_walkthrough.ipynb`
-  - first end-to-end walkthrough of the live code path
-  - currently still work in progress, but already runnable
+Walkthrough notebooks live under `notebooks/`.
 
 ### Current status
 
-What is working in the active code path:
+What is already solid in the active code path:
 
-- scalar polynomial interactions
-- multi-species scalar interactions
-- derivative interactions with permutation-aware momentum assignment
-- fermion permutation signs
-- stripped and unstripped external fermion factors
-- open spinor-index output through Spenso bispinor metrics
-- gamma-matrix and gauge-generator structures supplied through wrappers
-- reusable operator builders in `src/operators.py`
-- a model-layer API that compiles to the engine
-- direct/model cross-checks in the main regression script
-- gauge-ready examples such as quark-gluon and complex-scalar current structures
-- a minimal gauge compiler driven by `GaugeGroup`, `GaugeRepresentation`, and field metadata
-- a convention-fixed physical compiler for:
-  - `psibar i gamma^mu D_mu psi`
-  - `(D_mu phi)^dagger (D^mu phi)`
-  - `-1/4 F_{mu nu} F^{mu nu}`
-  - `-1/4 F^a_{mu nu} F^{a mu nu}` with Yang-Mills 3- and 4-gauge vertices
-  - `-(1/2 xi) (partial.A)^2`
-  - the ordinary non-abelian Faddeev-Popov ghost sector
-- compiled gauge-model checks for quark-gluon and abelian complex-scalar interactions
-- a declarative front-end around `lagrangian_decl=` with:
-  - `CovD(...)`
+- local scalar, fermion, and mixed-species interaction lowering
+- derivative interactions with explicit derivative-target bookkeeping
+- fermion sign handling for the currently supported closed-bilinear structures
+- stripped and unstripped external-leg output through `vertex_factor(...)`
+- Spenso-backed gamma matrices, Lorentz metrics, generators, and structure constants
+- declarative source syntax around:
   - `Gamma(...)`
+  - `CovD(...)`
   - `FieldStrength(...)`
   - `GaugeFixing(...)`
   - `GhostLagrangian(...)`
-- dedicated `pytest` coverage for:
-  - repeated-slot covariant expansion
-  - mixed-group scalar contact compilation
-  - compiler validation hardening for undeclared gauge bosons, partial
-    fermion spinor labels, and ambiguous multi-representation matches
-  - the main covariant / pure-gauge compiler matrix
-  - ordinary gauge-fixing and ghost compilation
-- runnable gamma/tensor checks in `src/spenso_gamma_checks.py`
+- convention-fixed covariant compilation for:
+  - `i psibar gamma^mu D_mu psi`
+  - `(D_mu phi)^dagger (D^mu phi)`
+  - abelian and non-abelian gauge kinetic terms
+  - ordinary gauge fixing
+  - ordinary Faddeev-Popov ghost terms
+- broad `pytest` coverage across:
+  - QED / QCD covariant compilation
+  - repeated-slot gauge actions
+  - mixed-group scalar contacts
+  - gauge-fixing and ghost compilation
+  - declarative Lagrangian lowering
+  - pure-gauge canonicalization
+  - electroweak unbroken and SSB examples
 
-What is not yet solid:
+What is still under development:
 
-- general multi-fermion tensor support is still narrower than a full FeynRules-like system
-- broader direct/model regression coverage still partly lives in `src/examples.py`
-- background-field-gauge scaffolding and background/quantum splitting are still absent
-- declaration/model validation is tighter in the compiler entry points, including
-  undeclared gauge-boson metadata and partial fermion spinor-label rejection, but
-  still not complete across the whole model layer
-- the public API boundary between the minimal structural compiler and the
-  physical compiler should be tightened further
+- general multi-fermion tensor support beyond the currently supported ordered closed-bilinear structures
+- broader model-validation checks in the FeynRules style
+  - hermiticity
+  - kinetic normalization
+  - mass-diagonalization / mass-spectrum consistency
+- remaining maintainability work in `src/model/lowering.py`
+- some integration-style assertions still live in `examples/` instead of focused tests
 
-### Conventions
+### Conventions and entry points
 
 Frozen compiler conventions are documented in:
 
 - `docs/notes/CONVENTIONS.md`
 
-The main engine entry point is:
+Core symbolic entry points:
 
-- `vertex_factor(...)` in `src/model_symbolica.py`
-
-It accepts either:
-
-- model-layer input: `interaction=...`, `external_legs=...`
-- direct input: `coupling`, `alphas`, `betas`, `ps`, plus optional role/index metadata
+- `symbolic.vertex_engine.contract_to_full_expression(...)`
+  - low-level contraction/permutation engine
+- `symbolic.vertex_engine.vertex_factor(...)`
+  - high-level vertex extraction façade
+- `symbolic.vertex_engine.simplify_vertex(...)`
+  - high-level post-processing helper
+- `symbolic.vertex_engine.simplify_deltas(...)`
+- `symbolic.vertex_engine.simplify_spinor_indices(...)`
 
 Important output conventions:
 
@@ -120,15 +102,8 @@ Important output conventions:
 - `include_delta=True` by default
   - the returned expression keeps the overall momentum-conservation factor
     `(2*pi)^d Delta(sum p)`
-- use `include_delta=False` when you want the reduced vertex with that universal factor stripped
-
-Related helpers:
-
-- `simplify_deltas(...)`
-- `simplify_spinor_indices(...)`
-- `simplify_vertex(...)`
-- `compact_vertex_sum_form(...)`
-- `compact_sum_notation(...)`
+- `simplify_vertex(..., simplify_gamma=False)` keeps gamma-chain simplification opt-in
+- use `include_delta=False` when you want the reduced vertex with the universal momentum delta stripped
 
 Gauge/compiler conventions:
 
@@ -142,9 +117,38 @@ Gauge/compiler conventions:
 - ordinary non-abelian ghosts use the integrated form
   `L_gh = (partial cbar)(partial c) - g f (partial cbar) A c`
 
-### Recommended Declarative Workflow
+### Recommended workflows
 
-For model building, prefer one unified declaration entry point:
+Choose the front door based on whether the source term is already local and
+expanded, or whether it still needs model metadata:
+
+- Use `Lagrangian(...)` for local/already-expanded operators.
+  - Good fit: explicit products of fields, `PartialD(...)`, `Gamma(...)`,
+    `Metric(...)`, `T(...)`, and `StructureConstant(...)`.
+  - `Lagrangian(...)` does not consult `GaugeGroup` metadata and does not
+    compile covariant derivatives, gauge kinetic terms, gauge fixing, or ghost
+    sectors.
+- Use `Model(..., lagrangian_decl=...)` for metadata-dependent declarations.
+  - Good fit: `CovD(...)`, `FieldStrength(...)`, gauge kinetic terms,
+    `GaugeFixing(...)`, `GhostLagrangian(...)`, and any declaration that needs
+    charges, representations, gauge-boson assignments, or ghost-field
+    metadata.
+
+For metadata-free local operators, use `Lagrangian(...)` directly:
+
+```python
+L = Lagrangian(
+    g4 * psi.bar * Gamma(mu) * psi * chi.bar * Gamma(mu) * chi
+)
+
+vertex = L.feynman_rule(psi.bar, psi, chi.bar, chi)
+```
+
+This path is intended for terms that are already written in local form. It is
+not the right entry point for `CovD(...)`, `FieldStrength(...)`,
+`GaugeFixing(...)`, or `GhostLagrangian(...)`.
+
+For model declarations that need gauge metadata, use `Model(..., lagrangian_decl=...)`:
 
 ```python
 model = Model(
@@ -152,7 +156,8 @@ model = Model(
     fields=(q, G, ghG),
     lagrangian_decl=(
         I * q.bar * Gamma(mu) * CovD(q, mu)
-        - Expression.num(1) / Expression.num(4) * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)
+        - Expression.num(1) / Expression.num(4)
+        * FieldStrength(SU3C, mu, nu) * FieldStrength(SU3C, mu, nu)
         + GaugeFixing(SU3C, xi=xiQCD)
         + GhostLagrangian(SU3C)
     ),
@@ -161,35 +166,29 @@ model = Model(
 vertex = model.lagrangian().feynman_rule(q.bar, q, G)
 ```
 
-This keeps the front-end close to the structure of a FeynRules model file while
-still lowering into the existing Symbolica + Spenso compiler back-end.
+### Local DSL scope
 
-`Lagrangian(...)` remains the convenient front door for metadata-free local
-operators built from fields, `PartialD(...)`, and local tensor/spinor
-structures. `Model(..., lagrangian_decl=...)` is the source-level entry point
-for declarations that need model metadata, such as `CovD(...)`,
-`FieldStrength(...)`, gauge fixing, and ghosts. `Model.lagrangian()` returns
-the compiled extraction object used for `feynman_rule(...)`, and explicit
-compiled-term workflows can still construct `CompiledLagrangian(terms=...)`
-directly from `InteractionTerm` tuples.
+The local tensor helpers `T(...)` and `StructureConstant(...)` are currently
+limited placeholders for already-expanded monomials:
 
-The old split declaration slots (`covariant_terms`, `gauge_kinetic_terms`,
-`gauge_fixing_terms`, `ghost_terms`) are still supported for compatibility, but
-they are now legacy API.
+- they are useful when you want to write an explicit local color / gauge tensor
+  structure by hand,
+- they do not by themselves select a gauge group or representation,
+- they do not infer normalization conventions from `GaugeGroup` metadata,
+- they should not be read as fully generic group-aware objects yet.
 
-### Main workflow
+When the interaction should be derived from declared gauge data, prefer
+`Model(..., lagrangian_decl=...)` and let the compiler build the corresponding
+generator or structure-constant insertions from `GaugeGroup` metadata.
 
-The current workflow is:
+Use the lower-level direct engine only when you explicitly want to supply the
+parallel-list contraction input (`coupling`, `alphas`, `betas`, `ps`, roles,
+index labels, and derivative targets) yourself.
 
-1. declare an interaction, either directly or through `InteractionTerm`
-2. provide external legs
-3. let `vertex_factor(...)` perform contraction sums and derivative bookkeeping
-4. optionally simplify the result with `simplify_vertex(...)` or more targeted helpers
-
-The main runnable entry points for this workflow are:
-
-- `src/examples.py`
-- `src/examples_lagrangian.py`
+Legacy split declaration slots such as `covariant_terms`,
+`gauge_kinetic_terms`, `gauge_fixing_terms`, and `ghost_terms` are still
+supported for compatibility, but `lagrangian_decl=` is the preferred source
+entry point.
 
 ### Setup
 
@@ -202,55 +201,48 @@ dependencies listed in `requirements.txt`.
 
 ### Usage
 
-Run the main example and regression script from the repository root:
+Run the main example/regression scripts from the repository root:
 
-- `./.venv/bin/python src/examples.py`
-- `./.venv/bin/python src/examples_lagrangian.py`
-- `./.venv/bin/python src/examples.py --suite scalar`
-- `./.venv/bin/python src/examples_lagrangian.py --suite covariant --skip-tests`
-- `./.venv/bin/python src/examples.py --suite fermion`
-- `./.venv/bin/python src/examples.py --suite gauge`
-- `./.venv/bin/python src/examples.py --suite model`
-- `./.venv/bin/python src/examples.py --suite covariant`
-- `./.venv/bin/python src/examples.py --suite cross`
+- `./.venv/bin/python examples/examples.py --suite all`
+- `./.venv/bin/python examples/examples.py --suite scalar`
+- `./.venv/bin/python examples/examples.py --suite fermion`
+- `./.venv/bin/python examples/examples.py --suite gauge`
+- `./.venv/bin/python examples/examples.py --suite model`
+- `./.venv/bin/python examples/examples.py --suite covariant`
+- `./.venv/bin/python examples/examples.py --suite cross`
+- `./.venv/bin/python examples/examples_lagrangian.py --suite all`
+- `./.venv/bin/python examples/examples_lagrangian.py --suite covariant --skip-tests`
+- `./.venv/bin/python examples/examples_su2.py`
+- `./.venv/bin/python examples/examples_electroweak_unbroken.py`
+- `./.venv/bin/python examples/examples_electroweak_ssb.py`
+- `./.venv/bin/python src/symbolic/spenso_gamma_checks.py`
 - `./.venv/bin/python -m pytest -q`
-
-Notes:
-
-- `src/examples.py --suite all` is the main validation target
-- `./.venv/bin/python src/spenso_gamma_checks.py` is a second live validation path for gamma/tensor structures
 
 For notebooks, use the repository virtual environment:
 
 - `.venv/bin/python`
 
-### Current notes
+### Notes and roadmap
 
 Project notes are kept in:
 
+- `docs/notes/CONVENTIONS.md`
+- `docs/notes/FEYNRULES_STYLE_STRATEGY.md`
+- `docs/notes/code_review_roadmap.md`
 - `docs/notes/PROJECT_GOAL.md`
 - `docs/notes/ROADMAP.md`
 - `docs/notes/RESEARCH_LOG.md`
 - `docs/notes/THESIS_PROGRESS.md`
-- `docs/notes/CONVENTIONS.md`
-- `docs/notes/FEYNRULES_STYLE_STRATEGY.md`
+
+The current day-to-day engineering roadmap is `docs/notes/code_review_roadmap.md`.
 
 ### Immediate priorities
 
-The highest-value next steps in the codebase are:
+The current implementation priorities are tracked in `docs/notes/code_review_roadmap.md`.
 
-1. keep conventions documented once across code, docs, and tests
-2. keep moving the runnable assertions in `src/examples.py` toward a dedicated test harness
-3. tighten the remaining declaration/model validation outside the compiler entry points
-4. add background/quantum gauge-field splitting on top of the ordinary gauge-fixed path
-5. improve canonical/readable pure-gauge output while keeping the raw compiled form available
-6. widen the ordinary gauge-fixed regression matrix and examples
+Near-term themes:
 
-Suggested implementation order:
-
-1. keep conventions frozen in one place
-2. extract tests from `src/examples.py`
-3. tighten remaining declaration/model validation
-4. add background/quantum gauge-field splitting
-5. improve canonical/readable pure-gauge output on top of the raw compiled form
-6. widen the ordinary gauge-fixed regression matrix
+1. keep conventions and validation checks aligned with the test suite
+2. continue shrinking large multi-responsibility modules such as `src/model/lowering.py`
+3. reduce string-based equality/canonical-form workarounds where Symbolica/Spenso can do the job directly
+4. extend physics-facing validation and user-facing diagnostics without changing conventions implicitly

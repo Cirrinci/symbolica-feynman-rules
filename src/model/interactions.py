@@ -13,6 +13,7 @@ from .metadata import (
     ConjugateField,
     Field,
     FieldRole,
+    LORENTZ_KIND,
     SPINOR_KIND,
     Statistics,
     _copy_index_labels,
@@ -41,6 +42,50 @@ class FieldOccurrence:
         if isinstance(spinor, tuple):
             return spinor[0] if spinor else None
         return spinor
+
+    def __mul__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__mul__(other)
+
+    def __rmul__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__rmul__(other)
+
+    def __add__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__add__(other)
+
+    def __radd__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(
+            _FieldFactor(
+                self.field,
+                conjugated=self.conjugated,
+                labels=self.labels,
+            )
+        ).__radd__(other)
 
 
 @dataclass(frozen=True)
@@ -80,6 +125,7 @@ class InteractionTerm:
     coupling: object
     fields: tuple[FieldOccurrence, ...]
     derivatives: tuple[DerivativeAction, ...] = ()
+    closed_dirac_bilinears: tuple[tuple[int, int], ...] = ()
     label: str = ""
 
     @property
@@ -129,6 +175,27 @@ class InteractionTerm:
             return DeclaredLagrangian(source_terms=decl_terms + (self,))
         return NotImplemented
 
+    def feynman_rule(
+        self,
+        *fields,
+        momenta=None,
+        simplify=True,
+        include_delta: bool = True,
+        strip_externals: bool = True,
+        simplify_gamma: bool = False,
+    ):
+        """Compute one vertex rule without manually wrapping this term."""
+        from .lagrangian import Lagrangian
+
+        return Lagrangian(terms=(self,)).feynman_rule(
+            *fields,
+            momenta=momenta,
+            simplify=simplify,
+            include_delta=include_delta,
+            strip_externals=strip_externals,
+            simplify_gamma=simplify_gamma,
+        )
+
     def to_vertex_kwargs(self, external_legs: Sequence[ExternalLeg]) -> dict:
         """Generate the dict consumed by ``vertex_factor()``."""
 
@@ -147,15 +214,57 @@ class InteractionTerm:
         leg_roles = [leg.role for leg in external_legs]
 
         field_index_labels = [_copy_index_labels(occ.labels) for occ in self.fields]
+        field_index_types = [occ.field.indices for occ in self.fields]
         leg_index_labels = [_copy_index_labels(leg.labels) for leg in external_legs]
 
         leg_spins = [leg.spin for leg in external_legs]
 
         derivative_indices = [d.lorentz_index for d in self.derivatives]
         derivative_targets = [d.target for d in self.derivatives]
+        coupling = self.coupling
+
+        if derivative_indices:
+            external_lorentz_labels = set()
+            for slot_labels in field_index_labels:
+                value = slot_labels.get(LORENTZ_KIND)
+                if isinstance(value, tuple):
+                    external_lorentz_labels.update(
+                        label for label in value if label is not None
+                    )
+                elif value is not None:
+                    external_lorentz_labels.add(value)
+
+            internal_lorentz_map: dict[str, object] = {}
+            original_lorentz_map: dict[str, object] = {}
+            normalized_derivatives = []
+            next_internal = 1
+
+            for lorentz_index in derivative_indices:
+                if lorentz_index in external_lorentz_labels:
+                    normalized_derivatives.append(lorentz_index)
+                    continue
+
+                key = (
+                    lorentz_index.to_canonical_string()
+                    if hasattr(lorentz_index, "to_canonical_string")
+                    else str(lorentz_index)
+                )
+                mapped = internal_lorentz_map.get(key)
+                if mapped is None:
+                    mapped = S(f"mu{next_internal}_int")
+                    internal_lorentz_map[key] = mapped
+                    original_lorentz_map[key] = lorentz_index
+                    next_internal += 1
+                normalized_derivatives.append(mapped)
+
+            if internal_lorentz_map:
+                if hasattr(coupling, "replace"):
+                    for key, mapped in internal_lorentz_map.items():
+                        coupling = coupling.replace(original_lorentz_map[key], mapped)
+                derivative_indices = normalized_derivatives
 
         return dict(
-            coupling=self.coupling,
+            coupling=coupling,
             alphas=alphas,
             betas=betas,
             ps=ps,
@@ -163,10 +272,12 @@ class InteractionTerm:
             field_roles=field_roles,
             leg_roles=leg_roles,
             field_index_labels=field_index_labels,
+            field_index_types=field_index_types,
             leg_index_labels=leg_index_labels,
             leg_spins=leg_spins,
             derivative_indices=derivative_indices,
             derivative_targets=derivative_targets,
+            closed_dirac_bilinears=self.closed_dirac_bilinears,
         )
 
 
@@ -214,19 +325,21 @@ def _parse_field_arg(arg) -> tuple[Field, bool]:
 
 
 def _auto_leg_labels(field_obj: Field, counter: list[int]) -> dict:
-    """Generate sequential index labels ``i1``, ``i2``, ... for one leg."""
+    """Generate readable default labels for one leg."""
+
+    leg_number = counter[0]
+    counter[0] += 1
 
     kind_counts = Counter(idx.kind for idx in field_obj.indices)
     kind_ordinals: dict[str, int] = {}
     labels: dict[str, object] = {}
 
     for idx in field_obj.indices:
-        label = S(f"i{counter[0]}")
-        counter[0] += 1
-
         ordinal = kind_ordinals.get(idx.kind, 0)
         kind_ordinals[idx.kind] = ordinal + 1
         count = kind_counts[idx.kind]
+        base = f"{idx.prefix}{leg_number}"
+        label = S(base if ordinal == 0 else f"{base}_{ordinal + 1}")
 
         if count > 1:
             if idx.kind not in labels:

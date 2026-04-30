@@ -12,11 +12,18 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
-from compiler.gauge import compile_covariant_terms, expand_cov_der  # noqa: E402
+from compiler.gauge import (  # noqa: E402
+    compile_complex_scalar_gauge_terms,
+    compile_covariant_terms,
+    compile_fermion_gauge_current,
+    compile_mixed_complex_scalar_contact_terms,
+    expand_cov_der,
+)
 from model import (  # noqa: E402
     COLOR_FUND_INDEX,
     COLOR_ADJ_INDEX,
     LORENTZ_INDEX,
+    SPINOR_INDEX,
     CovD,
     Field,
     GaugeGroup,
@@ -42,6 +49,19 @@ def _make_bislot_scalar():
         symbol=phi,
         conjugate_symbol=phidag,
         indices=(COLOR_FUND_INDEX, COLOR_FUND_INDEX),
+    )
+
+
+def _make_bislot_fermion():
+    q = S("q")
+    qbar = S("qbar")
+    return Field(
+        "QBiTest",
+        spin=1 / 2,
+        self_conjugate=False,
+        symbol=q,
+        conjugate_symbol=qbar,
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, COLOR_FUND_INDEX),
     )
 
 
@@ -173,6 +193,91 @@ def test_expand_cov_der_exposes_repeated_slot_metadata():
         assert piece.metadata.representation_slots == (0, 1)
         assert piece.metadata.repeated_index is True
         assert piece.metadata.conjugated is False
+
+
+@pytest.mark.parametrize(
+    ("override_kwargs", "override_name"),
+    (
+        ({"matter_labels": (S("c_left_manual"), S("c_right_manual"))}, "matter_labels"),
+        ({"adjoint_labels": (S("a_left_manual"), S("a_right_manual"))}, "adjoint_labels"),
+        ({"internal_label": S("c_mid_manual")}, "internal_label"),
+    ),
+)
+def test_slot_policy_sum_rejects_global_scalar_label_overrides(
+    override_kwargs,
+    override_name,
+):
+    _, scalar, gluon, su3 = _make_bislot_sum_model()
+
+    with pytest.raises(ValueError, match=override_name):
+        compile_complex_scalar_gauge_terms(
+            scalar=scalar,
+            gauge_group=su3,
+            gauge_field=gluon,
+            **override_kwargs,
+        )
+
+
+@pytest.mark.parametrize(
+    ("override_kwargs", "override_name"),
+    (
+        ({"matter_labels": (S("c_left_manual"), S("c_right_manual"))}, "matter_labels"),
+        ({"adjoint_label": S("a_manual")}, "adjoint_label"),
+    ),
+)
+def test_slot_policy_sum_rejects_global_fermion_label_overrides(
+    override_kwargs,
+    override_name,
+):
+    fermion = _make_bislot_fermion()
+    gluon = _make_gluon()
+    su3 = GaugeGroup(
+        name="SU3",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fund_sum",
+                slot_policy="sum",
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match=override_name):
+        compile_fermion_gauge_current(
+            fermion=fermion,
+            gauge_group=su3,
+            gauge_field=gluon,
+            **override_kwargs,
+        )
+
+
+@pytest.mark.parametrize(
+    ("override_kwargs", "override_name"),
+    (
+        ({"left_adjoint_label": S("a_left_manual")}, "left_adjoint_label"),
+        ({"right_adjoint_label": S("a_right_manual")}, "right_adjoint_label"),
+    ),
+)
+def test_slot_policy_sum_rejects_global_mixed_contact_label_overrides(
+    override_kwargs,
+    override_name,
+):
+    _, scalar, gluon, su3 = _make_bislot_sum_model()
+
+    with pytest.raises(ValueError, match=override_name):
+        compile_mixed_complex_scalar_contact_terms(
+            scalar=scalar,
+            left_gauge_group=su3,
+            left_gauge_field=gluon,
+            right_gauge_group=su3,
+            right_gauge_field=gluon,
+            **override_kwargs,
+        )
 
 
 def test_slot_policy_sum_current_matches_expected_bislot_vertex():

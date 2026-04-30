@@ -70,6 +70,7 @@ class AnalyzedSourceTerm:
     interaction: InteractionTerm | None = None
     covariant_core: DiracKineticTerm | ComplexScalarKineticTerm | None = None
     covariant_spectators: tuple[tuple[object, bool], ...] = ()
+    generic_covariant_monomial: _DeclaredMonomial | None = None
     gauge_kinetic: GaugeKineticTerm | None = None
     gauge_fixing: GaugeFixingTerm | None = None
     ghost: GhostTerm | None = None
@@ -79,6 +80,7 @@ class AnalyzedSourceTerm:
         return any(
             (
                 self.covariant_core is not None,
+                self.generic_covariant_monomial is not None,
                 self.gauge_kinetic is not None,
                 self.gauge_fixing is not None,
                 self.ghost is not None,
@@ -147,6 +149,7 @@ class _LocalFieldEntry:
     field: Field
     conjugated: bool
     derivative_indices: tuple[object, ...]
+    labels: dict
 
 
 def _local_field_entry_from_factor(factor) -> _LocalFieldEntry | None:
@@ -155,12 +158,14 @@ def _local_field_entry_from_factor(factor) -> _LocalFieldEntry | None:
             field=factor.field,
             conjugated=factor.conjugated,
             derivative_indices=(),
+            labels=factor.labels,
         )
     if isinstance(factor, PartialDerivativeFactor):
         return _LocalFieldEntry(
             field=factor.field,
             conjugated=factor.conjugated,
             derivative_indices=tuple(factor.lorentz_indices),
+            labels=factor.labels,
         )
     return None
 
@@ -226,6 +231,21 @@ def _single_slot_position(field_obj: Field, kind: str) -> int | None:
     return positions[0]
 
 
+def _resolve_endpoint_slot(
+    field_obj: Field,
+    slot_label_map: Mapping[int, object],
+    kind: str,
+) -> int | None:
+    positions = field_obj.index_positions(kind=kind)
+    if len(positions) == 1:
+        return positions[0]
+
+    labeled_positions = [slot for slot in positions if slot in slot_label_map]
+    if len(labeled_positions) == 1:
+        return labeled_positions[0]
+    return None
+
+
 def _ensure_endpoint_labels(
     *,
     field_entries: Sequence[_LocalFieldEntry],
@@ -236,8 +256,16 @@ def _ensure_endpoint_labels(
     counters: dict[str, int],
     distinct: bool,
 ) -> tuple[object, object] | None:
-    left_slot = _single_slot_position(field_entries[left_idx].field, kind)
-    right_slot = _single_slot_position(field_entries[right_idx].field, kind)
+    left_slot = _resolve_endpoint_slot(
+        field_entries[left_idx].field,
+        slot_labels[left_idx],
+        kind,
+    )
+    right_slot = _resolve_endpoint_slot(
+        field_entries[right_idx].field,
+        slot_labels[right_idx],
+        kind,
+    )
     if left_slot is None or right_slot is None:
         return None
 
@@ -335,25 +363,102 @@ def _assign_default_pair_labels(
             slot_labels[interval_idx + 1][right_slot] = label
 
 
-def _bind_declared_indices_to_field_slots(
+def _ambiguous_local_attachment_error(
     *,
+    factor,
+    kind: str,
+    labels: Sequence[object],
+    available_slots: Sequence[tuple[int, int]],
+) -> ValueError:
+    rendered_labels = ", ".join(str(label) for label in labels)
+    rendered_slots = ", ".join(
+        f"{field_idx}:{slot_idx}" for field_idx, slot_idx in available_slots
+    ) or "none"
+    return ValueError(
+        "Ambiguous local tensor attachment in declarative local monomial: "
+        f"{factor} cannot uniquely bind {kind} label(s) [{rendered_labels}] "
+        f"to available field slots [{rendered_slots}]."
+    )
+
+
+def _bind_declared_factor_indices_to_field_slots(
+    *,
+    factor,
     field_entries: Sequence[_LocalFieldEntry],
     slot_labels: Sequence[dict[int, object]],
-    declared_refs: Sequence[tuple[str, object]],
 ):
+    declared_refs = _local_declared_index_refs(factor)
+    if not declared_refs:
+        return
+
     by_kind: dict[str, list[object]] = {}
     for kind, label in declared_refs:
         by_kind.setdefault(kind, []).append(label)
 
     for kind, labels in by_kind.items():
-        candidates: list[tuple[int, int]] = []
+        used_slots: set[tuple[int, int]] = set()
+        unresolved_labels: list[object] = []
+
+        for label in labels:
+            matches: list[tuple[int, int]] = []
+            for field_idx, entry in enumerate(field_entries):
+                for slot in entry.field.index_positions(kind=kind):
+                    key = (field_idx, slot)
+                    if key in used_slots:
+                        continue
+                    slot_label = slot_labels[field_idx].get(slot)
+                    if slot_label is not None and _expr_equal_impl(slot_label, label):
+                        matches.append(key)
+
+            if len(matches) > 1:
+                raise _ambiguous_local_attachment_error(
+                    factor=factor,
+                    kind=kind,
+                    labels=(label,),
+                    available_slots=matches,
+                )
+            if len(matches) == 1:
+                used_slots.add(matches[0])
+                continue
+            unresolved_labels.append(label)
+
+        if not unresolved_labels:
+            continue
+
+        available_slots: list[tuple[int, int]] = []
         for field_idx, entry in enumerate(field_entries):
             for slot in entry.field.index_positions(kind=kind):
-                if slot in slot_labels[field_idx]:
+                key = (field_idx, slot)
+                if key in used_slots or slot in slot_labels[field_idx]:
                     continue
-                candidates.append((field_idx, slot))
-        for (field_idx, slot), label in zip(candidates, labels):
+                available_slots.append(key)
+
+        if not available_slots:
+            continue
+        if len(available_slots) != len(unresolved_labels):
+            raise _ambiguous_local_attachment_error(
+                factor=factor,
+                kind=kind,
+                labels=tuple(unresolved_labels),
+                available_slots=available_slots,
+            )
+
+        for (field_idx, slot), label in zip(available_slots, unresolved_labels):
             slot_labels[field_idx][slot] = label
+
+
+def _bind_declared_indices_to_field_slots(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    declared_factors: Sequence[object],
+):
+    for factor in declared_factors:
+        _bind_declared_factor_indices_to_field_slots(
+            factor=factor,
+            field_entries=field_entries,
+            slot_labels=slot_labels,
+        )
 
 
 def _fill_unassigned_local_slot_labels(
@@ -370,10 +475,54 @@ def _fill_unassigned_local_slot_labels(
             slot_labels[field_idx][slot] = _fresh_local_label(prefix, counters)
 
 
+def _unsupported_local_fermion_ordering_error() -> ValueError:
+    return ValueError(
+        "Unsupported fermion ordering in local monomial. "
+        "Local fermion terms must decompose into disjoint ordered closed Dirac "
+        "bilinears of the form fermion.bar ... fermion."
+    )
+
+
+def _infer_closed_local_dirac_bilinears(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    interval_supports_closed_dirac_bilinear: Sequence[bool],
+) -> tuple[tuple[int, int], ...]:
+    closed_dirac_bilinears = tuple(
+        (interval_idx, interval_idx + 1)
+        for interval_idx, (left, right) in enumerate(
+            zip(field_entries, field_entries[1:])
+        )
+        if interval_supports_closed_dirac_bilinear[interval_idx]
+        and left.field == right.field
+        and left.field.kind == "fermion"
+        and not left.field.self_conjugate
+        and bool(left.conjugated)
+        and not bool(right.conjugated)
+    )
+
+    fermion_slots = tuple(
+        idx for idx, entry in enumerate(field_entries) if entry.field.kind == "fermion"
+    )
+    if not fermion_slots:
+        return closed_dirac_bilinears
+
+    covered_slots = [slot for pair in closed_dirac_bilinears for slot in pair]
+    covered_counts = Counter(covered_slots)
+    if (
+        len(covered_slots) != len(fermion_slots)
+        or set(covered_slots) != set(fermion_slots)
+        or any(count != 1 for count in covered_counts.values())
+    ):
+        raise _unsupported_local_fermion_ordering_error()
+
+    return closed_dirac_bilinears
+
+
 def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     tokens: list[tuple[str, object]] = []
     field_entries: list[_LocalFieldEntry] = []
-    declared_refs: list[tuple[str, object]] = []
+    declared_factors: list[object] = []
     free_tensor_factors: list[object] = []
 
     for factor in term.factors:
@@ -381,16 +530,19 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         if field_entry is not None:
             field_entries.append(field_entry)
             tokens.append(("field", len(field_entries) - 1))
-            declared_refs.extend(_local_declared_index_refs(factor))
+            if _local_declared_index_refs(factor):
+                declared_factors.append(factor)
             continue
         if _is_local_chain_factor(factor):
             tokens.append(("chain", factor))
-            declared_refs.extend(_local_declared_index_refs(factor))
+            if _local_declared_index_refs(factor):
+                declared_factors.append(factor)
             continue
         if _is_local_free_tensor_factor(factor):
             tokens.append(("tensor", factor))
             free_tensor_factors.append(factor)
-            declared_refs.extend(_local_declared_index_refs(factor))
+            if _local_declared_index_refs(factor):
+                declared_factors.append(factor)
             continue
         return None
 
@@ -410,6 +562,9 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     interval_chain_factors: list[tuple[object, ...]] = [
         () for _ in range(max(len(field_entries) - 1, 0))
     ]
+    interval_supports_closed_dirac_bilinear = [
+        True for _ in range(max(len(field_entries) - 1, 0))
+    ]
     for interval_idx, (left_pos, right_pos) in enumerate(
         zip(field_token_positions, field_token_positions[1:])
     ):
@@ -424,12 +579,18 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
             interval_chain_factors[interval_idx] = tuple(
                 value for kind, value in between if kind == "chain"
             )
+            continue
+        interval_supports_closed_dirac_bilinear[interval_idx] = False
 
     coupling = term.coefficient
     for factor in free_tensor_factors:
         coupling *= _build_local_free_tensor_expression(factor)
 
-    slot_labels: list[dict[int, object]] = [{} for _ in field_entries]
+    # Explicit labels seed lowering; auto-generated labels only fill the gaps.
+    slot_labels: list[dict[int, object]] = [
+        entry.field.unpack_slot_labels(entry.labels)
+        for entry in field_entries
+    ]
     counters: dict[str, int] = {}
 
     for interval_idx, factors in enumerate(interval_chain_factors):
@@ -483,12 +644,17 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     _bind_declared_indices_to_field_slots(
         field_entries=field_entries,
         slot_labels=slot_labels,
-        declared_refs=declared_refs,
+        declared_factors=declared_factors,
     )
     _fill_unassigned_local_slot_labels(
         field_entries=field_entries,
         slot_labels=slot_labels,
         counters=counters,
+    )
+
+    closed_dirac_bilinears = _infer_closed_local_dirac_bilinears(
+        field_entries=field_entries,
+        interval_supports_closed_dirac_bilinear=interval_supports_closed_dirac_bilinear,
     )
 
     return InteractionTerm(
@@ -505,6 +671,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
             for idx, entry in enumerate(field_entries)
             for lorentz_index in entry.derivative_indices
         ),
+        closed_dirac_bilinears=closed_dirac_bilinears,
     )
 
 
@@ -557,6 +724,9 @@ def _analyze_declared_source_term(term) -> AnalyzedSourceTerm | None:
     if ghost is not None:
         return AnalyzedSourceTerm(term=term, ghost=ghost)
 
+    if isinstance(term, _DeclaredMonomial) and _is_generic_covariant_monomial_candidate(term):
+        return AnalyzedSourceTerm(term=term, generic_covariant_monomial=term)
+
     return None
 
 
@@ -566,6 +736,8 @@ def _unsupported_declared_source_term_error():
         "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
         "CovD(Phi.bar, mu) * CovD(Phi, mu), "
         "either optionally multiplied by local spectator fields, "
+        "more general local monomials with one or more CovD(...) factors that can be "
+        "expanded using model gauge metadata, "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
@@ -577,6 +749,8 @@ def _unsupported_declared_source_term_error():
 def _validate_declared_monomial(term: _DeclaredMonomial):
     if _match_covariant_monomial(term) is not None:
         return
+    if _is_generic_covariant_monomial_candidate(term):
+        return
     if _lower_field_strength_monomial(term) is not None:
         return
     if _lower_local_interaction_monomial(term) is not None:
@@ -586,6 +760,8 @@ def _validate_declared_monomial(term: _DeclaredMonomial):
         "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
         "CovD(Phi.bar, mu) * CovD(Phi, mu), "
         "either optionally multiplied by local spectator fields, "
+        "more general local monomials with one or more CovD(...) factors that can be "
+        "expanded using model gauge metadata, "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
@@ -755,9 +931,34 @@ def _source_term_needs_compilation(term) -> bool:
     if isinstance(term, _DeclaredMonomial):
         if _match_covariant_monomial(term) is not None:
             return True
+        if _is_generic_covariant_monomial_candidate(term):
+            return True
         if _lower_field_strength_monomial(term) is not None:
             return True
     return False
+
+
+def _declared_monomial_has_covd(term: _DeclaredMonomial) -> bool:
+    return any(isinstance(factor, CovariantDerivativeFactor) for factor in term.factors)
+
+
+def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
+    if not _declared_monomial_has_covd(term):
+        return False
+
+    field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
+    gamma_factors = [factor for factor in term.factors if isinstance(factor, GammaFactor)]
+    covd_factors = [
+        factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)
+    ]
+
+    # Keep malformed bare kinetic cores on the old strict-validation path.
+    if len(covd_factors) == 1 and len(gamma_factors) == 1 and len(field_factors) == 1:
+        return False
+    if len(covd_factors) == 2 and len(gamma_factors) == 0 and len(field_factors) == 0:
+        return False
+
+    return True
 
 
 def _validate_declared_source_term(term):

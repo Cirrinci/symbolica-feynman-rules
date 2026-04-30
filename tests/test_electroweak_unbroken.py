@@ -171,8 +171,8 @@ def test_unbroken_electroweak_doublet_w_current():
     expected_w = (
         -I
         * g2_sym
-        * gamma_matrix(S("i1"), S("i3"), S("i5"))
-        * weak_gauge_generator(S("i6"), S("i2"), S("i4"))
+        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
+        * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
         * D3
     )
     _assert_equal(got_w, expected_w)
@@ -189,8 +189,8 @@ def test_unbroken_electroweak_doublet_b_current():
         -I
         * g1_sym
         * yL
-        * gamma_matrix(S("i1"), S("i3"), S("i5"))
-        * WEAK_FUND_INDEX.representation.g(S("i2"), S("i4")).to_expression()
+        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
+        * WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
         * D3
     )
     _assert_equal(got_b, expected_b)
@@ -210,7 +210,7 @@ def test_unbroken_electroweak_singlet_b_current():
         -I
         * g1_sym
         * yR
-        * gamma_matrix(S("i1"), S("i2"), S("i3"))
+        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * D3
     )
     _assert_equal(got_b, expected_b)
@@ -229,7 +229,7 @@ def test_unbroken_electroweak_higgs_w_current():
     expected = (
         I
         * g2_sym
-        * weak_gauge_generator(S("i4"), S("i1"), S("i2"))
+        * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
         * (pcomp(q2, mu) - pcomp(q1, mu))
         * D3
     )
@@ -247,7 +247,7 @@ def test_unbroken_electroweak_higgs_b_current():
         I
         * g1_sym
         * yH
-        * WEAK_FUND_INDEX.representation.g(S("i1"), S("i2")).to_expression()
+        * WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
         * (pcomp(q2, mu) - pcomp(q1, mu))
         * D3
     )
@@ -264,15 +264,15 @@ def test_unbroken_electroweak_higgs_ww_contact():
     )
     c_mid = S("w_mid_H_SU2L")
     contact_struct = (
-        weak_gauge_generator(S("i4"), S("i1"), c_mid)
-        * weak_gauge_generator(S("i6"), c_mid, S("i2"))
-        + weak_gauge_generator(S("i6"), S("i1"), c_mid)
-        * weak_gauge_generator(S("i4"), c_mid, S("i2"))
+        weak_gauge_generator(S("aw3"), S("w1"), c_mid)
+        * weak_gauge_generator(S("aw4"), c_mid, S("w2"))
+        + weak_gauge_generator(S("aw4"), S("w1"), c_mid)
+        * weak_gauge_generator(S("aw3"), c_mid, S("w2"))
     )
     expected = (
         I
         * (g2_sym ** 2)
-        * scalar_gauge_contact(S("i3"), S("i5"))
+        * scalar_gauge_contact(S("mu3"), S("mu4"))
         * contact_struct
         * D4
     )
@@ -292,8 +292,8 @@ def test_unbroken_electroweak_higgs_bb_contact():
         * I
         * (g1_sym ** 2)
         * (yH ** 2)
-        * WEAK_FUND_INDEX.representation.g(S("i1"), S("i2")).to_expression()
-        * scalar_gauge_contact(S("i3"), S("i4"))
+        * WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
+        * scalar_gauge_contact(S("mu3"), S("mu4"))
         * D4
     )
     _assert_equal(got, expected)
@@ -313,8 +313,8 @@ def test_unbroken_electroweak_higgs_wb_contact():
         * g2_sym
         * g1_sym
         * yH
-        * weak_gauge_generator(S("i4"), S("i1"), S("i2"))
-        * scalar_gauge_contact(S("i3"), S("i5"))
+        * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
+        * scalar_gauge_contact(S("mu3"), S("mu4"))
         * D4
     )
     _assert_equal(got, expected)

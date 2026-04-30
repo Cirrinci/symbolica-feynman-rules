@@ -125,11 +125,9 @@ def test_compile_abelian_gauge_fixing_term():
         external_legs=legs,
         species_map={b1: photon_symbol, b2: photon_symbol},
     )
-    rho_left = compiled[0].derivatives[0].lorentz_index
-    rho_right = compiled[0].derivatives[1].lorentz_index
     expected = (
         (I / xi_qed)
-        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, rho_left, rho_right)
+        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, S("mu1_int"), S("mu2_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2)
     )
@@ -171,12 +169,10 @@ def test_compile_nonabelian_gauge_fixing_term():
         external_legs=legs,
         species_map={b1: gluon_symbol, b2: gluon_symbol},
     )
-    rho_left = compiled[0].derivatives[0].lorentz_index
-    rho_right = compiled[0].derivatives[1].lorentz_index
     expected = (
         (I / xi_qcd)
         * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
-        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, rho_left, rho_right)
+        * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, S("mu1_int"), S("mu2_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2)
     )
@@ -224,11 +220,9 @@ def test_compile_nonabelian_ghost_terms():
         external_legs=bilinear_legs,
         species_map={b1: antighost_symbol, b2: ghost_symbol},
     )
-    bilinear_mu = bilinear.derivatives[0].lorentz_index
-    bilinear_nu = bilinear.derivatives[1].lorentz_index
     expected_bilinear = (
         -I
-        * ghost_kinetic_raw(a1, a2, p1, p2, bilinear_mu, bilinear_nu)
+        * ghost_kinetic_raw(a1, a2, p1, p2, S("mu1_int"), S("mu2_int"))
         * (2 * pi) ** d
         * Delta(p1 + p2)
     )
@@ -244,10 +238,9 @@ def test_compile_nonabelian_ghost_terms():
         external_legs=cubic_legs,
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
-    cubic_rho = cubic.derivatives[0].lorentz_index
     expected_cubic = (
         -gS
-        * ghost_gauge_raw(a1, a2, a3, mu3, cubic_rho, p1)
+        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )
@@ -540,10 +533,9 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         ),
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
-    ghost_rho = ghost_gauge_term.derivatives[0].lorentz_index
     expected_ghost_gauge = (
         -gS
-        * ghost_gauge_raw(a1, a2, a3, mu3, ghost_rho, p1)
+        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )
@@ -672,10 +664,9 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         ),
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
-    ghost_rho = ghost_gauge_term.derivatives[0].lorentz_index
     expected_ghost_gauge = (
         -gS
-        * ghost_gauge_raw(a1, a2, a3, mu3, ghost_rho, p1)
+        * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )

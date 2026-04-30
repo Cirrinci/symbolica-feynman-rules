@@ -75,6 +75,7 @@ from symbolic.spenso_structures import (  # noqa: E402
     gamma5_matrix,
     gamma_matrix,
     lorentz_metric,
+    simplify_gamma_chain,
     structure_constant,
 )
 from lagrangian.operators import (  # noqa: E402
@@ -84,38 +85,24 @@ from lagrangian.operators import (  # noqa: E402
     quark_gluon_current,
     scalar_gauge_contact,
 )
-from examples.examples import (  # noqa: E402
-    MODEL_QCD_COVARIANT,
-    MODEL_QED_FERMION_COVARIANT,
-    MODEL_SCALAR_QED_COVARIANT,
-    MODEL_SCALAR_QCD_COVARIANT,
-    MODEL_MIXED_FERMION_COVARIANT,
-    MODEL_MIXED_SCALAR_COVARIANT,
-    MODEL_QED_GAUGE_COVARIANT,
-    MODEL_QCD_GAUGE_COVARIANT,
-    MODEL_QED_GAUGE_FIXING_COVARIANT,
-    MODEL_QCD_GAUGE_FIXING_COVARIANT,
-    MODEL_QED_ORDINARY_GAUGE_FIXED,
-    MODEL_QCD_GHOST_COVARIANT,
-    MODEL_QCD_ORDINARY_GAUGE_FIXED,
-    QuarkField,
-    GluonField,
-    GaugeField,
-    PsiQEDField,
-    PsiMixField,
-    PhiQEDField,
-    PhiQCDField,
-    PhiMixField,
-    GhostGluonField,
+from tests.support.builders import (  # noqa: E402
+    canon as _canon,
+    dirac_covd_decl as _dirac_decl,
+    gauge_kinetic_decl as _gauge_decl,
+    make_complex_scalar,
+    make_dirac_fermion as _make_dirac_fermion,
+    make_ghost as _make_ghost,
+    make_gluon as _make_gluon,
+    make_photon as _make_photon,
+    make_su3 as _make_su3,
+    make_u1 as _make_u1,
+    scalar_covd_decl as _scalar_decl,
 )
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _canon(expr):
-    return expr.expand().to_canonical_string()
 
 
 def _ref_vertex(interaction, legs, d=None):
@@ -131,56 +118,156 @@ def _ref_vertex(interaction, legs, d=None):
         include_delta=True,
     ), external_legs=legs)
 
+# ---------------------------------------------------------------------------
+# Shared sample model cases
+# ---------------------------------------------------------------------------
 
-def _make_photon():
-    return Field("A", spin=1, self_conjugate=True, symbol=S("A"),
-                 indices=(LORENTZ_INDEX,))
+gS, eQED, xiQED, xiQCD = S("gS", "eQED", "xiQED", "xiQCD")
+qPhi, qPsi, qMix, qPhiMix = S("qPhi", "qPsi", "qMix", "qPhiMix")
+phiC0, phiCdag0 = S("phiC0", "phiCdag0")
+phiQCD0, phiQCDdag0 = S("phiQCD0", "phiQCDdag0")
+phiMix0, phiMixdag0 = S("phiMix0", "phiMixdag0")
+ghG0, ghGbar0 = S("ghG0", "ghGbar0")
+psibar0, psi0 = S("psibar0", "psi0")
+psibarQED0, psiQED0 = S("psibarQED0", "psiQED0")
+psibarMix0, psiMix0 = S("psibarMix0", "psiMix0")
+A0, G0 = S("A0", "G0")
+mu_sample, nu_sample = S("mu", "nu")
 
+PhiQEDField = make_complex_scalar(
+    "PhiQED",
+    symbol=phiC0,
+    conjugate_symbol=phiCdag0,
+    charge=qPhi,
+)
+PhiQCDField = make_complex_scalar(
+    "PhiQCD",
+    symbol=phiQCD0,
+    conjugate_symbol=phiQCDdag0,
+    color=True,
+)
+PhiMixField = make_complex_scalar(
+    "PhiMix",
+    symbol=phiMix0,
+    conjugate_symbol=phiMixdag0,
+    color=True,
+    charge=qPhiMix,
+)
+PsiQEDField = _make_dirac_fermion(
+    "PsiQED",
+    symbol=psiQED0,
+    conjugate_symbol=psibarQED0,
+    charge=qPsi,
+)
+PsiMixField = _make_dirac_fermion(
+    "PsiMix",
+    symbol=psiMix0,
+    conjugate_symbol=psibarMix0,
+    color=True,
+    charge=qMix,
+)
+GaugeField = _make_photon(name="A", symbol=A0)
+QuarkField = _make_dirac_fermion(
+    "q",
+    symbol=psi0,
+    conjugate_symbol=psibar0,
+    color=True,
+)
+GluonField = _make_gluon(name="G", symbol=G0)
+GhostGluonField = _make_ghost(
+    name="ghG",
+    symbol=ghG0,
+    conjugate_symbol=ghGbar0,
+)
 
-def _make_gluon():
-    return Field("G", spin=1, self_conjugate=True, symbol=S("G"),
-                 indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
+QCD_GROUP = _make_su3(gS, GluonField.symbol, ghost_sym=GhostGluonField.symbol, name="SU3C")
+QED_GROUP = _make_u1(eQED, GaugeField.symbol, name="U1QED")
 
-
-def _make_ghost():
-    return Field("ghG", spin=0, kind="ghost", self_conjugate=False,
-                 symbol=S("ghG"), conjugate_symbol=S("ghGbar"),
-                 indices=(COLOR_ADJ_INDEX,))
-
-
-def _make_u1(coupling, gauge_boson_sym, name="U1", charge="Q"):
-    return GaugeGroup(name=name, abelian=True, coupling=coupling,
-                      gauge_boson=gauge_boson_sym, charge=charge)
-
-
-def _make_su3(coupling, gauge_boson_sym, ghost_sym=None, name="SU3"):
-    return GaugeGroup(
-        name=name, abelian=False, coupling=coupling,
-        gauge_boson=gauge_boson_sym,
-        ghost_field=ghost_sym,
-        structure_constant=structure_constant,
-        representations=(
-            GaugeRepresentation(index=COLOR_FUND_INDEX,
-                                generator_builder=gauge_generator, name="fund"),
-        ),
-    )
-
-
-def _dirac_decl(field):
-    return I * field.bar * Gamma(S("mu_decl")) * CovD(field, S("mu_decl"))
-
-
-def _scalar_decl(field):
-    return CovD(field.bar, S("mu_decl")) * CovD(field, S("mu_decl"))
-
-
-def _gauge_decl(group):
-    mu_decl, nu_decl = S("mu_decl", "nu_decl")
-    return (
-        -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(group, mu_decl, nu_decl)
-        * FieldStrength(group, mu_decl, nu_decl)
-    )
+MODEL_QCD_COVARIANT = Model(
+    name="QCD-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(QuarkField, GluonField),
+    lagrangian_decl=_dirac_decl(QuarkField, mu=mu_sample),
+)
+MODEL_SCALAR_QED_COVARIANT = Model(
+    name="ScalarQED-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(PhiQEDField, GaugeField),
+    lagrangian_decl=_scalar_decl(PhiQEDField, mu=mu_sample),
+)
+MODEL_SCALAR_QCD_COVARIANT = Model(
+    name="ScalarQCD-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(PhiQCDField, GluonField),
+    lagrangian_decl=_scalar_decl(PhiQCDField, mu=mu_sample),
+)
+MODEL_QED_FERMION_COVARIANT = Model(
+    name="FermionQED-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(PsiQEDField, GaugeField),
+    lagrangian_decl=_dirac_decl(PsiQEDField, mu=mu_sample),
+)
+MODEL_MIXED_FERMION_COVARIANT = Model(
+    name="MixedQCDQED-covariant",
+    gauge_groups=(QCD_GROUP, QED_GROUP),
+    fields=(PsiMixField, GluonField, GaugeField),
+    lagrangian_decl=_dirac_decl(PsiMixField, mu=mu_sample),
+)
+MODEL_MIXED_SCALAR_COVARIANT = Model(
+    name="MixedScalarQCDQED-covariant",
+    gauge_groups=(QCD_GROUP, QED_GROUP),
+    fields=(PhiMixField, GluonField, GaugeField),
+    lagrangian_decl=_scalar_decl(PhiMixField, mu=mu_sample),
+)
+MODEL_QED_GAUGE_COVARIANT = Model(
+    name="QEDGauge-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    lagrangian_decl=_gauge_decl(QED_GROUP, mu=mu_sample, nu=nu_sample),
+)
+MODEL_QCD_GAUGE_COVARIANT = Model(
+    name="QCDGauge-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    lagrangian_decl=_gauge_decl(QCD_GROUP, mu=mu_sample, nu=nu_sample),
+)
+MODEL_QED_GAUGE_FIXING_COVARIANT = Model(
+    name="QEDGaugeFixing-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    lagrangian_decl=GaugeFixing(QED_GROUP, xi=xiQED),
+)
+MODEL_QCD_GAUGE_FIXING_COVARIANT = Model(
+    name="QCDGaugeFixing-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField,),
+    lagrangian_decl=GaugeFixing(QCD_GROUP, xi=xiQCD),
+)
+MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
+    name="QEDGaugeFixed-covariant",
+    gauge_groups=(QED_GROUP,),
+    fields=(GaugeField,),
+    lagrangian_decl=(
+        _gauge_decl(QED_GROUP, mu=mu_sample, nu=nu_sample)
+        + GaugeFixing(QED_GROUP, xi=xiQED)
+    ),
+)
+MODEL_QCD_GHOST_COVARIANT = Model(
+    name="QCDGhost-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField, GhostGluonField),
+    lagrangian_decl=GhostLagrangian(QCD_GROUP),
+)
+MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
+    name="QCDGaugeFixed-covariant",
+    gauge_groups=(QCD_GROUP,),
+    fields=(GluonField, GhostGluonField),
+    lagrangian_decl=(
+        _gauge_decl(QCD_GROUP, mu=mu_sample, nu=nu_sample)
+        + GaugeFixing(QCD_GROUP, xi=xiQCD)
+        + GhostLagrangian(QCD_GROUP)
+    ),
+)
 
 
 # ---------------------------------------------------------------------------
@@ -262,6 +349,19 @@ def test_interaction_term_add_to_lagrangian():
     assert result.terms[0] is t
 
 
+def test_interaction_term_feynman_rule_matches_lagrangian_wrapper():
+    """InteractionTerm.feynman_rule() is a thin convenience wrapper."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    term = InteractionTerm(
+        coupling=S("lam4"),
+        fields=tuple(phi.occurrence() for _ in range(4)),
+    )
+
+    assert _canon(term.feynman_rule(phi, phi, phi, phi, simplify=True)) == _canon(
+        Lagrangian(terms=(term,)).feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+
+
 # ---------------------------------------------------------------------------
 # Scalar phi^4: self-conjugate bosonic vertex
 # ---------------------------------------------------------------------------
@@ -323,6 +423,47 @@ def test_lagrangian_accepts_declared_partiald_phi4_product():
     assert _canon(got) == _canon(expected)
 
 
+def test_partiald_accepts_labels_and_conjugated_keywords():
+    """PartialD(..., labels=..., conjugated=...) matches the explicit FieldOccurrence form."""
+    ghost = _make_ghost()
+    mu = S("mu")
+    a_bar = S("a_bar")
+    a_ghost = S("a_ghost")
+
+    keyword_form = Lagrangian(
+        COLOR_ADJ_INDEX.representation.g(a_bar, a_ghost).to_expression()
+        * PartialD(
+            ghost,
+            mu,
+            conjugated=True,
+            labels={COLOR_ADJ_KIND: a_bar},
+        )
+        * PartialD(
+            ghost,
+            mu,
+            labels={COLOR_ADJ_KIND: a_ghost},
+        )
+    )
+    occurrence_form = Lagrangian(
+        COLOR_ADJ_INDEX.representation.g(a_bar, a_ghost).to_expression()
+        * PartialD(
+            ghost.occurrence(
+                conjugated=True,
+                labels={COLOR_ADJ_KIND: a_bar},
+            ),
+            mu,
+        )
+        * PartialD(
+            ghost.occurrence(labels={COLOR_ADJ_KIND: a_ghost}),
+            mu,
+        )
+    )
+
+    assert _canon(keyword_form.feynman_rule(ghost.bar, ghost, simplify=True)) == _canon(
+        occurrence_form.feynman_rule(ghost.bar, ghost, simplify=True)
+    )
+
+
 def test_lagrangian_accepts_declared_yukawa_product():
     """Two-fermion scalar bilinears infer the needed spinor labels automatically."""
     psi = Field(
@@ -354,6 +495,29 @@ def test_lagrangian_accepts_declared_yukawa_product():
     assert _canon(got) == _canon(expected)
 
 
+def test_colored_fermion_bilinear_uses_explicit_color_identity():
+    quark = Field(
+        "q",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+
+    got = Lagrangian(quark.bar * quark).feynman_rule(
+        quark.bar, quark, simplify=True
+    )
+    canon = _canon(got)
+    spin_identity = _canon(SPINOR_INDEX.representation.g(S("i1"), S("i2")).to_expression())
+    color_identity = _canon(COLOR_FUND_INDEX.representation.g(S("c1"), S("c2")).to_expression())
+
+    assert spin_identity in canon
+    assert color_identity in canon
+    assert "delta(q,q)" not in canon
+    assert "delta(qbar,qbar)" not in canon
+
+
 def test_lagrangian_accepts_declared_vector_current():
     """A unique vector slot inherits the declared Lorentz label from Gamma(mu)."""
     psi = Field(
@@ -375,7 +539,7 @@ def test_lagrangian_accepts_declared_vector_current():
     expected = (
         I
         * g
-        * gamma_matrix(S("i1"), S("i2"), S("i3"))
+        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * (2 * pi) ** S("d")
         * Delta(S("q1") + S("q2") + S("q3"))
     )
@@ -444,10 +608,165 @@ def test_lagrangian_accepts_declared_current_current():
                 psi.occurrence(conjugated=True, labels={SPINOR_KIND: b_bar}),
                 psi.occurrence(labels={SPINOR_KIND: b_psi}),
             ),
+            closed_dirac_bilinears=((0, 1), (2, 3)),
         ),
     ))
     expected = ref.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
     assert _canon(got) == _canon(expected)
+
+
+def test_declared_psibar_psi_sq_uses_closed_bilinear_signs():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    g = S("g")
+    q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+    d = S("d")
+
+    got = Lagrangian(
+        g * psi.bar * psi * psi.bar * psi
+    ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+
+    expected = (
+        2
+        * I
+        * g
+        * (2 * pi) ** d
+        * Delta(q1 + q2 + q3 + q4)
+        * (
+            psi_bar_psi(S("i1"), S("i2")) * psi_bar_psi(S("i3"), S("i4"))
+            + psi_bar_psi(S("i1"), S("i4")) * psi_bar_psi(S("i3"), S("i2"))
+        )
+    )
+    assert _canon(got) == _canon(expected)
+
+
+def test_declared_current_current_uses_closed_bilinear_signs():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    g = S("g")
+    mu = S("mu")
+    q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+    d = S("d")
+
+    got = simplify_gamma_chain(
+        Lagrangian(
+        g * psi.bar * Gamma(mu) * psi * psi.bar * Gamma(mu) * psi
+        ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    )
+
+    expected = (
+        2
+        * I
+        * g
+        * (2 * pi) ** d
+        * Delta(q1 + q2 + q3 + q4)
+        * (
+            gamma_matrix(S("i1"), S("i2"), mu) * gamma_matrix(S("i3"), S("i4"), mu)
+            + gamma_matrix(S("i1"), S("i4"), mu) * gamma_matrix(S("i3"), S("i2"), mu)
+        )
+    )
+    assert _canon(got) == _canon(expected)
+
+
+def test_distinct_species_closed_bilinear_product_is_stable_and_nonzero():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    L = Lagrangian(g4 * psi.bar * psi * chi.bar * chi)
+    assert len(L.terms) == 1
+    assert L.terms[0].closed_dirac_bilinears == ((0, 1), (2, 3))
+
+    got_1 = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    got_2 = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+
+    assert _canon(got_1) == _canon(got_2)
+    assert _canon(got_1) != _canon(Expression.num(0))
+
+
+def test_distinct_species_closed_bilinear_order_is_bosonic():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    got_1 = Lagrangian(
+        g4 * psi.bar * psi * chi.bar * chi
+    ).feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    got_2 = Lagrangian(
+        g4 * chi.bar * chi * psi.bar * psi
+    ).feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+
+    assert _canon(got_1) == _canon(got_2)
+
+
+def test_reversed_fields_inside_bilinear_are_rejected():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    with pytest.raises(ValueError, match="Unsupported fermion ordering in local monomial"):
+        Lagrangian(
+            g4 * psi * psi.bar * chi.bar * chi
+        )
+
+
+def test_partially_recognized_multi_fermion_chain_is_rejected():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    g4 = S("g4")
+
+    with pytest.raises(ValueError, match="Unsupported fermion ordering in local monomial"):
+        Lagrangian(g4 * psi.bar * psi * chi * chi.bar)
+
+
+def test_identical_closed_bilinear_square_is_deterministic_and_nonzero():
+    psi = _make_dirac_fermion("Psi")
+    g4 = S("g4")
+
+    L = Lagrangian(g4 * psi.bar * psi * psi.bar * psi)
+    assert len(L.terms) == 1
+    assert L.terms[0].closed_dirac_bilinears == ((0, 1), (2, 3))
+
+    got_1 = L.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    got_2 = L.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+
+    assert _canon(got_1) == _canon(got_2)
+    assert _canon(got_1) != _canon(Expression.num(0))
+
+
+def test_distinct_species_vector_bilinear_order_is_stable():
+    psi = _make_dirac_fermion("Psi")
+    chi = _make_dirac_fermion("Chi")
+    gV = S("gV")
+    mu = S("mu")
+
+    L = Lagrangian(gV * psi.bar * Gamma(mu) * psi * chi.bar * Gamma(mu) * chi)
+    assert len(L.terms) == 1
+    assert L.terms[0].closed_dirac_bilinears == ((0, 1), (2, 3))
+
+    got_1 = simplify_gamma_chain(
+        L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    )
+    got_2 = simplify_gamma_chain(
+        Lagrangian(
+            gV * chi.bar * Gamma(mu) * chi * psi.bar * Gamma(mu) * psi
+        ).feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    )
+
+    assert _canon(got_1) == _canon(got_2)
+    assert _canon(got_1) != _canon(Expression.num(0))
 
 
 def test_lagrangian_accepts_declared_local_quark_gluon_current():
@@ -520,6 +839,36 @@ def test_lagrangian_accepts_declared_local_scalar_contact():
     ))
     expected = ref.feynman_rule(phi.bar, phi, A, A, simplify=True)
     assert _canon(got) == _canon(expected)
+
+
+def test_lagrangian_rejects_ambiguous_local_metric_attachment():
+    """Metric(mu, rho) must not guess which vector fields carry its endpoints."""
+    A = Field(
+        "A",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("A"),
+        indices=(LORENTZ_INDEX,),
+    )
+    B = Field(
+        "B",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("B"),
+        indices=(LORENTZ_INDEX,),
+    )
+    C = Field(
+        "C",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("C"),
+        indices=(LORENTZ_INDEX,),
+    )
+    mu = S("mu")
+    rho = S("rho")
+
+    with pytest.raises(ValueError, match="Ambiguous local tensor attachment"):
+        Lagrangian(A * B * C * Metric(mu, rho))
 
 
 def test_lagrangian_accepts_declared_two_fermion_partiald_operator():
@@ -872,6 +1221,39 @@ def test_model_accepts_declared_complex_scalar_mass_product():
     assert _canon(got) == _canon(expected)
 
 
+def test_covd_accepts_conjugated_keyword():
+    """CovD(..., conjugated=True) matches the existing Field.bar form."""
+    eQED, qPhi = S("eQED", "qPhi")
+    mu = S("mu")
+    phi = Field(
+        "PhiQED",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phiQED"),
+        conjugate_symbol=S("phiQEDbar"),
+        quantum_numbers={"Q": qPhi},
+    )
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    keyword_model = Model(
+        gauge_groups=(u1,),
+        fields=(phi, photon),
+        lagrangian_decl=CovD(phi, mu, conjugated=True) * CovD(phi, mu),
+    )
+    bar_model = Model(
+        gauge_groups=(u1,),
+        fields=(phi, photon),
+        lagrangian_decl=CovD(phi.bar, mu) * CovD(phi, mu),
+    )
+
+    assert _canon(
+        keyword_model.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    ) == _canon(
+        bar_model.lagrangian().feynman_rule(phi.bar, phi, photon, simplify=True)
+    )
+
+
 def test_complex_scalar_mass_term_tuple_input():
     """(Field, bool) input works the same as Field.bar."""
     phiC = Field("PhiC", spin=0, self_conjugate=False, symbol=S("phiC"), conjugate_symbol=S("phiCdag"))
@@ -953,6 +1335,66 @@ def test_no_match_raises():
         L.feynman_rule(phi, phi, chi, chi)
 
 
+def test_no_match_lists_available_higher_arity_signatures():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=S("lam4"),
+            fields=tuple(phi.occurrence() for _ in range(4)),
+        ),
+    ))
+
+    with pytest.raises(ValueError) as excinfo:
+        lagrangian.feynman_rule(phi, phi, simplify=True)
+
+    message = str(excinfo.value)
+    assert "No matching interaction terms for: Phi, Phi." in message
+    assert "Available signatures:" in message
+    assert "Phi, Phi, Phi, Phi" in message
+
+
+def test_no_match_lists_useful_available_signatures_for_unrelated_request():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+    ))
+
+    with pytest.raises(ValueError) as excinfo:
+        lagrangian.feynman_rule(psi.bar, psi, simplify=True)
+
+    message = str(excinfo.value)
+    assert "No matching interaction terms for: Psi.bar, Psi." in message
+    assert "Available signatures:" in message
+    assert "Phi, Phi" in message
+    assert "Phi, Chi, Chi" in message
+
+
+def test_no_match_on_empty_lagrangian_is_clear():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian()
+
+    with pytest.raises(ValueError) as excinfo:
+        lagrangian.feynman_rule(phi, simplify=True)
+
+    message = str(excinfo.value)
+    assert "No matching interaction terms for: Phi." in message
+    assert "Available signatures:" in message
+    assert "  - (none)" in message
+
+
 def test_same_symbol_different_kind_does_not_match():
     """Distinct field kinds sharing one symbol must not silently match."""
     scalar = Field("S", spin=0, self_conjugate=True, symbol=S("X"))
@@ -996,6 +1438,395 @@ def test_multiple_matching_terms_are_summed():
     assert _canon(got) == _canon(expected)
 
 
+def test_feynman_rule_no_args_returns_all_vertices():
+    """A zero-argument call returns every available vertex keyed by names."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    lam4 = S("lam4")
+    g = S("g")
+
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=lam4, fields=tuple(phi.occurrence() for _ in range(4))),
+        InteractionTerm(
+            coupling=g,
+            fields=(phi.occurrence(), phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+    ))
+
+    rules = L.feynman_rule(simplify=True)
+
+    phi4_key = ("Phi", "Phi", "Phi", "Phi")
+    mixed_key = ("Phi", "Phi", "Chi", "Chi")
+    assert set(rules) == {phi4_key, mixed_key}
+    assert _canon(rules[phi4_key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+    assert _canon(rules[mixed_key]) == _canon(
+        L.feynman_rule(phi, phi, chi, chi, simplify=True)
+    )
+
+
+def test_feynman_rule_no_args_can_return_field_keys():
+    """The previous object-keyed zero-argument mapping is still available."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lam4 = S("lam4")
+    L = Lagrangian(lam4 * phi * phi * phi * phi)
+
+    rules = L.feynman_rule(simplify=True, key_format="fields")
+    key = (phi, phi, phi, phi)
+
+    assert tuple(rules) == (key,)
+    assert _canon(rules[key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+
+
+def test_feynman_rules_returns_all_vertices():
+    """feynman_rules() exposes the same grouped mapping as zero-arg feynman_rule()."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+        InteractionTerm(
+            coupling=S("lam"),
+            fields=tuple(phi.occurrence() for _ in range(4)),
+        ),
+    ))
+
+    assert {
+        key: _canon(value) for key, value in L.feynman_rules(simplify=True).items()
+    } == {
+        key: _canon(value) for key, value in L.feynman_rule(simplify=True).items()
+    }
+
+
+def test_feynman_rules_filters_by_arity():
+    """arity=... keeps only the requested vertex size."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+        InteractionTerm(
+            coupling=S("lam"),
+            fields=tuple(phi.occurrence() for _ in range(4)),
+        ),
+    ))
+
+    rules = L.feynman_rules(arity=3, simplify=True, key_format="fields")
+
+    assert tuple(rules) == ((phi, chi, chi),)
+    assert _canon(rules[(phi, chi, chi)]) == _canon(
+        L.feynman_rule(phi, chi, chi, simplify=True)
+    )
+
+
+def test_feynman_rules_select_uses_requested_field_tuples():
+    """select=[...] reuses the single-vertex path for exactly the requested tuples."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("g"), fields=(phi.occurrence(), chi.occurrence(), chi.occurrence())),
+    ))
+
+    rules = L.feynman_rules(
+        select=[(chi, phi, chi)],
+        simplify=True,
+        key_format="fields",
+    )
+
+    assert tuple(rules) == ((chi, phi, chi),)
+    assert _canon(rules[(chi, phi, chi)]) == _canon(
+        L.feynman_rule(chi, phi, chi, simplify=True)
+    )
+
+
+def test_feynman_rule_no_args_merges_repeated_signature():
+    """Repeated terms with the same field content are grouped and summed."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    g1 = S("g1")
+    g2 = S("g2")
+
+    t1 = InteractionTerm(coupling=g1, fields=tuple(phi.occurrence() for _ in range(4)))
+    t2 = InteractionTerm(coupling=g2, fields=tuple(phi.occurrence() for _ in range(4)))
+    L = Lagrangian(terms=(t1, t2))
+
+    rules = L.feynman_rule(simplify=True)
+    raw_rules = L.feynman_rule(simplify=False)
+    key = ("Phi", "Phi", "Phi", "Phi")
+
+    assert tuple(rules) == (key,)
+    assert _canon(rules[key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    )
+    assert _canon(raw_rules[key]) == _canon(
+        L.feynman_rule(phi, phi, phi, phi, simplify=False)
+    )
+
+
+def test_feynman_rule_no_args_normalizes_conjugated_field_keys():
+    """Non-self-conjugate fields use .bar suffixes in default name keys."""
+    phi = Field(
+        "PhiC",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi"),
+        conjugate_symbol=S("phibar"),
+    )
+    lam = S("lam")
+    L = Lagrangian(lam * phi.bar * phi)
+
+    rules = L.feynman_rule(simplify=True)
+    key = next(iter(rules))
+
+    assert len(rules) == 1
+    assert key == ("PhiC.bar", "PhiC")
+    assert _canon(rules[key]) == _canon(L.feynman_rule(phi.bar, phi, simplify=True))
+
+
+def test_feynman_rule_no_args_field_keys_preserve_conjugated_objects():
+    """key_format='fields' keeps Field.bar objects for programmatic lookup."""
+    phi = Field(
+        "PhiC",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi"),
+        conjugate_symbol=S("phibar"),
+    )
+    lam = S("lam")
+    L = Lagrangian(lam * phi.bar * phi)
+
+    rules = L.feynman_rule(simplify=True, key_format="fields")
+    key = next(iter(rules))
+
+    assert len(rules) == 1
+    assert isinstance(key[0], ConjugateField)
+    assert key[0].field is phi
+    assert key[1] is phi
+    assert _canon(rules[key]) == _canon(L.feynman_rule(phi.bar, phi, simplify=True))
+
+
+def test_feynman_rule_no_args_rejects_momenta_override():
+    """A shared momenta= override is ambiguous for mixed-arity enumeration."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    L = Lagrangian(S("g") * phi * phi)
+
+    with pytest.raises(ValueError, match="momenta"):
+        L.feynman_rule(momenta=[S("p")])
+
+
+def test_feynman_rule_rejects_unknown_key_format():
+    """Typos in key_format fail loudly."""
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    L = Lagrangian(S("g") * phi * phi)
+
+    with pytest.raises(ValueError, match="key_format"):
+        L.feynman_rule(key_format="objects")
+
+
+def test_feynman_rule_no_args_name_keys_reject_ambiguous_names():
+    """Default name keys do not silently merge different same-name fields."""
+    phi1 = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi1"))
+    phi2 = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi2"))
+    L = Lagrangian(terms=(
+        InteractionTerm(coupling=S("g1"), fields=(phi1.occurrence(), phi1.occurrence())),
+        InteractionTerm(coupling=S("g2"), fields=(phi2.occurrence(), phi2.occurrence())),
+    ))
+
+    with pytest.raises(ValueError, match="key_format='fields'"):
+        L.feynman_rule()
+
+    rules = L.feynman_rule(key_format="fields")
+    assert (phi1, phi1) in rules
+    assert (phi2, phi2) in rules
+
+
+def test_feynman_rule_no_args_nontrivial_model_summary_is_usable():
+    """A larger compiled model returns a usable mapping without API changes."""
+    rules = MODEL_QCD_ORDINARY_GAUGE_FIXED.lagrangian().feynman_rule(simplify=False)
+
+    assert ("G", "G") in rules
+    assert ("G", "G", "G") in rules
+    assert ("G", "G", "G", "G") in rules
+    assert ("ghG.bar", "ghG") in rules
+    assert ("ghG.bar", "G", "ghG") in rules
+    assert _canon(rules[("ghG.bar", "G", "ghG")]) == _canon(
+        MODEL_QCD_ORDINARY_GAUGE_FIXED.lagrangian().feynman_rule(
+            GhostGluonField.bar,
+            GluonField,
+            GhostGluonField,
+            simplify=False,
+        )
+    )
+
+
+# ---------------------------------------------------------------------------
+# High-level output-policy options
+# ---------------------------------------------------------------------------
+
+def test_feynman_rule_default_output_policy_is_unchanged():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(S("lam4") * phi * phi * phi * phi)
+
+    got_default = lagrangian.feynman_rule(phi, phi, phi, phi, simplify=True)
+    got_explicit = lagrangian.feynman_rule(
+        phi,
+        phi,
+        phi,
+        phi,
+        simplify=True,
+        include_delta=True,
+        strip_externals=True,
+        simplify_gamma=False,
+    )
+
+    assert _canon(got_default) == _canon(got_explicit)
+
+
+def test_feynman_rule_include_delta_false_omits_delta():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(S("lam4") * phi * phi * phi * phi)
+
+    with_delta = lagrangian.feynman_rule(phi, phi, phi, phi, simplify=False)
+    without_delta = lagrangian.feynman_rule(
+        phi,
+        phi,
+        phi,
+        phi,
+        simplify=False,
+        include_delta=False,
+    )
+
+    assert "Delta" in with_delta.to_canonical_string()
+    assert "Delta" not in without_delta.to_canonical_string()
+
+
+def test_feynman_rule_strip_externals_false_preserves_generic_external_factors():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(S("y") * psi.bar * psi * phi)
+
+    stripped = lagrangian.feynman_rule(psi.bar, psi, phi, simplify=False)
+    unstripped = lagrangian.feynman_rule(
+        psi.bar,
+        psi,
+        phi,
+        simplify=False,
+        strip_externals=False,
+    )
+
+    text = unstripped.to_canonical_string()
+    assert "U(" not in stripped.to_canonical_string()
+    assert "U(" in text
+    assert "UF(" not in text
+    assert "UbarF(" not in text
+    assert _canon(stripped) != _canon(unstripped)
+
+
+def test_high_level_unstripped_external_placeholders_by_field_type():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    photon = _make_photon(name="A", symbol=S("A0"))
+    ghost = _make_ghost(name="ghG", symbol=S("ghG0"), conjugate_symbol=S("ghGbar0"))
+    mu = S("mu")
+
+    scalar_text = Lagrangian(S("y") * psi.bar * psi * phi).feynman_rule(
+        psi.bar,
+        psi,
+        phi,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+    fermion_text = Lagrangian(S("m") * psi.bar * psi).feynman_rule(
+        psi.bar,
+        psi,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+    vector_text = Lagrangian(S("e") * psi.bar * Gamma(mu) * psi * photon).feynman_rule(
+        psi.bar,
+        psi,
+        photon,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+    ghost_text = Lagrangian(S("mgh") * ghost.bar * ghost).feynman_rule(
+        ghost.bar,
+        ghost,
+        simplify=False,
+        strip_externals=False,
+    ).to_canonical_string()
+
+    assert scalar_text.count("U(") == 1
+    assert "UF(" not in scalar_text
+    assert "UbarF(" not in scalar_text
+
+    assert "U(" not in fermion_text
+    assert "UF(" not in fermion_text
+    assert "UbarF(" not in fermion_text
+    assert "spenso::{symmetric,real}::g(" in fermion_text
+
+    assert vector_text.count("U(") == 1
+    assert "UF(" not in vector_text
+    assert "UbarF(" not in vector_text
+    assert "gamma(" in vector_text
+    assert "mu3" in vector_text
+
+    assert ghost_text.count("U(") == 2
+    assert "ghG0" in ghost_text
+    assert "ghGbar0" in ghost_text
+
+
+def test_feynman_rule_simplify_gamma_forwards_to_cleanup_path():
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    g = S("g")
+    mu, nu = S("mu", "nu")
+    lagrangian = Lagrangian(
+        g * psi.bar * Gamma(mu) * Gamma(nu) * psi
+        + g * psi.bar * Gamma(nu) * Gamma(mu) * psi
+    )
+
+    default = lagrangian.feynman_rule(psi.bar, psi, simplify=True)
+    with_gamma = lagrangian.feynman_rule(
+        psi.bar,
+        psi,
+        simplify=True,
+        simplify_gamma=True,
+    )
+    manual = simplify_gamma_chain(default)
+
+    assert _canon(with_gamma) == _canon(manual)
+    assert _canon(with_gamma) != _canon(default)
+
+
 # ---------------------------------------------------------------------------
 # Model.lagrangian() integration: QED Dirac kinetic term
 # ---------------------------------------------------------------------------
@@ -1021,7 +1852,7 @@ def test_model_lagrangian_qed_fermion():
     legs = (
         fermion.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1")}),
         fermion.leg(q2, labels={SPINOR_KIND: S("i2")}),
-        photon.leg(q3, labels={LORENTZ_KIND: S("i3")}),
+        photon.leg(q3, labels={LORENTZ_KIND: S("mu3")}),
     )
     ref = _ref_vertex(gauge_term, legs)
     assert _canon(got) == _canon(ref)
@@ -1070,6 +1901,7 @@ def test_declared_lagrangian_qed_fermion_includes_free_bilinear():
 
     compiled = compile_covariant_terms(model)
     assert len(compiled) == 2
+    assert any(len(term.fields) == 2 for term in compiled)
 
     L = model.lagrangian()
     got = L.feynman_rule(fermion.bar, fermion, simplify=True)
@@ -1087,6 +1919,30 @@ def test_declared_lagrangian_qed_fermion_includes_free_bilinear():
     ))
 
     assert _canon(got) == _canon(ref.feynman_rule(fermion.bar, fermion, simplify=True))
+
+
+def test_legacy_qed_fermion_kinetic_term_is_gauge_only():
+    """Legacy DiracKineticTerm keeps only gauge-generated interactions."""
+    eQED, qPsi = S("eQED", "qPsi")
+    fermion = Field("PsiQED", spin=Fraction(1, 2), self_conjugate=False,
+                     symbol=S("psi"), conjugate_symbol=S("psibar"),
+                     indices=(SPINOR_INDEX,), quantum_numbers={"Q": qPsi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        legacy = Model(
+            gauge_groups=(u1,),
+            fields=(fermion, photon),
+            covariant_terms=(DiracKineticTerm(field=fermion),),
+        )
+
+    compiled = compile_covariant_terms(legacy)
+    assert compiled
+    assert all(len(term.fields) != 2 for term in compiled)
+
+    with pytest.raises(ValueError, match="No matching interaction terms"):
+        legacy.lagrangian().feynman_rule(fermion.bar, fermion, simplify=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1112,9 +1968,9 @@ def test_model_lagrangian_qcd_fermion():
     assert len(compiled) == 2
     gauge_term = next(term for term in compiled if len(term.fields) == 3)
     legs = (
-        quark.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1"), COLOR_FUND_KIND: S("i2")}),
-        quark.leg(q2, labels={SPINOR_KIND: S("i3"), COLOR_FUND_KIND: S("i4")}),
-        gluon.leg(q3, labels={LORENTZ_KIND: S("i5"), COLOR_ADJ_KIND: S("i6")}),
+        quark.leg(q1, conjugated=True, labels={SPINOR_KIND: S("i1"), COLOR_FUND_KIND: S("c1")}),
+        quark.leg(q2, labels={SPINOR_KIND: S("i2"), COLOR_FUND_KIND: S("c2")}),
+        gluon.leg(q3, labels={LORENTZ_KIND: S("mu3"), COLOR_ADJ_KIND: S("a3")}),
     )
     ref = _ref_vertex(gauge_term, legs)
     assert _canon(got) == _canon(ref)
@@ -1161,6 +2017,7 @@ def test_declared_lagrangian_scalar_qed_includes_free_bilinear():
 
     compiled = compile_covariant_terms(model)
     assert len(compiled) == 4
+    assert any(len(term.fields) == 2 for term in compiled)
 
     L = model.lagrangian()
     got = L.feynman_rule(phi.bar, phi, simplify=True)
@@ -1180,6 +2037,30 @@ def test_declared_lagrangian_scalar_qed_includes_free_bilinear():
     ))
 
     assert _canon(got) == _canon(ref.feynman_rule(phi.bar, phi, simplify=True))
+
+
+def test_legacy_scalar_qed_kinetic_term_is_gauge_only():
+    """Legacy ComplexScalarKineticTerm keeps only gauge-generated interactions."""
+    eQED, qPhi = S("eQED", "qPhi")
+    phi = Field("PhiQED", spin=0, self_conjugate=False,
+                symbol=S("phiQED"), conjugate_symbol=S("phiQEDbar"),
+                quantum_numbers={"Q": qPhi})
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        legacy = Model(
+            gauge_groups=(u1,),
+            fields=(phi, photon),
+            covariant_terms=(ComplexScalarKineticTerm(field=phi),),
+        )
+
+    compiled = compile_covariant_terms(legacy)
+    assert compiled
+    assert all(len(term.fields) != 2 for term in compiled)
+
+    with pytest.raises(ValueError, match="No matching interaction terms"):
+        legacy.lagrangian().feynman_rule(phi.bar, phi, simplify=True)
 
 
 def test_declared_lagrangian_field_strength_matches_legacy():
@@ -1265,6 +2146,23 @@ def test_declared_lagrangian_rejects_field_strength_index_mismatch():
             lagrangian_decl=-(Expression.num(1) / Expression.num(4))
             * FieldStrength(su3, mu, nu)
             * FieldStrength(su3, nu, mu),
+        )
+
+
+def test_declared_lagrangian_rejects_field_strength_repeated_lorentz_index():
+    """FieldStrength(G, mu, mu) must be rejected before gauge compilation."""
+    e = S("e")
+    mu = S("mu")
+    photon = _make_photon()
+    u1 = _make_u1(e, photon.symbol)
+
+    with pytest.raises(ValueError, match="FieldStrength indices must be distinct"):
+        Model(
+            gauge_groups=(u1,),
+            fields=(photon,),
+            lagrangian_decl=-(Expression.num(1) / Expression.num(4))
+            * FieldStrength(u1, mu, mu)
+            * FieldStrength(u1, mu, mu),
         )
 
 
@@ -1436,8 +2334,8 @@ def test_lagrangian_abelian_gauge_kinetic():
     ref_sum = Expression.num(0)
     for term in compiled:
         legs = (
-            photon.leg(q1, labels={LORENTZ_KIND: S("i1")}),
-            photon.leg(q2, labels={LORENTZ_KIND: S("i2")}),
+            photon.leg(q1, labels={LORENTZ_KIND: S("mu1")}),
+            photon.leg(q2, labels={LORENTZ_KIND: S("mu2")}),
         )
         ref_sum += _ref_vertex(term, legs)
     assert _canon(got) == _canon(ref_sum)
@@ -1501,8 +2399,8 @@ def test_lagrangian_abelian_gauge_fixing():
 
     q1, q2 = S("q1", "q2")
     legs = (
-        photon.leg(q1, labels={LORENTZ_KIND: S("i1")}),
-        photon.leg(q2, labels={LORENTZ_KIND: S("i2")}),
+        photon.leg(q1, labels={LORENTZ_KIND: S("mu1")}),
+        photon.leg(q2, labels={LORENTZ_KIND: S("mu2")}),
     )
     ref = _ref_vertex(compiled[0], legs)
     assert _canon(got) == _canon(ref)
@@ -1528,8 +2426,8 @@ def test_lagrangian_nonabelian_gauge_fixing():
 
     q1, q2 = S("q1", "q2")
     legs = (
-        gluon.leg(q1, labels={LORENTZ_KIND: S("i1"), COLOR_ADJ_KIND: S("i2")}),
-        gluon.leg(q2, labels={LORENTZ_KIND: S("i3"), COLOR_ADJ_KIND: S("i4")}),
+        gluon.leg(q1, labels={LORENTZ_KIND: S("mu1"), COLOR_ADJ_KIND: S("a1")}),
+        gluon.leg(q2, labels={LORENTZ_KIND: S("mu2"), COLOR_ADJ_KIND: S("a2")}),
     )
     ref = _ref_vertex(compiled[0], legs)
     assert _canon(got) == _canon(ref)
@@ -1585,8 +2483,8 @@ def test_lagrangian_ghost_bilinear():
     q1, q2 = S("q1", "q2")
     bilinear = compiled[0]
     legs = (
-        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("i1")}),
-        ghost.leg(q2, labels={COLOR_ADJ_KIND: S("i2")}),
+        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("a1")}),
+        ghost.leg(q2, labels={COLOR_ADJ_KIND: S("a2")}),
     )
     ref = _ref_vertex(bilinear, legs)
     assert _canon(got) == _canon(ref)
@@ -1613,12 +2511,107 @@ def test_lagrangian_ghost_gauge_interaction():
 
     q1, q2, q3 = S("q1", "q2", "q3")
     legs = (
-        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("i1")}),
-        gluon.leg(q2, labels={LORENTZ_KIND: S("i2"), COLOR_ADJ_KIND: S("i3")}),
-        ghost.leg(q3, labels={COLOR_ADJ_KIND: S("i4")}),
+        ghost.leg(q1, conjugated=True, labels={COLOR_ADJ_KIND: S("a1")}),
+        gluon.leg(q2, labels={LORENTZ_KIND: S("mu2"), COLOR_ADJ_KIND: S("a2")}),
+        ghost.leg(q3, labels={COLOR_ADJ_KIND: S("a3")}),
     )
     ref = _ref_vertex(ghost_gauge_term, legs)
     assert _canon(got) == _canon(ref)
+
+
+def test_manual_raw_spenso_gauge_fixing_and_ghost_sources():
+    """Raw Spenso tensors plus labeled FieldOccurrence factors match built-in wrappers."""
+    gS, xiQCD = S("gS", "xiQCD")
+    gluon = _make_gluon()
+    ghost = _make_ghost()
+    su3 = _make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol)
+
+    mu_left = S("mu_left")
+    mu_right = S("mu_right")
+    rho_left = S("rho_left")
+    rho_right = S("rho_right")
+    mu = S("mu")
+    rho_ghost = S("rho_ghost")
+
+    a_left = S("a_left")
+    a_right = S("a_right")
+    a_bar = S("a_bar")
+    a_gluon = S("a_gluon")
+    a_ghost = S("a_ghost")
+
+    manual = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xiQCD))
+            * COLOR_ADJ_INDEX.representation.g(a_left, a_right).to_expression()
+            * LORENTZ_INDEX.representation.g(mu_left, rho_left).to_expression()
+            * LORENTZ_INDEX.representation.g(mu_right, rho_right).to_expression()
+            * PartialD(
+                gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_left, COLOR_ADJ_KIND: a_left}
+                ),
+                rho_left,
+            )
+            * PartialD(
+                gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_right, COLOR_ADJ_KIND: a_right}
+                ),
+                rho_right,
+            )
+            + COLOR_ADJ_INDEX.representation.g(a_bar, a_ghost).to_expression()
+            * PartialD(
+                ghost.occurrence(
+                    conjugated=True,
+                    labels={COLOR_ADJ_KIND: a_bar},
+                ),
+                mu,
+            )
+            * PartialD(
+                ghost.occurrence(labels={COLOR_ADJ_KIND: a_ghost}),
+                mu,
+            )
+            + (
+                -gS
+                * structure_constant(a_bar, a_gluon, a_ghost)
+                * LORENTZ_INDEX.representation.g(rho_ghost, mu_left).to_expression()
+                * PartialD(
+                    ghost.occurrence(
+                        conjugated=True,
+                        labels={COLOR_ADJ_KIND: a_bar},
+                    ),
+                    rho_ghost,
+                )
+                * gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_left, COLOR_ADJ_KIND: a_gluon}
+                )
+                * ghost.occurrence(labels={COLOR_ADJ_KIND: a_ghost})
+            )
+        ),
+    )
+    wrapped = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=GaugeFixing(su3, xi=xiQCD) + GhostLagrangian(su3),
+    )
+
+    manual_lagrangian = manual.lagrangian()
+    wrapped_lagrangian = wrapped.lagrangian()
+
+    assert len(manual_lagrangian.terms) == 3
+    assert _canon(manual_lagrangian.feynman_rule(gluon, gluon, simplify=True)) == _canon(
+        wrapped_lagrangian.feynman_rule(gluon, gluon, simplify=True)
+    )
+    assert _canon(
+        manual_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True)
+    ) == _canon(
+        wrapped_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True)
+    )
+    assert _canon(
+        manual_lagrangian.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    ) == _canon(
+        wrapped_lagrangian.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    )
 
 
 def test_ghost_lagrangian_wrapper_preserves_source_and_scalar_prefactor():
@@ -1985,3 +2978,160 @@ def test_dressed_dirac_covd_with_fermion_spectator_bilinear():
     assert _canon(L.feynman_rule(psi.bar, psi, A, xi.bar, xi)) == _canon(
         ref.feynman_rule(psi.bar, psi, A, xi.bar, xi)
     )
+
+
+def test_generic_declared_monomial_supports_multiple_dirac_covd_chains():
+    gS = S("gS")
+    mu = S("mu")
+    nu = S("nu")
+    a = S("a")
+    b = S("b")
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    chi = Field(
+        "Chi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("chi"),
+        conjugate_symbol=S("chibar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(psi, chi, gluon),
+        lagrangian_decl=(
+            I
+            * psi.bar
+            * Gamma(mu)
+            * CovD(psi, mu)
+            * chi.bar
+            * Gamma(nu)
+            * CovD(chi, nu)
+        ),
+    )
+    L = model.lagrangian()
+
+    gluon_mu = gluon.occurrence(labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a})
+    gluon_nu = gluon.occurrence(labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: a})
+    ref_single_gluon = Lagrangian(
+        (-gS) * psi.bar * Gamma(mu) * T(a) * psi * chi.bar * Gamma(nu) * PartialD(chi, nu) * gluon_mu
+        + (-gS) * psi.bar * Gamma(mu) * PartialD(psi, mu) * chi.bar * Gamma(nu) * T(a) * chi * gluon_nu
+    )
+    assert _canon(
+        L.feynman_rule(psi.bar, psi, chi.bar, chi, gluon, simplify=True)
+    ) == _canon(
+        ref_single_gluon.feynman_rule(
+            psi.bar, psi, chi.bar, chi, gluon, simplify=True
+        )
+    )
+
+    gluon_mu_a = gluon.occurrence(labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a})
+    gluon_nu_b = gluon.occurrence(labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: b})
+    ref_double_gluon = Lagrangian(
+        -(I * gS * gS)
+        * psi.bar
+        * Gamma(mu)
+        * T(a)
+        * psi
+        * chi.bar
+        * Gamma(nu)
+        * T(b)
+        * chi
+        * gluon_mu_a
+        * gluon_nu_b
+    )
+    assert _canon(
+        L.feynman_rule(psi.bar, psi, chi.bar, chi, gluon, gluon, simplify=True)
+    ) == _canon(
+        ref_double_gluon.feynman_rule(
+            psi.bar, psi, chi.bar, chi, gluon, gluon, simplify=True
+        )
+    )
+
+
+def test_generic_declared_monomial_supports_same_species_quark_covd_product():
+    gS = S("gS")
+    mu = S("mu")
+    nu = S("nu")
+    quark = Field(
+        "q",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(quark, gluon),
+        lagrangian_decl=(
+            I
+            * quark.bar
+            * Gamma(mu)
+            * CovD(quark, mu)
+            * quark.bar
+            * Gamma(nu)
+            * CovD(quark, nu)
+        ),
+    )
+    L = model.lagrangian()
+
+    got_single_gluon = L.feynman_rule(
+        quark.bar, quark, quark.bar, quark, gluon, simplify=True
+    )
+
+    mu_int = S("mu1_int")
+    q1, q2, q3, q4, q5 = S("q1", "q2", "q3", "q4", "q5")
+    c1, c2, c3, c4 = S("c1", "c2", "c3", "c4")
+    i1, i2, i3, i4 = S("i1", "i2", "i3", "i4")
+    mu5 = S("mu5")
+    a5 = S("a5")
+    color_metric = COLOR_FUND_INDEX.representation.g
+    expected_relative_signs = (
+        color_metric(c1, c2).to_expression()
+        * gamma_matrix(i1, i2, mu_int)
+        * gamma_matrix(i3, i4, mu5)
+        * gauge_generator(a5, c3, c4)
+        * pcomp(q2, mu_int)
+        + color_metric(c1, c4).to_expression()
+        * gamma_matrix(i1, i4, mu_int)
+        * gamma_matrix(i3, i2, mu5)
+        * gauge_generator(a5, c3, c2)
+        * pcomp(q4, mu_int)
+        + color_metric(c2, c3).to_expression()
+        * gamma_matrix(i1, i4, mu5)
+        * gamma_matrix(i3, i2, mu_int)
+        * gauge_generator(a5, c1, c4)
+        * pcomp(q2, mu_int)
+        + color_metric(c3, c4).to_expression()
+        * gamma_matrix(i1, i2, mu5)
+        * gamma_matrix(i3, i4, mu_int)
+        * gauge_generator(a5, c1, c2)
+        * pcomp(q4, mu_int)
+    )
+    expected_single_gluon = (
+        2
+        * gS
+        * (2 * pi) ** S("d")
+        * Delta(q1 + q2 + q3 + q4 + q5)
+        * expected_relative_signs
+    )
+
+    got_single_gluon_canon = _canon(got_single_gluon)
+    assert got_single_gluon_canon in {
+        _canon(expected_single_gluon),
+        _canon(-expected_single_gluon),
+    }
+    assert L.feynman_rule(quark.bar, quark, quark.bar, quark, gluon, gluon, simplify=True) != 0

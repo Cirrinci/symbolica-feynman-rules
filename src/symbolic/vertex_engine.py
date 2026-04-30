@@ -20,10 +20,16 @@ from typing import Literal, Optional, Sequence
 
 from symbolica import S, Expression
 from symbolica.community.spenso import Representation
-from symbolica.community.idenso import simplify_metrics
 
-from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND
-from symbolic.tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
+from symbolic.spenso_structures import SPINOR_KIND
+from symbolic.vertex_postprocessing import (
+    _species_key,
+    apply_vertex_output_policy as _apply_vertex_output_policy,
+    canonicalize_vector_vertex as _canonicalize_vector_vertex_impl,
+    simplify_deltas as _simplify_deltas_impl,
+    simplify_spinor_indices as _simplify_spinor_indices_impl,
+    simplify_vertex as _simplify_vertex_impl,
+)
 
 # ---------------------------------------------------------------------------
 # Module-level Symbolica symbols + Spenso bispinor representation
@@ -408,11 +414,13 @@ def contract_to_full_expression(
     field_roles=None,
     leg_roles=None,
     field_index_labels: Optional[Sequence[dict]] = None,
+    field_index_types: Optional[Sequence[Sequence]] = None,
     leg_index_labels: Optional[Sequence[dict]] = None,
     field_spinor_indices: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
     coupling=None,
+    closed_dirac_bilinears: Optional[Sequence[tuple[int, int]]] = None,
 ):
     """Sum over all Wick contractions to build the full vacuum matrix element.
 
@@ -455,6 +463,8 @@ def contract_to_full_expression(
 
     if field_index_labels is not None and len(field_index_labels) != n:
         raise ValueError("field_index_labels must have the same length as alphas")
+    if field_index_types is not None and len(field_index_types) != n:
+        raise ValueError("field_index_types must have the same length as alphas")
     if leg_index_labels is not None and len(leg_index_labels) != n:
         raise ValueError("leg_index_labels must have the same length as betas")
     if leg_spins is not None and len(leg_spins) != n:
@@ -488,15 +498,74 @@ def contract_to_full_expression(
         _fermion_slots_from_roles(field_roles)
         if statistics == "fermion" else []
     )
+    use_closed_dirac_bilinear_signs = False
+    if fermion_slots:
+        candidate_bilinears = []
+        for pair in closed_dirac_bilinears or ():
+            if len(pair) != 2:
+                raise ValueError(
+                    "closed_dirac_bilinears entries must be (psibar_slot, psi_slot) pairs."
+                )
+            normalized = (int(pair[0]), int(pair[1]))
+            if normalized not in candidate_bilinears:
+                candidate_bilinears.append(normalized)
+        for pair in fermion_chains:
+            if pair not in candidate_bilinears:
+                candidate_bilinears.append(pair)
+
+        if candidate_bilinears:
+            covered_slots = []
+            valid_dirac_roles = all(
+                _role_is_psibar(field_roles[slot]) or _role_is_psi(field_roles[slot])
+                for slot in fermion_slots
+            )
+            if valid_dirac_roles:
+                for left_slot, right_slot in candidate_bilinears:
+                    if (
+                        left_slot < 0
+                        or right_slot < 0
+                        or left_slot >= n
+                        or right_slot >= n
+                    ):
+                        raise ValueError(
+                            "closed_dirac_bilinears contains a slot outside the interaction arity."
+                        )
+                    if not (
+                        _role_is_psibar(field_roles[left_slot])
+                        and _role_is_psi(field_roles[right_slot])
+                    ):
+                        raise ValueError(
+                            "closed_dirac_bilinears must pair one psibar slot with one psi slot."
+                        )
+                    covered_slots.extend((left_slot, right_slot))
+
+                covered_counts = Counter(covered_slots)
+                use_closed_dirac_bilinear_signs = (
+                    len(covered_slots) == len(fermion_slots)
+                    and set(covered_slots) == set(fermion_slots)
+                    and all(count == 1 for count in covered_counts.values())
+                )
 
     open_index_slots = []
     if coupling is not None and field_index_labels is not None:
         open_index_slots = _open_index_labels(field_index_labels, field_roles)
 
+    field_index_label_counts = Counter()
+    if field_index_labels is not None:
+        for slot_labels in field_index_labels:
+            for kind, _, label in _flatten_index_labels(slot_labels):
+                label_key = (
+                    label.to_canonical_string()
+                    if hasattr(label, "to_canonical_string")
+                    else str(label)
+                )
+                field_index_label_counts[(kind, label_key)] += 1
+
     total = Expression.num(0)
 
     for perm in permutations(range(n)):
         term = Expression.num(1)
+        paired_explicit_indices = {}
 
         coupling_term = coupling if coupling is not None else Expression.num(1)
         if open_index_slots and leg_index_labels is not None:
@@ -518,7 +587,7 @@ def contract_to_full_expression(
         if not valid:
             continue
 
-        if fermion_slots:
+        if fermion_slots and not use_closed_dirac_bilinear_signs:
             term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
 
         for mu, tgt in zip(derivative_indices, derivative_targets):
@@ -545,6 +614,39 @@ def contract_to_full_expression(
                     spin=spin,
                     spinor_index=spinor_index or S(f"si{i + 1}"),
                 )
+
+            if (
+                field_index_types is not None
+                and field_index_labels is not None
+                and leg_index_labels is not None
+            ):
+                kind_ordinals = Counter()
+                for index in field_index_types[i]:
+                    ordinal = kind_ordinals[index.kind]
+                    kind_ordinals[index.kind] += 1
+
+                    if _role_is_fermion(role) and index.kind == SPINOR_KIND:
+                        continue
+
+                    field_label = _get_label(field_index_labels[i], index.kind, ordinal)
+                    leg_label = _get_label(leg_index_labels[j], index.kind, ordinal)
+                    if field_label is None or leg_label is None:
+                        continue
+
+                    label_key = (
+                        field_label.to_canonical_string()
+                        if hasattr(field_label, "to_canonical_string")
+                        else str(field_label)
+                    )
+                    if field_index_label_counts[(index.kind, label_key)] <= 1:
+                        continue
+
+                    pair_key = (index.kind, label_key)
+                    if pair_key in paired_explicit_indices:
+                        prior_representation, prior_leg_label = paired_explicit_indices.pop(pair_key)
+                        term *= prior_representation.g(prior_leg_label, leg_label).to_expression()
+                    else:
+                        paired_explicit_indices[pair_key] = (index.representation, leg_label)
             p_sum += ps[j]
 
         if use_spinor_deltas:
@@ -603,10 +705,12 @@ def vertex_factor(
     field_roles=None,
     leg_roles=None,
     field_index_labels=None,
+    field_index_types=None,
     leg_index_labels=None,
     field_spinor_indices=None,
     leg_spinor_indices=None,
     leg_spins=None,
+    closed_dirac_bilinears: Optional[Sequence[tuple[int, int]]] = None,
     strip_externals: bool = True,
     include_delta: bool = True,
     d=None,
@@ -633,10 +737,12 @@ def vertex_factor(
         field_roles = kwargs["field_roles"]
         leg_roles = kwargs["leg_roles"]
         field_index_labels = kwargs["field_index_labels"]
+        field_index_types = kwargs["field_index_types"]
         leg_index_labels = kwargs["leg_index_labels"]
         leg_spins = kwargs["leg_spins"]
         derivative_indices = kwargs["derivative_indices"]
         derivative_targets = kwargs["derivative_targets"]
+        closed_dirac_bilinears = kwargs["closed_dirac_bilinears"]
 
     if alphas is None or betas is None or ps is None:
         raise ValueError("alphas, betas, ps are required")
@@ -675,30 +781,29 @@ def vertex_factor(
         field_roles=field_roles,
         leg_roles=leg_roles,
         field_index_labels=field_index_labels,
+        field_index_types=field_index_types,
         leg_index_labels=leg_index_labels,
         leg_spins=leg_spins,
         coupling=coupling,
+        closed_dirac_bilinears=closed_dirac_bilinears,
     )
-    full = contracted
-
-    if include_delta:
-        if d is None:
-            d = S("d")
-        p_sum = Expression.num(0)
-        for p in ps:
-            p_sum += p
-        full = full.replace(plane_wave(p_sum, x), (2 * pi) ** d * Delta(p_sum))
-
-    if strip_externals:
-        beta_, p_ = S("beta_", "p_")
-        full = full.replace(U(beta_, p_), 1)
-        if leg_index_labels is None:
-            spin_, si_ = S("spin_", "si_")
-            full = full.replace(UF(beta_, p_, spin_, si_), 1)
-            full = full.replace(UbarF(beta_, p_, spin_, si_), 1)
-        q_, x_ = S("q_", "x_")
-        full = full.replace(Expression.EXP(-I * Dot(q_, x_)), 1)
-
+    full = _apply_vertex_output_policy(
+        contracted,
+        ps=ps,
+        x=x,
+        include_delta=include_delta,
+        strip_externals=strip_externals,
+        leg_index_labels=leg_index_labels,
+        d=d,
+        plane_wave=plane_wave,
+        delta_symbol=Delta,
+        pi_symbol=pi,
+        u_symbol=U,
+        uf_symbol=UF,
+        ubarf_symbol=UbarF,
+        dot_symbol=Dot,
+        i_symbol=I,
+    )
     return I * full
 
 
@@ -706,95 +811,28 @@ def vertex_factor(
 # Simplification helpers
 # ---------------------------------------------------------------------------
 
-def _species_key(x):
-    return x.to_canonical_string() if hasattr(x, 'to_canonical_string') else str(x)
-
-
 def simplify_deltas(expr, species_map=None):
     """Simplify species Kronecker deltas."""
-    a_ = S("a_")
-
-    if species_map is not None:
-        for beta_sym, species_sym in species_map.items():
-            expr = expr.replace(beta_sym, species_sym)
-        expr = expr.replace(delta(a_, a_), Expression.num(1))
-
-        known_species = sorted(
-            set(species_map.values()),
-            key=lambda s: _species_key(s),
-        )
-        for i in range(len(known_species)):
-            for j in range(i + 1, len(known_species)):
-                expr = expr.replace(
-                    delta(known_species[i], known_species[j]),
-                    Expression.num(0),
-                )
-    else:
-        expr = expr.replace(delta(a_, a_), Expression.num(1))
-
-    return expr
+    return _simplify_deltas_impl(expr, species_map=species_map)
 
 
 def simplify_spinor_indices(expr):
     """Contract repeated bispinor indices using Spenso's metric simplification."""
-    return simplify_metrics(expr)
-
-
-def _vector_leg_lorentz_labels(external_legs):
-    labels = []
-    for leg in external_legs:
-        label = _get_label(getattr(leg, "labels", None), LORENTZ_KIND)
-        if label is None:
-            return ()
-        labels.append(label)
-    return tuple(labels)
-
-
-def _vector_leg_internal_labels(external_legs):
-    labels = []
-    for leg in external_legs:
-        label = None
-        for index in getattr(leg.field, "indices", ()):
-            if index.kind == LORENTZ_KIND:
-                continue
-            label = _get_label(getattr(leg, "labels", None), index.kind)
-            if label is not None:
-                labels.append(label)
-                break
-        if label is None:
-            return ()
-    return tuple(labels)
+    return _simplify_spinor_indices_impl(expr)
 
 
 def _canonicalize_vector_vertex(expr, external_legs):
-    if external_legs is None or len(external_legs) not in (3, 4):
-        return expr
-    if not all(getattr(getattr(leg, "field", None), "kind", None) == "vector" for leg in external_legs):
-        return expr
-
-    lorentz_labels = _vector_leg_lorentz_labels(external_legs)
-    if not lorentz_labels:
-        return expr
-
-    internal_labels = _vector_leg_internal_labels(external_legs)
-    if not internal_labels:
-        return expr
-
-    canonical_expr, _, _ = canonize_spenso_tensors(
-        expr,
-        lorentz_indices=lorentz_labels,
-        adjoint_indices=internal_labels,
-    )
-    return canonical_expr
+    return _canonicalize_vector_vertex_impl(expr, external_legs)
 
 
-def simplify_vertex(expr, species_map=None, external_legs=None):
+def simplify_vertex(expr, species_map=None, external_legs=None, simplify_gamma: bool = False):
     """Simplify a vertex factor expression in one call."""
-    expr = simplify_deltas(expr, species_map=species_map)
-    expr = simplify_spinor_indices(expr)
-    expr = contract_spenso_lorentz_metrics(expr)
-    expr = _canonicalize_vector_vertex(expr, external_legs)
-    return expr
+    return _simplify_vertex_impl(
+        expr,
+        species_map=species_map,
+        external_legs=external_legs,
+        simplify_gamma=simplify_gamma,
+    )
 
 
 # ---------------------------------------------------------------------------

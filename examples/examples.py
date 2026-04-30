@@ -1,11 +1,9 @@
 """
-Vertex-factor examples and tests.
+Vertex-factor examples.
 
 Covers both the direct parallel-list API and the FeynRules-style model layer.
-This file currently plays two roles:
-
-- readable showcase of the implemented physics structures
-- integration-style regression script for the live source tree
+Behavioral validation now lives under ``tests/``; this file is kept runnable as
+an interactive/demo entry point.
 """
 
 import argparse
@@ -467,6 +465,7 @@ L_psibar_psi_sq = dict(
     leg_roles=["psibar", "psi", "psibar", "psi"],
     field_spinor_indices=[alpha_s, alpha_s, beta_s, beta_s],
     leg_spins=[s1, s2, s3, s4],
+    closed_dirac_bilinears=((0, 1), (2, 3)),
 )
 
 L_psibar_psi_sq_spinor = dict(
@@ -484,6 +483,7 @@ L_current_current = dict(
     leg_roles=["psibar", "psi", "psibar", "psi"],
     field_spinor_indices=[a_bar, a_psi, b_bar, b_psi],
     leg_spins=[s1, s2, s3, s4],
+    closed_dirac_bilinears=((0, 1), (2, 3)),
 )
 
 L_quark_gluon = dict(
@@ -672,14 +672,6 @@ QCD_GROUP = GaugeGroup(
     abelian=False,
     coupling=gS,
     gauge_boson=G0,
-    structure_constant=structure_constant,
-    representations=(COLOR_FUND_REP,),
-)
-QCD_GROUP_GHOST = GaugeGroup(
-    name="SU3C",
-    abelian=False,
-    coupling=gS,
-    gauge_boson=G0,
     ghost_field=ghG0,
     structure_constant=structure_constant,
     representations=(COLOR_FUND_REP,),
@@ -825,19 +817,19 @@ MODEL_QED_ORDINARY_GAUGE_FIXED = Model(
 )
 MODEL_QCD_GHOST_COVARIANT = Model(
     name="QCDGhost-covariant",
-    gauge_groups=(QCD_GROUP_GHOST,),
+    gauge_groups=(QCD_GROUP,),
     fields=(GluonField, GhostGluonField),
-    lagrangian_decl=GhostLagrangian(QCD_GROUP_GHOST),
+    lagrangian_decl=GhostLagrangian(QCD_GROUP),
 )
 MODEL_QCD_ORDINARY_GAUGE_FIXED = Model(
     name="QCDGaugeFixed-covariant",
-    gauge_groups=(QCD_GROUP_GHOST,),
+    gauge_groups=(QCD_GROUP,),
     fields=(GluonField, GhostGluonField),
     lagrangian_decl=(
         -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(QCD_GROUP_GHOST, mu, nu) * FieldStrength(QCD_GROUP_GHOST, mu, nu)
-        + GaugeFixing(QCD_GROUP_GHOST, xi=xiQCD)
-        + GhostLagrangian(QCD_GROUP_GHOST)
+        * FieldStrength(QCD_GROUP, mu, nu) * FieldStrength(QCD_GROUP, mu, nu)
+        + GaugeFixing(QCD_GROUP, xi=xiQCD)
+        + GhostLagrangian(QCD_GROUP)
     ),
 )
 
@@ -930,6 +922,7 @@ TERM_psibar_psi_sq = InteractionTerm(
         PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: beta_s}),
         PsiField.occurrence(labels={SPINOR_KIND: beta_s}),
     ),
+    closed_dirac_bilinears=((0, 1), (2, 3)),
     label="-(g/2)(psibar psi)^2",
 )
 LEGS_fermion4 = (
@@ -953,6 +946,7 @@ TERM_current_current = InteractionTerm(
         PsiField.occurrence(conjugated=True, labels={SPINOR_KIND: b_bar}),
         PsiField.occurrence(labels={SPINOR_KIND: b_psi}),
     ),
+    closed_dirac_bilinears=((0, 1), (2, 3)),
     label="gJJ * (psibar gamma^mu psi)(psibar gamma_mu psi)",
 )
 
@@ -1988,7 +1982,7 @@ def _run_fermion_tests():
     expected_sp = (
         -I * g_psi4 * D4
         * (bis.g(i1, i2).to_expression() * bis.g(i3, i4).to_expression()
-           - bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
+           + bis.g(i1, i4).to_expression() * bis.g(i3, i2).to_expression())
     )
     _check(V, expected_sp, "(psibar psi)^2 amputated")
 
@@ -2003,7 +1997,7 @@ def _run_fermion_tests():
     expected_jj = (
         2 * I * gJJ * D4
         * (gamma_matrix(i1, i2, mu) * gamma_matrix(i3, i4, mu)
-           - gamma_matrix(i1, i4, mu) * gamma_matrix(i3, i2, mu))
+           + gamma_matrix(i1, i4, mu) * gamma_matrix(i3, i2, mu))
     )
     _check(simplify_gamma_chain(V), expected_jj, "Current-current stripped")
 
@@ -2154,7 +2148,7 @@ def _run_model_tests():
     expected_sp = (
         -I * g_psi4 * D4
         * (psi_bar_psi(i1, i2) * psi_bar_psi(i3, i4)
-           - psi_bar_psi(i1, i4) * psi_bar_psi(i3, i2))
+           + psi_bar_psi(i1, i4) * psi_bar_psi(i3, i2))
     )
     _check(
         V_sp,
@@ -2168,7 +2162,7 @@ def _run_model_tests():
     expected_jj = (
         2 * I * gJJ * D4
         * (psi_bar_gamma_psi(i1, i2, mu) * psi_bar_gamma_psi(i3, i4, mu)
-           - psi_bar_gamma_psi(i1, i4, mu) * psi_bar_gamma_psi(i3, i2, mu))
+           + psi_bar_gamma_psi(i1, i4, mu) * psi_bar_gamma_psi(i3, i2, mu))
     )
     _check(
         simplify_gamma_chain(V_jj),
@@ -2743,7 +2737,17 @@ def _run_covariant_compiler_tests():
     V_photon = simplify_gamma_chain(V_photon)
     _check(
         V_photon,
-        I * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, photon_rho, photon_left, photon_right) * D2,
+        I
+        * gauge_kinetic_bilinear_raw(
+            mu3,
+            mu4,
+            p1,
+            p2,
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
+        )
+        * D2,
         "Covariant compiler: abelian gauge bilinear",
         show_vertex=True,
         description=_model_decl_label(
@@ -2782,7 +2786,15 @@ def _run_covariant_compiler_tests():
     _check(
         V_ym_bilinear,
         I
-        * gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, ym_rho, ym_left, ym_right)
+        * gauge_kinetic_bilinear_raw(
+            mu3,
+            mu4,
+            p1,
+            p2,
+            S("mu1_int"),
+            S("mu1_int"),
+            S("mu2_int"),
+        )
         * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
         * D2,
         "Covariant compiler: non-abelian gauge bilinear",
@@ -2808,7 +2820,18 @@ def _run_covariant_compiler_tests():
         )),
         simplify_gamma_chain(
             gS
-            * yang_mills_three_vertex_metric_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3, ym_cubic_rho)
+            * yang_mills_three_vertex_metric_raw(
+                a3,
+                a4,
+                a5,
+                mu,
+                nu,
+                rho,
+                p1,
+                p2,
+                p3,
+                S("mu1_int"),
+            )
             * D3
         ),
         "Covariant compiler: Yang-Mills cubic",
@@ -2867,7 +2890,16 @@ def _run_gauge_fixed_compiler_tests():
             external_legs=LEGS_photon_kinetic,
             species_map={b1: A0, b2: A0},
         ),
-        (I / xiQED) * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, qed_gf_left, qed_gf_right) * D2,
+        (I / xiQED)
+        * gauge_fixing_bilinear_raw(
+            mu3,
+            mu4,
+            p1,
+            p2,
+            S("mu1_int"),
+            S("mu2_int"),
+        )
+        * D2,
         "Gauge-fixed compiler: abelian gauge fixing",
         show_vertex=True,
         description=qed_gf_term.label,
@@ -2890,7 +2922,14 @@ def _run_gauge_fixed_compiler_tests():
         ),
         (
             (I / xiQCD)
-            * gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, qcd_gf_left, qcd_gf_right)
+            * gauge_fixing_bilinear_raw(
+                mu3,
+                mu4,
+                p1,
+                p2,
+                S("mu1_int"),
+                S("mu2_int"),
+            )
             * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
             * D2
         ),
@@ -2938,8 +2977,24 @@ def _run_gauge_fixed_compiler_tests():
         simplify_gamma_chain(
             I
             * (
-                gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, photon_rho, photon_left, photon_right)
-                + gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, photon_gf_left, photon_gf_right) / xiQED
+                gauge_kinetic_bilinear_raw(
+                    mu3,
+                    mu4,
+                    p1,
+                    p2,
+                    S("mu1_int"),
+                    S("mu1_int"),
+                    S("mu2_int"),
+                )
+                + gauge_fixing_bilinear_raw(
+                    mu3,
+                    mu4,
+                    p1,
+                    p2,
+                    S("mu1_int"),
+                    S("mu2_int"),
+                )
+                / xiQED
             )
             * D2
         ),
@@ -2966,7 +3021,7 @@ def _run_gauge_fixed_compiler_tests():
             external_legs=LEGS_ghost_bilinear,
             species_map={b1: ghGbar0, b2: ghG0},
         ),
-        -I * ghost_kinetic_raw(a3, a4, p1, p2, ghost_mu, ghost_nu) * D2,
+        -I * ghost_kinetic_raw(a3, a4, p1, p2, S("mu1_int"), S("mu2_int")) * D2,
         "Gauge-fixed compiler: ghost bilinear",
         show_vertex=True,
         description=qcd_ghost_bilinear.label,
@@ -2980,7 +3035,7 @@ def _run_gauge_fixed_compiler_tests():
             external_legs=LEGS_ghost_gluon,
             species_map={b1: ghGbar0, b2: G0, b3: ghG0},
         ),
-        -gS * ghost_gauge_raw(a3, a4, a5, mu3, ghost_rho, p1) * D3,
+        -gS * ghost_gauge_raw(a3, a4, a5, mu3, S("mu1_int"), p1) * D3,
         "Gauge-fixed compiler: ghost-gluon interaction",
         show_vertex=True,
         description=qcd_ghost_gauge.label,
@@ -3023,8 +3078,24 @@ def _run_gauge_fixed_compiler_tests():
         simplify_gamma_chain(
             I
             * (
-                gauge_kinetic_bilinear_raw(mu3, mu4, p1, p2, gluon_rho, gluon_left, gluon_right)
-                + gauge_fixing_bilinear_raw(mu3, mu4, p1, p2, gluon_gf_left, gluon_gf_right) / xiQCD
+                gauge_kinetic_bilinear_raw(
+                    mu3,
+                    mu4,
+                    p1,
+                    p2,
+                    S("mu1_int"),
+                    S("mu1_int"),
+                    S("mu2_int"),
+                )
+                + gauge_fixing_bilinear_raw(
+                    mu3,
+                    mu4,
+                    p1,
+                    p2,
+                    S("mu1_int"),
+                    S("mu2_int"),
+                )
+                / xiQCD
             )
             * COLOR_ADJ_INDEX.representation.g(a3, a4).to_expression()
             * D2
@@ -3266,13 +3337,17 @@ def _run_all_tests():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run vertex examples and tests.")
+    parser = argparse.ArgumentParser(description="Run vertex examples.")
     parser.add_argument(
         "--suite",
         choices=("scalar", "fermion", "gauge", "gaugefix", "model", "covariant", "cross", "role", "all"),
         default="all",
     )
-    parser.add_argument("--skip-tests", action="store_true")
+    parser.add_argument(
+        "--skip-tests",
+        action="store_true",
+        help="Ignored compatibility flag; validation now lives under tests/.",
+    )
     parser.add_argument(
         "--no-demo",
         action="store_true",
@@ -3282,26 +3357,3 @@ if __name__ == "__main__":
 
     if not args.no_demo:
         _run_demo_output(args.suite)
-
-    if not args.skip_tests:
-        if args.suite == "all":
-            _run_all_tests()
-        elif args.suite == "scalar":
-            _run_scalar_tests()
-        elif args.suite == "fermion":
-            _run_fermion_tests()
-            _run_fermion_derivative_mixed_tests()
-        elif args.suite == "gauge":
-            _run_gauge_ready_tests()
-        elif args.suite == "gaugefix":
-            _run_gauge_fixed_compiler_tests()
-        elif args.suite == "model":
-            _run_model_tests()
-            _run_compiled_gauge_tests()
-        elif args.suite == "covariant":
-            _run_covariant_compiler_tests()
-            _run_tensor_canonicalization_tests()
-        elif args.suite == "cross":
-            _run_cross_checks()
-        elif args.suite == "role":
-            _run_role_regression_tests()

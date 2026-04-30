@@ -1,8 +1,8 @@
 """
-Lagrangian API examples and regression tests.
+Lagrangian API examples.
 
-This file mirrors src/examples.py but uses exclusively the FeynRules-style
-Lagrangian API (Model.lagrangian().feynman_rule(...)).
+This file mirrors `examples/examples.py` but uses exclusively the FeynRules-style
+Lagrangian API (`Model.lagrangian().feynman_rule(...)`).
 
 Conventions (automatic):
   - Momenta: q1, q2, q3, ...
@@ -350,7 +350,7 @@ def _run_scalar_tests():
     expected_d = compact_vertex_sum_form(
         coupling=gD,
         ps=[q1, q2, q3, q4],
-        derivative_indices=[mu, nu],
+        derivative_indices=[S("mu1_int"), S("mu2_int")],
         derivative_targets=[0, 1],
         d=d,
         field_species=[PhiField.symbol] * 4,
@@ -363,7 +363,7 @@ def _run_scalar_tests():
     expected_d2 = compact_vertex_sum_form(
         coupling=gD2,
         ps=[q1, q2, q3, q4],
-        derivative_indices=[mu, mu],
+        derivative_indices=[S("mu1_int"), S("mu1_int")],
         derivative_targets=[0, 1],
         d=d,
         field_species=[PhiField.symbol] * 4,
@@ -403,10 +403,10 @@ def _run_fermion_tests():
     G12 = bis.g(S("i1"), S("i2")).to_expression()
     _check(got, I * yF * G12 * D3, "L-API: Yukawa")
 
-    # Vector current: psibar psi A → I*gV*gamma(i1,i2,i3)*D3
+    # Vector current: psibar psi A → I*gV*gamma(i1,i2,mu3)*D3
     L = _local_lagrangian(DECL_vec_current)
     got = L.feynman_rule(PsiField.bar, PsiField, GaugeField)
-    expected_vec = I * gV * gamma_matrix(S("i1"), S("i2"), S("i3")) * D3
+    expected_vec = I * gV * gamma_matrix(S("i1"), S("i2"), S("mu3")) * D3
     _check(got, expected_vec, "L-API: vector current")
 
     # Axial current: psibar gamma^mu gamma5 psi A
@@ -415,7 +415,7 @@ def _run_fermion_tests():
     expected_axial = (
         I
         * gV
-        * gamma_matrix(S("i1"), S("spinor_decl_3"), S("i3"))
+        * gamma_matrix(S("i1"), S("spinor_decl_3"), S("mu3"))
         * gamma5_matrix(S("spinor_decl_3"), S("i2"))
         * D3
     )
@@ -429,7 +429,7 @@ def _run_fermion_tests():
     expected_sp = (
         -I * g_psi4 * D4
         * (psi_bar_psi(S("i1"), S("i2")) * psi_bar_psi(S("i3"), S("i4"))
-           - psi_bar_psi(S("i1"), S("i4")) * psi_bar_psi(S("i3"), S("i2")))
+           + psi_bar_psi(S("i1"), S("i4")) * psi_bar_psi(S("i3"), S("i2")))
     )
     _check(got, expected_sp, "L-API: (psibar psi)^2")
 
@@ -441,7 +441,7 @@ def _run_fermion_tests():
     expected_jj = (
         2 * I * gJJ * D4
         * (gamma_matrix(S("i1"), S("i2"), mu) * gamma_matrix(S("i3"), S("i4"), mu)
-           - gamma_matrix(S("i1"), S("i4"), mu) * gamma_matrix(S("i3"), S("i2"), mu))
+           + gamma_matrix(S("i1"), S("i4"), mu) * gamma_matrix(S("i3"), S("i2"), mu))
     )
     _check(got, expected_jj, "L-API: current-current")
 
@@ -460,19 +460,19 @@ def _run_mixed_derivative_tests():
     # d_mu psibar
     L = _local_lagrangian(DECL_dpsibar)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
-    _check(got, yF * pcomp(q1, mu) * G12 * D4, "L-API: d_mu psibar * psi * phi * chi")
+    _check(got, yF * pcomp(q1, S("mu1_int")) * G12 * D4, "L-API: d_mu psibar * psi * phi * chi")
 
     # d_nu psi
     L = _local_lagrangian(DECL_dpsi)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
-    _check(got, yF * pcomp(q2, nu) * G12 * D4, "L-API: psibar * d_nu psi * phi * chi")
+    _check(got, yF * pcomp(q2, S("mu1_int")) * G12 * D4, "L-API: psibar * d_nu psi * phi * chi")
 
     # (d_mu phi)(d_nu chi)
     L = _local_lagrangian(DECL_dphi_dchi)
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(
         got,
-        -I * yF * pcomp(q3, mu) * pcomp(q4, nu) * G12 * D4,
+        -I * yF * pcomp(q3, S("mu1_int")) * pcomp(q4, S("mu2_int")) * G12 * D4,
         "L-API: psibar * psi * (d_mu phi)(d_nu chi)",
     )
 
@@ -481,7 +481,7 @@ def _run_mixed_derivative_tests():
     got = L.feynman_rule(PsiField.bar, PsiField, PhiField, ChiField)
     _check(
         got,
-        -I * g1 * G12 * D4 * pcomp(q3, mu) * pcomp(q3, mu),
+        -I * g1 * G12 * D4 * pcomp(q3, S("mu1_int")) * pcomp(q3, S("mu1_int")),
         "L-API: g1 * psibar psi (d^2 phi) chi",
     )
 
@@ -491,8 +491,8 @@ def _run_mixed_derivative_tests():
     _check(
         got,
         2 * I * g2 * G12 * D4
-        * pcomp(q3, mu) * pcomp(q3, nu)
-        * pcomp(q4, mu) * pcomp(q4, nu),
+        * pcomp(q3, S("mu1_int")) * pcomp(q3, S("mu2_int"))
+        * pcomp(q4, S("mu1_int")) * pcomp(q4, S("mu2_int")),
         "L-API: g2 * psibar psi (d_mu d_nu phi)^2",
     )
 
@@ -507,12 +507,12 @@ def _run_gauge_ready_tests():
     print("\n  --- Gauge-ready vertices (Lagrangian API) ---")
 
     # Quark-gluon:
-    # QuarkField.bar → i1=spinor, i2=color_fund
-    # QuarkField     → i3=spinor, i4=color_fund
-    # GluonField     → i5=lorentz, i6=color_adj
+    # QuarkField.bar → i1=spinor, c1=color_fund
+    # QuarkField     → i2=spinor, c2=color_fund
+    # GluonField     → mu3=lorentz, a3=color_adj
     L = _local_lagrangian(DECL_quark_gluon)
     got = L.feynman_rule(QuarkField.bar, QuarkField, GluonField)
-    expected_qg = I * gS * quark_gluon_current(S("i1"), S("i3"), S("i5"), S("i6"), S("i2"), S("i4")) * D3
+    expected_qg = I * gS * quark_gluon_current(S("i1"), S("i2"), S("mu3"), S("a3"), S("c1"), S("c2")) * D3
     _check(got, expected_qg, "L-API: quark-gluon")
 
     # Complex scalar current: phiC^dag, phiC, A → non-zero
@@ -524,7 +524,7 @@ def _run_gauge_ready_tests():
     # Complex scalar contact: phiC^dag, phiC, A, A
     L_ct = _local_lagrangian(DECL_complex_scalar_contact)
     got_ct = L_ct.feynman_rule(PhiCField.bar, PhiCField, GaugeField, GaugeField)
-    expected_ct = 2 * I * gPhiAA * scalar_gauge_contact(S("i1"), S("i2")) * D4
+    expected_ct = 2 * I * gPhiAA * scalar_gauge_contact(S("mu3"), S("mu4")) * D4
     _check(got_ct, expected_ct, "L-API: complex scalar contact")
 
     print("\n  Gauge-ready tests passed.\n")
@@ -543,7 +543,7 @@ def _run_compiled_minimal_tests():
     got = L_qcd.feynman_rule(QuarkField.bar, QuarkField, GluonField)
     expected_qcd = (
         -I * gS
-        * quark_gluon_current(S("i1"), S("i3"), S("i5"), S("i6"), S("i2"), S("i4"))
+        * quark_gluon_current(S("i1"), S("i2"), S("mu3"), S("a3"), S("c1"), S("c2"))
         * D3
     )
     _check(got, expected_qcd, "L-API minimal: QCD quark-gluon")
@@ -552,7 +552,7 @@ def _run_compiled_minimal_tests():
     compiled_qed = compile_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
     L_qed = Lagrangian(terms=compiled_qed)
     got = L_qed.feynman_rule(PsiQEDField.bar, PsiQEDField, GaugeField)
-    expected_qed = -I * eQED * qPsi * gamma_matrix(S("i1"), S("i2"), S("i3")) * D3
+    expected_qed = -I * eQED * qPsi * gamma_matrix(S("i1"), S("i2"), S("mu3")) * D3
     _check(got, expected_qed, "L-API minimal: QED fermion")
 
     # Scalar QED current (3pt) and contact (4pt)
@@ -562,7 +562,7 @@ def _run_compiled_minimal_tests():
     expected_sc_qed_3pt = I * eQED * qPhi * (pcomp(q2, mu) - pcomp(q1, mu)) * D3
     _check(got_3pt, expected_sc_qed_3pt, "L-API minimal: scalar QED current")
     got_4pt = L_sc_qed.feynman_rule(PhiQEDField.bar, PhiQEDField, GaugeField, GaugeField)
-    expected_sc_qed_4pt = 2 * I * (eQED ** 2) * (qPhi ** 2) * scalar_gauge_contact(S("i1"), S("i2")) * D4
+    expected_sc_qed_4pt = 2 * I * (eQED ** 2) * (qPhi ** 2) * scalar_gauge_contact(S("mu3"), S("mu4")) * D4
     _check(got_4pt, expected_sc_qed_4pt, "L-API minimal: scalar QED contact")
 
     # Scalar QCD current (3pt) and contact (4pt)
@@ -570,7 +570,7 @@ def _run_compiled_minimal_tests():
     L_sc_qcd = Lagrangian(terms=compiled_sc_qcd)
     got_3pt = L_sc_qcd.feynman_rule(PhiQCDField.bar, PhiQCDField, GluonField)
     expected_sc_qcd_3pt = (
-        I * gS * gauge_generator(S("i4"), S("i1"), S("i2"))
+        I * gS * gauge_generator(S("a3"), S("c1"), S("c2"))
         * (pcomp(q2, mu) - pcomp(q1, mu))
         * D3
     )
@@ -578,9 +578,9 @@ def _run_compiled_minimal_tests():
     got_4pt = L_sc_qcd.feynman_rule(PhiQCDField.bar, PhiQCDField, GluonField, GluonField)
     expected_sc_qcd_4pt = (
         I * (gS ** 2)
-        * scalar_gauge_contact(S("i3"), S("i5"))
+        * scalar_gauge_contact(S("mu3"), S("mu4"))
         * _symmetrized_generator_contact(
-            S("i4"), S("i6"), S("i1"), S("i2"), S("c_mid_PhiQCD_SU3C"),
+            S("a3"), S("a4"), S("c1"), S("c2"), S("c_mid_PhiQCD_SU3C"),
         )
         * D4
     )
@@ -596,11 +596,11 @@ def _run_compiled_minimal_tests():
 
     compiled_bislot = compile_minimal_gauge_interactions(MODEL_SCALAR_QCD_BISLOT_BASE)
     L_bislot = Lagrangian(terms=compiled_bislot)
-    spectator_identity = COLOR_FUND_INDEX.representation.g(S("i2"), S("i4")).to_expression()
+    spectator_identity = COLOR_FUND_INDEX.representation.g(S("c1_2"), S("c2_2")).to_expression()
     got_bislot = L_bislot.feynman_rule(PhiBiField.bar, PhiBiField, GluonField)
     expected_bislot = (
         I * gS
-        * gauge_generator(S("i6"), S("i1"), S("i3"))
+        * gauge_generator(S("a3"), S("c1"), S("c2"))
         * spectator_identity
         * (pcomp(q2, mu) - pcomp(q1, mu))
         * D3
@@ -914,15 +914,15 @@ def _run_tensor_canonicalization_tests():
 
     canon_contact = _canonized_gauge_vertex(
         raw_contact,
-        lorentz_indices=(S("i3"), S("i5")),
-        adjoint_indices=(S("i4"), S("i6")),
-        color_fund_indices=(S("i1"), S("i2"), S("c_mid_PhiQCD_SU3C")),
+        lorentz_indices=(S("mu3"), S("mu4")),
+        adjoint_indices=(S("a3"), S("a4")),
+        color_fund_indices=(S("c1"), S("c2"), S("c_mid_PhiQCD_SU3C")),
     )
     canon_contact_renamed = _canonized_gauge_vertex(
         renamed_contact,
-        lorentz_indices=(S("i3"), S("i5")),
-        adjoint_indices=(S("i4"), S("i6")),
-        color_fund_indices=(S("i1"), S("i2"), alt_dummy),
+        lorentz_indices=(S("mu3"), S("mu4")),
+        adjoint_indices=(S("a3"), S("a4")),
+        color_fund_indices=(S("c1"), S("c2"), alt_dummy),
     )
     _check(canon_contact, canon_contact_renamed, "Tensor canon: scalar QCD contact dummy-label invariance")
 
@@ -1668,7 +1668,7 @@ def _run_all_tests():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run Lagrangian API examples and tests.")
+    parser = argparse.ArgumentParser(description="Run Lagrangian API examples.")
     parser.add_argument(
         "--suite",
         choices=(
@@ -1677,7 +1677,11 @@ if __name__ == "__main__":
         ),
         default="all",
     )
-    parser.add_argument("--skip-tests", action="store_true")
+    parser.add_argument(
+        "--skip-tests",
+        action="store_true",
+        help="Ignored compatibility flag; validation now lives under tests/.",
+    )
     parser.add_argument(
         "--no-demo",
         action="store_true",
@@ -1687,33 +1691,3 @@ if __name__ == "__main__":
 
     if not args.no_demo:
         _run_demo(args.suite)
-
-    if not args.skip_tests:
-        if args.suite == "all":
-            _run_all_tests()
-        elif args.suite == "scalar":
-            _run_scalar_tests()
-        elif args.suite == "fermion":
-            _run_fermion_tests()
-        elif args.suite == "mixed":
-            _run_mixed_derivative_tests()
-        elif args.suite == "gauge":
-            _run_gauge_ready_tests()
-        elif args.suite == "minimal":
-            _run_compiled_minimal_tests()
-        elif args.suite == "covariant":
-            _run_covariant_tests()
-        elif args.suite == "puregauge":
-            _run_pure_gauge_tests()
-        elif args.suite == "gaugefix":
-            _run_gauge_fixing_tests()
-        elif args.suite == "ghost":
-            _run_ghost_tests()
-        elif args.suite == "full":
-            _run_full_gauge_fixed_tests()
-        elif args.suite == "cross":
-            _run_cross_checks()
-        elif args.suite == "tensor":
-            _run_tensor_canonicalization_tests()
-        elif args.suite == "role":
-            _run_role_regression_tests()

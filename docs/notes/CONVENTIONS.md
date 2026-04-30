@@ -24,6 +24,21 @@ Applies to:
 - with `include_delta=True`, the phase becomes `(2*pi)^d Delta(sum p)`
 - with `strip_externals=True`, external `U`, `UF`, and `UbarF` factors are amputated from the displayed result
 
+## Multi-fermion sign rule
+
+- generic fermionic Wick sums still use the flat Grassmann sign from the
+  permutation restricted to fermion slots
+- one exception is now part of the frozen behavior:
+  - if an interaction term is explicitly known to be a complete product of
+    closed Dirac bilinears `psibar ... psi`, covering all Dirac fermion slots
+    exactly once, the compatible pairings use the FeynRules-style bilinear
+    convention with common `+` relative signs
+- this exception is metadata-driven:
+  - lowering / compiler code marks the closed bilinears
+  - vertex extraction consumes that provenance
+- generic open multi-fermion tensors do not use this shortcut and keep the old
+  flat Grassmann sign
+
 ## Matter covariant derivative convention
 
 `D_mu = partial_mu + i g A_mu`
