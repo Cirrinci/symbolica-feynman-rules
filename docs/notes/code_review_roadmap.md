@@ -434,18 +434,18 @@ Recommended implementation shape:
   - Wrong factors in kinetic terms propagate into every vertex and can silently rescale the whole model.
   - This is one of the first checks physics users expect before trusting derived Feynman rules.
 - Minimum viable check:
-  - Recognize canonical two-point structures for:
-    - scalar: `PartialD(phi.bar, mu) * PartialD(phi, mu)`
-    - fermion: `I * psibar * Gamma(mu) * PartialD(psi, mu)`
-    - vector: `-(1/4) F_{mu nu} F^{mu nu}`
-  - Flag unexpected overall coefficients or duplicate canonical kinetic terms.
+  - Validate the normalized declaration objects that already encode kinetic intent:
+    - `ComplexScalarKineticTerm`
+    - `DiracKineticTerm`
+    - `GaugeKineticTerm`
+  - Flag unexpected overall coefficients or duplicate declaration-level kinetic terms.
 - First implementation target:
-  - Run on compiled two-point interaction terms and compare extracted coefficients against convention-locked templates.
-  - Treat gauge-only legacy kinetic declarations separately from full declarative `CovD(...)` operators.
+  - Stay conservative and metadata-driven: inspect declaration-level kinetic terms before compilation rather than trying to infer operator classes from compiled vertices.
+  - Skip ambiguous symbolic coefficients instead of guessing.
 - Good first tests:
-  - canonical QED/QCD kinetic sectors pass;
+  - canonical declaration-level scalar / fermion / gauge kinetic terms pass;
   - scalar kinetic term with coefficient `2` fails;
-  - doubled vector bilinear fails.
+  - duplicated kinetic declarations fail.
 - Implemented API:
   - `Model.validate() -> ValidationReport`
     - returns structured issues only
@@ -457,8 +457,17 @@ Recommended implementation shape:
   - [x] explicit gauge kinetic declaration with coefficient exactly `1` passes
   - [x] explicit scalar / fermion / gauge kinetic declaration with an explicit non-unit numeric coefficient reports `kinetic_normalization`
   - [x] duplicate scalar / fermion / gauge kinetic declarations with the same field and gauge-group selection report `duplicate_kinetic_term`
+  - [ ] arbitrary local kinetic expressions such as `PartialD(phi, mu) * PartialD(phi, mu)`
+  - [ ] real-scalar `1/2` normalization checks outside explicitly supported dedicated declarations
   - [ ] compiled two-point pattern matching against convention-locked templates
   - [ ] broader ambiguous / EFT-style operator classification
+- Clarified current scope:
+  - Implemented today:
+    - declaration-level coefficient and duplicate diagnostics for `ComplexScalarKineticTerm`, `DiracKineticTerm`, and `GaugeKineticTerm`
+  - Not implemented yet:
+    - recognizing compiled two-point kinetic structures,
+    - recognizing arbitrary local kinetic monomials built directly from `PartialD(...)`,
+    - validating real-scalar `1/2` normalization unless a dedicated supported declaration path is added for it.
 - Example diagnostics:
   - `ValidationIssue(code='kinetic_normalization', message=\"Complex-scalar kinetic term for field 'Phi' has non-canonical coefficient 2; expected 1.\")`
   - `ValidationIssue(code='duplicate_kinetic_term', message=\"Duplicate complex-scalar kinetic declarations found for field 'Phi' with gauge-group selection ('__auto__',).\")`
