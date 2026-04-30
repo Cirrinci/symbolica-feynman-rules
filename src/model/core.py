@@ -290,6 +290,75 @@ class Model:
                     "in model.fields.",
                 )
 
+        def normalize_explicit_groups(group_target):
+            if group_target is None:
+                return None
+            if isinstance(group_target, (tuple, list)):
+                return tuple(group_target)
+            return (group_target,)
+
+        def field_index_names(field: Field) -> str:
+            if not field.indices:
+                return "(none)"
+            return ", ".join(index.name for index in field.indices)
+
+        def representation_index_names(gauge_group: GaugeGroup) -> str:
+            if not gauge_group.representations:
+                return "(none)"
+            return ", ".join(rep.index.name for rep in gauge_group.representations)
+
+        for term in self.all_covariant_terms():
+            field = self.find_field(term.field)
+            if field is None:
+                continue
+
+            explicit_groups = normalize_explicit_groups(term.gauge_group)
+            if explicit_groups is None:
+                candidate_groups = tuple(group for group in self.gauge_groups if not group.abelian)
+            else:
+                candidate_groups = []
+                for group_target in explicit_groups:
+                    gauge_group = self.find_gauge_group(group_target)
+                    if gauge_group is None:
+                        add_issue(
+                            "undeclared_gauge_group",
+                            "Covariant validation could not resolve gauge group "
+                            f"{group_target!r} in model.gauge_groups.",
+                        )
+                        continue
+                    candidate_groups.append(gauge_group)
+                candidate_groups = tuple(candidate_groups)
+
+            for gauge_group in candidate_groups:
+                if gauge_group.abelian:
+                    continue
+
+                try:
+                    rep_info = gauge_group.matter_representation_and_slots(field)
+                except ValueError as exc:
+                    if explicit_groups is None and not any(
+                        rep.index == field_index
+                        for rep in gauge_group.representations
+                        for field_index in field.indices
+                    ):
+                        continue
+                    add_issue(
+                        "gauge_representation_resolution",
+                        "Covariant validation could not resolve the representation metadata "
+                        f"for field {field.name!r} under gauge group {gauge_group.name!r}: {exc}",
+                    )
+                    continue
+
+                if rep_info is None and explicit_groups is not None:
+                    add_issue(
+                        "missing_gauge_representation",
+                        "Covariant validation requires field "
+                        f"{field.name!r} to carry a declared representation under "
+                        f"gauge group {gauge_group.name!r}. Field indices: "
+                        f"{field_index_names(field)}. Declared representation indices: "
+                        f"{representation_index_names(gauge_group)}.",
+                    )
+
         return ValidationReport(issues=tuple(issues))
 
     def lagrangian(self) -> CompiledLagrangian:

@@ -494,10 +494,14 @@ Recommended implementation shape:
   - [x] ghost lagrangian declared for an abelian gauge group
   - [x] non-abelian ghost lagrangian declared without a callable `structure_constant`
   - [x] ghost lagrangian declared without a declared `ghost_field`
-  - [ ] representation-slot / representation-mismatch diagnostics before extraction
+  - [x] explicit non-abelian covariant term with invalid / unresolved representation metadata
+  - [x] explicit non-abelian covariant term with no matching declared representation
+  - [ ] broader automatic-coupling / representation-slot diagnostics for every possible inferred gauge action
 - Example diagnostics:
   - `ValidationIssue(code='missing_ghost_field', message=\"Ghost validation requires gauge group 'SU3C' to declare ghost_field.\")`
   - `ValidationIssue(code='abelian_ghost_sector', message=\"Ghost validation only supports non-abelian gauge groups; got 'U1QED'.\")`
+  - `ValidationIssue(code='gauge_representation_resolution', message=\"Covariant validation could not resolve the representation metadata for field 'q' under gauge group 'SU3C': GaugeRepresentation(slot=3) is out of range for field 'q'.\")`
+  - `ValidationIssue(code='missing_gauge_representation', message=\"Covariant validation requires field 'PhiSinglet' to carry a declared representation under gauge group 'SU3C'. ...\")`
 - Tests:
   - `tests/test_model_validation.py::test_model_validate_reports_missing_ghost_field`
     - Passes.
@@ -508,6 +512,12 @@ Recommended implementation shape:
   - `tests/test_model_validation.py::test_model_validate_reports_missing_structure_constant_for_nonabelian_ghosts`
     - Passes.
   - `tests/test_model_validation.py::test_model_validate_accepts_valid_nonabelian_ghost_and_gauge_fixing_setup`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_accepts_valid_nonabelian_representation_usage`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_reports_invalid_representation_slot`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_reports_missing_nonabelian_representation_for_explicit_term`
     - Passes.
 
 ### 6.5 Mass-Spectrum Consistency

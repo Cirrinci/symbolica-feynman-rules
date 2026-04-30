@@ -9,9 +9,20 @@ sys.path.insert(0, str(SRC))
 
 from symbolica import S  # noqa: E402
 
-from model import GaugeFixing, GaugeGroup, GhostLagrangian, Model  # noqa: E402
-from symbolic.spenso_structures import structure_constant  # noqa: E402
-from tests.support.builders import make_ghost, make_gluon, make_photon  # noqa: E402
+from model import (  # noqa: E402
+    COLOR_FUND_INDEX,
+    DiracKineticTerm,
+    ComplexScalarKineticTerm,
+    Field,
+    GaugeFixing,
+    GaugeGroup,
+    GaugeRepresentation,
+    GhostLagrangian,
+    Model,
+    SPINOR_INDEX,
+)
+from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
+from tests.support.builders import make_dirac_fermion, make_ghost, make_gluon, make_photon  # noqa: E402
 
 
 def test_model_validate_reports_missing_ghost_field():
@@ -138,3 +149,91 @@ def test_model_validate_accepts_valid_nonabelian_ghost_and_gauge_fixing_setup():
 
     assert report.ok
     assert report.issues == ()
+
+
+def test_model_validate_accepts_valid_nonabelian_representation_usage():
+    quark = make_dirac_fermion("q", symbol=S("q"), conjugate_symbol=S("qbar"), color=True)
+    gluon = make_gluon(symbol=S("G"))
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fund",
+            ),
+        ),
+    )
+    model = Model(gauge_groups=(su3,), fields=(quark, gluon))
+    model.covariant_terms = (DiracKineticTerm(field=quark, gauge_group=su3),)
+
+    report = model.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_model_validate_reports_invalid_representation_slot():
+    quark = make_dirac_fermion("q", symbol=S("q"), conjugate_symbol=S("qbar"), color=True)
+    gluon = make_gluon(symbol=S("G"))
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fund",
+                slot=3,
+            ),
+        ),
+    )
+    model = Model(gauge_groups=(su3,), fields=(quark, gluon))
+    model.covariant_terms = (DiracKineticTerm(field=quark, gauge_group=su3),)
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["gauge_representation_resolution"]
+    assert "out of range" in report.issues[0].message
+
+
+def test_model_validate_reports_missing_nonabelian_representation_for_explicit_term():
+    scalar = Field(
+        "PhiSinglet",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phi_singlet"),
+        conjugate_symbol=S("phidag_singlet"),
+    )
+    gluon = make_gluon(symbol=S("G"))
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fund",
+            ),
+        ),
+    )
+    model = Model(gauge_groups=(su3,), fields=(scalar, gluon))
+    model.covariant_terms = (ComplexScalarKineticTerm(field=scalar, gauge_group=su3),)
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["missing_gauge_representation"]
+    assert "PhiSinglet" in report.issues[0].message
+    assert "ColorFund" in report.issues[0].message
