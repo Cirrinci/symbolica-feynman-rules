@@ -11,18 +11,19 @@ from symbolica import S  # noqa: E402
 
 from model import (  # noqa: E402
     COLOR_FUND_INDEX,
-    DiracKineticTerm,
     ComplexScalarKineticTerm,
+    DiracKineticTerm,
     Field,
     GaugeFixing,
     GaugeGroup,
+    GaugeKineticTerm,
     GaugeRepresentation,
     GhostLagrangian,
     Model,
     SPINOR_INDEX,
 )
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
-from tests.support.builders import make_dirac_fermion, make_ghost, make_gluon, make_photon  # noqa: E402
+from tests.support.builders import make_complex_scalar, make_dirac_fermion, make_ghost, make_gluon, make_photon  # noqa: E402
 
 
 def test_model_validate_reports_missing_ghost_field():
@@ -143,6 +144,78 @@ def test_model_validate_accepts_valid_nonabelian_ghost_and_gauge_fixing_setup():
         gauge_groups=(su3,),
         fields=(gluon, ghost),
         lagrangian_decl=GaugeFixing(su3, xi=S("xiQCD")) + GhostLagrangian(su3),
+    )
+
+    report = model.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_model_validate_accepts_canonical_scalar_kinetic_term():
+    scalar = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
+    model = Model(fields=(scalar,), lagrangian_decl=ComplexScalarKineticTerm(field=scalar))
+
+    report = model.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_model_validate_reports_noncanonical_scalar_kinetic_normalization():
+    scalar = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
+    model = Model(
+        fields=(scalar,),
+        lagrangian_decl=ComplexScalarKineticTerm(field=scalar, coefficient=2),
+    )
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["kinetic_normalization"]
+    assert "non-canonical coefficient 2" in report.issues[0].message
+
+
+def test_model_validate_reports_duplicate_scalar_kinetic_term():
+    scalar = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
+    model = Model(
+        fields=(scalar,),
+        lagrangian_decl=(
+            ComplexScalarKineticTerm(field=scalar)
+            + ComplexScalarKineticTerm(field=scalar)
+        ),
+    )
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["duplicate_kinetic_term"]
+    assert "Duplicate complex-scalar kinetic declarations" in report.issues[0].message
+
+
+def test_model_validate_accepts_canonical_dirac_kinetic_term():
+    fermion = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
+    model = Model(fields=(fermion,), lagrangian_decl=DiracKineticTerm(field=fermion))
+
+    report = model.validate()
+
+    assert report.ok
+    assert report.issues == ()
+
+
+def test_model_validate_accepts_canonical_vector_kinetic_term():
+    gluon = make_gluon(symbol=S("G"))
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        structure_constant=structure_constant,
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=GaugeKineticTerm(gauge_group=su3),
     )
 
     report = model.validate()

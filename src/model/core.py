@@ -239,6 +239,110 @@ class Model:
             if issue not in issues:
                 issues.append(issue)
 
+        def coefficient_status(value):
+            if value == 1:
+                return True
+            if isinstance(value, bool):
+                return True if value else False
+            if isinstance(value, (int, float)):
+                return value == 1
+            if hasattr(value, "numerator") and hasattr(value, "denominator"):
+                return value == 1
+            if hasattr(value, "to_canonical_string"):
+                text = value.to_canonical_string()
+                if text == "1":
+                    return True
+                if any(ch.isalpha() for ch in text):
+                    return None
+                return False
+            return None
+
+        def normalize_group_target(target):
+            if target is None:
+                return ("__auto__",)
+            if isinstance(target, (tuple, list)):
+                items = tuple(target)
+            else:
+                items = (target,)
+
+            normalized = []
+            for item in items:
+                gauge_group = self.find_gauge_group(item)
+                if gauge_group is not None:
+                    normalized.append(gauge_group.name)
+                elif isinstance(item, GaugeGroup):
+                    normalized.append(item.name)
+                else:
+                    normalized.append(repr(item))
+            return tuple(normalized)
+
+        def field_name(target) -> str:
+            field = self.find_field(target)
+            if field is not None:
+                return field.name
+            if isinstance(target, Field):
+                return target.name
+            return repr(target)
+
+        kinetic_duplicates: dict[tuple[object, ...], int] = {}
+
+        for term in self.all_covariant_terms():
+            if isinstance(term, DiracKineticTerm):
+                kind_label = "Dirac"
+                duplicate_key = ("dirac", field_name(term.field), normalize_group_target(term.gauge_group))
+            else:
+                kind_label = "complex-scalar"
+                duplicate_key = ("scalar", field_name(term.field), normalize_group_target(term.gauge_group))
+
+            kinetic_duplicates[duplicate_key] = kinetic_duplicates.get(duplicate_key, 0) + 1
+
+            status = coefficient_status(term.coefficient)
+            if status is False:
+                add_issue(
+                    "kinetic_normalization",
+                    f"{kind_label} kinetic term for field {field_name(term.field)!r} "
+                    f"has non-canonical coefficient {term.coefficient!r}; expected 1.",
+                )
+
+        for term in self.all_gauge_kinetic_terms():
+            duplicate_key = ("vector", normalize_group_target(term.gauge_group))
+            kinetic_duplicates[duplicate_key] = kinetic_duplicates.get(duplicate_key, 0) + 1
+
+            status = coefficient_status(term.coefficient)
+            if status is False:
+                group = self.find_gauge_group(term.gauge_group)
+                group_name = group.name if group is not None else repr(term.gauge_group)
+                add_issue(
+                    "kinetic_normalization",
+                    f"Gauge kinetic term for gauge group {group_name!r} has "
+                    f"non-canonical coefficient {term.coefficient!r}; expected 1.",
+                )
+
+        for key, count in kinetic_duplicates.items():
+            if count <= 1:
+                continue
+
+            if key[0] == "dirac":
+                _, field_label, groups = key
+                add_issue(
+                    "duplicate_kinetic_term",
+                    f"Duplicate Dirac kinetic declarations found for field {field_label!r} "
+                    f"with gauge-group selection {groups}.",
+                )
+            elif key[0] == "scalar":
+                _, field_label, groups = key
+                add_issue(
+                    "duplicate_kinetic_term",
+                    f"Duplicate complex-scalar kinetic declarations found for field {field_label!r} "
+                    f"with gauge-group selection {groups}.",
+                )
+            else:
+                _, groups = key
+                add_issue(
+                    "duplicate_kinetic_term",
+                    f"Duplicate gauge kinetic declarations found for gauge-group selection {groups}.",
+                )
+
         for term in self.all_gauge_fixing_terms():
             gauge_group = self.find_gauge_group(term.gauge_group)
             if gauge_group is None:

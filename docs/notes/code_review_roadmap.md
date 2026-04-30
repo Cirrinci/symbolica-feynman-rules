@@ -429,7 +429,7 @@ Recommended implementation shape:
 
 ### 6.2 Kinetic Normalization
 
-- [ ] Check canonical normalization of scalar, fermion, and vector kinetic terms.
+- [x] Add an initial pattern-based kinetic normalization validation pass.
 - Why it matters:
   - Wrong factors in kinetic terms propagate into every vertex and can silently rescale the whole model.
   - This is one of the first checks physics users expect before trusting derived Feynman rules.
@@ -446,6 +446,33 @@ Recommended implementation shape:
   - canonical QED/QCD kinetic sectors pass;
   - scalar kinetic term with coefficient `2` fails;
   - doubled vector bilinear fails.
+- Implemented API:
+  - `Model.validate() -> ValidationReport`
+    - returns structured issues only
+    - does not modify or normalize terms
+    - does not change compilation or extraction behavior
+- Implemented checks:
+  - [x] explicit complex-scalar kinetic declaration with coefficient exactly `1` passes
+  - [x] explicit Dirac kinetic declaration with coefficient exactly `1` passes
+  - [x] explicit gauge kinetic declaration with coefficient exactly `1` passes
+  - [x] explicit scalar / fermion / gauge kinetic declaration with an explicit non-unit numeric coefficient reports `kinetic_normalization`
+  - [x] duplicate scalar / fermion / gauge kinetic declarations with the same field and gauge-group selection report `duplicate_kinetic_term`
+  - [ ] compiled two-point pattern matching against convention-locked templates
+  - [ ] broader ambiguous / EFT-style operator classification
+- Example diagnostics:
+  - `ValidationIssue(code='kinetic_normalization', message=\"Complex-scalar kinetic term for field 'Phi' has non-canonical coefficient 2; expected 1.\")`
+  - `ValidationIssue(code='duplicate_kinetic_term', message=\"Duplicate complex-scalar kinetic declarations found for field 'Phi' with gauge-group selection ('__auto__',).\")`
+- Tests:
+  - `tests/test_model_validation.py::test_model_validate_accepts_canonical_scalar_kinetic_term`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_reports_noncanonical_scalar_kinetic_normalization`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_reports_duplicate_scalar_kinetic_term`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_accepts_canonical_dirac_kinetic_term`
+    - Passes.
+  - `tests/test_model_validation.py::test_model_validate_accepts_canonical_vector_kinetic_term`
+    - Passes.
 
 ### 6.3 Mass Structure / Diagonalization
 
