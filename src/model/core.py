@@ -23,7 +23,7 @@ from .lowering import (
     _analyze_declared_source_term,
     _unsupported_declared_source_term_error,
 )
-from .metadata import Field, GaugeGroup, Parameter
+from .metadata import Field, GaugeGroup, Parameter, ParameterAssumptions
 
 
 ValidationSeverity = Literal["error", "warning"]
@@ -206,6 +206,41 @@ class Model:
                 return gauge_group
         return None
 
+    def find_parameter(self, target) -> Optional[Parameter]:
+        """Resolve a parameter by object identity, declaration name, or symbol."""
+        if isinstance(target, Parameter):
+            for parameter in self.parameters:
+                if parameter is target:
+                    return parameter
+            return None
+        if target is None:
+            return None
+
+        if hasattr(target, "to_canonical_string"):
+            target_text = target.to_canonical_string()
+        else:
+            target_text = str(target)
+
+        for parameter in self.parameters:
+            if parameter.name == target_text:
+                return parameter
+            symbol = parameter.symbol
+            if hasattr(symbol, "to_canonical_string"):
+                symbol_text = symbol.to_canonical_string()
+            else:
+                symbol_text = str(symbol)
+            if symbol_text == target_text:
+                return parameter
+        return None
+
+    def parameter_assumptions(self, target) -> Optional[ParameterAssumptions]:
+        """Return structured assumptions for one declared parameter."""
+
+        parameter = self.find_parameter(target)
+        if parameter is None:
+            return None
+        return parameter.assumptions()
+
     def gauge_boson_field(self, gauge_group: GaugeGroup) -> Field:
         """Resolve the gauge boson field declared for a gauge group."""
         if isinstance(gauge_group.gauge_boson, Field):
@@ -248,6 +283,9 @@ class Model:
                 return value == 1
             if hasattr(value, "numerator") and hasattr(value, "denominator"):
                 return value == 1
+            assumptions = self.parameter_assumptions(value)
+            if assumptions is not None:
+                return None
             if hasattr(value, "to_canonical_string"):
                 text = value.to_canonical_string()
                 if text == "1":

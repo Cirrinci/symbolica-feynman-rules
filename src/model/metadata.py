@@ -250,8 +250,30 @@ class GaugeGroup:
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
+class ParameterAssumptions:
+    """Structured parameter metadata exposed to validation and reporting."""
+
+    name: str
+    symbol: object
+    indices: tuple[IndexType, ...]
+    real: bool
+    complex: bool
+    internal: bool
+    external: bool
+    has_value: bool
+    value: object = None
+
+
+@dataclass(frozen=True)
 class Parameter:
-    """Model parameter (coupling constant, mass, Yukawa matrix, ...)."""
+    """Model parameter (coupling constant, mass, Yukawa matrix, ...).
+
+    ``complex_param`` records whether the parameter should be treated as
+    complex-valued by default. ``internal`` distinguishes derived/internal
+    parameters from external user inputs. ``value`` is optional and may be
+    numeric or symbolic; this first pass only stores it as metadata and does
+    not trigger automatic evaluation.
+    """
     name: str
     symbol: object = None
     indices: tuple[IndexType, ...] = ()
@@ -262,6 +284,41 @@ class Parameter:
     def __post_init__(self):
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
+
+    @property
+    def is_real(self) -> bool:
+        return not self.complex_param
+
+    @property
+    def is_complex(self) -> bool:
+        return bool(self.complex_param)
+
+    @property
+    def is_internal(self) -> bool:
+        return bool(self.internal)
+
+    @property
+    def is_external(self) -> bool:
+        return not self.internal
+
+    @property
+    def has_value(self) -> bool:
+        return self.value is not None
+
+    def assumptions(self) -> ParameterAssumptions:
+        """Return a structured summary of the parameter metadata."""
+
+        return ParameterAssumptions(
+            name=self.name,
+            symbol=self.symbol,
+            indices=self.indices,
+            real=self.is_real,
+            complex=self.is_complex,
+            internal=self.is_internal,
+            external=self.is_external,
+            has_value=self.has_value,
+            value=self.value,
+        )
 
 
 # ---------------------------------------------------------------------------

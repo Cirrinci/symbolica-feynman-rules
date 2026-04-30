@@ -936,7 +936,44 @@ Suggested rollout order:
 
 - [ ] Turn `Parameter` into a real model component rather than a placeholder metadata object.
   - Current issue:
-    - `Parameter` exists in `src/model/metadata.py` but is not yet integrated into evaluation, validation, or dependency handling.
+    - `Parameter` existed only as a thin metadata dataclass and `Model.parameters`
+      was effectively inert: there was no lookup helper, no structured
+      assumptions object, and validation had no direct way to consult
+      parameter metadata.
+  - Implemented in the first infrastructure pass:
+    - `src/model/metadata.py`
+      - Added structured `ParameterAssumptions`.
+      - `Parameter` now exposes:
+        - `is_real` / `is_complex`
+        - `is_internal` / `is_external`
+        - `has_value`
+        - `assumptions()`
+      - The existing core metadata is now explicit and reusable:
+        - name / symbol
+        - indexed parameter slots
+        - real vs complex
+        - internal vs external
+        - optional stored value / defining expression
+    - `src/model/core.py`
+      - Added `Model.find_parameter(...)` lookup by:
+        - parameter identity
+        - parameter name
+        - parameter symbol
+      - Added `Model.parameter_assumptions(...)`.
+      - `Model.validate()` now consults parameter assumptions for exact
+        parameter coefficients in a behavior-neutral way. This does not
+        evaluate or rewrite coefficients; it only makes the metadata available
+        to future checks.
+  - Tests added:
+    - `tests/test_parameters.py::test_model_find_parameter_by_name_symbol_and_identity`
+    - `tests/test_parameters.py::test_parameter_assumptions_expose_real_complex_external_internal_and_value`
+    - `tests/test_parameters.py::test_parameter_properties_preserve_basic_metadata`
+    - `tests/test_parameters.py::test_validation_accepts_declared_parameter_metadata_without_behavior_change`
+  - Still open:
+    - dependency evaluation for internal parameters
+    - numerical substitution / parameter cards
+    - propagation of parameter assumptions into mass-spectrum consistency checks
+    - broader symbolic use of parameter assumptions in hermiticity and normalization diagnostics
 
 - [ ] Improve EFT scaling beyond explicit permutation sums.
   - Current issue:
