@@ -14,6 +14,19 @@ All checks run as assertions that can be invoked by ``pytest`` or
 ``python spenso_gamma_checks.py``.
 """
 
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+if __package__ in (None, ""):
+    ROOT = Path(__file__).resolve().parents[2]
+    SRC = ROOT / "src"
+    for path in (ROOT, SRC):
+        path_text = str(path)
+        if path_text not in sys.path:
+            sys.path.insert(0, path_text)
+
 from symbolica import Expression
 
 from symbolic.vertex_engine import (
