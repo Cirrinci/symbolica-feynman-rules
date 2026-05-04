@@ -22,7 +22,7 @@ keeps an explicit overall ``i``.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Optional
+from typing import Optional, Union
 
 from symbolica import S, Expression
 
@@ -345,7 +345,7 @@ class CovariantDerivativePartialPiece:
 class CovariantGaugeMetadata:
     gauge_group: GaugeGroup
     gauge_field: Field
-    representation: GaugeRepresentation | None
+    representation: Optional[GaugeRepresentation]
     representation_slots: tuple[int, ...]
     repeated_index: bool
     conjugated: bool
@@ -392,9 +392,9 @@ class _GaugeAction:
     gauge_lorentz_slot: int
     gauge_slot_labels: dict[int, object]
     coupling: object
-    representation: GaugeRepresentation | None = None
+    representation: Optional[GaugeRepresentation] = None
     representation_slot: Optional[int] = None
-    adjoint_label: object | None = None
+    adjoint_label: Optional[object] = None
 
     @classmethod
     def from_piece(
@@ -485,7 +485,7 @@ class _GaugeFieldLayout:
 
     field: Field
     lorentz_slot: int
-    adjoint_kind: str | None = None
+    adjoint_kind: Optional[str] = None
     adjoint_slot: Optional[int] = None
 
     @classmethod
@@ -1706,7 +1706,7 @@ def compile_complex_scalar_kinetic_term(
 
 def _compile_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
     *,
     include_free_bilinear: bool,
     spectators: tuple[tuple[Field, bool], ...] = (),
@@ -1727,7 +1727,7 @@ def _compile_covariant_core(
 
 def _compile_declared_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
     spectators: tuple[tuple[Field, bool], ...] = (),
 ) -> tuple[InteractionTerm, ...]:
     """Compile one declarative ``CovD`` monomial as the full kinetic operator."""
@@ -1745,7 +1745,7 @@ def _compile_declared_covariant_core(
 
 def _compile_legacy_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
 ) -> tuple[InteractionTerm, ...]:
     """Compile one legacy kinetic declaration as gauge-interaction-only."""
     return _compile_legacy_covariant_core_impl(

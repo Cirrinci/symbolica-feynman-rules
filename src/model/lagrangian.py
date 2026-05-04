@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+from typing import Optional, Union
 
 from symbolica import Expression, S
 
@@ -97,7 +98,7 @@ def _term_vertex_fields(term: InteractionTerm):
     return tuple(_field_arg_from_occurrence(occ) for occ in term.fields)
 
 
-def _normalize_field_filter_args(field_args, *, parameter_name: str) -> tuple[tuple[object, bool], ...] | None:
+def _normalize_field_filter_args(field_args, *, parameter_name: str) -> Optional[tuple[tuple[object, bool], ...]]:
     if field_args is None:
         return None
     try:
@@ -881,4 +882,4 @@ class DeclaredLagrangian:
             return "0"
         return " + ".join(str(term) for term in self.source_terms)
 
-CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
+CovariantTerm = Union[DiracKineticTerm, ComplexScalarKineticTerm]

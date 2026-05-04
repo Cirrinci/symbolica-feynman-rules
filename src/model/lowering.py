@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence, Union
 
 from symbolica import Expression, S
 
@@ -67,13 +67,13 @@ class AnalyzedSourceTerm:
     """
 
     term: object
-    interaction: InteractionTerm | None = None
-    covariant_core: DiracKineticTerm | ComplexScalarKineticTerm | None = None
+    interaction: Optional[InteractionTerm] = None
+    covariant_core: Optional[Union[DiracKineticTerm, ComplexScalarKineticTerm]] = None
     covariant_spectators: tuple[tuple[object, bool], ...] = ()
-    generic_covariant_monomial: _DeclaredMonomial | None = None
-    gauge_kinetic: GaugeKineticTerm | None = None
-    gauge_fixing: GaugeFixingTerm | None = None
-    ghost: GhostTerm | None = None
+    generic_covariant_monomial: Optional[_DeclaredMonomial] = None
+    gauge_kinetic: Optional[GaugeKineticTerm] = None
+    gauge_fixing: Optional[GaugeFixingTerm] = None
+    ghost: Optional[GhostTerm] = None
 
     @property
     def needs_compilation(self) -> bool:
@@ -90,7 +90,7 @@ class AnalyzedSourceTerm:
 
 def _match_covariant_monomial(
     term: _DeclaredMonomial,
-) -> tuple[DiracKineticTerm | ComplexScalarKineticTerm, tuple[tuple[object, bool], ...]] | None:
+) -> Optional[tuple[Union[DiracKineticTerm, ComplexScalarKineticTerm], tuple[tuple[object, bool], ...]]]:
     """Match one declarative ``CovD`` monomial and preserve any spectator fields.
 
     The exact Dirac/scalar covariant-core recognition lives in
@@ -152,7 +152,7 @@ class _LocalFieldEntry:
     labels: dict
 
 
-def _local_field_entry_from_factor(factor) -> _LocalFieldEntry | None:
+def _local_field_entry_from_factor(factor) -> Optional[_LocalFieldEntry]:
     if isinstance(factor, _FieldFactor):
         return _LocalFieldEntry(
             field=factor.field,
@@ -224,7 +224,7 @@ def _fresh_local_label(prefix: str, counters: dict[str, int]):
     return S(f"{prefix}_decl_{counters[prefix]}")
 
 
-def _single_slot_position(field_obj: Field, kind: str) -> int | None:
+def _single_slot_position(field_obj: Field, kind: str) -> Optional[int]:
     positions = field_obj.index_positions(kind=kind)
     if len(positions) != 1:
         return None
@@ -235,7 +235,7 @@ def _resolve_endpoint_slot(
     field_obj: Field,
     slot_label_map: Mapping[int, object],
     kind: str,
-) -> int | None:
+) -> Optional[int]:
     positions = field_obj.index_positions(kind=kind)
     if len(positions) == 1:
         return positions[0]
@@ -255,7 +255,7 @@ def _ensure_endpoint_labels(
     kind: str,
     counters: dict[str, int],
     distinct: bool,
-) -> tuple[object, object] | None:
+) -> Optional[tuple[object, object]]:
     left_slot = _resolve_endpoint_slot(
         field_entries[left_idx].field,
         slot_labels[left_idx],
@@ -684,7 +684,7 @@ def _lower_field_strength_monomial(term: _DeclaredMonomial):
     )
 
 
-def _analyze_declared_source_term(term) -> AnalyzedSourceTerm | None:
+def _analyze_declared_source_term(term) -> Optional[AnalyzedSourceTerm]:
     interaction = _source_term_interaction(term)
     if interaction is not None:
         return AnalyzedSourceTerm(term=term, interaction=interaction)
@@ -871,7 +871,7 @@ def _lower_standalone_lagrangian_source_term(term) -> InteractionTerm:
     raise TypeError(f"Cannot lower {type(term).__name__} into a standalone Lagrangian.")
 
 
-def _source_term_interaction(term) -> InteractionTerm | None:
+def _source_term_interaction(term) -> Optional[InteractionTerm]:
     if isinstance(term, InteractionTerm):
         return term
     if isinstance(term, _DeclaredMonomial):
@@ -879,7 +879,7 @@ def _source_term_interaction(term) -> InteractionTerm | None:
     return None
 
 
-def _source_term_covariant_core(term) -> DiracKineticTerm | ComplexScalarKineticTerm | None:
+def _source_term_covariant_core(term) -> Optional[Union[DiracKineticTerm, ComplexScalarKineticTerm]]:
     if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
         return term
     if isinstance(term, _DeclaredMonomial):
@@ -890,7 +890,7 @@ def _source_term_covariant_core(term) -> DiracKineticTerm | ComplexScalarKinetic
     return None
 
 
-def _source_term_gauge_kinetic(term) -> GaugeKineticTerm | None:
+def _source_term_gauge_kinetic(term) -> Optional[GaugeKineticTerm]:
     if isinstance(term, GaugeKineticTerm):
         return term
     if isinstance(term, _DeclaredMonomial):
@@ -898,7 +898,7 @@ def _source_term_gauge_kinetic(term) -> GaugeKineticTerm | None:
     return None
 
 
-def _source_term_gauge_fixing(term) -> GaugeFixingTerm | None:
+def _source_term_gauge_fixing(term) -> Optional[GaugeFixingTerm]:
     if isinstance(term, GaugeFixingTerm):
         return term
     if isinstance(term, GaugeFixingDeclaration):
@@ -911,7 +911,7 @@ def _source_term_gauge_fixing(term) -> GaugeFixingTerm | None:
     return None
 
 
-def _source_term_ghost(term) -> GhostTerm | None:
+def _source_term_ghost(term) -> Optional[GhostTerm]:
     if isinstance(term, GhostTerm):
         return term
     if isinstance(term, GhostLagrangianDeclaration):

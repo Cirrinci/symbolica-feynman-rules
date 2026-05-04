@@ -382,13 +382,13 @@ def _copy_index_label_value(value):
     return value
 
 
-def _copy_index_labels(labels: Mapping | None) -> dict:
+def _copy_index_labels(labels: Optional[Mapping]) -> dict:
     if not labels:
         return {}
     return {kind: _copy_index_label_value(value) for kind, value in labels.items()}
 
 
-def _normalize_index_labels(field: "Field", labels: Mapping | None) -> dict:
+def _normalize_index_labels(field: "Field", labels: Optional[Mapping]) -> dict:
     normalized = _copy_index_labels(labels)
     if not normalized:
         return {}
@@ -515,7 +515,7 @@ class Field:
 
         return packed
 
-    def unpack_slot_labels(self, labels: Mapping | None) -> dict[int, object]:
+    def unpack_slot_labels(self, labels: Optional[Mapping]) -> dict[int, object]:
         """Invert ``pack_slot_labels`` back to slot-indexed labels."""
         normalized = _normalize_index_labels(self, labels)
         if not normalized:
@@ -548,7 +548,7 @@ class Field:
 
         return unpacked
 
-    def occurrence(self, *, conjugated: bool = False, labels: dict | None = None):
+    def occurrence(self, *, conjugated: bool = False, labels: Optional[dict] = None):
         """Create a FieldOccurrence of this field in an interaction term."""
         from .interactions import FieldOccurrence
 
@@ -570,7 +570,7 @@ class Field:
         conjugated: bool = False,
         species=None,
         spin=None,
-        labels: dict | None = None,
+        labels: Optional[dict] = None,
     ):
         """Create an ExternalLeg for this field."""
         from .interactions import ExternalLeg

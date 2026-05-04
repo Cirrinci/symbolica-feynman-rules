@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from lagrangian.operators import psi_bar_gamma_psi, scalar_gauge_contact
 from model import DerivativeAction, Field, InteractionTerm
@@ -121,7 +121,7 @@ def _build_fermion_current_interaction(
     i_bar,
     i_psi,
     gauge_action_from_piece: Callable,
-    slot_suffix: Callable[[Field, int | None], str],
+    slot_suffix: Callable[[Field, Optional[int]], str],
     prefactor=1,
     label: str = "",
     lorentz_label=None,
@@ -170,7 +170,7 @@ def _default_scalar_contact_internal_label(
     right_piece: Any,
     *,
     symbol: Callable[[str], object],
-    slot_suffix: Callable[[Field, int | None], str],
+    slot_suffix: Callable[[Field, Optional[int]], str],
 ) -> object:
     left_group = left_piece.metadata.gauge_group
     right_group = right_piece.metadata.gauge_group
@@ -196,7 +196,7 @@ def _build_scalar_contact_action_data(
     right_piece: Any,
     gauge_action_from_piece: Callable,
     symbol: Callable[[str], object],
-    slot_suffix: Callable[[Field, int | None], str],
+    slot_suffix: Callable[[Field, Optional[int]], str],
     left_lorentz_label=None,
     right_lorentz_label=None,
     matter_labels=None,
@@ -296,7 +296,7 @@ def _compile_scalar_contact_terms(
     right_pieces: tuple[Any, ...],
     gauge_action_from_piece: Callable,
     symbol: Callable[[str], object],
-    slot_suffix: Callable[[Field, int | None], str],
+    slot_suffix: Callable[[Field, Optional[int]], str],
     mixed_scalar_contact_slot_suffix: Callable[[tuple[int, ...]], str],
     left_lorentz_label,
     right_lorentz_label,

@@ -6,7 +6,7 @@ the larger ``compiler.gauge`` entrypoint without changing any public APIs.
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Union
 
 from symbolica import Expression
 
@@ -118,7 +118,7 @@ def _assemble_full_covariant_operator(
 
 def _compile_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
     *,
     include_free_bilinear: bool,
     spectators: tuple[tuple[Field, bool], ...] = (),
@@ -203,7 +203,7 @@ def _compile_covariant_core(
 
 def _compile_declared_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
     *,
     spectators: tuple[tuple[Field, bool], ...] = (),
     require_declared_field: Callable,
@@ -228,7 +228,7 @@ def _compile_declared_covariant_core(
 
 def _compile_legacy_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
     *,
     require_declared_field: Callable,
     compile_dirac_kinetic_term: Callable,

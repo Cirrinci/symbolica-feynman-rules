@@ -19,7 +19,7 @@ without touching the core compiler.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 from symbolica import Expression, S
 from symbolica.community.spenso import Representation
@@ -50,7 +50,7 @@ class LinearTerm:
     """
 
     coefficient: object
-    item: object | None = None
+    item: Optional[object] = None
     conjugated: bool = False
 
     def display_name(self) -> str:
@@ -102,7 +102,7 @@ class FlavorMatrix:
 
     name: str
     symbol: object = None
-    dagger_symbol: object | None = None
+    dagger_symbol: Optional[object] = None
 
     def __post_init__(self):
         if self.symbol is None:
@@ -122,7 +122,7 @@ class FlavorMatrixYukawaAssignment:
     """Matrix-valued broken-phase Yukawa assignment for one flavored Dirac field."""
 
     fermion: Field
-    matrix: FlavorMatrix | object
+    matrix: Union[FlavorMatrix, object]
     label: str = ""
 
     def mass_entry(self, left_label, right_label, vev):
@@ -135,7 +135,7 @@ class CKMChargedCurrentAssignment:
 
     up_field: Field
     down_field: Field
-    matrix: FlavorMatrix | object
+    matrix: Union[FlavorMatrix, object]
     label: str = ""
 
 
@@ -146,7 +146,7 @@ class ElectroweakMassSpectrum:
     mw: object
     mz: object
     photon: object
-    mh: object | None = None
+    mh: Optional[object] = None
     fermions: tuple[tuple[Field, object], ...] = ()
 
 
@@ -163,9 +163,9 @@ class BrokenElectroweakFields:
     charged_w: Field
     z_boson: Field
     photon: Field
-    ghost_charged: Field | None = None
-    ghost_z: Field | None = None
-    ghost_photon: Field | None = None
+    ghost_charged: Optional[Field] = None
+    ghost_z: Optional[Field] = None
+    ghost_photon: Optional[Field] = None
     fermions: tuple[Field, ...] = ()
 
 
@@ -210,9 +210,9 @@ class BrokenElectroweakSector:
     charged_mixing: tuple[LinearRelation, ...]
     neutral_mixing: tuple[LinearRelation, ...]
     masses: ElectroweakMassSpectrum
-    gauge_couplings: ElectroweakGaugeCouplings | None = None
-    higgs_potential: HiggsPotentialData | None = None
-    gauge_fixing: ElectroweakGaugeFixing | None = None
+    gauge_couplings: Optional[ElectroweakGaugeCouplings] = None
+    higgs_potential: Optional[HiggsPotentialData] = None
+    gauge_fixing: Optional[ElectroweakGaugeFixing] = None
     yukawas: tuple[DiagonalYukawaAssignment, ...] = ()
     matrix_yukawas: tuple[FlavorMatrixYukawaAssignment, ...] = ()
     charged_current_mixings: tuple[CKMChargedCurrentAssignment, ...] = ()
@@ -377,7 +377,7 @@ def _default_field(field: Optional[Field], default: Field) -> Field:
     return default if field is None else field
 
 
-def _unique_fields(*fields: Field | None) -> tuple[Field, ...]:
+def _unique_fields(*fields: Optional[Field]) -> tuple[Field, ...]:
     ordered: list[Field] = []
     for field in fields:
         if field is None:
@@ -440,8 +440,8 @@ def _fermion_bilinear_occurrences(
     *,
     spinor_label,
     stem: str,
-    left_slot_overrides: dict[int, object] | None = None,
-    right_slot_overrides: dict[int, object] | None = None,
+    left_slot_overrides: Optional[dict[int, object]] = None,
+    right_slot_overrides: Optional[dict[int, object]] = None,
 ):
     spinor_slot = _single_index_slot(field, SPINOR_INDEX, purpose=f"{field.name} bilinear")
     left_slot_labels = {spinor_slot: spinor_label}
@@ -472,8 +472,8 @@ def _paired_fermion_occurrences(
     left_spinor_label,
     right_spinor_label,
     stem: str,
-    left_slot_overrides: dict[int, object] | None = None,
-    right_slot_overrides: dict[int, object] | None = None,
+    left_slot_overrides: Optional[dict[int, object]] = None,
+    right_slot_overrides: Optional[dict[int, object]] = None,
 ):
     left_spinor_slot = _single_index_slot(left_field, SPINOR_INDEX, purpose=f"{left_field.name}/{right_field.name} current")
     right_spinor_slot = _single_index_slot(right_field, SPINOR_INDEX, purpose=f"{left_field.name}/{right_field.name} current")
@@ -940,7 +940,7 @@ def _fermion_bilinear_term(
     *,
     coefficient,
     fermion: Field,
-    scalar: Field | None = None,
+    scalar: Optional[Field] = None,
     label: str = "",
 ) -> InteractionTerm:
     spinor = S(f"alpha_{fermion.name}_ssb")
@@ -967,7 +967,7 @@ def _fermion_matrix_bilinear_term(
     coefficient,
     matrix,
     fermion: Field,
-    scalar: Field | None = None,
+    scalar: Optional[Field] = None,
     label: str = "",
 ) -> InteractionTerm:
     _validate_flavored_fermion(fermion, purpose="Matrix Yukawa assignment")
@@ -1090,7 +1090,7 @@ def _ghost_vector_interaction(
     )
 
 
-def _ghost_mass_term(*, ghost: Field, coefficient, scalar: Field | None = None, label: str = "") -> InteractionTerm:
+def _ghost_mass_term(*, ghost: Field, coefficient, scalar: Optional[Field] = None, label: str = "") -> InteractionTerm:
     fields = [
         ghost.occurrence(conjugated=True),
         ghost.occurrence(),
@@ -1239,19 +1239,19 @@ def build_broken_electroweak_sector(
     vev,
     include_gauge_sector: bool = False,
     higgs_quartic=None,
-    gauge_fixing: ElectroweakGaugeFixing | None = None,
-    higgs_doublet: Field | None = None,
-    weak_gauge: Field | None = None,
-    hypercharge_gauge: Field | None = None,
-    higgs: Field | None = None,
-    goldstone_neutral: Field | None = None,
-    goldstone_charged: Field | None = None,
-    charged_w: Field | None = None,
-    z_boson: Field | None = None,
-    photon: Field | None = None,
-    ghost_charged: Field | None = None,
-    ghost_z: Field | None = None,
-    ghost_photon: Field | None = None,
+    gauge_fixing: Optional[ElectroweakGaugeFixing] = None,
+    higgs_doublet: Optional[Field] = None,
+    weak_gauge: Optional[Field] = None,
+    hypercharge_gauge: Optional[Field] = None,
+    higgs: Optional[Field] = None,
+    goldstone_neutral: Optional[Field] = None,
+    goldstone_charged: Optional[Field] = None,
+    charged_w: Optional[Field] = None,
+    z_boson: Optional[Field] = None,
+    photon: Optional[Field] = None,
+    ghost_charged: Optional[Field] = None,
+    ghost_z: Optional[Field] = None,
+    ghost_photon: Optional[Field] = None,
     yukawas: tuple[DiagonalYukawaAssignment, ...] = (),
     matrix_yukawas: tuple[FlavorMatrixYukawaAssignment, ...] = (),
     charged_current_mixings: tuple[CKMChargedCurrentAssignment, ...] = (),

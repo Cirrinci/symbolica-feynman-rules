@@ -5,10 +5,12 @@ from __future__ import annotations
 from symbolica import Expression, S
 
 from model import Field, InteractionTerm
+from typing import Optional
+
 from symbolic.spenso_structures import LORENTZ_KIND
 
 
-def _default_index_labels(field: Field, index, qualifier: str = "id", slot: int | None = None):
+def _default_index_labels(field: Field, index, qualifier: str = "id", slot: Optional[int] = None):
     stem = f"{field.name}_{index.kind}"
     if slot is not None and field.index_kind_count(index.kind) > 1:
         stem += f"_{slot + 1}"
