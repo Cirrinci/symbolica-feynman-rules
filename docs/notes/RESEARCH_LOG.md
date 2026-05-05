@@ -776,3 +776,143 @@ What this achieved:
   (kinetic normalization, hermiticity, mass structure)
 - the final walkthrough notebook now demonstrates the full declarative
   workflow including diagnostic validation
+
+### 2026-04-30: validation diagnostics, parameter metadata, and notebook cleanup
+
+What happened:
+
+- the reporting/validation layer was extended beyond basic issue collection:
+  - sector filtering was added to vertex reports
+  - compiled-lagrangian mass-mixing diagnostics were added for off-diagonal
+    bilinears
+  - the mass-mixing warnings were kept diagnostic-only rather than promoted to
+    hard failures
+- the first version of those checks was then tightened:
+  - stable field keys were used instead of display names
+  - warnings were restricted to canonical conjugated bilinears
+  - mixed-sector counts were made sector-local
+- the model metadata layer was extended with basic parameter lookup and
+  assumptions infrastructure:
+  - parameter assumptions can now be stored and queried through the model
+  - validation/reporting code can consult declared parameter metadata without
+    reaching into raw expressions
+- focused regression coverage was added for:
+  - sector-filtered reporting
+  - mass-mixing diagnostics
+  - parameter lookup / parameter assumptions
+- the main final walkthrough notebook was cleaned up and shortened so the live
+  examples track the current API more directly
+
+What this achieved:
+
+- validation moved from a minimal diagnostic pass toward a more useful model
+  inspection layer
+- the reporting API can now separate sectors and flag suspicious mass
+  structure without conflating those checks with hard compilation failures
+- parameter metadata is now available as a first-class model-level concept,
+  which prepares later validation and assumption-aware workflows
+- the final walkthrough notebook became easier to use as the compact reference
+  for the current public API
+
+### 2026-05-04: branch cleanup, Python-compatibility pass, and first compact Lagrangian-list notebook
+
+What happened:
+
+- the accidental reintroduction of the old top-level `src/model.py` file was
+  removed so the source tree returned to the intended modular `src/model/*`
+  layout
+- the direct `src/symbolic/spenso_gamma_checks.py` entrypoint was fixed so it
+  can be run successfully from the repository venv as documented
+- a compatibility pass replaced Python 3.10 union-annotation syntax in the
+  covered source files with older-style `typing.Optional[...]` /
+  `typing.Union[...]` forms
+- the repository was reviewed after that cleanup:
+  - syntax compilation succeeded on `src`, `tests`, and `examples`
+  - the full test suite passed
+  - the main runnable example suites passed
+- a new compact notebook,
+  `notebooks/list_lagrangians.ipynb`,
+  was started as a short reference organized around
+  `Model(..., lagrangian_decl=...)`
+- the first version of that notebook covered:
+  - basic scalar examples
+  - derivative scalar examples
+  - a first fermion section in the same compact model-layer style
+
+What this achieved:
+
+- the repository tree was brought back into a cleaner post-refactor state
+  before continuing notebook/API work
+- the documented gamma-check validation path became reliable again
+- the covered source files are now easier to run on slightly older Python
+  versions
+- the project gained a second, much shorter notebook focused specifically on
+  “how to write Lagrangians with the current model layer,” separate from the
+  longer workflow walkthroughs
+
+### 2026-05-05: typed ghost declarations, lowering-based shorthand resolution, and compact SU(2) notebook coverage
+
+What happened:
+
+- the ghost declaration API was cleaned up around a typed
+  `GhostField(..., ghost_of=...)` helper while keeping compatibility with the
+  older `kind="ghost"` path
+- the ordinary `CovD(...)` machinery was generalized so adjoint ghost fields
+  are treated through the same representation-aware compiler path as covered
+  scalar, fermion, and quark matter fields
+- this enabled direct FeynRules-style ghost input such as
+  `- Ghost.bar * PartialD(CovD(Ghost, mu), mu)` without adding a ghost-only
+  backend path
+- `GaugeFixing(...)` was reworked so the helper lowers through the same local
+  derivative-expression machinery as a manual tensor declaration instead of
+  bypassing the ordinary lowering path
+- compact field-occurrence syntax sugar was added at the metadata layer:
+  - `Photon(mu)`
+  - `Gluon(mu, a)`
+  - `GhostG.bar(a)`
+- the shorthand semantics were then resolved in local lowering rather than in
+  the Wick-contraction engine:
+  - divergence-like forms such as `PartialD(Photon(mu), mu)` and
+    `PartialD(Gluon(mu, a), mu)` now lower to explicit metric-contracted
+    derivatives with fresh internal Lorentz labels
+  - the same lowering pass was generalized to the ghost-gluon product-rule
+    branch so direct FeynRules-style ghost terms use the external gluon
+    Lorentz slot consistently on both momentum terms
+- the vertex engine was simplified again after that refactor:
+  it now consumes ordinary lowered tensor structure instead of carrying a
+  divergence-specific index-remapping rule
+- focused regression coverage was added and updated for:
+  - positive and negative shorthand-derivative cases
+  - scalar and vector-current regressions
+  - helper-vs-manual gauge-fixing equality for U(1) and SU(3)
+  - direct FeynRules-style ghost-gluon vertices with exact leg-order checks
+- `notebooks/list_lagrangians.ipynb` was rebuilt as a compact reference
+  notebook around `Model(..., lagrangian_decl=...)` and extended with:
+  - scalar examples
+  - fermion examples
+  - gauge, gauge-fixing, and ghost examples
+  - pure `SU(2)_L` examples
+  - mixed `SU(2)_L x U(1)_Y` examples showing the full set of emitted current
+    and contact vertices, including the mixed `W B` scalar contact
+- the live validation paths were rerun successfully:
+  - `./.venv/bin/pytest -q`
+    - result: `272 passed`
+  - notebook execution check for `notebooks/list_lagrangians.ipynb`
+    - result: passed
+
+What this achieved:
+
+- the ghost sector now fits the same declarative model-building story as the
+  covered matter sectors instead of depending on special wrappers alone
+- direct FeynRules-style ghost and gauge-fixing source terms are now real
+  first-class inputs to the public declaration API
+- the compact field-call syntax improves notebook/model readability without
+  moving symbolic interpretation into the wrong architectural layer
+- lowering now carries the responsibility for shorthand resolution, which is a
+  cleaner boundary than keeping special symbolic-index heuristics in the core
+  vertex engine
+- the gauge-fixing helper and its manual tensor form are now explicitly locked
+  to the same backend behavior
+- the notebook coverage now includes the non-abelian `SU(2)` and mixed
+  electroweak-style cases in the same compact Lagrangian-declaration style as
+  the scalar, QED, and QCD sections
