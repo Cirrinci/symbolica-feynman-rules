@@ -288,6 +288,36 @@ def test_field_bar_self_conjugate():
     assert cf.field is phi
 
 
+def test_field_call_builds_occurrence_from_positional_labels():
+    photon = Field("A", spin=1, self_conjugate=True, indices=(LORENTZ_INDEX,))
+    gluon = Field(
+        "G",
+        spin=1,
+        self_conjugate=True,
+        indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+    )
+
+    photon_occ = photon(S("mu"))
+    gluon_occ = gluon(S("nu"), S("a"))
+
+    assert photon_occ.field is photon
+    assert photon_occ.conjugated is False
+    assert photon_occ.labels == {LORENTZ_KIND: S("mu")}
+
+    assert gluon_occ.field is gluon
+    assert gluon_occ.conjugated is False
+    assert gluon_occ.labels == {LORENTZ_KIND: S("nu"), COLOR_ADJ_KIND: S("a")}
+
+
+def test_conjugate_field_call_builds_conjugated_occurrence():
+    ghost = _make_ghost()
+    occurrence = ghost.bar(S("a"))
+
+    assert occurrence.field is ghost
+    assert occurrence.conjugated is True
+    assert occurrence.labels == {COLOR_ADJ_KIND: S("a")}
+
+
 # ---------------------------------------------------------------------------
 # Lagrangian composition
 # ---------------------------------------------------------------------------
@@ -2457,32 +2487,146 @@ def test_gauge_fixing_wrapper_preserves_source_and_scalar_prefactor():
     assert _canon(got) == _canon(ref)
 
 
+def test_local_divergence_shorthand_lowers_to_metric_contracted_derivative():
+    """`PartialD(Photon(mu), mu)` lowers to `g(mu, rho) * PartialD(Photon(mu), rho)`."""
+    photon = _make_photon()
+    phi = Field("PhiDiv", spin=0, self_conjugate=True, symbol=S("phiDiv"))
+    g = S("gDiv")
+    mu = S("mu_div")
+
+    model = Model(
+        fields=(photon, phi),
+        lagrangian_decl=g * PartialD(photon(mu), mu) * phi,
+    )
+
+    compiled = model.lagrangian().terms
+    assert len(compiled) == 1
+    derivative, = compiled[0].derivatives
+    assert derivative.target == 0
+    assert derivative.lorentz_index != mu
+    expected_coupling = g * lorentz_metric(mu, derivative.lorentz_index)
+    assert _canon(compiled[0].coupling) == _canon(expected_coupling)
+
+    got = compiled[0].feynman_rule(photon, phi, include_delta=False, simplify=True)
+    expected = g * pcomp(S("q1"), S("mu1"))
+    assert _canon(got) == _canon(expected)
+
+
+def test_local_non_divergence_derivative_keeps_declared_lorentz_index():
+    """`PartialD(Photon(mu), rho)` keeps a non-slot derivative index off the external label."""
+    photon = _make_photon()
+    phi = Field("PhiND", spin=0, self_conjugate=True, symbol=S("phiND"))
+    g = S("gND")
+    mu = S("mu_nd")
+    rho = S("rho_nd")
+
+    model = Model(
+        fields=(photon, phi),
+        lagrangian_decl=g * PartialD(photon(mu), rho) * phi,
+    )
+
+    compiled = model.lagrangian().terms
+    assert len(compiled) == 1
+    derivative, = compiled[0].derivatives
+    assert derivative.target == 0
+    assert derivative.lorentz_index == rho
+
+    got = compiled[0].feynman_rule(photon, phi, include_delta=False, simplify=True)
+    expected = g * pcomp(S("q1"), S("mu1_int"))
+    assert _canon(got) == _canon(expected)
+
+
+def test_scalar_partiald_does_not_bind_vector_slot():
+    """Scalar derivatives keep their declared Lorentz index and bind no vector slot."""
+    phi = Field("PhiScalar", spin=0, self_conjugate=True, symbol=S("phiScalar"))
+    photon = _make_photon()
+    g = S("gScalar")
+    mu = S("mu_scalar")
+
+    compiled = Lagrangian(g * PartialD(phi, mu) * photon).terms
+    assert len(compiled) == 1
+    derivative, = compiled[0].derivatives
+    assert derivative.target == 0
+
+    got = compiled[0].feynman_rule(phi, photon, include_delta=False, simplify=True)
+    expected = g * pcomp(S("q1"), mu)
+    assert _canon(got) == _canon(expected)
+
+
+def test_explicit_vector_slot_current_keeps_existing_output():
+    """`Psi.bar * Gamma(mu) * Psi * Photon(mu)` matches the pre-existing current rule."""
+    psi = Field(
+        "PsiSlot",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psiSlot"),
+        conjugate_symbol=S("psibarSlot"),
+        indices=(SPINOR_INDEX,),
+    )
+    photon = _make_photon()
+    g = S("gSlot")
+    mu = S("mu_slot")
+
+    explicit = Lagrangian(
+        g * psi.bar * Gamma(mu) * psi * photon(mu)
+    ).feynman_rule(psi.bar, psi, photon, simplify=True)
+    legacy = Lagrangian(
+        g * psi.bar * Gamma(mu) * psi * photon
+    ).feynman_rule(psi.bar, psi, photon, simplify=True)
+
+    assert _canon(explicit) == _canon(legacy)
+
+
+def test_qed_covd_dirac_vertex_regression_after_divergence_binding_change():
+    """CovD-based Dirac terms keep the established QED current convention."""
+    eQED, qPsi = S("eQED_reg", "qPsi_reg")
+    mu = S("mu_reg")
+    fermion = Field(
+        "PsiReg",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psiReg"),
+        conjugate_symbol=S("psibarReg"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Q": qPsi},
+    )
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(fermion, photon),
+        lagrangian_decl=I * fermion.bar * Gamma(mu) * CovD(fermion, mu),
+    )
+
+    got = model.lagrangian().feynman_rule(fermion.bar, fermion, photon, simplify=True)
+    expected = (
+        I
+        * eQED
+        * qPsi
+        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
+        * (2 * pi) ** S("d")
+        * Delta(S("q1") + S("q2") + S("q3"))
+    )
+    assert _canon(got) == _canon(expected)
+
+
 def test_manual_abelian_gauge_fixing_matches_helper():
-    """Manual `-(1/2 xi) (partial.A)^2` lowers to the same rule as GaugeFixing(...)."""
+    """Manual `PartialD(Photon(mu), mu)` syntax matches GaugeFixing(...)."""
     eQED, xiQED = S("eQED", "xiQED")
     photon = _make_photon()
     u1 = _make_u1(eQED, photon.symbol)
 
-    mu_left = S("mu_left_qed_gf")
-    mu_right = S("mu_right_qed_gf")
-    rho_left = S("rho_left_qed_gf")
-    rho_right = S("rho_right_qed_gf")
+    mu = S("mu_qed_gf")
+    nu = S("nu_qed_gf")
 
     manual = Model(
         gauge_groups=(u1,),
         fields=(photon,),
         lagrangian_decl=(
             -(Expression.num(1) / (Expression.num(2) * xiQED))
-            * LORENTZ_INDEX.representation.g(mu_left, rho_left).to_expression()
-            * LORENTZ_INDEX.representation.g(mu_right, rho_right).to_expression()
-            * PartialD(
-                photon.occurrence(labels={LORENTZ_KIND: mu_left}),
-                rho_left,
-            )
-            * PartialD(
-                photon.occurrence(labels={LORENTZ_KIND: mu_right}),
-                rho_right,
-            )
+            * PartialD(photon(mu), mu)
+            * PartialD(photon(nu), nu)
         ),
     )
     helper = Model(
@@ -2496,39 +2640,46 @@ def test_manual_abelian_gauge_fixing_matches_helper():
     )
 
 
+def test_manual_abelian_gauge_fixing_shorthand_has_expected_direct_rule():
+    """Manual QED gauge fixing in the shorthand form lowers directly to `i p1 p2 / xi`."""
+    eQED, xiQED = S("eQED", "xiQED")
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+    mu = S("mu_qed_rule")
+    nu = S("nu_qed_rule")
+
+    manual = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xiQED))
+            * PartialD(photon(mu), mu)
+            * PartialD(photon(nu), nu)
+        ),
+    )
+
+    got = manual.lagrangian().feynman_rule(photon, photon, include_delta=False, simplify=True)
+    expected = I * pcomp(S("q1"), S("mu1")) * pcomp(S("q2"), S("mu2")) / xiQED
+    assert _canon(got) == _canon(expected)
+
+
 def test_manual_nonabelian_gauge_fixing_matches_helper():
-    """Manual adjoint/Lorentz tensor gauge fixing matches GaugeFixing(...)."""
+    """Manual `PartialD(Gluon(mu, a), mu)` syntax matches GaugeFixing(...)."""
     gS, xiQCD = S("gS", "xiQCD")
     gluon = _make_gluon()
     su3 = _make_su3(gS, gluon.symbol)
 
-    mu_left = S("mu_left_qcd_gf")
-    mu_right = S("mu_right_qcd_gf")
-    rho_left = S("rho_left_qcd_gf")
-    rho_right = S("rho_right_qcd_gf")
-    a_left = S("a_left_qcd_gf")
-    a_right = S("a_right_qcd_gf")
+    mu = S("mu_qcd_gf")
+    nu = S("nu_qcd_gf")
+    a = S("a_qcd_gf")
 
     manual = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
         lagrangian_decl=(
             -(Expression.num(1) / (Expression.num(2) * xiQCD))
-            * COLOR_ADJ_INDEX.representation.g(a_left, a_right).to_expression()
-            * LORENTZ_INDEX.representation.g(mu_left, rho_left).to_expression()
-            * LORENTZ_INDEX.representation.g(mu_right, rho_right).to_expression()
-            * PartialD(
-                gluon.occurrence(
-                    labels={LORENTZ_KIND: mu_left, COLOR_ADJ_KIND: a_left}
-                ),
-                rho_left,
-            )
-            * PartialD(
-                gluon.occurrence(
-                    labels={LORENTZ_KIND: mu_right, COLOR_ADJ_KIND: a_right}
-                ),
-                rho_right,
-            )
+            * PartialD(gluon(mu, a), mu)
+            * PartialD(gluon(nu, a), nu)
         ),
     )
     helper = Model(
@@ -2540,6 +2691,38 @@ def test_manual_nonabelian_gauge_fixing_matches_helper():
     assert _canon(manual.lagrangian().feynman_rule(gluon, gluon, simplify=True)) == _canon(
         helper.lagrangian().feynman_rule(gluon, gluon, simplify=True)
     )
+
+
+def test_manual_nonabelian_gauge_fixing_shorthand_with_metric_has_expected_direct_rule():
+    """Manual SU(3) shorthand with the adjoint metric lowers directly to the 2-point rule."""
+    gS, xiQCD = S("gS", "xiQCD")
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+    mu = S("mu_qcd_rule")
+    nu = S("nu_qcd_rule")
+    a = S("a_qcd_rule")
+    b = S("b_qcd_rule")
+
+    manual = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xiQCD))
+            * COLOR_ADJ_INDEX.representation.g(a, b).to_expression()
+            * PartialD(gluon(mu, a), mu)
+            * PartialD(gluon(nu, b), nu)
+        ),
+    )
+
+    got = manual.lagrangian().feynman_rule(gluon, gluon, include_delta=False, simplify=True)
+    expected = (
+        I
+        * COLOR_ADJ_INDEX.representation.g(S("a1"), S("a2")).to_expression()
+        * pcomp(S("q1"), S("mu1"))
+        * pcomp(S("q2"), S("mu2"))
+        / xiQCD
+    )
+    assert _canon(got) == _canon(expected)
 
 
 # ===========================================================================

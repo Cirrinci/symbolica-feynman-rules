@@ -419,6 +419,28 @@ def _field_reference_text(target) -> str:
     return str(target)
 
 
+def _occurrence_labels_from_call(
+    field: "Field",
+    positional_labels: tuple[object, ...],
+    labels: Optional[Mapping],
+) -> dict:
+    if len(positional_labels) > len(field.indices):
+        raise TypeError(
+            f"Field {field.name!r} takes at most {len(field.indices)} index label(s), "
+            f"got {len(positional_labels)}."
+        )
+
+    slot_labels = {slot: value for slot, value in enumerate(positional_labels)}
+    explicit = field.unpack_slot_labels(labels) if labels is not None else {}
+    for slot, value in explicit.items():
+        if slot in slot_labels and slot_labels[slot] != value:
+            raise TypeError(
+                f"Field {field.name!r} received conflicting labels for slot {slot + 1}."
+            )
+        slot_labels[slot] = value
+    return field.pack_slot_labels(slot_labels)
+
+
 @dataclass(frozen=True)
 class Field:
     """Particle field declaration (mirrors M$ClassesDescription)."""
@@ -626,6 +648,19 @@ class Field:
 
         return _DeclaredMonomial.from_factor(_FieldFactor(self)).__radd__(other)
 
+    def __call__(self, *labels, conjugated: bool = False, index_labels: Optional[Mapping] = None):
+        """Shorthand for ``field.occurrence(...)`` with positional slot labels.
+
+        Examples:
+        - ``Photon(mu)`` for a vector field with one Lorentz index
+        - ``Gluon(mu, a)`` for a field with ``(Lorentz, adjoint)`` slots
+        - ``GhostG(a)`` for an adjoint ghost
+        """
+        return self.occurrence(
+            conjugated=conjugated,
+            labels=_occurrence_labels_from_call(self, labels, index_labels),
+        )
+
 
 # ---------------------------------------------------------------------------
 # ConjugateField  (conjugation marker for the Lagrangian API)
@@ -655,6 +690,13 @@ class ConjugateField:
         from .declared import _DeclaredMonomial, _FieldFactor
 
         return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__radd__(other)
+
+    def __call__(self, *labels, index_labels: Optional[Mapping] = None):
+        """Shorthand for ``field.occurrence(conjugated=True, ...)``."""
+        return self.field.occurrence(
+            conjugated=True,
+            labels=_occurrence_labels_from_call(self.field, labels, index_labels),
+        )
 
 
 def GhostField(

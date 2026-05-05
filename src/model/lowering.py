@@ -486,6 +486,88 @@ def _fill_unassigned_local_slot_labels(
             slot_labels[field_idx][slot] = _fresh_local_label(prefix, counters)
 
 
+def _local_label_key(label) -> str:
+    return label.to_canonical_string() if hasattr(label, "to_canonical_string") else str(label)
+
+
+def _count_local_field_label_occurrences(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+) -> Counter:
+    counts = Counter()
+    for field_idx, entry in enumerate(field_entries):
+        for slot, label in slot_labels[field_idx].items():
+            if label is None:
+                continue
+            kind = entry.field.indices[slot].kind
+            counts[(kind, _local_label_key(label))] += 1
+    return counts
+
+
+def _rewrite_local_lorentz_slot_contraction(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    explicit_slot_labels: Sequence[dict[int, object]],
+    field_label_counts: Counter,
+    lorentz_index,
+    counters: dict[str, int],
+) -> Optional[tuple[object, object]]:
+    matches: list[object] = []
+    lorentz_key = _local_label_key(lorentz_index)
+    if field_label_counts[(LORENTZ_KIND, lorentz_key)] != 1:
+        return None
+
+    for field_idx, entry in enumerate(field_entries):
+        for slot in entry.field.index_positions(kind=LORENTZ_KIND):
+            slot_label = explicit_slot_labels[field_idx].get(slot)
+            if slot_label is None:
+                continue
+            if _expr_equal_impl(slot_label, lorentz_index):
+                matches.append(slot_label)
+
+    if len(matches) != 1:
+        return None
+    slot_label = matches[0]
+    fresh_internal = _fresh_local_label("mu", counters)
+    return slot_label, fresh_internal
+
+
+def _rewrite_local_lorentz_slot_contractions(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    explicit_slot_labels: Sequence[dict[int, object]],
+    counters: dict[str, int],
+):
+    field_label_counts = _count_local_field_label_occurrences(
+        field_entries=field_entries,
+        slot_labels=explicit_slot_labels,
+    )
+    extra_coupling = Expression.num(1)
+    rewritten_derivatives: list[tuple[object, ...]] = []
+
+    for idx, entry in enumerate(field_entries):
+        rewritten_indices: list[object] = []
+        for lorentz_index in entry.derivative_indices:
+            rewrite = _rewrite_local_lorentz_slot_contraction(
+                field_entries=field_entries,
+                explicit_slot_labels=explicit_slot_labels,
+                field_label_counts=field_label_counts,
+                lorentz_index=lorentz_index,
+                counters=counters,
+            )
+            if rewrite is None:
+                rewritten_indices.append(lorentz_index)
+                continue
+            slot_label, fresh_internal = rewrite
+            extra_coupling *= lorentz_metric(slot_label, fresh_internal)
+            rewritten_indices.append(fresh_internal)
+        rewritten_derivatives.append(tuple(rewritten_indices))
+
+    return extra_coupling, tuple(rewritten_derivatives)
+
+
 def _unsupported_local_fermion_ordering_error() -> ValueError:
     return ValueError(
         "Unsupported fermion ordering in local monomial. "
@@ -602,6 +684,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         entry.field.unpack_slot_labels(entry.labels)
         for entry in field_entries
     ]
+    explicit_slot_labels: list[dict[int, object]] = [dict(labels) for labels in slot_labels]
     counters: dict[str, int] = {}
 
     for interval_idx, factors in enumerate(interval_chain_factors):
@@ -662,6 +745,13 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         slot_labels=slot_labels,
         counters=counters,
     )
+    divergence_coupling, rewritten_derivatives = _rewrite_local_lorentz_slot_contractions(
+        field_entries=field_entries,
+        slot_labels=slot_labels,
+        explicit_slot_labels=explicit_slot_labels,
+        counters=counters,
+    )
+    coupling *= divergence_coupling
 
     closed_dirac_bilinears = _infer_closed_local_dirac_bilinears(
         field_entries=field_entries,
@@ -679,8 +769,8 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         ),
         derivatives=tuple(
             DerivativeAction(target=idx, lorentz_index=lorentz_index)
-            for idx, entry in enumerate(field_entries)
-            for lorentz_index in entry.derivative_indices
+            for idx, derivative_indices in enumerate(rewritten_derivatives)
+            for lorentz_index in derivative_indices
         ),
         closed_dirac_bilinears=closed_dirac_bilinears,
     )

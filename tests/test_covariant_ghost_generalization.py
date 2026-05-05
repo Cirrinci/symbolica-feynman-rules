@@ -75,6 +75,8 @@ def test_feynrules_style_ghost_covd_vertex_keeps_product_rule_momenta():
 
     This intentionally differs from the integrated-by-parts `GhostLagrangian(...)`
     helper, whose compact convention places the momentum on the antighost leg.
+    In the direct product-rule form, both momentum terms are rendered on the
+    external gluon Lorentz label carried by leg 3.
     """
     model, ghost, _gluon, _su3 = _make_qcd_ghost_covd_model()
 
@@ -87,7 +89,27 @@ def test_feynrules_style_ghost_covd_vertex_keeps_product_rule_momenta():
     expected = (
         S("gS")
         * structure_constant(S("a2"), S("a1"), S("a3"))
-        * (pcomp(S("q2"), S("mu_decl")) + pcomp(S("q3"), S("mu_decl")))
+        * (pcomp(S("q2"), S("mu2")) + pcomp(S("q3"), S("mu2")))
+    )
+
+    assert canon(got) == canon(expected)
+
+
+def test_feynrules_style_ghost_covd_vertex_ghbar_gh_gluon_uses_gluon_leg_lorentz_index():
+    """For leg order `(ghG.bar, ghG, G)`, both momentum terms carry the gluon index."""
+    model, ghost, gluon, _su3 = _make_qcd_ghost_covd_model()
+
+    got = model.lagrangian().feynman_rule(
+        ghost.bar,
+        ghost,
+        gluon,
+        include_delta=False,
+        simplify=True,
+    )
+    expected = (
+        S("gS")
+        * structure_constant(S("a3"), S("a1"), S("a2"))
+        * (pcomp(S("q2"), S("mu3")) + pcomp(S("q3"), S("mu3")))
     )
 
     assert canon(got) == canon(expected)
