@@ -2572,7 +2572,7 @@ def test_manual_raw_spenso_gauge_fixing_and_ghost_sources():
                 mu,
             )
             + (
-                -gS
+                gS
                 * structure_constant(a_bar, a_gluon, a_ghost)
                 * LORENTZ_INDEX.representation.g(rho_ghost, mu_left).to_expression()
                 * PartialD(

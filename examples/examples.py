@@ -2819,7 +2819,7 @@ def _run_covariant_compiler_tests():
             species_map={b1: G0, b2: G0, b3: G0},
         )),
         simplify_gamma_chain(
-            gS
+            -gS
             * yang_mills_three_vertex_metric_raw(
                 a3,
                 a4,
@@ -2837,7 +2837,7 @@ def _run_covariant_compiler_tests():
         "Covariant compiler: Yang-Mills cubic",
         show_vertex=True,
         description=ym_cubic.label,
-        display_vertex=gS * yang_mills_three_vertex_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3) * D3,
+        display_vertex=-gS * yang_mills_three_vertex_raw(a3, a4, a5, mu, nu, rho, p1, p2, p3) * D3,
     )
 
     _check(
@@ -3035,11 +3035,11 @@ def _run_gauge_fixed_compiler_tests():
             external_legs=LEGS_ghost_gluon,
             species_map={b1: ghGbar0, b2: G0, b3: ghG0},
         ),
-        -gS * ghost_gauge_raw(a3, a4, a5, mu3, S("mu1_int"), p1) * D3,
+        gS * ghost_gauge_raw(a3, a4, a5, mu3, S("mu1_int"), p1) * D3,
         "Gauge-fixed compiler: ghost-gluon interaction",
         show_vertex=True,
         description=qcd_ghost_gauge.label,
-        display_vertex=-gS * ghost_gauge(a3, a4, a5, mu3, p1) * D3,
+        display_vertex=gS * ghost_gauge(a3, a4, a5, mu3, p1) * D3,
     )
 
     compiled_qcd_gauge_fixed = compile_covariant_terms(MODEL_QCD_ORDINARY_GAUGE_FIXED)

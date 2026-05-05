@@ -12,7 +12,7 @@ Frozen conventions for the physical path:
 - ``vertex_factor(...)`` contributes the universal overall ``+i``
 - matter covariant derivatives use ``D_mu = partial_mu - i g A_mu``
 - non-abelian field strengths use
-  ``F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu``
+  ``F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu + g f^{abc} A^b_mu A^c_nu``
 
 With these choices, matter currents follow the same sign convention as the
 local gauge-ready examples, the Yang-Mills 3-gauge vertex is real, and the
@@ -1308,7 +1308,7 @@ def compile_yang_mills_cubic_term(
     rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}_cubic")
     coupling = (
         coefficient
-        * gauge_group.coupling
+        * (-gauge_group.coupling)
         * _build_structure_constant(gauge_group, adj_left, adj_middle, adj_right)
         * lorentz_metric(alpha, gamma)
         * lorentz_metric(rho, beta)
@@ -1458,7 +1458,7 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
     """Compile the ordinary unbroken Faddeev-Popov ghost sector.
 
     For the current conventions this corresponds to:
-    ``-cbar^a partial^mu(D_mu c)^a = (partial cbar)(partial c) - g f (partial cbar) A c``.
+    ``-cbar^a partial^mu(D_mu c)^a = (partial cbar)(partial c) + g f (partial cbar) A c``.
     """
     gauge_group = _require_declared_gauge_group(
         model,
@@ -1517,7 +1517,7 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
 
     ghost_gauge = InteractionTerm(
         coupling=(
-            -term.coefficient
+            term.coefficient
             * gauge_group.coupling
             * _build_structure_constant(gauge_group, a_bar, a_gauge, a_ghost)
             * lorentz_metric(rho, mu)

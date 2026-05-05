@@ -78,7 +78,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_ghost_gluon_vertex():
         GhostGluonField.bar, GluonField, GhostGluonField,
     )
     contracted = contract_spenso_lorentz_metrics(vertex)
-    expected = -gS * ghost_gauge(S("a1"), S("a2"), S("a3"), S("mu2"), q1) * D3
+    expected = gS * ghost_gauge(S("a1"), S("a2"), S("a3"), S("mu2"), q1) * D3
 
     assert _canon(contracted) == _canon(expected)
 
@@ -94,7 +94,7 @@ def test_contract_then_canonize_matches_compact_yang_mills_cubic():
         adjoint_indices=(S("a1"), S("a2"), S("a3")),
     )
 
-    expected = gS * yang_mills_three_vertex_raw(
+    expected = -gS * yang_mills_three_vertex_raw(
         S("a1"), S("a2"), S("a3"),
         S("mu1"), S("mu2"), S("mu3"),
         q1, q2, q3,

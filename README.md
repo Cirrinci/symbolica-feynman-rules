@@ -111,11 +111,11 @@ Gauge/compiler conventions:
 - `vertex_factor(...)` contributes the universal overall `+i`
 - matter uses `D_mu = partial_mu - i g A_mu`
 - pure gauge uses
-  `F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu`
+  `F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu + g f^{abc} A^b_mu A^c_nu`
 - ordinary gauge fixing uses
   `L_gf = -(1/2 xi) (partial.A)^2`
 - ordinary non-abelian ghosts use the integrated form
-  `L_gh = (partial cbar)(partial c) - g f (partial cbar) A c`
+  `L_gh = (partial cbar)(partial c) + g f (partial cbar) A c`
 
 ### Recommended workflows
 

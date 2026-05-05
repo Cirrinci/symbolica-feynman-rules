@@ -239,7 +239,7 @@ def test_compile_nonabelian_ghost_terms():
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
     expected_cubic = (
-        -gS
+        gS
         * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
@@ -534,7 +534,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
     expected_ghost_gauge = (
-        -gS
+        gS
         * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
@@ -665,7 +665,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
     expected_ghost_gauge = (
-        -gS
+        gS
         * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
