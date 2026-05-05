@@ -29,6 +29,12 @@ class _DeclaredFactorMixin:
     def __radd__(self, other):
         return _DeclaredMonomial.from_factor(self).__radd__(other)
 
+    def __sub__(self, other):
+        return _DeclaredMonomial.from_factor(self).__sub__(other)
+
+    def __rsub__(self, other):
+        return _DeclaredMonomial.from_factor(self).__rsub__(other)
+
 
 @dataclass(frozen=True)
 class _FieldFactor(_DeclaredFactorMixin):
@@ -181,6 +187,16 @@ class GaugeFixingDeclaration:
             return NotImplemented
         return DeclaredLagrangian(source_terms=terms + (self,))
 
+    def __sub__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
+        return DeclaredLagrangian.from_item(self).__sub__(other)
+
+    def __rsub__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
+        return DeclaredLagrangian.from_item(self).__rsub__(other)
+
     def __mul__(self, other):
         if _is_decl_scalar(other):
             return replace(self, coefficient=self.coefficient * other)
@@ -225,6 +241,16 @@ class GhostLagrangianDeclaration:
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(source_terms=terms + (self,))
+
+    def __sub__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
+        return DeclaredLagrangian.from_item(self).__sub__(other)
+
+    def __rsub__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
+        return DeclaredLagrangian.from_item(self).__rsub__(other)
 
     def __mul__(self, other):
         if _is_decl_scalar(other):
@@ -375,6 +401,16 @@ class _DeclaredMonomial:
         from .lagrangian import DeclaredLagrangian
 
         return DeclaredLagrangian.from_item(self).__radd__(other)
+
+    def __sub__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
+        return DeclaredLagrangian.from_item(self).__sub__(other)
+
+    def __rsub__(self, other):
+        from .lagrangian import DeclaredLagrangian
+
+        return DeclaredLagrangian.from_item(self).__rsub__(other)
 
     def __str__(self):
         pieces = [str(factor) for factor in self.factors]

@@ -56,6 +56,7 @@ from model import (
     GaugeRepresentation,
     InteractionTerm,
     Model,
+    PartialD,
 )
 from model.declared import (
     _DeclaredMonomial,
@@ -1675,28 +1676,25 @@ def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[Inte
     rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}_gf")
     rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}_gf")
     identity_factor, fields = layout.bilinear_occurrences(alpha, beta)
-
-    coupling = (
+    label = term.label or f"-(1/2 {term.xi}) ({gauge_group.name} gauge fixing)"
+    manual_term = (
         -term.coefficient
         * _HALF
         / term.xi
         * identity_factor
         * lorentz_metric(alpha, rho_left)
         * lorentz_metric(beta, rho_right)
+        * PartialD(fields[0], rho_left)
+        * PartialD(fields[1], rho_right)
     )
-    label = term.label or f"-(1/2 {term.xi}) ({gauge_group.name} gauge fixing)"
+    interaction = _lower_local_interaction_monomial(manual_term)
+    if interaction is None:
+        raise ValueError(
+            "Gauge-fixing compilation could not lower the helper form through "
+            "the ordinary local interaction path."
+        )
 
-    return (
-        InteractionTerm(
-            coupling=coupling,
-            fields=fields,
-            derivatives=(
-                DerivativeAction(target=0, lorentz_index=rho_left),
-                DerivativeAction(target=1, lorentz_index=rho_right),
-            ),
-            label=label,
-        ),
-    )
+    return (replace(interaction, label=label),)
 
 
 def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, ...]:

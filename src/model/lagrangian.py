@@ -877,6 +877,22 @@ class DeclaredLagrangian:
             return NotImplemented
         return DeclaredLagrangian(source_terms=terms + self.source_terms)
 
+    def __sub__(self, other):
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(
+            source_terms=self.source_terms + tuple(-term for term in terms)
+        )
+
+    def __rsub__(self, other):
+        terms = _declared_source_terms_from_item(other)
+        if terms is None:
+            return NotImplemented
+        return DeclaredLagrangian(
+            source_terms=terms + tuple(-term for term in self.source_terms)
+        )
+
     def __str__(self):
         if not self.source_terms:
             return "0"

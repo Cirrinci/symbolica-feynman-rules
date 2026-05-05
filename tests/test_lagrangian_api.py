@@ -2457,6 +2457,91 @@ def test_gauge_fixing_wrapper_preserves_source_and_scalar_prefactor():
     assert _canon(got) == _canon(ref)
 
 
+def test_manual_abelian_gauge_fixing_matches_helper():
+    """Manual `-(1/2 xi) (partial.A)^2` lowers to the same rule as GaugeFixing(...)."""
+    eQED, xiQED = S("eQED", "xiQED")
+    photon = _make_photon()
+    u1 = _make_u1(eQED, photon.symbol)
+
+    mu_left = S("mu_left_qed_gf")
+    mu_right = S("mu_right_qed_gf")
+    rho_left = S("rho_left_qed_gf")
+    rho_right = S("rho_right_qed_gf")
+
+    manual = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xiQED))
+            * LORENTZ_INDEX.representation.g(mu_left, rho_left).to_expression()
+            * LORENTZ_INDEX.representation.g(mu_right, rho_right).to_expression()
+            * PartialD(
+                photon.occurrence(labels={LORENTZ_KIND: mu_left}),
+                rho_left,
+            )
+            * PartialD(
+                photon.occurrence(labels={LORENTZ_KIND: mu_right}),
+                rho_right,
+            )
+        ),
+    )
+    helper = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=GaugeFixing(u1, xi=xiQED),
+    )
+
+    assert _canon(manual.lagrangian().feynman_rule(photon, photon, simplify=True)) == _canon(
+        helper.lagrangian().feynman_rule(photon, photon, simplify=True)
+    )
+
+
+def test_manual_nonabelian_gauge_fixing_matches_helper():
+    """Manual adjoint/Lorentz tensor gauge fixing matches GaugeFixing(...)."""
+    gS, xiQCD = S("gS", "xiQCD")
+    gluon = _make_gluon()
+    su3 = _make_su3(gS, gluon.symbol)
+
+    mu_left = S("mu_left_qcd_gf")
+    mu_right = S("mu_right_qcd_gf")
+    rho_left = S("rho_left_qcd_gf")
+    rho_right = S("rho_right_qcd_gf")
+    a_left = S("a_left_qcd_gf")
+    a_right = S("a_right_qcd_gf")
+
+    manual = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xiQCD))
+            * COLOR_ADJ_INDEX.representation.g(a_left, a_right).to_expression()
+            * LORENTZ_INDEX.representation.g(mu_left, rho_left).to_expression()
+            * LORENTZ_INDEX.representation.g(mu_right, rho_right).to_expression()
+            * PartialD(
+                gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_left, COLOR_ADJ_KIND: a_left}
+                ),
+                rho_left,
+            )
+            * PartialD(
+                gluon.occurrence(
+                    labels={LORENTZ_KIND: mu_right, COLOR_ADJ_KIND: a_right}
+                ),
+                rho_right,
+            )
+        ),
+    )
+    helper = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=GaugeFixing(su3, xi=xiQCD),
+    )
+
+    assert _canon(manual.lagrangian().feynman_rule(gluon, gluon, simplify=True)) == _canon(
+        helper.lagrangian().feynman_rule(gluon, gluon, simplify=True)
+    )
+
+
 # ===========================================================================
 # Compiled sector: ghosts
 # ===========================================================================
@@ -2611,6 +2696,46 @@ def test_manual_raw_spenso_gauge_fixing_and_ghost_sources():
         manual_lagrangian.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
     ) == _canon(
         wrapped_lagrangian.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    )
+
+
+def test_gauge_fixing_with_feynrules_style_ghost_covd_stack_preserves_vertices():
+    """GaugeFixing(...) can stack with direct `-cbar * PartialD(CovD(c), mu)` syntax."""
+    gS, xiQCD = S("gS", "xiQCD")
+    mu = S("mu_decl")
+    gluon = _make_gluon()
+    ghost = _make_ghost(ghost_of=gluon)
+    su3 = _make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol)
+
+    gauge_fixing_only = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=GaugeFixing(su3, xi=xiQCD),
+    )
+    ghost_only = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=-(ghost.bar * PartialD(CovD(ghost, mu), mu)),
+    )
+    combined = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=GaugeFixing(su3, xi=xiQCD) - ghost.bar * PartialD(CovD(ghost, mu), mu),
+    )
+
+    assert len(combined.lagrangian_decl.source_terms) == 2
+    assert _canon(combined.lagrangian().feynman_rule(gluon, gluon, simplify=True)) == _canon(
+        gauge_fixing_only.lagrangian().feynman_rule(gluon, gluon, simplify=True)
+    )
+    assert _canon(
+        combined.lagrangian().feynman_rule(ghost.bar, ghost, simplify=True)
+    ) == _canon(
+        ghost_only.lagrangian().feynman_rule(ghost.bar, ghost, simplify=True)
+    )
+    assert _canon(
+        combined.lagrangian().feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    ) == _canon(
+        ghost_only.lagrangian().feynman_rule(ghost.bar, gluon, ghost, simplify=True)
     )
 
 
