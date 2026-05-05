@@ -19,6 +19,7 @@ from .declared import (
     _DeclaredMonomial,
     _FieldFactor,
     CovariantDerivativeFactor,
+    DifferentiatedCovariantFactor,
     PartialDerivativeFactor,
     GammaFactor,
     Gamma5Factor,
@@ -108,6 +109,8 @@ def _match_covariant_monomial(
         gamma_factor = gamma_factors[0]
         covd_factor = covd_factors[0]
         for core_slot, field_factor in enumerate(field_factors):
+            if field_factor.field.kind != "fermion" or covd_factor.field.kind != "fermion":
+                continue
             core = _lower_dirac_monomial_impl(
                 _DeclaredMonomial(
                     coefficient=term.coefficient,
@@ -129,6 +132,8 @@ def _match_covariant_monomial(
             return core, spectators
 
     if len(gamma_factors) == 0 and len(covd_factors) == 2:
+        if any(factor.field.kind != "scalar" for factor in covd_factors):
+            return None
         core = _lower_scalar_covd_monomial_impl(
             _DeclaredMonomial(
                 coefficient=term.coefficient,
@@ -182,7 +187,7 @@ def _local_chain_kind(factor) -> str:
     if isinstance(factor, (GammaFactor, Gamma5Factor)):
         return SPINOR_KIND
     if isinstance(factor, GeneratorFactor):
-        return COLOR_FUND_KIND
+        return factor.index_kind
     raise TypeError(f"Unsupported local chain factor {type(factor).__name__}")
 
 
@@ -318,7 +323,13 @@ def _build_chain_expression(
             pieces.append(gamma5_matrix(start_label, end_label))
             continue
         if isinstance(factor, GeneratorFactor):
-            pieces.append(gauge_generator(factor.adjoint_index, start_label, end_label))
+            pieces.append(
+                factor.generator_builder(
+                    factor.adjoint_index,
+                    start_label,
+                    end_label,
+                )
+            )
             continue
         raise TypeError(f"Unsupported chain factor {type(factor).__name__}")
 
@@ -939,7 +950,10 @@ def _source_term_needs_compilation(term) -> bool:
 
 
 def _declared_monomial_has_covd(term: _DeclaredMonomial) -> bool:
-    return any(isinstance(factor, CovariantDerivativeFactor) for factor in term.factors)
+    return any(
+        isinstance(factor, (CovariantDerivativeFactor, DifferentiatedCovariantFactor))
+        for factor in term.factors
+    )
 
 
 def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
@@ -951,11 +965,24 @@ def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
     covd_factors = [
         factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)
     ]
+    differentiated_covd_factors = [
+        factor for factor in term.factors if isinstance(factor, DifferentiatedCovariantFactor)
+    ]
 
     # Keep malformed bare kinetic cores on the old strict-validation path.
-    if len(covd_factors) == 1 and len(gamma_factors) == 1 and len(field_factors) == 1:
+    if (
+        not differentiated_covd_factors
+        and len(covd_factors) == 1
+        and len(gamma_factors) == 1
+        and len(field_factors) == 1
+    ):
         return False
-    if len(covd_factors) == 2 and len(gamma_factors) == 0 and len(field_factors) == 0:
+    if (
+        not differentiated_covd_factors
+        and len(covd_factors) == 2
+        and len(gamma_factors) == 0
+        and len(field_factors) == 0
+    ):
         return False
 
     return True

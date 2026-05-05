@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field as dataclass_field, replace
 
-from .metadata import ConjugateField, Field
+from .metadata import COLOR_FUND_KIND, ConjugateField, Field, gauge_generator
 # ---------------------------------------------------------------------------
 # Declarative Lagrangian factors  (CovD / Gamma / FieldStrength DSL)
 # ---------------------------------------------------------------------------
@@ -64,6 +64,18 @@ class CovariantDerivativeFactor(_DeclaredFactorMixin):
 
 
 @dataclass(frozen=True)
+class DifferentiatedCovariantFactor(_DeclaredFactorMixin):
+    covariant_factor: CovariantDerivativeFactor
+    lorentz_indices: tuple[object, ...]
+
+    def __str__(self):
+        rendered = str(self.covariant_factor)
+        for lorentz_index in self.lorentz_indices:
+            rendered = f"PartialD({rendered}, {lorentz_index})"
+        return rendered
+
+
+@dataclass(frozen=True)
 class PartialDerivativeFactor(_DeclaredFactorMixin):
     field: Field
     lorentz_indices: tuple[object, ...]
@@ -113,6 +125,8 @@ class MetricFactor(_DeclaredFactorMixin):
 @dataclass(frozen=True)
 class GeneratorFactor(_DeclaredFactorMixin):
     adjoint_index: object
+    generator_builder: object = gauge_generator
+    index_kind: str = COLOR_FUND_KIND
 
     def __str__(self):
         return f"T({self.adjoint_index})"
@@ -253,6 +267,7 @@ def _is_decl_scalar(value) -> bool:
             FieldOccurrence,
             _FieldFactor,
             CovariantDerivativeFactor,
+            DifferentiatedCovariantFactor,
             PartialDerivativeFactor,
             GammaFactor,
             Gamma5Factor,
@@ -391,11 +406,31 @@ def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialD
     """Declarative partial derivative factor for local derivative monomials.
 
     Accepts ``Field``, ``Field.bar``, ``FieldOccurrence``, ``(Field, bool)``,
-    or another ``PartialD(...)`` factor to build higher derivatives.
+    another ``PartialD(...)`` factor to build higher derivatives, or
+    ``CovD(...)`` to differentiate an already-declared covariant factor.
     """
     from .interactions import FieldOccurrence
     from .interactions import _parse_field_arg
 
+    if isinstance(field, DifferentiatedCovariantFactor):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Nested PartialD(CovD(...)) already carries field labels and conjugation."
+            )
+        return DifferentiatedCovariantFactor(
+            covariant_factor=field.covariant_factor,
+            lorentz_indices=field.lorentz_indices + (lorentz_index,),
+        )
+    if isinstance(field, CovariantDerivativeFactor):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Pass labels/conjugation either through CovD(...) or through PartialD(...), "
+                "not both."
+            )
+        return DifferentiatedCovariantFactor(
+            covariant_factor=field,
+            lorentz_indices=(lorentz_index,),
+        )
     if isinstance(field, PartialDerivativeFactor):
         if labels is not None or conjugated:
             raise TypeError(

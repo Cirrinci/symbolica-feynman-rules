@@ -411,6 +411,14 @@ def _normalize_index_labels(field: "Field", labels: Optional[Mapping]) -> dict:
     return normalized
 
 
+def _field_reference_text(target) -> str:
+    if target is None:
+        return "None"
+    if isinstance(target, Field):
+        return target.name
+    return str(target)
+
+
 @dataclass(frozen=True)
 class Field:
     """Particle field declaration (mirrors M$ClassesDescription)."""
@@ -424,8 +432,17 @@ class Field:
     conjugate_symbol: object = None
     mass: object = None
     quantum_numbers: Mapping[str, object] = field(default_factory=dict)
+    ghost_of: object = None
 
     def __post_init__(self):
+        if self.ghost_of is not None:
+            if self.kind is None:
+                object.__setattr__(self, "kind", "ghost")
+            elif self.kind != "ghost":
+                raise ValueError(
+                    f"Field {self.name!r} declares ghost_of={self.ghost_of!r} "
+                    "but kind is not 'ghost'. Use GhostField(...) or kind='ghost'."
+                )
         if self.kind is None:
             object.__setattr__(self, "kind", _infer_kind(self.spin))
         if self.statistics is None:
@@ -448,13 +465,18 @@ class Field:
             str(self.conjugate_symbol),
             str(self.mass),
             quantum_numbers,
+            _field_reference_text(self.ghost_of),
         ))
+
+    @property
+    def is_ghost(self) -> bool:
+        return self.kind == "ghost"
 
     def role_for(self, conjugated: bool = False) -> FieldRole:
         """Return the interaction/external-leg role implied by this field slot."""
         if self.kind == "fermion":
             return ROLE_PSIBAR if conjugated else ROLE_PSI
-        if self.kind == "ghost":
+        if self.is_ghost:
             return ROLE_GHOST_DAG if conjugated else ROLE_GHOST
         if self.kind == "vector":
             return ROLE_VECTOR
@@ -633,3 +655,37 @@ class ConjugateField:
         from .declared import _DeclaredMonomial, _FieldFactor
 
         return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__radd__(other)
+
+
+def GhostField(
+    name: str,
+    *,
+    ghost_of=None,
+    spin=0,
+    self_conjugate: bool = False,
+    indices: tuple[IndexType, ...] = (),
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+) -> Field:
+    """Typed ghost-field declaration.
+
+    This keeps the public declaration closer to FeynRules-style model files:
+    the field is marked as a ghost, remembers which gauge boson it belongs to,
+    and defaults to ghost number ``+1`` unless the caller overrides it.
+    """
+    numbers = dict(quantum_numbers or {})
+    numbers.setdefault("GhostNumber", 1)
+    return Field(
+        name,
+        spin=spin,
+        kind="ghost",
+        self_conjugate=self_conjugate,
+        indices=indices,
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=numbers,
+        ghost_of=ghost_of,
+    )
