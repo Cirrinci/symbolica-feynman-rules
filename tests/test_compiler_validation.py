@@ -297,7 +297,7 @@ def test_fermion_vertex_still_amputates_when_only_bosonic_leg_labels_are_given()
     )
 
     expected = (
-        -I
+        I
         * S("e")
         * S("qPsi")
         * psi_bar_gamma_psi(S("i1"), S("i2"), mu3)

@@ -10,13 +10,13 @@ Frozen conventions for the physical path:
 
 - Fourier transform derivatives act as ``-i p_mu``
 - ``vertex_factor(...)`` contributes the universal overall ``+i``
-- matter covariant derivatives use ``D_mu = partial_mu + i g A_mu``
+- matter covariant derivatives use ``D_mu = partial_mu - i g A_mu``
 - non-abelian field strengths use
   ``F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu``
 
-With these choices, matter currents carry the signs already locked down in the
-covariant tests, the Yang-Mills 3-gauge vertex is real, and the 4-gauge vertex
-keeps an explicit overall ``i``.
+With these choices, matter currents follow the same sign convention as the
+local gauge-ready examples, the Yang-Mills 3-gauge vertex is real, and the
+4-gauge vertex keeps an explicit overall ``i``.
 """
 
 from __future__ import annotations
@@ -795,7 +795,7 @@ def _fresh_generic_covd_label(prefix: str, counters: dict[str, int], stem: str) 
 
 def _generic_covd_piece_prefactor(field: Field, *, conjugated: bool, coupling):
     if field.kind == "fermion":
-        sign = -1 if conjugated else 1
+        sign = 1 if conjugated else -1
     elif field.kind == "scalar":
         sign = 1 if conjugated else -1
     else:
@@ -1563,7 +1563,7 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                         fermion=field,
                         gauge_group=gauge_group,
                         gauge_field=gauge_field,
-                        prefactor=-1,
+                        prefactor=1,
                     )
                 )
                 continue
@@ -1632,7 +1632,7 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
                 i_psi=i_psi,
                 gauge_action_from_piece=_GaugeAction.from_piece,
                 slot_suffix=_slot_suffix,
-                prefactor=-term.coefficient,
+                prefactor=term.coefficient,
                 label=label,
                 lorentz_label=mu,
                 spectator_exclude_slots={fermion_spinor_slot},

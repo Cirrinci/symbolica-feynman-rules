@@ -2226,7 +2226,7 @@ def _run_compiled_gauge_tests():
     term_qcd = compiled_qcd[0]
     _check(
         _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
-        -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
         "Compiled model: quark-gluon",
         show_vertex=True,
         description=term_qcd.label,
@@ -2240,7 +2240,7 @@ def _run_compiled_gauge_tests():
     term_qed = compiled_qed[0]
     _check(
         _model_vertex(interaction=term_qed, external_legs=LEGS_qed_fermion),
-        -I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
+        I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
         "Compiled model: fermion QED",
         show_vertex=True,
         description=term_qed.label,
@@ -2399,7 +2399,7 @@ def _run_covariant_compiler_tests():
     term_qcd = next(term for term in compiled_qcd if len(term.fields) == 3)
     _check(
         _model_vertex(interaction=term_qcd, external_legs=LEGS_quark_gluon),
-        -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
         "Covariant compiler: quark-gluon",
         show_vertex=True,
         description=term_qcd.label,
@@ -2413,7 +2413,7 @@ def _run_covariant_compiler_tests():
     term_qed = next(term for term in compiled_qed if len(term.fields) == 3)
     _check(
         _model_vertex(interaction=term_qed, external_legs=LEGS_qed_fermion),
-        -I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
+        I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * D3,
         "Covariant compiler: fermion QED",
         show_vertex=True,
         description=term_qed.label,
@@ -2502,14 +2502,14 @@ def _run_covariant_compiler_tests():
 
     _check(
         _model_vertex(interaction=compiled_mixed[0], external_legs=LEGS_mixed_fermion_gluon),
-        -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
+        I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * D3,
         "Covariant compiler: mixed fermion QCD piece",
         show_vertex=True,
         description="One kinetic term automatically expanded over all matching gauge groups",
     )
     _check(
         _model_vertex(interaction=compiled_mixed[1], external_legs=LEGS_mixed_fermion_qed),
-        -I
+        I
         * eQED
         * qMix
         * psi_bar_gamma_psi(i1, i2, mu3)

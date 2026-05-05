@@ -542,7 +542,7 @@ def _run_compiled_minimal_tests():
     L_qcd = Lagrangian(terms=compiled_qcd)
     got = L_qcd.feynman_rule(QuarkField.bar, QuarkField, GluonField)
     expected_qcd = (
-        -I * gS
+        I * gS
         * quark_gluon_current(S("i1"), S("i2"), S("mu3"), S("a3"), S("c1"), S("c2"))
         * D3
     )
@@ -552,7 +552,7 @@ def _run_compiled_minimal_tests():
     compiled_qed = compile_minimal_gauge_interactions(MODEL_QED_FERMION_BASE)
     L_qed = Lagrangian(terms=compiled_qed)
     got = L_qed.feynman_rule(PsiQEDField.bar, PsiQEDField, GaugeField)
-    expected_qed = -I * eQED * qPsi * gamma_matrix(S("i1"), S("i2"), S("mu3")) * D3
+    expected_qed = I * eQED * qPsi * gamma_matrix(S("i1"), S("i2"), S("mu3")) * D3
     _check(got, expected_qed, "L-API minimal: QED fermion")
 
     # Scalar QED current (3pt) and contact (4pt)

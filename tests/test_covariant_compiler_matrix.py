@@ -165,7 +165,7 @@ def test_covariant_dirac_qcd_current():
         external_legs=legs,
         species_map={b1: psibar, b2: psi, b3: gluon_symbol},
     )
-    expected = -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * (2 * pi) ** d * Delta(p1 + p2 + p3)
+    expected = I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * (2 * pi) ** d * Delta(p1 + p2 + p3)
     assert got.expand().to_canonical_string() == expected.expand().to_canonical_string()
 
 
@@ -211,7 +211,7 @@ def test_covariant_dirac_qed_current():
         external_legs=legs,
         species_map={b1: psibar, b2: psi, b3: photon_symbol},
     )
-    expected = -I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * (2 * pi) ** d * Delta(p1 + p2 + p3)
+    expected = I * eQED * qPsi * psi_bar_gamma_psi(i1, i2, mu3) * (2 * pi) ** d * Delta(p1 + p2 + p3)
     assert got.expand().to_canonical_string() == expected.expand().to_canonical_string()
 
 
@@ -266,7 +266,7 @@ def test_covariant_mixed_fermion_expands_over_qcd_and_qed():
         external_legs=qcd_legs,
         species_map={b1: psibar, b2: psi, b3: gluon_symbol},
     )
-    expected_qcd = -I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * (2 * pi) ** d * Delta(p1 + p2 + p3)
+    expected_qcd = I * gS * quark_gluon_current(i1, i2, mu3, a3, c1, c2) * (2 * pi) ** d * Delta(p1 + p2 + p3)
     assert got_qcd.expand().to_canonical_string() == expected_qcd.expand().to_canonical_string()
 
     qed_legs = (
@@ -280,7 +280,7 @@ def test_covariant_mixed_fermion_expands_over_qcd_and_qed():
         species_map={b1: psibar, b2: psi, b3: photon_symbol},
     )
     expected_qed = (
-        -I
+        I
         * eQED
         * qMix
         * psi_bar_gamma_psi(i1, i2, mu3)

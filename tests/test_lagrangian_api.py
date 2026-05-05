@@ -1859,7 +1859,7 @@ def test_model_lagrangian_qed_fermion():
 
 
 def test_declared_lagrangian_qed_fermion():
-    """A declarative CovD-based Dirac term preserves the legacy QED gauge vertex."""
+    """A declarative CovD-based Dirac term preserves the current QED gauge vertex convention."""
     eQED, qPsi = S("eQED", "qPsi")
     mu = S("mu")
     fermion = Field("PsiQED", spin=Fraction(1, 2), self_conjugate=False,
@@ -2811,7 +2811,7 @@ def test_dressed_dirac_covd_with_scalar_spectators():
             derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
         ),
         InteractionTerm(
-            coupling=-(S("e") * S("Qpsi")) * psi_bar_gamma_psi(i_bar, i_psi, mu),
+            coupling=(S("e") * S("Qpsi")) * psi_bar_gamma_psi(i_bar, i_psi, mu),
             fields=(
                 psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
                 psi.occurrence(labels={SPINOR_KIND: i_psi}),
@@ -2961,7 +2961,7 @@ def test_dressed_dirac_covd_with_fermion_spectator_bilinear():
             derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
         ),
         InteractionTerm(
-            coupling=-(S("e") * S("Qpsi")) * psi_bar_gamma_psi(i_bar, i_psi, mu) * psi_bar_psi(j_bar, j_psi),
+            coupling=(S("e") * S("Qpsi")) * psi_bar_gamma_psi(i_bar, i_psi, mu) * psi_bar_psi(j_bar, j_psi),
             fields=(
                 psi.occurrence(conjugated=True, labels={SPINOR_KIND: i_bar}),
                 psi.occurrence(labels={SPINOR_KIND: i_psi}),
@@ -3023,8 +3023,8 @@ def test_generic_declared_monomial_supports_multiple_dirac_covd_chains():
     gluon_mu = gluon.occurrence(labels={LORENTZ_KIND: mu, COLOR_ADJ_KIND: a})
     gluon_nu = gluon.occurrence(labels={LORENTZ_KIND: nu, COLOR_ADJ_KIND: a})
     ref_single_gluon = Lagrangian(
-        (-gS) * psi.bar * Gamma(mu) * T(a) * psi * chi.bar * Gamma(nu) * PartialD(chi, nu) * gluon_mu
-        + (-gS) * psi.bar * Gamma(mu) * PartialD(psi, mu) * chi.bar * Gamma(nu) * T(a) * chi * gluon_nu
+        gS * psi.bar * Gamma(mu) * T(a) * psi * chi.bar * Gamma(nu) * PartialD(chi, nu) * gluon_mu
+        + gS * psi.bar * Gamma(mu) * PartialD(psi, mu) * chi.bar * Gamma(nu) * T(a) * chi * gluon_nu
     )
     assert _canon(
         L.feynman_rule(psi.bar, psi, chi.bar, chi, gluon, simplify=True)

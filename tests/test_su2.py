@@ -216,7 +216,7 @@ def test_su2_fermion_doublet_vertex():
         LDoublet.bar, LDoublet, WField,
     )
     expected = (
-        -I * g2_sym
+        I * g2_sym
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
         * D3
@@ -288,7 +288,7 @@ def test_su2_u1_fermion_doublet_vertices():
         LYDoublet.bar, LYDoublet, WField,
     )
     expected_w = (
-        -I * g2_sym
+        I * g2_sym
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
         * D3
@@ -301,7 +301,7 @@ def test_su2_u1_fermion_doublet_vertices():
     )
     weak_fund_id = WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
     expected_b = (
-        -I * g1_sym * yL
+        I * g1_sym * yL
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * weak_fund_id
         * D3

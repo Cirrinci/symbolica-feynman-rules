@@ -109,7 +109,7 @@ Gauge/compiler conventions:
 
 - derivatives map to `-i p_mu`
 - `vertex_factor(...)` contributes the universal overall `+i`
-- matter uses `D_mu = partial_mu + i g A_mu`
+- matter uses `D_mu = partial_mu - i g A_mu`
 - pure gauge uses
   `F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu`
 - ordinary gauge fixing uses

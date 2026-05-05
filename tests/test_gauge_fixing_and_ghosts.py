@@ -515,7 +515,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         species_map={b1: antiquark_symbol, b2: quark_symbol, b3: gluon_symbol},
     )
     expected_current = (
-        -I
+        I
         * gS
         * quark_gluon_current(i1, i2, mu3, a3, c1, c2)
         * (2 * pi) ** d
@@ -627,7 +627,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         species_map={b1: antiquark_symbol, b2: quark_symbol, b3: gluon_symbol},
     )
     expected_qcd = (
-        -I
+        I
         * gS
         * quark_gluon_current(i1, i2, mu3, a3, c1, c2)
         * (2 * pi) ** d
@@ -645,7 +645,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         species_map={b1: antiquark_symbol, b2: quark_symbol, b3: photon_symbol},
     )
     expected_qed = (
-        -I
+        I
         * eQED
         * q_mix
         * psi_bar_gamma_psi(i1, i2, mu3)
