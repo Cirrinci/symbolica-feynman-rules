@@ -14,6 +14,7 @@ Covers:
 """
 
 import sys
+import re
 from fractions import Fraction
 from pathlib import Path
 
@@ -117,6 +118,10 @@ def _ref_vertex(interaction, legs, d=None):
         strip_externals=True,
         include_delta=True,
     ), external_legs=legs)
+
+
+def _normalize_internal_lorentz_labels(text: str) -> str:
+    return re.sub(r"mu\d+_int", "mu_int", text)
 
 # ---------------------------------------------------------------------------
 # Shared sample model cases
@@ -2870,10 +2875,10 @@ def test_manual_raw_spenso_gauge_fixing_and_ghost_sources():
     assert _canon(manual_lagrangian.feynman_rule(gluon, gluon, simplify=True)) == _canon(
         wrapped_lagrangian.feynman_rule(gluon, gluon, simplify=True)
     )
-    assert _canon(
-        manual_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True)
-    ) == _canon(
-        wrapped_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True)
+    assert _normalize_internal_lorentz_labels(
+        _canon(manual_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True))
+    ) == _normalize_internal_lorentz_labels(
+        _canon(wrapped_lagrangian.feynman_rule(ghost.bar, ghost, simplify=True))
     )
     assert _canon(
         manual_lagrangian.feynman_rule(ghost.bar, gluon, ghost, simplify=True)

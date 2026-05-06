@@ -599,6 +599,8 @@ def _real_vector_gauge_fixing_term(*, vector: Field, xi, label: str = "") -> Int
             DerivativeAction(target=1, lorentz_index=rho_right),
         ),
         label=label or f"EW R_xi: {vector.name} gauge fixing",
+        sector="gauge_fixing",
+        origin="EWGaugeFixing",
     )
 
 
@@ -623,6 +625,8 @@ def _complex_vector_gauge_fixing_term(*, vector: Field, xi, label: str = "") -> 
             DerivativeAction(target=1, lorentz_index=rho_right),
         ),
         label=label or f"EW R_xi: {vector.name} gauge fixing",
+        sector="gauge_fixing",
+        origin="EWGaugeFixing",
     )
 
 

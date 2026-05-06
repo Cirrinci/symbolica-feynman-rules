@@ -154,26 +154,27 @@ def _classify_term_sector(term) -> str:
     """Return a conservative sector tag for one compiled ``InteractionTerm``.
 
     Classification rules, in order:
-    1. Any field with ``kind == 'ghost'`` -> ``ghost``.
-    2. Compiled label marker ``'gauge fixing'`` -> ``gauge_fixing``.
+    1. Explicit ``term.sector`` provenance when present.
+    2. Any field with ``kind == 'ghost'`` -> ``ghost``.
     3. All field occurrences are spin-1 self-conjugate vectors -> ``pure_gauge``.
     4. At least one matter (scalar or fermion) field -> ``matter``.
     5. Otherwise -> ``unknown``.
 
-    This intentionally does not try to infer sectors from coupling structure or
-    derivative content; it only uses information that is reliably present on
-    compiled outputs from ``compiler.gauge`` and on directly-constructed
-    ``InteractionTerm`` instances built from declared ``Field`` metadata.
+    This intentionally avoids label-text heuristics. It only uses explicit
+    provenance or information reliably present on compiled outputs from
+    ``compiler.gauge`` and on directly-constructed ``InteractionTerm``
+    instances built from declared ``Field`` metadata.
     """
+
+    explicit_sector = getattr(term, "sector", "")
+    if explicit_sector in KNOWN_VERTEX_SECTORS:
+        return explicit_sector
 
     fields = tuple(occ.field for occ in term.fields)
     if not fields:
         return "unknown"
     if any(getattr(field_obj, "kind", None) == "ghost" for field_obj in fields):
         return "ghost"
-    label = (term.label or "").lower()
-    if "gauge fixing" in label:
-        return "gauge_fixing"
     if all(
         getattr(field_obj, "kind", None) == "vector"
         and getattr(field_obj, "self_conjugate", False)

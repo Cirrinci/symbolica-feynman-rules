@@ -127,6 +127,9 @@ class InteractionTerm:
     derivatives: tuple[DerivativeAction, ...] = ()
     closed_dirac_bilinears: tuple[tuple[int, int], ...] = ()
     label: str = ""
+    sector: str = ""
+    origin: str = ""
+    origin_group: object = None
 
     @property
     def statistics(self) -> Statistics:

@@ -1694,7 +1694,15 @@ def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[Inte
             "the ordinary local interaction path."
         )
 
-    return (replace(interaction, label=label),)
+    return (
+        replace(
+            interaction,
+            label=label,
+            sector="gauge_fixing",
+            origin="GaugeFixing",
+            origin_group=gauge_group,
+        ),
+    )
 
 
 def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, ...]:

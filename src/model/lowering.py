@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Mapping, Optional, Sequence, Union
 
 from symbolica import Expression, S
@@ -612,6 +612,83 @@ def _infer_closed_local_dirac_bilinears(
     return closed_dirac_bilinears
 
 
+def _interaction_term_matches_canonical_gauge_fixing(term: InteractionTerm) -> bool:
+    """Whether one lowered local term has the canonical gauge-fixing structure.
+
+    Accepted shape:
+    - exactly two vector-field occurrences of the same field
+    - exactly one derivative on each field
+    - coupling factorizes into
+      spectator identities * g(field_lorentz_1, deriv_1) * g(field_lorentz_2, deriv_2)
+      times a scalar prefactor
+
+    This intentionally does not inspect the overall scalar coefficient, so
+    helper and manual forms with the same operator structure classify together.
+    """
+
+    if len(term.fields) != 2 or len(term.derivatives) != 2:
+        return False
+
+    first, second = term.fields
+    if first.field is not second.field:
+        return False
+    if first.conjugated or second.conjugated:
+        return False
+
+    field = first.field
+    if field.kind != "vector" or not field.self_conjugate:
+        return False
+
+    derivatives_by_target = {action.target: action.lorentz_index for action in term.derivatives}
+    if set(derivatives_by_target) != {0, 1}:
+        return False
+
+    lorentz_slots = field.index_positions(kind=LORENTZ_KIND)
+    if len(lorentz_slots) != 1:
+        return False
+    lorentz_slot = lorentz_slots[0]
+
+    first_slot_labels = field.unpack_slot_labels(first.labels)
+    second_slot_labels = field.unpack_slot_labels(second.labels)
+    first_lorentz = first_slot_labels.get(lorentz_slot)
+    second_lorentz = second_slot_labels.get(lorentz_slot)
+    if first_lorentz is None or second_lorentz is None:
+        return False
+
+    expected = (
+        lorentz_metric(first_lorentz, derivatives_by_target[0])
+        * lorentz_metric(second_lorentz, derivatives_by_target[1])
+    )
+    for slot, index in enumerate(field.indices):
+        if slot == lorentz_slot:
+            continue
+        left_label = first_slot_labels.get(slot)
+        right_label = second_slot_labels.get(slot)
+        if left_label is None or right_label is None:
+            return False
+        expected *= index.representation.g(left_label, right_label).to_expression()
+
+    try:
+        ratio = (term.coupling / expected).expand()
+    except Exception:
+        return False
+
+    blocked_labels = {
+        _local_label_key(first_lorentz),
+        _local_label_key(second_lorentz),
+        _local_label_key(derivatives_by_target[0]),
+        _local_label_key(derivatives_by_target[1]),
+    }
+    for slot, index in enumerate(field.indices):
+        if slot == lorentz_slot:
+            continue
+        blocked_labels.add(_local_label_key(first_slot_labels[slot]))
+        blocked_labels.add(_local_label_key(second_slot_labels[slot]))
+
+    rendered_ratio = ratio.to_canonical_string() if hasattr(ratio, "to_canonical_string") else str(ratio)
+    return not any(label in rendered_ratio for label in blocked_labels)
+
+
 def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     tokens: list[tuple[str, object]] = []
     field_entries: list[_LocalFieldEntry] = []
@@ -758,7 +835,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         interval_supports_closed_dirac_bilinear=interval_supports_closed_dirac_bilinear,
     )
 
-    return InteractionTerm(
+    interaction = InteractionTerm(
         coupling=coupling,
         fields=tuple(
             entry.field.occurrence(
@@ -774,6 +851,13 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         ),
         closed_dirac_bilinears=closed_dirac_bilinears,
     )
+    if _interaction_term_matches_canonical_gauge_fixing(interaction):
+        interaction = replace(
+            interaction,
+            sector="gauge_fixing",
+            origin="manual_gauge_fixing",
+        )
+    return interaction
 
 
 def _lower_field_strength_monomial(term: _DeclaredMonomial):

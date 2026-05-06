@@ -2,6 +2,8 @@ from symbolica import Expression, S
 
 from model import (
     CovD,
+    DerivativeAction,
+    PartialD,
     Field,
     FieldStrength,
     Gamma,
@@ -199,6 +201,138 @@ def test_vertex_signatures_qcd_sector_split():
 
     unknown_signatures = compiled.vertex_signatures(sector="unknown")
     assert unknown_signatures == ()
+
+
+def test_vertex_report_helper_qed_gauge_fixing_sector_includes_two_photon_rule():
+    xi = S("xi_qed_report")
+    photon = make_photon(name="A", symbol=S("A0"))
+    u1 = make_u1(S("eQED_report"), photon.symbol, name="U1QED")
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=GaugeFixing(u1, xi=xi),
+    )
+
+    report = model.lagrangian().vertex_report(sector="gauge_fixing")
+
+    assert [sig.names for sig in report.signatures] == [("A", "A")]
+    assert report.matched_terms == 1
+
+
+def test_vertex_report_manual_qed_gauge_fixing_sector_matches_helper():
+    xi = S("xi_qed_report_manual")
+    photon = make_photon(name="A", symbol=S("A0"))
+    u1 = make_u1(S("eQED_report_manual"), photon.symbol, name="U1QED")
+    mu = S("mu_manual_qed")
+    nu = S("nu_manual_qed")
+
+    manual = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xi))
+            * PartialD(photon(mu), mu)
+            * PartialD(photon(nu), nu)
+        ),
+    )
+    helper = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=GaugeFixing(u1, xi=xi),
+    )
+
+    assert [sig.names for sig in manual.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
+        ("A", "A")
+    ]
+    assert (
+        manual.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
+        == helper.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
+        == 1
+    )
+
+
+def test_vertex_report_manual_su3_gauge_fixing_sector_matches_helper():
+    xi = S("xi_qcd_report_manual")
+    gluon = make_gluon(name="G", symbol=S("G0"))
+    su3 = make_su3(S("gS_report_manual"), gluon.symbol, name="SU3C")
+    mu = S("mu_manual_qcd")
+    nu = S("nu_manual_qcd")
+    a = S("a_manual_qcd")
+
+    manual = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xi))
+            * PartialD(gluon(mu, a), mu)
+            * PartialD(gluon(nu, a), nu)
+        ),
+    )
+    helper = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=GaugeFixing(su3, xi=xi),
+    )
+
+    assert [sig.names for sig in manual.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
+        ("G", "G")
+    ]
+    assert (
+        manual.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
+        == helper.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
+        == 1
+    )
+
+
+def test_vertex_report_non_gauge_fixing_vector_bilinear_is_not_misclassified():
+    photon = make_photon(name="A", symbol=S("A0"))
+    rho = S("rho_not_gf")
+    mu = S("mu_not_gf")
+    nu = S("nu_not_gf")
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=Expression.num(1),
+            fields=(photon(mu), photon(nu)),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=rho),
+                DerivativeAction(target=1, lorentz_index=rho),
+            ),
+        ),
+    ))
+
+    assert lagrangian.vertex_signatures(sector="gauge_fixing") == ()
+
+
+def test_vertex_report_manual_gauge_fixing_is_dummy_label_invariant():
+    xi = S("xi_qed_dummy")
+    photon = make_photon(name="A", symbol=S("A0"))
+    u1 = make_u1(S("eQED_dummy"), photon.symbol, name="U1QED")
+
+    first = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xi))
+            * PartialD(photon(S("alpha_label")), S("alpha_label"))
+            * PartialD(photon(S("beta_label")), S("beta_label"))
+        ),
+    )
+    second = Model(
+        gauge_groups=(u1,),
+        fields=(photon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / (Expression.num(2) * xi))
+            * PartialD(photon(S("mu_anything")), S("mu_anything"))
+            * PartialD(photon(S("nu_anything")), S("nu_anything"))
+        ),
+    )
+
+    assert [sig.names for sig in first.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
+        ("A", "A")
+    ]
+    assert [sig.names for sig in second.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
+        ("A", "A")
+    ]
 
 
 def test_vertex_signatures_every_signature_is_covered_by_some_sector():
