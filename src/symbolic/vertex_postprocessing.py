@@ -5,7 +5,7 @@ from __future__ import annotations
 from symbolica import Expression, S
 from symbolica.community.idenso import simplify_metrics
 
-from symbolic.spenso_structures import LORENTZ_KIND, simplify_gamma_chain
+from symbolic.spenso_structures import LORENTZ_KIND, WEAK_ADJ, simplify_gamma_chain
 from symbolic.tensor_canonicalization import (
     canonize_spenso_tensors,
     contract_spenso_lorentz_metrics,
@@ -139,6 +139,112 @@ def simplify_deltas(expr, species_map=None):
 def simplify_spinor_indices(expr):
     """Contract repeated bispinor indices using Spenso's metric simplification."""
     return simplify_metrics(expr)
+
+
+def _atom_type_name(expr):
+    return str(expr.get_type())
+
+
+def _term_factors(expr):
+    if _atom_type_name(expr) == "AtomType.Mul":
+        return list(expr)
+    return [expr]
+
+
+def _term_product(factors):
+    result = Expression.num(1)
+    for factor in factors:
+        result *= factor
+    return result
+
+
+def _is_su2_adjoint_slot(slot):
+    return (
+        _atom_type_name(slot) == "AtomType.Fn"
+        and slot.get_name() == "spenso::coad"
+        and len(slot) == 2
+        and str(slot[0]) == "3"
+    )
+
+
+def _is_su2_structure_constant(factor):
+    return (
+        _atom_type_name(factor) == "AtomType.Fn"
+        and factor.get_name() == "spenso::f"
+        and len(factor) == 3
+        and all(_is_su2_adjoint_slot(slot) for slot in factor)
+    )
+
+
+def _slot_label(slot):
+    return slot[1]
+
+
+def _weak_adj_metric(left, right):
+    return WEAK_ADJ.g(left, right).to_expression()
+
+
+def _normalize_su2_f_dummy_third(factor, dummy_key):
+    labels = [_slot_label(slot) for slot in factor]
+    position = [_species_key(label) for label in labels].index(dummy_key)
+    sign = Expression.num(-1) if position == 1 else Expression.num(1)
+    others = [label for label in labels if _species_key(label) != dummy_key]
+    return sign, others[0], others[1]
+
+
+def _rewrite_su2_ff_term(term):
+    factors = _term_factors(term)
+    structure_positions = [
+        pos for pos, factor in enumerate(factors)
+        if _is_su2_structure_constant(factor)
+    ]
+    for i, left_pos in enumerate(structure_positions):
+        for right_pos in structure_positions[i + 1:]:
+            left_factor = factors[left_pos]
+            right_factor = factors[right_pos]
+            left_labels = [_slot_label(slot) for slot in left_factor]
+            right_labels = [_slot_label(slot) for slot in right_factor]
+            left_map = {_species_key(label): label for label in left_labels}
+            right_keys = {_species_key(label) for label in right_labels}
+            shared = [key for key in left_map if key in right_keys]
+            if len(shared) != 1:
+                continue
+            dummy_key = shared[0]
+            left_sign, a, b = _normalize_su2_f_dummy_third(left_factor, dummy_key)
+            right_sign, c, d = _normalize_su2_f_dummy_third(right_factor, dummy_key)
+            replacement = left_sign * right_sign * (
+                _weak_adj_metric(a, c) * _weak_adj_metric(b, d)
+                - _weak_adj_metric(a, d) * _weak_adj_metric(b, c)
+            )
+            remaining = [
+                factor
+                for pos, factor in enumerate(factors)
+                if pos not in (left_pos, right_pos)
+            ]
+            return _term_product(remaining) * replacement
+    return term
+
+
+def simplify_su2_ff(expr):
+    """Rewrite SU(2) structure-constant products into adjoint Kronecker deltas.
+
+    This is intentionally narrow: it looks for one product of two ``f`` tensors
+    in a term, where the two factors share exactly one repeated adjoint index of
+    the SU(2) adjoint representation ``coad(3, ...)``. Each ``f`` is first
+    normalized so that the shared dummy index sits in the third slot, with the
+    corresponding antisymmetry sign tracked explicitly, then the identity
+
+        f(a,b,m) f(c,d,m) = delta(a,c) delta(b,d) - delta(a,d) delta(b,c)
+
+    is applied.
+    """
+
+    expanded = expr.expand() if hasattr(expr, "expand") else expr
+    terms = list(expanded) if _atom_type_name(expanded) == "AtomType.Add" else [expanded]
+    result = Expression.num(0)
+    for term in terms:
+        result += _rewrite_su2_ff_term(term)
+    return result.expand() if hasattr(result, "expand") else result
 
 
 def _vector_leg_lorentz_labels(external_legs):
