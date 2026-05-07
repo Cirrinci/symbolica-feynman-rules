@@ -467,6 +467,67 @@ def _bind_declared_indices_to_field_slots(
         )
 
 
+def _assign_unique_global_pair_labels(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+    counters: dict[str, int],
+):
+    """Share one remaining unique internal index pair across the whole monomial.
+
+    This is the generic fallback for compact mixed-species bilinears such as
+    Yukawas. If, after explicit-label binding, exactly two unlabeled slots of
+    one non-Lorentz kind remain in the whole local monomial, and they sit on
+    one conjugated and one unconjugated field occurrence, we treat that as the
+    unique implied contraction and assign one shared label.
+    """
+
+    kinds = []
+    seen = set()
+    for entry in field_entries:
+        for index in entry.field.indices:
+            if index.kind == LORENTZ_KIND or index.kind in seen:
+                continue
+            seen.add(index.kind)
+            kinds.append(index.kind)
+
+    for kind in kinds:
+        unlabeled_slots: list[tuple[int, int, object]] = []
+        for field_idx, entry in enumerate(field_entries):
+            for slot in entry.field.index_positions(kind=kind):
+                if slot in slot_labels[field_idx]:
+                    continue
+                unlabeled_slots.append((field_idx, slot, entry.field.indices[slot]))
+
+        if len(unlabeled_slots) != 2:
+            continue
+
+        first_idx, first_slot, first_index = unlabeled_slots[0]
+        second_idx, second_slot, second_index = unlabeled_slots[1]
+        if first_index != second_index:
+            continue
+
+        first_conj = bool(field_entries[first_idx].conjugated)
+        second_conj = bool(field_entries[second_idx].conjugated)
+        if first_conj and not second_conj:
+            conj_idx, conj_slot = first_idx, first_slot
+            bare_idx, bare_slot = second_idx, second_slot
+        elif second_conj and not first_conj:
+            conj_idx, conj_slot = second_idx, second_slot
+            bare_idx, bare_slot = first_idx, first_slot
+        else:
+            continue
+        if any(
+            field_entries[mid].field.kind == "fermion"
+            for mid in range(first_idx + 1, second_idx)
+        ):
+            continue
+
+        label = _fresh_local_label(first_index.prefix or first_index.kind, counters)
+        slot_labels[conj_idx][conj_slot] = label
+        slot_labels[bare_idx][bare_slot] = label
+
+
 def _fill_unassigned_local_slot_labels(
     *,
     field_entries: Sequence[_LocalFieldEntry],
@@ -575,12 +636,20 @@ def _infer_explicit_local_dirac_bilinears(
     *,
     field_entries: Sequence[_LocalFieldEntry],
     slot_labels: Sequence[dict[int, object]],
+    explicit_slot_labels: Sequence[dict[int, object]],
 ) -> Optional[tuple[tuple[int, int], ...]]:
     """Infer fermion chains from explicit/reused spinor labels.
 
     This accepts mixed-species local bilinears such as Yukawas when the source
     monomial already makes the spinor contraction explicit through repeated
     spinor labels on one ``fermion.bar`` slot and one ``fermion`` slot.
+
+    When both spinor slots carry **user-supplied** labels (present in
+    ``explicit_slot_labels``), either monomial order ψ … ψ̄ or ψ̄ … ψ is
+    accepted and normalized to ``(psibar_slot, psi_slot)``.  When labels were
+    auto-filled later, only the canonical ψ̄ … ψ field-entry order is accepted,
+    so implicit reversed bilinears still surface as unsupported ordering
+    errors (see regression tests).
     """
 
     fermion_slots = [
@@ -609,15 +678,33 @@ def _infer_explicit_local_dirac_bilinears(
     for key, slots in by_spinor_label.items():
         if len(slots) != 2:
             return None
-        left_slot, right_slot = slots
-        left_conjugated = bool(field_entries[left_slot].conjugated)
-        right_conjugated = bool(field_entries[right_slot].conjugated)
-        if left_conjugated and not right_conjugated:
-            inferred.append((left_slot, right_slot))
-        elif right_conjugated and not left_conjugated:
-            inferred.append((right_slot, left_slot))
+        first_slot, second_slot = slots
+        first_conj = bool(field_entries[first_slot].conjugated)
+        second_conj = bool(field_entries[second_slot].conjugated)
+
+        spin_slot_a = _single_slot_position(field_entries[first_slot].field, SPINOR_KIND)
+        spin_slot_b = _single_slot_position(field_entries[second_slot].field, SPINOR_KIND)
+        explicit_pair = (
+            spin_slot_a is not None
+            and spin_slot_b is not None
+            and spin_slot_a in explicit_slot_labels[first_slot]
+            and spin_slot_b in explicit_slot_labels[second_slot]
+        )
+
+        if first_conj and not second_conj:
+            psibar_slot, psi_slot = first_slot, second_slot
+        elif second_conj and not first_conj:
+            if not explicit_pair:
+                return None
+            psibar_slot, psi_slot = second_slot, first_slot
         else:
             return None
+        if any(
+            field_entries[mid].field.kind == "fermion"
+            for mid in range(first_slot + 1, second_slot)
+        ):
+            return None
+        inferred.append((psibar_slot, psi_slot))
         covered_slots.extend(slots)
 
     covered_counts = Counter(covered_slots)
@@ -636,6 +723,7 @@ def _infer_closed_local_dirac_bilinears(
     field_entries: Sequence[_LocalFieldEntry],
     interval_supports_closed_dirac_bilinear: Sequence[bool],
     slot_labels: Optional[Sequence[dict[int, object]]] = None,
+    explicit_slot_labels: Optional[Sequence[dict[int, object]]] = None,
 ) -> tuple[tuple[int, int], ...]:
     closed_dirac_bilinears = tuple(
         (interval_idx, interval_idx + 1)
@@ -665,9 +753,12 @@ def _infer_closed_local_dirac_bilinears(
     ):
         if slot_labels is None:
             raise _unsupported_local_fermion_ordering_error()
+        if explicit_slot_labels is None:
+            explicit_slot_labels = tuple({} for _ in field_entries)
         explicit_bilinears = _infer_explicit_local_dirac_bilinears(
             field_entries=field_entries,
             slot_labels=slot_labels,
+            explicit_slot_labels=explicit_slot_labels,
         )
         if explicit_bilinears is None:
             raise _unsupported_local_fermion_ordering_error()
@@ -885,6 +976,11 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         slot_labels=slot_labels,
         declared_factors=declared_factors,
     )
+    _assign_unique_global_pair_labels(
+        field_entries=field_entries,
+        slot_labels=slot_labels,
+        counters=counters,
+    )
     _fill_unassigned_local_slot_labels(
         field_entries=field_entries,
         slot_labels=slot_labels,
@@ -902,6 +998,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         field_entries=field_entries,
         interval_supports_closed_dirac_bilinear=interval_supports_closed_dirac_bilinear,
         slot_labels=slot_labels,
+        explicit_slot_labels=explicit_slot_labels,
     )
 
     interaction = InteractionTerm(
