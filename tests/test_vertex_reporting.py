@@ -1,5 +1,6 @@
 from fractions import Fraction
 
+import pytest
 from symbolica import Expression, S
 
 from model import (
@@ -36,6 +37,30 @@ from tests.support.builders import (
     make_su3,
     make_u1,
 )
+
+
+def _gauge_fixing_report(model):
+    return model.lagrangian().vertex_report(sector="gauge_fixing")
+
+
+def _gauge_fixing_signature_rows(model):
+    report = _gauge_fixing_report(model)
+    return [
+        (sig.names, sig.arity, sig.term_count, sig.sectors)
+        for sig in report.signatures
+    ]
+
+
+def _assert_empty_sector(lagrangian, sector):
+    assert lagrangian.vertex_signatures(sector=sector) == ()
+    report = lagrangian.vertex_report(sector=sector)
+    assert report.signatures == ()
+    assert report.matched_signatures == 0
+    assert report.matched_terms == 0
+
+
+def _canonical(expr):
+    return expr.expand().to_canonical_string()
 
 
 def test_vertex_report_enumerates_scalar_signatures_deterministically():
@@ -283,20 +308,57 @@ def _unbroken_sm_gauge_model():
     return model
 
 
+def _unbroken_sm_higgs_potential_model():
+    g2 = S("g2_sm_higgs")
+    g1 = S("g1_sm_higgs")
+    muH2 = S("muH2")
+    lamH = S("lamH")
+
+    weak_doublet_rep = GaugeRepresentation(
+        index=WEAK_FUND_INDEX,
+        generator_builder=weak_gauge_generator,
+        name="doublet",
+    )
+    su2 = GaugeGroup(
+        name="SU2L",
+        abelian=False,
+        coupling=g2,
+        gauge_boson="W",
+        structure_constant=weak_structure_constant,
+        representations=(weak_doublet_rep,),
+    )
+    u1 = make_u1(g1, S("B0"), name="U1Y", charge="Y")
+
+    higgs = Field(
+        "H",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("HSM0"),
+        conjugate_symbol=S("HSMdag0"),
+        indices=(WEAK_FUND_INDEX,),
+        quantum_numbers={"Y": Expression.num(1) / Expression.num(2)},
+    )
+
+    model = Model(
+        gauge_groups=(su2, u1),
+        fields=(higgs,),
+        lagrangian_decl=muH2 * higgs.bar * higgs - lamH * (higgs.bar * higgs) * (higgs.bar * higgs),
+    )
+    return model, higgs, muH2, lamH
+
+
 def test_vertex_signatures_invalid_sector_is_rejected():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     lagrangian = Lagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
     ))
 
-    try:
+    with pytest.raises(ValueError) as exc_info:
         lagrangian.vertex_signatures(sector="bogus")
-    except ValueError as exc:
-        assert "expected one of" in str(exc)
-        for known in KNOWN_VERTEX_SECTORS:
-            assert known in str(exc)
-    else:
-        raise AssertionError("expected ValueError for bogus sector tag")
+    message = str(exc_info.value)
+    assert "expected one of" in message
+    for known in KNOWN_VERTEX_SECTORS:
+        assert known in message
 
 
 def test_vertex_signatures_qcd_sector_split():
@@ -323,8 +385,7 @@ def test_vertex_signatures_qcd_sector_split():
     matter_names = sorted(sig.names for sig in matter_signatures)
     assert matter_names == [("q.bar", "q"), ("q.bar", "q", "G")]
 
-    unknown_signatures = compiled.vertex_signatures(sector="unknown")
-    assert unknown_signatures == ()
+    _assert_empty_sector(compiled, "unknown")
 
 
 def test_vertex_report_helper_qed_gauge_fixing_sector_includes_two_photon_rule():
@@ -337,9 +398,11 @@ def test_vertex_report_helper_qed_gauge_fixing_sector_includes_two_photon_rule()
         lagrangian_decl=GaugeFixing(u1, xi=xi),
     )
 
-    report = model.lagrangian().vertex_report(sector="gauge_fixing")
+    report = _gauge_fixing_report(model)
 
     assert [sig.names for sig in report.signatures] == [("A", "A")]
+    assert [sig.arity for sig in report.signatures] == [2]
+    assert [sig.sectors for sig in report.signatures] == [("gauge_fixing",)]
     assert report.matched_terms == 1
 
 
@@ -365,14 +428,12 @@ def test_vertex_report_manual_qed_gauge_fixing_sector_matches_helper():
         lagrangian_decl=GaugeFixing(u1, xi=xi),
     )
 
-    assert [sig.names for sig in manual.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
-        ("A", "A")
+    manual_rows = _gauge_fixing_signature_rows(manual)
+    helper_rows = _gauge_fixing_signature_rows(helper)
+    assert manual_rows == helper_rows == [
+        (("A", "A"), 2, 1, ("gauge_fixing",)),
     ]
-    assert (
-        manual.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
-        == helper.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
-        == 1
-    )
+    assert _gauge_fixing_report(manual).matched_terms == _gauge_fixing_report(helper).matched_terms == 1
 
 
 def test_vertex_report_manual_su3_gauge_fixing_sector_matches_helper():
@@ -398,14 +459,12 @@ def test_vertex_report_manual_su3_gauge_fixing_sector_matches_helper():
         lagrangian_decl=GaugeFixing(su3, xi=xi),
     )
 
-    assert [sig.names for sig in manual.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
-        ("G", "G")
+    manual_rows = _gauge_fixing_signature_rows(manual)
+    helper_rows = _gauge_fixing_signature_rows(helper)
+    assert manual_rows == helper_rows == [
+        (("G", "G"), 2, 1, ("gauge_fixing",)),
     ]
-    assert (
-        manual.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
-        == helper.lagrangian().vertex_report(sector="gauge_fixing").matched_terms
-        == 1
-    )
+    assert _gauge_fixing_report(manual).matched_terms == _gauge_fixing_report(helper).matched_terms == 1
 
 
 def test_vertex_report_non_gauge_fixing_vector_bilinear_is_not_misclassified():
@@ -424,7 +483,7 @@ def test_vertex_report_non_gauge_fixing_vector_bilinear_is_not_misclassified():
         ),
     ))
 
-    assert lagrangian.vertex_signatures(sector="gauge_fixing") == ()
+    _assert_empty_sector(lagrangian, "gauge_fixing")
 
 
 def test_vertex_report_manual_gauge_fixing_is_dummy_label_invariant():
@@ -451,11 +510,10 @@ def test_vertex_report_manual_gauge_fixing_is_dummy_label_invariant():
         ),
     )
 
-    assert [sig.names for sig in first.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
-        ("A", "A")
-    ]
-    assert [sig.names for sig in second.lagrangian().vertex_report(sector="gauge_fixing").signatures] == [
-        ("A", "A")
+    first_rows = _gauge_fixing_signature_rows(first)
+    second_rows = _gauge_fixing_signature_rows(second)
+    assert first_rows == second_rows == [
+        (("A", "A"), 2, 1, ("gauge_fixing",)),
     ]
 
 
@@ -504,8 +562,8 @@ def test_vertex_signatures_qed_sector_split():
     )
     assert matter_names == [("PsiQED.bar", "PsiQED"), ("PsiQED.bar", "PsiQED", "A")]
 
-    assert compiled.vertex_signatures(sector="ghost") == ()
-    assert compiled.vertex_signatures(sector="gauge_fixing") == ()
+    _assert_empty_sector(compiled, "ghost")
+    _assert_empty_sector(compiled, "gauge_fixing")
 
 
 def test_vertex_signatures_local_scalar_sector_is_matter():
@@ -531,9 +589,9 @@ def test_vertex_signatures_local_scalar_sector_is_matter():
         ("Phi", "Phi"),
         ("Phi", "Phi", "Phi", "Phi"),
     ]
-    assert lagrangian.vertex_signatures(sector="pure_gauge") == ()
-    assert lagrangian.vertex_signatures(sector="ghost") == ()
-    assert lagrangian.vertex_signatures(sector="gauge_fixing") == ()
+    _assert_empty_sector(lagrangian, "pure_gauge")
+    _assert_empty_sector(lagrangian, "ghost")
+    _assert_empty_sector(lagrangian, "gauge_fixing")
 
 
 def test_vertex_report_sector_filter_preserves_total_counts():
@@ -669,3 +727,24 @@ def test_unbroken_sm_gauge_signature_regression_matches_current_28_and_19_split(
     assert len(quadratic_signatures) == 9
     assert len(interaction_signatures) == 19
     assert len(local_signatures) == 28
+
+
+def test_unbroken_sm_higgs_potential_vertices_are_frozen():
+    model, higgs, muH2, lamH = _unbroken_sm_higgs_potential_model()
+    lagrangian = model.lagrangian()
+
+    rules = lagrangian.feynman_rules(include_delta=False)
+
+    assert set(rules) == {
+        ("H.bar", "H"),
+        ("H.bar", "H", "H.bar", "H"),
+    }
+    assert _canonical(rules[("H.bar", "H")]) == _canonical(I * muH2)
+    assert _canonical(rules[("H.bar", "H", "H.bar", "H")]) == _canonical(-4 * I * lamH)
+
+    assert _canonical(
+        lagrangian.feynman_rule(higgs.bar, higgs, include_delta=False)
+    ) == _canonical(I * muH2)
+    assert _canonical(
+        lagrangian.feynman_rule(higgs.bar, higgs, higgs.bar, higgs, include_delta=False)
+    ) == _canonical(-4 * I * lamH)

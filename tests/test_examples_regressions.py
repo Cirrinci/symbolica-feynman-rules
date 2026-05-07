@@ -1,14 +1,6 @@
 """Focused regressions extracted from the example scripts."""
 
-import sys
-from pathlib import Path
-
 import pytest
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC = REPO_ROOT / "src"
-sys.path.insert(0, str(SRC))
 
 from symbolica import Expression  # noqa: E402
 
@@ -48,13 +40,20 @@ def _canon(expr):
 
 
 def test_direct_api_yukawa_unstripped_keeps_external_spinors():
-    expr = simplify_deltas(
+    expr_unstripped = simplify_deltas(
         vertex_factor(**L_yukawa, x=x, d=d, strip_externals=False),
         species_map={b1: psibar0, b2: psi0, b3: phi0},
     )
-    text = expr.to_canonical_string()
-    assert "UbarF" in text
-    assert "UF" in text
+    expr_stripped = simplify_deltas(
+        vertex_factor(**L_yukawa, x=x, d=d, strip_externals=True),
+        species_map={b1: psibar0, b2: psi0, b3: phi0},
+    )
+    unstripped_text = expr_unstripped.to_canonical_string()
+    stripped_text = expr_stripped.to_canonical_string()
+    assert "UbarF" in unstripped_text
+    assert "UF" in unstripped_text
+    assert "UbarF" not in stripped_text
+    assert "UF" not in stripped_text
 
 
 def test_direct_api_rejects_underspecified_multi_fermion_operator():

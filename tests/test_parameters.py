@@ -1,12 +1,3 @@
-import sys
-from pathlib import Path
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC = REPO_ROOT / "src"
-sys.path.insert(0, str(SRC))
-
-
 from symbolica import S  # noqa: E402
 
 from model import ComplexScalarKineticTerm, Model, Parameter  # noqa: E402
@@ -98,10 +89,16 @@ def test_parameter_object_can_be_used_directly_as_declared_coupling():
     )
 
     expr = model.lagrangian().feynman_rule(phi.bar, phi, phi.bar, phi, simplify=True)
+    expr_from_symbol = Model(
+        fields=(phi,),
+        parameters=(g4,),
+        lagrangian_decl=g4.symbol * phi * phi.bar * phi * phi.bar,
+    ).lagrangian().feynman_rule(phi.bar, phi, phi.bar, phi, simplify=True)
 
     assert "Parameter(" not in str(expr)
     assert "g4" in str(expr)
     assert _canon(expr) == _canon(expr.expand())
+    assert _canon(expr) == _canon(expr_from_symbol)
 
 
 def test_parameter_object_matches_symbol_path_in_feynman_rule():

@@ -13,16 +13,10 @@ Covers:
 - Compiled sectors: scalar covariant, gauge kinetic, gauge-fixing, ghosts
 """
 
-import sys
 import re
 from fractions import Fraction
-from pathlib import Path
 
 import pytest
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC = REPO_ROOT / "src"
-sys.path.insert(0, str(SRC))
 
 from symbolica import S, Expression  # noqa: E402
 
