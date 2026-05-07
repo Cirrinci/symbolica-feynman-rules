@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from symbolica import Expression, S
-from symbolica.community.idenso import simplify_metrics
+from symbolica.community.idenso import simplify_color, simplify_metrics
 
 from symbolic.spenso_structures import LORENTZ_KIND, WEAK_ADJ, simplify_gamma_chain
 from symbolic.tensor_canonicalization import (
@@ -138,6 +138,16 @@ def simplify_deltas(expr, species_map=None):
 
 def simplify_spinor_indices(expr):
     """Contract repeated bispinor indices using Spenso's metric simplification."""
+    return simplify_metrics(expr)
+
+
+def simplify_color_indices(expr):
+    """Apply idenso ``simplify_color`` followed by metric clean-up.
+
+    This is a no-op on subexpressions that do not carry color tensors, so it
+    is safe to insert into the generic vertex pipeline.
+    """
+    expr = simplify_color(expr)
     return simplify_metrics(expr)
 
 
@@ -298,12 +308,38 @@ def canonicalize_vector_vertex(expr, external_legs):
     return canonical_expr
 
 
-def simplify_vertex(expr, species_map=None, external_legs=None, simplify_gamma: bool = False):
-    """Simplify a vertex factor expression in one call."""
+def simplify_vertex(
+    expr,
+    species_map=None,
+    external_legs=None,
+    simplify_gamma: bool = False,
+    simplify_color: bool = False,
+):
+    """Simplify a vertex factor expression in one call.
+
+    Steps applied (in order):
+
+    1. species-Kronecker-delta cleanup
+    2. (optional) ``simplify_gamma`` for Dirac chains
+    3. ``simplify_metrics`` (via ``simplify_spinor_indices``) to contract
+       bispinor and other metric pairs
+    4. (optional) ``simplify_color`` for SU(N) color identities -- this is
+       opt-in because the idenso pass applies Fierz-like rewrites
+       (e.g. ``T^a -> f`` substitutions) that change the surface form even
+       when they preserve the value, which would invalidate downstream
+       structural comparisons.
+    5. project-local Lorentz-metric/momentum contraction pass
+    6. vector-vertex canonicalisation when ``external_legs`` is provided
+
+    For a stronger one-call cleanup that always runs the full idenso chain,
+    use :func:`symbolic.tensor_canonicalization.canonize_full` instead.
+    """
     expr = simplify_deltas(expr, species_map=species_map)
     if simplify_gamma:
         expr = simplify_gamma_chain(expr)
     expr = simplify_spinor_indices(expr)
+    if simplify_color:
+        expr = simplify_color_indices(expr)
     expr = contract_spenso_lorentz_metrics(expr)
     expr = canonicalize_vector_vertex(expr, external_legs)
     return expr

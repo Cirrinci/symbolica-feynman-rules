@@ -10,6 +10,13 @@ The intended layering is:
 
 1. canonize tensor heads and dummy indices here
 2. apply gauge-/physics-specific compact rewrites elsewhere when desired
+
+The canonicalisation works by *swapping* every Spenso tensor head for a
+plain Symbolica symbol that carries the right ``is_symmetric`` /
+``is_antisymmetric`` attribute, running ``Expression.canonize_tensors`` on the
+result, and swapping back.  This is the cleanest way to give Symbolica access
+to the tensor symmetries while keeping the expression idiomatic Spenso for
+the rest of the pipeline.
 """
 
 from __future__ import annotations
@@ -18,7 +25,8 @@ from dataclasses import dataclass
 from typing import Iterable, Sequence
 
 from symbolica import Expression, S
-from .spenso_structures import lorentz_metric
+
+from .spenso_structures import lorentz_metric, simplify_invariants
 
 pcomp = S("pcomp")
 
@@ -45,7 +53,11 @@ class TensorHeadSpec:
         return S(self.canonical_name, **self.head_kwargs)
 
 
+# The Spenso built-in tensors live in the ``spenso::`` namespace, while
+# tensors created from Python via ``TensorName("...")`` land in
+# ``spenso_python::``.  Both are matched by the swap pattern below.
 SPENSO_TENSOR_HEAD_SPECS = (
+    # Built-in HEP heads.
     TensorHeadSpec(
         raw_name="spenso::g",
         canonical_name="canon::g",
@@ -62,6 +74,39 @@ SPENSO_TENSOR_HEAD_SPECS = (
         raw_name="spenso::f",
         canonical_name="canon::f",
         arity=3,
+        head_kwargs={"is_antisymmetric": True},
+    ),
+    # Project-defined invariant tensors.  See ``spenso_structures`` for the
+    # corresponding ``TensorName`` declarations.  We register these here so
+    # Symbolica knows their symmetry during ``canonize_tensors``.
+    TensorHeadSpec(
+        raw_name="spenso_python::weak_eps2",
+        canonical_name="canon::weak_eps2",
+        arity=2,
+        head_kwargs={"is_antisymmetric": True},
+    ),
+    TensorHeadSpec(
+        raw_name="spenso_python::lor_levi_civita",
+        canonical_name="canon::lor_levi_civita",
+        arity=4,
+        head_kwargs={"is_antisymmetric": True},
+    ),
+    TensorHeadSpec(
+        raw_name="spenso_python::color_eps3",
+        canonical_name="canon::color_eps3",
+        arity=3,
+        head_kwargs={"is_antisymmetric": True},
+    ),
+    TensorHeadSpec(
+        raw_name="spenso_python::color_d",
+        canonical_name="canon::color_d",
+        arity=3,
+        head_kwargs={"is_symmetric": True},
+    ),
+    TensorHeadSpec(
+        raw_name="spenso_python::dirac_C",
+        canonical_name="canon::dirac_C",
+        arity=2,
         head_kwargs={"is_antisymmetric": True},
     ),
 )
@@ -127,6 +172,8 @@ def canonize_spenso_tensors(
     adjoint_indices: Iterable[object] = (),
     color_fund_indices: Iterable[object] = (),
     spinor_indices: Iterable[object] = (),
+    weak_fund_indices: Iterable[object] = (),
+    weak_adj_indices: Iterable[object] = (),
     extra_index_groups: Iterable[tuple[object, object]] = (),
     standardize_dummy_names: bool = True,
 ):
@@ -136,6 +183,14 @@ def canonize_spenso_tensors(
     representations cannot be merged accidentally.  This is the main helper
     used by the current regression checks when gauge-heavy outputs should be
     compared modulo dummy-index renaming.
+
+    Each kwarg corresponds to one representation kind (Lorentz, color
+    adjoint, color fundamental, spinor, weak fundamental, weak adjoint).
+    Indices coming from different kinds are placed in distinct groups so
+    that ``canonize_tensors`` never collapses, e.g., a Lorentz dummy with a
+    color dummy.  Anything that does not fit the standard catalogue can be
+    routed through ``extra_index_groups`` as ``(index, group_marker)``
+    pairs.
     """
 
     contracted_indices = []
@@ -143,6 +198,8 @@ def canonize_spenso_tensors(
     contracted_indices.extend((idx, 1) for idx in adjoint_indices)
     contracted_indices.extend((idx, 2) for idx in color_fund_indices)
     contracted_indices.extend((idx, 3) for idx in spinor_indices)
+    contracted_indices.extend((idx, 4) for idx in weak_fund_indices)
+    contracted_indices.extend((idx, 5) for idx in weak_adj_indices)
     contracted_indices.extend(extra_index_groups)
 
     return canonize_tensor_expression(
@@ -201,3 +258,44 @@ def contract_spenso_lorentz_metrics(expr, *, max_passes: int = 8):
         if current == previous:
             break
     return result
+
+
+# ---------------------------------------------------------------------------
+# One-shot orchestrator
+# ---------------------------------------------------------------------------
+
+
+def canonize_full(
+    expr,
+    *,
+    lorentz_indices: Iterable[object] = (),
+    adjoint_indices: Iterable[object] = (),
+    color_fund_indices: Iterable[object] = (),
+    spinor_indices: Iterable[object] = (),
+    weak_fund_indices: Iterable[object] = (),
+    weak_adj_indices: Iterable[object] = (),
+    extra_index_groups: Iterable[tuple[object, object]] = (),
+    run_gamma: bool = True,
+):
+    """One-call simplification + canonicalisation.
+
+    Threads the idenso simplification chain (``simplify_invariants`` from
+    ``spenso_structures``), the project's own metric/momentum contraction
+    pass, and the symmetry-aware tensor canonicalisation in a single
+    deterministic order.  Returns just the canonical expression (the dummy
+    bookkeeping returned by :func:`canonize_spenso_tensors` is dropped here
+    for ergonomic reasons).
+    """
+    expr = simplify_invariants(expr, run_gamma=run_gamma)
+    expr = contract_spenso_lorentz_metrics(expr)
+    canonical, _, _ = canonize_spenso_tensors(
+        expr,
+        lorentz_indices=lorentz_indices,
+        adjoint_indices=adjoint_indices,
+        color_fund_indices=color_fund_indices,
+        spinor_indices=spinor_indices,
+        weak_fund_indices=weak_fund_indices,
+        weak_adj_indices=weak_adj_indices,
+        extra_index_groups=extra_index_groups,
+    )
+    return canonical

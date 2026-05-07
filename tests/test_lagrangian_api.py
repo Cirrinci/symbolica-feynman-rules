@@ -1125,6 +1125,40 @@ def test_model_accepts_declared_local_yukawa_product():
     assert _canon(got) == _canon(expected)
 
 
+def test_declared_yukawa_explicit_spinor_psi_before_psibar_matches_canonical():
+    """Explicit spinor contraction must work when ψ precedes ψ̄ in the monomial.
+
+    Regression: lowering inferred Dirac bilinears only when the conjugated
+    field appeared first in field-entry order; ψ … ψ̄ with shared labels must
+    still lower to the same vertex as ψ̄ … ψ.
+    """
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    y = S("y")
+    alpha = S("alpha_psi_first")
+
+    model_psi_first = Model(
+        fields=(psi, phi),
+        lagrangian_decl=y * psi(alpha) * psi.bar(alpha) * phi,
+    )
+    model_psibar_first = Model(
+        fields=(psi, phi),
+        lagrangian_decl=y * psi.bar(alpha) * psi(alpha) * phi,
+    )
+
+    kwargs = dict(simplify=True, include_delta=False)
+    got = model_psi_first.lagrangian().feynman_rule(psi.bar, psi, phi, **kwargs)
+    expected = model_psibar_first.lagrangian().feynman_rule(psi.bar, psi, phi, **kwargs)
+    assert _canon(got) == _canon(expected)
+
+
 def test_model_accepts_declared_explicit_mixed_species_yukawa_product():
     qL = Field(
         "qL",
@@ -1179,6 +1213,99 @@ def test_model_accepts_declared_explicit_mixed_species_yukawa_product():
         ),
     ))
     expected = ref.feynman_rule(qL.bar, H, dR, simplify=True, include_delta=False)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_compact_mixed_species_yukawa_product():
+    qL = Field(
+        "qL",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("qL0"),
+        conjugate_symbol=S("qLbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, WEAK_FUND_INDEX),
+    )
+    dR = Field(
+        "dR",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("dR0"),
+        conjugate_symbol=S("dRbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    H = Field(
+        "H",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("H0"),
+        conjugate_symbol=S("Hbar0"),
+        indices=(WEAK_FUND_INDEX,),
+    )
+    yd = S("yd")
+
+    model = Model(
+        fields=(qL, dR, H),
+        lagrangian_decl=yd * qL.bar * H * dR,
+    )
+    got = model.lagrangian().feynman_rule(qL.bar, H, dR, simplify=True, include_delta=False)
+
+    ref = Model(
+        fields=(qL, dR, H),
+        lagrangian_decl=yd * qL.bar(S("alpha"), S("c"), S("i")) * H(S("i")) * dR(S("alpha"), S("c")),
+    )
+    expected = ref.lagrangian().feynman_rule(qL.bar, H, dR, simplify=True, include_delta=False)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_partially_explicit_up_type_yukawa_with_eps2():
+    qL = Field(
+        "qL",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("qL0"),
+        conjugate_symbol=S("qLbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, WEAK_FUND_INDEX),
+    )
+    uR = Field(
+        "uR",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("uR0"),
+        conjugate_symbol=S("uRbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    H = Field(
+        "H",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("H0"),
+        conjugate_symbol=S("Hbar0"),
+        indices=(WEAK_FUND_INDEX,),
+    )
+    yu = S("yu")
+    i = S("i")
+    j = S("j")
+    eps2 = S("eps2")
+
+    model = Model(
+        fields=(qL, uR, H),
+        lagrangian_decl=yu
+        * eps2(i, j)
+        * qL.bar(index_labels={WEAK_FUND_INDEX.kind: i})
+        * H.bar(j)
+        * uR,
+    )
+    got = model.lagrangian().feynman_rule(qL.bar, H.bar, uR, simplify=True, include_delta=False)
+
+    ref = Model(
+        fields=(qL, uR, H),
+        lagrangian_decl=yu
+        * eps2(i, j)
+        * qL.bar(S("alpha"), S("c"), i)
+        * H.bar(j)
+        * uR(S("alpha"), S("c")),
+    )
+    expected = ref.lagrangian().feynman_rule(qL.bar, H.bar, uR, simplify=True, include_delta=False)
     assert _canon(got) == _canon(expected)
 
 

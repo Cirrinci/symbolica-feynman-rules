@@ -454,11 +454,6 @@ def _unbroken_sm_yukawa_model():
         quantum_numbers={"Y": Expression.num(1) / Expression.num(2)},
     )
 
-    alpha_qd = S("alpha_qd")
-    alpha_le = S("alpha_le")
-    alpha_qu = S("alpha_qu")
-    c_qd = S("c_qd")
-    c_qu = S("c_qu")
     i_qd = S("i_qd")
     i_le = S("i_le")
     i_qu = S("i_qu")
@@ -468,12 +463,12 @@ def _unbroken_sm_yukawa_model():
         gauge_groups=(su3, su2, u1),
         fields=(qL, uR, dR, lL, eR, higgs, gluon, weak_boson, hypercharge_boson),
         lagrangian_decl=(
-            -yd * qL.bar(alpha_qd, c_qd, i_qd) * higgs(i_qd) * dR(alpha_qd, c_qd)
-            - yd * dR.bar(alpha_qd, c_qd) * higgs.bar(i_qd) * qL(alpha_qd, c_qd, i_qd)
-            - ye * lL.bar(alpha_le, i_le) * higgs(i_le) * eR(alpha_le)
-            - ye * eR.bar(alpha_le) * higgs.bar(i_le) * lL(alpha_le, i_le)
-            - yu * eps2(i_qu, j_qu) * qL.bar(alpha_qu, c_qu, i_qu) * higgs.bar(j_qu) * uR(alpha_qu, c_qu)
-            - yu * eps2(i_qu, j_qu) * uR.bar(alpha_qu, c_qu) * higgs(j_qu) * qL(alpha_qu, c_qu, i_qu)
+            -yd * qL.bar * higgs * dR
+            - yd * dR.bar * higgs.bar * qL
+            - ye * lL.bar * higgs * eR
+            - ye * eR.bar * higgs.bar * lL
+            - yu * eps2(i_qu, j_qu) * qL.bar(index_labels={WEAK_FUND_INDEX.kind: i_qu}) * higgs.bar(j_qu) * uR
+            - yu * eps2(i_qu, j_qu) * uR.bar * higgs(j_qu) * qL(index_labels={WEAK_FUND_INDEX.kind: i_qu})
         ),
     )
     return model, {
