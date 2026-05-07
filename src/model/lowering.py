@@ -346,32 +346,27 @@ def _assign_default_pair_labels(
     interval_chain_factors: Sequence[tuple[object, ...]],
     counters: dict[str, int],
 ):
-    non_lorentz_shared_kinds = (SPINOR_KIND, COLOR_FUND_KIND, COLOR_ADJ_KIND)
-
     for interval_idx, (left, right) in enumerate(zip(field_entries, field_entries[1:])):
         if not left.conjugated or right.conjugated:
             continue
+        if left.field != right.field:
+            continue
         interval_kinds = {_local_chain_kind(factor) for factor in interval_chain_factors[interval_idx]}
-        for kind in non_lorentz_shared_kinds:
-            if kind in interval_kinds:
+        for slot, index in enumerate(left.field.indices):
+            if index.kind == LORENTZ_KIND:
                 continue
-            shared = (
-                left.field.index_kind_count(kind) == 1
-                and right.field.index_kind_count(kind) == 1
-            )
-            if not shared:
+            if slot >= len(right.field.indices):
                 continue
-
-            left_slot = _single_slot_position(left.field, kind)
-            right_slot = _single_slot_position(right.field, kind)
-            if left_slot is None or right_slot is None:
+            if right.field.indices[slot] != index:
                 continue
-            if left_slot in slot_labels[interval_idx] or right_slot in slot_labels[interval_idx + 1]:
+            if index.kind in interval_kinds:
+                continue
+            if slot in slot_labels[interval_idx] or slot in slot_labels[interval_idx + 1]:
                 continue
 
-            label = _fresh_local_label(kind, counters)
-            slot_labels[interval_idx][left_slot] = label
-            slot_labels[interval_idx + 1][right_slot] = label
+            label = _fresh_local_label(index.prefix or index.kind, counters)
+            slot_labels[interval_idx][slot] = label
+            slot_labels[interval_idx + 1][slot] = label
 
 
 def _ambiguous_local_attachment_error(
@@ -576,10 +571,71 @@ def _unsupported_local_fermion_ordering_error() -> ValueError:
     )
 
 
+def _infer_explicit_local_dirac_bilinears(
+    *,
+    field_entries: Sequence[_LocalFieldEntry],
+    slot_labels: Sequence[dict[int, object]],
+) -> Optional[tuple[tuple[int, int], ...]]:
+    """Infer fermion chains from explicit/reused spinor labels.
+
+    This accepts mixed-species local bilinears such as Yukawas when the source
+    monomial already makes the spinor contraction explicit through repeated
+    spinor labels on one ``fermion.bar`` slot and one ``fermion`` slot.
+    """
+
+    fermion_slots = [
+        idx for idx, entry in enumerate(field_entries) if entry.field.kind == "fermion"
+    ]
+    if not fermion_slots:
+        return ()
+
+    by_spinor_label: dict[str, list[int]] = {}
+    original_labels: dict[str, object] = {}
+
+    for idx in fermion_slots:
+        entry = field_entries[idx]
+        spinor_slot = _single_slot_position(entry.field, SPINOR_KIND)
+        if spinor_slot is None:
+            return None
+        label = slot_labels[idx].get(spinor_slot)
+        if label is None:
+            return None
+        key = _local_label_key(label)
+        by_spinor_label.setdefault(key, []).append(idx)
+        original_labels.setdefault(key, label)
+
+    inferred: list[tuple[int, int]] = []
+    covered_slots: list[int] = []
+    for key, slots in by_spinor_label.items():
+        if len(slots) != 2:
+            return None
+        left_slot, right_slot = slots
+        left_conjugated = bool(field_entries[left_slot].conjugated)
+        right_conjugated = bool(field_entries[right_slot].conjugated)
+        if left_conjugated and not right_conjugated:
+            inferred.append((left_slot, right_slot))
+        elif right_conjugated and not left_conjugated:
+            inferred.append((right_slot, left_slot))
+        else:
+            return None
+        covered_slots.extend(slots)
+
+    covered_counts = Counter(covered_slots)
+    if (
+        len(covered_slots) != len(fermion_slots)
+        or set(covered_slots) != set(fermion_slots)
+        or any(count != 1 for count in covered_counts.values())
+    ):
+        return None
+
+    return tuple(sorted(inferred))
+
+
 def _infer_closed_local_dirac_bilinears(
     *,
     field_entries: Sequence[_LocalFieldEntry],
     interval_supports_closed_dirac_bilinear: Sequence[bool],
+    slot_labels: Optional[Sequence[dict[int, object]]] = None,
 ) -> tuple[tuple[int, int], ...]:
     closed_dirac_bilinears = tuple(
         (interval_idx, interval_idx + 1)
@@ -607,7 +663,19 @@ def _infer_closed_local_dirac_bilinears(
         or set(covered_slots) != set(fermion_slots)
         or any(count != 1 for count in covered_counts.values())
     ):
-        raise _unsupported_local_fermion_ordering_error()
+        if slot_labels is None:
+            raise _unsupported_local_fermion_ordering_error()
+        explicit_bilinears = _infer_explicit_local_dirac_bilinears(
+            field_entries=field_entries,
+            slot_labels=slot_labels,
+        )
+        if explicit_bilinears is None:
+            raise _unsupported_local_fermion_ordering_error()
+        merged = list(closed_dirac_bilinears)
+        for pair in explicit_bilinears:
+            if pair not in merged:
+                merged.append(pair)
+        return tuple(merged)
 
     return closed_dirac_bilinears
 
@@ -833,6 +901,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     closed_dirac_bilinears = _infer_closed_local_dirac_bilinears(
         field_entries=field_entries,
         interval_supports_closed_dirac_bilinear=interval_supports_closed_dirac_bilinear,
+        slot_labels=slot_labels,
     )
 
     interaction = InteractionTerm(

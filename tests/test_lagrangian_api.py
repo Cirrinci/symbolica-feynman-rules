@@ -41,6 +41,7 @@ from model import (  # noqa: E402
     SPINOR_INDEX,
     SPINOR_KIND,
     T,
+    WEAK_FUND_INDEX,
     ConjugateField,
     ComplexScalarKineticTerm,
     DerivativeAction,
@@ -1121,6 +1122,63 @@ def test_model_accepts_declared_local_yukawa_product():
         ),
     ))
     expected = ref.feynman_rule(psi.bar, psi, phi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_model_accepts_declared_explicit_mixed_species_yukawa_product():
+    qL = Field(
+        "qL",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("qL0"),
+        conjugate_symbol=S("qLbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, WEAK_FUND_INDEX),
+    )
+    dR = Field(
+        "dR",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("dR0"),
+        conjugate_symbol=S("dRbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+    H = Field(
+        "H",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("H0"),
+        conjugate_symbol=S("Hbar0"),
+        indices=(WEAK_FUND_INDEX,),
+    )
+    yd = S("yd")
+    alpha = S("alpha")
+    c = S("c")
+    i = S("i")
+
+    model = Model(
+        fields=(qL, dR, H),
+        lagrangian_decl=yd * qL.bar(alpha, c, i) * H(i) * dR(alpha, c),
+    )
+    got = model.lagrangian().feynman_rule(qL.bar, H, dR, simplify=True, include_delta=False)
+
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=yd,
+            fields=(
+                qL.occurrence(conjugated=True, labels={
+                    SPINOR_KIND: S("alpha"),
+                    COLOR_FUND_KIND: S("c"),
+                    WEAK_FUND_INDEX.kind: S("i"),
+                }),
+                H.occurrence(labels={WEAK_FUND_INDEX.kind: S("i")}),
+                dR.occurrence(labels={
+                    SPINOR_KIND: S("alpha"),
+                    COLOR_FUND_KIND: S("c"),
+                }),
+            ),
+        ),
+    ))
+    expected = ref.feynman_rule(qL.bar, H, dR, simplify=True, include_delta=False)
     assert _canon(got) == _canon(expected)
 
 

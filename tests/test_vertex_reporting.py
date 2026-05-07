@@ -23,6 +23,7 @@ from model import (
     WEAK_FUND_INDEX,
     Model,
 )
+from model.lowering import _lower_standalone_lagrangian_source_term
 from model.lagrangian import KNOWN_VERTEX_SECTORS
 from symbolic.spenso_structures import weak_gauge_generator, weak_structure_constant
 from symbolic.vertex_engine import I
@@ -345,6 +346,147 @@ def _unbroken_sm_higgs_potential_model():
         lagrangian_decl=muH2 * higgs.bar * higgs - lamH * (higgs.bar * higgs) * (higgs.bar * higgs),
     )
     return model, higgs, muH2, lamH
+
+
+def _explicit_unbroken_sm_higgs_potential_model():
+    model, higgs, muH2, lamH = _unbroken_sm_higgs_potential_model()
+    iH = S("iH")
+    jH = S("jH")
+    explicit_model = Model(
+        gauge_groups=model.gauge_groups,
+        fields=(higgs,),
+        lagrangian_decl=(
+            muH2 * higgs.bar(iH) * higgs(iH)
+            - lamH * higgs.bar(iH) * higgs(iH) * higgs.bar(jH) * higgs(jH)
+        ),
+    )
+    return explicit_model, higgs, muH2, lamH
+
+
+def _unbroken_sm_yukawa_model():
+    gS = S("gS_sm_yuk")
+    g2 = S("g2_sm_yuk")
+    g1 = S("g1_sm_yuk")
+    yu = S("yu")
+    yd = S("yd")
+    ye = S("ye")
+    eps2 = S("eps2")
+
+    gluon = make_gluon(name="G", symbol=S("G0"))
+    hypercharge_boson = make_photon(name="B", symbol=S("B0"))
+    weak_boson = Field(
+        "W",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("W0"),
+        indices=(LORENTZ_INDEX, WEAK_ADJ_INDEX),
+    )
+
+    weak_doublet_rep = GaugeRepresentation(
+        index=WEAK_FUND_INDEX,
+        generator_builder=weak_gauge_generator,
+        name="doublet",
+    )
+
+    su3 = make_su3(gS, gluon.symbol, name="SU3C")
+    su2 = GaugeGroup(
+        name="SU2L",
+        abelian=False,
+        coupling=g2,
+        gauge_boson=weak_boson.symbol,
+        structure_constant=weak_structure_constant,
+        representations=(weak_doublet_rep,),
+    )
+    u1 = make_u1(g1, hypercharge_boson.symbol, name="U1Y", charge="Y")
+
+    qL = Field(
+        "qL",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("qL0"),
+        conjugate_symbol=S("qLbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, WEAK_FUND_INDEX),
+        quantum_numbers={"Y": Expression.num(1) / Expression.num(6)},
+    )
+    uR = Field(
+        "uR",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("uR0"),
+        conjugate_symbol=S("uRbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+        quantum_numbers={"Y": Expression.num(2) / Expression.num(3)},
+    )
+    dR = Field(
+        "dR",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("dR0"),
+        conjugate_symbol=S("dRbar0"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+        quantum_numbers={"Y": -(Expression.num(1) / Expression.num(3))},
+    )
+    lL = Field(
+        "lL",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("lL0"),
+        conjugate_symbol=S("lLbar0"),
+        indices=(SPINOR_INDEX, WEAK_FUND_INDEX),
+        quantum_numbers={"Y": -(Expression.num(1) / Expression.num(2))},
+    )
+    eR = Field(
+        "eR",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("eR0"),
+        conjugate_symbol=S("eRbar0"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Y": -Expression.num(1)},
+    )
+    higgs = Field(
+        "H",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("HSM0"),
+        conjugate_symbol=S("HSMdag0"),
+        indices=(WEAK_FUND_INDEX,),
+        quantum_numbers={"Y": Expression.num(1) / Expression.num(2)},
+    )
+
+    alpha_qd = S("alpha_qd")
+    alpha_le = S("alpha_le")
+    alpha_qu = S("alpha_qu")
+    c_qd = S("c_qd")
+    c_qu = S("c_qu")
+    i_qd = S("i_qd")
+    i_le = S("i_le")
+    i_qu = S("i_qu")
+    j_qu = S("j_qu")
+
+    model = Model(
+        gauge_groups=(su3, su2, u1),
+        fields=(qL, uR, dR, lL, eR, higgs, gluon, weak_boson, hypercharge_boson),
+        lagrangian_decl=(
+            -yd * qL.bar(alpha_qd, c_qd, i_qd) * higgs(i_qd) * dR(alpha_qd, c_qd)
+            - yd * dR.bar(alpha_qd, c_qd) * higgs.bar(i_qd) * qL(alpha_qd, c_qd, i_qd)
+            - ye * lL.bar(alpha_le, i_le) * higgs(i_le) * eR(alpha_le)
+            - ye * eR.bar(alpha_le) * higgs.bar(i_le) * lL(alpha_le, i_le)
+            - yu * eps2(i_qu, j_qu) * qL.bar(alpha_qu, c_qu, i_qu) * higgs.bar(j_qu) * uR(alpha_qu, c_qu)
+            - yu * eps2(i_qu, j_qu) * uR.bar(alpha_qu, c_qu) * higgs(j_qu) * qL(alpha_qu, c_qu, i_qu)
+        ),
+    )
+    return model, {
+        "qL": qL,
+        "uR": uR,
+        "dR": dR,
+        "lL": lL,
+        "eR": eR,
+        "H": higgs,
+        "yu": yu,
+        "yd": yd,
+        "ye": ye,
+    }
 
 
 def test_vertex_signatures_invalid_sector_is_rejected():
@@ -732,6 +874,10 @@ def test_unbroken_sm_gauge_signature_regression_matches_current_28_and_19_split(
 def test_unbroken_sm_higgs_potential_vertices_are_frozen():
     model, higgs, muH2, lamH = _unbroken_sm_higgs_potential_model()
     lagrangian = model.lagrangian()
+    g12 = WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
+    g34 = WEAK_FUND_INDEX.representation.g(S("w3"), S("w4")).to_expression()
+    g14 = WEAK_FUND_INDEX.representation.g(S("w1"), S("w4")).to_expression()
+    g23 = WEAK_FUND_INDEX.representation.g(S("w2"), S("w3")).to_expression()
 
     rules = lagrangian.feynman_rules(include_delta=False)
 
@@ -739,12 +885,111 @@ def test_unbroken_sm_higgs_potential_vertices_are_frozen():
         ("H.bar", "H"),
         ("H.bar", "H", "H.bar", "H"),
     }
-    assert _canonical(rules[("H.bar", "H")]) == _canonical(I * muH2)
-    assert _canonical(rules[("H.bar", "H", "H.bar", "H")]) == _canonical(-4 * I * lamH)
+    assert _canonical(rules[("H.bar", "H")]) == _canonical(I * muH2 * g12)
+    assert _canonical(rules[("H.bar", "H", "H.bar", "H")]) == _canonical(
+        -2 * I * lamH * g12 * g34 - 2 * I * lamH * g14 * g23
+    )
 
     assert _canonical(
         lagrangian.feynman_rule(higgs.bar, higgs, include_delta=False)
-    ) == _canonical(I * muH2)
+    ) == _canonical(I * muH2 * g12)
     assert _canonical(
         lagrangian.feynman_rule(higgs.bar, higgs, higgs.bar, higgs, include_delta=False)
-    ) == _canonical(-4 * I * lamH)
+    ) == _canonical(-2 * I * lamH * g12 * g34 - 2 * I * lamH * g14 * g23)
+
+
+def test_compact_higgs_bilinear_local_lowering_shares_weak_label():
+    _model, higgs, muH2, _lamH = _unbroken_sm_higgs_potential_model()
+
+    interaction = _lower_standalone_lagrangian_source_term(muH2 * higgs.bar * higgs)
+
+    left_label = interaction.fields[0].labels["weak_fund"]
+    right_label = interaction.fields[1].labels["weak_fund"]
+
+    assert left_label == right_label
+
+
+def test_compact_higgs_quartic_local_lowering_forms_two_separate_singlets():
+    _model, higgs, _muH2, lamH = _unbroken_sm_higgs_potential_model()
+
+    interaction = _lower_standalone_lagrangian_source_term(
+        -lamH * (higgs.bar * higgs) * (higgs.bar * higgs)
+    )
+
+    labels = [field.labels["weak_fund"] for field in interaction.fields]
+
+    assert labels[0] == labels[1]
+    assert labels[2] == labels[3]
+    assert labels[0] != labels[2]
+
+
+def test_compact_higgs_potential_matches_explicit_weak_singlet_contractions():
+    compact_model, higgs, muH2, lamH = _unbroken_sm_higgs_potential_model()
+    explicit_model, _explicit_higgs, _explicit_muH2, _explicit_lamH = _explicit_unbroken_sm_higgs_potential_model()
+
+    compact_lagrangian = compact_model.lagrangian()
+    explicit_lagrangian = explicit_model.lagrangian()
+    g12 = WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
+    g34 = WEAK_FUND_INDEX.representation.g(S("w3"), S("w4")).to_expression()
+    g14 = WEAK_FUND_INDEX.representation.g(S("w1"), S("w4")).to_expression()
+    g23 = WEAK_FUND_INDEX.representation.g(S("w2"), S("w3")).to_expression()
+
+    assert tuple(sig.names for sig in compact_lagrangian.vertex_signatures()) == tuple(
+        sig.names for sig in explicit_lagrangian.vertex_signatures()
+    )
+    assert _canonical(
+        compact_lagrangian.feynman_rule(higgs.bar, higgs, include_delta=False)
+    ) == _canonical(
+        explicit_lagrangian.feynman_rule(higgs.bar, higgs, include_delta=False)
+    ) == _canonical(I * muH2 * g12)
+    assert _canonical(
+        compact_lagrangian.feynman_rule(higgs.bar, higgs, higgs.bar, higgs, include_delta=False)
+    ) == _canonical(
+        explicit_lagrangian.feynman_rule(higgs.bar, higgs, higgs.bar, higgs, include_delta=False)
+    ) == _canonical(-2 * I * lamH * g12 * g34 - 2 * I * lamH * g14 * g23)
+
+
+def test_explicit_higgs_bilinear_distinct_weak_labels_are_preserved():
+    _model, higgs, muH2, _lamH = _unbroken_sm_higgs_potential_model()
+    iH = S("iH_explicit")
+    jH = S("jH_explicit")
+
+    interaction = _lower_standalone_lagrangian_source_term(muH2 * higgs.bar(iH) * higgs(jH))
+
+    assert interaction.fields[0].labels["weak_fund"] == iH
+    assert interaction.fields[1].labels["weak_fund"] == jH
+    assert interaction.fields[0].labels["weak_fund"] != interaction.fields[1].labels["weak_fund"]
+
+
+def test_plain_higgs_pair_is_not_auto_contracted():
+    _model, higgs, muH2, _lamH = _unbroken_sm_higgs_potential_model()
+
+    interaction = _lower_standalone_lagrangian_source_term(muH2 * higgs * higgs)
+
+    assert interaction.fields[0].labels["weak_fund"] != interaction.fields[1].labels["weak_fund"]
+
+
+def test_unbroken_sm_yukawa_signatures_are_present_and_forbidden_ones_absent():
+    model, _items = _unbroken_sm_yukawa_model()
+    lagrangian = model.lagrangian()
+
+    local_signatures = {sig.names for sig in lagrangian.vertex_signatures()}
+    expected_signatures = {
+        ("qL.bar", "H", "dR"),
+        ("dR.bar", "H.bar", "qL"),
+        ("lL.bar", "H", "eR"),
+        ("eR.bar", "H.bar", "lL"),
+        ("qL.bar", "H.bar", "uR"),
+        ("uR.bar", "H", "qL"),
+    }
+    forbidden_signatures = {
+        ("qL.bar", "H", "uR"),
+        ("qL.bar", "H.bar", "dR"),
+        ("lL.bar", "H.bar", "eR"),
+    }
+
+    assert local_signatures == expected_signatures
+    assert local_signatures.isdisjoint(forbidden_signatures)
+
+    rules = lagrangian.feynman_rules(include_delta=False)
+    assert set(rules) == expected_signatures
