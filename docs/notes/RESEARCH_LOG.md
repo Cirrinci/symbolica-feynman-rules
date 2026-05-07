@@ -916,3 +916,214 @@ What this achieved:
 - the notebook coverage now includes the non-abelian `SU(2)` and mixed
   electroweak-style cases in the same compact Lagrangian-declaration style as
   the scalar, QED, and QCD sections
+
+### 2026-05-06: gauge-fixing provenance, unbroken SM gauge-structure coverage, and SU(2) quartic validation
+
+#### What happened
+
+* Sector classification for compiled/reporting views was tightened so that
+  `GaugeFixing(...)` helper terms and their canonical manual tensor forms now
+  report consistently as `gauge_fixing`, instead of diverging at the
+  `vertex_report(...)` / `vertex_signatures(...)` layer.
+
+* This was done by moving away from label-text heuristics toward explicit term
+  provenance:
+
+  * helper-generated gauge-fixing terms now carry explicit sector/origin
+    metadata;
+  * the lowering layer now recognizes the canonical manual
+    divergence-squared vector form conservatively and assigns the same
+    reporting sector;
+  * related tests were added for helper/manual parity, dummy-label
+    invariance, and protection against accidental over-classification of
+    unrelated vector-derivative bilinears.
+
+* `notebooks/list_lagrangians.ipynb` was extended with a compact full
+  **unbroken Standard Model gauge-structure** section using the existing
+  symbolic model-building API with
+  `SU(3)_c x SU(2)_L x U(1)_Y`.
+
+* That section now includes:
+
+  * SM-like matter fields with the expected color, weak, and hypercharge
+    assignments;
+  * a minimal kinetic `CovD(...)` test covering quark, lepton, and Higgs
+    matter;
+  * a second “full gauge” model including the three field-strength kinetic
+    terms for `G`, `W`, and `B`;
+  * compact cells that print only the emitted vertex signatures, without the
+    full rules, for quick inspection.
+
+* The SM-like field assignments used in the notebook are:
+
+  * `qL : (3,2,1/6)`
+  * `uR : (3,1,2/3)`
+  * `dR : (3,1,-1/3)`
+  * `lL : (1,2,-1/2)`
+  * `eR : (1,1,-1)`
+  * `H : (1,2,1/2)`
+
+* The local symbolic notebook emits the expected **28 vertex signatures** for
+  the full gauge test:
+
+  * 19 interaction signatures;
+  * 9 quadratic/two-point kinetic signatures.
+
+* The corresponding FeynRules comparison gives the expected **19 interaction
+  vertices**, because `FeynmanRules[...]` in that setup lists the interaction
+  vertices and not the same quadratic/two-point kinetic signatures printed by
+  the local notebook.
+
+* An explicit notebook cell was added to print the internal external-leg
+  assignment for the
+
+  ```text
+  ('H.bar', 'H', 'W')
+  ```
+
+  and
+
+  ```text
+  ('H.bar', 'H', 'B')
+  ```
+
+  vertices, together with the unsimplified rules, so the momentum ordering
+  `q1/q2/q3` can be checked directly against the field order.
+
+* An apparent sign mismatch in the scalar-gauge three-point vertices was
+  resolved:
+
+  * the local notebook prints the vertices as `('H.bar', 'H', W/B)` with
+    `q1 = H.bar` and `q2 = H`;
+  * FeynRules returns the same vertex ordered as `{H, Hbar, W/B}`;
+  * after mapping momenta using the actual FeynRules ordering, the signs
+    agree.
+
+* The `SU(2)` quartic gauge-boson vertex was cross-checked against the
+  FeynRules delta-basis form:
+
+  * a reusable helper, `simplify_su2_ff(expr)`, was added to rewrite narrow
+    `SU(2)` structure-constant products `f*f` into adjoint-metric /
+    Kronecker-delta form;
+  * the helper was tested on the compiled `WWWW` rule and matched the
+    expected FeynRules basis exactly;
+  * the notebook’s earlier `sympy`-based attempt was replaced by a
+    `symbolica`-native check showing:
+
+    * the raw `f*f` basis;
+    * the rewritten delta basis;
+    * the FeynRules-style target expression;
+    * a final difference of `0`.
+
+* The `WWW` and `GGG` vertices were also compared against the FeynRules
+  forms:
+
+  * both match the expected non-abelian three-gauge-boson structure;
+  * the only notation differences are coupling names, momentum labels, and
+    structure-constant naming.
+
+* Fermion-gauge vertices were checked against FeynRules:
+
+  * `qLbar qL G`, `qLbar qL W`, `qLbar qL B`;
+  * `uRbar uR G`, `uRbar uR B`;
+  * `dRbar dR G`, `dRbar dR B`;
+  * `lLbar lL W`, `lLbar lL B`;
+  * `eRbar eR B`.
+
+* The hypercharge coefficients agree with the expected values:
+
+  * `Y(qL) = 1/6`
+  * `Y(uR) = 2/3`
+  * `Y(dR) = -1/3`
+  * `Y(lL) = -1/2`
+  * `Y(eR) = -1`
+  * `Y(H) = 1/2`
+
+* Higgs-gauge vertices were checked against FeynRules:
+
+  * `Hbar H W`;
+  * `Hbar H B`;
+  * `Hbar H W W`;
+  * `Hbar H B B`;
+  * `Hbar H W B`.
+
+* The four-point Higgs-gauge vertices match directly in coefficient, sign,
+  and index structure. The three-point Higgs-gauge vertices also match once
+  the actual FeynRules external-leg ordering is used.
+
+* Validation was rerun after these changes:
+
+  * focused `SU(2)` tests passed;
+  * the full test suite passed;
+  * the updated notebook tail executed successfully.
+
+#### What this achieved
+
+* Helper/manual parity now holds not only at the level of Feynman rules, but
+  also at the reporting/provenance layer. This makes the model-inspection API
+  more trustworthy.
+
+* The compact notebook now includes a genuinely full **unbroken SM
+  gauge-structure** example for Standard Model-like matter content, rather
+  than only sector-isolated QED/QCD/`SU(2)` fragments.
+
+* The notebook can now inspect larger models in two complementary ways:
+
+  * full rules when the algebraic expression is needed;
+  * signature-only interaction lists when the goal is just to check which
+    couplings are present.
+
+* The explicit leg-assignment cell removes ambiguity about which external
+  momentum is attached to which ordered field in selected vertices.
+
+* The `WWWW` comparison closes an important confidence gap between the current
+  symbolic non-abelian output and the more familiar FeynRules delta-basis
+  presentation for `SU(2)` quartic gauge interactions.
+
+* The validation establishes that the symbolic implementation reproduces the
+  expected unbroken SM gauge-sector interactions:
+
+  * correct matter representations;
+  * correct hypercharge coefficients;
+  * correct non-abelian self-interactions;
+  * correct Higgs-gauge interactions;
+  * consistent interpretation of external-leg ordering.
+
+#### Validation summary
+
+```text
+Local symbolic notebook:
+  28 vertex signatures
+  = 19 interaction signatures
+  + 9 quadratic/two-point kinetic signatures
+
+FeynRules comparison:
+  19 interaction vertices
+
+SU(2) WWWW check:
+  raw f*f basis -> SU(2) delta basis -> FeynRules-style target
+  final difference: 0
+
+Resolved ambiguity:
+  apparent Hbar-H-gauge sign mismatch was due to FeynRules external-leg reordering,
+  not a real convention mismatch.
+```
+
+#### Caveats
+
+* This is not a full broken Standard Model implementation. The section
+  currently tests the **unbroken gauge structure** only.
+
+* The current notebook section does not yet include:
+
+  * electroweak symmetry breaking;
+  * physical `(A/Z/W^\pm)` mixing;
+  * Yukawa interactions;
+  * Higgs potential;
+  * CKM structure;
+  * ghost terms;
+  * a complete gauge-fixing and ghost sector for the full SM.
+
+* The `GGGG` vertex remains in the generic non-abelian `f*f` basis. This is
+  appropriate for `SU(3)` and should not be simplified to a pure
+  delta-delta structure in the same way as the `SU(2)` `WWWW` vertex.
