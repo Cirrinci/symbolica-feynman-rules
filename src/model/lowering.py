@@ -628,7 +628,7 @@ def _unsupported_local_fermion_ordering_error() -> ValueError:
     return ValueError(
         "Unsupported fermion ordering in local monomial. "
         "Local fermion terms must decompose into disjoint ordered closed Dirac "
-        "bilinears of the form fermion.bar ... fermion."
+        "bilinears with one conjugated and one unconjugated fermion endpoint."
     )
 
 
@@ -644,12 +644,10 @@ def _infer_explicit_local_dirac_bilinears(
     monomial already makes the spinor contraction explicit through repeated
     spinor labels on one ``fermion.bar`` slot and one ``fermion`` slot.
 
-    When both spinor slots carry **user-supplied** labels (present in
-    ``explicit_slot_labels``), either monomial order ψ … ψ̄ or ψ̄ … ψ is
-    accepted and normalized to ``(psibar_slot, psi_slot)``.  When labels were
-    auto-filled later, only the canonical ψ̄ … ψ field-entry order is accepted,
-    so implicit reversed bilinears still surface as unsupported ordering
-    errors (see regression tests).
+    The interaction field order is preserved exactly as written.  This helper
+    only normalizes the bilinear metadata to ``(psibar_slot, psi_slot)`` so the
+    downstream fermion-sign logic can recognize the chain regardless of whether
+    the source monomial was written as ψ̄ … ψ or ψ … ψ̄.
     """
 
     fermion_slots = [
@@ -682,20 +680,9 @@ def _infer_explicit_local_dirac_bilinears(
         first_conj = bool(field_entries[first_slot].conjugated)
         second_conj = bool(field_entries[second_slot].conjugated)
 
-        spin_slot_a = _single_slot_position(field_entries[first_slot].field, SPINOR_KIND)
-        spin_slot_b = _single_slot_position(field_entries[second_slot].field, SPINOR_KIND)
-        explicit_pair = (
-            spin_slot_a is not None
-            and spin_slot_b is not None
-            and spin_slot_a in explicit_slot_labels[first_slot]
-            and spin_slot_b in explicit_slot_labels[second_slot]
-        )
-
         if first_conj and not second_conj:
             psibar_slot, psi_slot = first_slot, second_slot
         elif second_conj and not first_conj:
-            if not explicit_pair:
-                return None
             psibar_slot, psi_slot = second_slot, first_slot
         else:
             return None
@@ -725,18 +712,25 @@ def _infer_closed_local_dirac_bilinears(
     slot_labels: Optional[Sequence[dict[int, object]]] = None,
     explicit_slot_labels: Optional[Sequence[dict[int, object]]] = None,
 ) -> tuple[tuple[int, int], ...]:
-    closed_dirac_bilinears = tuple(
-        (interval_idx, interval_idx + 1)
-        for interval_idx, (left, right) in enumerate(
-            zip(field_entries, field_entries[1:])
-        )
-        if interval_supports_closed_dirac_bilinear[interval_idx]
-        and left.field == right.field
-        and left.field.kind == "fermion"
-        and not left.field.self_conjugate
-        and bool(left.conjugated)
-        and not bool(right.conjugated)
-    )
+    closed_dirac_bilinears: list[tuple[int, int]] = []
+    occupied_slots: set[int] = set()
+    for interval_idx, (left, right) in enumerate(zip(field_entries, field_entries[1:])):
+        if not interval_supports_closed_dirac_bilinear[interval_idx]:
+            continue
+        if left.field.kind != "fermion" or right.field.kind != "fermion":
+            continue
+        if left.field.self_conjugate or right.field.self_conjugate:
+            continue
+        if bool(left.conjugated) == bool(right.conjugated):
+            continue
+        if interval_idx in occupied_slots or (interval_idx + 1) in occupied_slots:
+            continue
+        if bool(left.conjugated):
+            closed_dirac_bilinears.append((interval_idx, interval_idx + 1))
+        else:
+            closed_dirac_bilinears.append((interval_idx + 1, interval_idx))
+        occupied_slots.update((interval_idx, interval_idx + 1))
+    closed_dirac_bilinears = tuple(closed_dirac_bilinears)
 
     fermion_slots = tuple(
         idx for idx, entry in enumerate(field_entries) if entry.field.kind == "fermion"
@@ -942,7 +936,7 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
             if kind == SPINOR_KIND:
                 if left.field.kind != "fermion" or right.field.kind != "fermion":
                     return None
-                if not left.conjugated or right.conjugated:
+                if bool(left.conjugated) == bool(right.conjugated):
                     return None
 
             endpoints = _ensure_endpoint_labels(

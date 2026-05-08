@@ -741,24 +741,72 @@ def test_distinct_species_closed_bilinear_order_is_bosonic():
     assert _canon(got_1) == _canon(got_2)
 
 
-def test_reversed_fields_inside_bilinear_are_rejected():
+def test_reversed_fields_inside_bilinear_are_preserved_and_accepted():
     psi = _make_dirac_fermion("Psi")
     chi = _make_dirac_fermion("Chi")
     g4 = S("g4")
 
-    with pytest.raises(ValueError, match="Unsupported fermion ordering in local monomial"):
-        Lagrangian(
-            g4 * psi * psi.bar * chi.bar * chi
-        )
+    L = Lagrangian(g4 * psi * psi.bar * chi.bar * chi)
+
+    assert len(L.terms) == 1
+    assert tuple(occ.conjugated for occ in L.terms[0].fields) == (False, True, True, False)
+    assert L.terms[0].closed_dirac_bilinears == ((1, 0), (2, 3))
+    assert _canon(L.terms[0].coupling) == _canon(g4)
+
+    got = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=g4,
+            fields=(
+                psi.occurrence(labels={SPINOR_KIND: S("alpha_decl_1")}),
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: S("alpha_decl_1")}),
+                chi.occurrence(conjugated=True, labels={SPINOR_KIND: S("alpha_decl_2")}),
+                chi.occurrence(labels={SPINOR_KIND: S("alpha_decl_2")}),
+            ),
+            closed_dirac_bilinears=((1, 0), (2, 3)),
+        ),
+    ))
+    expected = ref.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    assert _canon(got) == _canon(expected)
 
 
-def test_partially_recognized_multi_fermion_chain_is_rejected():
+def test_reversed_chain_inside_larger_expression_is_accepted():
+    psi = _make_dirac_fermion("Psi")
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    y = S("y")
+
+    L = Lagrangian(y * phi * psi * psi.bar)
+
+    assert len(L.terms) == 1
+    assert tuple(occ.conjugated for occ in L.terms[0].fields) == (False, False, True)
+    assert L.terms[0].closed_dirac_bilinears == ((2, 1),)
+    assert _canon(L.terms[0].coupling) == _canon(y)
+
+    got = L.feynman_rule(phi, psi.bar, psi, simplify=True)
+    ref = Lagrangian(terms=(
+        InteractionTerm(
+            coupling=y,
+            fields=(
+                phi.occurrence(),
+                psi.occurrence(labels={SPINOR_KIND: S("alpha_decl_1")}),
+                psi.occurrence(conjugated=True, labels={SPINOR_KIND: S("alpha_decl_1")}),
+            ),
+            closed_dirac_bilinears=((2, 1),),
+        ),
+    ))
+    expected = ref.feynman_rule(phi, psi.bar, psi, simplify=True)
+    assert _canon(got) == _canon(expected)
+
+
+def test_mixed_canonical_and_reversed_bilinears_are_accepted():
     psi = _make_dirac_fermion("Psi")
     chi = _make_dirac_fermion("Chi")
     g4 = S("g4")
 
-    with pytest.raises(ValueError, match="Unsupported fermion ordering in local monomial"):
-        Lagrangian(g4 * psi.bar * psi * chi * chi.bar)
+    L = Lagrangian(g4 * psi.bar * psi * chi * chi.bar)
+
+    assert len(L.terms) == 1
+    assert L.terms[0].closed_dirac_bilinears == ((0, 1), (3, 2))
 
 
 def test_identical_closed_bilinear_square_is_deterministic_and_nonzero():
