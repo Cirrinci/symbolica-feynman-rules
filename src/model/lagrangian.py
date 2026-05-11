@@ -881,4 +881,4 @@ class DeclaredLagrangian:
             return "0"
         return " + ".join(str(term) for term in self.source_terms)
 
-CovariantTerm = DiracKineticTerm | ComplexScalarKineticTerm
+CovariantTerm = DiracKineticTerm or ComplexScalarKineticTerm
