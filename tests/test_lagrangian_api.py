@@ -2147,6 +2147,34 @@ def test_declared_lagrangian_qed_fermion():
     assert _canon(got) == _canon(ref)
 
 
+def test_model_infers_fields_and_gauge_group_from_structured_kinetic_declaration():
+    eQED, qPsi = S("eQED", "qPsi")
+    fermion = Field(
+        "PsiQED",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+        quantum_numbers={"Q": qPsi},
+    )
+    photon = _make_photon()
+    u1 = GaugeGroup(
+        name="U1QED",
+        abelian=True,
+        coupling=eQED,
+        gauge_boson=photon,
+        charge="Q",
+    )
+
+    model = Model(lagrangian_decl=DiracKineticTerm(field=fermion, gauge_group=u1))
+
+    assert model.fields == (fermion, photon)
+    assert model.gauge_groups == (u1,)
+    compiled = compile_covariant_terms(model)
+    assert any(len(term.fields) == 3 for term in compiled)
+
+
 def test_declared_lagrangian_qed_fermion_includes_free_bilinear():
     eQED, qPsi = S("eQED", "qPsi")
     mu = S("mu")
@@ -2345,6 +2373,33 @@ def test_declared_lagrangian_field_strength_matches_legacy():
     got_4pt = model.lagrangian().feynman_rule(gluon, gluon, gluon, gluon, simplify=True)
     ref_4pt = legacy.lagrangian().feynman_rule(gluon, gluon, gluon, gluon, simplify=True)
     assert _canon(got_4pt) == _canon(ref_4pt)
+
+
+def test_model_infers_fields_and_gauge_group_from_field_strength_declaration():
+    gS = S("gS")
+    mu, nu = S("mu", "nu")
+    gluon = _make_gluon()
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=gS,
+        gauge_boson=gluon,
+        structure_constant=structure_constant,
+    )
+
+    model = Model(
+        lagrangian_decl=-(Expression.num(1) / Expression.num(4))
+        * FieldStrength(su3, mu, nu)
+        * FieldStrength(su3, mu, nu),
+    )
+
+    assert model.gauge_groups == (su3,)
+    assert model.fields == (gluon,)
+
+    got = model.lagrangian().feynman_rule(gluon, gluon, gluon, simplify=True)
+    ref = Model(gauge_groups=(su3,), fields=(gluon,), lagrangian_decl=GaugeKineticTerm(gauge_group=su3))
+    expected = ref.lagrangian().feynman_rule(gluon, gluon, gluon, simplify=True)
+    assert _canon(got) == _canon(expected)
 
 
 def test_declared_lagrangian_rejects_scalar_covd_without_conjugate_pair():

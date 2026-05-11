@@ -6,7 +6,16 @@ from dataclasses import dataclass, replace
 from typing import Literal, Optional
 import warnings
 
-from .declared import _DeclaredMonomial
+from .declared import (
+    _DeclaredMonomial,
+    _FieldFactor,
+    CovariantDerivativeFactor,
+    DifferentiatedCovariantFactor,
+    FieldStrengthFactor,
+    GaugeFixingDeclaration,
+    GhostLagrangianDeclaration,
+    PartialDerivativeFactor,
+)
 from .interactions import InteractionTerm
 from .lagrangian import (
     CompiledLagrangian,
@@ -27,6 +36,74 @@ from .metadata import Field, GaugeGroup, Parameter, ParameterAssumptions
 
 
 ValidationSeverity = Literal["error", "warning"]
+
+
+def _append_unique_identity(items: list[object], value):
+    if value is None:
+        return
+    if any(existing is value for existing in items):
+        return
+    items.append(value)
+
+
+def _collect_declared_term_metadata(term, *, fields: list[Field], gauge_groups: list[GaugeGroup]):
+    if isinstance(term, InteractionTerm):
+        for occurrence in term.fields:
+            _append_unique_identity(fields, occurrence.field)
+        return
+
+    if isinstance(term, _DeclaredMonomial):
+        for factor in term.factors:
+            if isinstance(factor, (_FieldFactor, CovariantDerivativeFactor, PartialDerivativeFactor)):
+                _append_unique_identity(fields, factor.field)
+                continue
+            if isinstance(factor, DifferentiatedCovariantFactor):
+                _append_unique_identity(fields, factor.covariant_factor.field)
+                continue
+            if isinstance(factor, FieldStrengthFactor) and isinstance(factor.gauge_group, GaugeGroup):
+                _append_unique_identity(gauge_groups, factor.gauge_group)
+        return
+
+    if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
+        if isinstance(term.field, Field):
+            _append_unique_identity(fields, term.field)
+        if isinstance(term.gauge_group, GaugeGroup):
+            _append_unique_identity(gauge_groups, term.gauge_group)
+        return
+
+    if isinstance(
+        term,
+        (
+            GaugeKineticTerm,
+            GaugeFixingTerm,
+            GhostTerm,
+            GaugeFixingDeclaration,
+            GhostLagrangianDeclaration,
+        ),
+    ):
+        if isinstance(term.gauge_group, GaugeGroup):
+            _append_unique_identity(gauge_groups, term.gauge_group)
+
+
+def _infer_model_metadata(
+    *,
+    explicit_fields: tuple[Field, ...],
+    explicit_gauge_groups: tuple[GaugeGroup, ...],
+    source_terms: tuple[object, ...],
+) -> tuple[tuple[Field, ...], tuple[GaugeGroup, ...]]:
+    fields: list[Field] = list(explicit_fields)
+    gauge_groups: list[GaugeGroup] = list(explicit_gauge_groups)
+
+    for term in source_terms:
+        _collect_declared_term_metadata(term, fields=fields, gauge_groups=gauge_groups)
+
+    for gauge_group in tuple(gauge_groups):
+        if isinstance(gauge_group.gauge_boson, Field):
+            _append_unique_identity(fields, gauge_group.gauge_boson)
+        if isinstance(gauge_group.ghost_field, Field):
+            _append_unique_identity(fields, gauge_group.ghost_field)
+
+    return tuple(fields), tuple(gauge_groups)
 
 
 @dataclass(frozen=True)
@@ -110,6 +187,15 @@ class Model:
             self.lagrangian_decl = DeclaredLagrangian()
         elif not isinstance(self.lagrangian_decl, DeclaredLagrangian):
             self.lagrangian_decl = DeclaredLagrangian.from_item(self.lagrangian_decl)
+
+        inferred_fields, inferred_gauge_groups = _infer_model_metadata(
+            explicit_fields=self.fields,
+            explicit_gauge_groups=self.gauge_groups,
+            source_terms=self.source_lagrangian_terms(),
+        )
+        self.fields = inferred_fields
+        self.gauge_groups = inferred_gauge_groups
+
         for term in self.lagrangian_decl.source_terms:
             if _analyze_declared_source_term(term) is None:
                 raise _unsupported_declared_source_term_error()

@@ -82,7 +82,7 @@ def test_model_validate_reports_undeclared_gauge_group_references():
     model = Model(
         gauge_groups=(declared,),
         fields=(photon,),
-        lagrangian_decl=GaugeFixing(missing, xi=S("xiMissing")) + GhostLagrangian(missing),
+        lagrangian_decl=GaugeFixing(missing.name, xi=S("xiMissing")) + GhostLagrangian(missing.name),
     )
 
     report = model.validate()
