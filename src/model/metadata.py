@@ -9,6 +9,7 @@ from fractions import Fraction
 from typing import Callable, Literal, Mapping, Optional
 
 from symbolica import Expression, S
+from symbolica.community.spenso import Representation
 
 from symbolic.spenso_structures import (
     BISPINOR,
@@ -147,6 +148,42 @@ WEAK_ADJ_INDEX = IndexType(
     role=IndexRole.GAUGE_ADJ,
     prefix="aw",
 )
+
+
+def flavor_index(
+    name: str = "Flavor",
+    dimension: int = 3,
+    *,
+    prefix: str = "f",
+    kind: Optional[str] = None,
+) -> IndexType:
+    """Return a standard flavor index type for class-member expansion."""
+
+    return IndexType(
+        name,
+        Representation.cof(dimension),
+        kind or name.lower(),
+        dimension=dimension,
+        role=IndexRole.FLAVOR,
+        prefix=prefix,
+    )
+
+
+def generation_index(
+    name: str = "Generation",
+    dimension: int = 3,
+    *,
+    prefix: str = "f",
+    kind: Optional[str] = None,
+) -> IndexType:
+    """Backward-compatible alias for ``flavor_index(...)``."""
+
+    return flavor_index(
+        name=name,
+        dimension=dimension,
+        prefix=prefix,
+        kind=kind,
+    )
 
 
 # ---------------------------------------------------------------------------

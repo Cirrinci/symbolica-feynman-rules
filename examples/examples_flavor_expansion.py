@@ -3,9 +3,8 @@
 from fractions import Fraction
 
 from symbolica import S
-from symbolica.community.spenso import Representation
 
-from model import Field, IndexRole, IndexType, Lagrangian, Parameter, SPINOR_INDEX
+from model import Field, Lagrangian, Parameter, SPINOR_INDEX, flavor_index
 
 
 def _dirac_field(name: str, *, indices=()):
@@ -20,14 +19,7 @@ def _dirac_field(name: str, *, indices=()):
 
 
 def build_example():
-    generation = IndexType(
-        "Generation",
-        Representation.cof(3),
-        "generation",
-        dimension=3,
-        role=IndexRole.FLAVOR,
-        prefix="f",
-    )
+    flavor = flavor_index("Flavor", 3)
     e = _dirac_field("e", indices=(SPINOR_INDEX,))
     mu = _dirac_field("mu", indices=(SPINOR_INDEX,))
     tau = _dirac_field("tau", indices=(SPINOR_INDEX,))
@@ -37,12 +29,12 @@ def build_example():
         self_conjugate=False,
         symbol=S("psi"),
         conjugate_symbol=S("psibar"),
-        indices=(generation, SPINOR_INDEX),
-        flavor_index=generation,
+        indices=(flavor, SPINOR_INDEX),
+        flavor_index=flavor,
         class_members=(e, mu, tau),
     )
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
-    yukawa = Parameter("Y", indices=(generation, generation))
+    yukawa = Parameter("Y", indices=(flavor, flavor))
     lam = S("lam")
     f, h = S("f", "h")
 

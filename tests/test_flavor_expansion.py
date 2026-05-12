@@ -4,34 +4,22 @@ from collections import Counter
 import pytest
 
 from symbolica import S
-from symbolica.community.spenso import Representation
 
 from model import (
     COLOR_FUND_INDEX,
     Field,
-    IndexRole,
-    IndexType,
     Lagrangian,
     Model,
     Parameter,
     SPINOR_INDEX,
+    flavor_index,
+    generation_index,
 )
 from model.interactions import _field_match_key
 
 
 def _canon(expr):
     return expr.expand().to_canonical_string()
-
-
-def _generation_index(dimension: int, *, name: str = "Generation", prefix: str = "f"):
-    return IndexType(
-        name,
-        Representation.cof(dimension),
-        kind=name.lower(),
-        dimension=dimension,
-        role=IndexRole.FLAVOR,
-        prefix=prefix,
-    )
 
 
 def _dirac_field(name: str, *, symbol=None, conjugate_symbol=None, indices=()):
@@ -58,7 +46,7 @@ def _scalar_field(name: str, *, symbol=None):
 def _flavor_family(
     generic_name: str,
     member_names: tuple[str, ...],
-    generation,
+    flavor,
     *,
     extra_indices=(),
 ):
@@ -75,7 +63,7 @@ def _flavor_family(
         generic_name,
         symbol=S(generic_name.lower()),
         conjugate_symbol=S(f"{generic_name.lower()}bar"),
-        indices=(generation,) + extra_indices + (SPINOR_INDEX,),
+        indices=(flavor,) + extra_indices + (SPINOR_INDEX,),
     )
     generic = Field(
         generic.name,
@@ -84,20 +72,20 @@ def _flavor_family(
         symbol=generic.symbol,
         conjugate_symbol=generic.conjugate_symbol,
         indices=generic.indices,
-        flavor_index=generation,
+        flavor_index=flavor,
         class_members=members,
     )
     return generic, members
 
 
 def test_field_class_metadata_tracks_generic_member_mapping():
-    generation = _generation_index(3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), generation)
+    flavor = flavor_index("Flavor", 3)
+    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
     phi = _scalar_field("Phi")
 
-    assert psi.flavor_index is generation
+    assert psi.flavor_index is flavor
     assert psi.flavor_index_slot() == 0
-    assert psi.indices == (generation, SPINOR_INDEX)
+    assert psi.indices == (flavor, SPINOR_INDEX)
     assert e.indices == (SPINOR_INDEX,)
     assert mu.indices == (SPINOR_INDEX,)
     assert tau.indices == (SPINOR_INDEX,)
@@ -111,9 +99,20 @@ def test_field_class_metadata_tracks_generic_member_mapping():
     assert model.find_field(tau) is tau
 
 
+def test_generation_index_is_a_backward_compatible_alias():
+    generation = generation_index("Generation", 3)
+    flavor = flavor_index("Generation", 3)
+
+    assert generation.name == flavor.name
+    assert generation.kind == flavor.kind
+    assert generation.dimension == flavor.dimension
+    assert generation.role == flavor.role
+    assert generation.prefix == flavor.prefix
+
+
 def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal_members():
-    generation = _generation_index(3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), generation)
+    flavor = flavor_index("Flavor", 3)
+    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
     phi = _scalar_field("Phi")
     f = S("f")
     lagrangian = Lagrangian(S("g") * psi.bar(f) * psi(f) * phi)
@@ -139,7 +138,7 @@ def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal
     }
 
     flavor_identity = _canon(
-        generation.representation.g(S("f1"), S("f2")).to_expression()
+        flavor.representation.g(S("f1"), S("f2")).to_expression()
     )
     assert flavor_identity in _canon(compact[("Psi.bar", "Psi", "Phi")])
     assert "Y(" not in _canon(expanded[("e.bar", "e", "Phi")])
@@ -156,11 +155,11 @@ def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal
 
 
 def test_non_diagonal_flavor_tensor_expands_to_all_member_pairs():
-    generation = _generation_index(3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), generation)
+    flavor = flavor_index("Flavor", 3)
+    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
     phi = _scalar_field("Phi")
     f, g = S("f", "g")
-    yukawa = Parameter("Y", indices=(generation, generation))
+    yukawa = Parameter("Y", indices=(flavor, flavor))
     model = Model(
         fields=(psi, phi),
         parameters=(yukawa,),
@@ -209,12 +208,12 @@ def test_non_diagonal_flavor_tensor_expands_to_all_member_pairs():
 
 
 def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_terms():
-    generation = _generation_index(3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), generation)
+    flavor = flavor_index("Flavor", 3)
+    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
     phi = _scalar_field("Phi")
     lam = S("lam")
     f, h = S("f", "h")
-    yukawa = Parameter("Y", indices=(generation, generation))
+    yukawa = Parameter("Y", indices=(flavor, flavor))
 
     mixed = Lagrangian(lam * psi.bar(f) * yukawa(f, h) * psi(h) * phi)
     manual = Lagrangian(lam * e.bar * yukawa(1, 2) * mu * phi)
@@ -273,11 +272,11 @@ def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_te
 
 
 def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
-    generation = _generation_index(3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), generation)
+    flavor = flavor_index("Flavor", 3)
+    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
     phi = _scalar_field("Phi")
     f = S("f")
-    y = Parameter("y", indices=(generation,))
+    y = Parameter("y", indices=(flavor,))
     model = Model(
         fields=(psi, phi),
         parameters=(y,),
@@ -287,7 +286,7 @@ def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
     with pytest.raises(ValueError, match="allow_summation=True"):
         model.lagrangian().vertex_signatures(flavor_expand=True)
 
-    y_diag = Parameter("yDiag", indices=(generation,), allow_summation=True)
+    y_diag = Parameter("yDiag", indices=(flavor,), allow_summation=True)
     diagonal_model = Model(
         fields=(psi, phi),
         parameters=(y_diag,),
@@ -320,13 +319,13 @@ def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
 
 
 def test_zero_flavor_tensor_components_are_dropped_after_expansion():
-    generation = _generation_index(3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), generation)
+    flavor = flavor_index("Flavor", 3)
+    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
     phi = _scalar_field("Phi")
     f, g = S("f", "g")
     diagonal_matrix = Parameter(
         "Ydiag",
-        indices=(generation, generation),
+        indices=(flavor, flavor),
         components={
             (1, 2): 0,
             (1, 3): 0,
@@ -367,11 +366,11 @@ def test_zero_flavor_tensor_components_are_dropped_after_expansion():
 
 
 def test_gauge_indices_remain_symbolic_when_flavor_members_expand():
-    generation = _generation_index(2)
+    flavor = flavor_index("Flavor", 2)
     q, (d, u) = _flavor_family(
         "q",
         ("d", "u"),
-        generation,
+        flavor,
         extra_indices=(COLOR_FUND_INDEX,),
     )
     phi = _scalar_field("Phi")
@@ -392,20 +391,20 @@ def test_gauge_indices_remain_symbolic_when_flavor_members_expand():
 
 
 def test_two_flavor_classes_can_share_one_generation_label():
-    generation = _generation_index(3)
+    flavor = flavor_index("Flavor", 3)
     left, (e_left, mu_left, tau_left) = _flavor_family(
         "L",
         ("eL", "muL", "tauL"),
-        generation,
+        flavor,
     )
     right, (e_right, mu_right, tau_right) = _flavor_family(
         "R",
         ("eR", "muR", "tauR"),
-        generation,
+        flavor,
     )
     phi = _scalar_field("Phi")
     f = S("f")
-    y = Parameter("yLR", indices=(generation,), allow_summation=True)
+    y = Parameter("yLR", indices=(flavor,), allow_summation=True)
     model = Model(
         fields=(left, right, phi),
         parameters=(y,),
@@ -438,12 +437,12 @@ def test_two_flavor_classes_can_share_one_generation_label():
 
 
 def test_independent_flavor_labels_expand_across_two_field_classes():
-    generation = _generation_index(3)
-    up, (u, c, t) = _flavor_family("U", ("u", "c", "t"), generation)
-    down, (d, s, b) = _flavor_family("D", ("d", "s", "b"), generation)
+    flavor = flavor_index("Flavor", 3)
+    up, (u, c, t) = _flavor_family("U", ("u", "c", "t"), flavor)
+    down, (d, s, b) = _flavor_family("D", ("d", "s", "b"), flavor)
     w = _scalar_field("W")
     f, g = S("f", "g")
-    mixing = Parameter("V", indices=(generation, generation))
+    mixing = Parameter("V", indices=(flavor, flavor))
     model = Model(
         fields=(up, down, w),
         parameters=(mixing,),
@@ -482,10 +481,10 @@ def test_independent_flavor_labels_expand_across_two_field_classes():
 
 
 def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_errors():
-    generation = _generation_index(3)
+    flavor = flavor_index("Flavor", 3)
 
     with pytest.raises(ValueError, match="declares 2 class member"):
-        _flavor_family("BadPsi", ("e", "mu"), generation)
+        _flavor_family("BadPsi", ("e", "mu"), flavor)
 
     member_with_flavor = Field(
         "bad_member",
@@ -493,7 +492,7 @@ def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_error
         self_conjugate=False,
         symbol=S("bad_member"),
         conjugate_symbol=S("bad_memberbar"),
-        indices=(generation, SPINOR_INDEX),
+        indices=(flavor, SPINOR_INDEX),
     )
     with pytest.raises(ValueError, match="still carries a flavor index"):
         Field(
@@ -502,8 +501,8 @@ def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_error
             self_conjugate=False,
             symbol=S("badclass"),
             conjugate_symbol=S("badclassbar"),
-            indices=(generation, SPINOR_INDEX),
-            flavor_index=generation,
+            indices=(flavor, SPINOR_INDEX),
+            flavor_index=flavor,
             class_members=(member_with_flavor, member_with_flavor, member_with_flavor),
         )
 
@@ -513,8 +512,8 @@ def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_error
         self_conjugate=False,
         symbol=S("psinm"),
         conjugate_symbol=S("psinmbar"),
-        indices=(generation, SPINOR_INDEX),
-        flavor_index=generation,
+        indices=(flavor, SPINOR_INDEX),
+        flavor_index=flavor,
     )
     phi = _scalar_field("PhiMissing")
     f = S("f")
