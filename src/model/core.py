@@ -103,6 +103,10 @@ def _infer_model_metadata(
         if isinstance(gauge_group.ghost_field, Field):
             _append_unique_identity(fields, gauge_group.ghost_field)
 
+    for field in tuple(fields):
+        for member in getattr(field, "class_members", ()):
+            _append_unique_identity(fields, member)
+
     return tuple(fields), tuple(gauge_groups)
 
 
@@ -594,5 +598,6 @@ class Model:
         from compiler.gauge import compile_covariant_terms
 
         return CompiledLagrangian(
-            terms=self.all_interactions() + compile_covariant_terms(self)
+            terms=self.all_interactions() + compile_covariant_terms(self),
+            parameters=self.parameters,
         )

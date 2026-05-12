@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field, replace
+from enum import Enum
 from fractions import Fraction
 from typing import Callable, Literal, Mapping, Optional
 
@@ -72,26 +73,80 @@ ROLE_GHOST_DAG = FieldRole("ghost_dag", "fermion", conjugated=True)
 # IndexType
 # ---------------------------------------------------------------------------
 
+
+class IndexRole(str, Enum):
+    """Semantic role carried by one declared index type."""
+
+    GENERIC = "generic"
+    SPINOR = "spinor"
+    LORENTZ = "lorentz"
+    GAUGE_FUND = "gauge_fund"
+    GAUGE_ADJ = "gauge_adj"
+    FLAVOR = "flavor"
+    INTERNAL = "internal"
+
+
+def _default_index_role_for_kind(kind: str) -> IndexRole:
+    if kind == SPINOR_KIND:
+        return IndexRole.SPINOR
+    if kind == LORENTZ_KIND:
+        return IndexRole.LORENTZ
+    if kind in (COLOR_FUND_KIND, WEAK_FUND_KIND):
+        return IndexRole.GAUGE_FUND
+    if kind in (COLOR_ADJ_KIND, WEAK_ADJ_KIND):
+        return IndexRole.GAUGE_ADJ
+    return IndexRole.GENERIC
+
 @dataclass(frozen=True)
 class IndexType:
     """One kind of index that a field can carry (spinor, Lorentz, colour, ...)."""
     name: str
     representation: object
     kind: str
+    dimension: Optional[int] = None
+    role: IndexRole = IndexRole.GENERIC
     prefix: str = ""
 
     def __post_init__(self):
+        if self.role == IndexRole.GENERIC:
+            object.__setattr__(self, "role", _default_index_role_for_kind(self.kind))
         if not self.prefix:
             object.__setattr__(self, "prefix", self.kind[:1])
 
+IndexKind = IndexType
 
-SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, prefix="i")
-LORENTZ_INDEX = IndexType("Lorentz", LORENTZ, LORENTZ_KIND, prefix="mu")
-COLOR_FUND_INDEX = IndexType("ColorFund", COLOR_FUND, COLOR_FUND_KIND, prefix="c")
-COLOR_ADJ_INDEX = IndexType("ColorAdj", COLOR_ADJ, COLOR_ADJ_KIND, prefix="a")
+
+SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, role=IndexRole.SPINOR, prefix="i")
+LORENTZ_INDEX = IndexType("Lorentz", LORENTZ, LORENTZ_KIND, role=IndexRole.LORENTZ, prefix="mu")
+COLOR_FUND_INDEX = IndexType(
+    "ColorFund",
+    COLOR_FUND,
+    COLOR_FUND_KIND,
+    role=IndexRole.GAUGE_FUND,
+    prefix="c",
+)
+COLOR_ADJ_INDEX = IndexType(
+    "ColorAdj",
+    COLOR_ADJ,
+    COLOR_ADJ_KIND,
+    role=IndexRole.GAUGE_ADJ,
+    prefix="a",
+)
 # SU(2)_L weak isospin: doublet (fundamental) and triplet (adjoint).
-WEAK_FUND_INDEX = IndexType("WeakFund", WEAK_FUND, WEAK_FUND_KIND, prefix="w")
-WEAK_ADJ_INDEX = IndexType("WeakAdj", WEAK_ADJ, WEAK_ADJ_KIND, prefix="aw")
+WEAK_FUND_INDEX = IndexType(
+    "WeakFund",
+    WEAK_FUND,
+    WEAK_FUND_KIND,
+    role=IndexRole.GAUGE_FUND,
+    prefix="w",
+)
+WEAK_ADJ_INDEX = IndexType(
+    "WeakAdj",
+    WEAK_ADJ,
+    WEAK_ADJ_KIND,
+    role=IndexRole.GAUGE_ADJ,
+    prefix="aw",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +316,7 @@ class ParameterAssumptions:
     internal: bool
     external: bool
     has_value: bool
+    allow_summation: bool
     value: object = None
 
 
@@ -282,10 +338,27 @@ class Parameter:
     complex_param: bool = False
     internal: bool = True
     value: object = None
+    components: Mapping[tuple[object, ...], object] = field(default_factory=dict)
+    allow_summation: bool = False
 
     def __post_init__(self):
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
+        if not self.indices and self.components:
+            raise ValueError(
+                f"Parameter {self.name!r} defines indexed components but carries no indices."
+            )
+        normalized_components = {}
+        for raw_key, component_value in self.components.items():
+            key = raw_key if isinstance(raw_key, tuple) else (raw_key,)
+            if len(key) != len(self.indices):
+                raise ValueError(
+                    f"Parameter {self.name!r} expects {len(self.indices)} component index value(s), "
+                    f"got {len(key)} for key {raw_key!r}."
+                )
+            normalized_components[tuple(key)] = component_value
+        if normalized_components:
+            object.__setattr__(self, "components", normalized_components)
 
     @property
     def is_real(self) -> bool:
@@ -319,8 +392,19 @@ class Parameter:
             internal=self.is_internal,
             external=self.is_external,
             has_value=self.has_value,
+            allow_summation=self.allow_summation,
             value=self.value,
         )
+
+    def __call__(self, *labels):
+        if len(labels) != len(self.indices):
+            raise TypeError(
+                f"Parameter {self.name!r} takes {len(self.indices)} index label(s), "
+                f"got {len(labels)}."
+            )
+        if not labels:
+            return self.symbol
+        return self.symbol(*labels)
 
     def __mul__(self, other):
         return self.symbol * other
@@ -455,6 +539,8 @@ class Field:
     mass: object = None
     quantum_numbers: Mapping[str, object] = field(default_factory=dict)
     ghost_of: object = None
+    flavor_index: Optional[IndexType] = None
+    class_members: tuple["Field", ...] = ()
 
     def __post_init__(self):
         if self.ghost_of is not None:
@@ -471,6 +557,63 @@ class Field:
             object.__setattr__(self, "statistics", _infer_statistics(self.kind))
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
+        if self.flavor_index is not None and self.flavor_index.role != IndexRole.FLAVOR:
+            raise ValueError(
+                f"Field {self.name!r} declares flavor_index={self.flavor_index.name!r}, "
+                "but that index type is not marked with role=IndexRole.FLAVOR."
+            )
+        if self.class_members and self.flavor_index is None:
+            raise ValueError(
+                f"Field {self.name!r} declares class_members but no flavor_index."
+            )
+        if self.class_members:
+            flavor_slots = tuple(
+                slot
+                for slot, index in enumerate(self.indices)
+                if index == self.flavor_index
+            )
+            if len(flavor_slots) != 1:
+                raise ValueError(
+                    f"Field {self.name!r} must carry exactly one slot of flavor_index "
+                    f"{self.flavor_index.name!r} when class_members are declared."
+                )
+            if self.flavor_index.dimension is None:
+                raise ValueError(
+                    f"Field {self.name!r} uses flavor index {self.flavor_index.name!r} "
+                    "for class_members, but that index type has no declared dimension."
+                )
+            if len(self.class_members) != self.flavor_index.dimension:
+                raise ValueError(
+                    f"Field {self.name!r} declares {len(self.class_members)} class member(s), "
+                    f"but flavor index {self.flavor_index.name!r} has dimension "
+                    f"{self.flavor_index.dimension}."
+                )
+            flavor_slot = flavor_slots[0]
+            member_indices = self.indices[:flavor_slot] + self.indices[flavor_slot + 1 :]
+            for member in self.class_members:
+                if not isinstance(member, Field):
+                    raise TypeError(
+                        f"Field {self.name!r} class_members must be Field instances."
+                    )
+                if any(index.role == IndexRole.FLAVOR for index in member.indices):
+                    raise ValueError(
+                        f"Field {self.name!r} class member {member.name!r} still carries a flavor index."
+                    )
+                if member.indices != member_indices:
+                    raise ValueError(
+                        f"Field {self.name!r} class member {member.name!r} must carry "
+                        f"indices {member_indices!r}, got {member.indices!r}."
+                    )
+                if (
+                    str(Fraction(member.spin)) != str(Fraction(self.spin))
+                    or member.kind != self.kind
+                    or member.statistics != self.statistics
+                    or member.self_conjugate != self.self_conjugate
+                ):
+                    raise ValueError(
+                        f"Field {self.name!r} class member {member.name!r} must match the "
+                        "generic field spin/statistics/conjugation metadata."
+                    )
 
     def __hash__(self):
         quantum_numbers = tuple(
@@ -480,7 +623,16 @@ class Field:
             self.name,
             str(Fraction(self.spin)),
             self.self_conjugate,
-            tuple((index.name, index.kind, index.prefix) for index in self.indices),
+            tuple(
+                (
+                    index.name,
+                    index.kind,
+                    index.prefix,
+                    index.dimension,
+                    index.role,
+                )
+                for index in self.indices
+            ),
             self.kind,
             self.statistics,
             str(self.symbol),
@@ -488,11 +640,44 @@ class Field:
             str(self.mass),
             quantum_numbers,
             _field_reference_text(self.ghost_of),
+            None
+            if self.flavor_index is None
+            else (
+                self.flavor_index.name,
+                self.flavor_index.kind,
+                self.flavor_index.prefix,
+                self.flavor_index.dimension,
+                self.flavor_index.role,
+            ),
+            tuple(member.name for member in self.class_members),
         ))
 
     @property
     def is_ghost(self) -> bool:
         return self.kind == "ghost"
+
+    @property
+    def is_flavor_generic(self) -> bool:
+        return bool(self.class_members)
+
+    def flavor_index_slot(self) -> Optional[int]:
+        if self.flavor_index is None:
+            return None
+        matches = self.index_positions(index=self.flavor_index)
+        if len(matches) != 1:
+            return None
+        return matches[0]
+
+    def class_member_for(self, flavor_value: int) -> "Field":
+        if not self.class_members:
+            raise ValueError(
+                f"Field {self.name!r} has no class_members for flavor expansion."
+            )
+        if flavor_value < 1 or flavor_value > len(self.class_members):
+            raise ValueError(
+                f"Field {self.name!r} has no class member for flavor value {flavor_value}."
+            )
+        return self.class_members[flavor_value - 1]
 
     def role_for(self, conjugated: bool = False) -> FieldRole:
         """Return the interaction/external-leg role implied by this field slot."""
