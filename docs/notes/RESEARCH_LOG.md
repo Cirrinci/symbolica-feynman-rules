@@ -1127,3 +1127,80 @@ Resolved ambiguity:
 * The `GGGG` vertex remains in the generic non-abelian `f*f` basis. This is
   appropriate for `SU(3)` and should not be simplified to a pure
   delta-delta structure in the same way as the `SU(2)` `WWWW` vertex.
+
+### 2026-05-11: lighter `Model(..., lagrangian_decl=...)` metadata requirements
+
+What happened:
+
+- the model-construction path was relaxed so local
+  `Model(..., lagrangian_decl=...)` usage no longer always needs an explicit
+  `fields=(...)` list when the fields can be inferred from the declaration
+- gauge-group requirements were also tightened to the cases that actually need
+  them:
+  if a declaration does not use `CovD(...)` or other gauge-dependent
+  structures, the model no longer needs explicit `gauge_groups=(...)`
+- the related notebook/model-building flow was cleaned up so the compact
+  `lagrangian_decl=...` examples stay closer to how users will actually write
+  small models
+
+What this achieved:
+
+- reduced boilerplate for direct declarative model building
+- made the local `Model(..., lagrangian_decl=...)` workflow less fragile for
+  simple non-gauge examples
+- improved the separation between metadata that is genuinely required for
+  compilation and metadata that can be inferred automatically
+
+### 2026-05-12: flavor-index expansion and FeynRules-style field-class declarations
+
+What happened:
+
+- flavor/class expansion support was added around explicit flavor index
+  metadata rather than hard-coded generation semantics:
+  - `IndexRole.FLAVOR`
+  - `flavor_index(...)`
+  - field-level `flavor_index` and `class_members`
+  - indexed `Parameter` metadata with `components` and `allow_summation`
+- the compiled Lagrangian extraction path was extended so
+  `feynman_rule(...)`, `feynman_rules(...)`, `vertex_signatures(...)`, and
+  `vertex_report(...)` can all run with `flavor_expand=...`
+- the public declaration API was then cleaned up to follow the FeynRules
+  model-file workflow more closely:
+  - explicit indices first
+  - then gauge representations / gauge groups
+  - then field classes
+  - then parameters
+  - then the Lagrangian
+- new public helpers were added in the metadata layer:
+  - `dirac_field(...)`
+  - `scalar_field(...)`
+  - `dirac_field_class(...)`
+- `flavor_family(...)` was kept, but reduced to a thin convenience wrapper
+  instead of being the main recommended workflow
+- selected flavor expansion was also generalized beyond `True/False`:
+  `flavor_expand` can now be `True`, one flavor index, or an iterable of
+  flavor indices
+- the main flavor example and notebook flow were rewritten around explicit
+  FeynRules-like declarations for charged leptons and colored quark classes,
+  including two-index Yukawa-matrix-style parameters with off-diagonal zero
+  components
+- regression coverage was expanded for:
+  - charged-lepton / up-quark / down-quark field-class metadata
+  - flavor expansion with color preserved
+  - diagonal matrix-style Yukawas
+  - retained one-index `allow_summation` behavior
+  - selected flavor expansion
+
+What this achieved:
+
+- the project now has a much clearer public flavor API that matches the
+  FeynRules mental model more directly
+- flavor-generic classes remain explicit at declaration time, while expanded
+  member fields correctly drop the selected flavor index and keep non-flavor
+  indices such as color and spinor
+- the main examples now present flavor structure as ordinary model metadata,
+  not as a special toy constructor
+- the flavor backend stayed intact while the user-facing workflow became more
+  realistic for Standard Model-like model files
+- validation stayed clean after the refactor:
+  the full pytest suite passed with `316 passed`
