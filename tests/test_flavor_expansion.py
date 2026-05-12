@@ -1,4 +1,3 @@
-from fractions import Fraction
 from collections import Counter
 
 import pytest
@@ -12,8 +11,12 @@ from model import (
     Model,
     Parameter,
     SPINOR_INDEX,
+    dirac_field,
+    dirac_field_class,
+    flavor_family,
     flavor_index,
     generation_index,
+    scalar_field,
 )
 from model.interactions import _field_match_key
 
@@ -22,81 +25,95 @@ def _canon(expr):
     return expr.expand().to_canonical_string()
 
 
-def _dirac_field(name: str, *, symbol=None, conjugate_symbol=None, indices=()):
-    if symbol is None:
-        symbol = S(name)
-    if conjugate_symbol is None:
-        conjugate_symbol = S(f"{name}bar")
-    return Field(
-        name,
-        spin=Fraction(1, 2),
-        self_conjugate=False,
-        symbol=symbol,
-        conjugate_symbol=conjugate_symbol,
-        indices=indices,
+def _off_diagonal_zero_components(index):
+    return {
+        (row, col): 0
+        for row in range(1, index.dimension + 1)
+        for col in range(1, index.dimension + 1)
+        if row != col
+    }
+
+
+def _charged_lepton_class(generation):
+    return dirac_field_class(
+        "l",
+        class_members=("e", "mu", "ta"),
+        indices=(generation,),
+        flavor_index=generation,
     )
 
 
-def _scalar_field(name: str, *, symbol=None):
-    if symbol is None:
-        symbol = S(name)
-    return Field(name, spin=0, self_conjugate=True, symbol=symbol)
-
-
-def _flavor_family(
-    generic_name: str,
-    member_names: tuple[str, ...],
-    flavor,
-    *,
-    extra_indices=(),
-):
-    members = tuple(
-        _dirac_field(
-            member_name,
-            symbol=S(member_name),
-            conjugate_symbol=S(f"{member_name}bar"),
-            indices=extra_indices + (SPINOR_INDEX,),
-        )
-        for member_name in member_names
+def _up_quark_class(generation):
+    return dirac_field_class(
+        "uq",
+        class_members=("u", "c", "t"),
+        indices=(generation, COLOR_FUND_INDEX),
+        flavor_index=generation,
     )
-    generic = _dirac_field(
-        generic_name,
-        symbol=S(generic_name.lower()),
-        conjugate_symbol=S(f"{generic_name.lower()}bar"),
-        indices=(flavor,) + extra_indices + (SPINOR_INDEX,),
+
+
+def _down_quark_class(generation):
+    return dirac_field_class(
+        "dq",
+        class_members=("d", "s", "b"),
+        indices=(generation, COLOR_FUND_INDEX),
+        flavor_index=generation,
     )
-    generic = Field(
-        generic.name,
-        spin=generic.spin,
-        self_conjugate=generic.self_conjugate,
-        symbol=generic.symbol,
-        conjugate_symbol=generic.conjugate_symbol,
-        indices=generic.indices,
-        flavor_index=flavor,
-        class_members=members,
-    )
-    return generic, members
 
 
-def test_field_class_metadata_tracks_generic_member_mapping():
-    flavor = flavor_index("Flavor", 3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
-    phi = _scalar_field("Phi")
+def test_charged_lepton_field_class_metadata_exposes_feynrules_like_structure():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
 
-    assert psi.flavor_index is flavor
-    assert psi.flavor_index_slot() == 0
-    assert psi.indices == (flavor, SPINOR_INDEX)
+    assert l.indices == (Generation, SPINOR_INDEX)
+    assert l.flavor_index is Generation
+    assert l.flavor_index_slot() == 0
+    assert tuple(member.name for member in l.class_members) == ("e", "mu", "ta")
     assert e.indices == (SPINOR_INDEX,)
     assert mu.indices == (SPINOR_INDEX,)
-    assert tau.indices == (SPINOR_INDEX,)
-    assert psi.class_member_for(1) is e
-    assert psi.class_member_for(2) is mu
-    assert psi.class_member_for(3) is tau
+    assert ta.indices == (SPINOR_INDEX,)
+    assert l.class_member_for(1) is e
+    assert l.class_member_for(2) is mu
+    assert l.class_member_for(3) is ta
 
-    model = Model(fields=(psi, phi), lagrangian_decl=S("g") * psi.bar(S("f")) * psi(S("f")) * phi)
+    model = Model(
+        fields=(l, Phi),
+        lagrangian_decl=S("g") * l.bar(S("f")) * l(S("f")) * Phi,
+    )
     assert model.find_field(e) is e
     assert model.find_field(mu) is mu
-    assert model.find_field(tau) is tau
+    assert model.find_field(ta) is ta
+
+
+def test_up_quark_field_class_metadata_preserves_colour_and_spinor():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    uq, (u, c, t) = _up_quark_class(Generation)
+
+    assert uq.indices == (Generation, COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert uq.flavor_index is Generation
+    assert uq.flavor_index_slot() == 0
+    assert u.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert c.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert t.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert Generation not in u.indices
+    assert Generation not in c.indices
+    assert Generation not in t.indices
+
+
+def test_down_quark_field_class_metadata_preserves_colour_and_spinor():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    dq, (d, s, b) = _down_quark_class(Generation)
+
+    assert dq.indices == (Generation, COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert dq.flavor_index is Generation
+    assert dq.flavor_index_slot() == 0
+    assert d.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert s.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert b.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert Generation not in d.indices
+    assert Generation not in s.indices
+    assert Generation not in b.indices
 
 
 def test_generation_index_is_a_backward_compatible_alias():
@@ -110,12 +127,27 @@ def test_generation_index_is_a_backward_compatible_alias():
     assert generation.prefix == flavor.prefix
 
 
+def test_flavor_family_remains_a_thin_convenience_wrapper():
+    Generation = flavor_index("Generation", 2, prefix="f")
+    q, (d, u) = flavor_family(
+        "q",
+        ("d", "u"),
+        Generation,
+        extra_indices=(COLOR_FUND_INDEX,),
+    )
+
+    assert q.indices == (Generation, COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert q.flavor_index is Generation
+    assert d.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+    assert u.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
+
+
 def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal_members():
-    flavor = flavor_index("Flavor", 3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
-    phi = _scalar_field("Phi")
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
     f = S("f")
-    lagrangian = Lagrangian(S("g") * psi.bar(f) * psi(f) * phi)
+    lagrangian = Lagrangian(S("g") * l.bar(f) * l(f) * Phi)
 
     compact = lagrangian.feynman_rules(
         flavor_expand=False,
@@ -130,24 +162,24 @@ def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal
         include_delta=True,
     )
 
-    assert set(compact) == {("Psi.bar", "Psi", "Phi")}
+    assert set(compact) == {("l.bar", "l", "Phi")}
     assert set(expanded) == {
         ("e.bar", "e", "Phi"),
         ("mu.bar", "mu", "Phi"),
-        ("tau.bar", "tau", "Phi"),
+        ("ta.bar", "ta", "Phi"),
     }
 
     flavor_identity = _canon(
-        flavor.representation.g(S("f1"), S("f2")).to_expression()
+        Generation.representation.g(S("f1"), S("f2")).to_expression()
     )
-    assert flavor_identity in _canon(compact[("Psi.bar", "Psi", "Phi")])
-    assert "Y(" not in _canon(expanded[("e.bar", "e", "Phi")])
+    assert flavor_identity in _canon(compact[("l.bar", "l", "Phi")])
+    assert "g(1,2)" not in _canon(expanded[("e.bar", "e", "Phi")])
 
     with pytest.raises(ValueError, match="No matching interaction terms"):
         lagrangian.feynman_rule(
             e.bar,
             mu,
-            phi,
+            Phi,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
@@ -155,15 +187,15 @@ def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal
 
 
 def test_non_diagonal_flavor_tensor_expands_to_all_member_pairs():
-    flavor = flavor_index("Flavor", 3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
-    phi = _scalar_field("Phi")
-    f, g = S("f", "g")
-    yukawa = Parameter("Y", indices=(flavor, flavor))
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
+    f, h = S("f", "h")
+    yl = Parameter("yl", indices=(Generation, Generation))
     model = Model(
-        fields=(psi, phi),
-        parameters=(yukawa,),
-        lagrangian_decl=S("g") * psi.bar(f) * yukawa(f, g) * psi(g) * phi,
+        fields=(l, Phi),
+        parameters=(yl,),
+        lagrangian_decl=S("g") * l.bar(f) * yl(f, h) * l(h) * Phi,
     )
     lagrangian = model.lagrangian()
 
@@ -175,31 +207,31 @@ def test_non_diagonal_flavor_tensor_expands_to_all_member_pairs():
     )
 
     assert len(expanded) == 9
-    assert "Y(1,2)" in _canon(
+    assert "yl(1,2)" in _canon(
         lagrangian.feynman_rule(
             e.bar,
             mu,
-            phi,
+            Phi,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
         )
     )
-    assert "Y(2,1)" in _canon(
+    assert "yl(2,1)" in _canon(
         lagrangian.feynman_rule(
             mu.bar,
             e,
-            phi,
+            Phi,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
         )
     )
-    assert "Y(3,3)" in _canon(
+    assert "yl(3,3)" in _canon(
         lagrangian.feynman_rule(
-            tau.bar,
-            tau,
-            phi,
+            ta.bar,
+            ta,
+            Phi,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
@@ -208,22 +240,22 @@ def test_non_diagonal_flavor_tensor_expands_to_all_member_pairs():
 
 
 def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_terms():
-    flavor = flavor_index("Flavor", 3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
-    phi = _scalar_field("Phi")
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
     lam = S("lam")
     f, h = S("f", "h")
-    yukawa = Parameter("Y", indices=(flavor, flavor))
+    yl = Parameter("yl", indices=(Generation, Generation))
 
-    mixed = Lagrangian(lam * psi.bar(f) * yukawa(f, h) * psi(h) * phi)
-    manual = Lagrangian(lam * e.bar * yukawa(1, 2) * mu * phi)
-    compact = Lagrangian(lam * psi.bar(f) * psi(f) * phi)
-    manual_diag = Lagrangian(lam * e.bar * e * phi)
+    mixed = Lagrangian(lam * l.bar(f) * yl(f, h) * l(h) * Phi)
+    manual = Lagrangian(lam * e.bar * yl(1, 2) * mu * Phi)
+    compact = Lagrangian(lam * l.bar(f) * l(f) * Phi)
+    manual_diag = Lagrangian(lam * e.bar * e * Phi)
 
     mixed_rule = mixed.feynman_rule(
         e.bar,
         mu,
-        phi,
+        Phi,
         simplify=True,
         include_delta=True,
         flavor_expand=True,
@@ -231,14 +263,14 @@ def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_te
     manual_rule = manual.feynman_rule(
         e.bar,
         mu,
-        phi,
+        Phi,
         simplify=True,
         include_delta=True,
     )
     diag_rule = compact.feynman_rule(
         e.bar,
         e,
-        phi,
+        Phi,
         simplify=True,
         include_delta=True,
         flavor_expand=True,
@@ -246,7 +278,7 @@ def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_te
     manual_diag_rule = manual_diag.feynman_rule(
         e.bar,
         e,
-        phi,
+        Phi,
         simplify=True,
         include_delta=True,
     )
@@ -260,7 +292,7 @@ def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_te
     target = Counter((
         _field_match_key(e, True),
         _field_match_key(mu, False),
-        _field_match_key(phi, False),
+        _field_match_key(Phi, False),
     ))
     contributors = [
         term
@@ -268,29 +300,29 @@ def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_te
         if Counter(_field_match_key(occ.field, occ.conjugated) for occ in term.fields) == target
     ]
     assert len(contributors) == 1
-    assert _canon(contributors[0].coupling) == _canon(lam * yukawa(1, 2))
+    assert _canon(contributors[0].coupling) == _canon(lam * yl(1, 2))
 
 
 def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
-    flavor = flavor_index("Flavor", 3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
-    phi = _scalar_field("Phi")
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
     f = S("f")
-    y = Parameter("y", indices=(flavor,))
+    y = Parameter("y", indices=(Generation,))
     model = Model(
-        fields=(psi, phi),
+        fields=(l, Phi),
         parameters=(y,),
-        lagrangian_decl=y(f) * psi.bar(f) * psi(f) * phi,
+        lagrangian_decl=y(f) * l.bar(f) * l(f) * Phi,
     )
 
     with pytest.raises(ValueError, match="allow_summation=True"):
         model.lagrangian().vertex_signatures(flavor_expand=True)
 
-    y_diag = Parameter("yDiag", indices=(flavor,), allow_summation=True)
+    y_diag = Parameter("yDiag", indices=(Generation,), allow_summation=True)
     diagonal_model = Model(
-        fields=(psi, phi),
+        fields=(l, Phi),
         parameters=(y_diag,),
-        lagrangian_decl=y_diag(f) * psi.bar(f) * psi(f) * phi,
+        lagrangian_decl=y_diag(f) * l.bar(f) * l(f) * Phi,
     )
     diagonal_lagrangian = diagonal_model.lagrangian()
 
@@ -304,13 +336,13 @@ def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
     assert set(expanded) == {
         ("e.bar", "e", "Phi"),
         ("mu.bar", "mu", "Phi"),
-        ("tau.bar", "tau", "Phi"),
+        ("ta.bar", "ta", "Phi"),
     }
     assert "yDiag(2)" in _canon(
         diagonal_lagrangian.feynman_rule(
             mu.bar,
             mu,
-            phi,
+            Phi,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
@@ -319,26 +351,19 @@ def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
 
 
 def test_zero_flavor_tensor_components_are_dropped_after_expansion():
-    flavor = flavor_index("Flavor", 3)
-    psi, (e, mu, tau) = _flavor_family("Psi", ("e", "mu", "tau"), flavor)
-    phi = _scalar_field("Phi")
-    f, g = S("f", "g")
-    diagonal_matrix = Parameter(
-        "Ydiag",
-        indices=(flavor, flavor),
-        components={
-            (1, 2): 0,
-            (1, 3): 0,
-            (2, 1): 0,
-            (2, 3): 0,
-            (3, 1): 0,
-            (3, 2): 0,
-        },
+    Generation = flavor_index("Generation", 3, prefix="f")
+    uq, (u, c, t) = _up_quark_class(Generation)
+    Phi = scalar_field("Phi")
+    f, h, colour = S("f", "h", "c")
+    yu = Parameter(
+        "yu",
+        indices=(Generation, Generation),
+        components=_off_diagonal_zero_components(Generation),
     )
     model = Model(
-        fields=(psi, phi),
-        parameters=(diagonal_matrix,),
-        lagrangian_decl=S("g") * psi.bar(f) * diagonal_matrix(f, g) * psi(g) * phi,
+        fields=(uq, Phi),
+        parameters=(yu,),
+        lagrangian_decl=S("g") * uq.bar(f, colour) * yu(f, h) * uq(h, colour) * Phi,
     )
     lagrangian = model.lagrangian()
 
@@ -350,65 +375,110 @@ def test_zero_flavor_tensor_components_are_dropped_after_expansion():
     )
 
     assert set(expanded) == {
-        ("e.bar", "e", "Phi"),
-        ("mu.bar", "mu", "Phi"),
-        ("tau.bar", "tau", "Phi"),
+        ("u.bar", "u", "Phi"),
+        ("c.bar", "c", "Phi"),
+        ("t.bar", "t", "Phi"),
     }
     with pytest.raises(ValueError, match="No matching interaction terms"):
         lagrangian.feynman_rule(
-            e.bar,
-            mu,
-            phi,
+            u.bar,
+            c,
+            Phi,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
         )
 
 
-def test_gauge_indices_remain_symbolic_when_flavor_members_expand():
-    flavor = flavor_index("Flavor", 2)
-    q, (d, u) = _flavor_family(
-        "q",
-        ("d", "u"),
-        flavor,
-        extra_indices=(COLOR_FUND_INDEX,),
-    )
-    phi = _scalar_field("Phi")
-    f, c = S("f", "c")
-    lagrangian = Lagrangian(S("g") * q.bar(f, c) * q(f, c) * phi)
+def test_flavor_expansion_preserves_colour_indices_in_terms_and_rules():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    uq, (u, c, t) = _up_quark_class(Generation)
+    Phi = scalar_field("Phi")
+    f, colour = S("f", "c")
+    gQ = S("gQ")
+    lagrangian = Lagrangian(gQ * uq.bar(f, colour) * uq(f, colour) * Phi)
 
     signatures = lagrangian.vertex_signatures(flavor_expand=True)
     expanded_terms = lagrangian._expanded_terms(flavor_expand=True)
+    expanded_rule = lagrangian.feynman_rule(
+        u.bar,
+        u,
+        Phi,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=True,
+    )
+    manual_rule = Lagrangian(gQ * u.bar(colour) * u(colour) * Phi).feynman_rule(
+        u.bar,
+        u,
+        Phi,
+        simplify=True,
+        include_delta=True,
+    )
 
     assert {signature.names for signature in signatures} == {
-        ("d.bar", "d", "Phi"),
         ("u.bar", "u", "Phi"),
+        ("c.bar", "c", "Phi"),
+        ("t.bar", "t", "Phi"),
     }
-    assert len(expanded_terms) == 2
+    assert len(expanded_terms) == 3
     for term in expanded_terms:
-        assert term.fields[0].labels["color_fund"] == c
-        assert term.fields[1].labels["color_fund"] == c
+        assert term.fields[0].labels["color_fund"] == colour
+        assert term.fields[1].labels["color_fund"] == colour
+    assert _canon(expanded_rule - manual_rule) == "0"
+
+
+def test_selected_flavor_expand_can_target_one_index_type():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    SU2D = flavor_index("SU2D", 2, prefix="d")
+    uq, (_u, _c, _t) = _up_quark_class(Generation)
+    chi, (_chi1, _chi2) = dirac_field_class(
+        "chi",
+        class_members=("chi1", "chi2"),
+        indices=(SU2D,),
+        flavor_index=SU2D,
+    )
+    Phi = scalar_field("Phi")
+    f, d, colour = S("f", "d", "c")
+    lagrangian = Lagrangian(S("g") * uq.bar(f, colour) * chi(d) * Phi)
+
+    generation_only = lagrangian.vertex_signatures(flavor_expand=Generation)
+    su2d_only = lagrangian.vertex_signatures(flavor_expand=SU2D)
+    selected_both = lagrangian.vertex_signatures(flavor_expand=(Generation, SU2D))
+
+    assert {signature.names for signature in generation_only} == {
+        ("u.bar", "chi", "Phi"),
+        ("c.bar", "chi", "Phi"),
+        ("t.bar", "chi", "Phi"),
+    }
+    assert {signature.names for signature in su2d_only} == {
+        ("uq.bar", "chi1", "Phi"),
+        ("uq.bar", "chi2", "Phi"),
+    }
+    assert len(selected_both) == 6
 
 
 def test_two_flavor_classes_can_share_one_generation_label():
-    flavor = flavor_index("Flavor", 3)
-    left, (e_left, mu_left, tau_left) = _flavor_family(
-        "L",
-        ("eL", "muL", "tauL"),
-        flavor,
+    Generation = flavor_index("Generation", 3, prefix="f")
+    left, (e_left, mu_left, ta_left) = dirac_field_class(
+        "lL",
+        class_members=("eL", "muL", "taL"),
+        indices=(Generation,),
+        flavor_index=Generation,
     )
-    right, (e_right, mu_right, tau_right) = _flavor_family(
-        "R",
-        ("eR", "muR", "tauR"),
-        flavor,
+    right, (e_right, mu_right, ta_right) = dirac_field_class(
+        "lR",
+        class_members=("eR", "muR", "taR"),
+        indices=(Generation,),
+        flavor_index=Generation,
     )
-    phi = _scalar_field("Phi")
+    Phi = scalar_field("Phi")
     f = S("f")
-    y = Parameter("yLR", indices=(flavor,), allow_summation=True)
+    y = Parameter("yLR", indices=(Generation,), allow_summation=True)
     model = Model(
-        fields=(left, right, phi),
+        fields=(left, right, Phi),
         parameters=(y,),
-        lagrangian_decl=y(f) * left.bar(f) * right(f) * phi,
+        lagrangian_decl=y(f) * left.bar(f) * right(f) * Phi,
     )
     lagrangian = model.lagrangian()
 
@@ -422,13 +492,13 @@ def test_two_flavor_classes_can_share_one_generation_label():
     assert set(expanded) == {
         ("eL.bar", "eR", "Phi"),
         ("muL.bar", "muR", "Phi"),
-        ("tauL.bar", "tauR", "Phi"),
+        ("taL.bar", "taR", "Phi"),
     }
     assert "yLR(3)" in _canon(
         lagrangian.feynman_rule(
-            tau_left.bar,
-            tau_right,
-            phi,
+            ta_left.bar,
+            ta_right,
+            Phi,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
@@ -437,16 +507,16 @@ def test_two_flavor_classes_can_share_one_generation_label():
 
 
 def test_independent_flavor_labels_expand_across_two_field_classes():
-    flavor = flavor_index("Flavor", 3)
-    up, (u, c, t) = _flavor_family("U", ("u", "c", "t"), flavor)
-    down, (d, s, b) = _flavor_family("D", ("d", "s", "b"), flavor)
-    w = _scalar_field("W")
-    f, g = S("f", "g")
-    mixing = Parameter("V", indices=(flavor, flavor))
+    Generation = flavor_index("Generation", 3, prefix="f")
+    uq, (u, c, t) = _up_quark_class(Generation)
+    dq, (d, s, b) = _down_quark_class(Generation)
+    W = scalar_field("W")
+    f, h, colour = S("f", "h", "c")
+    V = Parameter("V", indices=(Generation, Generation))
     model = Model(
-        fields=(up, down, w),
-        parameters=(mixing,),
-        lagrangian_decl=up.bar(f) * mixing(f, g) * down(g) * w,
+        fields=(uq, dq, W),
+        parameters=(V,),
+        lagrangian_decl=uq.bar(f, colour) * V(f, h) * dq(h, colour) * W,
     )
     lagrangian = model.lagrangian()
 
@@ -462,7 +532,7 @@ def test_independent_flavor_labels_expand_across_two_field_classes():
         lagrangian.feynman_rule(
             u.bar,
             s,
-            w,
+            W,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
@@ -472,7 +542,7 @@ def test_independent_flavor_labels_expand_across_two_field_classes():
         lagrangian.feynman_rule(
             t.bar,
             b,
-            w,
+            W,
             simplify=True,
             include_delta=True,
             flavor_expand=True,
@@ -481,43 +551,49 @@ def test_independent_flavor_labels_expand_across_two_field_classes():
 
 
 def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_errors():
-    flavor = flavor_index("Flavor", 3)
+    Generation = flavor_index("Generation", 3, prefix="f")
 
     with pytest.raises(ValueError, match="declares 2 class member"):
-        _flavor_family("BadPsi", ("e", "mu"), flavor)
+        dirac_field_class(
+            "BadPsi",
+            class_members=("e", "mu"),
+            indices=(Generation,),
+            flavor_index=Generation,
+        )
 
-    member_with_flavor = Field(
-        "bad_member",
-        spin=Fraction(1, 2),
-        self_conjugate=False,
-        symbol=S("bad_member"),
-        conjugate_symbol=S("bad_memberbar"),
-        indices=(flavor, SPINOR_INDEX),
-    )
+    member_with_flavor = dirac_field("bad_member", indices=(Generation,))
     with pytest.raises(ValueError, match="still carries a flavor index"):
         Field(
             "BadClass",
-            spin=Fraction(1, 2),
-            self_conjugate=False,
+            spin=member_with_flavor.spin,
+            self_conjugate=member_with_flavor.self_conjugate,
             symbol=S("badclass"),
             conjugate_symbol=S("badclassbar"),
-            indices=(flavor, SPINOR_INDEX),
-            flavor_index=flavor,
+            indices=(Generation, SPINOR_INDEX),
+            flavor_index=Generation,
             class_members=(member_with_flavor, member_with_flavor, member_with_flavor),
         )
 
-    psi = Field(
+    template = dirac_field(
         "PsiNoMembers",
-        spin=Fraction(1, 2),
-        self_conjugate=False,
+        indices=(Generation,),
         symbol=S("psinm"),
         conjugate_symbol=S("psinmbar"),
-        indices=(flavor, SPINOR_INDEX),
-        flavor_index=flavor,
     )
-    phi = _scalar_field("PhiMissing")
+    psi = Field(
+        template.name,
+        spin=template.spin,
+        self_conjugate=template.self_conjugate,
+        indices=template.indices,
+        kind=template.kind,
+        statistics=template.statistics,
+        symbol=template.symbol,
+        conjugate_symbol=template.conjugate_symbol,
+        flavor_index=Generation,
+    )
+    Phi = scalar_field("PhiMissing")
     f = S("f")
-    lagrangian = Lagrangian(S("g") * psi.bar(f) * psi(f) * phi)
+    lagrangian = Lagrangian(S("g") * psi.bar(f) * psi(f) * Phi)
 
     with pytest.raises(ValueError, match="no class members are defined"):
         lagrangian.vertex_signatures(flavor_expand=True)

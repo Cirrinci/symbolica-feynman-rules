@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 from symbolica import Expression, S
 
@@ -16,6 +16,11 @@ from .interactions import (
     _parse_field_arg,
     _term_matches_fields,
 )
+from .metadata import IndexRole, IndexType
+
+
+FlavorExpandOption = bool | IndexType | Iterable[IndexType]
+_EXPAND_ALL_FLAVOR_INDICES = object()
 
 
 def _normalize_interaction_terms_input(terms):
@@ -69,10 +74,35 @@ def _merge_unique_metadata(left, right):
     return tuple(merged)
 
 
-def _normalize_flavor_expand_option(flavor_expand) -> bool:
-    if isinstance(flavor_expand, bool):
+def _normalize_flavor_expand_option(flavor_expand):
+    if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES:
         return flavor_expand
-    raise TypeError("`flavor_expand` must be a boolean.")
+    if isinstance(flavor_expand, bool):
+        return _EXPAND_ALL_FLAVOR_INDICES if flavor_expand else False
+    if isinstance(flavor_expand, IndexType):
+        indices = (flavor_expand,)
+    else:
+        try:
+            indices = tuple(flavor_expand)
+        except TypeError as exc:
+            raise TypeError(
+                "`flavor_expand` must be a boolean, one flavor index, or an iterable of flavor indices."
+            ) from exc
+
+    normalized: list[IndexType] = []
+    for index in indices:
+        if not isinstance(index, IndexType):
+            raise TypeError(
+                "`flavor_expand` iterable entries must be IndexType instances."
+            )
+        if index.role != IndexRole.FLAVOR:
+            raise ValueError(
+                f"`flavor_expand` only accepts flavor indices; got {index.name!r} "
+                f"with role={index.role.value!r}."
+            )
+        if index not in normalized:
+            normalized.append(index)
+    return tuple(normalized)
 
 
 def _field_arg_from_occurrence(occurrence):
@@ -328,14 +358,24 @@ class CompiledLagrangian:
             return "0"
         return " + ".join(str(term) for term in self.terms)
 
-    def _expanded_terms(self, *, flavor_expand: bool = False) -> tuple[InteractionTerm, ...]:
-        if not _normalize_flavor_expand_option(flavor_expand):
+    def _expanded_terms(self, *, flavor_expand: FlavorExpandOption = False) -> tuple[InteractionTerm, ...]:
+        flavor_expand = _normalize_flavor_expand_option(flavor_expand)
+        if not flavor_expand:
             return self.terms
         from .flavor import expand_flavor_terms
 
-        return expand_flavor_terms(self.terms, parameters=self.parameters)
+        selected_indices = (
+            None
+            if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES
+            else tuple(flavor_expand)
+        )
+        return expand_flavor_terms(
+            self.terms,
+            parameters=self.parameters,
+            selected_indices=selected_indices,
+        )
 
-    def _vertex_field_tuples(self, *, flavor_expand: bool = False):
+    def _vertex_field_tuples(self, *, flavor_expand: FlavorExpandOption = False):
         vertices = {}
         for term in self._expanded_terms(flavor_expand=flavor_expand):
             key = _term_vertex_key(term)
@@ -343,7 +383,7 @@ class CompiledLagrangian:
                 vertices[key] = _term_vertex_fields(term)
         return tuple(vertices.values())
 
-    def _vertex_signature_entries(self, *, sector=None, flavor_expand: bool = False):
+    def _vertex_signature_entries(self, *, sector=None, flavor_expand: FlavorExpandOption = False):
         grouped = {}
         for term in self._expanded_terms(flavor_expand=flavor_expand):
             term_sector = _classify_term_sector(term)
@@ -381,7 +421,7 @@ class CompiledLagrangian:
         parsed_fields,
         *,
         max_signatures: int = 8,
-        flavor_expand: bool = False,
+        flavor_expand: FlavorExpandOption = False,
     ) -> ValueError:
         requested = ", ".join(
             _parsed_field_arg_name(field_obj, conjugated)
@@ -411,7 +451,7 @@ class CompiledLagrangian:
         signature=None,
         contains_fields=None,
         sector=None,
-        flavor_expand: bool = False,
+        flavor_expand: FlavorExpandOption = False,
     ):
         """Enumerate grouped compiled interaction signatures without extracting vertices.
 
@@ -479,7 +519,7 @@ class CompiledLagrangian:
         signature=None,
         contains_fields=None,
         sector=None,
-        flavor_expand: bool = False,
+        flavor_expand: FlavorExpandOption = False,
     ) -> VertexReport:
         """Return a structured summary of available compiled interaction signatures.
 
@@ -571,7 +611,7 @@ class CompiledLagrangian:
         include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
-        flavor_expand: bool = False,
+        flavor_expand: FlavorExpandOption = False,
     ):
         """Compute multiple Feynman rules grouped by field content."""
         if key_format not in ("names", "fields"):
@@ -624,7 +664,7 @@ class CompiledLagrangian:
         include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
-        flavor_expand: bool = False,
+        flavor_expand: FlavorExpandOption = False,
     ):
         """Compute Feynman vertex rules.
 

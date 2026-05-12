@@ -9,7 +9,7 @@ from itertools import product
 from symbolica import Expression, S
 
 from .interactions import InteractionTerm
-from .metadata import IndexRole, Parameter
+from .metadata import IndexRole, IndexType, Parameter
 
 
 def _canonical_value_key(value):
@@ -55,6 +55,13 @@ def _parameter_head_map(parameters: tuple[Parameter, ...]) -> dict[str, Paramete
     }
 
 
+def _index_is_selected(
+    index: IndexType,
+    selected_indices: frozenset[IndexType] | None,
+) -> bool:
+    return selected_indices is None or index in selected_indices
+
+
 def _register_flavor_label(label_entries, label_counts, label, index):
     label_name = _label_name(label)
     prior = label_entries.get(label_name)
@@ -70,7 +77,13 @@ def _register_flavor_label(label_entries, label_counts, label, index):
     label_counts[label_name] += 1
 
 
-def _collect_parameter_flavor_labels(expr, parameters, label_entries, label_counts):
+def _collect_parameter_flavor_labels(
+    expr,
+    parameters,
+    label_entries,
+    label_counts,
+    selected_indices,
+):
     if not parameters or not hasattr(expr, "to_atom_tree"):
         return
 
@@ -83,7 +96,10 @@ def _collect_parameter_flavor_labels(expr, parameters, label_entries, label_coun
             parameter = heads.get(node.head)
             if parameter is not None and len(node.tail) == len(parameter.indices):
                 for index, arg in zip(parameter.indices, node.tail):
-                    if index.role != IndexRole.FLAVOR:
+                    if index.role != IndexRole.FLAVOR or not _index_is_selected(
+                        index,
+                        selected_indices,
+                    ):
                         continue
                     if str(arg.atom_type) != "AtomType.Var":
                         continue
@@ -107,14 +123,21 @@ def _collect_parameter_flavor_labels(expr, parameters, label_entries, label_coun
             )
 
 
-def _collect_term_flavor_labels(term: InteractionTerm, parameters: tuple[Parameter, ...]):
+def _collect_term_flavor_labels(
+    term: InteractionTerm,
+    parameters: tuple[Parameter, ...],
+    selected_indices: frozenset[IndexType] | None,
+):
     label_entries: dict[str, tuple[object, object]] = {}
     label_counts: Counter = Counter()
 
     for occurrence in term.fields:
         slot_labels = occurrence.field.unpack_slot_labels(occurrence.labels)
         for slot, index in enumerate(occurrence.field.indices):
-            if index.role != IndexRole.FLAVOR:
+            if index.role != IndexRole.FLAVOR or not _index_is_selected(
+                index,
+                selected_indices,
+            ):
                 continue
             label = slot_labels.get(slot)
             if label is None:
@@ -129,6 +152,7 @@ def _collect_term_flavor_labels(term: InteractionTerm, parameters: tuple[Paramet
         parameters,
         label_entries,
         label_counts,
+        selected_indices,
     )
 
     ordered = []
@@ -152,19 +176,24 @@ def _apply_parameter_components(expr, parameters: tuple[Parameter, ...]):
     return result
 
 
-def _expand_occurrence(occurrence, assignment_by_name):
+def _expand_occurrence(occurrence, assignment_by_name, selected_indices):
     field = occurrence.field
     slot_labels = field.unpack_slot_labels(occurrence.labels)
     flavor_slot = field.flavor_index_slot()
 
     if flavor_slot is None:
-        if any(index.role == IndexRole.FLAVOR for index in field.indices):
+        if any(
+            index.role == IndexRole.FLAVOR and _index_is_selected(index, selected_indices)
+            for index in field.indices
+        ):
             raise ValueError(
                 f"Cannot flavor-expand field {field.name!r} because no class members are defined."
             )
         return occurrence
 
     index = field.indices[flavor_slot]
+    if not _index_is_selected(index, selected_indices):
+        return occurrence
     label = slot_labels.get(flavor_slot)
     if label is None:
         raise ValueError(
@@ -236,13 +265,19 @@ def expand_flavor_terms(
     terms,
     *,
     parameters: tuple[Parameter, ...] = (),
+    selected_indices: tuple[IndexType, ...] | None = None,
 ) -> tuple[InteractionTerm, ...]:
     """Expand flavor-generic fields in compiled interaction terms."""
 
+    selected = None if selected_indices is None else frozenset(selected_indices)
     expanded_terms: list[InteractionTerm] = []
 
     for term in terms:
-        assignments = _collect_term_flavor_labels(term, parameters)
+        assignments = _collect_term_flavor_labels(
+            term,
+            parameters,
+            selected,
+        )
         if not assignments:
             expanded_terms.append(term)
             continue
@@ -268,7 +303,7 @@ def expand_flavor_terms(
                     term,
                     coupling=coupling,
                     fields=tuple(
-                        _expand_occurrence(occurrence, assignment_by_name)
+                        _expand_occurrence(occurrence, assignment_by_name, selected)
                         for occurrence in term.fields
                     ),
                 )

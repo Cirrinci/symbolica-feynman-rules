@@ -186,6 +186,173 @@ def generation_index(
     )
 
 
+def _default_conjugate_symbol(name: str):
+    return S(f"{name}bar")
+
+
+def _validate_dirac_helper_indices(helper_name: str, indices: tuple["IndexType", ...]):
+    if any(index == SPINOR_INDEX for index in indices):
+        raise ValueError(
+            f"{helper_name} appends SPINOR_INDEX automatically; omit it from `indices`."
+        )
+
+
+def dirac_field(
+    name: str,
+    *,
+    indices: tuple[IndexType, ...] = (),
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+) -> "Field":
+    """Declare a Dirac field with the spinor slot appended automatically."""
+
+    indices = tuple(indices)
+    _validate_dirac_helper_indices("dirac_field(...)", indices)
+    if symbol is None:
+        symbol = S(name)
+    if conjugate_symbol is None:
+        conjugate_symbol = _default_conjugate_symbol(name)
+    return Field(
+        name,
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        indices=indices + (SPINOR_INDEX,),
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=dict(quantum_numbers or {}),
+    )
+
+
+def scalar_field(
+    name: str,
+    *,
+    self_conjugate: bool = True,
+    indices: tuple[IndexType, ...] = (),
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+) -> "Field":
+    """Declare a scalar field with lightweight defaults."""
+
+    if symbol is None:
+        symbol = S(name)
+    if conjugate_symbol is None and not self_conjugate:
+        conjugate_symbol = _default_conjugate_symbol(name)
+    return Field(
+        name,
+        spin=0,
+        self_conjugate=self_conjugate,
+        indices=tuple(indices),
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=dict(quantum_numbers or {}),
+    )
+
+
+def dirac_field_class(
+    name: str,
+    *,
+    class_members: tuple[str | "Field", ...],
+    indices: tuple[IndexType, ...],
+    flavor_index: IndexType,
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+) -> tuple["Field", tuple["Field", ...]]:
+    """Declare a flavor-generic Dirac field class plus its concrete members.
+
+    This mirrors the FeynRules pattern where ``FlavorIndex`` and
+    ``ClassMembers`` are explicit field-class options.
+    """
+
+    indices = tuple(indices)
+    _validate_dirac_helper_indices("dirac_field_class(...)", indices)
+
+    flavor_slots = tuple(
+        slot for slot, index in enumerate(indices) if index == flavor_index
+    )
+    if len(flavor_slots) != 1:
+        raise ValueError(
+            f"dirac_field_class({name!r}) expects `indices` to contain flavor_index "
+            f"{flavor_index.name!r} exactly once."
+        )
+
+    flavor_slot = flavor_slots[0]
+    member_indices = indices[:flavor_slot] + indices[flavor_slot + 1 :]
+    members: list[Field] = []
+    for member in class_members:
+        if isinstance(member, Field):
+            members.append(member)
+            continue
+        members.append(
+            dirac_field(
+                str(member),
+                indices=member_indices,
+                mass=mass,
+                quantum_numbers=quantum_numbers,
+            )
+        )
+
+    generic = dirac_field(
+        name,
+        indices=indices,
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=quantum_numbers,
+    )
+    generic = Field(
+        generic.name,
+        spin=generic.spin,
+        self_conjugate=generic.self_conjugate,
+        indices=generic.indices,
+        kind=generic.kind,
+        statistics=generic.statistics,
+        symbol=generic.symbol,
+        conjugate_symbol=generic.conjugate_symbol,
+        mass=generic.mass,
+        quantum_numbers=generic.quantum_numbers,
+        flavor_index=flavor_index,
+        class_members=tuple(members),
+    )
+    return generic, tuple(members)
+
+
+def flavor_family(
+    generic_name: str,
+    member_names: tuple[str, ...],
+    flavor: IndexType,
+    *,
+    extra_indices: tuple[IndexType, ...] = (),
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+) -> tuple["Field", tuple["Field", ...]]:
+    """Convenience shortcut for toy examples.
+
+    Prefer ``dirac_field_class(...)`` in model-file-style declarations where
+    ``class_members=...`` and ``flavor_index=...`` should stay visible.
+    """
+
+    return dirac_field_class(
+        generic_name,
+        class_members=tuple(member_names),
+        indices=(flavor,) + tuple(extra_indices),
+        flavor_index=flavor,
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=quantum_numbers,
+    )
+
+
 # ---------------------------------------------------------------------------
 # GaugeGroup
 # ---------------------------------------------------------------------------
