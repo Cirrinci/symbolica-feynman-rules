@@ -518,7 +518,7 @@ class CompiledLagrangian:
         select=None,
         simplify=True,
         key_format="names",
-        include_delta: bool = True,
+        include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
     ):
@@ -568,7 +568,7 @@ class CompiledLagrangian:
         momenta=None,
         simplify=True,
         key_format="names",
-        include_delta: bool = True,
+        include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
     ):

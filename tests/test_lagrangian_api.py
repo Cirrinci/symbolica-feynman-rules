@@ -406,7 +406,7 @@ def test_phi4_vertex():
         fields=tuple(phi.occurrence() for _ in range(4)),
     )
     L = Lagrangian(terms=(term,))
-    got = L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    got = L.feynman_rule(phi, phi, phi, phi, simplify=True, include_delta=True)
 
     q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
     d = S("d")
@@ -420,7 +420,7 @@ def test_lagrangian_accepts_declared_phi4_field_product():
     lam4 = S("lam4")
 
     got = Lagrangian(lam4 * phi * phi * phi * phi).feynman_rule(
-        phi, phi, phi, phi, simplify=True
+        phi, phi, phi, phi, simplify=True, include_delta=True
     )
 
     q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
@@ -563,7 +563,7 @@ def test_lagrangian_accepts_declared_vector_current():
     mu = S("mu")
 
     got = Lagrangian(g * psi.bar * Gamma(mu) * psi * A).feynman_rule(
-        psi.bar, psi, A, simplify=True
+        psi.bar, psi, A, simplify=True, include_delta=True
     )
 
     expected = (
@@ -627,7 +627,7 @@ def test_lagrangian_accepts_declared_current_current():
 
     got = Lagrangian(
         g * psi.bar * Gamma(mu) * psi * psi.bar * Gamma(mu) * psi
-    ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True, include_delta=True)
 
     ref = Lagrangian(terms=(
         InteractionTerm(
@@ -641,7 +641,9 @@ def test_lagrangian_accepts_declared_current_current():
             closed_dirac_bilinears=((0, 1), (2, 3)),
         ),
     ))
-    expected = ref.feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    expected = ref.feynman_rule(
+        psi.bar, psi, psi.bar, psi, simplify=True, include_delta=True
+    )
     assert _canon(got) == _canon(expected)
 
 
@@ -660,7 +662,7 @@ def test_declared_psibar_psi_sq_uses_closed_bilinear_signs():
 
     got = Lagrangian(
         g * psi.bar * psi * psi.bar * psi
-    ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+    ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True, include_delta=True)
 
     expected = (
         2
@@ -693,7 +695,7 @@ def test_declared_current_current_uses_closed_bilinear_signs():
     got = simplify_gamma_chain(
         Lagrangian(
         g * psi.bar * Gamma(mu) * psi * psi.bar * Gamma(mu) * psi
-        ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True)
+        ).feynman_rule(psi.bar, psi, psi.bar, psi, simplify=True, include_delta=True)
     )
 
     expected = (
@@ -1000,7 +1002,7 @@ def test_lagrangian_accepts_declared_complex_scalar_current_pair():
     got = Lagrangian(
         g * phi.bar * PartialD(phi, mu) * A,
         -g * PartialD(phi.bar, mu) * phi * A,
-    ).feynman_rule(phi.bar, phi, A, simplify=True)
+    ).feynman_rule(phi.bar, phi, A, simplify=True, include_delta=True)
 
     expected = (
         g
@@ -1018,7 +1020,7 @@ def test_lagrangian_accepts_lagrangian_decl_keyword():
 
     got = Lagrangian(
         lagrangian_decl=lam4 * phi * phi * phi * phi
-    ).feynman_rule(phi, phi, phi, phi, simplify=True)
+    ).feynman_rule(phi, phi, phi, phi, simplify=True, include_delta=True)
 
     q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
     d = S("d")
@@ -1076,7 +1078,7 @@ def test_model_accepts_declared_phi4_field_product():
     lam4 = S("lam4")
 
     model = Model(fields=(phi,), lagrangian_decl=lam4 * phi * phi * phi * phi)
-    got = model.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True)
+    got = model.lagrangian().feynman_rule(phi, phi, phi, phi, simplify=True, include_delta=True)
 
     q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
     d = S("d")
@@ -1461,7 +1463,7 @@ def test_complex_scalar_mass_term():
         fields=(phiC.occurrence(conjugated=True), phiC.occurrence()),
     )
     L = Lagrangian(terms=(term,))
-    got = L.feynman_rule(phiC.bar, phiC, simplify=True)
+    got = L.feynman_rule(phiC.bar, phiC, simplify=True, include_delta=True)
 
     q1, q2 = S("q1", "q2")
     d = S("d")
@@ -1475,7 +1477,7 @@ def test_model_accepts_declared_complex_scalar_mass_product():
     lamC = S("lamC")
 
     model = Model(fields=(phiC,), lagrangian_decl=lamC * phiC.bar * phiC)
-    got = model.lagrangian().feynman_rule(phiC.bar, phiC, simplify=True)
+    got = model.lagrangian().feynman_rule(phiC.bar, phiC, simplify=True, include_delta=True)
 
     q1, q2 = S("q1", "q2")
     d = S("d")
@@ -1526,7 +1528,7 @@ def test_complex_scalar_mass_term_tuple_input():
         fields=(phiC.occurrence(conjugated=True), phiC.occurrence()),
     )
     L = Lagrangian(terms=(term,))
-    got = L.feynman_rule((phiC, True), phiC, simplify=True)
+    got = L.feynman_rule((phiC, True), phiC, simplify=True, include_delta=True)
 
     q1, q2 = S("q1", "q2")
     d = S("d")
@@ -1549,7 +1551,7 @@ def test_phi2_chi2_vertex():
         fields=(phi.occurrence(), phi.occurrence(), chi.occurrence(), chi.occurrence()),
     )
     L = Lagrangian(terms=(term,))
-    got = L.feynman_rule(phi, phi, chi, chi, simplify=True)
+    got = L.feynman_rule(phi, phi, chi, chi, simplify=True, include_delta=True)
 
     q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
     d = S("d")
@@ -1572,7 +1574,9 @@ def test_custom_momenta():
     )
     L = Lagrangian(terms=(term,))
     p1, p2, p3, p4 = S("p1", "p2", "p3", "p4")
-    got = L.feynman_rule(phi, phi, phi, phi, momenta=[p1, p2, p3, p4], simplify=True)
+    got = L.feynman_rule(
+        phi, phi, phi, phi, momenta=[p1, p2, p3, p4], simplify=True, include_delta=True
+    )
 
     d = S("d")
     expected = 24 * I * lam * (2 * pi) ** d * Delta(p1 + p2 + p3 + p4)
@@ -1692,7 +1696,7 @@ def test_multiple_matching_terms_are_summed():
     t1 = InteractionTerm(coupling=g1, fields=tuple(phi.occurrence() for _ in range(4)))
     t2 = InteractionTerm(coupling=g2, fields=tuple(phi.occurrence() for _ in range(4)))
     L = Lagrangian(terms=(t1, t2))
-    got = L.feynman_rule(phi, phi, phi, phi, simplify=True)
+    got = L.feynman_rule(phi, phi, phi, phi, simplify=True, include_delta=True)
 
     q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
     d = S("d")
@@ -1933,7 +1937,7 @@ def test_feynman_rule_no_args_nontrivial_model_summary_is_usable():
 # High-level output-policy options
 # ---------------------------------------------------------------------------
 
-def test_feynman_rule_default_output_policy_is_unchanged():
+def test_feynman_rule_default_output_policy_is_delta_free():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     lagrangian = Lagrangian(S("lam4") * phi * phi * phi * phi)
 
@@ -1944,7 +1948,7 @@ def test_feynman_rule_default_output_policy_is_unchanged():
         phi,
         phi,
         simplify=True,
-        include_delta=True,
+        include_delta=False,
         strip_externals=True,
         simplify_gamma=False,
     )
@@ -1952,11 +1956,13 @@ def test_feynman_rule_default_output_policy_is_unchanged():
     assert _canon(got_default) == _canon(got_explicit)
 
 
-def test_feynman_rule_include_delta_false_omits_delta():
+def test_feynman_rule_include_delta_true_restores_delta():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     lagrangian = Lagrangian(S("lam4") * phi * phi * phi * phi)
 
-    with_delta = lagrangian.feynman_rule(phi, phi, phi, phi, simplify=False)
+    with_delta = lagrangian.feynman_rule(
+        phi, phi, phi, phi, simplify=False, include_delta=True
+    )
     without_delta = lagrangian.feynman_rule(
         phi,
         phi,
@@ -2105,7 +2111,7 @@ def test_model_lagrangian_qed_fermion():
                   lagrangian_decl=_dirac_decl(fermion))
 
     L = model.lagrangian()
-    got = L.feynman_rule(fermion.bar, fermion, photon, simplify=True)
+    got = L.feynman_rule(fermion.bar, fermion, photon, simplify=True, include_delta=True)
 
     q1, q2, q3 = S("q1", "q2", "q3")
     compiled = compile_covariant_terms(model)
@@ -2251,7 +2257,7 @@ def test_model_lagrangian_qcd_fermion():
                   lagrangian_decl=_dirac_decl(quark))
 
     L = model.lagrangian()
-    got = L.feynman_rule(quark.bar, quark, gluon, simplify=True)
+    got = L.feynman_rule(quark.bar, quark, gluon, simplify=True, include_delta=True)
 
     q1, q2, q3 = S("q1", "q2", "q3")
     compiled = compile_covariant_terms(model)
@@ -2645,7 +2651,7 @@ def test_lagrangian_abelian_gauge_kinetic():
     assert len(compiled) == 2  # metric + cross bilinears
 
     L = model.lagrangian()
-    got = L.feynman_rule(photon, photon, simplify=True)
+    got = L.feynman_rule(photon, photon, simplify=True, include_delta=True)
 
     q1, q2 = S("q1", "q2")
     ref_sum = Expression.num(0)
@@ -2712,7 +2718,7 @@ def test_lagrangian_abelian_gauge_fixing():
     assert len(compiled) == 1
 
     L = model.lagrangian()
-    got = L.feynman_rule(photon, photon, simplify=True)
+    got = L.feynman_rule(photon, photon, simplify=True, include_delta=True)
 
     q1, q2 = S("q1", "q2")
     legs = (
@@ -2739,7 +2745,7 @@ def test_lagrangian_nonabelian_gauge_fixing():
     assert len(compiled) == 1
 
     L = model.lagrangian()
-    got = L.feynman_rule(gluon, gluon, simplify=True)
+    got = L.feynman_rule(gluon, gluon, simplify=True, include_delta=True)
 
     q1, q2 = S("q1", "q2")
     legs = (
@@ -2886,7 +2892,9 @@ def test_qed_covd_dirac_vertex_regression_after_divergence_binding_change():
         lagrangian_decl=I * fermion.bar * Gamma(mu) * CovD(fermion, mu),
     )
 
-    got = model.lagrangian().feynman_rule(fermion.bar, fermion, photon, simplify=True)
+    got = model.lagrangian().feynman_rule(
+        fermion.bar, fermion, photon, simplify=True, include_delta=True
+    )
     expected = (
         I
         * eQED
@@ -3033,7 +3041,7 @@ def test_lagrangian_ghost_bilinear():
     assert len(compiled) == 2  # bilinear + gauge interaction
 
     L = model.lagrangian()
-    got = L.feynman_rule(ghost.bar, ghost, simplify=True)
+    got = L.feynman_rule(ghost.bar, ghost, simplify=True, include_delta=True)
 
     q1, q2 = S("q1", "q2")
     bilinear = compiled[0]
@@ -3062,7 +3070,7 @@ def test_lagrangian_ghost_gauge_interaction():
     ghost_gauge_term = compiled[1]
 
     L = model.lagrangian()
-    got = L.feynman_rule(ghost.bar, gluon, ghost, simplify=True)
+    got = L.feynman_rule(ghost.bar, gluon, ghost, simplify=True, include_delta=True)
 
     q1, q2, q3 = S("q1", "q2", "q3")
     legs = (
@@ -3684,7 +3692,7 @@ def test_generic_declared_monomial_supports_same_species_quark_covd_product():
     L = model.lagrangian()
 
     got_single_gluon = L.feynman_rule(
-        quark.bar, quark, quark.bar, quark, gluon, simplify=True
+        quark.bar, quark, quark.bar, quark, gluon, simplify=True, include_delta=True
     )
 
     mu_int = S("mu1_int")

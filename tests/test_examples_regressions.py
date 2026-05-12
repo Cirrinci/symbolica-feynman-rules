@@ -170,9 +170,9 @@ def test_lagrangian_tuple_field_syntax_matches_complex_scalar_bilinear():
     expected = I * lamC * (2 * pi) ** d * Delta(S("q1") + S("q2"))
     lagrangian = Lagrangian(lamC * phi.bar * phi)
 
-    assert _canon(lagrangian.feynman_rule(phi.bar, phi)) == _canon(expected)
-    assert _canon(lagrangian.feynman_rule(phi, phi.bar)) == _canon(expected)
-    assert _canon(lagrangian.feynman_rule((phi, True), phi)) == _canon(expected)
+    assert _canon(lagrangian.feynman_rule(phi.bar, phi, include_delta=True)) == _canon(expected)
+    assert _canon(lagrangian.feynman_rule(phi, phi.bar, include_delta=True)) == _canon(expected)
+    assert _canon(lagrangian.feynman_rule((phi, True), phi, include_delta=True)) == _canon(expected)
 
 
 def test_lagrangian_same_symbol_distinct_fields_do_not_match():

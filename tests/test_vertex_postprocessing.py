@@ -176,7 +176,7 @@ def test_lagrangian_feynman_rule_default_simplify_is_unchanged():
         )
     )
 
-    got = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    got = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True, include_delta=True)
     species_map = {
         species: species
         for species in (

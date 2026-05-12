@@ -54,7 +54,9 @@ D4 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
 
 
 def test_contract_spenso_lorentz_metrics_simplifies_qed_gauge_bilinear():
-    vertex = MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(GaugeField, GaugeField)
+    vertex = MODEL_QED_GAUGE_COVARIANT.lagrangian().feynman_rule(
+        GaugeField, GaugeField, include_delta=True,
+    )
     contracted = contract_spenso_lorentz_metrics(vertex)
 
     expected = I * gauge_kinetic_bilinear(S("mu1"), S("mu2"), q1, q2, S("mu1_int")) * D2
@@ -64,7 +66,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_qed_gauge_bilinear():
 
 def test_contract_spenso_lorentz_metrics_simplifies_ghost_bilinear():
     vertex = MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
-        GhostGluonField.bar, GhostGluonField,
+        GhostGluonField.bar, GhostGluonField, include_delta=True,
     )
     contracted = contract_spenso_lorentz_metrics(vertex)
 
@@ -75,7 +77,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_ghost_bilinear():
 
 def test_contract_spenso_lorentz_metrics_simplifies_ghost_gluon_vertex():
     vertex = MODEL_QCD_GHOST_COVARIANT.lagrangian().feynman_rule(
-        GhostGluonField.bar, GluonField, GhostGluonField,
+        GhostGluonField.bar, GluonField, GhostGluonField, include_delta=True,
     )
     contracted = contract_spenso_lorentz_metrics(vertex)
     expected = gS * ghost_gauge(S("a1"), S("a2"), S("a3"), S("mu2"), q1) * D3
@@ -85,7 +87,7 @@ def test_contract_spenso_lorentz_metrics_simplifies_ghost_gluon_vertex():
 
 def test_contract_then_canonize_matches_compact_yang_mills_cubic():
     vertex = MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
-        GluonField, GluonField, GluonField,
+        GluonField, GluonField, GluonField, include_delta=True,
     )
     contracted = contract_spenso_lorentz_metrics(vertex)
     canon_got, _, _ = canonize_spenso_tensors(
@@ -110,7 +112,7 @@ def test_contract_then_canonize_matches_compact_yang_mills_cubic():
 
 def test_canonized_yang_mills_quartic_matches_grouped_color_channels():
     vertex = MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
-        GluonField, GluonField, GluonField, GluonField,
+        GluonField, GluonField, GluonField, GluonField, include_delta=True,
     )
     canon_got, _, _ = canonize_spenso_tensors(
         vertex,

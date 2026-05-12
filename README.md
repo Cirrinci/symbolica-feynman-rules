@@ -99,11 +99,14 @@ Important output conventions:
 
 - `strip_externals=True` by default
   - external wavefunctions are amputated from the displayed vertex
-- `include_delta=True` by default
-  - the returned expression keeps the overall momentum-conservation factor
-    `(2*pi)^d Delta(sum p)`
+- high-level `Lagrangian.feynman_rule(...)` / `Model(...).lagrangian().feynman_rule(...)`
+  use `include_delta=False` by default
+  - the returned expression omits the universal momentum-conservation factor
+    unless you request it explicitly
+- low-level `vertex_factor(...)` still defaults to `include_delta=True`
 - `simplify_vertex(..., simplify_gamma=False)` keeps gamma-chain simplification opt-in
-- use `include_delta=False` when you want the reduced vertex with the universal momentum delta stripped
+- use `include_delta=True` when you want to keep the universal
+  `(2*pi)^d Delta(sum p)` factor in the displayed rule
 
 Gauge/compiler conventions:
 

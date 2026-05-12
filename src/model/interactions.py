@@ -183,7 +183,7 @@ class InteractionTerm:
         *fields,
         momenta=None,
         simplify=True,
-        include_delta: bool = True,
+        include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
     ):

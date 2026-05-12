@@ -189,11 +189,11 @@ def test_broken_higgs_sector_generates_w_and_z_masses_but_no_photon_mass():
     mw_sq = electroweak_mw(g2, v) ** 2
     mz_sq = electroweak_mz(g1, g2, v) ** 2
 
-    got_w = L.feynman_rule(wp.bar, wp, simplify=True)
+    got_w = L.feynman_rule(wp.bar, wp, simplify=True, include_delta=True)
     expected_w = I * mw_sq * lorentz_metric(S("mu1"), S("mu2")) * D2
     assert _canon(got_w) == _canon(expected_w)
 
-    got_z = L.feynman_rule(z, z, simplify=True)
+    got_z = L.feynman_rule(z, z, simplify=True, include_delta=True)
     expected_z = I * mz_sq * lorentz_metric(S("mu1"), S("mu2")) * D2
     assert _canon(got_z) == _canon(expected_z)
 
@@ -212,11 +212,11 @@ def test_goldstone_vector_mixing_terms_are_present():
     wp = BROKEN.fields.charged_w
     z = BROKEN.fields.z_boson
 
-    got_g0z = L.feynman_rule(g0, z, simplify=True)
+    got_g0z = L.feynman_rule(g0, z, simplify=True, include_delta=True)
     expected_g0z = electroweak_mz(g1, g2, v) * pcomp(q1, S("mu2")) * D2
     assert _canon(got_g0z) == _canon(expected_g0z)
 
-    got_gpwm = L.feynman_rule(gp, wp.bar, simplify=True)
+    got_gpwm = L.feynman_rule(gp, wp.bar, simplify=True, include_delta=True)
     expected_gpwm = electroweak_mw(g2, v) * pcomp(q1, S("mu2")) * D2
     assert _canon(got_gpwm) == _canon(expected_gpwm)
 
@@ -227,19 +227,19 @@ def test_broken_phase_hvv_and_hff_vertices_match_expected_structure():
     z = BROKEN.fields.z_boson
     me = ye * v * SQRT_HALF
 
-    got_hww = L.feynman_rule(h, wp.bar, wp, simplify=True)
+    got_hww = L.feynman_rule(h, wp.bar, wp, simplify=True, include_delta=True)
     expected_hww = I * (g2**2) * v * HALF * lorentz_metric(S("mu2"), S("mu3")) * D3
     assert _canon(got_hww) == _canon(expected_hww)
 
-    got_hzz = L.feynman_rule(h, z, z, simplify=True)
+    got_hzz = L.feynman_rule(h, z, z, simplify=True, include_delta=True)
     expected_hzz = 2 * I * (electroweak_mz(g1, g2, v) ** 2 / v) * lorentz_metric(S("mu2"), S("mu3")) * D3
     assert _canon(got_hzz) == _canon(expected_hzz)
 
-    got_hff = L.feynman_rule(electron.bar, electron, h, simplify=True)
+    got_hff = L.feynman_rule(electron.bar, electron, h, simplify=True, include_delta=True)
     expected_hff = -I * ye * SQRT_HALF * bis.g(S("i1"), S("i2")).to_expression() * D3
     assert _canon(got_hff) == _canon(expected_hff)
 
-    got_ff = L.feynman_rule(electron.bar, electron, simplify=True)
+    got_ff = L.feynman_rule(electron.bar, electron, simplify=True, include_delta=True)
     expected_ff = -I * me * bis.g(S("i1"), S("i2")).to_expression() * D2
     assert _canon(got_ff) == _canon(expected_ff)
 
@@ -253,7 +253,7 @@ def test_physical_gauge_basis_has_diagonal_bilinears_and_expected_wwa_vertex():
     with pytest.raises(ValueError, match="No matching interaction terms"):
         FULL_L.feynman_rule(photon, z, simplify=True)
 
-    got_wwa = FULL_L.feynman_rule(wp.bar, wp, photon, simplify=True)
+    got_wwa = FULL_L.feynman_rule(wp.bar, wp, photon, simplify=True, include_delta=True)
     expected_wwa = (
         I
         * e_em
@@ -276,7 +276,7 @@ def test_physical_gauge_quartics_match_expected_structure():
     photon = FULL_BROKEN.fields.photon
     mixed_coupling = electroweak_e(g1, g2) * FULL_BROKEN.gauge_couplings.g_ww_z
 
-    got_wwaz = FULL_L.feynman_rule(wp.bar, wp, photon, z, simplify=True)
+    got_wwaz = FULL_L.feynman_rule(wp.bar, wp, photon, z, simplify=True, include_delta=True)
     expected_wwaz = (
         I
         * mixed_coupling
@@ -289,7 +289,7 @@ def test_physical_gauge_quartics_match_expected_structure():
     )
     assert _canon(got_wwaz) == _canon(expected_wwaz)
 
-    got_wwaa = FULL_L.feynman_rule(wp.bar, wp, photon, photon, simplify=True)
+    got_wwaa = FULL_L.feynman_rule(wp.bar, wp, photon, photon, simplify=True, include_delta=True)
     expected_wwaa = (
         I
         * (electroweak_e(g1, g2) ** 2)
@@ -309,15 +309,15 @@ def test_higgs_potential_derives_higgs_mass_and_self_couplings():
 
     assert _canon(FULL_BROKEN.higgs_potential.mh_sq) == _canon(mh_sq)
 
-    got_hh = FULL_L.feynman_rule(h, h, simplify=True)
+    got_hh = FULL_L.feynman_rule(h, h, simplify=True, include_delta=True)
     expected_hh = -I * (pcomp(q1, S("mu1_int")) * pcomp(q2, S("mu1_int")) + mh_sq) * D2
     assert _canon(got_hh) == _canon(expected_hh)
 
-    got_hhh = FULL_L.feynman_rule(h, h, h, simplify=True)
+    got_hhh = FULL_L.feynman_rule(h, h, h, simplify=True, include_delta=True)
     expected_hhh = -6 * I * lamH * v * D3
     assert _canon(got_hhh) == _canon(expected_hhh)
 
-    got_hhhh = FULL_L.feynman_rule(h, h, h, h, simplify=True)
+    got_hhhh = FULL_L.feynman_rule(h, h, h, h, simplify=True, include_delta=True)
     expected_hhhh = -6 * I * lamH * D4
     assert _canon(got_hhhh) == _canon(expected_hhhh)
 
@@ -331,11 +331,11 @@ def test_rxi_gauge_fixing_cancels_goldstone_vector_mixing_and_sets_goldstone_mas
     assert _canon(FULL_L.feynman_rule(g0, z, simplify=True)) == _canon(ZERO)
     assert _canon(FULL_L.feynman_rule(gp, wp.bar, simplify=True)) == _canon(ZERO)
 
-    got_g0 = FULL_L.feynman_rule(g0, g0, simplify=True)
+    got_g0 = FULL_L.feynman_rule(g0, g0, simplify=True, include_delta=True)
     expected_g0 = -I * (pcomp(q1, S("mu1_int")) * pcomp(q2, S("mu1_int")) + xiZ * (electroweak_mz(g1, g2, v) ** 2)) * D2
     assert _canon(got_g0) == _canon(expected_g0)
 
-    got_gp = FULL_L.feynman_rule(gp.bar, gp, simplify=True)
+    got_gp = FULL_L.feynman_rule(gp.bar, gp, simplify=True, include_delta=True)
     expected_gp = -I * (pcomp(q1, S("mu1_int")) * pcomp(q2, S("mu1_int")) + xiW * (electroweak_mw(g2, v) ** 2)) * D2
     assert _canon(got_gp) == _canon(expected_gp)
 
@@ -350,15 +350,15 @@ def test_rxi_ghost_bilinears_have_expected_masses():
     cz_mu = _ghost_kinetic_lorentz_index(FULL_L, c_z)
     ca_mu = _ghost_kinetic_lorentz_index(FULL_L, c_a)
 
-    got_cw = FULL_L.feynman_rule(c_w.bar, c_w, simplify=True)
+    got_cw = FULL_L.feynman_rule(c_w.bar, c_w, simplify=True, include_delta=True)
     expected_cw = -I * (pcomp(q1, cw_mu) * pcomp(q2, cw_mu) + xiW * mw_sq) * D2
     assert _canon(got_cw) == _canon(expected_cw)
 
-    got_cz = FULL_L.feynman_rule(c_z.bar, c_z, simplify=True)
+    got_cz = FULL_L.feynman_rule(c_z.bar, c_z, simplify=True, include_delta=True)
     expected_cz = -I * (pcomp(q1, cz_mu) * pcomp(q2, cz_mu) + xiZ * mz_sq) * D2
     assert _canon(got_cz) == _canon(expected_cz)
 
-    got_ca = FULL_L.feynman_rule(c_a.bar, c_a, simplify=True)
+    got_ca = FULL_L.feynman_rule(c_a.bar, c_a, simplify=True, include_delta=True)
     expected_ca = -I * pcomp(q1, ca_mu) * pcomp(q2, ca_mu) * D2
     assert _canon(got_ca) == _canon(expected_ca)
 
@@ -372,19 +372,19 @@ def test_physical_basis_ghost_vertices_cover_gauge_and_goldstone_couplings():
     g0 = FULL_BROKEN.fields.goldstone_neutral
     gp = FULL_BROKEN.fields.goldstone_charged
 
-    got_cwacw = FULL_L.feynman_rule(c_w.bar, photon, c_w, simplify=True)
+    got_cwacw = FULL_L.feynman_rule(c_w.bar, photon, c_w, simplify=True, include_delta=True)
     expected_cwacw = -I * electroweak_e(g1, g2) * pcomp(q1, S("mu2")) * D3
     assert _canon(got_cwacw) == _canon(expected_cwacw)
 
-    got_cwwca = FULL_L.feynman_rule(c_w.bar, wp, c_a, simplify=True)
+    got_cwwca = FULL_L.feynman_rule(c_w.bar, wp, c_a, simplify=True, include_delta=True)
     expected_cwwca = I * electroweak_e(g1, g2) * pcomp(q1, S("mu2")) * D3
     assert _canon(got_cwwca) == _canon(expected_cwwca)
 
-    got_cwg0cw = FULL_L.feynman_rule(c_w.bar, c_w, g0, simplify=True)
+    got_cwg0cw = FULL_L.feynman_rule(c_w.bar, c_w, g0, simplify=True, include_delta=True)
     expected_cwg0cw = xiW * electroweak_mw(g2, v) * g2 * HALF * D3
     assert _canon(got_cwg0cw) == _canon(expected_cwg0cw)
 
-    got_czgmcw = FULL_L.feynman_rule(c_z.bar, c_w, gp.bar, simplify=True)
+    got_czgmcw = FULL_L.feynman_rule(c_z.bar, c_w, gp.bar, simplify=True, include_delta=True)
     expected_czgmcw = I * xiZ * electroweak_mz(g1, g2, v) * g2 * HALF * D3
     assert _canon(got_czgmcw) == _canon(expected_czgmcw)
 
@@ -392,7 +392,7 @@ def test_physical_basis_ghost_vertices_cover_gauge_and_goldstone_couplings():
 def test_matrix_yukawa_generates_open_flavor_mass_and_higgs_vertices():
     h = FLAVORED_BROKEN.fields.higgs
 
-    got_mass = FLAVORED_L.feynman_rule(up_flavored.bar, up_flavored, simplify=True)
+    got_mass = FLAVORED_L.feynman_rule(up_flavored.bar, up_flavored, simplify=True, include_delta=True)
     expected_mass = (
         -I
         * yu_matrix.entry(S("f1"), S("f2"))
@@ -403,7 +403,7 @@ def test_matrix_yukawa_generates_open_flavor_mass_and_higgs_vertices():
     )
     assert _canon(got_mass) == _canon(expected_mass)
 
-    got_hff = FLAVORED_L.feynman_rule(up_flavored.bar, up_flavored, h, simplify=True)
+    got_hff = FLAVORED_L.feynman_rule(up_flavored.bar, up_flavored, h, simplify=True, include_delta=True)
     expected_hff = (
         -I
         * yu_matrix.entry(S("f1"), S("f2"))
@@ -417,7 +417,7 @@ def test_matrix_yukawa_generates_open_flavor_mass_and_higgs_vertices():
 def test_ckm_charged_current_uses_left_chiral_flavor_matrix_and_dagger():
     wp = FLAVORED_BROKEN.fields.charged_w
 
-    got_wp = FLAVORED_L.feynman_rule(up_flavored.bar, down_flavored, wp, simplify=True)
+    got_wp = FLAVORED_L.feynman_rule(up_flavored.bar, down_flavored, wp, simplify=True, include_delta=True)
     expected_wp = (
         -I
         * g2
@@ -429,7 +429,7 @@ def test_ckm_charged_current_uses_left_chiral_flavor_matrix_and_dagger():
     )
     assert _canon_ckm_current(got_wp) == _canon_ckm_current(expected_wp)
 
-    got_wm = FLAVORED_L.feynman_rule(down_flavored.bar, up_flavored, wp.bar, simplify=True)
+    got_wm = FLAVORED_L.feynman_rule(down_flavored.bar, up_flavored, wp.bar, simplify=True, include_delta=True)
     expected_wm = (
         -I
         * g2
