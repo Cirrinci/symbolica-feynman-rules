@@ -12,7 +12,6 @@ from model import (
     Parameter,
     SPINOR_INDEX,
     dirac_field,
-    dirac_field_class,
     flavor_index,
     scalar_field,
 )
@@ -33,30 +32,33 @@ def _off_diagonal_zero_components(index):
 
 
 def _charged_lepton_class(generation):
-    return dirac_field_class(
+    l = dirac_field(
         "l",
         class_members=("e", "mu", "ta"),
         indices=(generation,),
         flavor_index=generation,
     )
+    return l, l.class_members
 
 
 def _up_quark_class(generation):
-    return dirac_field_class(
+    uq = dirac_field(
         "uq",
         class_members=("u", "c", "t"),
         indices=(generation, COLOR_FUND_INDEX),
         flavor_index=generation,
     )
+    return uq, uq.class_members
 
 
 def _down_quark_class(generation):
-    return dirac_field_class(
+    dq = dirac_field(
         "dq",
         class_members=("d", "s", "b"),
         indices=(generation, COLOR_FUND_INDEX),
         flavor_index=generation,
     )
+    return dq, dq.class_members
 
 
 def test_charged_lepton_field_class_metadata_exposes_feynrules_like_structure():
@@ -404,12 +406,13 @@ def test_selected_flavor_expand_can_target_one_index_type():
     Generation = flavor_index("Generation", 3, prefix="f")
     SU2D = flavor_index("SU2D", 2, prefix="d")
     uq, (_u, _c, _t) = _up_quark_class(Generation)
-    chi, (_chi1, _chi2) = dirac_field_class(
+    chi = dirac_field(
         "chi",
         class_members=("chi1", "chi2"),
         indices=(SU2D,),
         flavor_index=SU2D,
     )
+    _chi1, _chi2 = chi.class_members
     Phi = scalar_field("Phi")
     f, d, colour = S("f", "d", "c")
     lagrangian = Lagrangian(S("g") * uq.bar(f, colour) * chi(d) * Phi)
@@ -432,18 +435,20 @@ def test_selected_flavor_expand_can_target_one_index_type():
 
 def test_two_flavor_classes_can_share_one_generation_label():
     Generation = flavor_index("Generation", 3, prefix="f")
-    left, (e_left, mu_left, ta_left) = dirac_field_class(
+    left = dirac_field(
         "lL",
         class_members=("eL", "muL", "taL"),
         indices=(Generation,),
         flavor_index=Generation,
     )
-    right, (e_right, mu_right, ta_right) = dirac_field_class(
+    e_left, mu_left, ta_left = left.class_members
+    right = dirac_field(
         "lR",
         class_members=("eR", "muR", "taR"),
         indices=(Generation,),
         flavor_index=Generation,
     )
+    e_right, mu_right, ta_right = right.class_members
     Phi = scalar_field("Phi")
     f = S("f")
     y = Parameter("yLR", indices=(Generation,), allow_summation=True)
@@ -526,7 +531,7 @@ def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_error
     Generation = flavor_index("Generation", 3, prefix="f")
 
     with pytest.raises(ValueError, match="declares 2 class member"):
-        dirac_field_class(
+        dirac_field(
             "BadPsi",
             class_members=("e", "mu"),
             indices=(Generation,),

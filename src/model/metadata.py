@@ -188,8 +188,17 @@ def dirac_field(
     conjugate_symbol=None,
     mass=None,
     quantum_numbers: Optional[Mapping[str, object]] = None,
+    class_members: tuple = (),
+    flavor_index: Optional[IndexType] = None,
 ) -> "Field":
-    """Declare a Dirac field with the spinor slot appended automatically."""
+    """Declare a Dirac field with the spinor slot appended automatically.
+
+    When ``class_members`` is given, the field is a flavor class (à la
+    FeynRules ``ClassMembers``). Members may be passed either as plain names
+    (strings) or as fully-constructed Dirac ``Field`` instances; string members
+    are auto-built with the same metadata as the class field minus the flavor
+    index slot. Their concrete instances are reachable via ``field.class_members``.
+    """
 
     indices = tuple(indices)
     _validate_dirac_helper_indices("dirac_field(...)", indices)
@@ -206,6 +215,8 @@ def dirac_field(
         conjugate_symbol=conjugate_symbol,
         mass=mass,
         quantum_numbers=dict(quantum_numbers or {}),
+        flavor_index=flavor_index,
+        class_members=tuple(class_members),
     )
 
 
@@ -218,8 +229,14 @@ def scalar_field(
     conjugate_symbol=None,
     mass=None,
     quantum_numbers: Optional[Mapping[str, object]] = None,
+    class_members: tuple = (),
+    flavor_index: Optional[IndexType] = None,
 ) -> "Field":
-    """Declare a scalar field with lightweight defaults."""
+    """Declare a scalar field with lightweight defaults.
+
+    Supports flavor-class declarations through ``class_members`` /
+    ``flavor_index`` (see :func:`dirac_field`).
+    """
 
     if symbol is None:
         symbol = S(name)
@@ -234,77 +251,9 @@ def scalar_field(
         conjugate_symbol=conjugate_symbol,
         mass=mass,
         quantum_numbers=dict(quantum_numbers or {}),
-    )
-
-
-def dirac_field_class(
-    name: str,
-    *,
-    class_members: tuple[str | "Field", ...],
-    indices: tuple[IndexType, ...],
-    flavor_index: IndexType,
-    symbol=None,
-    conjugate_symbol=None,
-    mass=None,
-    quantum_numbers: Optional[Mapping[str, object]] = None,
-) -> tuple["Field", tuple["Field", ...]]:
-    """Declare a flavor-generic Dirac field class plus its concrete members.
-
-    This mirrors the FeynRules pattern where ``FlavorIndex`` and
-    ``ClassMembers`` are explicit field-class options.
-    """
-
-    indices = tuple(indices)
-    _validate_dirac_helper_indices("dirac_field_class(...)", indices)
-
-    flavor_slots = tuple(
-        slot for slot, index in enumerate(indices) if index == flavor_index
-    )
-    if len(flavor_slots) != 1:
-        raise ValueError(
-            f"dirac_field_class({name!r}) expects `indices` to contain flavor_index "
-            f"{flavor_index.name!r} exactly once."
-        )
-
-    flavor_slot = flavor_slots[0]
-    member_indices = indices[:flavor_slot] + indices[flavor_slot + 1 :]
-    members: list[Field] = []
-    for member in class_members:
-        if isinstance(member, Field):
-            members.append(member)
-            continue
-        members.append(
-            dirac_field(
-                str(member),
-                indices=member_indices,
-                mass=mass,
-                quantum_numbers=quantum_numbers,
-            )
-        )
-
-    generic = dirac_field(
-        name,
-        indices=indices,
-        symbol=symbol,
-        conjugate_symbol=conjugate_symbol,
-        mass=mass,
-        quantum_numbers=quantum_numbers,
-    )
-    generic = Field(
-        generic.name,
-        spin=generic.spin,
-        self_conjugate=generic.self_conjugate,
-        indices=generic.indices,
-        kind=generic.kind,
-        statistics=generic.statistics,
-        symbol=generic.symbol,
-        conjugate_symbol=generic.conjugate_symbol,
-        mass=generic.mass,
-        quantum_numbers=generic.quantum_numbers,
         flavor_index=flavor_index,
-        class_members=tuple(members),
+        class_members=tuple(class_members),
     )
-    return generic, tuple(members)
 
 
 # ---------------------------------------------------------------------------
@@ -698,7 +647,7 @@ class Field:
     quantum_numbers: Mapping[str, object] = field(default_factory=dict)
     ghost_of: object = None
     flavor_index: Optional[IndexType] = None
-    class_members: tuple["Field", ...] = ()
+    class_members: tuple = ()
 
     def __post_init__(self):
         if self.ghost_of is not None:
@@ -748,10 +697,13 @@ class Field:
                 )
             flavor_slot = flavor_slots[0]
             member_indices = self.indices[:flavor_slot] + self.indices[flavor_slot + 1 :]
+            built_members: list[Field] = []
             for member in self.class_members:
+                if isinstance(member, str):
+                    member = self._build_class_member(member, member_indices)
                 if not isinstance(member, Field):
                     raise TypeError(
-                        f"Field {self.name!r} class_members must be Field instances."
+                        f"Field {self.name!r} class_members must be strings or Field instances."
                     )
                 if any(index.role == IndexRole.FLAVOR for index in member.indices):
                     raise ValueError(
@@ -772,6 +724,37 @@ class Field:
                         f"Field {self.name!r} class member {member.name!r} must match the "
                         "generic field spin/statistics/conjugation metadata."
                     )
+                built_members.append(member)
+            object.__setattr__(self, "class_members", tuple(built_members))
+
+    def _build_class_member(
+        self,
+        name: str,
+        member_indices: tuple[IndexType, ...],
+    ) -> "Field":
+        """Build one concrete class member from a name string.
+
+        Members inherit the parent's spin, statistics, kind, self_conjugate,
+        mass, and quantum_numbers, and carry the parent's indices minus the
+        flavor index slot. The member's own `symbol`/`conjugate_symbol` default
+        to ``S(name)``/``S(name + 'bar')`` (the latter only when not
+        self-conjugate).
+        """
+        conjugate_symbol = (
+            _default_conjugate_symbol(name) if not self.self_conjugate else None
+        )
+        return Field(
+            name,
+            spin=self.spin,
+            self_conjugate=self.self_conjugate,
+            indices=member_indices,
+            kind=self.kind,
+            statistics=self.statistics,
+            symbol=S(name),
+            conjugate_symbol=conjugate_symbol,
+            mass=self.mass,
+            quantum_numbers=dict(self.quantum_numbers),
+        )
 
     def __hash__(self):
         quantum_numbers = tuple(

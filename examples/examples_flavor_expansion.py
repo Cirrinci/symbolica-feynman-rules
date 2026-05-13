@@ -21,7 +21,7 @@ from model import (  # noqa: E402
     GaugeRepresentation,
     Model,
     Parameter,
-    dirac_field_class,
+    dirac_field,
     flavor_index,
     scalar_field,
 )
@@ -48,22 +48,23 @@ def build_example():
         representations=(colour_fund,),
     )
 
-    # Fields / particle classes
-    l, leptons = dirac_field_class(
+    # Fields / particle classes: FeynRules-style ClassMembers declarations.
+    # Members inherit the class metadata and drop the flavor-index slot.
+    l = dirac_field(
         "l",
         class_members=("e", "mu", "ta"),
         indices=(Generation,),
         flavor_index=Generation,
         quantum_numbers={"Q": -1, "LeptonNumber": 1},
     )
-    uq, up_quarks = dirac_field_class(
+    uq = dirac_field(
         "uq",
         class_members=("u", "c", "t"),
         indices=(Generation, Colour),
         flavor_index=Generation,
         quantum_numbers={"Q": Fraction(2, 3)},
     )
-    dq, down_quarks = dirac_field_class(
+    dq = dirac_field(
         "dq",
         class_members=("d", "s", "b"),
         indices=(Generation, Colour),
@@ -99,14 +100,14 @@ def build_example():
             + yu(f, h) * uq.bar(f, c) * uq(h, c) * Phi
         ),
     )
-    return model, Generation, leptons, up_quarks, down_quarks, Phi
+    return model, Generation, l, uq, dq, Phi
 
 
 def main():
-    model, Generation, leptons, up_quarks, down_quarks, Phi = build_example()
-    _e, _mu, _ta = leptons
-    u, c, t = up_quarks
-    _d, _s, _b = down_quarks
+    model, Generation, l, uq, dq, Phi = build_example()
+    _e, _mu, _ta = l.class_members
+    u, c, t = uq.class_members
+    _d, _s, _b = dq.class_members
 
     print("compact signatures:")
     for signature in model.vertex_signatures(flavor_expand=False):

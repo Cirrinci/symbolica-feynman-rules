@@ -118,7 +118,8 @@ class Model:
     1. declare indices (``flavor_index``, ``COLOR_FUND_INDEX``, ...)
     2. declare gauge representations and gauge groups
     3. declare fields with ``Field(...)`` (or convenience helpers like
-       ``dirac_field``, ``scalar_field``, ``dirac_field_class``)
+       ``dirac_field`` / ``scalar_field``; pass ``class_members=(...)`` and
+       ``flavor_index=...`` for FeynRules-like flavor-class declarations)
     4. declare parameters with ``Parameter(...)``
     5. build the model with ``Model(gauge_groups=..., fields=...,
        parameters=..., lagrangian_decl=...)``

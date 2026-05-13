@@ -4,8 +4,9 @@ The public surface is intentionally small. The recommended workflow is:
 
 1. declare indices (``flavor_index(...)``, ``COLOR_FUND_INDEX``, ...)
 2. declare gauge representations and ``GaugeGroup(...)``
-3. declare fields with ``Field(...)`` (or ``dirac_field``, ``scalar_field``,
-   ``dirac_field_class`` for FeynRules-like class declarations)
+3. declare fields with ``Field(...)`` (or ``dirac_field`` / ``scalar_field``;
+   pass ``class_members=(...)`` and ``flavor_index=...`` for FeynRules-like
+   flavor-class declarations)
 4. declare parameters with ``Parameter(...)``
 5. build the model with ``Model(gauge_groups=..., fields=..., parameters=...,
    lagrangian_decl=...)``
@@ -51,7 +52,6 @@ from .metadata import (
     WEAK_FUND_INDEX,
     WEAK_FUND_KIND,
     dirac_field,
-    dirac_field_class,
     flavor_index,
     scalar_field,
 )
