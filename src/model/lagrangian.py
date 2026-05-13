@@ -509,6 +509,12 @@ class CompiledLagrangian:
             total_signatures=len(all_signatures),
         )
 
+    def validate(self):
+        """Return structured diagnostics inferred from compiled interaction terms."""
+        from .validation import validate_compiled_lagrangian
+
+        return validate_compiled_lagrangian(self)
+
     def feynman_rules(
         self,
         *,

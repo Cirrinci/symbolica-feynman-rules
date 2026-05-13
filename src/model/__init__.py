@@ -100,6 +100,7 @@ from .lagrangian import (
 
 # ---- top-level model -----------------------------------------------------
 from .core import Model
+from .validation import ValidationIssue, ValidationReport
 
 # ---- SSB helpers (kept for the existing electroweak workflow) ------------
 from .ssb import *  # noqa: F401,F403

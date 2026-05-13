@@ -31,6 +31,7 @@ from .lowering import (
     _unsupported_declared_source_term_error,
 )
 from .metadata import Field, GaugeGroup, Parameter
+from .validation import ValidationIssue, ValidationReport, validate_model
 
 
 def _append_unique_identity(items: list[object], value):
@@ -236,6 +237,10 @@ class Model:
                 f"for gauge group {gauge_group.name!r}."
             )
         return field
+
+    def validate(self) -> ValidationReport:
+        """Return structured model diagnostics without changing compilation behavior."""
+        return validate_model(self)
 
     def lagrangian(self) -> CompiledLagrangian:
         """Compile the declared Lagrangian into a ``CompiledLagrangian``.
