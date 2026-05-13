@@ -574,3 +574,41 @@ def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_error
 
     with pytest.raises(ValueError, match="no class members are defined"):
         lagrangian.vertex_signatures(flavor_expand=True)
+
+
+def test_rejects_same_label_used_as_generation_and_colour():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    uq, (_u, _c, _t) = _up_quark_class(Generation)
+    Phi = scalar_field("Phi")
+    f, col = S("f", "col")
+
+    with pytest.raises(ValueError, match="incompatible index types"):
+        Model(
+            fields=(uq, Phi),
+            lagrangian_decl=uq.bar(f, col) * uq(col, f) * Phi,
+        ).lagrangian()
+
+
+def test_standalone_lagrangian_rejects_same_label_used_as_generation_and_colour():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    uq, (_u, _c, _t) = _up_quark_class(Generation)
+    Phi = scalar_field("Phi")
+    f, col = S("f", "col")
+
+    with pytest.raises(ValueError, match="incompatible index types"):
+        Lagrangian(uq.bar(f, col) * uq(col, f) * Phi)
+
+
+def test_rejects_parameter_label_used_in_incompatible_index_space():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    uq, (_u, _c, _t) = _up_quark_class(Generation)
+    Phi = scalar_field("Phi")
+    yu = Parameter("yu", indices=(Generation, Generation))
+    f, col = S("f", "col")
+
+    with pytest.raises(ValueError, match="incompatible index types"):
+        Model(
+            fields=(uq, Phi),
+            parameters=(yu,),
+            lagrangian_decl=yu(f, col) * uq.bar(f, col) * uq(f, col) * Phi,
+        ).lagrangian()

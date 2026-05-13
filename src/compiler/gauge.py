@@ -1954,7 +1954,7 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
     interactions: list[InteractionTerm] = []
 
     for term in model.lagrangian_decl.source_terms:
-        analyzed = _analyze_declared_source_term(term)
+        analyzed = _analyze_declared_source_term(term, parameters=model.parameters)
         if analyzed is None:
             raise TypeError(f"Unsupported declarative term: {type(term)!r}")
 

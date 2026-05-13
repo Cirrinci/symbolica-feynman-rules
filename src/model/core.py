@@ -154,7 +154,7 @@ class Model:
         self.gauge_groups = inferred_gauge_groups
 
         for term in self.lagrangian_decl.source_terms:
-            if _analyze_declared_source_term(term) is None:
+            if _analyze_declared_source_term(term, parameters=self.parameters) is None:
                 raise _unsupported_declared_source_term_error()
 
     def find_field(self, target) -> Optional[Field]:
