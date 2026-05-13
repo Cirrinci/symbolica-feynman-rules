@@ -1,37 +1,102 @@
-## Thesis Progress
+# Thesis outline
 
-Working title: Toward a Python implementation of FeynRules using Symbolica and Spenso.
+### Absrtract
 
-## Current thesis position
 
-The project is beyond proof of concept for the ordinary gauge-theory baseline. The key result is that Symbolica handles the combinatoric/symbolic core while Spenso provides a viable tensor/index layer for realistic vertex structures.
+### Chapter 1: Introduction
 
-## Milestone status
+- State why Feynman rules are needed in particle physics and why automation is useful
+- Introduce FeynRules 
+- End the chapter with list of thesis contributions
 
-- symbolic contraction engine: done
-- model/declaration layer: usable and actively refined
-- declarative Lagrangian front end: done (primary path)
-- covariant matter compiler: done for covered cases
-- pure-gauge Yang-Mills compiler: done for covered cases
-- ordinary gauge fixing + ghosts: done for covered cases
-- SU(2)L example + tests: done
-- BFM split and BFM sectors: not started
+### Chapter 2:  Theory Background
 
-## Current architecture snapshot
+- Essential background only: Lagrangian field theory, vertices from interaction terms, scalar/fermion/vector/ghost fields
+- Index types: Lorentz, spinor, gauge, flavor; covariant derivatives; abelian and non-abelian gauge theories; fermionic non-commutativity
+- Gauge fixing and ghost fields: why required
+- SM
+- SMEFT
 
-- symbolic engine and tensor utilities: `src/symbolic/*`
-- model/declaration and lowering: `src/model/*`
-- declarative helper layer: `src/lagrangian/*`
-- gauge/covariant compiler: `src/compiler/gauge.py`
-- runnable examples: `examples/*`
-- regression suite: `tests/*`
+### Chapter 3: Existing Tools: FeynRules
 
-## Main open risks
+- FeynRules workflow and model-file structure
 
-- fast gauge/lowering refactors may outpace targeted regression coverage
-- a portion of behavioral checks still sits in examples rather than tests
-- API ergonomics for whole-Lagrangian extraction still incomplete
+### Chapter 4: Design Goals and Scope
 
-## Next thesis milestone
+- Build a transparent symbolic pipeline from model declaration to Feynman rules
 
-Deliver first BFM-ready declaration/compiler layer (background/quantum split) on top of the already working ordinary gauge-fixed baseline, with tests first.
+### Chapter 5: Architecture of the Python Framework
+- full pipeline: user syntax -> lowered objects -> extracted vertices
+- Cover `Model`, `Field`, `ConjugateField`, `IndexType`, `GaugeGroup`, `Representation`, `CovD`, `PartialD`, `Gamma`, `InteractionTerm`, and the analyzed/lowered source-term layer.
+
+### Chapter 6: Index and Tensor Handling
+- Explain how index kinds and labels are represented, when labels are explicit or inferred, and where ambiguity is rejected.
+- Note that explicit labels are verbose but robust, while compact notation is readable but inference-sensitive.
+- Require ambiguous input to fail clearly.
+
+### Chapter 7: Gauge Interactions
+- Describe the internal representation of gauge groups and matter representations, 
+- how covariant derivatives are expanded.
+- Cover abelian and non-abelian cases, scalar and fermion kinetic terms, matter-gauge vertices
+
+### Chapter 8: Fermions and Non-Commuting Products
+
+- Grassmann parity, Dirac conjugation, fermion ordering
+- Bilinear recognition, gamma matrices, chiral projectors, four-fermion terms
+- Difficulties of non-canonical ordering
+- Fermions as main technical challenge (order & indices)
+
+### Chapter 9: Gauge Kinetic Terms, Gauge Fixing and Ghosts
+
+- Field-strength tensors, pure-gauge interactions
+- Gauge-fixing terms, ghost declarations, ghost-gauge interactions
+- Adoc metadata -> improved reporting, validation, debugging
+
+### Chapter 10: Feynman-Rule Extraction
+
+- Canonical interaction terms to vertices
+- Vertex signatures, external-leg labels, momentum assignment
+- Derivative-to-momentum conversion
+- Fermionic signs, output simplification
+
+### Chapter 11: Validation and Comparison
+
+- Small analytic examples, then targeted FeynRules comparisons
+- tests
+
+### Chapter 12: Results
+
+- Representative model inputs, lowered terms, extracted vertices
+- intermediate structure
+- Compact feature table: implemented, partially implemented, unsupported
+- Validation summary: analytic and FeynRules checks
+
+### Chapter 13: Discussion
+
+- What worked well and remained difficult
+- Technical lessons: fermion signs, sign conventions, index inference, gauge matching
+- Inspectable intermediate representations as main strength
+
+### Chapter 14: Conclusions and Future Work
+
+- Restate goal, summarize framework, main validated examples, current limitations
+- Future:....
+
+## Supported scope to present
+
+- scalar fields
+- Dirac fermions
+- vector gauge bosons
+- ghost fields
+- abelian and non-abelian gauge groups
+- fundamental and adjoint matter representations
+- symbolic parameters and couplings
+- local interactions and covariant-derivative interactions
+- gauge kinetic terms
+- gauge-fixing terms
+- ghost terms
+- partial flavor/class expansion support
+
+## What to keep out of scope
+
+...
