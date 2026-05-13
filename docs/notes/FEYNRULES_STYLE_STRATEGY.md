@@ -18,6 +18,12 @@ Purpose: architecture principles, not timeline/status.
 - compiler assembles physics terms.
 - vertex extraction consumes normalized terms.
 
+5. Plain symbols stay user-facing, typed labels stay internal
+- keep compact FeynRules-style labels like `f`, `h`, `col` in the public API.
+- declaration/lowering must bind each label name to one exact `IndexType`
+  across the whole monomial and reject incompatible reuse before heuristics or
+  auto-filled labels run.
+
 ## Current front end
 
 The intended public direction is:
@@ -52,6 +58,7 @@ The intended split is:
 2. declaration/lowering
    - typed model declarations
    - canonical source-term analysis
+   - monomial-wide binding of plain symbolic labels to exact index spaces
    - lowering to normalized backend terms
    - provenance for structures that should affect extraction semantics
 3. compiler

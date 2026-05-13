@@ -14,7 +14,7 @@ Rule:
 
 ### Current status snapshot
 
-As of 2026-04-23:
+As of 2026-05-13:
 
 - the active source tree is modularized under `src/`
 - the core symbolic extraction engine now lives in `src/symbolic/vertex_engine.py`
@@ -33,8 +33,7 @@ As of 2026-04-23:
   - `src/lagrangian/lowering.py`
 - gauge/covariant compiler logic now lives in `src/compiler/gauge.py`
 - runnable validation/examples now live in:
-  - `examples/examples.py`
-  - `examples/examples_lagrangian.py`
+  - `examples/examples_flavor_expansion.py`
   - `examples/examples_su2.py`
   - `examples/examples_electroweak_unbroken.py`
   - `examples/examples_electroweak_ssb.py`
@@ -51,6 +50,13 @@ As of 2026-04-23:
   - `FieldStrength(group, mu, nu)`
   - `GaugeFixing(group, xi=...)`
   - `GhostLagrangian(group)`
+- flavor-class declarations now use explicit field metadata:
+  - `dirac_field(..., class_members=..., flavor_index=...)`
+  - `scalar_field(..., class_members=..., flavor_index=...)`
+- selective flavor expansion is available through
+  `flavor_expand=True`, one flavor index, or an iterable of flavor indices
+- plain symbolic slot labels are now validated monomial-wide against one exact
+  `IndexType` per label name before lowering continues
 - manual `InteractionTerm(...)` monomials still compose with the declarative
   forms in the same Lagrangian declaration
 - the backend architecture is still the same:
@@ -1171,12 +1177,10 @@ What happened:
   - then field classes
   - then parameters
   - then the Lagrangian
-- new public helpers were added in the metadata layer:
-  - `dirac_field(...)`
-  - `scalar_field(...)`
-  - `dirac_field_class(...)`
-- `flavor_family(...)` was kept, but reduced to a thin convenience wrapper
-  instead of being the main recommended workflow
+- the recommended public field-declaration helpers are now the ordinary
+  metadata constructors with explicit flavor-class arguments:
+  - `dirac_field(..., class_members=..., flavor_index=...)`
+  - `scalar_field(..., class_members=..., flavor_index=...)`
 - selected flavor expansion was also generalized beyond `True/False`:
   `flavor_expand` can now be `True`, one flavor index, or an iterable of
   flavor indices
@@ -1204,3 +1208,43 @@ What this achieved:
   realistic for Standard Model-like model files
 - validation stayed clean after the refactor:
   the full pytest suite passed with `316 passed`
+
+### 2026-05-13: monomial-wide typed-label validation for plain symbolic indices
+
+What happened:
+
+- a safety review checked how plain symbolic labels such as
+  `f`, `h`, and `col` are interpreted across one whole interaction monomial
+- that review found a real gap in the old lowering path:
+  symbolic labels were validated slot-locally, so incompatible reuse like
+  `uq.bar(f, col) * uq(col, f) * Phi` could compile silently
+- the lowering layer now builds one monomial-wide registry from label name to
+  exact `IndexType`
+- the new validation scans:
+  - explicit field-slot labels
+  - local tensor / derivative labels on factors such as
+    `Gamma(...)`, `PartialD(...)`, `Metric(...)`, `T(...)`,
+    `StructureConstant(...)`, and `FieldStrength(...)`
+  - indexed parameter calls in the coefficient when the parent
+    `Model(..., parameters=...)` provides the `Parameter.indices` metadata
+- the validation now runs before auto-filled labels and before the local
+  lowering heuristics that infer implied contractions
+- dedicated regression tests were added for:
+  - generation/colour label swapping inside one fermion bilinear
+  - a parameter label reused across incompatible generation and colour slots
+  - the standalone local `Lagrangian(...)` field-only rejection path
+
+What this achieved:
+
+- the public API stays FeynRules-like:
+  users can keep writing compact plain-symbol labels instead of explicit typed
+  wrappers
+- internally, one label name is now bound to exactly one index space per
+  monomial, so incompatible reuse is rejected early instead of compiling into a
+  wrong contraction
+- flavor/non-flavor conflicts and non-flavor/non-flavor conflicts are now both
+  caught on the declared-term path
+- lowering heuristics can no longer make an invalid symbolic input look valid
+  by filling missing labels after the fact
+- the safety fix is covered by tests and the whole suite stayed green:
+  `170 passed`

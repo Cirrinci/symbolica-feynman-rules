@@ -30,7 +30,7 @@ Live source code is organized as split packages rather than flat top-level files
   - reusable operator builders such as bilinears, currents, and gauge-contact structures
 - `examples/`
   - runnable example/regression scripts
-  - includes the general examples, the declarative Lagrangian examples, SU(2), and electroweak examples
+  - includes flavor-expansion, SU(2), and electroweak examples
 - `tests/`
   - the main regression suite
 - `docs/notes/`
@@ -65,8 +65,15 @@ What is already solid in the active code path:
   - mixed-group scalar contacts
   - gauge-fixing and ghost compilation
   - declarative Lagrangian lowering
+  - flavor-class declarations and selective flavor expansion
   - pure-gauge canonicalization
   - electroweak unbroken and SSB examples
+- FeynRules-style flavor classes through
+  `dirac_field(..., class_members=..., flavor_index=...)` and
+  selective `flavor_expand=...`
+- monomial-wide validation of explicit symbolic index labels across local
+  lowering; the `Model(..., parameters=...)` path also validates indexed
+  parameter labels against their declared index spaces
 
 What is still under development:
 
@@ -137,6 +144,13 @@ expanded, or whether it still needs model metadata:
     charges, representations, gauge-boson assignments, or ghost-field
     metadata.
 
+For compact FeynRules-style index notation, plain symbols such as
+`f, h, col = S("f", "h", "col")` are still valid. During lowering, each label
+name is bound to one index space per monomial, so reusing one name across
+incompatible slots is rejected. Full parameter-aware label checks require the
+`Model(..., parameters=..., lagrangian_decl=...)` path because standalone
+`Lagrangian(...)` does not carry a parameter table.
+
 For metadata-free local operators, use `Lagrangian(...)` directly:
 
 ```python
@@ -206,15 +220,7 @@ dependencies listed in `requirements.txt`.
 
 Run the main example/regression scripts from the repository root:
 
-- `./.venv/bin/python examples/examples.py --suite all`
-- `./.venv/bin/python examples/examples.py --suite scalar`
-- `./.venv/bin/python examples/examples.py --suite fermion`
-- `./.venv/bin/python examples/examples.py --suite gauge`
-- `./.venv/bin/python examples/examples.py --suite model`
-- `./.venv/bin/python examples/examples.py --suite covariant`
-- `./.venv/bin/python examples/examples.py --suite cross`
-- `./.venv/bin/python examples/examples_lagrangian.py --suite all`
-- `./.venv/bin/python examples/examples_lagrangian.py --suite covariant --skip-tests`
+- `./.venv/bin/python -m examples.examples_flavor_expansion`
 - `./.venv/bin/python examples/examples_su2.py`
 - `./.venv/bin/python examples/examples_electroweak_unbroken.py`
 - `./.venv/bin/python examples/examples_electroweak_ssb.py`
