@@ -233,39 +233,6 @@ def _classify_term_sector(term) -> str:
     return "unknown"
 
 
-def _base_field_match_key(field_obj):
-    """Stable field key that ignores external conjugation status."""
-
-    return _field_match_key(field_obj, False)
-
-
-def _is_canonical_mass_like_pair(first_occ, second_occ) -> bool:
-    """Return whether a compiled 2-point term has the conservative mass shape.
-
-    Supported mass-like patterns:
-    - complex scalar: ``phi.bar * chi``
-    - Dirac fermion: ``psibar * chi``
-
-    Real-scalar off-diagonal bilinears and non-canonical ordering/conjugation
-    patterns are intentionally ignored rather than guessed.
-    """
-
-    first_field = first_occ.field
-    second_field = second_occ.field
-    if first_field.kind != second_field.kind:
-        return False
-
-    if first_field.kind == "scalar":
-        if first_field.self_conjugate or second_field.self_conjugate:
-            return False
-        return bool(first_occ.conjugated and not second_occ.conjugated)
-
-    if first_field.kind == "fermion":
-        return bool(first_occ.conjugated and not second_occ.conjugated)
-
-    return False
-
-
 @dataclass(frozen=True)
 class VertexSignature:
     """One grouped interaction signature available in a compiled Lagrangian.
@@ -541,65 +508,6 @@ class CompiledLagrangian:
             total_terms=len(self.terms),
             total_signatures=len(all_signatures),
         )
-
-    def validate(self):
-        """Return structured diagnostics inferred from compiled interaction terms.
-
-        The check is intentionally narrow:
-
-        - It inspects only 2-field, derivative-free interaction terms whose
-          fields are matter (scalar or fermion) and whose ordering matches a
-          conservative mass-like pattern.
-        - It reports off-diagonal canonical pairs as ``mass_structure_mixing``
-          warnings.
-        - Diagonal terms are silent (they are the expected canonical case).
-
-        The check intentionally does not try to detect malformed mass terms
-        (that would require deep symbolic analysis of the coupling and index
-        structure that the current canonicalization layer does not yet
-        guarantee). It also does not attempt diagonalization.
-
-        Compiled output that carries derivatives (kinetic, gauge-fixing, ghost
-        bilinears, gauge-kinetic bilinears) is excluded by the derivative
-        filter, so those terms do not produce false positives.
-        """
-        from .core import ValidationIssue, ValidationReport
-
-        issues: list[ValidationIssue] = []
-
-        def add_issue(code: str, message: str, *, severity: str = "error"):
-            issue = ValidationIssue(code=code, message=message, severity=severity)
-            if issue not in issues:
-                issues.append(issue)
-
-        for term in self.terms:
-            if len(term.fields) != 2:
-                continue
-            if term.derivatives:
-                continue
-
-            first, second = term.fields
-            first_field = first.field
-            second_field = second.field
-            if first_field.kind not in ("scalar", "fermion"):
-                continue
-            if second_field.kind not in ("scalar", "fermion"):
-                continue
-            if not _is_canonical_mass_like_pair(first, second):
-                continue
-            if _base_field_match_key(first_field) == _base_field_match_key(second_field):
-                continue
-
-            kind_label = "fermion" if first_field.kind == "fermion" else "scalar"
-            add_issue(
-                "mass_structure_mixing",
-                f"Off-diagonal {kind_label} mass-like bilinear detected between "
-                f"fields {first_field.name!r} and {second_field.name!r}; "
-                "compiled term has 0 derivatives and only 2 matter fields.",
-                severity="warning",
-            )
-
-        return ValidationReport(issues=tuple(issues))
 
     def feynman_rules(
         self,

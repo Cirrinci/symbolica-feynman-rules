@@ -17,13 +17,12 @@ from .spectators import (
 )
 from lagrangian.operators import psi_bar_gamma_psi
 from model import (
-    ComplexScalarKineticTerm,
     DerivativeAction,
-    DiracKineticTerm,
     Field,
     InteractionTerm,
     Model,
 )
+from model.lagrangian import ComplexScalarKineticTerm, DiracKineticTerm
 from symbolic.spenso_structures import SPINOR_KIND
 
 
@@ -225,25 +224,3 @@ def _compile_declared_covariant_core(
         symbol=symbol,
     )
 
-
-def _compile_legacy_covariant_core(
-    model: Model,
-    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
-    *,
-    require_declared_field: Callable,
-    compile_dirac_kinetic_term: Callable,
-    compile_complex_scalar_kinetic_term: Callable,
-    unique_slot: Callable,
-    symbol: Callable,
-) -> tuple[InteractionTerm, ...]:
-    """Compile one legacy kinetic declaration as gauge-interaction-only."""
-    return _compile_covariant_core(
-        model,
-        core,
-        include_free_bilinear=False,
-        require_declared_field=require_declared_field,
-        compile_dirac_kinetic_term=compile_dirac_kinetic_term,
-        compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=unique_slot,
-        symbol=symbol,
-    )

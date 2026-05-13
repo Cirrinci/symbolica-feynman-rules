@@ -169,23 +169,6 @@ def flavor_index(
     )
 
 
-def generation_index(
-    name: str = "Generation",
-    dimension: int = 3,
-    *,
-    prefix: str = "f",
-    kind: Optional[str] = None,
-) -> IndexType:
-    """Backward-compatible alias for ``flavor_index(...)``."""
-
-    return flavor_index(
-        name=name,
-        dimension=dimension,
-        prefix=prefix,
-        kind=kind,
-    )
-
-
 def _default_conjugate_symbol(name: str):
     return S(f"{name}bar")
 
@@ -322,35 +305,6 @@ def dirac_field_class(
         class_members=tuple(members),
     )
     return generic, tuple(members)
-
-
-def flavor_family(
-    generic_name: str,
-    member_names: tuple[str, ...],
-    flavor: IndexType,
-    *,
-    extra_indices: tuple[IndexType, ...] = (),
-    symbol=None,
-    conjugate_symbol=None,
-    mass=None,
-    quantum_numbers: Optional[Mapping[str, object]] = None,
-) -> tuple["Field", tuple["Field", ...]]:
-    """Convenience shortcut for toy examples.
-
-    Prefer ``dirac_field_class(...)`` in model-file-style declarations where
-    ``class_members=...`` and ``flavor_index=...`` should stay visible.
-    """
-
-    return dirac_field_class(
-        generic_name,
-        class_members=tuple(member_names),
-        indices=(flavor,) + tuple(extra_indices),
-        flavor_index=flavor,
-        symbol=symbol,
-        conjugate_symbol=conjugate_symbol,
-        mass=mass,
-        quantum_numbers=quantum_numbers,
-    )
 
 
 # ---------------------------------------------------------------------------

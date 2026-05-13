@@ -13,9 +13,7 @@ from model import (
     SPINOR_INDEX,
     dirac_field,
     dirac_field_class,
-    flavor_family,
     flavor_index,
-    generation_index,
     scalar_field,
 )
 from model.interactions import _field_match_key
@@ -114,32 +112,6 @@ def test_down_quark_field_class_metadata_preserves_colour_and_spinor():
     assert Generation not in d.indices
     assert Generation not in s.indices
     assert Generation not in b.indices
-
-
-def test_generation_index_is_a_backward_compatible_alias():
-    generation = generation_index("Generation", 3)
-    flavor = flavor_index("Generation", 3)
-
-    assert generation.name == flavor.name
-    assert generation.kind == flavor.kind
-    assert generation.dimension == flavor.dimension
-    assert generation.role == flavor.role
-    assert generation.prefix == flavor.prefix
-
-
-def test_flavor_family_remains_a_thin_convenience_wrapper():
-    Generation = flavor_index("Generation", 2, prefix="f")
-    q, (d, u) = flavor_family(
-        "q",
-        ("d", "u"),
-        Generation,
-        extra_indices=(COLOR_FUND_INDEX,),
-    )
-
-    assert q.indices == (Generation, COLOR_FUND_INDEX, SPINOR_INDEX)
-    assert q.flavor_index is Generation
-    assert d.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
-    assert u.indices == (COLOR_FUND_INDEX, SPINOR_INDEX)
 
 
 def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal_members():

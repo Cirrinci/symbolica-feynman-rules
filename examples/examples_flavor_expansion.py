@@ -107,19 +107,18 @@ def main():
     _e, _mu, _ta = leptons
     u, c, t = up_quarks
     _d, _s, _b = down_quarks
-    lagrangian = model.lagrangian()
 
     print("compact signatures:")
-    for signature in lagrangian.vertex_signatures(flavor_expand=False):
+    for signature in model.vertex_signatures(flavor_expand=False):
         print(" ", signature.names)
 
     print("expanded signatures (Generation):")
-    for signature in lagrangian.vertex_signatures(flavor_expand=Generation):
+    for signature in model.vertex_signatures(flavor_expand=Generation):
         print(" ", signature.names)
 
     print("example diagonal Yukawa rule Γ(u.bar, u, Phi):")
     print(
-        lagrangian.feynman_rule(
+        model.feynman_rule(
             u.bar,
             u,
             Phi,
@@ -131,7 +130,7 @@ def main():
 
     print("example diagonal Yukawa rule Γ(t.bar, t, Phi):")
     print(
-        lagrangian.feynman_rule(
+        model.feynman_rule(
             t.bar,
             t,
             Phi,
@@ -144,7 +143,7 @@ def main():
     print("off-diagonal Yukawa entries are removed by components={(i,j): 0}:")
     try:
         print(
-            lagrangian.feynman_rule(
+            model.feynman_rule(
                 u.bar,
                 c,
                 Phi,
