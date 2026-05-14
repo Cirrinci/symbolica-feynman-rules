@@ -21,7 +21,8 @@ from typing import Literal, Optional, Sequence
 from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 
-from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND
+from symbolic.spenso_structures import SPINOR_KIND
+from model.metadata import is_spinor_index, spinor_kind_for
 from symbolic.vertex_postprocessing import (
     _species_key,
     apply_vertex_output_policy as _apply_vertex_output_policy,
@@ -165,6 +166,85 @@ def _index_label_key(label) -> str:
 # Fermion helpers
 # ---------------------------------------------------------------------------
 
+def _spinor_label(labels):
+    if labels is None:
+        return None
+    return _get_label(labels, SPINOR_KIND)
+
+
+def _legacy_spinor_label_dicts(spinor_indices, index_types=None):
+    labels = []
+    for i, spinor_index in enumerate(spinor_indices):
+        if spinor_index is None:
+            labels.append({})
+            continue
+        types = index_types[i] if index_types is not None and i < len(index_types) else ()
+        spinor_kind = spinor_kind_for(types) if types else SPINOR_KIND
+        labels.append({spinor_kind: spinor_index})
+    return labels
+
+
+def _normalize_spinor_label_dict_for_engine(labels, index_types=()):
+    if not labels or not index_types:
+        return {} if labels is None else dict(labels)
+
+    spinor_kind = spinor_kind_for(index_types)
+    if spinor_kind == SPINOR_KIND:
+        return dict(labels)
+
+    normalized = dict(labels)
+    if spinor_kind in normalized and SPINOR_KIND in normalized:
+        raise ValueError(
+            "Ambiguous spinor labels: provide either the canonical "
+            f"{SPINOR_KIND!r} key or the custom {spinor_kind!r} key, not both."
+        )
+    if spinor_kind in normalized:
+        normalized[SPINOR_KIND] = normalized.pop(spinor_kind)
+    return normalized
+
+
+def _normalize_spinor_label_sequence_for_engine(label_sequence, index_type_sequence=None):
+    if label_sequence is None:
+        return None
+    return [
+        _normalize_spinor_label_dict_for_engine(
+            labels,
+            index_type_sequence[i]
+            if index_type_sequence is not None and i < len(index_type_sequence)
+            else (),
+        )
+        for i, labels in enumerate(label_sequence)
+    ]
+
+
+def normalize_vertex_inputs_for_engine(
+    *,
+    field_index_labels,
+    field_index_types,
+    leg_index_labels,
+    leg_index_types,
+    field_spinor_indices,
+    leg_spinor_indices,
+):
+    field_index_labels, leg_index_labels = _merge_legacy_spinor_params(
+        field_index_labels,
+        leg_index_labels,
+        field_spinor_indices,
+        leg_spinor_indices,
+        field_index_types=field_index_types,
+        leg_index_types=leg_index_types,
+    )
+    field_index_labels = _normalize_spinor_label_sequence_for_engine(
+        field_index_labels,
+        field_index_types,
+    )
+    leg_index_labels = _normalize_spinor_label_sequence_for_engine(
+        leg_index_labels,
+        leg_index_types,
+    )
+    return field_index_labels, leg_index_labels
+
+
 def factor_leg_compatible(i, j, alphas, betas, field_roles=None, leg_roles=None):
     """Compatibility check for matching factor i with external leg j.
 
@@ -185,7 +265,7 @@ def _group_spinor_slots(field_index_labels):
     """Group field slots by spinor label for chain inference."""
     groups = {}
     for i, slot_labels in enumerate(field_index_labels):
-        spinor = _get_label(slot_labels, SPINOR_KIND)
+        spinor = _spinor_label(slot_labels)
         if spinor is None:
             continue
         groups.setdefault(str(spinor), []).append(i)
@@ -232,7 +312,7 @@ def _all_fermion_slots_labeled(field_roles, field_index_labels):
         return False
     for i, role in enumerate(field_roles):
         if _role_is_fermion(role):
-            if _get_label(field_index_labels[i], SPINOR_KIND) is None:
+            if _spinor_label(field_index_labels[i]) is None:
                 return False
     return True
 
@@ -242,7 +322,7 @@ def _fermion_leg_spinor_labels_present(leg_roles, leg_index_labels):
     if leg_roles is None or leg_index_labels is None:
         return False
     return any(
-        _role_is_fermion(role) and _get_label(labels, SPINOR_KIND) is not None
+        _role_is_fermion(role) and _spinor_label(labels) is not None
         for role, labels in zip(leg_roles, leg_index_labels)
     )
 
@@ -253,7 +333,7 @@ def _with_default_fermion_leg_index_labels(leg_roles, leg_index_labels):
     merged = []
     for i, role in enumerate(leg_roles):
         labels = dict(leg_index_labels[i] or {})
-        if _role_is_fermion(role) and _get_label(labels, SPINOR_KIND) is None:
+        if _role_is_fermion(role) and _spinor_label(labels) is None:
             labels[SPINOR_KIND] = _get_label(defaults[i], SPINOR_KIND)
         merged.append(labels)
     return merged
@@ -277,7 +357,7 @@ def _validate_fermion_spinor_delta_inputs(
         if _role_is_fermion(role)
         and (
             field_index_labels is None
-            or _get_label(field_index_labels[i], SPINOR_KIND) is None
+            or _spinor_label(field_index_labels[i]) is None
         )
     ]
     if missing_field_slots:
@@ -292,7 +372,7 @@ def _validate_fermion_spinor_delta_inputs(
         str(i + 1)
         for i, role in enumerate(leg_roles)
         if _role_is_fermion(role)
-        and _get_label(leg_index_labels[i], SPINOR_KIND) is None
+        and _spinor_label(leg_index_labels[i]) is None
     ]
     if missing_leg_slots:
         raise ValueError(
@@ -333,7 +413,11 @@ def _external_factor_for_contraction(*, role, alpha, beta, p, spin, spinor_index
     return delta(alpha, beta) * U(beta, p)
 
 
-def _validate_supported_fermion_structure(field_roles, field_index_labels, coupling=None):
+def _validate_supported_fermion_structure(
+    field_roles,
+    field_index_labels,
+    coupling=None,
+):
     """Reject underspecified multi-fermion operators."""
     if field_roles is None:
         return
@@ -352,9 +436,11 @@ def _validate_supported_fermion_structure(field_roles, field_index_labels, coupl
     if chains:
         return
 
-    labels = [str(_get_label(field_index_labels[i], SPINOR_KIND)) for i in fermion_slots]
-    if all(_get_label(field_index_labels[i], SPINOR_KIND) is not None for i in fermion_slots) \
-       and len(set(labels)) == len(labels):
+    labels = [str(_spinor_label(field_index_labels[i])) for i in fermion_slots]
+    if all(
+        _spinor_label(field_index_labels[i]) is not None
+        for i in fermion_slots
+    ) and len(set(labels)) == len(labels):
         if coupling is None:
             raise ValueError(
                 "Explicit open-slot multi-fermion encoding requires coupling to "
@@ -362,9 +448,9 @@ def _validate_supported_fermion_structure(field_roles, field_index_labels, coupl
             )
         coupling_text = coupling.to_canonical_string()
         missing = [
-            str(_get_label(field_index_labels[i], SPINOR_KIND))
+            str(_spinor_label(field_index_labels[i]))
             for i in fermion_slots
-            if str(_get_label(field_index_labels[i], SPINOR_KIND)) not in coupling_text
+            if str(_spinor_label(field_index_labels[i])) not in coupling_text
         ]
         if missing:
             raise ValueError(
@@ -386,19 +472,20 @@ def _validate_supported_fermion_structure(field_roles, field_index_labels, coupl
 def _merge_legacy_spinor_params(
     field_index_labels, leg_index_labels,
     field_spinor_indices, leg_spinor_indices,
-    n,
+    field_index_types=None,
+    leg_index_types=None,
 ):
     """Merge old field_spinor_indices/leg_spinor_indices into the new format."""
     if field_spinor_indices is not None and field_index_labels is None:
-        field_index_labels = [
-            {SPINOR_KIND: si} if si is not None else {}
-            for si in field_spinor_indices
-        ]
+        field_index_labels = _legacy_spinor_label_dicts(
+            field_spinor_indices,
+            field_index_types,
+        )
     if leg_spinor_indices is not None and leg_index_labels is None:
-        leg_index_labels = [
-            {SPINOR_KIND: si} if si is not None else {}
-            for si in leg_spinor_indices
-        ]
+        leg_index_labels = _legacy_spinor_label_dicts(
+            leg_spinor_indices,
+            leg_index_types,
+        )
     return field_index_labels, leg_index_labels
 
 
@@ -420,6 +507,7 @@ def contract_to_full_expression(
     field_index_labels: Optional[Sequence[dict]] = None,
     field_index_types: Optional[Sequence[Sequence]] = None,
     leg_index_labels: Optional[Sequence[dict]] = None,
+    leg_index_types: Optional[Sequence[Sequence]] = None,
     field_spinor_indices: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
@@ -459,10 +547,13 @@ def contract_to_full_expression(
     if (field_roles is None) != (leg_roles is None):
         raise ValueError("Provide both field_roles and leg_roles, or neither")
 
-    field_index_labels, leg_index_labels = _merge_legacy_spinor_params(
-        field_index_labels, leg_index_labels,
-        field_spinor_indices, leg_spinor_indices,
-        n,
+    field_index_labels, leg_index_labels = normalize_vertex_inputs_for_engine(
+        field_index_labels=field_index_labels,
+        field_index_types=field_index_types,
+        leg_index_labels=leg_index_labels,
+        leg_index_types=leg_index_types,
+        field_spinor_indices=field_spinor_indices,
+        leg_spinor_indices=leg_spinor_indices,
     )
 
     if field_index_labels is not None and len(field_index_labels) != n:
@@ -480,7 +571,9 @@ def contract_to_full_expression(
                 "statistics='fermion' requires both field_roles and leg_roles"
             )
         _validate_supported_fermion_structure(
-            field_roles, field_index_labels, coupling=coupling,
+            field_roles,
+            field_index_labels,
+            coupling=coupling,
         )
         _validate_fermion_spinor_delta_inputs(
             field_roles,
@@ -490,7 +583,7 @@ def contract_to_full_expression(
         )
 
     use_spinor_deltas = leg_index_labels is not None and any(
-        _get_label(entry, SPINOR_KIND) is not None
+        _spinor_label(entry) is not None
         for entry in leg_index_labels
     )
 
@@ -601,7 +694,7 @@ def contract_to_full_expression(
             else:
                 spin = leg_spins[j] if leg_spins is not None else _default_spin_symbol(j)
                 spinor_index = (
-                    _get_label(field_index_labels[i], SPINOR_KIND)
+                    _spinor_label(field_index_labels[i])
                     if field_index_labels is not None
                     else S(f"si{i + 1}")
                 )
@@ -624,7 +717,7 @@ def contract_to_full_expression(
                     ordinal = kind_ordinals[index.kind]
                     kind_ordinals[index.kind] += 1
 
-                    if _role_is_fermion(role) and index.kind == SPINOR_KIND:
+                    if _role_is_fermion(role) and is_spinor_index(index):
                         continue
 
                     field_label = _get_label(field_index_labels[i], index.kind, ordinal)
@@ -646,8 +739,8 @@ def contract_to_full_expression(
 
         if use_spinor_deltas:
             for psibar_slot, psi_slot in fermion_chains:
-                bar_label = _get_label(leg_index_labels[perm[psibar_slot]], SPINOR_KIND)
-                psi_label = _get_label(leg_index_labels[perm[psi_slot]], SPINOR_KIND)
+                bar_label = _spinor_label(leg_index_labels[perm[psibar_slot]])
+                psi_label = _spinor_label(leg_index_labels[perm[psi_slot]])
                 if bar_label is not None and psi_label is not None:
                     term *= bis.g(bar_label, psi_label).to_expression()
 
@@ -702,6 +795,7 @@ def vertex_factor(
     field_index_labels=None,
     field_index_types=None,
     leg_index_labels=None,
+    leg_index_types=None,
     field_spinor_indices=None,
     leg_spinor_indices=None,
     leg_spins=None,
@@ -734,6 +828,7 @@ def vertex_factor(
         field_index_labels = kwargs["field_index_labels"]
         field_index_types = kwargs["field_index_types"]
         leg_index_labels = kwargs["leg_index_labels"]
+        leg_index_types = kwargs.get("leg_index_types")
         leg_spins = kwargs["leg_spins"]
         derivative_indices = kwargs["derivative_indices"]
         derivative_targets = kwargs["derivative_targets"]
@@ -743,10 +838,13 @@ def vertex_factor(
         raise ValueError("alphas, betas, ps are required")
 
     n = len(ps)
-    field_index_labels, leg_index_labels = _merge_legacy_spinor_params(
-        field_index_labels, leg_index_labels,
-        field_spinor_indices, leg_spinor_indices,
-        n,
+    field_index_labels, leg_index_labels = normalize_vertex_inputs_for_engine(
+        field_index_labels=field_index_labels,
+        field_index_types=field_index_types,
+        leg_index_labels=leg_index_labels,
+        leg_index_types=leg_index_types,
+        field_spinor_indices=field_spinor_indices,
+        leg_spinor_indices=leg_spinor_indices,
     )
 
     if (
@@ -778,6 +876,7 @@ def vertex_factor(
         field_index_labels=field_index_labels,
         field_index_types=field_index_types,
         leg_index_labels=leg_index_labels,
+        leg_index_types=leg_index_types,
         leg_spins=leg_spins,
         coupling=coupling,
         closed_dirac_bilinears=closed_dirac_bilinears,

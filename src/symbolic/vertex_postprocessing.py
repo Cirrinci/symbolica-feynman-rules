@@ -5,7 +5,8 @@ from __future__ import annotations
 from symbolica import Expression, S
 from symbolica.community.idenso import simplify_color, simplify_metrics
 
-from symbolic.spenso_structures import LORENTZ_KIND, WEAK_ADJ, simplify_gamma_chain
+from model.metadata import is_lorentz_index, lorentz_slots_for
+from symbolic.spenso_structures import WEAK_ADJ, simplify_gamma_chain
 from symbolic.tensor_canonicalization import (
     canonize_spenso_tensors,
     contract_spenso_lorentz_metrics,
@@ -260,7 +261,24 @@ def simplify_su2_ff(expr):
 def _vector_leg_lorentz_labels(external_legs):
     labels = []
     for leg in external_legs:
-        label = _get_label(getattr(leg, "labels", None), LORENTZ_KIND)
+        field = getattr(leg, "field", None)
+        if field is None:
+            return ()
+        lorentz_slots = lorentz_slots_for(field)
+        if len(lorentz_slots) != 1:
+            return ()
+        lorentz_slot = lorentz_slots[0]
+        lorentz_kind = field.indices[lorentz_slot].kind
+        lorentz_ordinal = sum(
+            1
+            for index in field.indices[:lorentz_slot]
+            if index.kind == lorentz_kind
+        )
+        label = _get_label(
+            getattr(leg, "labels", None),
+            lorentz_kind,
+            lorentz_ordinal,
+        )
         if label is None:
             return ()
         labels.append(label)
@@ -272,7 +290,7 @@ def _vector_leg_internal_labels(external_legs):
     for leg in external_legs:
         label = None
         for index in getattr(leg.field, "indices", ()):
-            if index.kind == LORENTZ_KIND:
+            if is_lorentz_index(index):
                 continue
             label = _get_label(getattr(leg, "labels", None), index.kind)
             if label is not None:

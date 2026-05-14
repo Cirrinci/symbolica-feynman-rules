@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
-from typing import Callable, Literal, Mapping, Optional
+from typing import Callable, Literal, Mapping, Optional, Sequence
+
+_REP_ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 from symbolica import Expression, S
 from symbolica.community.spenso import Representation
@@ -88,6 +91,83 @@ class IndexType:
     def __post_init__(self):
         if not self.prefix:
             object.__setattr__(self, "prefix", self.kind[:1])
+
+
+def representation_family(rep: object) -> str:
+    """Stable Spenso representation key for index-family checks."""
+    return _REP_ANSI.sub("", str(rep))
+
+
+def is_spinor_index(index: IndexType) -> bool:
+    return representation_family(index.representation).startswith("bis")
+
+
+def is_lorentz_index(index: IndexType) -> bool:
+    return representation_family(index.representation).startswith("mink")
+
+
+def indices_compatible_for_labels(left: IndexType, right: IndexType) -> bool:
+    """Whether two declared indices may share one symbolic label in a monomial."""
+    if left == right or left.kind == right.kind:
+        return True
+    if is_spinor_index(left) and is_spinor_index(right):
+        return True
+    if is_lorentz_index(left) and is_lorentz_index(right):
+        return True
+    return False
+
+
+def spinor_kind_for(indices: Sequence[IndexType]) -> str:
+    for index in indices:
+        if is_spinor_index(index):
+            return index.kind
+    return SPINOR_KIND
+
+
+def lorentz_kind_for(indices: Sequence[IndexType]) -> str:
+    for index in indices:
+        if is_lorentz_index(index):
+            return index.kind
+    return LORENTZ_KIND
+
+
+def lorentz_index_for(indices: Sequence[IndexType]) -> Optional[IndexType]:
+    for index in indices:
+        if is_lorentz_index(index):
+            return index
+    return None
+
+
+def lorentz_slots_for(field) -> tuple[int, ...]:
+    return tuple(
+        slot for slot, index in enumerate(field.indices) if is_lorentz_index(index)
+    )
+
+
+def spinor_slots_for(field) -> tuple[int, ...]:
+    return tuple(
+        slot for slot, index in enumerate(field.indices) if is_spinor_index(index)
+    )
+
+
+def unique_lorentz_slot(field, *, purpose: str) -> int:
+    slots = lorentz_slots_for(field)
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} requires field {field.name!r} to expose exactly one Lorentz slot; "
+            f"found {len(slots)}."
+        )
+    return slots[0]
+
+
+def unique_spinor_slot(field, *, purpose: str) -> int:
+    slots = spinor_slots_for(field)
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} requires field {field.name!r} to expose exactly one spinor slot; "
+            f"found {len(slots)}."
+        )
+    return slots[0]
 
 
 SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, prefix="i")

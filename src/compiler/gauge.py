@@ -67,7 +67,17 @@ from model.lagrangian import (
     GhostTerm,
 )
 from model.lowering import _analyze_declared_source_term, _lower_local_interaction_monomial
-from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND, lorentz_metric
+from symbolic.spenso_structures import lorentz_metric
+from model.metadata import (
+    is_lorentz_index,
+    is_spinor_index,
+    lorentz_kind_for,
+    lorentz_slots_for,
+    spinor_kind_for,
+    spinor_slots_for,
+    unique_lorentz_slot,
+    unique_spinor_slot,
+)
 
 
 _HALF = Expression.num(1) / Expression.num(2)
@@ -116,7 +126,7 @@ def _default_matter_labels(field: Field, rep_prefix: str, slot: Optional[int] = 
 
 def _first_non_lorentz_index_slot(field: Field) -> Optional[int]:
     for slot, index in enumerate(field.indices):
-        if index.kind != LORENTZ_KIND:
+        if not is_lorentz_index(index):
             return slot
     return None
 
@@ -558,9 +568,8 @@ class _GaugeAction:
         gauge_group = piece.metadata.gauge_group
         gauge_field = piece.metadata.gauge_field
         mu = lorentz_label or piece.lorentz_index
-        gauge_lorentz_slot = _unique_slot(
+        gauge_lorentz_slot = unique_lorentz_slot(
             gauge_field,
-            LORENTZ_KIND,
             purpose=purpose,
         )
         gauge_slot_labels = {gauge_lorentz_slot: mu}
@@ -647,7 +656,7 @@ class _GaugeFieldLayout:
         if gauge_field.kind != "vector":
             raise ValueError(f"{purpose} requires a vector field, got kind={gauge_field.kind!r}.")
 
-        lorentz_slot = _unique_slot(gauge_field, LORENTZ_KIND, purpose=purpose)
+        lorentz_slot = unique_lorentz_slot(gauge_field, purpose=purpose)
         adjoint_kind = None
         adjoint_slot = None
         if require_adjoint:
@@ -1240,9 +1249,8 @@ def compile_fermion_gauge_current(
 
     mu = lorentz_label or _default_vector_label(gauge_field, gauge_group, suffix="mu")
     i_bar, i_psi = spinor_labels or _default_spinor_labels(fermion, gauge_group)
-    fermion_spinor_slot = _unique_slot(
+    fermion_spinor_slot = unique_spinor_slot(
         fermion,
-        SPINOR_KIND,
         purpose="Fermion gauge-current compilation",
     )
 
@@ -1809,9 +1817,8 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
         CovD(fermion, mu),
         gauge_group=term.gauge_group,
     )
-    fermion_spinor_slot = _unique_slot(
+    fermion_spinor_slot = unique_spinor_slot(
         fermion,
-        SPINOR_KIND,
         purpose="Dirac kinetic compilation",
     )
 
@@ -1916,7 +1923,6 @@ def _compile_covariant_core(
         require_declared_field=_require_declared_field,
         compile_dirac_kinetic_term=compile_dirac_kinetic_term,
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=_unique_slot,
         symbol=_symbol,
     )
 
@@ -1934,7 +1940,6 @@ def _compile_declared_covariant_core(
         require_declared_field=_require_declared_field,
         compile_dirac_kinetic_term=compile_dirac_kinetic_term,
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=_unique_slot,
         symbol=_symbol,
     )
 
