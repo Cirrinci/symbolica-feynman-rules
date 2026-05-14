@@ -518,11 +518,14 @@ def test_flavor_expansion_cache_keys_by_normalized_selection(monkeypatch):
     su2_second = lagrangian._expanded_terms(flavor_expand=[SU2D])
     both_first = lagrangian._expanded_terms(flavor_expand=(Generation, SU2D))
     both_second = lagrangian._expanded_terms(flavor_expand=[Generation, SU2D])
+    both_reversed = lagrangian._expanded_terms(flavor_expand=(SU2D, Generation))
 
     assert generation_first is generation_second
     assert su2_first is su2_second
     assert both_first is both_second
+    assert both_first is both_reversed
     assert calls["count"] == 3
+    assert len(lagrangian._expanded_terms_cache) == 3
 
     assert {signature.names for signature in lagrangian.vertex_signatures(flavor_expand=Generation)} == {
         ("u.bar", "chi", "Phi"),

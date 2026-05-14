@@ -111,18 +111,20 @@ def _flavor_expand_cache_key(flavor_expand) -> tuple[object, ...]:
         return ("none",)
     if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES:
         return ("all",)
+
+    selected_identifiers = sorted(
+        (
+            index.name,
+            index.kind,
+            index.dimension,
+            index.is_flavor,
+            index.prefix,
+        )
+        for index in flavor_expand
+    )
     return (
         "selected",
-        tuple(
-            (
-                index.name,
-                index.kind,
-                index.dimension,
-                index.is_flavor,
-                index.prefix,
-            )
-            for index in flavor_expand
-        ),
+        tuple(selected_identifiers),
     )
 
 
