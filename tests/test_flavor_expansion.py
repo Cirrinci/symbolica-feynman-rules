@@ -1,6 +1,7 @@
 from collections import Counter
 
 import pytest
+import model.flavor as flavor_module
 
 from symbolica import S
 
@@ -437,6 +438,209 @@ def test_selected_flavor_expand_can_target_one_index_type():
         ("uq.bar", "chi2", "Phi"),
     }
     assert len(selected_both) == 6
+
+
+def test_flavor_expansion_cache_reuses_expanded_terms_across_rule_queries(monkeypatch):
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, _mu, _ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
+    f = S("f")
+    lagrangian = Lagrangian(S("g") * l.bar(f) * l(f) * Phi)
+
+    calls = {"count": 0}
+    original = flavor_module.expand_flavor_terms
+
+    def counted_expand_flavor_terms(*args, **kwargs):
+        calls["count"] += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(flavor_module, "expand_flavor_terms", counted_expand_flavor_terms)
+
+    expanded_first = lagrangian._expanded_terms(flavor_expand=True)
+    expanded_second = lagrangian._expanded_terms(flavor_expand=True)
+    signatures = lagrangian.vertex_signatures(flavor_expand=True)
+    rules = lagrangian.feynman_rules(
+        flavor_expand=True,
+        key_format="names",
+        simplify=True,
+        include_delta=True,
+    )
+    vertex = lagrangian.feynman_rule(
+        e.bar,
+        e,
+        Phi,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=True,
+    )
+
+    assert expanded_first is expanded_second
+    assert calls["count"] == 1
+    assert {signature.names for signature in signatures} == {
+        ("e.bar", "e", "Phi"),
+        ("mu.bar", "mu", "Phi"),
+        ("ta.bar", "ta", "Phi"),
+    }
+    assert set(rules) == {
+        ("e.bar", "e", "Phi"),
+        ("mu.bar", "mu", "Phi"),
+        ("ta.bar", "ta", "Phi"),
+    }
+    assert _canon(vertex - rules[("e.bar", "e", "Phi")]) == "0"
+
+
+def test_flavor_expansion_cache_keys_by_normalized_selection(monkeypatch):
+    Generation = flavor_index("Generation", 3, prefix="f")
+    SU2D = flavor_index("SU2D", 2, prefix="d")
+    uq, (_u, _c, _t) = _up_quark_class(Generation)
+    chi = dirac_field(
+        "chi",
+        class_members=("chi1", "chi2"),
+        indices=(SU2D,),
+        flavor_index=SU2D,
+    )
+    Phi = scalar_field("Phi")
+    f, d, colour = S("f", "d", "c")
+    lagrangian = Lagrangian(S("g") * uq.bar(f, colour) * chi(d) * Phi)
+
+    calls = {"count": 0}
+    original = flavor_module.expand_flavor_terms
+
+    def counted_expand_flavor_terms(*args, **kwargs):
+        calls["count"] += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(flavor_module, "expand_flavor_terms", counted_expand_flavor_terms)
+
+    generation_first = lagrangian._expanded_terms(flavor_expand=Generation)
+    generation_second = lagrangian._expanded_terms(flavor_expand=(Generation,))
+    su2_first = lagrangian._expanded_terms(flavor_expand=SU2D)
+    su2_second = lagrangian._expanded_terms(flavor_expand=[SU2D])
+    both_first = lagrangian._expanded_terms(flavor_expand=(Generation, SU2D))
+    both_second = lagrangian._expanded_terms(flavor_expand=[Generation, SU2D])
+
+    assert generation_first is generation_second
+    assert su2_first is su2_second
+    assert both_first is both_second
+    assert calls["count"] == 3
+
+    assert {signature.names for signature in lagrangian.vertex_signatures(flavor_expand=Generation)} == {
+        ("u.bar", "chi", "Phi"),
+        ("c.bar", "chi", "Phi"),
+        ("t.bar", "chi", "Phi"),
+    }
+    assert {signature.names for signature in lagrangian.vertex_signatures(flavor_expand=SU2D)} == {
+        ("uq.bar", "chi1", "Phi"),
+        ("uq.bar", "chi2", "Phi"),
+    }
+    assert len(lagrangian.vertex_signatures(flavor_expand=(Generation, SU2D))) == 6
+
+
+def test_smeft_like_three_generation_labels_expand_correctly():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    left = dirac_field(
+        "lL",
+        class_members=("eL", "muL", "taL"),
+        indices=(Generation,),
+        flavor_index=Generation,
+    )
+    e_left, _mu_left, _ta_left = left.class_members
+    right = dirac_field(
+        "lR",
+        class_members=("eR", "muR", "taR"),
+        indices=(Generation,),
+        flavor_index=Generation,
+    )
+    _e_right, mu_right, _ta_right = right.class_members
+    chi = scalar_field(
+        "chi",
+        class_members=("chi1", "chi2", "chi3"),
+        indices=(Generation,),
+        flavor_index=Generation,
+    )
+    _chi1, _chi2, chi3 = chi.class_members
+    Phi = scalar_field("Phi")
+    f, h, k = S("f", "h", "k")
+    coefficient = Parameter("C", indices=(Generation, Generation, Generation))
+    model = Model(
+        fields=(left, right, chi, Phi),
+        parameters=(coefficient,),
+        lagrangian_decl=coefficient(f, h, k) * left.bar(f) * right(h) * chi(k) * Phi,
+    )
+    lagrangian = model.lagrangian()
+
+    expanded = lagrangian.feynman_rules(
+        flavor_expand=True,
+        key_format="names",
+        simplify=True,
+        include_delta=True,
+    )
+
+    assert len(expanded) == 27
+    assert ("eL.bar", "muR", "chi3", "Phi") in expanded
+    assert "C(1,2,3)" in _canon(
+        lagrangian.feynman_rule(
+            e_left.bar,
+            mu_right,
+            chi3,
+            Phi,
+            simplify=True,
+            include_delta=True,
+            flavor_expand=True,
+        )
+    )
+
+
+def test_flavor_expansion_cache_does_not_leak_across_rebuild_or_term_mutation():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, _mu, _ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
+    Xi = scalar_field("Xi")
+    f = S("f")
+    lagrangian = Lagrangian(S("g") * l.bar(f) * l(f) * Phi)
+
+    expanded_before = lagrangian._expanded_terms(flavor_expand=True)
+    assert len(expanded_before) == 3
+    with pytest.raises(ValueError, match="No matching interaction terms"):
+        lagrangian.feynman_rule(
+            e.bar,
+            e,
+            Xi,
+            simplify=True,
+            include_delta=True,
+            flavor_expand=True,
+        )
+
+    rebuilt = lagrangian + (S("h") * l.bar(f) * l(f) * Xi)
+    rebuilt_expanded = rebuilt._expanded_terms(flavor_expand=True)
+    assert len(rebuilt_expanded) == 6
+    assert any(term.fields[-1].field is Xi for term in rebuilt_expanded)
+
+    extra_terms = Lagrangian(S("h") * l.bar(f) * l(f) * Xi).terms
+    lagrangian.terms = lagrangian.terms + extra_terms
+    expanded_after_mutation = lagrangian._expanded_terms(flavor_expand=True)
+    manual_xi = Lagrangian(S("h") * e.bar * e * Xi).feynman_rule(
+        e.bar,
+        e,
+        Xi,
+        simplify=True,
+        include_delta=True,
+    )
+
+    assert expanded_after_mutation is not expanded_before
+    assert len(expanded_after_mutation) == 6
+    assert any(term.fields[-1].field is Xi for term in expanded_after_mutation)
+    assert _canon(
+        lagrangian.feynman_rule(
+            e.bar,
+            e,
+            Xi,
+            simplify=True,
+            include_delta=True,
+            flavor_expand=True,
+        )
+        - manual_xi
+    ) == "0"
 
 
 def test_two_flavor_classes_can_share_one_generation_label():

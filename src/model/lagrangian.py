@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from typing import Iterable, Optional, Union
 
 from symbolica import Expression, S
@@ -102,6 +102,28 @@ def _normalize_flavor_expand_option(flavor_expand):
         if index not in normalized:
             normalized.append(index)
     return tuple(normalized)
+
+
+def _flavor_expand_cache_key(flavor_expand) -> tuple[object, ...]:
+    """Return a hashable cache key for one normalized ``flavor_expand`` option."""
+
+    if flavor_expand is False:
+        return ("none",)
+    if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES:
+        return ("all",)
+    return (
+        "selected",
+        tuple(
+            (
+                index.name,
+                index.kind,
+                index.dimension,
+                index.is_flavor,
+                index.prefix,
+            )
+            for index in flavor_expand
+        ),
+    )
 
 
 def _field_arg_from_occurrence(occurrence):
@@ -276,10 +298,22 @@ class CompiledLagrangian:
 
     terms: tuple[InteractionTerm, ...] = ()
     parameters: tuple[object, ...] = ()
+    _expanded_terms_cache: dict[tuple[object, ...], tuple[InteractionTerm, ...]] = dataclass_field(
+        default_factory=dict,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+
+    def __setattr__(self, name, value):
+        object.__setattr__(self, name, value)
+        if name in ("terms", "parameters") and hasattr(self, "_expanded_terms_cache"):
+            object.__setattr__(self, "_expanded_terms_cache", {})
 
     def __init__(self, terms=(), parameters=()):
         self.terms = _normalize_interaction_terms_input(terms)
         self.parameters = tuple(parameters)
+        self._expanded_terms_cache = {}
 
     @classmethod
     def from_item(cls, item) -> "CompiledLagrangian":
@@ -328,6 +362,12 @@ class CompiledLagrangian:
         flavor_expand = _normalize_flavor_expand_option(flavor_expand)
         if not flavor_expand:
             return self.terms
+
+        cache_key = _flavor_expand_cache_key(flavor_expand)
+        cached = self._expanded_terms_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         from .flavor import expand_flavor_terms
 
         selected_indices = (
@@ -335,11 +375,13 @@ class CompiledLagrangian:
             if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES
             else tuple(flavor_expand)
         )
-        return expand_flavor_terms(
+        expanded_terms = expand_flavor_terms(
             self.terms,
             parameters=self.parameters,
             selected_indices=selected_indices,
         )
+        self._expanded_terms_cache[cache_key] = expanded_terms
+        return expanded_terms
 
     def _vertex_field_tuples(self, *, flavor_expand: FlavorExpandOption = False):
         vertices = {}
@@ -688,6 +730,7 @@ class Lagrangian(CompiledLagrangian):
     source_terms: tuple[object, ...] = ()
 
     def __init__(self, *items, terms=None, lagrangian_decl=None):
+        self._expanded_terms_cache = {}
         if terms is not None and (items or lagrangian_decl is not None):
             raise TypeError(
                 "Lagrangian accepts either `terms=` or declarative input, not both."
