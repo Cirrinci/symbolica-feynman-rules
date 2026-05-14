@@ -9,7 +9,7 @@ from itertools import product
 from symbolica import Expression, S
 
 from .interactions import InteractionTerm
-from .metadata import IndexRole, IndexType, Parameter
+from .metadata import IndexType, Parameter
 
 
 def _canonical_value_key(value):
@@ -96,7 +96,7 @@ def _collect_parameter_flavor_labels(
             parameter = heads.get(node.head)
             if parameter is not None and len(node.tail) == len(parameter.indices):
                 for index, arg in zip(parameter.indices, node.tail):
-                    if index.role != IndexRole.FLAVOR or not _index_is_selected(
+                    if not index.is_flavor or not _index_is_selected(
                         index,
                         selected_indices,
                     ):
@@ -113,7 +113,7 @@ def _collect_parameter_flavor_labels(
     visit(expr.to_atom_tree())
 
     for parameter, label_name in single_index_parameter_labels:
-        if parameter.allow_summation:
+        if parameter.permits_label_summation():
             continue
         if label_counts[label_name] > 2:
             raise ValueError(
@@ -134,7 +134,7 @@ def _collect_term_flavor_labels(
     for occurrence in term.fields:
         slot_labels = occurrence.field.unpack_slot_labels(occurrence.labels)
         for slot, index in enumerate(occurrence.field.indices):
-            if index.role != IndexRole.FLAVOR or not _index_is_selected(
+            if not index.is_flavor or not _index_is_selected(
                 index,
                 selected_indices,
             ):
@@ -183,7 +183,7 @@ def _expand_occurrence(occurrence, assignment_by_name, selected_indices):
 
     if flavor_slot is None:
         if any(
-            index.role == IndexRole.FLAVOR and _index_is_selected(index, selected_indices)
+            index.is_flavor and _index_is_selected(index, selected_indices)
             for index in field.indices
         ):
             raise ValueError(

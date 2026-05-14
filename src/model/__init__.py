@@ -30,8 +30,6 @@ from .metadata import (
     GaugeGroup,
     GaugeRepresentation,
     GhostField,
-    IndexKind,
-    IndexRole,
     IndexType,
     LORENTZ_INDEX,
     LORENTZ_KIND,

@@ -16,7 +16,7 @@ from .interactions import (
     _parse_field_arg,
     _term_matches_fields,
 )
-from .metadata import IndexRole, IndexType
+from .metadata import IndexType
 
 
 FlavorExpandOption = bool | IndexType | Iterable[IndexType]
@@ -95,10 +95,9 @@ def _normalize_flavor_expand_option(flavor_expand):
             raise TypeError(
                 "`flavor_expand` iterable entries must be IndexType instances."
             )
-        if index.role != IndexRole.FLAVOR:
+        if not index.is_flavor:
             raise ValueError(
-                f"`flavor_expand` only accepts flavor indices; got {index.name!r} "
-                f"with role={index.role.value!r}."
+                f"`flavor_expand` only accepts flavor indices; got {index.name!r}."
             )
         if index not in normalized:
             normalized.append(index)

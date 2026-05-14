@@ -277,7 +277,7 @@ def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_te
     assert _canon(contributors[0].coupling) == _canon(lam * yl(1, 2))
 
 
-def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
+def test_diagonal_one_index_flavor_parameter_allows_summation_by_default():
     Generation = flavor_index("Generation", 3, prefix="f")
     l, (e, mu, ta) = _charged_lepton_class(Generation)
     Phi = scalar_field("Phi")
@@ -288,19 +288,9 @@ def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
         parameters=(y,),
         lagrangian_decl=y(f) * l.bar(f) * l(f) * Phi,
     )
+    lagrangian = model.lagrangian()
 
-    with pytest.raises(ValueError, match="allow_summation=True"):
-        model.lagrangian().vertex_signatures(flavor_expand=True)
-
-    y_diag = Parameter("yDiag", indices=(Generation,), allow_summation=True)
-    diagonal_model = Model(
-        fields=(l, Phi),
-        parameters=(y_diag,),
-        lagrangian_decl=y_diag(f) * l.bar(f) * l(f) * Phi,
-    )
-    diagonal_lagrangian = diagonal_model.lagrangian()
-
-    expanded = diagonal_lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rules(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -312,8 +302,8 @@ def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
         ("mu.bar", "mu", "Phi"),
         ("ta.bar", "ta", "Phi"),
     }
-    assert "yDiag(2)" in _canon(
-        diagonal_lagrangian.feynman_rule(
+    assert "y(2)" in _canon(
+        lagrangian.feynman_rule(
             mu.bar,
             mu,
             Phi,
@@ -322,6 +312,22 @@ def test_diagonal_one_index_parameter_requires_allow_summation_metadata():
             flavor_expand=True,
         )
     )
+
+
+def test_diagonal_one_index_flavor_parameter_can_opt_out_of_summation():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
+    f = S("f")
+    y = Parameter("y", indices=(Generation,), allow_summation=False)
+    model = Model(
+        fields=(l, Phi),
+        parameters=(y,),
+        lagrangian_decl=y(f) * l.bar(f) * l(f) * Phi,
+    )
+
+    with pytest.raises(ValueError, match="allow_summation=True"):
+        model.lagrangian().vertex_signatures(flavor_expand=True)
 
 
 def test_zero_flavor_tensor_components_are_dropped_after_expansion():

@@ -32,7 +32,6 @@ from .interactions import DerivativeAction, InteractionTerm
 from .lagrangian import DeclaredLagrangian
 from .metadata import (
     Field,
-    IndexRole,
     IndexType,
     LORENTZ_INDEX,
     SPINOR_INDEX,
@@ -47,7 +46,7 @@ FLAVOR_INDEX = IndexType(
     Representation.cof(3),
     "flavor",
     dimension=3,
-    role=IndexRole.FLAVOR,
+    is_flavor=True,
     prefix="f",
 )
 

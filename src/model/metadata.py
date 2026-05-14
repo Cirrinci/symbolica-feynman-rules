@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field, replace
-from enum import Enum
 from fractions import Fraction
 from typing import Callable, Literal, Mapping, Optional
 
@@ -75,79 +74,29 @@ ROLE_GHOST_DAG = FieldRole("ghost_dag", "fermion", conjugated=True)
 # ---------------------------------------------------------------------------
 
 
-class IndexRole(str, Enum):
-    """Semantic role carried by one declared index type."""
-
-    GENERIC = "generic"
-    SPINOR = "spinor"
-    LORENTZ = "lorentz"
-    GAUGE_FUND = "gauge_fund"
-    GAUGE_ADJ = "gauge_adj"
-    FLAVOR = "flavor"
-    INTERNAL = "internal"
-
-
-def _default_index_role_for_kind(kind: str) -> IndexRole:
-    if kind == SPINOR_KIND:
-        return IndexRole.SPINOR
-    if kind == LORENTZ_KIND:
-        return IndexRole.LORENTZ
-    if kind in (COLOR_FUND_KIND, WEAK_FUND_KIND):
-        return IndexRole.GAUGE_FUND
-    if kind in (COLOR_ADJ_KIND, WEAK_ADJ_KIND):
-        return IndexRole.GAUGE_ADJ
-    return IndexRole.GENERIC
-
 @dataclass(frozen=True)
 class IndexType:
     """One kind of index that a field can carry (spinor, Lorentz, colour, ...)."""
+
     name: str
     representation: object
     kind: str
     dimension: Optional[int] = None
-    role: IndexRole = IndexRole.GENERIC
+    is_flavor: bool = False
     prefix: str = ""
 
     def __post_init__(self):
-        if self.role == IndexRole.GENERIC:
-            object.__setattr__(self, "role", _default_index_role_for_kind(self.kind))
         if not self.prefix:
             object.__setattr__(self, "prefix", self.kind[:1])
 
-IndexKind = IndexType
 
-
-SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, role=IndexRole.SPINOR, prefix="i")
-LORENTZ_INDEX = IndexType("Lorentz", LORENTZ, LORENTZ_KIND, role=IndexRole.LORENTZ, prefix="mu")
-COLOR_FUND_INDEX = IndexType(
-    "ColorFund",
-    COLOR_FUND,
-    COLOR_FUND_KIND,
-    role=IndexRole.GAUGE_FUND,
-    prefix="c",
-)
-COLOR_ADJ_INDEX = IndexType(
-    "ColorAdj",
-    COLOR_ADJ,
-    COLOR_ADJ_KIND,
-    role=IndexRole.GAUGE_ADJ,
-    prefix="a",
-)
+SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, prefix="i")
+LORENTZ_INDEX = IndexType("Lorentz", LORENTZ, LORENTZ_KIND, prefix="mu")
+COLOR_FUND_INDEX = IndexType("ColorFund", COLOR_FUND, COLOR_FUND_KIND, prefix="c")
+COLOR_ADJ_INDEX = IndexType("ColorAdj", COLOR_ADJ, COLOR_ADJ_KIND, prefix="a")
 # SU(2)_L weak isospin: doublet (fundamental) and triplet (adjoint).
-WEAK_FUND_INDEX = IndexType(
-    "WeakFund",
-    WEAK_FUND,
-    WEAK_FUND_KIND,
-    role=IndexRole.GAUGE_FUND,
-    prefix="w",
-)
-WEAK_ADJ_INDEX = IndexType(
-    "WeakAdj",
-    WEAK_ADJ,
-    WEAK_ADJ_KIND,
-    role=IndexRole.GAUGE_ADJ,
-    prefix="aw",
-)
+WEAK_FUND_INDEX = IndexType("WeakFund", WEAK_FUND, WEAK_FUND_KIND, prefix="w")
+WEAK_ADJ_INDEX = IndexType("WeakAdj", WEAK_ADJ, WEAK_ADJ_KIND, prefix="aw")
 
 
 def flavor_index(
@@ -164,7 +113,7 @@ def flavor_index(
         Representation.cof(dimension),
         kind or name.lower(),
         dimension=dimension,
-        role=IndexRole.FLAVOR,
+        is_flavor=True,
         prefix=prefix,
     )
 
@@ -423,7 +372,7 @@ class ParameterAssumptions:
     internal: bool
     external: bool
     has_value: bool
-    allow_summation: bool
+    allow_summation: Optional[bool]
     value: object = None
 
 
@@ -446,7 +395,7 @@ class Parameter:
     internal: bool = True
     value: object = None
     components: Mapping[tuple[object, ...], object] = field(default_factory=dict)
-    allow_summation: bool = False
+    allow_summation: Optional[bool] = None
 
     def __post_init__(self):
         if self.symbol is None:
@@ -486,6 +435,19 @@ class Parameter:
     @property
     def has_value(self) -> bool:
         return self.value is not None
+
+    def permits_label_summation(self) -> bool:
+        """Whether one flavor label may appear more than twice in one term.
+
+        Single-index flavor parameters default to True, matching the usual
+        FeynRules diagonal shorthand ``y(f)`` in ``y(f) * l.bar(f) * l(f)``.
+        Set ``allow_summation=False`` to reject that pattern explicitly.
+        """
+        if self.allow_summation is False:
+            return False
+        if self.allow_summation is True:
+            return True
+        return len(self.indices) == 1 and self.indices[0].is_flavor
 
     def assumptions(self) -> ParameterAssumptions:
         """Return a structured summary of the parameter metadata."""
@@ -664,10 +626,10 @@ class Field:
             object.__setattr__(self, "statistics", _infer_statistics(self.kind))
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
-        if self.flavor_index is not None and self.flavor_index.role != IndexRole.FLAVOR:
+        if self.flavor_index is not None and not self.flavor_index.is_flavor:
             raise ValueError(
                 f"Field {self.name!r} declares flavor_index={self.flavor_index.name!r}, "
-                "but that index type is not marked with role=IndexRole.FLAVOR."
+                "but that index type is not marked as a flavor index."
             )
         if self.class_members and self.flavor_index is None:
             raise ValueError(
@@ -705,7 +667,7 @@ class Field:
                     raise TypeError(
                         f"Field {self.name!r} class_members must be strings or Field instances."
                     )
-                if any(index.role == IndexRole.FLAVOR for index in member.indices):
+                if any(index.is_flavor for index in member.indices):
                     raise ValueError(
                         f"Field {self.name!r} class member {member.name!r} still carries a flavor index."
                     )
@@ -770,7 +732,7 @@ class Field:
                     index.kind,
                     index.prefix,
                     index.dimension,
-                    index.role,
+                    index.is_flavor,
                 )
                 for index in self.indices
             ),
@@ -788,7 +750,7 @@ class Field:
                 self.flavor_index.kind,
                 self.flavor_index.prefix,
                 self.flavor_index.dimension,
-                self.flavor_index.role,
+                self.flavor_index.is_flavor,
             ),
             tuple(member.name for member in self.class_members),
         ))
