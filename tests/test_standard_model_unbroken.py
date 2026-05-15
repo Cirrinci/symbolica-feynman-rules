@@ -47,6 +47,16 @@ def test_all_standard_model_fermions_carry_the_generation_index():
         assert field.flavor_index is Generation
 
 
+def test_generation_flavor_classes_are_declared_for_flavor_expansion():
+    sm = build_unbroken_standard_model()
+
+    assert tuple(member.name for member in sm.fields.qL.class_members) == ("qL1", "qL2", "qL3")
+    assert tuple(member.name for member in sm.fields.uR.class_members) == ("u", "c", "t")
+    assert tuple(member.name for member in sm.fields.dR.class_members) == ("d", "s", "b")
+    assert tuple(member.name for member in sm.fields.lL.class_members) == ("lL1", "lL2", "lL3")
+    assert tuple(member.name for member in sm.fields.eR.class_members) == ("e", "mu", "ta")
+
+
 def test_yukawa_forward_and_hc_terms_use_the_expected_parameter_families():
     sm = build_unbroken_standard_model()
 
@@ -132,6 +142,58 @@ def test_unbroken_standard_model_builds_and_validates():
 
     assert report.ok
     assert report.issues == ()
+
+
+def test_flavor_expand_true_now_works_for_unbroken_standard_model():
+    sm = build_unbroken_standard_model()
+    lagrangian = sm.model.lagrangian()
+    Generation = sm.indices.generation
+    qL1, qL2, qL3 = sm.fields.qL.class_members
+    d, s, b = sm.fields.dR.class_members
+    u, c, t = sm.fields.uR.class_members
+    lL1, lL2, lL3 = sm.fields.lL.class_members
+    e, mu, ta = sm.fields.eR.class_members
+
+    expanded_signatures = {signature.names for signature in lagrangian.vertex_signatures(flavor_expand=Generation)}
+
+    assert ("qL1.bar", "d", "Phi") in expanded_signatures
+    assert ("qL2.bar", "s", "Phi") in expanded_signatures
+    assert ("qL3.bar", "b", "Phi") in expanded_signatures
+    assert ("lL1.bar", "e", "Phi") in expanded_signatures
+    assert ("lL2.bar", "mu", "Phi") in expanded_signatures
+    assert ("lL3.bar", "ta", "Phi") in expanded_signatures
+    assert ("qL1.bar", "Phi.bar", "u") in expanded_signatures
+    assert ("qL2.bar", "Phi.bar", "c") in expanded_signatures
+    assert ("qL3.bar", "Phi.bar", "t") in expanded_signatures
+
+    down_rule = lagrangian.feynman_rule(
+        qL1.bar,
+        d,
+        sm.fields.Phi,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=True,
+    )
+    lepton_rule = lagrangian.feynman_rule(
+        lL2.bar,
+        mu,
+        sm.fields.Phi,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=True,
+    )
+    up_rule = lagrangian.feynman_rule(
+        qL3.bar,
+        sm.fields.Phi.bar,
+        t,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=True,
+    )
+
+    assert "Yd(1,1)" in _canon(down_rule)
+    assert "Ye(2,2)" in _canon(lepton_rule)
+    assert "Yu(3,3)" in _canon(up_rule)
 
 
 def test_unbroken_standard_model_selected_vertex_signatures_are_present():

@@ -11,6 +11,11 @@ the current declarative ``Model`` / ``DeclaredLagrangian`` framework:
   matrices appearing in the hermitian-conjugate terms
 - Lagrangian sections: ``LGauge``, ``LFermions``, ``LHiggs``, ``LYukawa``
 
+The generation-carrying fermions are declared as flavor classes with
+``class_members`` so the existing ``flavor_expand=True`` machinery can expand
+them into concrete generation members, matching the flavor-class examples in
+``examples/examples_flavor_expansion.py``.
+
 Explicitly omitted from this builder:
 
 - background/quantum gauge-field splitting
@@ -167,6 +172,7 @@ def build_unbroken_standard_model(
             indices=(SPINOR_INDEX, WEAK_FUND_INDEX, generation, COLOR_FUND_INDEX),
             quantum_numbers={"Y": _ONE / _SIX},
             flavor_index=generation,
+            class_members=("qL1", "qL2", "qL3"),
         ),
         uR=Field(
             "uR",
@@ -177,6 +183,7 @@ def build_unbroken_standard_model(
             indices=(SPINOR_INDEX, generation, COLOR_FUND_INDEX),
             quantum_numbers={"Y": _TWO / _THREE},
             flavor_index=generation,
+            class_members=("u", "c", "t"),
         ),
         dR=Field(
             "dR",
@@ -187,6 +194,7 @@ def build_unbroken_standard_model(
             indices=(SPINOR_INDEX, generation, COLOR_FUND_INDEX),
             quantum_numbers={"Y": -(_ONE / _THREE)},
             flavor_index=generation,
+            class_members=("d", "s", "b"),
         ),
         lL=Field(
             "lL",
@@ -197,6 +205,7 @@ def build_unbroken_standard_model(
             indices=(SPINOR_INDEX, WEAK_FUND_INDEX, generation),
             quantum_numbers={"Y": -_HALF},
             flavor_index=generation,
+            class_members=("lL1", "lL2", "lL3"),
         ),
         eR=Field(
             "eR",
@@ -207,6 +216,7 @@ def build_unbroken_standard_model(
             indices=(SPINOR_INDEX, generation),
             quantum_numbers={"Y": -_ONE},
             flavor_index=generation,
+            class_members=("e", "mu", "ta"),
         ),
         Phi=standard_model_higgs_doublet(
             name="Phi",
