@@ -6,7 +6,9 @@ the current declarative ``Model`` / ``DeclaredLagrangian`` framework:
 - gauge groups: ``U1Y``, ``SU2L``, ``SU3C``
 - indices: generation, weak fundamental/adjoint, colour fundamental/adjoint
 - fields: ``qL``, ``uR``, ``dR``, ``lL``, ``eR``, ``Phi``, ``B``, ``Wi``, ``G``
-- parameters: ``g1``, ``g2``, ``g3``, ``lam``, ``muH``, ``Yu``, ``Yd``, ``Ye``
+- parameters: ``g1``, ``g2``, ``g3``, ``lam``, ``muH``, ``Yu``, ``Yd``, ``Ye``,
+  plus explicit stand-ins ``YuDag``, ``YdDag``, ``YeDag`` for the Yukawa
+  matrices appearing in the hermitian-conjugate terms
 - Lagrangian sections: ``LGauge``, ``LFermions``, ``LHiggs``, ``LYukawa``
 
 Explicitly omitted from this builder:
@@ -97,8 +99,11 @@ class UnbrokenStandardModelParameters:
     lam: Parameter
     muH: Parameter
     Yu: Parameter
+    YuDag: Parameter
     Yd: Parameter
+    YdDag: Parameter
     Ye: Parameter
+    YeDag: Parameter
 
 
 @dataclass(frozen=True)
@@ -142,8 +147,14 @@ def build_unbroken_standard_model(
         lam=Parameter("lam"),
         muH=Parameter("muH"),
         Yu=Parameter("Yu", indices=(generation, generation), complex_param=True),
+        # Until the framework has a symbolic HC/Conjugate operator, the
+        # hermitian-conjugate Yukawa terms use explicit stand-in parameters for
+        # the matrix entries of Y^\dagger.
+        YuDag=Parameter("YuDag", indices=(generation, generation), complex_param=True),
         Yd=Parameter("Yd", indices=(generation, generation), complex_param=True),
+        YdDag=Parameter("YdDag", indices=(generation, generation), complex_param=True),
         Ye=Parameter("Ye", indices=(generation, generation), complex_param=True),
+        YeDag=Parameter("YeDag", indices=(generation, generation), complex_param=True),
     )
 
     fields = UnbrokenStandardModelFields(
@@ -267,6 +278,8 @@ def build_unbroken_standard_model(
     nu = S("nu")
     ii = S("ii")
     jj = S("jj")
+    sp1 = S("sp1")
+    cc = S("cc")
     ff1 = S("ff1")
     ff2 = S("ff2")
 
@@ -296,45 +309,36 @@ def build_unbroken_standard_model(
         - parameters.lam * fields.Phi.bar * fields.Phi * fields.Phi.bar * fields.Phi
     )
 
-    # The current core has no symbolic parameter-conjugation operator, so the
-    # reverse-direction Yukawa terms reuse the same matrix symbols.
+    # These `*Dag` parameters are temporary stand-ins for the complex-conjugate
+    # Yukawa matrices in the hermitian-conjugate operators until the framework
+    # grows a first-class symbolic HC/Conjugate operation.
     LYukawa = (
         -parameters.Yd(ff1, ff2)
-        * fields.qL.bar(index_labels={generation.kind: ff1})
-        * fields.dR(index_labels={generation.kind: ff2})
-        * fields.Phi
+        * fields.qL.bar(sp1, ii, ff1, cc)
+        * fields.dR(sp1, ff2, cc)
+        * fields.Phi(ii)
         - parameters.Ye(ff1, ff2)
-        * fields.lL.bar(index_labels={generation.kind: ff1})
-        * fields.eR(index_labels={generation.kind: ff2})
-        * fields.Phi
+        * fields.lL.bar(sp1, ii, ff1)
+        * fields.eR(sp1, ff2)
+        * fields.Phi(ii)
         - parameters.Yu(ff1, ff2)
         * weak_eps2(ii, jj)
-        * fields.qL.bar(
-            index_labels={
-                WEAK_FUND_INDEX.kind: ii,
-                generation.kind: ff1,
-            }
-        )
+        * fields.qL.bar(sp1, ii, ff1, cc)
         * fields.Phi.bar(jj)
-        * fields.uR(index_labels={generation.kind: ff2})
-        - parameters.Yd(ff1, ff2)
-        * fields.dR.bar(index_labels={generation.kind: ff2})
-        * fields.Phi.bar
-        * fields.qL(index_labels={generation.kind: ff1})
-        - parameters.Ye(ff1, ff2)
-        * fields.eR.bar(index_labels={generation.kind: ff2})
-        * fields.Phi.bar
-        * fields.lL(index_labels={generation.kind: ff1})
-        - parameters.Yu(ff1, ff2)
+        * fields.uR(sp1, ff2, cc)
+        - parameters.YdDag(ff2, ff1)
+        * fields.dR.bar(sp1, ff2, cc)
+        * fields.Phi.bar(ii)
+        * fields.qL(sp1, ii, ff1, cc)
+        - parameters.YeDag(ff2, ff1)
+        * fields.eR.bar(sp1, ff2)
+        * fields.Phi.bar(ii)
+        * fields.lL(sp1, ii, ff1)
+        - parameters.YuDag(ff2, ff1)
         * weak_eps2(ii, jj)
-        * fields.uR.bar(index_labels={generation.kind: ff2})
+        * fields.uR.bar(sp1, ff2, cc)
         * fields.Phi(jj)
-        * fields.qL(
-            index_labels={
-                WEAK_FUND_INDEX.kind: ii,
-                generation.kind: ff1,
-            }
-        )
+        * fields.qL(sp1, ii, ff1, cc)
     )
 
     LSM = LGauge + LFermions + LHiggs + LYukawa
@@ -363,8 +367,11 @@ def build_unbroken_standard_model(
             parameters.lam,
             parameters.muH,
             parameters.Yu,
+            parameters.YuDag,
             parameters.Yd,
+            parameters.YdDag,
             parameters.Ye,
+            parameters.YeDag,
         ),
         lagrangian_decl=LSM,
     )
