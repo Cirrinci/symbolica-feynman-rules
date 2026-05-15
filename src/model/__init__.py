@@ -100,6 +100,17 @@ from .lagrangian import (
 from .core import Model
 from .validation import ValidationIssue, ValidationReport
 
+# ---- unbroken Standard Model helper --------------------------------------
+from .standard_model_unbroken import (
+    UnbrokenStandardModel,
+    UnbrokenStandardModelFields,
+    UnbrokenStandardModelGaugeGroups,
+    UnbrokenStandardModelIndices,
+    UnbrokenStandardModelLagrangians,
+    UnbrokenStandardModelParameters,
+    build_unbroken_standard_model,
+)
+
 # ---- SSB helpers (kept for the existing electroweak workflow) ------------
 from .ssb import *  # noqa: F401,F403
 
