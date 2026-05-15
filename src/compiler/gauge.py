@@ -173,7 +173,13 @@ def _default_internal_adjoint_label(gauge_field: Field, gauge_group: GaugeGroup)
         raise ValueError(
             f"Gauge field {gauge_field.name!r} does not expose a non-Lorentz adjoint index."
         )
-    return _symbol(f"{adj_kind}_mid_{gauge_field.name}_{gauge_group.name}")
+    if adj_kind == "color_adj":
+        stem = "a_mid"
+    elif adj_kind == "weak_adj":
+        stem = "aw_mid"
+    else:
+        stem = f"{adj_kind}_mid"
+    return _symbol(f"{stem}_{gauge_field.name}_{gauge_group.name}")
 
 
 def _default_ghost_labels(field: Field, index, slot: Optional[int] = None):

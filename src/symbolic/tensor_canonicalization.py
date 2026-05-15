@@ -30,6 +30,15 @@ from .spenso_structures import lorentz_metric, simplify_invariants
 
 pcomp = S("pcomp")
 
+_DUMMY_GROUP_STEMS = {
+    0: "mu_mid",
+    1: "a_mid",
+    2: "c_mid",
+    3: "i_mid",
+    4: "w_mid",
+    5: "aw_mid",
+}
+
 
 @dataclass(frozen=True)
 class TensorHeadSpec:
@@ -128,6 +137,9 @@ def _replace_tensor_heads(expr, specs: Sequence[TensorHeadSpec], *, reverse: boo
 
 
 def _dummy_name(group, slot: int) -> str:
+    if group in _DUMMY_GROUP_STEMS:
+        stem = _DUMMY_GROUP_STEMS[group]
+        return stem if slot == 1 else f"{stem}_{slot}"
     group_text = str(group).replace(" ", "_").replace(":", "_")
     return f"canon_dummy_{group_text}_{slot}"
 
@@ -299,3 +311,44 @@ def canonize_full(
         extra_index_groups=extra_index_groups,
     )
     return canonical
+
+
+def canonize_structure_constant_products(
+    expr,
+    *,
+    lorentz_indices: Iterable[object] = (),
+    adjoint_indices: Iterable[object] = (),
+    color_fund_indices: Iterable[object] = (),
+    spinor_indices: Iterable[object] = (),
+    weak_fund_indices: Iterable[object] = (),
+    weak_adj_indices: Iterable[object] = (),
+    extra_index_groups: Iterable[tuple[object, object]] = (),
+):
+    """Canonize commutative tensor products built from ``f`` / ``g`` factors.
+
+    This is the comparison layer used when matching gauge-sector outputs to
+    external tools such as FeynRules:
+
+    - each antisymmetric structure constant is canonized with the correct sign
+    - Lorentz metrics are canonized using their symmetry
+    - contracted dummy indices are renamed deterministically to readable typed
+      stems such as ``a_mid`` or ``mu_mid``
+    - commutative products are sorted and like terms are collected
+
+    Unlike :func:`canonize_full`, this helper does not contract explicit
+    Lorentz metrics against momenta. It is intended for direct comparison of
+    fully expanded tensor expressions.
+    """
+
+    expanded = expr.expand() if hasattr(expr, "expand") else expr
+    canonical, _, _ = canonize_spenso_tensors(
+        expanded,
+        lorentz_indices=lorentz_indices,
+        adjoint_indices=adjoint_indices,
+        color_fund_indices=color_fund_indices,
+        spinor_indices=spinor_indices,
+        weak_fund_indices=weak_fund_indices,
+        weak_adj_indices=weak_adj_indices,
+        extra_index_groups=extra_index_groups,
+    )
+    return canonical.expand() if hasattr(canonical, "expand") else canonical
