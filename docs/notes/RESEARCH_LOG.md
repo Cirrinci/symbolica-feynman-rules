@@ -776,3 +776,354 @@ What this achieved:
   (kinetic normalization, hermiticity, mass structure)
 - the final walkthrough notebook now demonstrates the full declarative
   workflow including diagnostic validation
+
+### 2026-04-30: validation diagnostics, parameter metadata, and notebook cleanup
+
+What happened:
+
+- the reporting/validation layer was extended beyond basic issue collection:
+  - sector filtering was added to vertex reports
+  - compiled-lagrangian mass-mixing diagnostics were added for off-diagonal
+    bilinears
+  - the mass-mixing warnings were kept diagnostic-only rather than promoted to
+    hard failures
+- the first version of those checks was then tightened:
+  - stable field keys were used instead of display names
+  - warnings were restricted to canonical conjugated bilinears
+  - mixed-sector counts were made sector-local
+- the model metadata layer was extended with basic parameter lookup and
+  assumptions infrastructure:
+  - parameter assumptions can now be stored and queried through the model
+  - validation/reporting code can consult declared parameter metadata without
+    reaching into raw expressions
+- focused regression coverage was added for:
+  - sector-filtered reporting
+  - mass-mixing diagnostics
+  - parameter lookup / parameter assumptions
+- the main final walkthrough notebook was cleaned up and shortened so the live
+  examples track the current API more directly
+
+What this achieved:
+
+- validation moved from a minimal diagnostic pass toward a more useful model
+  inspection layer
+- the reporting API can now separate sectors and flag suspicious mass
+  structure without conflating those checks with hard compilation failures
+- parameter metadata is now available as a first-class model-level concept,
+  which prepares later validation and assumption-aware workflows
+- the final walkthrough notebook became easier to use as the compact reference
+  for the current public API
+
+### 2026-05-04: branch cleanup, Python-compatibility pass, and first compact Lagrangian-list notebook
+
+What happened:
+
+- the accidental reintroduction of the old top-level `src/model.py` file was
+  removed so the source tree returned to the intended modular `src/model/*`
+  layout
+- the direct `src/symbolic/spenso_gamma_checks.py` entrypoint was fixed so it
+  can be run successfully from the repository venv as documented
+- a compatibility pass replaced Python 3.10 union-annotation syntax in the
+  covered source files with older-style `typing.Optional[...]` /
+  `typing.Union[...]` forms
+- the repository was reviewed after that cleanup:
+  - syntax compilation succeeded on `src`, `tests`, and `examples`
+  - the full test suite passed
+  - the main runnable example suites passed
+- a new compact notebook,
+  `notebooks/list_lagrangians.ipynb`,
+  was started as a short reference organized around
+  `Model(..., lagrangian_decl=...)`
+- the first version of that notebook covered:
+  - basic scalar examples
+  - derivative scalar examples
+  - a first fermion section in the same compact model-layer style
+
+What this achieved:
+
+- the repository tree was brought back into a cleaner post-refactor state
+  before continuing notebook/API work
+- the documented gamma-check validation path became reliable again
+- the covered source files are now easier to run on slightly older Python
+  versions
+- the project gained a second, much shorter notebook focused specifically on
+  “how to write Lagrangians with the current model layer,” separate from the
+  longer workflow walkthroughs
+
+### 2026-05-05: typed ghost declarations, lowering-based shorthand resolution, and compact SU(2) notebook coverage
+
+What happened:
+
+- the ghost declaration API was cleaned up around a typed
+  `GhostField(..., ghost_of=...)` helper while keeping compatibility with the
+  older `kind="ghost"` path
+- the ordinary `CovD(...)` machinery was generalized so adjoint ghost fields
+  are treated through the same representation-aware compiler path as covered
+  scalar, fermion, and quark matter fields
+- this enabled direct FeynRules-style ghost input such as
+  `- Ghost.bar * PartialD(CovD(Ghost, mu), mu)` without adding a ghost-only
+  backend path
+- `GaugeFixing(...)` was reworked so the helper lowers through the same local
+  derivative-expression machinery as a manual tensor declaration instead of
+  bypassing the ordinary lowering path
+- compact field-occurrence syntax sugar was added at the metadata layer:
+  - `Photon(mu)`
+  - `Gluon(mu, a)`
+  - `GhostG.bar(a)`
+- the shorthand semantics were then resolved in local lowering rather than in
+  the Wick-contraction engine:
+  - divergence-like forms such as `PartialD(Photon(mu), mu)` and
+    `PartialD(Gluon(mu, a), mu)` now lower to explicit metric-contracted
+    derivatives with fresh internal Lorentz labels
+  - the same lowering pass was generalized to the ghost-gluon product-rule
+    branch so direct FeynRules-style ghost terms use the external gluon
+    Lorentz slot consistently on both momentum terms
+- the vertex engine was simplified again after that refactor:
+  it now consumes ordinary lowered tensor structure instead of carrying a
+  divergence-specific index-remapping rule
+- focused regression coverage was added and updated for:
+  - positive and negative shorthand-derivative cases
+  - scalar and vector-current regressions
+  - helper-vs-manual gauge-fixing equality for U(1) and SU(3)
+  - direct FeynRules-style ghost-gluon vertices with exact leg-order checks
+- `notebooks/list_lagrangians.ipynb` was rebuilt as a compact reference
+  notebook around `Model(..., lagrangian_decl=...)` and extended with:
+  - scalar examples
+  - fermion examples
+  - gauge, gauge-fixing, and ghost examples
+  - pure `SU(2)_L` examples
+  - mixed `SU(2)_L x U(1)_Y` examples showing the full set of emitted current
+    and contact vertices, including the mixed `W B` scalar contact
+- the live validation paths were rerun successfully:
+  - `./.venv/bin/pytest -q`
+    - result: `272 passed`
+  - notebook execution check for `notebooks/list_lagrangians.ipynb`
+    - result: passed
+
+What this achieved:
+
+- the ghost sector now fits the same declarative model-building story as the
+  covered matter sectors instead of depending on special wrappers alone
+- direct FeynRules-style ghost and gauge-fixing source terms are now real
+  first-class inputs to the public declaration API
+- the compact field-call syntax improves notebook/model readability without
+  moving symbolic interpretation into the wrong architectural layer
+- lowering now carries the responsibility for shorthand resolution, which is a
+  cleaner boundary than keeping special symbolic-index heuristics in the core
+  vertex engine
+- the gauge-fixing helper and its manual tensor form are now explicitly locked
+  to the same backend behavior
+- the notebook coverage now includes the non-abelian `SU(2)` and mixed
+  electroweak-style cases in the same compact Lagrangian-declaration style as
+  the scalar, QED, and QCD sections
+
+### 2026-05-06: gauge-fixing provenance, unbroken SM gauge-structure coverage, and SU(2) quartic validation
+
+#### What happened
+
+* Sector classification for compiled/reporting views was tightened so that
+  `GaugeFixing(...)` helper terms and their canonical manual tensor forms now
+  report consistently as `gauge_fixing`, instead of diverging at the
+  `vertex_report(...)` / `vertex_signatures(...)` layer.
+
+* This was done by moving away from label-text heuristics toward explicit term
+  provenance:
+
+  * helper-generated gauge-fixing terms now carry explicit sector/origin
+    metadata;
+  * the lowering layer now recognizes the canonical manual
+    divergence-squared vector form conservatively and assigns the same
+    reporting sector;
+  * related tests were added for helper/manual parity, dummy-label
+    invariance, and protection against accidental over-classification of
+    unrelated vector-derivative bilinears.
+
+* `notebooks/list_lagrangians.ipynb` was extended with a compact full
+  **unbroken Standard Model gauge-structure** section using the existing
+  symbolic model-building API with
+  `SU(3)_c x SU(2)_L x U(1)_Y`.
+
+* That section now includes:
+
+  * SM-like matter fields with the expected color, weak, and hypercharge
+    assignments;
+  * a minimal kinetic `CovD(...)` test covering quark, lepton, and Higgs
+    matter;
+  * a second “full gauge” model including the three field-strength kinetic
+    terms for `G`, `W`, and `B`;
+  * compact cells that print only the emitted vertex signatures, without the
+    full rules, for quick inspection.
+
+* The SM-like field assignments used in the notebook are:
+
+  * `qL : (3,2,1/6)`
+  * `uR : (3,1,2/3)`
+  * `dR : (3,1,-1/3)`
+  * `lL : (1,2,-1/2)`
+  * `eR : (1,1,-1)`
+  * `H : (1,2,1/2)`
+
+* The local symbolic notebook emits the expected **28 vertex signatures** for
+  the full gauge test:
+
+  * 19 interaction signatures;
+  * 9 quadratic/two-point kinetic signatures.
+
+* The corresponding FeynRules comparison gives the expected **19 interaction
+  vertices**, because `FeynmanRules[...]` in that setup lists the interaction
+  vertices and not the same quadratic/two-point kinetic signatures printed by
+  the local notebook.
+
+* An explicit notebook cell was added to print the internal external-leg
+  assignment for the
+
+  ```text
+  ('H.bar', 'H', 'W')
+  ```
+
+  and
+
+  ```text
+  ('H.bar', 'H', 'B')
+  ```
+
+  vertices, together with the unsimplified rules, so the momentum ordering
+  `q1/q2/q3` can be checked directly against the field order.
+
+* An apparent sign mismatch in the scalar-gauge three-point vertices was
+  resolved:
+
+  * the local notebook prints the vertices as `('H.bar', 'H', W/B)` with
+    `q1 = H.bar` and `q2 = H`;
+  * FeynRules returns the same vertex ordered as `{H, Hbar, W/B}`;
+  * after mapping momenta using the actual FeynRules ordering, the signs
+    agree.
+
+* The `SU(2)` quartic gauge-boson vertex was cross-checked against the
+  FeynRules delta-basis form:
+
+  * a reusable helper, `simplify_su2_ff(expr)`, was added to rewrite narrow
+    `SU(2)` structure-constant products `f*f` into adjoint-metric /
+    Kronecker-delta form;
+  * the helper was tested on the compiled `WWWW` rule and matched the
+    expected FeynRules basis exactly;
+  * the notebook’s earlier `sympy`-based attempt was replaced by a
+    `symbolica`-native check showing:
+
+    * the raw `f*f` basis;
+    * the rewritten delta basis;
+    * the FeynRules-style target expression;
+    * a final difference of `0`.
+
+* The `WWW` and `GGG` vertices were also compared against the FeynRules
+  forms:
+
+  * both match the expected non-abelian three-gauge-boson structure;
+  * the only notation differences are coupling names, momentum labels, and
+    structure-constant naming.
+
+* Fermion-gauge vertices were checked against FeynRules:
+
+  * `qLbar qL G`, `qLbar qL W`, `qLbar qL B`;
+  * `uRbar uR G`, `uRbar uR B`;
+  * `dRbar dR G`, `dRbar dR B`;
+  * `lLbar lL W`, `lLbar lL B`;
+  * `eRbar eR B`.
+
+* The hypercharge coefficients agree with the expected values:
+
+  * `Y(qL) = 1/6`
+  * `Y(uR) = 2/3`
+  * `Y(dR) = -1/3`
+  * `Y(lL) = -1/2`
+  * `Y(eR) = -1`
+  * `Y(H) = 1/2`
+
+* Higgs-gauge vertices were checked against FeynRules:
+
+  * `Hbar H W`;
+  * `Hbar H B`;
+  * `Hbar H W W`;
+  * `Hbar H B B`;
+  * `Hbar H W B`.
+
+* The four-point Higgs-gauge vertices match directly in coefficient, sign,
+  and index structure. The three-point Higgs-gauge vertices also match once
+  the actual FeynRules external-leg ordering is used.
+
+* Validation was rerun after these changes:
+
+  * focused `SU(2)` tests passed;
+  * the full test suite passed;
+  * the updated notebook tail executed successfully.
+
+#### What this achieved
+
+* Helper/manual parity now holds not only at the level of Feynman rules, but
+  also at the reporting/provenance layer. This makes the model-inspection API
+  more trustworthy.
+
+* The compact notebook now includes a genuinely full **unbroken SM
+  gauge-structure** example for Standard Model-like matter content, rather
+  than only sector-isolated QED/QCD/`SU(2)` fragments.
+
+* The notebook can now inspect larger models in two complementary ways:
+
+  * full rules when the algebraic expression is needed;
+  * signature-only interaction lists when the goal is just to check which
+    couplings are present.
+
+* The explicit leg-assignment cell removes ambiguity about which external
+  momentum is attached to which ordered field in selected vertices.
+
+* The `WWWW` comparison closes an important confidence gap between the current
+  symbolic non-abelian output and the more familiar FeynRules delta-basis
+  presentation for `SU(2)` quartic gauge interactions.
+
+* The validation establishes that the symbolic implementation reproduces the
+  expected unbroken SM gauge-sector interactions:
+
+  * correct matter representations;
+  * correct hypercharge coefficients;
+  * correct non-abelian self-interactions;
+  * correct Higgs-gauge interactions;
+  * consistent interpretation of external-leg ordering.
+
+#### Validation summary
+
+```text
+Local symbolic notebook:
+  28 vertex signatures
+  = 19 interaction signatures
+  + 9 quadratic/two-point kinetic signatures
+
+FeynRules comparison:
+  19 interaction vertices
+
+SU(2) WWWW check:
+  raw f*f basis -> SU(2) delta basis -> FeynRules-style target
+  final difference: 0
+
+Resolved ambiguity:
+  apparent Hbar-H-gauge sign mismatch was due to FeynRules external-leg reordering,
+  not a real convention mismatch.
+```
+
+#### Caveats
+
+* This is not a full broken Standard Model implementation. The section
+  currently tests the **unbroken gauge structure** only.
+
+* The current notebook section does not yet include:
+
+  * electroweak symmetry breaking;
+  * physical `(A/Z/W^\pm)` mixing;
+  * Yukawa interactions;
+  * Higgs potential;
+  * CKM structure;
+  * ghost terms;
+  * a complete gauge-fixing and ghost sector for the full SM.
+
+* The `GGGG` vertex remains in the generic non-abelian `f*f` basis. This is
+  appropriate for `SU(3)` and should not be simplified to a pure
+  delta-delta structure in the same way as the `SU(2)` `WWWW` vertex.

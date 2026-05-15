@@ -1,13 +1,4 @@
-import sys
-from pathlib import Path
-
 import pytest
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC = REPO_ROOT / "src"
-sys.path.insert(0, str(SRC))
-
 
 from symbolica import S, Expression  # noqa: E402
 
@@ -239,7 +230,7 @@ def test_compile_nonabelian_ghost_terms():
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
     expected_cubic = (
-        -gS
+        gS
         * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
@@ -515,7 +506,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         species_map={b1: antiquark_symbol, b2: quark_symbol, b3: gluon_symbol},
     )
     expected_current = (
-        -I
+        I
         * gS
         * quark_gluon_current(i1, i2, mu3, a3, c1, c2)
         * (2 * pi) ** d
@@ -534,7 +525,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
     expected_ghost_gauge = (
-        -gS
+        gS
         * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
@@ -627,7 +618,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         species_map={b1: antiquark_symbol, b2: quark_symbol, b3: gluon_symbol},
     )
     expected_qcd = (
-        -I
+        I
         * gS
         * quark_gluon_current(i1, i2, mu3, a3, c1, c2)
         * (2 * pi) ** d
@@ -645,7 +636,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         species_map={b1: antiquark_symbol, b2: quark_symbol, b3: photon_symbol},
     )
     expected_qed = (
-        -I
+        I
         * eQED
         * q_mix
         * psi_bar_gamma_psi(i1, i2, mu3)
@@ -665,7 +656,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         species_map={b1: antighost_symbol, b2: gluon_symbol, b3: ghost_symbol},
     )
     expected_ghost_gauge = (
-        -gS
+        gS
         * ghost_gauge_raw(a1, a2, a3, mu3, S("mu1_int"), p1)
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)

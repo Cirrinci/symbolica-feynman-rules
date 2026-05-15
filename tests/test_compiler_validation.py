@@ -1,13 +1,4 @@
-import sys
-from pathlib import Path
-
 import pytest
-
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC = REPO_ROOT / "src"
-sys.path.insert(0, str(SRC))
-
 
 from symbolica import S, Expression  # noqa: E402
 
@@ -297,7 +288,7 @@ def test_fermion_vertex_still_amputates_when_only_bosonic_leg_labels_are_given()
     )
 
     expected = (
-        -I
+        I
         * S("e")
         * S("qPsi")
         * psi_bar_gamma_psi(S("i1"), S("i2"), mu3)

@@ -13,6 +13,7 @@ from model import (
     Gamma,
     GaugeGroup,
     GaugeRepresentation,
+    GhostField,
     LORENTZ_INDEX,
     SPINOR_INDEX,
 )
@@ -42,15 +43,14 @@ def make_gluon(*, name="G", symbol=None):
     )
 
 
-def make_ghost(*, name="ghG", symbol=None, conjugate_symbol=None):
+def make_ghost(*, name="ghG", ghost_of=None, symbol=None, conjugate_symbol=None):
     if symbol is None:
         symbol = S(name)
     if conjugate_symbol is None:
         conjugate_symbol = S(f"{name}bar")
-    return Field(
+    return GhostField(
         name,
-        spin=0,
-        kind="ghost",
+        ghost_of=ghost_of,
         self_conjugate=False,
         symbol=symbol,
         conjugate_symbol=conjugate_symbol,

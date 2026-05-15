@@ -21,7 +21,7 @@ from typing import Literal, Optional, Sequence
 from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 
-from symbolic.spenso_structures import SPINOR_KIND
+from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND
 from symbolic.vertex_postprocessing import (
     _species_key,
     apply_vertex_output_policy as _apply_vertex_output_policy,
@@ -133,14 +133,14 @@ def _open_index_labels(field_index_labels, field_roles=None):
     counts = Counter()
     for slot_labels in field_index_labels:
         for kind, _, label in _flatten_index_labels(slot_labels):
-            counts[(kind, str(label))] += 1
+            counts[(kind, _index_label_key(label))] += 1
 
     open_slots = []
     for slot_idx, slot_labels in enumerate(field_index_labels):
         if field_roles is not None and not _role_is_fermion(field_roles[slot_idx]):
             pass
         for kind, ordinal, label in _flatten_index_labels(slot_labels):
-            if counts[(kind, str(label))] == 1:
+            if counts[(kind, _index_label_key(label))] == 1:
                 open_slots.append((slot_idx, kind, ordinal, label))
     return open_slots
 
@@ -155,6 +155,10 @@ def _get_label(index_labels_dict, kind, ordinal=0):
     if isinstance(val, (list, tuple)):
         return val[ordinal] if 0 <= ordinal < len(val) else None
     return val
+
+
+def _index_label_key(label) -> str:
+    return label.to_canonical_string() if hasattr(label, "to_canonical_string") else str(label)
 
 
 # ---------------------------------------------------------------------------
@@ -554,12 +558,7 @@ def contract_to_full_expression(
     if field_index_labels is not None:
         for slot_labels in field_index_labels:
             for kind, _, label in _flatten_index_labels(slot_labels):
-                label_key = (
-                    label.to_canonical_string()
-                    if hasattr(label, "to_canonical_string")
-                    else str(label)
-                )
-                field_index_label_counts[(kind, label_key)] += 1
+                field_index_label_counts[(kind, _index_label_key(label))] += 1
 
     total = Expression.num(0)
 
@@ -633,11 +632,7 @@ def contract_to_full_expression(
                     if field_label is None or leg_label is None:
                         continue
 
-                    label_key = (
-                        field_label.to_canonical_string()
-                        if hasattr(field_label, "to_canonical_string")
-                        else str(field_label)
-                    )
+                    label_key = _index_label_key(field_label)
                     if field_index_label_counts[(index.kind, label_key)] <= 1:
                         continue
 

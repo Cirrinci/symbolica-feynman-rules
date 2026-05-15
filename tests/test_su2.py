@@ -23,10 +23,13 @@ from model import (
     WEAK_FUND_INDEX,
 )
 from symbolic.spenso_structures import (
+    WEAK_ADJ,
     gamma_matrix,
+    lorentz_metric,
     weak_gauge_generator,
     weak_structure_constant,
 )
+from symbolic.vertex_postprocessing import simplify_su2_ff
 from symbolic.vertex_engine import Delta, I, pi, pcomp
 
 d = S("d")
@@ -216,7 +219,7 @@ def test_su2_fermion_doublet_vertex():
         LDoublet.bar, LDoublet, WField,
     )
     expected = (
-        -I * g2_sym
+        I * g2_sym
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
         * D3
@@ -270,6 +273,49 @@ def test_su2_yang_mills_vertices():
     _assert_nonzero(MODEL_SU2_YM.lagrangian().feynman_rule(WField, WField, WField, WField))
 
 
+def test_su2_quartic_vertex_simplify_su2_ff_matches_delta_basis():
+    got = simplify_su2_ff(
+        MODEL_SU2_YM.lagrangian().feynman_rule(
+            WField, WField, WField, WField, include_delta=False,
+        )
+    )
+
+    eta12 = lorentz_metric(S("mu1"), S("mu2"))
+    eta13 = lorentz_metric(S("mu1"), S("mu3"))
+    eta14 = lorentz_metric(S("mu1"), S("mu4"))
+    eta23 = lorentz_metric(S("mu2"), S("mu3"))
+    eta24 = lorentz_metric(S("mu2"), S("mu4"))
+    eta34 = lorentz_metric(S("mu3"), S("mu4"))
+
+    delta14 = WEAK_ADJ.g(S("aw1"), S("aw4")).to_expression()
+    delta23 = WEAK_ADJ.g(S("aw2"), S("aw3")).to_expression()
+    delta13 = WEAK_ADJ.g(S("aw1"), S("aw3")).to_expression()
+    delta24 = WEAK_ADJ.g(S("aw2"), S("aw4")).to_expression()
+    delta12 = WEAK_ADJ.g(S("aw1"), S("aw2")).to_expression()
+    delta34 = WEAK_ADJ.g(S("aw3"), S("aw4")).to_expression()
+
+    expected = I * g2_sym**2 * (
+        eta14 * eta23 * (
+            -2 * delta14 * delta23
+            + delta13 * delta24
+            + delta12 * delta34
+        )
+        + eta13 * eta24 * (
+            delta14 * delta23
+            - 2 * delta13 * delta24
+            + delta12 * delta34
+        )
+        + eta12 * eta34 * (
+            delta14 * delta23
+            + delta13 * delta24
+            - 2 * delta12 * delta34
+        )
+    )
+
+    _assert_equal(got, expected)
+    assert "spenso::f" not in _canonical(got)
+
+
 def test_su2_ghost_vertices():
     _cross_check(MODEL_SU2_GAUGE_FIXED, WField, WField)
     _cross_check(MODEL_SU2_GAUGE_FIXED, WField, WField, WField)
@@ -288,7 +334,7 @@ def test_su2_u1_fermion_doublet_vertices():
         LYDoublet.bar, LYDoublet, WField,
     )
     expected_w = (
-        -I * g2_sym
+        I * g2_sym
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
         * D3
@@ -301,7 +347,7 @@ def test_su2_u1_fermion_doublet_vertices():
     )
     weak_fund_id = WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
     expected_b = (
-        -I * g1_sym * yL
+        I * g1_sym * yL
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * weak_fund_id
         * D3

@@ -169,7 +169,7 @@ def test_unbroken_electroweak_doublet_w_current():
         WField,
     )
     expected_w = (
-        -I
+        I
         * g2_sym
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
         * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
@@ -186,7 +186,7 @@ def test_unbroken_electroweak_doublet_b_current():
         BField,
     )
     expected_b = (
-        -I
+        I
         * g1_sym
         * yL
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))
@@ -207,7 +207,7 @@ def test_unbroken_electroweak_singlet_b_current():
         BField,
     )
     expected_b = (
-        -I
+        I
         * g1_sym
         * yR
         * gamma_matrix(S("i1"), S("i2"), S("mu3"))

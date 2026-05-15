@@ -10,19 +10,19 @@ Frozen conventions for the physical path:
 
 - Fourier transform derivatives act as ``-i p_mu``
 - ``vertex_factor(...)`` contributes the universal overall ``+i``
-- matter covariant derivatives use ``D_mu = partial_mu + i g A_mu``
+- matter covariant derivatives use ``D_mu = partial_mu - i g A_mu``
 - non-abelian field strengths use
-  ``F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu - g f^{abc} A^b_mu A^c_nu``
+  ``F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu + g f^{abc} A^b_mu A^c_nu``
 
-With these choices, matter currents carry the signs already locked down in the
-covariant tests, the Yang-Mills 3-gauge vertex is real, and the 4-gauge vertex
-keeps an explicit overall ``i``.
+With these choices, matter currents follow the same sign convention as the
+local gauge-ready examples, the Yang-Mills 3-gauge vertex is real, and the
+4-gauge vertex keeps an explicit overall ``i``.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Optional
+from typing import Optional, Union
 
 from symbolica import S, Expression
 
@@ -56,10 +56,12 @@ from model import (
     GaugeRepresentation,
     InteractionTerm,
     Model,
+    PartialD,
 )
 from model.declared import (
     _DeclaredMonomial,
     _FieldFactor,
+    DifferentiatedCovariantFactor,
     GeneratorFactor,
     PartialDerivativeFactor,
 )
@@ -195,6 +197,80 @@ def _field_transforms_under_gauge_group(field: Field, gauge_group: GaugeGroup) -
     return gauge_group.matter_representation(field) is not None
 
 
+def _ghost_associated_gauge_boson_matches(
+    model: Model,
+    field: Field,
+    gauge_group: GaugeGroup,
+) -> bool:
+    if not field.is_ghost or field.ghost_of is None:
+        return True
+
+    gauge_boson = model.gauge_boson_field(gauge_group)
+    associated = model.find_field(field.ghost_of)
+    if associated is not None:
+        return gauge_boson is associated
+
+    target_text = str(field.ghost_of)
+    return target_text in (
+        gauge_boson.name,
+        str(gauge_boson.symbol),
+        str(gauge_group.gauge_boson),
+    )
+
+
+def _maybe_nonabelian_rep_and_slots(
+    field: Field,
+    gauge_group: GaugeGroup,
+    *,
+    model: Optional[Model] = None,
+    gauge_field: Optional[Field] = None,
+) -> Optional[tuple[GaugeRepresentation, tuple[int, ...]]]:
+    rep_info = gauge_group.matter_representation_and_slots(field)
+    if rep_info is not None:
+        return rep_info
+
+    if model is None or gauge_field is None:
+        return None
+    if gauge_group.structure_constant is None or not callable(gauge_group.structure_constant):
+        return None
+
+    adj_slot = _adjoint_index_slot(gauge_field)
+    if adj_slot is None:
+        return None
+    adjoint_index = gauge_field.indices[adj_slot]
+    inferred = GaugeRepresentation(
+        index=adjoint_index,
+        generator_builder=gauge_group.structure_constant,
+        name="adjoint",
+    )
+    slots = inferred.slots_for(field)
+    if not slots:
+        return None
+    return inferred, tuple(slots)
+
+
+def _covd_field_transforms_under_gauge_group(
+    model: Model,
+    field: Field,
+    gauge_group: GaugeGroup,
+) -> bool:
+    if gauge_group.abelian:
+        if gauge_group.charge is None:
+            return False
+        return field.quantum_numbers.get(gauge_group.charge, 0) != 0
+
+    if not _ghost_associated_gauge_boson_matches(model, field, gauge_group):
+        return False
+
+    gauge_field = model.gauge_boson_field(gauge_group)
+    return _maybe_nonabelian_rep_and_slots(
+        field,
+        gauge_group,
+        model=model,
+        gauge_field=gauge_field,
+    ) is not None
+
+
 def _require_declared_field(model: Model, target, *, purpose: str) -> Field:
     """Resolve one field strictly from the parent model declarations."""
     if isinstance(target, Field):
@@ -257,6 +333,47 @@ def _require_field_transforms_under_gauge_group(
         )
 
 
+def _require_covd_field_transforms_under_gauge_group(
+    model: Model,
+    field: Field,
+    gauge_group: GaugeGroup,
+    *,
+    purpose: str,
+):
+    if gauge_group.abelian:
+        if gauge_group.charge is None:
+            raise ValueError(
+                f"{purpose} cannot use abelian gauge group {gauge_group.name!r} "
+                "without a declared charge label."
+            )
+        charge = field.quantum_numbers.get(gauge_group.charge, 0)
+        if charge == 0:
+            raise ValueError(
+                f"{purpose} requires field {field.name!r} to carry non-zero "
+                f"charge {gauge_group.charge!r} under gauge group {gauge_group.name!r}."
+            )
+        return
+
+    if not _ghost_associated_gauge_boson_matches(model, field, gauge_group):
+        raise ValueError(
+            f"{purpose} requires ghost field {field.name!r} to be associated with "
+            f"the gauge boson of gauge group {gauge_group.name!r}."
+        )
+
+    gauge_field = model.gauge_boson_field(gauge_group)
+    if _maybe_nonabelian_rep_and_slots(
+        field,
+        gauge_group,
+        model=model,
+        gauge_field=gauge_field,
+    ) is None:
+        raise ValueError(
+            f"{purpose} requires field {field.name!r} to carry a declared "
+            f"representation under gauge group {gauge_group.name!r}, or the "
+            "group adjoint index so an adjoint action can be inferred."
+        )
+
+
 def _resolve_covariant_gauge_groups(model: Model, *, field: Field, gauge_group=None) -> tuple[GaugeGroup, ...]:
     purpose = f"Covariant compilation for field {field.name!r}"
     if gauge_group is not None:
@@ -264,25 +381,50 @@ def _resolve_covariant_gauge_groups(model: Model, *, field: Field, gauge_group=N
             resolved = []
             for item in gauge_group:
                 group = _require_declared_gauge_group(model, item, purpose=purpose)
-                _require_field_transforms_under_gauge_group(field, group, purpose=purpose)
+                _require_covd_field_transforms_under_gauge_group(
+                    model,
+                    field,
+                    group,
+                    purpose=purpose,
+                )
                 resolved.append(group)
             return tuple(resolved)
 
         resolved = _require_declared_gauge_group(model, gauge_group, purpose=purpose)
-        _require_field_transforms_under_gauge_group(field, resolved, purpose=purpose)
+        _require_covd_field_transforms_under_gauge_group(
+            model,
+            field,
+            resolved,
+            purpose=purpose,
+        )
         return (resolved,)
 
-    matches = tuple(group for group in model.gauge_groups if _field_transforms_under_gauge_group(field, group))
+    matches = tuple(
+        group
+        for group in model.gauge_groups
+        if _covd_field_transforms_under_gauge_group(model, field, group)
+    )
     if not matches:
         raise ValueError(f"Field {field.name!r} does not transform under any declared gauge group.")
     return matches
 
 
-def _nonabelian_rep_and_slots(field: Field, gauge_group: GaugeGroup):
-    rep_info = gauge_group.matter_representation_and_slots(field)
+def _nonabelian_rep_and_slots(
+    field: Field,
+    gauge_group: GaugeGroup,
+    *,
+    model: Optional[Model] = None,
+    gauge_field: Optional[Field] = None,
+):
+    rep_info = _maybe_nonabelian_rep_and_slots(
+        field,
+        gauge_group,
+        model=model,
+        gauge_field=gauge_field,
+    )
     if rep_info is None:
         raise ValueError(
-            f"Field {field.name!r} carries no representation declared for "
+            f"Field {field.name!r} carries no representation declared or inferred for "
             f"gauge group {gauge_group.name!r}."
         )
     return rep_info
@@ -323,13 +465,18 @@ def _ghost_field_for_group(model: Model, gauge_group: GaugeGroup) -> Field:
         gauge_group.ghost_field,
         purpose="Ghost compilation",
     )
-    if ghost_field.kind != "ghost":
+    if not ghost_field.is_ghost:
         raise ValueError(
             f"Ghost compilation requires field {ghost_field.name!r} to have kind='ghost'."
         )
     if ghost_field.self_conjugate:
         raise ValueError(
             f"Ghost compilation requires field {ghost_field.name!r} to be non-self-conjugate."
+        )
+    if not _ghost_associated_gauge_boson_matches(model, ghost_field, gauge_group):
+        raise ValueError(
+            f"Ghost compilation requires ghost field {ghost_field.name!r} to be associated "
+            f"with the gauge boson of gauge group {gauge_group.name!r}."
         )
     return ghost_field
 
@@ -345,7 +492,7 @@ class CovariantDerivativePartialPiece:
 class CovariantGaugeMetadata:
     gauge_group: GaugeGroup
     gauge_field: Field
-    representation: GaugeRepresentation | None
+    representation: Optional[GaugeRepresentation]
     representation_slots: tuple[int, ...]
     repeated_index: bool
     conjugated: bool
@@ -392,9 +539,9 @@ class _GaugeAction:
     gauge_lorentz_slot: int
     gauge_slot_labels: dict[int, object]
     coupling: object
-    representation: GaugeRepresentation | None = None
+    representation: Optional[GaugeRepresentation] = None
     representation_slot: Optional[int] = None
-    adjoint_label: object | None = None
+    adjoint_label: Optional[object] = None
 
     @classmethod
     def from_piece(
@@ -485,7 +632,7 @@ class _GaugeFieldLayout:
 
     field: Field
     lorentz_slot: int
-    adjoint_kind: str | None = None
+    adjoint_kind: Optional[str] = None
     adjoint_slot: Optional[int] = None
 
     @classmethod
@@ -654,11 +801,6 @@ def _validate_expandable_covariant_field(
     *,
     purpose: str,
 ):
-    if field.kind not in ("fermion", "scalar"):
-        raise ValueError(
-            f"{purpose} currently supports only fermion or scalar matter fields; "
-            f"got kind={field.kind!r} for field {field.name!r}."
-        )
     if field.self_conjugate:
         raise ValueError(
             f"{purpose} currently supports only non-self-conjugate matter fields; "
@@ -667,6 +809,7 @@ def _validate_expandable_covariant_field(
 
 
 def _covariant_gauge_metadata(
+    model: Optional[Model],
     field: Field,
     gauge_group: GaugeGroup,
     gauge_field: Field,
@@ -678,7 +821,12 @@ def _covariant_gauge_metadata(
         rep = None
         rep_slots: tuple[int, ...] = ()
     else:
-        rep, rep_slots = _nonabelian_rep_and_slots(field, gauge_group)
+        rep, rep_slots = _nonabelian_rep_and_slots(
+            field,
+            gauge_group,
+            model=model,
+            gauge_field=gauge_field,
+        )
 
     return CovariantGaugeMetadata(
         gauge_group=gauge_group,
@@ -693,6 +841,7 @@ def _covariant_gauge_metadata(
 
 
 def _expand_field_gauge_pieces(
+    model: Optional[Model] = None,
     *,
     field: Field,
     gauge_group: GaugeGroup,
@@ -706,6 +855,7 @@ def _expand_field_gauge_pieces(
         raise ValueError(f"Expected a vector gauge field, got kind={gauge_field.kind!r}.")
 
     metadata = _covariant_gauge_metadata(
+        model,
         field,
         gauge_group,
         gauge_field,
@@ -764,6 +914,7 @@ def expand_cov_der(
         gauge_field = model.gauge_boson_field(group)
         gauge_pieces.extend(
             _expand_field_gauge_pieces(
+                model=model,
                 field=field,
                 gauge_group=group,
                 gauge_field=gauge_field,
@@ -793,17 +944,20 @@ def _fresh_generic_covd_label(prefix: str, counters: dict[str, int], stem: str) 
     return _symbol(f"{prefix}_{stem}_{counters[prefix]}")
 
 
-def _generic_covd_piece_prefactor(field: Field, *, conjugated: bool, coupling):
-    if field.kind == "fermion":
-        sign = -1 if conjugated else 1
-    elif field.kind == "scalar":
-        sign = 1 if conjugated else -1
-    else:
-        raise ValueError(
-            "Generic CovD monomial expansion currently supports only fermion "
-            f"or scalar matter fields, got kind={field.kind!r}."
-        )
-    return sign * Expression.I * coupling
+def _generic_covd_piece_prefactor(
+    *,
+    conjugated: bool,
+    action: _GaugeAction,
+):
+    sign = 1 if conjugated else -1
+    if action.representation is not None:
+        gauge_adj_slot = _adjoint_index_slot(action.gauge_field)
+        if (
+            gauge_adj_slot is not None
+            and action.representation.index == action.gauge_field.indices[gauge_adj_slot]
+        ):
+            return sign * action.coupling
+    return sign * Expression.I * action.coupling
 
 
 def _generic_covd_matter_factor(
@@ -879,18 +1033,29 @@ def _expand_generic_covd_factor(
         if expanded.conjugated:
             inline_factors.append(matter_factor)
             if action.representation is not None:
-                inline_factors.append(GeneratorFactor(action.adjoint_label))
+                inline_factors.append(
+                    GeneratorFactor(
+                        action.adjoint_label,
+                        generator_builder=action.representation.generator_builder,
+                        index_kind=action.representation.index.kind,
+                    )
+                )
         else:
             if action.representation is not None:
-                inline_factors.append(GeneratorFactor(action.adjoint_label))
+                inline_factors.append(
+                    GeneratorFactor(
+                        action.adjoint_label,
+                        generator_builder=action.representation.generator_builder,
+                        index_kind=action.representation.index.kind,
+                    )
+                )
             inline_factors.append(matter_factor)
 
         branches.append(
             _GenericCovariantBranch(
                 coefficient=_generic_covd_piece_prefactor(
-                    expanded.field,
                     conjugated=expanded.conjugated,
-                    coupling=action.coupling,
+                    action=action,
                 ),
                 inline_factors=tuple(inline_factors),
                 tail_factors=(
@@ -905,6 +1070,81 @@ def _expand_generic_covd_factor(
     return tuple(branches)
 
 
+def _differentiate_declared_branch_field_factor(factor, *, lorentz_index):
+    if isinstance(factor, _FieldFactor):
+        return PartialDerivativeFactor(
+            field=factor.field,
+            lorentz_indices=(lorentz_index,),
+            conjugated=factor.conjugated,
+            labels=factor.labels,
+        )
+    if isinstance(factor, PartialDerivativeFactor):
+        return PartialDerivativeFactor(
+            field=factor.field,
+            lorentz_indices=factor.lorentz_indices + (lorentz_index,),
+            conjugated=factor.conjugated,
+            labels=factor.labels,
+        )
+    return None
+
+
+def _differentiate_generic_covariant_branch(
+    branch: _GenericCovariantBranch,
+    *,
+    lorentz_index,
+) -> tuple[_GenericCovariantBranch, ...]:
+    factors = list(branch.inline_factors + branch.tail_factors)
+    inline_count = len(branch.inline_factors)
+    differentiated: list[_GenericCovariantBranch] = []
+
+    for idx, factor in enumerate(factors):
+        differentiated_factor = _differentiate_declared_branch_field_factor(
+            factor,
+            lorentz_index=lorentz_index,
+        )
+        if differentiated_factor is None:
+            continue
+        updated = list(factors)
+        updated[idx] = differentiated_factor
+        differentiated.append(
+            _GenericCovariantBranch(
+                coefficient=branch.coefficient,
+                inline_factors=tuple(updated[:inline_count]),
+                tail_factors=tuple(updated[inline_count:]),
+            )
+        )
+
+    if differentiated:
+        return tuple(differentiated)
+    raise ValueError(
+        "Cannot apply PartialD(...) to expanded CovD(...) branch with no field factors."
+    )
+
+
+def _expand_differentiated_covd_factor(
+    model: Model,
+    factor: DifferentiatedCovariantFactor,
+    *,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    branches = _expand_generic_covd_factor(
+        model,
+        factor.covariant_factor,
+        counters=counters,
+    )
+    for lorentz_index in factor.lorentz_indices:
+        next_branches: list[_GenericCovariantBranch] = []
+        for branch in branches:
+            next_branches.extend(
+                _differentiate_generic_covariant_branch(
+                    branch,
+                    lorentz_index=lorentz_index,
+                )
+            )
+        branches = tuple(next_branches)
+    return branches
+
+
 def _expand_generic_declared_covariant_monomial(
     model: Model,
     term: _DeclaredMonomial,
@@ -913,7 +1153,19 @@ def _expand_generic_declared_covariant_monomial(
     branches = (_GenericCovariantBranch(),)
 
     for factor in term.factors:
-        if not isinstance(factor, CovariantDerivativeFactor):
+        if isinstance(factor, CovariantDerivativeFactor):
+            replacements = _expand_generic_covd_factor(
+                model,
+                factor,
+                counters=counters,
+            )
+        elif isinstance(factor, DifferentiatedCovariantFactor):
+            replacements = _expand_differentiated_covd_factor(
+                model,
+                factor,
+                counters=counters,
+            )
+        else:
             branches = tuple(
                 _GenericCovariantBranch(
                     coefficient=branch.coefficient,
@@ -923,12 +1175,6 @@ def _expand_generic_declared_covariant_monomial(
                 for branch in branches
             )
             continue
-
-        replacements = _expand_generic_covd_factor(
-            model,
-            factor,
-            counters=counters,
-        )
         next_branches: list[_GenericCovariantBranch] = []
         for branch in branches:
             for replacement in replacements:
@@ -1308,7 +1554,7 @@ def compile_yang_mills_cubic_term(
     rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}_cubic")
     coupling = (
         coefficient
-        * gauge_group.coupling
+        * (-gauge_group.coupling)
         * _build_structure_constant(gauge_group, adj_left, adj_middle, adj_right)
         * lorentz_metric(alpha, gamma)
         * lorentz_metric(rho, beta)
@@ -1430,26 +1676,31 @@ def compile_gauge_fixing_term(model: Model, term: GaugeFixingTerm) -> tuple[Inte
     rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}_gf")
     rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}_gf")
     identity_factor, fields = layout.bilinear_occurrences(alpha, beta)
-
-    coupling = (
+    label = term.label or f"-(1/2 {term.xi}) ({gauge_group.name} gauge fixing)"
+    manual_term = (
         -term.coefficient
         * _HALF
         / term.xi
         * identity_factor
         * lorentz_metric(alpha, rho_left)
         * lorentz_metric(beta, rho_right)
+        * PartialD(fields[0], rho_left)
+        * PartialD(fields[1], rho_right)
     )
-    label = term.label or f"-(1/2 {term.xi}) ({gauge_group.name} gauge fixing)"
+    interaction = _lower_local_interaction_monomial(manual_term)
+    if interaction is None:
+        raise ValueError(
+            "Gauge-fixing compilation could not lower the helper form through "
+            "the ordinary local interaction path."
+        )
 
     return (
-        InteractionTerm(
-            coupling=coupling,
-            fields=fields,
-            derivatives=(
-                DerivativeAction(target=0, lorentz_index=rho_left),
-                DerivativeAction(target=1, lorentz_index=rho_right),
-            ),
+        replace(
+            interaction,
             label=label,
+            sector="gauge_fixing",
+            origin="GaugeFixing",
+            origin_group=gauge_group,
         ),
     )
 
@@ -1458,7 +1709,7 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
     """Compile the ordinary unbroken Faddeev-Popov ghost sector.
 
     For the current conventions this corresponds to:
-    ``-cbar^a partial^mu(D_mu c)^a = (partial cbar)(partial c) - g f (partial cbar) A c``.
+    ``-cbar^a partial^mu(D_mu c)^a = (partial cbar)(partial c) + g f (partial cbar) A c``.
     """
     gauge_group = _require_declared_gauge_group(
         model,
@@ -1517,7 +1768,7 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
 
     ghost_gauge = InteractionTerm(
         coupling=(
-            -term.coefficient
+            term.coefficient
             * gauge_group.coupling
             * _build_structure_constant(gauge_group, a_bar, a_gauge, a_ghost)
             * lorentz_metric(rho, mu)
@@ -1563,7 +1814,7 @@ def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, .
                         fermion=field,
                         gauge_group=gauge_group,
                         gauge_field=gauge_field,
-                        prefactor=-1,
+                        prefactor=1,
                     )
                 )
                 continue
@@ -1632,7 +1883,7 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
                 i_psi=i_psi,
                 gauge_action_from_piece=_GaugeAction.from_piece,
                 slot_suffix=_slot_suffix,
-                prefactor=-term.coefficient,
+                prefactor=term.coefficient,
                 label=label,
                 lorentz_label=mu,
                 spectator_exclude_slots={fermion_spinor_slot},
@@ -1706,7 +1957,7 @@ def compile_complex_scalar_kinetic_term(
 
 def _compile_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
     *,
     include_free_bilinear: bool,
     spectators: tuple[tuple[Field, bool], ...] = (),
@@ -1727,7 +1978,7 @@ def _compile_covariant_core(
 
 def _compile_declared_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
     spectators: tuple[tuple[Field, bool], ...] = (),
 ) -> tuple[InteractionTerm, ...]:
     """Compile one declarative ``CovD`` monomial as the full kinetic operator."""
@@ -1745,7 +1996,7 @@ def _compile_declared_covariant_core(
 
 def _compile_legacy_covariant_core(
     model: Model,
-    core: DiracKineticTerm | ComplexScalarKineticTerm,
+    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
 ) -> tuple[InteractionTerm, ...]:
     """Compile one legacy kinetic declaration as gauge-interaction-only."""
     return _compile_legacy_covariant_core_impl(

@@ -382,13 +382,13 @@ def _copy_index_label_value(value):
     return value
 
 
-def _copy_index_labels(labels: Mapping | None) -> dict:
+def _copy_index_labels(labels: Optional[Mapping]) -> dict:
     if not labels:
         return {}
     return {kind: _copy_index_label_value(value) for kind, value in labels.items()}
 
 
-def _normalize_index_labels(field: "Field", labels: Mapping | None) -> dict:
+def _normalize_index_labels(field: "Field", labels: Optional[Mapping]) -> dict:
     normalized = _copy_index_labels(labels)
     if not normalized:
         return {}
@@ -411,6 +411,36 @@ def _normalize_index_labels(field: "Field", labels: Mapping | None) -> dict:
     return normalized
 
 
+def _field_reference_text(target) -> str:
+    if target is None:
+        return "None"
+    if isinstance(target, Field):
+        return target.name
+    return str(target)
+
+
+def _occurrence_labels_from_call(
+    field: "Field",
+    positional_labels: tuple[object, ...],
+    labels: Optional[Mapping],
+) -> dict:
+    if len(positional_labels) > len(field.indices):
+        raise TypeError(
+            f"Field {field.name!r} takes at most {len(field.indices)} index label(s), "
+            f"got {len(positional_labels)}."
+        )
+
+    slot_labels = {slot: value for slot, value in enumerate(positional_labels)}
+    explicit = field.unpack_slot_labels(labels) if labels is not None else {}
+    for slot, value in explicit.items():
+        if slot in slot_labels and slot_labels[slot] != value:
+            raise TypeError(
+                f"Field {field.name!r} received conflicting labels for slot {slot + 1}."
+            )
+        slot_labels[slot] = value
+    return field.pack_slot_labels(slot_labels)
+
+
 @dataclass(frozen=True)
 class Field:
     """Particle field declaration (mirrors M$ClassesDescription)."""
@@ -424,8 +454,17 @@ class Field:
     conjugate_symbol: object = None
     mass: object = None
     quantum_numbers: Mapping[str, object] = field(default_factory=dict)
+    ghost_of: object = None
 
     def __post_init__(self):
+        if self.ghost_of is not None:
+            if self.kind is None:
+                object.__setattr__(self, "kind", "ghost")
+            elif self.kind != "ghost":
+                raise ValueError(
+                    f"Field {self.name!r} declares ghost_of={self.ghost_of!r} "
+                    "but kind is not 'ghost'. Use GhostField(...) or kind='ghost'."
+                )
         if self.kind is None:
             object.__setattr__(self, "kind", _infer_kind(self.spin))
         if self.statistics is None:
@@ -448,13 +487,18 @@ class Field:
             str(self.conjugate_symbol),
             str(self.mass),
             quantum_numbers,
+            _field_reference_text(self.ghost_of),
         ))
+
+    @property
+    def is_ghost(self) -> bool:
+        return self.kind == "ghost"
 
     def role_for(self, conjugated: bool = False) -> FieldRole:
         """Return the interaction/external-leg role implied by this field slot."""
         if self.kind == "fermion":
             return ROLE_PSIBAR if conjugated else ROLE_PSI
-        if self.kind == "ghost":
+        if self.is_ghost:
             return ROLE_GHOST_DAG if conjugated else ROLE_GHOST
         if self.kind == "vector":
             return ROLE_VECTOR
@@ -515,7 +559,7 @@ class Field:
 
         return packed
 
-    def unpack_slot_labels(self, labels: Mapping | None) -> dict[int, object]:
+    def unpack_slot_labels(self, labels: Optional[Mapping]) -> dict[int, object]:
         """Invert ``pack_slot_labels`` back to slot-indexed labels."""
         normalized = _normalize_index_labels(self, labels)
         if not normalized:
@@ -548,7 +592,7 @@ class Field:
 
         return unpacked
 
-    def occurrence(self, *, conjugated: bool = False, labels: dict | None = None):
+    def occurrence(self, *, conjugated: bool = False, labels: Optional[dict] = None):
         """Create a FieldOccurrence of this field in an interaction term."""
         from .interactions import FieldOccurrence
 
@@ -570,7 +614,7 @@ class Field:
         conjugated: bool = False,
         species=None,
         spin=None,
-        labels: dict | None = None,
+        labels: Optional[dict] = None,
     ):
         """Create an ExternalLeg for this field."""
         from .interactions import ExternalLeg
@@ -604,6 +648,19 @@ class Field:
 
         return _DeclaredMonomial.from_factor(_FieldFactor(self)).__radd__(other)
 
+    def __call__(self, *labels, conjugated: bool = False, index_labels: Optional[Mapping] = None):
+        """Shorthand for ``field.occurrence(...)`` with positional slot labels.
+
+        Examples:
+        - ``Photon(mu)`` for a vector field with one Lorentz index
+        - ``Gluon(mu, a)`` for a field with ``(Lorentz, adjoint)`` slots
+        - ``GhostG(a)`` for an adjoint ghost
+        """
+        return self.occurrence(
+            conjugated=conjugated,
+            labels=_occurrence_labels_from_call(self, labels, index_labels),
+        )
+
 
 # ---------------------------------------------------------------------------
 # ConjugateField  (conjugation marker for the Lagrangian API)
@@ -633,3 +690,44 @@ class ConjugateField:
         from .declared import _DeclaredMonomial, _FieldFactor
 
         return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__radd__(other)
+
+    def __call__(self, *labels, index_labels: Optional[Mapping] = None):
+        """Shorthand for ``field.occurrence(conjugated=True, ...)``."""
+        return self.field.occurrence(
+            conjugated=True,
+            labels=_occurrence_labels_from_call(self.field, labels, index_labels),
+        )
+
+
+def GhostField(
+    name: str,
+    *,
+    ghost_of=None,
+    spin=0,
+    self_conjugate: bool = False,
+    indices: tuple[IndexType, ...] = (),
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+) -> Field:
+    """Typed ghost-field declaration.
+
+    This keeps the public declaration closer to FeynRules-style model files:
+    the field is marked as a ghost, remembers which gauge boson it belongs to,
+    and defaults to ghost number ``+1`` unless the caller overrides it.
+    """
+    numbers = dict(quantum_numbers or {})
+    numbers.setdefault("GhostNumber", 1)
+    return Field(
+        name,
+        spin=spin,
+        kind="ghost",
+        self_conjugate=self_conjugate,
+        indices=indices,
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=numbers,
+        ghost_of=ghost_of,
+    )

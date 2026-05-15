@@ -89,7 +89,7 @@ class Model:
     fields: tuple[Field, ...] = ()
     parameters: tuple[Parameter, ...] = ()
     interactions: tuple[InteractionTerm, ...] = ()
-    lagrangian_decl: DeclaredLagrangian | None = None
+    lagrangian_decl: Optional[DeclaredLagrangian] = None
     covariant_terms: tuple[CovariantTerm, ...] = ()
     gauge_kinetic_terms: tuple[GaugeKineticTerm, ...] = ()
     gauge_fixing_terms: tuple[GaugeFixingTerm, ...] = ()
