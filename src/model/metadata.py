@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
-from typing import Callable, Literal, Mapping, Optional
+from typing import Callable, Literal, Mapping, Optional, Sequence
+
+_REP_ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 from symbolica import Expression, S
+from symbolica.community.spenso import Representation
 
 from symbolic.spenso_structures import (
     BISPINOR,
@@ -72,17 +76,98 @@ ROLE_GHOST_DAG = FieldRole("ghost_dag", "fermion", conjugated=True)
 # IndexType
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class IndexType:
     """One kind of index that a field can carry (spinor, Lorentz, colour, ...)."""
+
     name: str
     representation: object
     kind: str
+    dimension: Optional[int] = None
+    is_flavor: bool = False
     prefix: str = ""
 
     def __post_init__(self):
         if not self.prefix:
             object.__setattr__(self, "prefix", self.kind[:1])
+
+
+def representation_family(rep: object) -> str:
+    """Stable Spenso representation key for index-family checks."""
+    return _REP_ANSI.sub("", str(rep))
+
+
+def is_spinor_index(index: IndexType) -> bool:
+    return representation_family(index.representation).startswith("bis")
+
+
+def is_lorentz_index(index: IndexType) -> bool:
+    return representation_family(index.representation).startswith("mink")
+
+
+def indices_compatible_for_labels(left: IndexType, right: IndexType) -> bool:
+    """Whether two declared indices may share one symbolic label in a monomial."""
+    if left == right or left.kind == right.kind:
+        return True
+    if is_spinor_index(left) and is_spinor_index(right):
+        return True
+    if is_lorentz_index(left) and is_lorentz_index(right):
+        return True
+    return False
+
+
+def spinor_kind_for(indices: Sequence[IndexType]) -> str:
+    for index in indices:
+        if is_spinor_index(index):
+            return index.kind
+    return SPINOR_KIND
+
+
+def lorentz_kind_for(indices: Sequence[IndexType]) -> str:
+    for index in indices:
+        if is_lorentz_index(index):
+            return index.kind
+    return LORENTZ_KIND
+
+
+def lorentz_index_for(indices: Sequence[IndexType]) -> Optional[IndexType]:
+    for index in indices:
+        if is_lorentz_index(index):
+            return index
+    return None
+
+
+def lorentz_slots_for(field) -> tuple[int, ...]:
+    return tuple(
+        slot for slot, index in enumerate(field.indices) if is_lorentz_index(index)
+    )
+
+
+def spinor_slots_for(field) -> tuple[int, ...]:
+    return tuple(
+        slot for slot, index in enumerate(field.indices) if is_spinor_index(index)
+    )
+
+
+def unique_lorentz_slot(field, *, purpose: str) -> int:
+    slots = lorentz_slots_for(field)
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} requires field {field.name!r} to expose exactly one Lorentz slot; "
+            f"found {len(slots)}."
+        )
+    return slots[0]
+
+
+def unique_spinor_slot(field, *, purpose: str) -> int:
+    slots = spinor_slots_for(field)
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} requires field {field.name!r} to expose exactly one spinor slot; "
+            f"found {len(slots)}."
+        )
+    return slots[0]
 
 
 SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, prefix="i")
@@ -92,6 +177,112 @@ COLOR_ADJ_INDEX = IndexType("ColorAdj", COLOR_ADJ, COLOR_ADJ_KIND, prefix="a")
 # SU(2)_L weak isospin: doublet (fundamental) and triplet (adjoint).
 WEAK_FUND_INDEX = IndexType("WeakFund", WEAK_FUND, WEAK_FUND_KIND, prefix="w")
 WEAK_ADJ_INDEX = IndexType("WeakAdj", WEAK_ADJ, WEAK_ADJ_KIND, prefix="aw")
+
+
+def flavor_index(
+    name: str = "Flavor",
+    dimension: int = 3,
+    *,
+    prefix: str = "f",
+    kind: Optional[str] = None,
+) -> IndexType:
+    """Return a standard flavor index type for class-member expansion."""
+
+    return IndexType(
+        name,
+        Representation.cof(dimension),
+        kind or name.lower(),
+        dimension=dimension,
+        is_flavor=True,
+        prefix=prefix,
+    )
+
+
+def _default_conjugate_symbol(name: str):
+    return S(f"{name}bar")
+
+
+def _validate_dirac_helper_indices(helper_name: str, indices: tuple["IndexType", ...]):
+    if any(index == SPINOR_INDEX for index in indices):
+        raise ValueError(
+            f"{helper_name} appends SPINOR_INDEX automatically; omit it from `indices`."
+        )
+
+
+def dirac_field(
+    name: str,
+    *,
+    indices: tuple[IndexType, ...] = (),
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+    class_members: tuple = (),
+    flavor_index: Optional[IndexType] = None,
+) -> "Field":
+    """Declare a Dirac field with the spinor slot appended automatically.
+
+    When ``class_members`` is given, the field is a flavor class (à la
+    FeynRules ``ClassMembers``). Members may be passed either as plain names
+    (strings) or as fully-constructed Dirac ``Field`` instances; string members
+    are auto-built with the same metadata as the class field minus the flavor
+    index slot. Their concrete instances are reachable via ``field.class_members``.
+    """
+
+    indices = tuple(indices)
+    _validate_dirac_helper_indices("dirac_field(...)", indices)
+    if symbol is None:
+        symbol = S(name)
+    if conjugate_symbol is None:
+        conjugate_symbol = _default_conjugate_symbol(name)
+    return Field(
+        name,
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        indices=indices + (SPINOR_INDEX,),
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=dict(quantum_numbers or {}),
+        flavor_index=flavor_index,
+        class_members=tuple(class_members),
+    )
+
+
+def scalar_field(
+    name: str,
+    *,
+    self_conjugate: bool = True,
+    indices: tuple[IndexType, ...] = (),
+    symbol=None,
+    conjugate_symbol=None,
+    mass=None,
+    quantum_numbers: Optional[Mapping[str, object]] = None,
+    class_members: tuple = (),
+    flavor_index: Optional[IndexType] = None,
+) -> "Field":
+    """Declare a scalar field with lightweight defaults.
+
+    Supports flavor-class declarations through ``class_members`` /
+    ``flavor_index`` (see :func:`dirac_field`).
+    """
+
+    if symbol is None:
+        symbol = S(name)
+    if conjugate_symbol is None and not self_conjugate:
+        conjugate_symbol = _default_conjugate_symbol(name)
+    return Field(
+        name,
+        spin=0,
+        self_conjugate=self_conjugate,
+        indices=tuple(indices),
+        symbol=symbol,
+        conjugate_symbol=conjugate_symbol,
+        mass=mass,
+        quantum_numbers=dict(quantum_numbers or {}),
+        flavor_index=flavor_index,
+        class_members=tuple(class_members),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +452,7 @@ class ParameterAssumptions:
     internal: bool
     external: bool
     has_value: bool
+    allow_summation: Optional[bool]
     value: object = None
 
 
@@ -282,10 +474,27 @@ class Parameter:
     complex_param: bool = False
     internal: bool = True
     value: object = None
+    components: Mapping[tuple[object, ...], object] = field(default_factory=dict)
+    allow_summation: Optional[bool] = None
 
     def __post_init__(self):
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
+        if not self.indices and self.components:
+            raise ValueError(
+                f"Parameter {self.name!r} defines indexed components but carries no indices."
+            )
+        normalized_components = {}
+        for raw_key, component_value in self.components.items():
+            key = raw_key if isinstance(raw_key, tuple) else (raw_key,)
+            if len(key) != len(self.indices):
+                raise ValueError(
+                    f"Parameter {self.name!r} expects {len(self.indices)} component index value(s), "
+                    f"got {len(key)} for key {raw_key!r}."
+                )
+            normalized_components[tuple(key)] = component_value
+        if normalized_components:
+            object.__setattr__(self, "components", normalized_components)
 
     @property
     def is_real(self) -> bool:
@@ -307,6 +516,19 @@ class Parameter:
     def has_value(self) -> bool:
         return self.value is not None
 
+    def permits_label_summation(self) -> bool:
+        """Whether one flavor label may appear more than twice in one term.
+
+        Single-index flavor parameters default to True, matching the usual
+        FeynRules diagonal shorthand ``y(f)`` in ``y(f) * l.bar(f) * l(f)``.
+        Set ``allow_summation=False`` to reject that pattern explicitly.
+        """
+        if self.allow_summation is False:
+            return False
+        if self.allow_summation is True:
+            return True
+        return len(self.indices) == 1 and self.indices[0].is_flavor
+
     def assumptions(self) -> ParameterAssumptions:
         """Return a structured summary of the parameter metadata."""
 
@@ -319,8 +541,19 @@ class Parameter:
             internal=self.is_internal,
             external=self.is_external,
             has_value=self.has_value,
+            allow_summation=self.allow_summation,
             value=self.value,
         )
+
+    def __call__(self, *labels):
+        if len(labels) != len(self.indices):
+            raise TypeError(
+                f"Parameter {self.name!r} takes {len(self.indices)} index label(s), "
+                f"got {len(labels)}."
+            )
+        if not labels:
+            return self.symbol
+        return self.symbol(*labels)
 
     def __mul__(self, other):
         return self.symbol * other
@@ -455,6 +688,8 @@ class Field:
     mass: object = None
     quantum_numbers: Mapping[str, object] = field(default_factory=dict)
     ghost_of: object = None
+    flavor_index: Optional[IndexType] = None
+    class_members: tuple = ()
 
     def __post_init__(self):
         if self.ghost_of is not None:
@@ -471,6 +706,97 @@ class Field:
             object.__setattr__(self, "statistics", _infer_statistics(self.kind))
         if self.symbol is None:
             object.__setattr__(self, "symbol", S(self.name))
+        if self.flavor_index is not None and not self.flavor_index.is_flavor:
+            raise ValueError(
+                f"Field {self.name!r} declares flavor_index={self.flavor_index.name!r}, "
+                "but that index type is not marked as a flavor index."
+            )
+        if self.class_members and self.flavor_index is None:
+            raise ValueError(
+                f"Field {self.name!r} declares class_members but no flavor_index."
+            )
+        if self.class_members:
+            flavor_slots = tuple(
+                slot
+                for slot, index in enumerate(self.indices)
+                if index == self.flavor_index
+            )
+            if len(flavor_slots) != 1:
+                raise ValueError(
+                    f"Field {self.name!r} must carry exactly one slot of flavor_index "
+                    f"{self.flavor_index.name!r} when class_members are declared."
+                )
+            if self.flavor_index.dimension is None:
+                raise ValueError(
+                    f"Field {self.name!r} uses flavor index {self.flavor_index.name!r} "
+                    "for class_members, but that index type has no declared dimension."
+                )
+            if len(self.class_members) != self.flavor_index.dimension:
+                raise ValueError(
+                    f"Field {self.name!r} declares {len(self.class_members)} class member(s), "
+                    f"but flavor index {self.flavor_index.name!r} has dimension "
+                    f"{self.flavor_index.dimension}."
+                )
+            flavor_slot = flavor_slots[0]
+            member_indices = self.indices[:flavor_slot] + self.indices[flavor_slot + 1 :]
+            built_members: list[Field] = []
+            for member in self.class_members:
+                if isinstance(member, str):
+                    member = self._build_class_member(member, member_indices)
+                if not isinstance(member, Field):
+                    raise TypeError(
+                        f"Field {self.name!r} class_members must be strings or Field instances."
+                    )
+                if any(index.is_flavor for index in member.indices):
+                    raise ValueError(
+                        f"Field {self.name!r} class member {member.name!r} still carries a flavor index."
+                    )
+                if member.indices != member_indices:
+                    raise ValueError(
+                        f"Field {self.name!r} class member {member.name!r} must carry "
+                        f"indices {member_indices!r}, got {member.indices!r}."
+                    )
+                if (
+                    str(Fraction(member.spin)) != str(Fraction(self.spin))
+                    or member.kind != self.kind
+                    or member.statistics != self.statistics
+                    or member.self_conjugate != self.self_conjugate
+                ):
+                    raise ValueError(
+                        f"Field {self.name!r} class member {member.name!r} must match the "
+                        "generic field spin/statistics/conjugation metadata."
+                    )
+                built_members.append(member)
+            object.__setattr__(self, "class_members", tuple(built_members))
+
+    def _build_class_member(
+        self,
+        name: str,
+        member_indices: tuple[IndexType, ...],
+    ) -> "Field":
+        """Build one concrete class member from a name string.
+
+        Members inherit the parent's spin, statistics, kind, self_conjugate,
+        mass, and quantum_numbers, and carry the parent's indices minus the
+        flavor index slot. The member's own `symbol`/`conjugate_symbol` default
+        to ``S(name)``/``S(name + 'bar')`` (the latter only when not
+        self-conjugate).
+        """
+        conjugate_symbol = (
+            _default_conjugate_symbol(name) if not self.self_conjugate else None
+        )
+        return Field(
+            name,
+            spin=self.spin,
+            self_conjugate=self.self_conjugate,
+            indices=member_indices,
+            kind=self.kind,
+            statistics=self.statistics,
+            symbol=S(name),
+            conjugate_symbol=conjugate_symbol,
+            mass=self.mass,
+            quantum_numbers=dict(self.quantum_numbers),
+        )
 
     def __hash__(self):
         quantum_numbers = tuple(
@@ -480,7 +806,16 @@ class Field:
             self.name,
             str(Fraction(self.spin)),
             self.self_conjugate,
-            tuple((index.name, index.kind, index.prefix) for index in self.indices),
+            tuple(
+                (
+                    index.name,
+                    index.kind,
+                    index.prefix,
+                    index.dimension,
+                    index.is_flavor,
+                )
+                for index in self.indices
+            ),
             self.kind,
             self.statistics,
             str(self.symbol),
@@ -488,11 +823,44 @@ class Field:
             str(self.mass),
             quantum_numbers,
             _field_reference_text(self.ghost_of),
+            None
+            if self.flavor_index is None
+            else (
+                self.flavor_index.name,
+                self.flavor_index.kind,
+                self.flavor_index.prefix,
+                self.flavor_index.dimension,
+                self.flavor_index.is_flavor,
+            ),
+            tuple(member.name for member in self.class_members),
         ))
 
     @property
     def is_ghost(self) -> bool:
         return self.kind == "ghost"
+
+    @property
+    def is_flavor_generic(self) -> bool:
+        return bool(self.class_members)
+
+    def flavor_index_slot(self) -> Optional[int]:
+        if self.flavor_index is None:
+            return None
+        matches = self.index_positions(index=self.flavor_index)
+        if len(matches) != 1:
+            return None
+        return matches[0]
+
+    def class_member_for(self, flavor_value: int) -> "Field":
+        if not self.class_members:
+            raise ValueError(
+                f"Field {self.name!r} has no class_members for flavor expansion."
+            )
+        if flavor_value < 1 or flavor_value > len(self.class_members):
+            raise ValueError(
+                f"Field {self.name!r} has no class member for flavor value {flavor_value}."
+            )
+        return self.class_members[flavor_value - 1]
 
     def role_for(self, conjugated: bool = False) -> FieldRole:
         """Return the interaction/external-leg role implied by this field slot."""

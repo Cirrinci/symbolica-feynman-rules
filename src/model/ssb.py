@@ -30,11 +30,25 @@ from .core import Model
 from .declared import PartialD
 from .interactions import DerivativeAction, InteractionTerm
 from .lagrangian import DeclaredLagrangian
-from .metadata import Field, IndexType, LORENTZ_INDEX, SPINOR_INDEX, WEAK_ADJ_INDEX, WEAK_FUND_INDEX
+from .metadata import (
+    Field,
+    IndexType,
+    LORENTZ_INDEX,
+    SPINOR_INDEX,
+    WEAK_ADJ_INDEX,
+    WEAK_FUND_INDEX,
+)
 
 _HALF = Expression.num(1) / Expression.num(2)
 _INV_SQRT2 = _HALF ** _HALF
-FLAVOR_INDEX = IndexType("FlavorFund", Representation.cof(3), "flavor", prefix="f")
+FLAVOR_INDEX = IndexType(
+    "FlavorFund",
+    Representation.cof(3),
+    "flavor",
+    dimension=3,
+    is_flavor=True,
+    prefix="f",
+)
 
 #===============================================================
 #Pretty-printable linear relations for Higgs expansion and gauge mixing

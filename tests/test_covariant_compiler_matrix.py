@@ -2,7 +2,7 @@ from fractions import Fraction
 
 from symbolica import S, Expression  # noqa: E402
 
-from compiler.gauge import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
+from compiler.gauge import compile_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -144,7 +144,6 @@ def test_covariant_dirac_qcd_current():
     )
 
     compiled = compile_covariant_terms(model)
-    assert with_compiled_covariant_terms(model).interactions == compiled
     assert len(compiled) == 2
 
     legs = (
@@ -632,7 +631,6 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
     )
 
     compiled = compile_covariant_terms(model)
-    assert with_compiled_covariant_terms(model).interactions == compiled
     assert len(compiled) == 4
     metric_term, cross_term, cubic_term, quartic_term = compiled
 

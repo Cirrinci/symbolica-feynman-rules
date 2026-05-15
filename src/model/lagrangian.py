@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
-from typing import Optional, Union
+from dataclasses import dataclass, field as dataclass_field
+from typing import Iterable, Optional, Union
 
 from symbolica import Expression, S
 
@@ -16,6 +16,11 @@ from .interactions import (
     _parse_field_arg,
     _term_matches_fields,
 )
+from .metadata import IndexType
+
+
+FlavorExpandOption = bool | IndexType | Iterable[IndexType]
+_EXPAND_ALL_FLAVOR_INDICES = object()
 
 
 def _normalize_interaction_terms_input(terms):
@@ -58,6 +63,69 @@ def _compiled_lagrangian_context_error():
     from .lowering import _compiled_lagrangian_context_error as impl
 
     return impl()
+
+
+def _merge_unique_metadata(left, right):
+    merged = list(left)
+    for item in right:
+        if any(existing is item for existing in merged):
+            continue
+        merged.append(item)
+    return tuple(merged)
+
+
+def _normalize_flavor_expand_option(flavor_expand):
+    if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES:
+        return flavor_expand
+    if isinstance(flavor_expand, bool):
+        return _EXPAND_ALL_FLAVOR_INDICES if flavor_expand else False
+    if isinstance(flavor_expand, IndexType):
+        indices = (flavor_expand,)
+    else:
+        try:
+            indices = tuple(flavor_expand)
+        except TypeError as exc:
+            raise TypeError(
+                "`flavor_expand` must be a boolean, one flavor index, or an iterable of flavor indices."
+            ) from exc
+
+    normalized: list[IndexType] = []
+    for index in indices:
+        if not isinstance(index, IndexType):
+            raise TypeError(
+                "`flavor_expand` iterable entries must be IndexType instances."
+            )
+        if not index.is_flavor:
+            raise ValueError(
+                f"`flavor_expand` only accepts flavor indices; got {index.name!r}."
+            )
+        if index not in normalized:
+            normalized.append(index)
+    return tuple(normalized)
+
+
+def _flavor_expand_cache_key(flavor_expand) -> tuple[object, ...]:
+    """Return a hashable cache key for one normalized ``flavor_expand`` option."""
+
+    if flavor_expand is False:
+        return ("none",)
+    if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES:
+        return ("all",)
+
+    selected_identifiers = sorted(
+        (
+            index.name,
+            index.kind,
+            index.dimension,
+            index.is_flavor,
+            index.prefix,
+        )
+        for index in flavor_expand
+    )
+    return (
+        "selected",
+        tuple(selected_identifiers),
+    )
 
 
 def _field_arg_from_occurrence(occurrence):
@@ -188,39 +256,6 @@ def _classify_term_sector(term) -> str:
     return "unknown"
 
 
-def _base_field_match_key(field_obj):
-    """Stable field key that ignores external conjugation status."""
-
-    return _field_match_key(field_obj, False)
-
-
-def _is_canonical_mass_like_pair(first_occ, second_occ) -> bool:
-    """Return whether a compiled 2-point term has the conservative mass shape.
-
-    Supported mass-like patterns:
-    - complex scalar: ``phi.bar * chi``
-    - Dirac fermion: ``psibar * chi``
-
-    Real-scalar off-diagonal bilinears and non-canonical ordering/conjugation
-    patterns are intentionally ignored rather than guessed.
-    """
-
-    first_field = first_occ.field
-    second_field = second_occ.field
-    if first_field.kind != second_field.kind:
-        return False
-
-    if first_field.kind == "scalar":
-        if first_field.self_conjugate or second_field.self_conjugate:
-            return False
-        return bool(first_occ.conjugated and not second_occ.conjugated)
-
-    if first_field.kind == "fermion":
-        return bool(first_occ.conjugated and not second_occ.conjugated)
-
-    return False
-
-
 @dataclass(frozen=True)
 class VertexSignature:
     """One grouped interaction signature available in a compiled Lagrangian.
@@ -264,19 +299,41 @@ class CompiledLagrangian:
     """Collection of compiled ``InteractionTerm`` objects."""
 
     terms: tuple[InteractionTerm, ...] = ()
+    parameters: tuple[object, ...] = ()
+    _expanded_terms_cache: dict[tuple[object, ...], tuple[InteractionTerm, ...]] = dataclass_field(
+        default_factory=dict,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
-    def __init__(self, terms=()):
+    def __setattr__(self, name, value):
+        object.__setattr__(self, name, value)
+        if name in ("terms", "parameters") and hasattr(self, "_expanded_terms_cache"):
+            object.__setattr__(self, "_expanded_terms_cache", {})
+
+    def __init__(self, terms=(), parameters=()):
         self.terms = _normalize_interaction_terms_input(terms)
+        self.parameters = tuple(parameters)
+        self._expanded_terms_cache = {}
 
     @classmethod
     def from_item(cls, item) -> "CompiledLagrangian":
+        if isinstance(item, CompiledLagrangian):
+            return cls(terms=item.terms, parameters=item.parameters)
         return cls(terms=item)
 
     def __add__(self, other):
         if isinstance(other, InteractionTerm):
-            return CompiledLagrangian(terms=self.terms + (other,))
+            return CompiledLagrangian(
+                terms=self.terms + (other,),
+                parameters=self.parameters,
+            )
         if isinstance(other, CompiledLagrangian):
-            return CompiledLagrangian(terms=self.terms + other.terms)
+            return CompiledLagrangian(
+                terms=self.terms + other.terms,
+                parameters=_merge_unique_metadata(self.parameters, other.parameters),
+            )
         if _declared_source_terms_from_item(other) is not None:
             raise ValueError(_compiled_lagrangian_context_error())
         return NotImplemented
@@ -285,9 +342,15 @@ class CompiledLagrangian:
         if other == 0:
             return self
         if isinstance(other, InteractionTerm):
-            return CompiledLagrangian(terms=(other,) + self.terms)
+            return CompiledLagrangian(
+                terms=(other,) + self.terms,
+                parameters=self.parameters,
+            )
         if isinstance(other, CompiledLagrangian):
-            return CompiledLagrangian(terms=other.terms + self.terms)
+            return CompiledLagrangian(
+                terms=other.terms + self.terms,
+                parameters=_merge_unique_metadata(other.parameters, self.parameters),
+            )
         if _declared_source_terms_from_item(other) is not None:
             raise ValueError(_compiled_lagrangian_context_error())
         return NotImplemented
@@ -297,17 +360,42 @@ class CompiledLagrangian:
             return "0"
         return " + ".join(str(term) for term in self.terms)
 
-    def _vertex_field_tuples(self):
+    def _expanded_terms(self, *, flavor_expand: FlavorExpandOption = False) -> tuple[InteractionTerm, ...]:
+        flavor_expand = _normalize_flavor_expand_option(flavor_expand)
+        if not flavor_expand:
+            return self.terms
+
+        cache_key = _flavor_expand_cache_key(flavor_expand)
+        cached = self._expanded_terms_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        from .flavor import expand_flavor_terms
+
+        selected_indices = (
+            None
+            if flavor_expand is _EXPAND_ALL_FLAVOR_INDICES
+            else tuple(flavor_expand)
+        )
+        expanded_terms = expand_flavor_terms(
+            self.terms,
+            parameters=self.parameters,
+            selected_indices=selected_indices,
+        )
+        self._expanded_terms_cache[cache_key] = expanded_terms
+        return expanded_terms
+
+    def _vertex_field_tuples(self, *, flavor_expand: FlavorExpandOption = False):
         vertices = {}
-        for term in self.terms:
+        for term in self._expanded_terms(flavor_expand=flavor_expand):
             key = _term_vertex_key(term)
             if key not in vertices:
                 vertices[key] = _term_vertex_fields(term)
         return tuple(vertices.values())
 
-    def _vertex_signature_entries(self, *, sector=None):
+    def _vertex_signature_entries(self, *, sector=None, flavor_expand: FlavorExpandOption = False):
         grouped = {}
-        for term in self.terms:
+        for term in self._expanded_terms(flavor_expand=flavor_expand):
             term_sector = _classify_term_sector(term)
             if sector is not None and term_sector != sector:
                 continue
@@ -338,12 +426,18 @@ class CompiledLagrangian:
             )
         return tuple(sorted(entries, key=lambda entry: _vertex_signature_sort_key(entry.fields)))
 
-    def _no_matching_interaction_terms_error(self, parsed_fields, *, max_signatures: int = 8) -> ValueError:
+    def _no_matching_interaction_terms_error(
+        self,
+        parsed_fields,
+        *,
+        max_signatures: int = 8,
+        flavor_expand: FlavorExpandOption = False,
+    ) -> ValueError:
         requested = ", ".join(
             _parsed_field_arg_name(field_obj, conjugated)
             for field_obj, conjugated in parsed_fields
         )
-        available_signatures = self.vertex_signatures()
+        available_signatures = self.vertex_signatures(flavor_expand=flavor_expand)
 
         lines = [f"No matching interaction terms for: {requested}.", "Available signatures:"]
         if not available_signatures:
@@ -367,6 +461,7 @@ class CompiledLagrangian:
         signature=None,
         contains_fields=None,
         sector=None,
+        flavor_expand: FlavorExpandOption = False,
     ):
         """Enumerate grouped compiled interaction signatures without extracting vertices.
 
@@ -408,7 +503,10 @@ class CompiledLagrangian:
         )
 
         signatures = []
-        for vertex_signature in self._vertex_signature_entries(sector=sector):
+        for vertex_signature in self._vertex_signature_entries(
+            sector=sector,
+            flavor_expand=flavor_expand,
+        ):
             if arity is not None and vertex_signature.arity != arity:
                 continue
 
@@ -431,6 +529,7 @@ class CompiledLagrangian:
         signature=None,
         contains_fields=None,
         sector=None,
+        flavor_expand: FlavorExpandOption = False,
     ) -> VertexReport:
         """Return a structured summary of available compiled interaction signatures.
 
@@ -439,12 +538,13 @@ class CompiledLagrangian:
         and ``matched_terms`` only.
         """
 
-        all_signatures = self._vertex_signature_entries()
+        all_signatures = self._vertex_signature_entries(flavor_expand=flavor_expand)
         filtered = self.vertex_signatures(
             arity=arity,
             signature=signature,
             contains_fields=contains_fields,
             sector=sector,
+            flavor_expand=flavor_expand,
         )
         return VertexReport(
             signatures=filtered,
@@ -453,63 +553,10 @@ class CompiledLagrangian:
         )
 
     def validate(self):
-        """Return structured diagnostics inferred from compiled interaction terms.
+        """Return structured diagnostics inferred from compiled interaction terms."""
+        from .validation import validate_compiled_lagrangian
 
-        The check is intentionally narrow:
-
-        - It inspects only 2-field, derivative-free interaction terms whose
-          fields are matter (scalar or fermion) and whose ordering matches a
-          conservative mass-like pattern.
-        - It reports off-diagonal canonical pairs as ``mass_structure_mixing``
-          warnings.
-        - Diagonal terms are silent (they are the expected canonical case).
-
-        The check intentionally does not try to detect malformed mass terms
-        (that would require deep symbolic analysis of the coupling and index
-        structure that the current canonicalization layer does not yet
-        guarantee). It also does not attempt diagonalization.
-
-        Compiled output that carries derivatives (kinetic, gauge-fixing, ghost
-        bilinears, gauge-kinetic bilinears) is excluded by the derivative
-        filter, so those terms do not produce false positives.
-        """
-        from .core import ValidationIssue, ValidationReport
-
-        issues: list[ValidationIssue] = []
-
-        def add_issue(code: str, message: str, *, severity: str = "error"):
-            issue = ValidationIssue(code=code, message=message, severity=severity)
-            if issue not in issues:
-                issues.append(issue)
-
-        for term in self.terms:
-            if len(term.fields) != 2:
-                continue
-            if term.derivatives:
-                continue
-
-            first, second = term.fields
-            first_field = first.field
-            second_field = second.field
-            if first_field.kind not in ("scalar", "fermion"):
-                continue
-            if second_field.kind not in ("scalar", "fermion"):
-                continue
-            if not _is_canonical_mass_like_pair(first, second):
-                continue
-            if _base_field_match_key(first_field) == _base_field_match_key(second_field):
-                continue
-
-            kind_label = "fermion" if first_field.kind == "fermion" else "scalar"
-            add_issue(
-                "mass_structure_mixing",
-                f"Off-diagonal {kind_label} mass-like bilinear detected between "
-                f"fields {first_field.name!r} and {second_field.name!r}; "
-                "compiled term has 0 derivatives and only 2 matter fields.",
-                severity="warning",
-            )
-
-        return ValidationReport(issues=tuple(issues))
+        return validate_compiled_lagrangian(self)
 
     def feynman_rules(
         self,
@@ -518,16 +565,18 @@ class CompiledLagrangian:
         select=None,
         simplify=True,
         key_format="names",
-        include_delta: bool = True,
+        include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
+        flavor_expand: FlavorExpandOption = False,
     ):
         """Compute multiple Feynman rules grouped by field content."""
         if key_format not in ("names", "fields"):
             raise ValueError("key_format must be either 'names' or 'fields'.")
+        flavor_expand = _normalize_flavor_expand_option(flavor_expand)
 
         if select is None:
-            vertex_fields_list = self._vertex_field_tuples()
+            vertex_fields_list = self._vertex_field_tuples(flavor_expand=flavor_expand)
         else:
             vertex_fields_list = tuple(tuple(fields) for fields in select)
 
@@ -545,6 +594,7 @@ class CompiledLagrangian:
                 include_delta=include_delta,
                 strip_externals=strip_externals,
                 simplify_gamma=simplify_gamma,
+                flavor_expand=flavor_expand,
             )
             for vertex_fields in vertex_fields_list
         }
@@ -568,9 +618,10 @@ class CompiledLagrangian:
         momenta=None,
         simplify=True,
         key_format="names",
-        include_delta: bool = True,
+        include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
+        flavor_expand: FlavorExpandOption = False,
     ):
         """Compute Feynman vertex rules.
 
@@ -585,6 +636,7 @@ class CompiledLagrangian:
 
         if key_format not in ("names", "fields"):
             raise ValueError("key_format must be either 'names' or 'fields'.")
+        flavor_expand = _normalize_flavor_expand_option(flavor_expand)
 
         parsed = [_parse_field_arg(f) for f in fields]
         n = len(parsed)
@@ -597,6 +649,7 @@ class CompiledLagrangian:
                 include_delta=include_delta,
                 strip_externals=strip_externals,
                 simplify_gamma=simplify_gamma,
+                flavor_expand=flavor_expand,
             )
 
         if momenta is None:
@@ -619,9 +672,16 @@ class CompiledLagrangian:
                 )
             )
 
-        matching = [term for term in self.terms if _term_matches_fields(term, parsed)]
+        matching = [
+            term
+            for term in self._expanded_terms(flavor_expand=flavor_expand)
+            if _term_matches_fields(term, parsed)
+        ]
         if not matching:
-            raise self._no_matching_interaction_terms_error(parsed)
+            raise self._no_matching_interaction_terms_error(
+                parsed,
+                flavor_expand=flavor_expand,
+            )
 
         x = S("x_")
         d = S("d")
@@ -672,6 +732,7 @@ class Lagrangian(CompiledLagrangian):
     source_terms: tuple[object, ...] = ()
 
     def __init__(self, *items, terms=None, lagrangian_decl=None):
+        self._expanded_terms_cache = {}
         if terms is not None and (items or lagrangian_decl is not None):
             raise TypeError(
                 "Lagrangian accepts either `terms=` or declarative input, not both."

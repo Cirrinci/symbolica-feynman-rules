@@ -167,6 +167,7 @@ def test_unbroken_electroweak_doublet_w_current():
         LDoublet.bar,
         LDoublet,
         WField,
+        include_delta=True,
     )
     expected_w = (
         I
@@ -184,6 +185,7 @@ def test_unbroken_electroweak_doublet_b_current():
         LDoublet.bar,
         LDoublet,
         BField,
+        include_delta=True,
     )
     expected_b = (
         I
@@ -205,6 +207,7 @@ def test_unbroken_electroweak_singlet_b_current():
         ERight.bar,
         ERight,
         BField,
+        include_delta=True,
     )
     expected_b = (
         I
@@ -225,6 +228,7 @@ def test_unbroken_electroweak_higgs_w_current():
         HDoublet.bar,
         HDoublet,
         WField,
+        include_delta=True,
     )
     expected = (
         I
@@ -242,6 +246,7 @@ def test_unbroken_electroweak_higgs_b_current():
         HDoublet.bar,
         HDoublet,
         BField,
+        include_delta=True,
     )
     expected = (
         I
@@ -261,6 +266,7 @@ def test_unbroken_electroweak_higgs_ww_contact():
         HDoublet,
         WField,
         WField,
+        include_delta=True,
     )
     c_mid = S("w_mid_H_SU2L")
     contact_struct = (
@@ -286,6 +292,7 @@ def test_unbroken_electroweak_higgs_bb_contact():
         HDoublet,
         BField,
         BField,
+        include_delta=True,
     )
     expected = (
         2
@@ -306,6 +313,7 @@ def test_unbroken_electroweak_higgs_wb_contact():
         HDoublet,
         WField,
         BField,
+        include_delta=True,
     )
     expected = (
         2

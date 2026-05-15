@@ -2,7 +2,7 @@ import pytest
 
 from symbolica import S, Expression  # noqa: E402
 
-from compiler.gauge import compile_covariant_terms, with_compiled_covariant_terms  # noqa: E402
+from compiler.gauge import compile_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -104,7 +104,6 @@ def test_compile_abelian_gauge_fixing_term():
     )
 
     compiled = compile_covariant_terms(model)
-    assert with_compiled_covariant_terms(model).interactions == compiled
     assert len(compiled) == 1
 
     legs = (
@@ -198,7 +197,6 @@ def test_compile_nonabelian_ghost_terms():
     )
 
     compiled = compile_covariant_terms(model)
-    assert with_compiled_covariant_terms(model).interactions == compiled
     assert len(compiled) == 2
     bilinear, cubic = compiled
 
@@ -484,7 +482,6 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
     )
 
     compiled = compile_covariant_terms(model)
-    assert with_compiled_covariant_terms(model).interactions == compiled
     assert len(compiled) == 9
     labels = [interaction.label for interaction in compiled]
     assert any("gamma^mu D_mu" in label for label in labels)
@@ -597,7 +594,6 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
     )
 
     compiled = compile_covariant_terms(model)
-    assert with_compiled_covariant_terms(model).interactions == compiled
     assert len(compiled) == 6
 
     qcd_term, qed_term, _partial_term, gauge_fixing_term, ghost_bilinear_term, ghost_gauge_term = compiled
@@ -662,3 +658,38 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         * Delta(p1 + p2 + p3)
     )
     assert got_ghost_gauge.expand().to_canonical_string() == expected_ghost_gauge.expand().to_canonical_string()
+
+
+def test_model_infers_gauge_groups_from_gauge_fixing_and_ghost_declarations():
+    gluon_symbol = S("G")
+    ghost_symbol = S("ghG")
+    antighost_symbol = S("ghGbar")
+    gluon = _make_gluon(gluon_symbol)
+    ghost = _make_ghost(ghost_symbol, antighost_symbol)
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        ghost_field=ghost.symbol,
+        structure_constant=structure_constant,
+    )
+
+    gauge_fixing_model = Model(
+        fields=(gluon,),
+        lagrangian_decl=GaugeFixing(su3, xi=S("xiQCD")),
+    )
+    ghost_model = Model(
+        fields=(gluon, ghost),
+        lagrangian_decl=GhostLagrangian(su3),
+    )
+    combined_model = Model(
+        fields=(gluon, ghost),
+        lagrangian_decl=GaugeFixing(su3, xi=S("xiQCD")) + GhostLagrangian(su3),
+    )
+
+    assert gauge_fixing_model.gauge_groups == (su3,)
+    assert ghost_model.gauge_groups == (su3,)
+    assert combined_model.gauge_groups == (su3,)
+    assert len(compile_covariant_terms(gauge_fixing_model)) == 1
+    assert len(compile_covariant_terms(ghost_model)) == 2

@@ -5,9 +5,8 @@ from __future__ import annotations
 from symbolica import Expression, S
 
 from model import Field, InteractionTerm
+from model.metadata import is_lorentz_index
 from typing import Optional
-
-from symbolic.spenso_structures import LORENTZ_KIND
 
 
 def _default_index_labels(field: Field, index, qualifier: str = "id", slot: Optional[int] = None):
@@ -24,7 +23,7 @@ def _spectator_identity_factor(field: Field, *, exclude_slots=()):
     right_slot_labels = {}
 
     for slot, index in enumerate(field.indices):
-        if slot in exclude_slots or index.kind == LORENTZ_KIND:
+        if slot in exclude_slots or is_lorentz_index(index):
             continue
         left_label, right_label = _default_index_labels(field, index, slot=slot)
         factor *= index.representation.g(left_label, right_label).to_expression()
@@ -82,7 +81,7 @@ def _materialize_spectator_occurrences(spectators: tuple[tuple[Field, bool], ...
             if field.kind == "fermion":
                 fermion_bilinears.append((left_pos, right_pos))
             for slot, index in enumerate(field.indices):
-                if index.kind == LORENTZ_KIND:
+                if is_lorentz_index(index):
                     continue
                 left_label, right_label = _default_index_labels(
                     field,

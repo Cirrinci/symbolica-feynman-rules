@@ -17,14 +17,13 @@ from .spectators import (
 )
 from lagrangian.operators import psi_bar_gamma_psi
 from model import (
-    ComplexScalarKineticTerm,
     DerivativeAction,
-    DiracKineticTerm,
     Field,
     InteractionTerm,
     Model,
 )
-from symbolic.spenso_structures import SPINOR_KIND
+from model.lagrangian import ComplexScalarKineticTerm, DiracKineticTerm
+from model.metadata import unique_spinor_slot
 
 
 def _compile_dirac_partial_term(
@@ -32,15 +31,13 @@ def _compile_dirac_partial_term(
     *,
     coefficient=1,
     label: str = "",
-    unique_slot: Callable,
     symbol: Callable,
 ) -> InteractionTerm:
     mu = symbol("mu")
     i_bar = symbol(f"i_bar_{fermion.name}_covd")
     i_psi = symbol(f"i_{fermion.name}_covd")
-    fermion_spinor_slot = unique_slot(
+    fermion_spinor_slot = unique_spinor_slot(
         fermion,
-        SPINOR_KIND,
         purpose="Dirac kinetic partial-term compilation",
     )
     bar_slot_labels = {fermion_spinor_slot: i_bar}
@@ -125,7 +122,6 @@ def _compile_covariant_core(
     require_declared_field: Callable,
     compile_dirac_kinetic_term: Callable,
     compile_complex_scalar_kinetic_term: Callable,
-    unique_slot: Callable,
     symbol: Callable,
 ) -> tuple[InteractionTerm, ...]:
     """Compile one covariant kinetic core with explicit free-bilinear policy."""
@@ -155,7 +151,6 @@ def _compile_covariant_core(
             fermion,
             coefficient=core.coefficient,
             label=core.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} partial",
-            unique_slot=unique_slot,
             symbol=symbol,
         )
         return _assemble_full_covariant_operator(
@@ -209,7 +204,6 @@ def _compile_declared_covariant_core(
     require_declared_field: Callable,
     compile_dirac_kinetic_term: Callable,
     compile_complex_scalar_kinetic_term: Callable,
-    unique_slot: Callable,
     symbol: Callable,
 ) -> tuple[InteractionTerm, ...]:
     """Compile one declarative ``CovD`` monomial as the full kinetic operator."""
@@ -221,29 +215,6 @@ def _compile_declared_covariant_core(
         require_declared_field=require_declared_field,
         compile_dirac_kinetic_term=compile_dirac_kinetic_term,
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=unique_slot,
         symbol=symbol,
     )
 
-
-def _compile_legacy_covariant_core(
-    model: Model,
-    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
-    *,
-    require_declared_field: Callable,
-    compile_dirac_kinetic_term: Callable,
-    compile_complex_scalar_kinetic_term: Callable,
-    unique_slot: Callable,
-    symbol: Callable,
-) -> tuple[InteractionTerm, ...]:
-    """Compile one legacy kinetic declaration as gauge-interaction-only."""
-    return _compile_covariant_core(
-        model,
-        core,
-        include_free_bilinear=False,
-        require_declared_field=require_declared_field,
-        compile_dirac_kinetic_term=compile_dirac_kinetic_term,
-        compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=unique_slot,
-        symbol=symbol,
-    )

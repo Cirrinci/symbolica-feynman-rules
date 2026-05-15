@@ -13,10 +13,10 @@ from .metadata import (
     ConjugateField,
     Field,
     FieldRole,
-    LORENTZ_KIND,
-    SPINOR_KIND,
     Statistics,
     _copy_index_labels,
+    lorentz_kind_for,
+    spinor_kind_for,
 )
 
 
@@ -38,7 +38,7 @@ class FieldOccurrence:
 
     @property
     def spinor_label(self):
-        spinor = self.labels.get(SPINOR_KIND)
+        spinor = self.labels.get(spinor_kind_for(self.field.indices))
         if isinstance(spinor, tuple):
             return spinor[0] if spinor else None
         return spinor
@@ -183,7 +183,7 @@ class InteractionTerm:
         *fields,
         momenta=None,
         simplify=True,
-        include_delta: bool = True,
+        include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
     ):
@@ -219,6 +219,7 @@ class InteractionTerm:
         field_index_labels = [_copy_index_labels(occ.labels) for occ in self.fields]
         field_index_types = [occ.field.indices for occ in self.fields]
         leg_index_labels = [_copy_index_labels(leg.labels) for leg in external_legs]
+        leg_index_types = [leg.field.indices for leg in external_legs]
 
         leg_spins = [leg.spin for leg in external_legs]
 
@@ -228,8 +229,9 @@ class InteractionTerm:
 
         if derivative_indices:
             external_lorentz_labels = set()
-            for slot_labels in field_index_labels:
-                value = slot_labels.get(LORENTZ_KIND)
+            for slot_labels, index_types in zip(field_index_labels, field_index_types):
+                lorentz_kind = lorentz_kind_for(index_types)
+                value = slot_labels.get(lorentz_kind)
                 if isinstance(value, tuple):
                     external_lorentz_labels.update(
                         label for label in value if label is not None
@@ -277,6 +279,7 @@ class InteractionTerm:
             field_index_labels=field_index_labels,
             field_index_types=field_index_types,
             leg_index_labels=leg_index_labels,
+            leg_index_types=leg_index_types,
             leg_spins=leg_spins,
             derivative_indices=derivative_indices,
             derivative_targets=derivative_targets,

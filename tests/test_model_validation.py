@@ -2,16 +2,18 @@ from symbolica import S  # noqa: E402
 
 from model import (  # noqa: E402
     COLOR_FUND_INDEX,
-    ComplexScalarKineticTerm,
-    DiracKineticTerm,
     Field,
     GaugeFixing,
     GaugeGroup,
-    GaugeKineticTerm,
     GaugeRepresentation,
     GhostLagrangian,
     Model,
     SPINOR_INDEX,
+)
+from model.lagrangian import (  # noqa: E402
+    ComplexScalarKineticTerm,
+    DiracKineticTerm,
+    GaugeKineticTerm,
 )
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 from tests.support.builders import make_complex_scalar, make_dirac_fermion, make_ghost, make_gluon, make_photon  # noqa: E402
@@ -82,7 +84,7 @@ def test_model_validate_reports_undeclared_gauge_group_references():
     model = Model(
         gauge_groups=(declared,),
         fields=(photon,),
-        lagrangian_decl=GaugeFixing(missing, xi=S("xiMissing")) + GhostLagrangian(missing),
+        lagrangian_decl=GaugeFixing(missing.name, xi=S("xiMissing")) + GhostLagrangian(missing.name),
     )
 
     report = model.validate()
@@ -232,8 +234,11 @@ def test_model_validate_accepts_valid_nonabelian_representation_usage():
             ),
         ),
     )
-    model = Model(gauge_groups=(su3,), fields=(quark, gluon))
-    model.covariant_terms = (DiracKineticTerm(field=quark, gauge_group=su3),)
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(quark, gluon),
+        lagrangian_decl=DiracKineticTerm(field=quark, gauge_group=su3),
+    )
 
     report = model.validate()
 
@@ -259,8 +264,11 @@ def test_model_validate_reports_invalid_representation_slot():
             ),
         ),
     )
-    model = Model(gauge_groups=(su3,), fields=(quark, gluon))
-    model.covariant_terms = (DiracKineticTerm(field=quark, gauge_group=su3),)
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(quark, gluon),
+        lagrangian_decl=DiracKineticTerm(field=quark, gauge_group=su3),
+    )
 
     report = model.validate()
 
@@ -292,8 +300,11 @@ def test_model_validate_reports_missing_nonabelian_representation_for_explicit_t
             ),
         ),
     )
-    model = Model(gauge_groups=(su3,), fields=(scalar, gluon))
-    model.covariant_terms = (ComplexScalarKineticTerm(field=scalar, gauge_group=su3),)
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(scalar, gluon),
+        lagrangian_decl=ComplexScalarKineticTerm(field=scalar, gauge_group=su3),
+    )
 
     report = model.validate()
 

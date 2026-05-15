@@ -216,7 +216,7 @@ def _cross_check(model, *fields):
 
 def test_su2_fermion_doublet_vertex():
     got = MODEL_SU2_FERMION.lagrangian().feynman_rule(
-        LDoublet.bar, LDoublet, WField,
+        LDoublet.bar, LDoublet, WField, include_delta=True,
     )
     expected = (
         I * g2_sym
@@ -230,7 +230,7 @@ def test_su2_fermion_doublet_vertex():
 
 def test_su2_scalar_doublet_vertices():
     got_3pt = MODEL_SU2_SCALAR.lagrangian().feynman_rule(
-        HDoublet.bar, HDoublet, WField,
+        HDoublet.bar, HDoublet, WField, include_delta=True,
     )
     expected_3pt = (
         I * g2_sym
@@ -241,7 +241,7 @@ def test_su2_scalar_doublet_vertices():
     _assert_equal(got_3pt, expected_3pt)
 
     got_4pt = MODEL_SU2_SCALAR.lagrangian().feynman_rule(
-        HDoublet.bar, HDoublet, WField, WField,
+        HDoublet.bar, HDoublet, WField, WField, include_delta=True,
     )
     c_mid = S("w_mid_H_SU2L")
     contact_struct = (
@@ -331,7 +331,7 @@ def test_su2_ghost_vertices():
 def test_su2_u1_fermion_doublet_vertices():
     _cross_check(MODEL_SU2_U1_FERMION, LYDoublet.bar, LYDoublet, WField)
     got_w = MODEL_SU2_U1_FERMION.lagrangian().feynman_rule(
-        LYDoublet.bar, LYDoublet, WField,
+        LYDoublet.bar, LYDoublet, WField, include_delta=True,
     )
     expected_w = (
         I * g2_sym
@@ -343,7 +343,7 @@ def test_su2_u1_fermion_doublet_vertices():
 
     _cross_check(MODEL_SU2_U1_FERMION, LYDoublet.bar, LYDoublet, BField)
     got_b = MODEL_SU2_U1_FERMION.lagrangian().feynman_rule(
-        LYDoublet.bar, LYDoublet, BField,
+        LYDoublet.bar, LYDoublet, BField, include_delta=True,
     )
     weak_fund_id = WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
     expected_b = (

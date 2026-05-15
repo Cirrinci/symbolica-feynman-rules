@@ -29,7 +29,6 @@ from symbolica import S, Expression
 from .covariant_core import (
     _compile_covariant_core as _compile_covariant_core_impl,
     _compile_declared_covariant_core as _compile_declared_covariant_core_impl,
-    _compile_legacy_covariant_core as _compile_legacy_covariant_core_impl,
 )
 from .matter_actions import (
     _build_fermion_current_interaction,
@@ -45,13 +44,8 @@ from .spectators import (
 from model import (
     CovD,
     CovariantDerivativeFactor,
-    ComplexScalarKineticTerm,
     DerivativeAction,
-    DiracKineticTerm,
     Field,
-    GhostTerm,
-    GaugeKineticTerm,
-    GaugeFixingTerm,
     GaugeGroup,
     GaugeRepresentation,
     InteractionTerm,
@@ -65,8 +59,25 @@ from model.declared import (
     GeneratorFactor,
     PartialDerivativeFactor,
 )
-from model.lowering import _lower_local_interaction_monomial
-from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND, lorentz_metric
+from model.lagrangian import (
+    ComplexScalarKineticTerm,
+    DiracKineticTerm,
+    GaugeFixingTerm,
+    GaugeKineticTerm,
+    GhostTerm,
+)
+from model.lowering import _analyze_declared_source_term, _lower_local_interaction_monomial
+from symbolic.spenso_structures import lorentz_metric
+from model.metadata import (
+    is_lorentz_index,
+    is_spinor_index,
+    lorentz_kind_for,
+    lorentz_slots_for,
+    spinor_kind_for,
+    spinor_slots_for,
+    unique_lorentz_slot,
+    unique_spinor_slot,
+)
 
 
 _HALF = Expression.num(1) / Expression.num(2)
@@ -115,7 +126,7 @@ def _default_matter_labels(field: Field, rep_prefix: str, slot: Optional[int] = 
 
 def _first_non_lorentz_index_slot(field: Field) -> Optional[int]:
     for slot, index in enumerate(field.indices):
-        if index.kind != LORENTZ_KIND:
+        if not is_lorentz_index(index):
             return slot
     return None
 
@@ -557,9 +568,8 @@ class _GaugeAction:
         gauge_group = piece.metadata.gauge_group
         gauge_field = piece.metadata.gauge_field
         mu = lorentz_label or piece.lorentz_index
-        gauge_lorentz_slot = _unique_slot(
+        gauge_lorentz_slot = unique_lorentz_slot(
             gauge_field,
-            LORENTZ_KIND,
             purpose=purpose,
         )
         gauge_slot_labels = {gauge_lorentz_slot: mu}
@@ -646,7 +656,7 @@ class _GaugeFieldLayout:
         if gauge_field.kind != "vector":
             raise ValueError(f"{purpose} requires a vector field, got kind={gauge_field.kind!r}.")
 
-        lorentz_slot = _unique_slot(gauge_field, LORENTZ_KIND, purpose=purpose)
+        lorentz_slot = unique_lorentz_slot(gauge_field, purpose=purpose)
         adjoint_kind = None
         adjoint_slot = None
         if require_adjoint:
@@ -1239,9 +1249,8 @@ def compile_fermion_gauge_current(
 
     mu = lorentz_label or _default_vector_label(gauge_field, gauge_group, suffix="mu")
     i_bar, i_psi = spinor_labels or _default_spinor_labels(fermion, gauge_group)
-    fermion_spinor_slot = _unique_slot(
+    fermion_spinor_slot = unique_spinor_slot(
         fermion,
-        SPINOR_KIND,
         purpose="Fermion gauge-current compilation",
     )
 
@@ -1785,62 +1794,6 @@ def compile_ghost_term(model: Model, term: GhostTerm) -> tuple[InteractionTerm, 
     return (ghost_bilinear, ghost_gauge)
 
 
-def compile_minimal_gauge_interactions(model: Model) -> tuple[InteractionTerm, ...]:
-    """Compile minimal gauge interactions using kinetic-term conventions.
-
-    The generated interactions are the gauge pieces implied by the standard
-    covariant kinetic terms:
-    - fermions: ``i psibar gamma^mu D_mu psi``
-    - complex scalars: ``(D_mu phi)^dagger (D^mu phi)``
-
-    This keeps the standalone minimal compiler consistent with the declarative
-    ``CovD(...)`` path exposed by ``Model.lagrangian()``.
-    """
-    interactions: list[InteractionTerm] = []
-
-    for gauge_group in model.gauge_groups:
-        gauge_field = model.gauge_boson_field(gauge_group)
-
-        for field in model.fields:
-            if field == gauge_field:
-                continue
-
-            if field.kind == "fermion":
-                if not _field_transforms_under_gauge_group(field, gauge_group):
-                    continue
-
-                interactions.extend(
-                    compile_fermion_gauge_current(
-                        fermion=field,
-                        gauge_group=gauge_group,
-                        gauge_field=gauge_field,
-                        prefactor=1,
-                    )
-                )
-                continue
-
-            if field.kind == "scalar" and not field.self_conjugate:
-                if not _field_transforms_under_gauge_group(field, gauge_group):
-                    continue
-                interactions.extend(
-                    compile_complex_scalar_gauge_terms(
-                        scalar=field,
-                        gauge_group=gauge_group,
-                        gauge_field=gauge_field,
-                        current_prefactor=Expression.I,
-                        contact_prefactor=1,
-                    )
-                )
-
-    return tuple(interactions)
-
-
-def with_minimal_gauge_interactions(model: Model) -> Model:
-    """Return a copy of a model with compiled gauge interactions appended."""
-    compiled = compile_minimal_gauge_interactions(model)
-    return replace(model, interactions=model.interactions + compiled)
-
-
 def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[InteractionTerm, ...]:
     """Compile the gauge-interaction part of ``psibar i gamma^mu D_mu psi``.
 
@@ -1864,9 +1817,8 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
         CovD(fermion, mu),
         gauge_group=term.gauge_group,
     )
-    fermion_spinor_slot = _unique_slot(
+    fermion_spinor_slot = unique_spinor_slot(
         fermion,
-        SPINOR_KIND,
         purpose="Dirac kinetic compilation",
     )
 
@@ -1971,7 +1923,6 @@ def _compile_covariant_core(
         require_declared_field=_require_declared_field,
         compile_dirac_kinetic_term=compile_dirac_kinetic_term,
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=_unique_slot,
         symbol=_symbol,
     )
 
@@ -1989,45 +1940,31 @@ def _compile_declared_covariant_core(
         require_declared_field=_require_declared_field,
         compile_dirac_kinetic_term=compile_dirac_kinetic_term,
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=_unique_slot,
-        symbol=_symbol,
-    )
-
-
-def _compile_legacy_covariant_core(
-    model: Model,
-    core: Union[DiracKineticTerm, ComplexScalarKineticTerm],
-) -> tuple[InteractionTerm, ...]:
-    """Compile one legacy kinetic declaration as gauge-interaction-only."""
-    return _compile_legacy_covariant_core_impl(
-        model,
-        core,
-        require_declared_field=_require_declared_field,
-        compile_dirac_kinetic_term=compile_dirac_kinetic_term,
-        compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
-        unique_slot=_unique_slot,
         symbol=_symbol,
     )
 
 
 def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
-    """Compile all declared non-local / structured source terms in a model.
+    """Compile all declared source terms in ``Model.lagrangian_decl``.
 
-    Local interaction monomials are handled separately by ``Model.all_interactions()``.
-    This function expands only the declared terms that require compilation:
-    covariant-derivative monomials, field-strength terms, gauge fixing, ghosts,
-    and the legacy physical declaration slots.
+    This expands every declared term, including:
 
-    Declarative ``CovD(...)`` monomials are compiled as full operators, so their
-    output includes the free bilinear partial-derivative contribution alongside
-    the gauge-interaction pieces.  Legacy ``DiracKineticTerm`` and
-    ``ComplexScalarKineticTerm`` declarations intentionally keep their existing
-    gauge-only behavior for backward compatibility.
+    - covariant-derivative kinetic cores (``CovD(...) CovD(...)``,
+      ``i Psi.bar Gamma(mu) CovD(Psi, mu)``)
+    - generic ``CovD(...)`` monomials that need gauge-metadata expansion
+    - field-strength gauge kinetic terms (``-1/4 F F``)
+    - explicit ``GaugeFixing(...)`` and ``GhostLagrangian(...)`` declarations
+    - pure local interaction monomials.
     """
     interactions: list[InteractionTerm] = []
 
-    for analyzed in model.analyzed_source_terms():
+    for term in model.lagrangian_decl.source_terms:
+        analyzed = _analyze_declared_source_term(term, parameters=model.parameters)
+        if analyzed is None:
+            raise TypeError(f"Unsupported declarative term: {type(term)!r}")
+
         if analyzed.interaction is not None:
+            interactions.append(analyzed.interaction)
             continue
 
         if analyzed.covariant_core is not None:
@@ -2060,47 +1997,4 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
         if analyzed.ghost is not None:
             interactions.extend(compile_ghost_term(model, analyzed.ghost))
 
-    for term in model.covariant_terms:
-        if isinstance(term, DiracKineticTerm):
-            interactions.extend(_compile_legacy_covariant_core(model, term))
-            continue
-        if isinstance(term, ComplexScalarKineticTerm):
-            interactions.extend(_compile_legacy_covariant_core(model, term))
-            continue
-        raise TypeError(f"Unsupported covariant term type: {type(term)!r}")
-
-    for term in model.gauge_kinetic_terms:
-        interactions.extend(compile_gauge_kinetic_term(model, term))
-
-    for term in model.gauge_fixing_terms:
-        interactions.extend(compile_gauge_fixing_term(model, term))
-
-    for term in model.ghost_terms:
-        interactions.extend(compile_ghost_term(model, term))
-
     return tuple(interactions)
-
-
-def with_compiled_covariant_terms(model: Model) -> Model:
-    """Return a copy of a model with compiled physical kinetic terms appended.
-
-    The returned model has empty declaration slots (covariant_terms,
-    gauge_kinetic_terms, gauge_fixing_terms, ghost_terms) so that a
-    subsequent call to ``Model.lagrangian()`` does not re-compile and
-    double-count the same terms.
-    """
-    compiled = compile_covariant_terms(model)
-    preserved_source_terms = tuple(
-        analyzed.term
-        for analyzed in model.analyzed_source_terms()
-        if not analyzed.needs_compilation
-    )
-    return replace(
-        model,
-        interactions=model.interactions + compiled,
-        lagrangian_decl=type(model.lagrangian_decl)(source_terms=preserved_source_terms),
-        covariant_terms=(),
-        gauge_kinetic_terms=(),
-        gauge_fixing_terms=(),
-        ghost_terms=(),
-    )

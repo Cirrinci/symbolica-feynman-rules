@@ -14,7 +14,7 @@ Rule:
 
 ### Current status snapshot
 
-As of 2026-04-23:
+As of 2026-05-13:
 
 - the active source tree is modularized under `src/`
 - the core symbolic extraction engine now lives in `src/symbolic/vertex_engine.py`
@@ -33,8 +33,7 @@ As of 2026-04-23:
   - `src/lagrangian/lowering.py`
 - gauge/covariant compiler logic now lives in `src/compiler/gauge.py`
 - runnable validation/examples now live in:
-  - `examples/examples.py`
-  - `examples/examples_lagrangian.py`
+  - `examples/examples_flavor_expansion.py`
   - `examples/examples_su2.py`
   - `examples/examples_electroweak_unbroken.py`
   - `examples/examples_electroweak_ssb.py`
@@ -51,6 +50,13 @@ As of 2026-04-23:
   - `FieldStrength(group, mu, nu)`
   - `GaugeFixing(group, xi=...)`
   - `GhostLagrangian(group)`
+- flavor-class declarations now use explicit field metadata:
+  - `dirac_field(..., class_members=..., flavor_index=...)`
+  - `scalar_field(..., class_members=..., flavor_index=...)`
+- selective flavor expansion is available through
+  `flavor_expand=True`, one flavor index, or an iterable of flavor indices
+- plain symbolic slot labels are now validated monomial-wide against one exact
+  `IndexType` per label name before lowering continues
 - manual `InteractionTerm(...)` monomials still compose with the declarative
   forms in the same Lagrangian declaration
 - the backend architecture is still the same:
@@ -1127,3 +1133,118 @@ Resolved ambiguity:
 * The `GGGG` vertex remains in the generic non-abelian `f*f` basis. This is
   appropriate for `SU(3)` and should not be simplified to a pure
   delta-delta structure in the same way as the `SU(2)` `WWWW` vertex.
+
+### 2026-05-11: lighter `Model(..., lagrangian_decl=...)` metadata requirements
+
+What happened:
+
+- the model-construction path was relaxed so local
+  `Model(..., lagrangian_decl=...)` usage no longer always needs an explicit
+  `fields=(...)` list when the fields can be inferred from the declaration
+- gauge-group requirements were also tightened to the cases that actually need
+  them:
+  if a declaration does not use `CovD(...)` or other gauge-dependent
+  structures, the model no longer needs explicit `gauge_groups=(...)`
+- the related notebook/model-building flow was cleaned up so the compact
+  `lagrangian_decl=...` examples stay closer to how users will actually write
+  small models
+
+What this achieved:
+
+- reduced boilerplate for direct declarative model building
+- made the local `Model(..., lagrangian_decl=...)` workflow less fragile for
+  simple non-gauge examples
+- improved the separation between metadata that is genuinely required for
+  compilation and metadata that can be inferred automatically
+
+### 2026-05-12: flavor-index expansion and FeynRules-style field-class declarations
+
+What happened:
+
+- flavor/class expansion support was added around explicit flavor index
+  metadata rather than hard-coded generation semantics:
+  - `IndexRole.FLAVOR`
+  - `flavor_index(...)`
+  - field-level `flavor_index` and `class_members`
+  - indexed `Parameter` metadata with `components` and `allow_summation`
+- the compiled Lagrangian extraction path was extended so
+  `feynman_rule(...)`, `feynman_rules(...)`, `vertex_signatures(...)`, and
+  `vertex_report(...)` can all run with `flavor_expand=...`
+- the public declaration API was then cleaned up to follow the FeynRules
+  model-file workflow more closely:
+  - explicit indices first
+  - then gauge representations / gauge groups
+  - then field classes
+  - then parameters
+  - then the Lagrangian
+- the recommended public field-declaration helpers are now the ordinary
+  metadata constructors with explicit flavor-class arguments:
+  - `dirac_field(..., class_members=..., flavor_index=...)`
+  - `scalar_field(..., class_members=..., flavor_index=...)`
+- selected flavor expansion was also generalized beyond `True/False`:
+  `flavor_expand` can now be `True`, one flavor index, or an iterable of
+  flavor indices
+- the main flavor example and notebook flow were rewritten around explicit
+  FeynRules-like declarations for charged leptons and colored quark classes,
+  including two-index Yukawa-matrix-style parameters with off-diagonal zero
+  components
+- regression coverage was expanded for:
+  - charged-lepton / up-quark / down-quark field-class metadata
+  - flavor expansion with color preserved
+  - diagonal matrix-style Yukawas
+  - retained one-index `allow_summation` behavior
+  - selected flavor expansion
+
+What this achieved:
+
+- the project now has a much clearer public flavor API that matches the
+  FeynRules mental model more directly
+- flavor-generic classes remain explicit at declaration time, while expanded
+  member fields correctly drop the selected flavor index and keep non-flavor
+  indices such as color and spinor
+- the main examples now present flavor structure as ordinary model metadata,
+  not as a special toy constructor
+- the flavor backend stayed intact while the user-facing workflow became more
+  realistic for Standard Model-like model files
+- validation stayed clean after the refactor:
+  the full pytest suite passed with `316 passed`
+
+### 2026-05-13: monomial-wide typed-label validation for plain symbolic indices
+
+What happened:
+
+- a safety review checked how plain symbolic labels such as
+  `f`, `h`, and `col` are interpreted across one whole interaction monomial
+- that review found a real gap in the old lowering path:
+  symbolic labels were validated slot-locally, so incompatible reuse like
+  `uq.bar(f, col) * uq(col, f) * Phi` could compile silently
+- the lowering layer now builds one monomial-wide registry from label name to
+  exact `IndexType`
+- the new validation scans:
+  - explicit field-slot labels
+  - local tensor / derivative labels on factors such as
+    `Gamma(...)`, `PartialD(...)`, `Metric(...)`, `T(...)`,
+    `StructureConstant(...)`, and `FieldStrength(...)`
+  - indexed parameter calls in the coefficient when the parent
+    `Model(..., parameters=...)` provides the `Parameter.indices` metadata
+- the validation now runs before auto-filled labels and before the local
+  lowering heuristics that infer implied contractions
+- dedicated regression tests were added for:
+  - generation/colour label swapping inside one fermion bilinear
+  - a parameter label reused across incompatible generation and colour slots
+  - the standalone local `Lagrangian(...)` field-only rejection path
+
+What this achieved:
+
+- the public API stays FeynRules-like:
+  users can keep writing compact plain-symbol labels instead of explicit typed
+  wrappers
+- internally, one label name is now bound to exactly one index space per
+  monomial, so incompatible reuse is rejected early instead of compiling into a
+  wrong contraction
+- flavor/non-flavor conflicts and non-flavor/non-flavor conflicts are now both
+  caught on the declared-term path
+- lowering heuristics can no longer make an invalid symbolic input look valid
+  by filling missing labels after the fact
+- the safety fix is covered by tests and the whole suite stayed green:
+  `170 passed`

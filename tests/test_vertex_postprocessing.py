@@ -1,7 +1,9 @@
+from symbolica.community.spenso import Representation  # noqa: E402
 from symbolica import S  # noqa: E402
 
-from model import Field, Gamma, Lagrangian, Model  # noqa: E402
+from model import COLOR_ADJ_INDEX, Field, Gamma, IndexType, Lagrangian, Model  # noqa: E402
 from model.interactions import ExternalLeg, _auto_leg_labels  # noqa: E402
+from lagrangian.operators import yang_mills_three_vertex_raw  # noqa: E402
 from tests.support.builders import (  # noqa: E402
     canon as _canon,
     gauge_kinetic_decl,
@@ -9,7 +11,10 @@ from tests.support.builders import (  # noqa: E402
     make_gluon,
     make_su3,
 )
-from symbolic.tensor_canonicalization import contract_spenso_lorentz_metrics  # noqa: E402
+from symbolic.tensor_canonicalization import (  # noqa: E402
+    canonize_spenso_tensors,
+    contract_spenso_lorentz_metrics,
+)
 from symbolic.vertex_engine import (  # noqa: E402
     Delta,
     Dot,
@@ -121,6 +126,47 @@ def test_simplify_vertex_matches_explicit_chain_for_four_gluon_vertex():
     assert _canon(got) == _canon(manual)
 
 
+def test_canonicalize_vector_vertex_accepts_custom_lorentz_kind():
+    lorentz = IndexType("Lorentz", Representation.mink(4), "lorentzz", prefix="mu")
+    custom_gluon = Field(
+        "Gcustom",
+        spin=1,
+        self_conjugate=True,
+        symbol=S("Gcustom"),
+        indices=(lorentz, COLOR_ADJ_INDEX),
+    )
+    mu1, mu2, mu3 = S("mu1", "mu2", "mu3")
+    a1, a2, a3 = S("a1", "a2", "a3")
+    q1, q2, q3 = S("q1", "q2", "q3")
+    expr = yang_mills_three_vertex_raw(a2, a1, a3, mu2, mu1, mu3, q2, q1, q3)
+    legs = (
+        ExternalLeg(
+            field=custom_gluon,
+            momentum=q1,
+            labels={lorentz.kind: mu1, COLOR_ADJ_INDEX.kind: a1},
+        ),
+        ExternalLeg(
+            field=custom_gluon,
+            momentum=q2,
+            labels={lorentz.kind: mu2, COLOR_ADJ_INDEX.kind: a2},
+        ),
+        ExternalLeg(
+            field=custom_gluon,
+            momentum=q3,
+            labels={lorentz.kind: mu3, COLOR_ADJ_INDEX.kind: a3},
+        ),
+    )
+
+    got = canonicalize_vector_vertex(expr, external_legs=legs)
+    manual, _, _ = canonize_spenso_tensors(
+        expr,
+        lorentz_indices=(mu1, mu2, mu3),
+        adjoint_indices=(a1, a2, a3),
+    )
+
+    assert _canon(got) == _canon(manual)
+
+
 def test_simplify_vertex_default_behavior_is_unchanged():
     expr = gamma_anticommutator(S("i_left"), S("i_right"), S("mu"), S("nu"))
 
@@ -176,7 +222,7 @@ def test_lagrangian_feynman_rule_default_simplify_is_unchanged():
         )
     )
 
-    got = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True)
+    got = L.feynman_rule(psi.bar, psi, chi.bar, chi, simplify=True, include_delta=True)
     species_map = {
         species: species
         for species in (

@@ -38,11 +38,21 @@ from .interactions import (
     _field_match_key,
 )
 from .metadata import (
+    COLOR_ADJ_INDEX,
     COLOR_ADJ_KIND,
-    COLOR_FUND_KIND,
+    IndexType,
     LORENTZ_KIND,
+    LORENTZ_INDEX,
+    Parameter,
     SPINOR_KIND,
+    SPINOR_INDEX,
     Field,
+    indices_compatible_for_labels,
+    is_lorentz_index,
+    lorentz_index_for,
+    lorentz_slots_for,
+    spinor_kind_for,
+    spinor_slots_for,
     gamma5_matrix,
     gamma_matrix,
     gauge_generator,
@@ -183,9 +193,9 @@ def _is_local_free_tensor_factor(factor) -> bool:
     return isinstance(factor, (MetricFactor, StructureConstantFactor))
 
 
-def _local_chain_kind(factor) -> str:
+def _local_chain_kind(factor, *, spinor_kind: str = SPINOR_KIND) -> str:
     if isinstance(factor, (GammaFactor, Gamma5Factor)):
-        return SPINOR_KIND
+        return spinor_kind
     if isinstance(factor, GeneratorFactor):
         return factor.index_kind
     raise TypeError(f"Unsupported local chain factor {type(factor).__name__}")
@@ -210,6 +220,156 @@ def _local_declared_index_refs(factor) -> tuple[tuple[str, object], ...]:
             (COLOR_ADJ_KIND, factor.right_index),
         )
     return ()
+
+
+def _declared_label_name(label) -> str:
+    return str(label)
+
+
+def _atom_symbol_name(head: str) -> str:
+    return head.rsplit("::", 1)[-1]
+
+
+def _is_symbolic_index_label(label) -> bool:
+    if isinstance(label, str):
+        return True
+    if not hasattr(label, "to_atom_tree"):
+        return False
+    try:
+        node = label.to_atom_tree()
+    except Exception:
+        return False
+    return str(node.atom_type) == "AtomType.Var"
+
+
+def _parameter_head_map(parameters: Sequence[Parameter]) -> dict[str, Parameter]:
+    return {
+        f"python::{str(parameter.symbol)}": parameter
+        for parameter in parameters
+    }
+
+
+def _register_declared_label_binding(
+    label_bindings: dict[str, tuple[IndexType, str]],
+    label,
+    index: IndexType,
+    *,
+    origin: str,
+):
+    if not _is_symbolic_index_label(label):
+        return
+    label_name = _declared_label_name(label)
+    prior = label_bindings.get(label_name)
+    if prior is None:
+        label_bindings[label_name] = (index, origin)
+        return
+    prior_index, prior_origin = prior
+    if not indices_compatible_for_labels(prior_index, index):
+        raise ValueError(
+            f"Index label {label_name!r} is used with incompatible index types "
+            f"{prior_index.name!r} and {index.name!r} in one monomial "
+            f"({prior_origin}; {origin})."
+        )
+
+
+def _declared_factor_explicit_label_refs(
+    factor,
+    *,
+    lorentz_index: IndexType = LORENTZ_INDEX,
+) -> tuple[tuple[IndexType, object, str], ...]:
+    refs: list[tuple[IndexType, object, str]] = []
+    if isinstance(factor, CovariantDerivativeFactor):
+        refs.append((lorentz_index, factor.lorentz_index, f"CovD({factor.field.name})"))
+    elif isinstance(factor, DifferentiatedCovariantFactor):
+        covariant = factor.covariant_factor
+        refs.append((lorentz_index, covariant.lorentz_index, f"CovD({covariant.field.name})"))
+        refs.extend(
+            (lorentz_index, lorentz_index_label, f"PartialD(CovD({covariant.field.name}))")
+            for lorentz_index_label in factor.lorentz_indices
+        )
+    elif isinstance(factor, PartialDerivativeFactor):
+        refs.extend(
+            (lorentz_index, lorentz_index_label, f"PartialD({factor.field.name})")
+            for lorentz_index_label in factor.lorentz_indices
+        )
+    elif isinstance(factor, GammaFactor):
+        refs.append((lorentz_index, factor.lorentz_index, "Gamma"))
+    elif isinstance(factor, MetricFactor):
+        refs.append((lorentz_index, factor.left_index, "Metric"))
+        refs.append((lorentz_index, factor.right_index, "Metric"))
+    elif isinstance(factor, GeneratorFactor):
+        refs.append((COLOR_ADJ_INDEX, factor.adjoint_index, "T"))
+    elif isinstance(factor, StructureConstantFactor):
+        refs.append((COLOR_ADJ_INDEX, factor.left_index, "StructureConstant"))
+        refs.append((COLOR_ADJ_INDEX, factor.middle_index, "StructureConstant"))
+        refs.append((COLOR_ADJ_INDEX, factor.right_index, "StructureConstant"))
+    elif isinstance(factor, FieldStrengthFactor):
+        refs.append((lorentz_index, factor.left_index, "FieldStrength"))
+        refs.append((lorentz_index, factor.right_index, "FieldStrength"))
+    return tuple(refs)
+
+
+def _resolve_lorentz_index_from_term(term: _DeclaredMonomial) -> IndexType:
+    for factor in term.factors:
+        field_entry = _local_field_entry_from_factor(factor)
+        if field_entry is None:
+            continue
+        lorentz_index = lorentz_index_for(field_entry.field.indices)
+        if lorentz_index is not None:
+            return lorentz_index
+    return LORENTZ_INDEX
+
+
+def _validate_declared_label_bindings(
+    term: _DeclaredMonomial,
+    *,
+    parameters: Sequence[Parameter] = (),
+):
+    label_bindings: dict[str, tuple[IndexType, str]] = {}
+    lorentz_index = _resolve_lorentz_index_from_term(term)
+
+    for factor in term.factors:
+        field_entry = _local_field_entry_from_factor(factor)
+        if field_entry is not None:
+            slot_labels = field_entry.field.unpack_slot_labels(field_entry.labels)
+            for slot, label in slot_labels.items():
+                _register_declared_label_binding(
+                    label_bindings,
+                    label,
+                    field_entry.field.indices[slot],
+                    origin=f"{field_entry.field.name} slot {slot + 1}",
+                )
+        for index, label, origin in _declared_factor_explicit_label_refs(
+            factor,
+            lorentz_index=lorentz_index,
+        ):
+            _register_declared_label_binding(
+                label_bindings,
+                label,
+                index,
+                origin=origin,
+            )
+
+    if parameters and hasattr(term.coefficient, "to_atom_tree"):
+        parameter_heads = _parameter_head_map(parameters)
+
+        def visit(node):
+            if str(node.atom_type) == "AtomType.Fn":
+                parameter = parameter_heads.get(node.head)
+                if parameter is not None and len(node.tail) == len(parameter.indices):
+                    for slot, (index, arg) in enumerate(zip(parameter.indices, node.tail), start=1):
+                        if str(arg.atom_type) != "AtomType.Var":
+                            continue
+                        _register_declared_label_binding(
+                            label_bindings,
+                            _atom_symbol_name(arg.head),
+                            index,
+                            origin=f"{parameter.name} slot {slot}",
+                        )
+            for child in node.tail:
+                visit(child)
+
+        visit(term.coefficient.to_atom_tree())
 
 
 def _build_local_free_tensor_expression(factor):
@@ -351,9 +511,15 @@ def _assign_default_pair_labels(
             continue
         if left.field != right.field:
             continue
-        interval_kinds = {_local_chain_kind(factor) for factor in interval_chain_factors[interval_idx]}
+        interval_kinds = {
+            _local_chain_kind(
+                factor,
+                spinor_kind=spinor_kind_for(left.field.indices),
+            )
+            for factor in interval_chain_factors[interval_idx]
+        }
         for slot, index in enumerate(left.field.indices):
-            if index.kind == LORENTZ_KIND:
+            if is_lorentz_index(index):
                 continue
             if slot >= len(right.field.indices):
                 continue
@@ -486,7 +652,7 @@ def _assign_unique_global_pair_labels(
     seen = set()
     for entry in field_entries:
         for index in entry.field.indices:
-            if index.kind == LORENTZ_KIND or index.kind in seen:
+            if is_lorentz_index(index) or index.kind in seen:
                 continue
             seen.add(index.kind)
             kinds.append(index.kind)
@@ -571,11 +737,16 @@ def _rewrite_local_lorentz_slot_contraction(
 ) -> Optional[tuple[object, object]]:
     matches: list[object] = []
     lorentz_key = _local_label_key(lorentz_index)
-    if field_label_counts[(LORENTZ_KIND, lorentz_key)] != 1:
+    lorentz_kinds = {
+        entry.field.indices[slot].kind
+        for entry in field_entries
+        for slot in lorentz_slots_for(entry.field)
+    }
+    if sum(field_label_counts[(kind, lorentz_key)] for kind in lorentz_kinds) != 1:
         return None
 
     for field_idx, entry in enumerate(field_entries):
-        for slot in entry.field.index_positions(kind=LORENTZ_KIND):
+        for slot in lorentz_slots_for(entry.field):
             slot_label = explicit_slot_labels[field_idx].get(slot)
             if slot_label is None:
                 continue
@@ -661,9 +832,10 @@ def _infer_explicit_local_dirac_bilinears(
 
     for idx in fermion_slots:
         entry = field_entries[idx]
-        spinor_slot = _single_slot_position(entry.field, SPINOR_KIND)
-        if spinor_slot is None:
+        spinor_slots = spinor_slots_for(entry.field)
+        if len(spinor_slots) != 1:
             return None
+        spinor_slot = spinor_slots[0]
         label = slot_labels[idx].get(spinor_slot)
         if label is None:
             return None
@@ -796,7 +968,7 @@ def _interaction_term_matches_canonical_gauge_fixing(term: InteractionTerm) -> b
     if set(derivatives_by_target) != {0, 1}:
         return False
 
-    lorentz_slots = field.index_positions(kind=LORENTZ_KIND)
+    lorentz_slots = lorentz_slots_for(field)
     if len(lorentz_slots) != 1:
         return False
     lorentz_slot = lorentz_slots[0]
@@ -843,6 +1015,7 @@ def _interaction_term_matches_canonical_gauge_fixing(term: InteractionTerm) -> b
 
 
 def _lower_local_interaction_monomial(term: _DeclaredMonomial):
+    _validate_declared_label_bindings(term)
     tokens: list[tuple[str, object]] = []
     field_entries: list[_LocalFieldEntry] = []
     declared_factors: list[object] = []
@@ -925,15 +1098,16 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
         right = field_entries[interval_idx + 1]
         grouped: dict[str, list[object]] = {}
         group_order: list[str] = []
+        spinor_kind = spinor_kind_for(left.field.indices)
         for factor in factors:
-            kind = _local_chain_kind(factor)
+            kind = _local_chain_kind(factor, spinor_kind=spinor_kind)
             if kind not in grouped:
                 grouped[kind] = []
                 group_order.append(kind)
             grouped[kind].append(factor)
 
         for kind in group_order:
-            if kind == SPINOR_KIND:
+            if kind == spinor_kind:
                 if left.field.kind != "fermion" or right.field.kind != "fermion":
                     return None
                 if bool(left.conjugated) == bool(right.conjugated):
@@ -1029,7 +1203,13 @@ def _lower_field_strength_monomial(term: _DeclaredMonomial):
     )
 
 
-def _analyze_declared_source_term(term) -> Optional[AnalyzedSourceTerm]:
+def _analyze_declared_source_term(
+    term,
+    *,
+    parameters: Sequence[Parameter] = (),
+) -> Optional[AnalyzedSourceTerm]:
+    if isinstance(term, _DeclaredMonomial):
+        _validate_declared_label_bindings(term, parameters=parameters)
     interaction = _source_term_interaction(term)
     if interaction is not None:
         return AnalyzedSourceTerm(term=term, interaction=interaction)
@@ -1091,7 +1271,12 @@ def _unsupported_declared_source_term_error():
     )
 
 
-def _validate_declared_monomial(term: _DeclaredMonomial):
+def _validate_declared_monomial(
+    term: _DeclaredMonomial,
+    *,
+    parameters: Sequence[Parameter] = (),
+):
+    _validate_declared_label_bindings(term, parameters=parameters)
     if _match_covariant_monomial(term) is not None:
         return
     if _is_generic_covariant_monomial_candidate(term):
@@ -1322,7 +1507,7 @@ def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
     return True
 
 
-def _validate_declared_source_term(term):
+def _validate_declared_source_term(term, *, parameters: Sequence[Parameter] = ()):
     if isinstance(
         term,
         (
@@ -1338,6 +1523,6 @@ def _validate_declared_source_term(term):
     ):
         return
     if isinstance(term, _DeclaredMonomial):
-        _validate_declared_monomial(term)
+        _validate_declared_monomial(term, parameters=parameters)
         return
     raise TypeError(f"Unsupported declared Lagrangian term type: {type(term)!r}")
