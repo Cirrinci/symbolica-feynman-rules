@@ -1306,3 +1306,80 @@ What this achieved:
   against FeynRules
 - showed that the apparent quartic-gluon mismatch was a presentation /
   canonicalization issue rather than a real sign bug
+
+### 2026-05-18: lowered-Lagrangian operator layer, Symbolica export, review fixes,
+and notebook specification
+
+What happened:
+
+- added a new intermediate layer **after** compile/lower/expand and **before**
+  `vertex_engine.py`, without modifying the vertex engine:
+  - `src/lagrangian/operator_action.py` — `FieldOperator`, graded Leibniz on
+    ordered `InteractionTerm`s, slot-wise splice of `FieldOccurrence`
+    replacements, `replacement_operator` sugar
+  - `src/lagrangian/symbolica_export.py` — `interaction_term_to_symbolica`,
+    `lagrangian_to_symbolica` (display / scalar algebra only; fermion order not
+    preserved in Symbolica)
+  - `CompiledLagrangian.apply_operator(...)` and
+    `CompiledLagrangian.to_symbolica(...)` in `src/model/lagrangian.py`, with
+    optional `flavor_expand` on both (same semantics as `feynman_rules`)
+- confirmed Symbolica v1.4 multiplication is commutative, so
+  `InteractionTerm` remains the authoritative representation for ordered
+  fermion/ghost products; Symbolica is a view, not a reversible source of truth
+- reviewed the first implementation and fixed three correctness gaps:
+  - **bilinear metadata:** `_validate_and_remap_bilinears` now requires a
+    unique matching Dirac-fermion factor in the replacement when a slot is a
+    `closed_dirac_bilinears` endpoint; ghosts are not accepted as bilinear
+    endpoints; stale `(psibar, psi)` pairs are rejected instead of silently
+    remapped
+  - **derivatives on product replacements:** when a slot already carries
+    `DerivativeAction`s and the replacement has length `N > 1`, the engine
+    performs bosonic Leibniz fan-out across replacement slots (`N^M` terms for
+    `M` derivatives), instead of retargeting all derivatives to the first
+    replacement slot only
+  - **flavor-expanded export:** `to_symbolica(flavor_expand=True)` and
+    `apply_operator(..., flavor_expand=True)` use `_expanded_terms(...)` like
+    the vertex API, not the flavor-generic `.terms` list alone
+- added tests:
+  - `tests/test_operator_action.py` — 29 cases (Leibniz signs, bilinear
+    preserve/violate, derivative fan-out, flavor export, Symbolica commutative
+    limitation, `CompiledLagrangian.apply_operator` wiring)
+  - `tests/test_scalar_total_derivative_identity.py` — scalar IBP-motivation
+    check that `L_1 - L_2` matches `c * ∂_μ(φ² ∂_μ φ)` after manual lowering,
+    where `L_1 = c φ² □φ` and `L_2 = -2c φ (∂_μ φ)²`, via `to_symbolica()`
+    canonical comparison (not an automatic IBP engine)
+- wrote and expanded `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
+  as the primary usage/spec artifact:
+  - sections 1–6: `Model` → `lagrangian()`, inspect terms, `to_symbolica()`,
+    `apply_operator` (simple replacement, product replacement + derivative
+    fan-out, flavor export, odd-operator signs with bilinear-safe replacements)
+  - section 7: scalar total-derivative identity — manual expansion in the
+    declarative DSL; documents that equivalence is **modulo a total derivative**
+    under `∫ d⁴x`, not as identical local Lagrangians
+  - section 8: shows the current layer is **replacement-based**, not a true
+    `∂_μ` operator — `d_μ[Φ] = PartialD(Φ, μ)` cannot be encoded as a
+    `FieldOccurrence` replacement because fresh derivatives live in
+    `InteractionTerm.derivatives`
+  - section 9: large unbroken SM + linear `GaugeFixing(...)` export check —
+    `to_symbolica()` shows lowered `PartialD(...)` and fixing parameters, not
+    raw `CovD` / `FieldStrength` / `GaugeFixing` wrappers
+- full suite stayed green: `232 passed`
+
+What this achieved:
+
+- a first **replacement-style** operator calculus on fully lowered monomials,
+  suitable for field substitutions, gauge/BRST-like maps that rewrite slots,
+  and redistribution of **existing** partial derivatives across product-valued
+  replacements
+- a clear pipeline position: declarative `Model` → `CompiledLagrangian` →
+  optional `apply_operator` / `to_symbolica` → unchanged `feynman_rules`
+- separated three notions that must not be conflated in later work:
+  - **replacement / variation** on field slots (`Phi → Chi`, `psi → c·psi`)
+  - **true spacetime derivatives** (`∂_μ` creating new `DerivativeAction`s)
+  - **total derivatives / IBP** (equivalence only under the integral)
+- documented the main **remaining gaps** for follow-up:
+  - richer operator results that can attach new `DerivativeAction`s (a real
+    `d_μ` on products)
+  - a dedicated IBP / total-derivative simplification layer above lowered terms
+  - safe reverse conversion Symbolica → `InteractionTerm` only with a field
+    registry and explicit ordering metadata (stub left as `NotImplementedError`)
