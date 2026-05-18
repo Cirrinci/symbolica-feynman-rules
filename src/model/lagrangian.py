@@ -558,6 +558,46 @@ class CompiledLagrangian:
 
         return validate_compiled_lagrangian(self)
 
+    def apply_operator(
+        self,
+        operator,
+        *,
+        flavor_expand: FlavorExpandOption = False,
+    ) -> "CompiledLagrangian":
+        """Apply a ``FieldOperator`` to every compiled interaction term.
+
+        Returns a new ``CompiledLagrangian`` whose terms are the graded
+        Leibniz expansion of ``operator`` over the current terms. The
+        action is implemented at the ``InteractionTerm`` level (see
+        ``lagrangian.operator_action``); the authoritative ordered
+        representation is preserved.
+
+        ``flavor_expand`` mirrors ``feynman_rule``/``feynman_rules``: pass
+        ``True`` (or a specific flavor index) to act on the
+        flavor-expanded view of the terms rather than the flavor-generic
+        ones. Parameters are forwarded unchanged.
+        """
+
+        from lagrangian.operator_action import apply_field_operator
+
+        source_terms = self._expanded_terms(flavor_expand=flavor_expand)
+        return CompiledLagrangian(
+            terms=apply_field_operator(source_terms, operator),
+            parameters=self.parameters,
+        )
+
+    def to_symbolica(self):
+        """Render the compiled Lagrangian as a single Symbolica expression.
+
+        Display / simplification only -- Symbolica multiplication is
+        commutative, so fermion / ghost product ordering is not preserved.
+        Use the ordered ``terms`` tuple for ordering-sensitive operations.
+        """
+
+        from lagrangian.symbolica_export import lagrangian_to_symbolica
+
+        return lagrangian_to_symbolica(self)
+
     def feynman_rules(
         self,
         *,
