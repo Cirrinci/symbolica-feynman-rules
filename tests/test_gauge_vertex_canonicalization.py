@@ -17,7 +17,12 @@ from lagrangian.operators import (
     yang_mills_four_vertex_raw,
     yang_mills_three_vertex_raw,
 )
-from symbolic.tensor_canonicalization import canonize_spenso_tensors, contract_spenso_lorentz_metrics
+from symbolic.spenso_structures import lorentz_metric, structure_constant
+from symbolic.tensor_canonicalization import (
+    canonize_spenso_tensors,
+    canonize_structure_constant_products,
+    contract_spenso_lorentz_metrics,
+)
 
 
 q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
@@ -117,7 +122,7 @@ def test_canonized_yang_mills_quartic_matches_grouped_color_channels():
     canon_got, _, _ = canonize_spenso_tensors(
         vertex,
         lorentz_indices=(S("mu1"), S("mu2"), S("mu3"), S("mu4")),
-        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("color_adj_mid_G_SU3C")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("a_mid_G_SU3C")),
     )
 
     compact = (
@@ -128,14 +133,74 @@ def test_canonized_yang_mills_quartic_matches_grouped_color_channels():
         * yang_mills_four_vertex_raw(
             S("a1"), S("a2"), S("a3"), S("a4"),
             S("mu1"), S("mu2"), S("mu3"), S("mu4"),
-            S("color_adj_mid_G_SU3C"),
+            S("a_mid_G_SU3C"),
         )
         * D4
     )
     canon_compact, _, _ = canonize_spenso_tensors(
         compact,
         lorentz_indices=(S("mu1"), S("mu2"), S("mu3"), S("mu4")),
-        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("color_adj_mid_G_SU3C")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("a_mid_G_SU3C")),
     )
 
     assert _canon(canon_got) == _canon(canon_compact)
+
+
+def test_quartic_gluon_vertex_matches_feynrules_after_structure_constant_canonicalization():
+    vertex = MODEL_QCD_GAUGE_COVARIANT.lagrangian().feynman_rule(
+        GluonField, GluonField, GluonField, GluonField, include_delta=True,
+    )
+
+    a1, a2, a3, a4, b = S("a1", "a2", "a3", "a4", "b")
+    mu1, mu2, mu3, mu4 = S("mu1", "mu2", "mu3", "mu4")
+    feynrules = (
+        I
+        * (gS ** 2)
+        * structure_constant(a1, a3, b)
+        * structure_constant(a2, a4, b)
+        * lorentz_metric(mu1, mu4)
+        * lorentz_metric(mu2, mu3)
+        + I
+        * (gS ** 2)
+        * structure_constant(a1, a2, b)
+        * structure_constant(a3, a4, b)
+        * lorentz_metric(mu1, mu4)
+        * lorentz_metric(mu2, mu3)
+        + I
+        * (gS ** 2)
+        * structure_constant(a1, a4, b)
+        * structure_constant(a2, a3, b)
+        * lorentz_metric(mu1, mu3)
+        * lorentz_metric(mu2, mu4)
+        - I
+        * (gS ** 2)
+        * structure_constant(a1, a2, b)
+        * structure_constant(a3, a4, b)
+        * lorentz_metric(mu1, mu3)
+        * lorentz_metric(mu2, mu4)
+        - I
+        * (gS ** 2)
+        * structure_constant(a1, a4, b)
+        * structure_constant(a2, a3, b)
+        * lorentz_metric(mu1, mu2)
+        * lorentz_metric(mu3, mu4)
+        - I
+        * (gS ** 2)
+        * structure_constant(a1, a3, b)
+        * structure_constant(a2, a4, b)
+        * lorentz_metric(mu1, mu2)
+        * lorentz_metric(mu3, mu4)
+    ) * D4
+
+    canon_vertex = canonize_structure_constant_products(
+        vertex,
+        lorentz_indices=(mu1, mu2, mu3, mu4),
+        adjoint_indices=(a1, a2, a3, a4, b, S("a_mid_G_SU3C")),
+    )
+    canon_feynrules = canonize_structure_constant_products(
+        feynrules,
+        lorentz_indices=(mu1, mu2, mu3, mu4),
+        adjoint_indices=(a1, a2, a3, a4, b, S("a_mid_G_SU3C")),
+    )
+
+    assert _canon(canon_vertex) == _canon(canon_feynrules)

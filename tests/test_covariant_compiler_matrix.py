@@ -703,7 +703,7 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
         * Expression.num(1)
         / Expression.num(2)
         * (gS ** 2)
-        * yang_mills_four_vertex_raw(a3, a4, a5, a6, mu, nu, rho, sigma, S("color_adj_mid_G_SU3C"))
+        * yang_mills_four_vertex_raw(a3, a4, a5, a6, mu, nu, rho, sigma, S("a_mid_G_SU3C"))
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3 + p4)
     )

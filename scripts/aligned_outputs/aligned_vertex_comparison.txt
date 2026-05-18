@@ -1,0 +1,314 @@
+================================================================================
+Vertex 1
+Signature: {B, B}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+-1𝑖*pcomp(q1,mu2)*pcomp(q2,mu1)+1𝑖*g(mink(4, mu1),mink(4, mu2))*pcomp(q1,mu1_int)*pcomp(q2,mu1_int)
+
+================================================================================
+Vertex 2
+Signature: {B, B, Phi, Phibar}
+Status: BOTH
+FeynRules Rule:
+{{{B, 1}, {B, 2}, {Phi, 3}, {Phibar, 4}}, (I/2)*g1^2*IndexDelta[Index[SU2D, Ext[3]], Index[SU2D, Ext[4]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]}
+Python Rule:
+1𝑖/2*g1^2*g(mink(4, mu3),mink(4, mu4))*g(cof(2, w1),cof(2, w2))
+
+================================================================================
+Vertex 3
+Signature: {B, Phi, Phibar}
+Status: BOTH
+FeynRules Rule:
+{{{B, 1}, {Phi, 2}, {Phibar, 3}}, (I/2)*g1*FV[2, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]] - (I/2)*g1*FV[3, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]}
+Python Rule:
+-1𝑖/2*g1*g(cof(2, w1),cof(2, w2))*pcomp(q1,mu)+1𝑖/2*g1*g(cof(2, w1),cof(2, w2))*pcomp(q2,mu)
+
+================================================================================
+Vertex 4
+Signature: {B, Phi, Phibar, Wi}
+Status: BOTH
+FeynRules Rule:
+{{{B, 1}, {Phi, 2}, {Phibar, 3}, {Wi, 4}}, I*g1*g2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[3]], Index[SU2D, Ext[2]]]}
+Python Rule:
+1𝑖*g1*g2*g(mink(4, mu3),mink(4, mu4))*T(coad(3, aw4),cof(2, w1),cof(2, w2))
+
+================================================================================
+Vertex 5
+Signature: {B, dR, dRbar}
+Status: BOTH
+FeynRules Rule:
+{{{dRbar, 1}, {dR, 2}, {B, 3}}, (-1/3*I)*g1*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+Python Rule:
+-1𝑖/3*g1*g(cof(3, fl1),cof(3, fl2))*g(cof(3, c1),cof(3, c2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))
+
+================================================================================
+Vertex 6
+Signature: {B, eR, eRbar}
+Status: BOTH
+FeynRules Rule:
+{{{eRbar, 1}, {eR, 2}, {B, 3}}, (-I)*g1*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+Python Rule:
+-1𝑖*g1*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))
+
+================================================================================
+Vertex 7
+Signature: {B, lL, lLbar}
+Status: BOTH
+FeynRules Rule:
+{{{lLbar, 1}, {lL, 2}, {B, 3}}, (-1/2*I)*g1*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+Python Rule:
+-1𝑖/2*g1*g(cof(2, w1),cof(2, w2))*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))
+
+================================================================================
+Vertex 8
+Signature: {B, qL, qLbar}
+Status: BOTH
+FeynRules Rule:
+{{{qLbar, 1}, {qL, 2}, {B, 3}}, (I/6)*g1*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+Python Rule:
+1𝑖/6*g1*g(cof(2, w1),cof(2, w2))*g(cof(3, fl1),cof(3, fl2))*g(cof(3, c1),cof(3, c2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))
+
+================================================================================
+Vertex 9
+Signature: {B, uR, uRbar}
+Status: BOTH
+FeynRules Rule:
+{{{uRbar, 1}, {uR, 2}, {B, 3}}, ((2*I)/3)*g1*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+Python Rule:
+2𝑖/3*g1*g(cof(3, fl1),cof(3, fl2))*g(cof(3, c1),cof(3, c2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))
+
+================================================================================
+Vertex 10
+Signature: {G, G}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+1𝑖*g(mink(4, mu1),mink(4, mu2))*g(coad(8, a1),coad(8, a2))*pcomp(q1,mu1_int)*pcomp(q2,mu1_int)-1𝑖*g(coad(8, a1),coad(8, a2))*pcomp(q1,mu2)*pcomp(q2,mu1)
+
+================================================================================
+Vertex 11
+Signature: {G, G, G}
+Status: BOTH
+FeynRules Rule:
+{{{G, 1}, {G, 2}, {G, 3}}, (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[1]]])/2 - (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[1]]])/2 - (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[2]]])/2 + (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[2]]])/2 + (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[3]]])/2 - (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[3]]])/2 + (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]])/2 - (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]])/2 - (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]])/2 + (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]])/2 + (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])/2 - (g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])/2}
+Python Rule:
+-g3*g(mink(4, mu3),mink(4, mu1))*f(coad(8, a3),coad(8, a1),coad(8, a2))*pcomp(q1,mu2)+g3*g(mink(4, mu3),mink(4, mu1))*f(coad(8, a3),coad(8, a1),coad(8, a2))*pcomp(q3,mu2)+g3*g(mink(4, mu3),mink(4, mu2))*f(coad(8, a3),coad(8, a1),coad(8, a2))*pcomp(q2,mu1)-g3*g(mink(4, mu3),mink(4, mu2))*f(coad(8, a3),coad(8, a1),coad(8, a2))*pcomp(q3,mu1)+g3*g(mink(4, mu1),mink(4, mu2))*f(coad(8, a3),coad(8, a1),coad(8, a2))*pcomp(q1,mu3)-g3*g(mink(4, mu1),mink(4, mu2))*f(coad(8, a3),coad(8, a1),coad(8, a2))*pcomp(q2,mu3)
+
+================================================================================
+Vertex 12
+Signature: {G, G, G, G}
+Status: BOTH
+FeynRules Rule:
+{{{G, 1}, {G, 2}, {G, 3}, {G, 4}}, I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]}
+Python Rule:
+1𝑖*g3^2*g(mink(4, mu3),mink(4, mu4))*g(mink(4, mu1),mink(4, mu2))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a3),coad(8, a1))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a2),coad(8, a4))+1𝑖*g3^2*g(mink(4, mu3),mink(4, mu4))*g(mink(4, mu1),mink(4, mu2))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a3),coad(8, a2))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a1),coad(8, a4))-1𝑖*g3^2*g(mink(4, mu3),mink(4, mu1))*g(mink(4, mu4),mink(4, mu2))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a3),coad(8, a2))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a1),coad(8, a4))-1𝑖*g3^2*g(mink(4, mu3),mink(4, mu1))*g(mink(4, mu4),mink(4, mu2))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a3),coad(8, a4))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a1),coad(8, a2))-1𝑖*g3^2*g(mink(4, mu3),mink(4, mu2))*g(mink(4, mu4),mink(4, mu1))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a3),coad(8, a1))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a2),coad(8, a4))+1𝑖*g3^2*g(mink(4, mu3),mink(4, mu2))*g(mink(4, mu4),mink(4, mu1))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a3),coad(8, a4))*f(coad(8, color_adj_mid_G_SU3C),coad(8, a1),coad(8, a2))
+
+================================================================================
+Vertex 13
+Signature: {G, dR, dRbar}
+Status: BOTH
+FeynRules Rule:
+{{{dRbar, 1}, {dR, 2}, {G, 3}}, I*g3*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]}
+Python Rule:
+1𝑖*g3*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))*T(coad(8, a3),cof(3, c1),cof(3, c2))
+
+================================================================================
+Vertex 14
+Signature: {G, qL, qLbar}
+Status: BOTH
+FeynRules Rule:
+{{{qLbar, 1}, {qL, 2}, {G, 3}}, I*g3*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]}
+Python Rule:
+1𝑖*g3*g(cof(2, w1),cof(2, w2))*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))*T(coad(8, a3),cof(3, c1),cof(3, c2))
+
+================================================================================
+Vertex 15
+Signature: {G, uR, uRbar}
+Status: BOTH
+FeynRules Rule:
+{{{uRbar, 1}, {uR, 2}, {G, 3}}, I*g3*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]}
+Python Rule:
+1𝑖*g3*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))*T(coad(8, a3),cof(3, c1),cof(3, c2))
+
+================================================================================
+Vertex 16
+Signature: {Phi, Phi, Phibar, Phibar}
+Status: BOTH
+FeynRules Rule:
+{{{Phi, 1}, {Phi, 2}, {Phibar, 3}, {Phibar, 4}}, (-2*I)*lam*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[4]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]] - (2*I)*lam*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[4]]]}
+Python Rule:
+-2𝑖*lam*g(cof(2, w3),cof(2, w4))*g(cof(2, w1),cof(2, w2))-2𝑖*lam*g(cof(2, w3),cof(2, w2))*g(cof(2, w4),cof(2, w1))
+
+================================================================================
+Vertex 17
+Signature: {Phi, Phibar}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+-1𝑖*muH^2*g(cof(2, w1),cof(2, w2))-1𝑖*g(cof(2, w1),cof(2, w2))*pcomp(q1,mu1_int)*pcomp(q2,mu1_int)
+
+================================================================================
+Vertex 18
+Signature: {Phi, Phibar, Wi}
+Status: BOTH
+FeynRules Rule:
+{{{Phi, 1}, {Phibar, 2}, {Wi, 3}}, I*g2*FV[1, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]] - I*g2*FV[2, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]]}
+Python Rule:
+-1𝑖*g2*T(coad(3, aw3),cof(2, w1),cof(2, w2))*pcomp(q1,mu)+1𝑖*g2*T(coad(3, aw3),cof(2, w1),cof(2, w2))*pcomp(q2,mu)
+
+================================================================================
+Vertex 19
+Signature: {Phi, Phibar, Wi, Wi}
+Status: BOTH
+FeynRules Rule:
+{{{Phi, 1}, {Phibar, 2}, {Wi, 3}, {Wi, 4}}, I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, a1]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, a1], Index[SU2D, Ext[1]]] + I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, a1], Index[SU2D, Ext[1]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[2]], Index[SU2D, a1]]}
+Python Rule:
+1𝑖*g2^2*g(mink(4, mu3),mink(4, mu4))*T(coad(3, aw3),cof(2, w_mid_Phi_SU2L),cof(2, w2))*T(coad(3, aw4),cof(2, w1),cof(2, w_mid_Phi_SU2L))+1𝑖*g2^2*g(mink(4, mu3),mink(4, mu4))*T(coad(3, aw3),cof(2, w1),cof(2, w_mid_Phi_SU2L))*T(coad(3, aw4),cof(2, w_mid_Phi_SU2L),cof(2, w2))
+
+================================================================================
+Vertex 20
+Signature: {Phi, dR, qLbar}
+Status: BOTH
+FeynRules Rule:
+{{{qLbar, 1}, {dR, 2}, {Phi, 3}}, (-I)*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*yd[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+Python Rule:
+-1𝑖*g(bis(4, i1),bis(4, i2))*g(cof(2, w3),cof(2, w1))*g(cof(3, c1),cof(3, c2))*yd(fl1,fl2)
+
+================================================================================
+Vertex 21
+Signature: {Phi, eR, lLbar}
+Status: BOTH
+FeynRules Rule:
+{{{lLbar, 1}, {eR, 2}, {Phi, 3}}, (-I)*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*yl[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+Python Rule:
+-1𝑖*g(bis(4, i1),bis(4, i2))*g(cof(2, w3),cof(2, w1))*yl(fl1,fl2)
+
+================================================================================
+Vertex 22
+Signature: {Phi, qL, uRbar}
+Status: BOTH
+FeynRules Rule:
+{{{uRbar, 1}, {qL, 2}, {Phi, 3}}, (-I)*Conjugate[yu[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*Eps[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]}
+Python Rule:
+-1𝑖*g(bis(4, i1),bis(4, i3))*g(cof(3, c1),cof(3, c3))*Eps(cof(2, w3),cof(2, w2))*yuDag(fl1,fl3)
+
+================================================================================
+Vertex 23
+Signature: {Phibar, dRbar, qL}
+Status: BOTH
+FeynRules Rule:
+{{{dRbar, 1}, {qL, 2}, {Phibar, 3}}, (-I)*Conjugate[yd[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]}
+Python Rule:
+-1𝑖*g(bis(4, i1),bis(4, i3))*g(cof(2, w3),cof(2, w2))*g(cof(3, c1),cof(3, c3))*ydDag(fl1,fl3)
+
+================================================================================
+Vertex 24
+Signature: {Phibar, eRbar, lL}
+Status: BOTH
+FeynRules Rule:
+{{{eRbar, 1}, {lL, 2}, {Phibar, 3}}, (-I)*Conjugate[yl[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]}
+Python Rule:
+-1𝑖*g(bis(4, i1),bis(4, i3))*g(cof(2, w3),cof(2, w2))*ylDag(fl1,fl3)
+
+================================================================================
+Vertex 25
+Signature: {Phibar, qLbar, uR}
+Status: BOTH
+FeynRules Rule:
+{{{qLbar, 1}, {uR, 2}, {Phibar, 3}}, (-I)*Eps[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+Python Rule:
+-1𝑖*g(bis(4, i1),bis(4, i3))*g(cof(3, c1),cof(3, c3))*Eps(cof(2, w1),cof(2, w2))*yu(fl1,fl3)
+
+================================================================================
+Vertex 26
+Signature: {Wi, Wi}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+1𝑖*g(mink(4, mu1),mink(4, mu2))*g(coad(3, aw1),coad(3, aw2))*pcomp(q1,mu1_int)*pcomp(q2,mu1_int)-1𝑖*g(coad(3, aw1),coad(3, aw2))*pcomp(q1,mu2)*pcomp(q2,mu1)
+
+================================================================================
+Vertex 27
+Signature: {Wi, Wi, Wi}
+Status: BOTH
+FeynRules Rule:
+{{{Wi, 1}, {Wi, 2}, {Wi, 3}}, (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[1]]])/2 - (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[1]]])/2 - (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[2]]])/2 + (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[2]]])/2 + (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[3]]])/2 - (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, α], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, β], Index[Lorentz, Ext[3]]])/2 + (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]])/2 - (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]])/2 - (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]])/2 + (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]])/2 + (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])/2 - (g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])/2}
+Python Rule:
+-g2*g(mink(4, mu3),mink(4, mu1))*f(coad(3, aw3),coad(3, aw1),coad(3, aw2))*pcomp(q1,mu2)+g2*g(mink(4, mu3),mink(4, mu1))*f(coad(3, aw3),coad(3, aw1),coad(3, aw2))*pcomp(q3,mu2)+g2*g(mink(4, mu3),mink(4, mu2))*f(coad(3, aw3),coad(3, aw1),coad(3, aw2))*pcomp(q2,mu1)-g2*g(mink(4, mu3),mink(4, mu2))*f(coad(3, aw3),coad(3, aw1),coad(3, aw2))*pcomp(q3,mu1)+g2*g(mink(4, mu1),mink(4, mu2))*f(coad(3, aw3),coad(3, aw1),coad(3, aw2))*pcomp(q1,mu3)-g2*g(mink(4, mu1),mink(4, mu2))*f(coad(3, aw3),coad(3, aw1),coad(3, aw2))*pcomp(q2,mu3)
+
+================================================================================
+Vertex 28
+Signature: {Wi, Wi, Wi, Wi}
+Status: BOTH
+FeynRules Rule:
+{{{Wi, 1}, {Wi, 2}, {Wi, 3}, {Wi, 4}}, I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]}
+Python Rule:
+1𝑖*g2^2*g(mink(4, mu3),mink(4, mu4))*g(mink(4, mu1),mink(4, mu2))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw3),coad(3, aw1))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw2),coad(3, aw4))+1𝑖*g2^2*g(mink(4, mu3),mink(4, mu4))*g(mink(4, mu1),mink(4, mu2))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw3),coad(3, aw2))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw1),coad(3, aw4))-1𝑖*g2^2*g(mink(4, mu3),mink(4, mu1))*g(mink(4, mu4),mink(4, mu2))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw3),coad(3, aw2))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw1),coad(3, aw4))-1𝑖*g2^2*g(mink(4, mu3),mink(4, mu1))*g(mink(4, mu4),mink(4, mu2))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw3),coad(3, aw4))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw1),coad(3, aw2))-1𝑖*g2^2*g(mink(4, mu3),mink(4, mu2))*g(mink(4, mu4),mink(4, mu1))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw3),coad(3, aw1))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw2),coad(3, aw4))+1𝑖*g2^2*g(mink(4, mu3),mink(4, mu2))*g(mink(4, mu4),mink(4, mu1))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw3),coad(3, aw4))*f(coad(3, weak_adj_mid_Wi_SU2L),coad(3, aw1),coad(3, aw2))
+
+================================================================================
+Vertex 29
+Signature: {Wi, lL, lLbar}
+Status: BOTH
+FeynRules Rule:
+{{{lLbar, 1}, {lL, 2}, {Wi, 3}}, I*g2*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+Python Rule:
+1𝑖*g2*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))*T(coad(3, aw3),cof(2, w1),cof(2, w2))
+
+================================================================================
+Vertex 30
+Signature: {Wi, qL, qLbar}
+Status: BOTH
+FeynRules Rule:
+{{{qLbar, 1}, {qL, 2}, {Wi, 3}}, I*g2*Ga[Index[Lorentz, mu42], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+Python Rule:
+1𝑖*g2*g(cof(3, fl1),cof(3, fl2))*g(cof(3, c1),cof(3, c2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu3))*T(coad(3, aw3),cof(2, w1),cof(2, w2))
+
+================================================================================
+Vertex 31
+Signature: {dR, dRbar}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+1𝑖*g(cof(3, fl1),cof(3, fl2))*g(cof(3, c1),cof(3, c2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu1_int))*pcomp(q2,mu1_int)
+
+================================================================================
+Vertex 32
+Signature: {eR, eRbar}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+1𝑖*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu1_int))*pcomp(q2,mu1_int)
+
+================================================================================
+Vertex 33
+Signature: {lL, lLbar}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+1𝑖*g(cof(2, w1),cof(2, w2))*g(cof(3, fl1),cof(3, fl2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu1_int))*pcomp(q2,mu1_int)
+
+================================================================================
+Vertex 34
+Signature: {qL, qLbar}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+1𝑖*g(cof(2, w1),cof(2, w2))*g(cof(3, fl1),cof(3, fl2))*g(cof(3, c1),cof(3, c2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu1_int))*pcomp(q2,mu1_int)
+
+================================================================================
+Vertex 35
+Signature: {uR, uRbar}
+Status: ONLY_OURS
+FeynRules Rule:
+<MISSING>
+Python Rule:
+1𝑖*g(cof(3, fl1),cof(3, fl2))*g(cof(3, c1),cof(3, c2))*Ga(bis(4, i1),bis(4, i2),mink(4, mu1_int))*pcomp(q2,mu1_int)

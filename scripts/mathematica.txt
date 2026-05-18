@@ -1,0 +1,129 @@
+==============================
+Vertex 1
+Signature: {G, G, G}
+Rule: {{{G, 1}, {G, 2}, {G, 3}}, g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]}
+
+==============================
+Vertex 2
+Signature: {G, G, G, G}
+Rule: {{{G, 1}, {G, 2}, {G, 3}, {G, 4}}, I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, a1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]}
+
+==============================
+Vertex 3
+Signature: {dRbar, dR, B}
+Rule: {{{dRbar, 1}, {dR, 2}, {B, 3}}, (-1/3*I)*g1*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+
+==============================
+Vertex 4
+Signature: {eRbar, eR, B}
+Rule: {{{eRbar, 1}, {eR, 2}, {B, 3}}, (-I)*g1*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+
+==============================
+Vertex 5
+Signature: {lLbar, lL, B}
+Rule: {{{lLbar, 1}, {lL, 2}, {B, 3}}, (-1/2*I)*g1*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+
+==============================
+Vertex 6
+Signature: {qLbar, qL, B}
+Rule: {{{qLbar, 1}, {qL, 2}, {B, 3}}, (I/6)*g1*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+
+==============================
+Vertex 7
+Signature: {uRbar, uR, B}
+Rule: {{{uRbar, 1}, {uR, 2}, {B, 3}}, ((2*I)/3)*g1*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+
+==============================
+Vertex 8
+Signature: {B, Phi, Phibar}
+Rule: {{{B, 1}, {Phi, 2}, {Phibar, 3}}, (I/2)*g1*FV[2, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]] - (I/2)*g1*FV[3, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]}
+
+==============================
+Vertex 9
+Signature: {uRbar, qL, Phi}
+Rule: {{{uRbar, 1}, {qL, 2}, {Phi, 3}}, (-I)*Conjugate[yu[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*Eps[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]}
+
+==============================
+Vertex 10
+Signature: {dRbar, qL, Phibar}
+Rule: {{{dRbar, 1}, {qL, 2}, {Phibar, 3}}, (-I)*Conjugate[yd[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]}
+
+==============================
+Vertex 11
+Signature: {eRbar, lL, Phibar}
+Rule: {{{eRbar, 1}, {lL, 2}, {Phibar, 3}}, (-I)*Conjugate[yl[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]}
+
+==============================
+Vertex 12
+Signature: {B, B, Phi, Phibar}
+Rule: {{{B, 1}, {B, 2}, {Phi, 3}, {Phibar, 4}}, (I/2)*g1^2*IndexDelta[Index[SU2D, Ext[3]], Index[SU2D, Ext[4]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]}
+
+==============================
+Vertex 13
+Signature: {Phi, Phi, Phibar, Phibar}
+Rule: {{{Phi, 1}, {Phi, 2}, {Phibar, 3}, {Phibar, 4}}, (-2*I)*lam*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[4]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]] - (2*I)*lam*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[4]]]}
+
+==============================
+Vertex 14
+Signature: {qLbar, qL, G}
+Rule: {{{qLbar, 1}, {qL, 2}, {G, 3}}, I*g3*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]}
+
+==============================
+Vertex 15
+Signature: {uRbar, uR, G}
+Rule: {{{uRbar, 1}, {uR, 2}, {G, 3}}, I*g3*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]}
+
+==============================
+Vertex 16
+Signature: {dRbar, dR, G}
+Rule: {{{dRbar, 1}, {dR, 2}, {G, 3}}, I*g3*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]}
+
+==============================
+Vertex 17
+Signature: {qLbar, qL, Wi}
+Rule: {{{qLbar, 1}, {qL, 2}, {Wi, 3}}, I*g2*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+
+==============================
+Vertex 18
+Signature: {lLbar, lL, Wi}
+Rule: {{{lLbar, 1}, {lL, 2}, {Wi, 3}}, I*g2*Ga[Index[Lorentz, Ext[3]], Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]}
+
+==============================
+Vertex 19
+Signature: {Phi, Phibar, Wi}
+Rule: {{{Phi, 1}, {Phibar, 2}, {Wi, 3}}, I*g2*FV[1, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]] - I*g2*FV[2, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]]}
+
+==============================
+Vertex 20
+Signature: {B, Phi, Phibar, Wi}
+Rule: {{{B, 1}, {Phi, 2}, {Phibar, 3}, {Wi, 4}}, I*g1*g2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[3]], Index[SU2D, Ext[2]]]}
+
+==============================
+Vertex 21
+Signature: {Phi, Phibar, Wi, Wi}
+Rule: {{{Phi, 1}, {Phibar, 2}, {Wi, 3}, {Wi, 4}}, I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, a1]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, a1], Index[SU2D, Ext[1]]] + I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, a1], Index[SU2D, Ext[1]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[2]], Index[SU2D, a1]]}
+
+==============================
+Vertex 22
+Signature: {Wi, Wi, Wi}
+Rule: {{{Wi, 1}, {Wi, 2}, {Wi, 3}}, g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]}
+
+==============================
+Vertex 23
+Signature: {Wi, Wi, Wi, Wi}
+Rule: {{{Wi, 1}, {Wi, 2}, {Wi, 3}, {Wi, 4}}, I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, a1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, a1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]}
+
+==============================
+Vertex 24
+Signature: {qLbar, dR, Phi}
+Rule: {{{qLbar, 1}, {dR, 2}, {Phi, 3}}, (-I)*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*yd[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+
+==============================
+Vertex 25
+Signature: {lLbar, eR, Phi}
+Rule: {{{lLbar, 1}, {eR, 2}, {Phi, 3}}, (-I)*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*yl[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}
+
+==============================
+Vertex 26
+Signature: {qLbar, uR, Phibar}
+Rule: {{{qLbar, 1}, {uR, 2}, {Phibar, 3}}, (-I)*Eps[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]}

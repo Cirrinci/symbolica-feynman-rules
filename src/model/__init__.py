@@ -18,6 +18,11 @@ Declarative ``lagrangian_decl`` factors live in ``declared.py``:
 ``StructureConstant``, ``FieldStrength``, ``GaugeFixing``, ``GhostLagrangian``.
 """
 
+from __future__ import annotations
+
+from importlib import import_module
+from typing import TYPE_CHECKING
+
 # ---- metadata ------------------------------------------------------------
 from .metadata import (
     COLOR_ADJ_INDEX,
@@ -100,6 +105,30 @@ from .lagrangian import (
 from .core import Model
 from .validation import ValidationIssue, ValidationReport
 
+# ---- unbroken Standard Model helper --------------------------------------
+_SM_EXPORTS = frozenset(
+    {
+        "UnbrokenStandardModel",
+        "UnbrokenStandardModelFields",
+        "UnbrokenStandardModelGaugeGroups",
+        "UnbrokenStandardModelIndices",
+        "UnbrokenStandardModelLagrangians",
+        "UnbrokenStandardModelParameters",
+        "build_unbroken_standard_model",
+    }
+)
+
+if TYPE_CHECKING:
+    from .standard_model_unbroken import (
+        UnbrokenStandardModel,
+        UnbrokenStandardModelFields,
+        UnbrokenStandardModelGaugeGroups,
+        UnbrokenStandardModelIndices,
+        UnbrokenStandardModelLagrangians,
+        UnbrokenStandardModelParameters,
+        build_unbroken_standard_model,
+    )
+
 # ---- SSB helpers (kept for the existing electroweak workflow) ------------
 from .ssb import *  # noqa: F401,F403
 
@@ -110,3 +139,12 @@ from .lowering import (
     _match_covariant_monomial,
     _source_term_needs_compilation,
 )
+
+
+def __getattr__(name: str):
+    if name in _SM_EXPORTS:
+        module = import_module(".standard_model_unbroken", __name__)
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
