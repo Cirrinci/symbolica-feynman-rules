@@ -1248,3 +1248,61 @@ What this achieved:
   by filling missing labels after the fact
 - the safety fix is covered by tests and the whole suite stayed green:
   `170 passed`
+
+### 2026-05-14: flavor-expansion hardening, cache normalization, and notebook sync
+
+What happened:
+
+- the flavor/index handling path was reviewed and documented further in the
+  index-handling and flavor-expansion notebooks
+- flavor-index simplification was tightened across the model layer so expanded
+  flavor classes and their metadata behave more predictably
+- the flavor-expanded term cache in `src/model/lagrangian.py` was added and
+  then normalized so equivalent multi-index `flavor_expand` requests reuse the
+  same cached expansion
+- plain symbolic index-name handling was relaxed in the relevant compiler and
+  post-processing paths so user-facing labels remain usable without weakening
+  typed index checks
+- the `list_lagrangians.ipynb` notebook was updated so Yukawa/flavor content
+  is displayed more clearly
+
+What this achieved:
+
+- made flavor expansion cheaper to reuse across repeated vertex queries
+- reduced avoidable distinctions between equivalent flavor-expansion requests
+- kept the public notebook story aligned with the live flavor/index machinery
+- improved the robustness of symbolic index-name handling without changing the
+  typed contraction rules
+
+### 2026-05-15: unbroken Standard Model builder, Yukawa cleanup, flavor classes,
+and FeynRules-output comparison
+
+What happened:
+
+- a first non-BFM unbroken Standard Model builder was added under
+  `src/model/standard_model_unbroken.py`, together with a walkthrough notebook
+  and smoke tests
+- the builder was then tightened so the Yukawa sector uses explicit stand-in
+  conjugate matrices for the hermitian-conjugate terms and more explicit index
+  contractions matching the intended FeynRules structure
+- the generation-carrying fermions were declared as actual flavor classes with
+  `class_members`, which made `flavor_expand=True` work for the unbroken SM
+  example and enabled direct expansion tests
+- helper scripts were added to align and normalize Python and FeynRules vertex
+  outputs for direct comparison
+- the quartic gluon `GGGG` output was inspected in detail:
+  the internal adjoint dummy label was traced, structure-constant products were
+  canonicalized, and a regression test was added comparing the derived vertex
+  to the FeynRules form after canonicalization
+
+What this achieved:
+
+- established a first reusable non-BFM unbroken SM model in the live
+  declarative/model-building framework
+- made the Yukawa sector more honest about conjugation in the absence of a
+  symbolic `HC` operator
+- connected the unbroken SM example to the existing flavor-expansion machinery
+- created a cleaner output-comparison path for checking Python expressions
+  against FeynRules
+- showed that the apparent quartic-gluon mismatch was a presentation /
+  canonicalization issue rather than a real sign bug
