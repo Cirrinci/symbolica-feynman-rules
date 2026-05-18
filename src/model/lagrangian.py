@@ -586,17 +586,22 @@ class CompiledLagrangian:
             parameters=self.parameters,
         )
 
-    def to_symbolica(self):
+    def to_symbolica(self, *, flavor_expand: FlavorExpandOption = False):
         """Render the compiled Lagrangian as a single Symbolica expression.
 
         Display / simplification only -- Symbolica multiplication is
         commutative, so fermion / ghost product ordering is not preserved.
         Use the ordered ``terms`` tuple for ordering-sensitive operations.
+
+        ``flavor_expand`` mirrors ``feynman_rule``/``feynman_rules``: pass
+        ``True`` (or a specific flavor index, or an iterable of flavor
+        indices) to export the flavor-expanded view of the terms rather
+        than the flavor-generic ones.
         """
 
         from lagrangian.symbolica_export import lagrangian_to_symbolica
 
-        return lagrangian_to_symbolica(self)
+        return lagrangian_to_symbolica(self, flavor_expand=flavor_expand)
 
     def feynman_rules(
         self,

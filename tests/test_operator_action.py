@@ -25,6 +25,7 @@ from model import (
     Parameter,
     SPINOR_INDEX,
     dirac_field,
+    flavor_index,
     scalar_field,
 )
 from model.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
@@ -168,8 +169,19 @@ def test_replacement_operator_returns_none_for_unmapped_field(phi, chi):
 # ---------------------------------------------------------------------------
 
 
-def _psibar_psi_phi_term(psi: Field, phi: Field) -> InteractionTerm:
-    """Build ``psi.bar * psi * phi`` as an ``InteractionTerm``."""
+def _psibar_psi_phi_term(
+    psi: Field,
+    phi: Field,
+    *,
+    with_bilinear: bool = True,
+) -> InteractionTerm:
+    """Build ``psi.bar * psi * phi`` as an ``InteractionTerm``.
+
+    ``with_bilinear`` controls whether the closed Dirac bilinear metadata
+    is attached. Sign-tracking tests that don't preserve the bilinear
+    under their operator action should pass ``with_bilinear=False`` so
+    the engine doesn't reject the term for structural reasons.
+    """
 
     return InteractionTerm(
         coupling=Expression.num(1),
@@ -178,7 +190,7 @@ def _psibar_psi_phi_term(psi: Field, phi: Field) -> InteractionTerm:
             psi.occurrence(),
             phi.occurrence(),
         ),
-        closed_dirac_bilinears=((0, 1),),
+        closed_dirac_bilinears=((0, 1),) if with_bilinear else (),
     )
 
 
@@ -200,10 +212,19 @@ def test_odd_operator_picks_up_sign_after_two_fermions(psi, eta):
     Grassmann-odd ``psibar`` to reach slot 1.
 
     Concretely we use a non-trivial replacement (``psi -> eta``) so that
-    the two output terms can be distinguished by their field content.
+    the two output terms can be distinguished by their field content. The
+    replacement is unconjugated for both slots, which would break the
+    closed Dirac bilinear structure; we therefore build the source term
+    without bilinear metadata, since the focus of this test is the graded
+    Leibniz sign and not the bilinear bookkeeping (which is covered by
+    its own dedicated tests below).
     """
 
-    term = _psibar_psi_phi_term(psi, scalar_field("phi", self_conjugate=True))
+    term = _psibar_psi_phi_term(
+        psi,
+        scalar_field("phi", self_conjugate=True),
+        with_bilinear=False,
+    )
     operator = replacement_operator(
         "s",
         {psi: eta.occurrence()},
@@ -229,6 +250,10 @@ def test_odd_operator_picks_up_sign_after_two_fermions(psi, eta):
 def test_odd_operator_sign_alternates_across_pure_fermion_chain(psi, eta):
     """``s`` applied to a four-fermion chain ``psibar * psi * psibar * psi``
     gives signs ``(+, -, +, -)`` for slots ``(0, 1, 2, 3)``.
+
+    As with the two-fermion variant above, this test exercises the
+    Leibniz sign and uses a conjugation-flipping replacement, so the
+    source term is built without bilinear metadata.
     """
 
     term = InteractionTerm(
@@ -239,7 +264,6 @@ def test_odd_operator_sign_alternates_across_pure_fermion_chain(psi, eta):
             psi.occurrence(conjugated=True),
             psi.occurrence(),
         ),
-        closed_dirac_bilinears=((0, 1), (2, 3)),
     )
     operator = replacement_operator(
         "s",
@@ -495,3 +519,303 @@ def test_symbolica_export_does_not_distinguish_fermion_ordering(psi):
         closed_dirac_bilinears=((1, 0),),
     )
     assert _canon(interaction_term_to_symbolica(a)) == _canon(interaction_term_to_symbolica(b))
+
+
+# ---------------------------------------------------------------------------
+# Bilinear preservation / violation (finding 1)
+# ---------------------------------------------------------------------------
+
+
+def test_replacement_preserving_conjugation_remaps_bilinears_correctly(psi, eta):
+    """1-to-1 replacement that preserves Dirac-fermion conjugation keeps
+    the closed Dirac bilinear pointing at the right slots.
+
+    Original term: ``psi.bar * psi`` with bilinear ``(0, 1)``.
+    Operator: ``O[psi] = eta`` on the unconjugated psi slot, with an
+    explicit on_field that mirrors the original conjugation. Acting only
+    on the unconjugated slot remaps the bilinear to ``(0, 1)`` again
+    (replacement length 1 -> no slot shift).
+    """
+
+    def on_field(occurrence):
+        if occurrence.field is not psi:
+            return None
+        return single_field_result(eta.occurrence(conjugated=occurrence.conjugated))
+
+    operator = FieldOperator(name="O", parity=0, on_field=on_field)
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(psi.occurrence(conjugated=True), psi.occurrence()),
+        closed_dirac_bilinears=((0, 1),),
+    )
+
+    results = apply_field_operator_to_term(term, operator)
+    assert len(results) == 2
+
+    for slot, result in enumerate(results):
+        assert result.closed_dirac_bilinears == ((0, 1),)
+        names = tuple(occ.field.name for occ in result.fields)
+        expected = ("eta", "psi") if slot == 0 else ("psi", "eta")
+        assert names == expected
+
+
+def test_replacement_with_extra_factors_remaps_bilinear_endpoint(psi, ghost):
+    """Product-valued ``s[psi] = c * psi`` correctly remaps the bilinear
+    endpoint to the position of the unconjugated fermion in the
+    replacement.
+
+    Original term: ``psi.bar * psi`` with bilinear ``(0, 1)``.
+    Replacement on slot 1: ``(c, psi)``, where ``c`` is a Grassmann-odd
+    ghost. The bilinear's psi endpoint must move to slot ``1 + 1 = 2``,
+    leaving the psibar endpoint at slot ``0``.
+    """
+
+    def on_field(occurrence):
+        if occurrence.field is not psi or occurrence.conjugated:
+            return None
+        return single_field_result(
+            (ghost.occurrence(), psi.occurrence()),
+        )
+
+    operator = FieldOperator(name="s", parity=1, on_field=on_field)
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(psi.occurrence(conjugated=True), psi.occurrence()),
+        closed_dirac_bilinears=((0, 1),),
+    )
+
+    results = apply_field_operator_to_term(term, operator)
+    assert len(results) == 1
+    assert tuple(occ.field.name for occ in results[0].fields) == ("psi", "c", "psi")
+    assert tuple(occ.conjugated for occ in results[0].fields) == (True, False, False)
+    assert results[0].closed_dirac_bilinears == ((0, 2),)
+
+
+def test_replacement_breaking_bilinear_conjugation_raises(psi, eta):
+    """A replacement that does not contain a matching-conjugation
+    Dirac-fermion factor at a bilinear endpoint is rejected with a clear
+    structured error -- otherwise the stale bilinear would later be
+    rejected by ``vertex_engine`` with a less informative message.
+    """
+
+    operator = replacement_operator(
+        "broken",
+        # Unconditionally maps psi -> eta (unconjugated), regardless of
+        # the original slot's conjugation. This is exactly the source
+        # situation that finding 1 warned about.
+        {psi: eta.occurrence()},
+        parity=0,
+    )
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(psi.occurrence(conjugated=True), psi.occurrence()),
+        closed_dirac_bilinears=((0, 1),),
+    )
+    with pytest.raises(ValueError, match="psibar endpoint of a closed Dirac bilinear"):
+        apply_field_operator_to_term(term, operator)
+
+
+def test_ghost_replacement_in_dirac_bilinear_is_rejected(psi, ghost):
+    """Ghost fields are Grassmann-odd but have no Dirac spinor index, so
+    they must not be silently accepted as bilinear endpoints just
+    because their statistics is ``fermion``.
+    """
+
+    operator = FieldOperator(
+        name="O",
+        parity=0,
+        on_field=lambda occ: single_field_result(ghost.occurrence(conjugated=True)) if occ.field is psi else None,
+    )
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(psi.occurrence(conjugated=True), psi.occurrence()),
+        closed_dirac_bilinears=((0, 1),),
+    )
+    with pytest.raises(ValueError, match="closed Dirac bilinear"):
+        apply_field_operator_to_term(term, operator)
+
+
+# ---------------------------------------------------------------------------
+# Derivative Leibniz expansion (finding 2)
+# ---------------------------------------------------------------------------
+
+
+def test_product_valued_replacement_leibniz_expands_one_derivative(phi, chi):
+    """Bosonic Leibniz across a 2-slot replacement on a slot with one
+    derivative: the derivative fans out across the replacement, giving
+    two output terms.
+
+    Source: ``phi * partial_mu phi``.
+    Operator: ``O[phi] = (chi, phi)`` (two replacement slots) with
+    ``parity = 0`` and ``commute_with_partial_derivative = True``.
+    Acting on slot 1 should produce:
+
+    * ``phi * (partial_mu chi) * phi``  (derivative on first replacement slot)
+    * ``phi *  chi  * (partial_mu phi)``  (derivative on second replacement slot)
+
+    and acting on slot 0 (which has no derivative) should produce:
+
+    * ``(chi, phi) * partial_mu phi`` -- a single term.
+
+    Total: 3 output terms.
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(), phi.occurrence()),
+        derivatives=(DerivativeAction(target=1, lorentz_index=mu),),
+    )
+
+    def on_field(occurrence):
+        if occurrence.field is not phi:
+            return None
+        return single_field_result((chi.occurrence(), phi.occurrence()))
+
+    operator = FieldOperator(name="O", parity=0, on_field=on_field)
+    results = apply_field_operator_to_term(term, operator)
+    assert len(results) == 3
+
+    # Slot 0 acted on: no derivative on slot 0 -> single output term.
+    slot0 = results[0]
+    assert tuple(occ.field.name for occ in slot0.fields) == ("chi", "phi", "phi")
+    # The derivative originally on slot 1 is now on slot 2 after the shift.
+    assert slot0.derivatives == (DerivativeAction(target=2, lorentz_index=mu),)
+
+    # Slot 1 acted on -> two arrangements of the original derivative
+    # across the (chi, phi) replacement slots (1 and 2).
+    arrangement_a = results[1]
+    arrangement_b = results[2]
+    for arrangement in (arrangement_a, arrangement_b):
+        assert tuple(occ.field.name for occ in arrangement.fields) == ("phi", "chi", "phi")
+
+    derivative_targets = sorted(
+        action.target
+        for arrangement in (arrangement_a, arrangement_b)
+        for action in arrangement.derivatives
+    )
+    assert derivative_targets == [1, 2]
+
+
+def test_product_valued_replacement_leibniz_expands_two_derivatives(phi, chi):
+    """Two derivatives on the acted slot fan out to ``N**M = 2**2 = 4``
+    output terms (one per (derivative, replacement-slot) assignment).
+    """
+
+    mu = S("mu")
+    nu = S("nu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(),),
+        derivatives=(
+            DerivativeAction(target=0, lorentz_index=mu),
+            DerivativeAction(target=0, lorentz_index=nu),
+        ),
+    )
+
+    def on_field(occurrence):
+        if occurrence.field is not phi:
+            return None
+        return single_field_result((chi.occurrence(), phi.occurrence()))
+
+    operator = FieldOperator(name="O", parity=0, on_field=on_field)
+    results = apply_field_operator_to_term(term, operator)
+    assert len(results) == 4
+
+    arrangements = set()
+    for result in results:
+        assert tuple(occ.field.name for occ in result.fields) == ("chi", "phi")
+        slot_of = {action.lorentz_index: action.target for action in result.derivatives}
+        arrangements.add((slot_of[mu], slot_of[nu]))
+
+    assert arrangements == {(0, 0), (0, 1), (1, 0), (1, 1)}
+
+
+def test_single_replacement_is_still_one_arrangement_per_summand(phi, chi):
+    """For replacement length ``N = 1`` the Leibniz expansion collapses
+    back to one arrangement per summand (``1**M = 1``).
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(),),
+        derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
+    )
+    operator = replacement_operator("O", {phi: chi.occurrence()})
+
+    results = apply_field_operator_to_term(term, operator)
+    assert len(results) == 1
+    assert results[0].derivatives == (DerivativeAction(target=0, lorentz_index=mu),)
+
+
+def test_non_commuting_operator_still_rejects_derivative_slots(phi, chi):
+    """``commute_with_partial_derivative = False`` is preserved by the new
+    enumeration path: slots with derivatives are refused.
+    """
+
+    operator = FieldOperator(
+        name="O",
+        parity=0,
+        on_field=lambda occ: single_field_result(chi.occurrence()) if occ.field is phi else None,
+        commute_with_partial_derivative=False,
+    )
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(),),
+        derivatives=(DerivativeAction(target=0, lorentz_index=S("mu")),),
+    )
+    with pytest.raises(ValueError, match="does not commute with partial derivatives"):
+        apply_field_operator_to_term(term, operator)
+
+
+# ---------------------------------------------------------------------------
+# Flavor-expanded Symbolica export (finding 3)
+# ---------------------------------------------------------------------------
+
+
+def test_to_symbolica_with_flavor_expand_reflects_class_member_expansion():
+    """``CompiledLagrangian.to_symbolica(flavor_expand=True)`` exposes the
+    expanded class-member terms, not the flavor-generic source terms.
+
+    Concretely we build a tiny lepton-class Lagrangian with three
+    class members ``e``, ``mu``, ``ta``. The flavor-expanded export
+    should mention each member by name; the un-expanded export must not.
+    """
+
+    generation = flavor_index("Generation", 3, prefix="f")
+    l = dirac_field(
+        "l",
+        class_members=("e", "mu", "ta"),
+        indices=(generation,),
+        flavor_index=generation,
+    )
+    Phi = scalar_field("Phi")
+    f = S("f")
+
+    from model import Model
+
+    model = Model(
+        fields=(l, Phi),
+        lagrangian_decl=S("g") * l.bar(f) * l(f) * Phi,
+    )
+    lagrangian = model.lagrangian()
+
+    base_rendered = _canon(lagrangian.to_symbolica())
+    expanded_rendered = _canon(lagrangian.to_symbolica(flavor_expand=True))
+
+    # The generic form should contain the class name; the expanded form
+    # should contain each class-member name and *not* the generic class
+    # name.
+    assert "l" in base_rendered
+    for member in ("e", "mu", "ta"):
+        assert member in expanded_rendered, (
+            f"flavor-expanded export missing class member {member!r}"
+        )
+
+
+def test_to_symbolica_flavor_expand_false_matches_default_behavior():
+    """The default ``flavor_expand=False`` is unchanged by the new kwarg."""
+
+    base = Lagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(scalar_field("phi", self_conjugate=True).occurrence(),)),))
+    assert _canon(base.to_symbolica()) == _canon(base.to_symbolica(flavor_expand=False))

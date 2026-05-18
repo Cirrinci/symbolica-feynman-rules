@@ -106,15 +106,28 @@ def interaction_terms_to_symbolica(terms: Iterable[InteractionTerm]) -> object:
     return total
 
 
-def lagrangian_to_symbolica(lagrangian) -> object:
+def lagrangian_to_symbolica(lagrangian, *, flavor_expand=False) -> object:
     """Render any object exposing a ``terms`` attribute as a Symbolica sum.
 
     Works for ``CompiledLagrangian`` / ``Lagrangian`` instances directly,
     as well as any duck-typed container whose ``terms`` attribute is an
     iterable of ``InteractionTerm``.
+
+    ``flavor_expand`` mirrors the keyword of ``CompiledLagrangian.feynman_rule``
+    / ``feynman_rules``. When truthy (or when an explicit flavor index /
+    iterable of flavor indices is supplied), the export reflects the
+    flavor-expanded compiled view of the Lagrangian rather than the
+    flavor-generic source terms. For objects that don't expose
+    ``_expanded_terms`` (i.e. plain duck-typed containers), the parameter is
+    silently ignored and ``.terms`` is used as-is.
     """
 
-    return interaction_terms_to_symbolica(lagrangian.terms)
+    expanded_terms_method = getattr(lagrangian, "_expanded_terms", None)
+    if expanded_terms_method is not None:
+        terms = expanded_terms_method(flavor_expand=flavor_expand)
+    else:
+        terms = lagrangian.terms
+    return interaction_terms_to_symbolica(terms)
 
 
 # ---------------------------------------------------------------------------

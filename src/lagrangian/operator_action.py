@@ -47,6 +47,7 @@ message for full context):
 from __future__ import annotations
 
 from dataclasses import dataclass, field as dataclass_field, replace
+from itertools import product as iter_product
 from typing import Callable, Optional, Sequence, Union
 
 from symbolica import Expression
@@ -174,11 +175,20 @@ class FieldOperator:
     commute_with_partial_derivative:
         If True (default), the operator is assumed to commute with the
         partial derivatives encoded in ``InteractionTerm.derivatives``.
-        Any ``DerivativeAction(target=k, ...)`` on the slot being acted on
-        is re-targeted to the first replacement slot. If False, the engine
-        refuses to act on slots that carry derivative actions and raises a
-        structured error unless the user provides their own custom logic
-        (future extension).
+        For a replacement of length ``N >= 1`` on a slot that carries
+        ``M`` derivative actions, the engine then performs the bosonic
+        Leibniz expansion of those derivatives across the replacement
+        slots: each independent derivative may land on any replacement
+        slot, so each summand fans out to ``N ** M`` output terms (with
+        ``N ** 0 = 1`` recovering the simple no-derivative case). The
+        partial derivative is parity-even, so all such terms enter with
+        sign ``+1`` relative to the slot's Leibniz sign.
+
+        If False, the engine refuses to act on any slot that carries a
+        derivative action and raises a structured error -- callers that
+        need a non-commuting action (BRST through a covariant derivative,
+        for instance) should pre-expand the derivative or write a custom
+        ``on_field`` that consumes the derivative context explicitly.
     """
 
     name: str
@@ -231,6 +241,15 @@ def _validate_replacement_against_existing_features(
     derivatives_on_slot: tuple[DerivativeAction, ...],
     bilinears_containing_slot: tuple[tuple[int, int], ...],
 ):
+    """Reject replacements that the splice helpers cannot safely handle.
+
+    Structural validation of bilinear endpoints lives in
+    ``_validate_and_remap_bilinears`` (which inspects the replacement's
+    field statistics/conjugation). This helper only handles the
+    coarse-grained "is the replacement compatible with the operator's
+    options at all?" question.
+    """
+
     if not replacement:
         if derivatives_on_slot:
             raise ValueError(
@@ -254,43 +273,155 @@ def _validate_replacement_against_existing_features(
         )
 
 
-def _remap_after_splice(
+def _matching_fermion_positions_in_replacement(
+    replacement: Sequence[FieldOccurrence],
     *,
-    slot: int,
-    replacement_len: int,
-    derivatives: tuple[DerivativeAction, ...],
-    bilinears: tuple[tuple[int, int], ...],
-) -> tuple[tuple[DerivativeAction, ...], tuple[tuple[int, int], ...]]:
-    """Remap derivative ``target``s and bilinear endpoints after splicing.
+    conjugated_target: bool,
+) -> list[int]:
+    """Find positions in ``replacement`` that look like a Dirac-fermion of
+    the requested conjugation.
 
-    Splicing ``replacement_len`` field occurrences in place of one slot at
-    position ``slot`` shifts every slot index ``> slot`` by
-    ``replacement_len - 1``. Derivative actions on ``slot`` itself are
-    retargeted onto the first replacement slot (``slot``).
-
-    The bilinear endpoints are remapped consistently. We do not attempt to
-    re-derive bilinear structure here; if the operator changes a slot's
-    fermion structure the caller is expected to handle that explicitly.
+    Uses ``Field.kind == "fermion"`` (not just ``statistics == "fermion"``)
+    so that ghost fields -- which are Grassmann-odd but have no Dirac
+    spinor index -- are not accidentally picked up as bilinear endpoints.
     """
 
-    shift = replacement_len - 1
+    return [
+        position
+        for position, occurrence in enumerate(replacement)
+        if occurrence.field.kind == "fermion"
+        and bool(occurrence.conjugated) == bool(conjugated_target)
+    ]
 
-    def remap_index(idx: int) -> int:
-        if idx == slot:
-            return slot
+
+def _validate_and_remap_bilinears(
+    *,
+    operator: FieldOperator,
+    slot: int,
+    original_occurrence: FieldOccurrence,
+    replacement: tuple[FieldOccurrence, ...],
+    bilinears: tuple[tuple[int, int], ...],
+) -> tuple[tuple[int, int], ...]:
+    """Validate and remap ``closed_dirac_bilinears`` across one splice.
+
+    For each ``(psibar_slot, psi_slot)`` pair:
+
+    * Bilinears not involving ``slot`` are shifted by ``len(replacement) -
+      1`` for endpoints ``> slot``.
+    * Bilinears with the ``psibar`` endpoint at ``slot`` require the
+      replacement to contain *exactly one* Dirac-fermion occurrence with
+      ``conjugated == True``; its position inside the replacement becomes
+      the new ``psibar_slot``.
+    * Bilinears with the ``psi`` endpoint at ``slot`` require the
+      replacement to contain exactly one Dirac-fermion occurrence with
+      ``conjugated == False``.
+
+    If the replacement does not preserve the bilinear structure, we raise
+    a structured ``ValueError``: silently shifting the indices would
+    leave a stale bilinear pointing at a non-Dirac-fermion slot, which
+    the vertex engine would later reject with a less informative error.
+    """
+
+    shift = len(replacement) - 1
+
+    def shift_index(idx: int) -> int:
         if idx > slot:
             return idx + shift
         return idx
 
-    new_derivatives = tuple(
-        DerivativeAction(target=remap_index(action.target), lorentz_index=action.lorentz_index)
+    remapped: list[tuple[int, int]] = []
+    for psibar_slot, psi_slot in bilinears:
+        if psibar_slot == slot:
+            matches = _matching_fermion_positions_in_replacement(
+                replacement, conjugated_target=True
+            )
+            if len(matches) != 1:
+                raise ValueError(
+                    f"Operator {operator.name!r} acts on slot {slot}, the psibar "
+                    "endpoint of a closed Dirac bilinear, but the replacement does "
+                    f"not contain exactly one conjugated Dirac-fermion factor (found "
+                    f"{len(matches)}). Provide a replacement that preserves the "
+                    "bilinear structure, or drop the bilinear metadata before "
+                    "applying the operator."
+                )
+            remapped.append((slot + matches[0], shift_index(psi_slot)))
+            continue
+        if psi_slot == slot:
+            matches = _matching_fermion_positions_in_replacement(
+                replacement, conjugated_target=False
+            )
+            if len(matches) != 1:
+                raise ValueError(
+                    f"Operator {operator.name!r} acts on slot {slot}, the psi "
+                    "endpoint of a closed Dirac bilinear, but the replacement does "
+                    f"not contain exactly one unconjugated Dirac-fermion factor "
+                    f"(found {len(matches)}). Provide a replacement that preserves "
+                    "the bilinear structure, or drop the bilinear metadata before "
+                    "applying the operator."
+                )
+            remapped.append((shift_index(psibar_slot), slot + matches[0]))
+            continue
+        remapped.append((shift_index(psibar_slot), shift_index(psi_slot)))
+    return tuple(remapped)
+
+
+def _enumerate_derivative_arrangements(
+    *,
+    operator: FieldOperator,
+    slot: int,
+    replacement_len: int,
+    derivatives: tuple[DerivativeAction, ...],
+) -> list[tuple[DerivativeAction, ...]]:
+    """Enumerate output ``derivatives`` tuples for the bosonic Leibniz
+    expansion of derivatives across one splice.
+
+    Derivatives not on ``slot`` are simply shifted; derivatives on
+    ``slot`` itself fan out: each independent derivative may land on any
+    of the ``replacement_len`` replacement slots, giving
+    ``replacement_len ** (#on_slot)`` independent arrangements. The
+    partial derivative is parity-even, so no extra signs appear here.
+
+    The empty-replacement / non-commuting-partial cases are guarded by
+    ``_validate_replacement_against_existing_features`` and would also
+    raise here defensively if reached.
+    """
+
+    shift = replacement_len - 1
+
+    def shift_index(idx: int) -> int:
+        if idx > slot:
+            return idx + shift
+        return idx
+
+    on_slot = tuple(action for action in derivatives if action.target == slot)
+    off_slot = tuple(
+        DerivativeAction(target=shift_index(action.target), lorentz_index=action.lorentz_index)
         for action in derivatives
+        if action.target != slot
     )
-    new_bilinears = tuple(
-        (remap_index(psibar_slot), remap_index(psi_slot))
-        for psibar_slot, psi_slot in bilinears
-    )
-    return new_derivatives, new_bilinears
+
+    if not on_slot:
+        return [off_slot]
+
+    if replacement_len == 0:
+        raise ValueError(
+            f"Operator {operator.name!r} cannot annihilate slot {slot} while it "
+            "carries derivative actions."
+        )
+    if not operator.commute_with_partial_derivative:
+        raise ValueError(
+            f"Operator {operator.name!r} does not commute with partial derivatives, "
+            f"and slot {slot} carries derivative actions."
+        )
+
+    arrangements: list[tuple[DerivativeAction, ...]] = []
+    for assignment in iter_product(range(replacement_len), repeat=len(on_slot)):
+        placed = tuple(
+            DerivativeAction(target=slot + offset, lorentz_index=action.lorentz_index)
+            for action, offset in zip(on_slot, assignment)
+        )
+        arrangements.append(off_slot + placed)
+    return arrangements
 
 
 def _coupling_product(*pieces: object) -> object:
@@ -364,10 +495,11 @@ def apply_field_operator_to_term(
             )
 
             new_fields = term.fields[:slot] + replacement + term.fields[slot + 1 :]
-            new_derivatives, new_bilinears = _remap_after_splice(
+            new_bilinears = _validate_and_remap_bilinears(
+                operator=operator,
                 slot=slot,
-                replacement_len=len(replacement),
-                derivatives=term.derivatives,
+                original_occurrence=occurrence,
+                replacement=replacement,
                 bilinears=term.closed_dirac_bilinears,
             )
             new_coupling = _coupling_product(
@@ -375,16 +507,24 @@ def apply_field_operator_to_term(
                 summand.coefficient,
                 term.coupling,
             )
-            new_terms.append(
-                replace(
-                    term,
-                    coupling=new_coupling,
-                    fields=new_fields,
-                    derivatives=new_derivatives,
-                    closed_dirac_bilinears=new_bilinears,
-                    origin=(term.origin + (";" if term.origin else "") + f"op:{operator.name}@slot{slot}"),
-                )
+
+            arrangements = _enumerate_derivative_arrangements(
+                operator=operator,
+                slot=slot,
+                replacement_len=len(replacement),
+                derivatives=term.derivatives,
             )
+            for new_derivatives in arrangements:
+                new_terms.append(
+                    replace(
+                        term,
+                        coupling=new_coupling,
+                        fields=new_fields,
+                        derivatives=new_derivatives,
+                        closed_dirac_bilinears=new_bilinears,
+                        origin=(term.origin + (";" if term.origin else "") + f"op:{operator.name}@slot{slot}"),
+                    )
+                )
 
         parity_to_the_left = (parity_to_the_left + _occurrence_parity(occurrence)) % 2
 
