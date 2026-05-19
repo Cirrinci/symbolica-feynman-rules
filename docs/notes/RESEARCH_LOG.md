@@ -1383,3 +1383,93 @@ What this achieved:
   - a dedicated IBP / total-derivative simplification layer above lowered terms
   - safe reverse conversion Symbolica → `InteractionTerm` only with a field
     registry and explicit ordering metadata (stub left as `NotImplementedError`)
+
+### 2026-05-19: derivative-aware operator actions, infinitesimal gauge variation,
+unified grouped vertex extraction, and label-safe replacements
+
+What happened:
+
+- the lowered-operator layer in `src/lagrangian/operator_action.py` was
+  extended beyond pure slot replacement:
+  `OperatorSummand` now carries `new_derivatives`, the engine translates those
+  replacement-local derivative targets into absolute `InteractionTerm` slot
+  indices, and the runtime action can therefore create fresh
+  `DerivativeAction(...)` entries instead of only redistributing derivatives
+  that were already present on the acted slot
+- on top of that extension, `partial(...)` was turned into a dual-purpose API:
+  - `partial(mu)` now returns a runtime `FieldOperator` that acts by graded
+    Leibniz on lowered terms and attaches a fresh derivative on each acted slot
+  - `partial(mu, Phi)` remains the declarative `PartialD(Phi, mu)` shortcut for
+    model declarations
+  - the runtime form also supports `on=...` filtering so it can act only on a
+    selected field or tuple of fields
+- `gauge_variation(group=..., parameter=...)` was implemented as a concrete
+  infinitesimal gauge-transformation operator on compiled Lagrangians:
+  - U(1) matter variations use the field charge from
+    `field.quantum_numbers[group.charge]`
+  - non-abelian matter variations insert the appropriate generator and rotate
+    the representation-slot label explicitly
+  - gauge-boson variations produce both the inhomogeneous `+ ∂_μ α`
+    contribution and the homogeneous `- g f^{abc} α^b A^c_μ` contribution
+  - the gauge parameter is materialized as a synthetic scalar field `alpha`
+    (with the adjoint index when needed), so the existing lowered-term
+    derivative bookkeeping can be reused
+- the compiled-Lagrangian view gained a cleaner public surface:
+  - `CompiledLagrangian.to_symbolica(...)` stayed as the display/export view
+  - `Model.to_symbolica(...)` was added as the top-level forwarder, so the user
+    does not need to drop to `model.lagrangian()` just to inspect the compiled
+    expression
+  - grouped whole-Lagrangian vertex extraction was folded into zero-argument
+    `feynman_rule(...)`, with `arity=` and `select=` preserved there; the old
+    plural `feynman_rules(...)` entry point was removed across code, tests,
+    notebooks, and docs
+- the operator-action layer was hardened again around replacement metadata:
+  replacements now inherit missing compatible slot labels from the acted
+  occurrence when the target is unambiguous
+  (same exact `IndexType`, one compatible replacement occurrence, same slot
+  multiplicity)
+- that label-inheritance fix closed a real usability gap in the notebook odd
+  operator example:
+  a bilinear-preserving replacement such as `psi -> xi` no longer drops the
+  original spinor label, so the resulting derived terms remain consumable by
+  the usual `feynman_rule(...)` vertex-extraction path
+- the operator/gauge notebook story was synchronized with the live code:
+  `notebooks/operator_action_and_symbolica_walkthrough.ipynb` now documents the
+  runtime partial-derivative operator, gauge variation on lowered terms, and
+  working vertex extraction on operator-derived Lagrangians
+- regression coverage was expanded materially:
+  - `tests/test_operator_action.py` now covers runtime `partial(...)`,
+    fresh-derivative insertion, bilinear-preserving differentiated fermion
+    chains, Symbolica export forwarding, and the label-inheritance path needed
+    for downstream `feynman_rule(...)`
+  - `tests/test_gauge_variation.py` covers U(1) and non-abelian matter
+    invariance checks, wrong-charge / non-singlet non-invariance checks, the
+    explicit gauge-boson variation structure, and a well-formedness check for
+    pure Yang-Mills variation
+  - `tests/test_vertex_reporting.py` now pins the zero-argument
+    `feynman_rule(arity=...)` / `feynman_rule(select=...)` behavior directly
+- the full test suite was rerun after these changes and passed:
+  `269 passed`
+
+What this achieved:
+
+- the operator layer crossed an important threshold:
+  it is no longer only a replacement calculus on existing lowered slots, but
+  can now also create fresh spacetime-derivative structure in the same
+  `InteractionTerm` representation that the rest of the pipeline already trusts
+- the project now has a direct lowered-term implementation of infinitesimal
+  gauge variation, which makes gauge-invariance checks possible without adding
+  a second symbolic engine or reinterpreting the declarative source language
+- the public API became more coherent:
+  users can inspect compiled expressions from either `Model` or
+  `CompiledLagrangian`, and there is now one canonical vertex-extraction name
+  (`feynman_rule(...)`) for both single-vertex and grouped whole-Lagrangian
+  queries
+- derived Lagrangians produced by custom operators became more robust
+  downstream:
+  index labels needed by the fermion vertex machinery are no longer lost in
+  the common "same-structure replacement field" case
+- the notebook/documentation story moved closer to the real code:
+  the main operator walkthrough now demonstrates features that are actually
+  implemented end-to-end, including fresh derivatives, gauge variation, and
+  vertex extraction from operator outputs
