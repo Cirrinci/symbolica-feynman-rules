@@ -1,86 +1,120 @@
 # Thesis outline
 
-### Absrtract
+**Narrative arc:** motivation and context → design principles → pipeline implementation (declaration → lowering → vertices) → validation → synthesis.
 
+Keep each implementation chapter anchored on one question: *what goes in, what comes out, and what can go wrong?*
 
-### Chapter 1: Introduction
+---
 
-- State why Feynman rules are needed in particle physics and why automation is useful
-- Introduce FeynRules 
-- End the chapter with list of thesis contributions
+### Front matter
 
-### Chapter 2:  Theory Background
+- Abstract
+- (Optional) notation and conventions table — index kinds, metric signature, fermion ordering convention
 
-- Essential background only: Lagrangian field theory, vertices from interaction terms, scalar/fermion/vector/ghost fields
-- Index types: Lorentz, spinor, gauge, flavor; covariant derivatives; abelian and non-abelian gauge theories; fermionic non-commutativity
-- Gauge fixing and ghost fields: why required
-- SM
-- SMEFT
+---
 
-### Chapter 3: Existing Tools: FeynRules
+### Chapter 1 — Introduction
 
-- FeynRules workflow and model-file structure
+- Why Feynman rules matter; why automated, inspectable derivation is useful
+- Brief role of FeynRules and of this Python/Symbolica approach (one paragraph each; details in Ch. 2)
+- **Contributions** (numbered list)
+- **Scope** (what is in / out of the thesis)
+- Chapter guide
 
-### Chapter 4: Design Goals and Scope
+---
 
-- Build a transparent symbolic pipeline from model declaration to Feynman rules
+### Chapter 2 — Background and related work
 
-### Chapter 5: Architecture of the Python Framework
-- full pipeline: user syntax -> lowered objects -> extracted vertices
-- Cover `Model`, `Field`, `ConjugateField`, `IndexType`, `GaugeGroup`, `Representation`, `CovD`, `PartialD`, `Gamma`, `InteractionTerm`, and the analyzed/lowered source-term layer.
+*Theory and tools in one place; avoid repeating FeynRules later.*
 
-### Chapter 6: Index and Tensor Handling
-- Explain how index kinds and labels are represented, when labels are explicit or inferred, and where ambiguity is rejected.
-- Note that explicit labels are verbose but robust, while compact notation is readable but inference-sensitive.
-- Require ambiguous input to fail clearly.
+**2.1 Field theory essentials** — Lagrangians, interaction terms, vertices; scalar / vector / Dirac / ghost fields; Lorentz, spinor, gauge, and flavor indices; abelian and non-abelian gauge structure; covariant derivatives; gauge fixing and ghosts (why they are needed).
 
-### Chapter 7: Gauge Interactions
-- Describe the internal representation of gauge groups and matter representations, 
-- how covariant derivatives are expanded.
-- Cover abelian and non-abelian cases, scalar and fermion kinetic terms, matter-gauge vertices
+**2.2 Reference models** — Standard Model as the main validation target; SMEFT only as motivation or outlook if not implemented.
 
-### Chapter 8: Fermions and Non-Commuting Products
+**2.3 FeynRules workflow** — model files, conventions, outputs used for comparison.
 
-- Grassmann parity, Dirac conjugation, fermion ordering
-- Bilinear recognition, gamma matrices, chiral projectors, four-fermion terms
-- Difficulties of non-canonical ordering
-- Fermions as main technical challenge (order & indices)
+---
 
-### Chapter 9: Gauge Kinetic Terms, Gauge Fixing and Ghosts
+### Chapter 3 — Requirements, design, and architecture
 
-- Field-strength tensors, pure-gauge interactions
-- Gauge-fixing terms, ghost declarations, ghost-gauge interactions
-- Adoc metadata -> improved reporting, validation, debugging
+*Former Ch. 4 + 5.*
 
-### Chapter 10: Feynman-Rule Extraction
+- Design goals: transparent symbolic pipeline, explicit intermediate representations, fail-fast index handling, separation of physics layers
+- End-to-end pipeline diagram: declarative `Model` → analyzed source terms → lowered `InteractionTerm`s → compiler (gauge) → vertex engine → output
+- Layer responsibilities: `model/`, `lagrangian/`, `compiler/`, `symbolic/` — what each may and may not know
+- Core objects: `Field`, conjugation, `IndexType`, `GaugeGroup`, `Representation`, `CovD`, `PartialD`, `Gamma`, `InteractionTerm`, provenance metadata
 
-- Canonical interaction terms to vertices
-- Vertex signatures, external-leg labels, momentum assignment
-- Derivative-to-momentum conversion
-- Fermionic signs, output simplification
+---
 
-### Chapter 11: Validation and Comparison
+### Chapter 4 — Model declaration and lowering
 
-- Small analytic examples, then targeted FeynRules comparisons
-- tests
+- Public declarative syntax and `Model` construction
+- Source-term analysis: index binding, plain labels vs typed slots, ambiguity rejection
+- Lowering to canonical interaction monomials (fields, `DerivativeAction`, couplings, bilinear metadata)
+- Flavor / class expansion (supported subset)
 
-### Chapter 12: Results
+---
 
-- Representative model inputs, lowered terms, extracted vertices
-- intermediate structure
-- Compact feature table: implemented, partially implemented, unsupported
-- Validation summary: analytic and FeynRules checks
+### Chapter 5 — Gauge sector
 
-### Chapter 13: Discussion
+*Merge former gauge-interaction and kinetic/fixing/ghost chapters.*
 
-- What worked well and remained difficult
-- Technical lessons: fermion signs, sign conventions, index inference, gauge matching
-- Inspectable intermediate representations as main strength
+- Metadata-driven covariant expansion (abelian and non-abelian; scalar and fermion matter; repeated slots)
+- Field strengths and pure-gauge interactions
+- Gauge fixing and ghost Lagrangians; ghost–gauge vertices
+- How provenance metadata supports validation and debugging
 
-### Chapter 14: Conclusions and Future Work
+---
 
-- Restate goal, summarize framework, main validated examples, current limitations
-- Future:....
+### Chapter 6 — Fermions, indices, and Feynman-rule extraction
+
+*Fermion ordering and vertex engine belong in one chapter — they are one pipeline stage.*
+
+- Grassmann parity, Dirac conjugation, ordered products, bilinear recognition
+- Gamma matrices, projectors, four-fermion structures; ordering pitfalls
+- Index/tensor infrastructure (representation, contraction, canonicalization) at the point of use
+- Vertex signatures, external legs, momentum replacement, fermionic signs, simplification
+
+---
+
+### Chapter 7 — Validation and results
+
+*Single evaluation chapter — no separate “results” chapter.*
+
+- Strategy: analytic checks → targeted FeynRules parity → regression tests
+- Representative examples: small models, unbroken SM (and any other flagship case)
+- Show intermediate structures where they clarify correctness (lowered terms, sample vertices)
+- **Feature table:** implemented / partial / not supported
+- Summary of agreements and known presentation mismatches (e.g. canonicalization)
+
+---
+
+### Chapter 8 — Discussion
+
+- What worked well; what remained difficult (fermion signs, conventions, index inference, gauge matching)
+- Inspectable intermediates as the main methodological strength
+- Limitations of scope and of comparison to FeynRules
+
+---
+
+### Chapter 9 — Conclusions and future work
+
+- Restate goal and main outcomes
+- Future directions (pick what you actually want to pursue):
+  - electroweak symmetry breaking / BFM extensions
+  - richer flavor expansion and SMEFT interfaces
+  - operator calculus on lowered Lagrangians (`apply_operator`, Symbolica export) and IBP / total-derivative layer
+  - tighter Symbolica ↔ `InteractionTerm` round-trip only with explicit ordering metadata
+
+---
+
+### Appendices (optional)
+
+- A: Conventions and index glossary
+- B: Selected vertex or model-file comparisons
+- C: Short note on operator-action layer (if too detailed for the main text)
+
+---
 
 ## Supported scope to present
 
@@ -96,7 +130,3 @@
 - gauge-fixing terms
 - ghost terms
 - partial flavor/class expansion support
-
-## What to keep out of scope
-
-...
