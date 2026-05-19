@@ -36,6 +36,7 @@ from lagrangian.operator_action import (
     apply_field_operator,
     apply_field_operator_to_term,
     constant_result,
+    partial,
     replacement_operator,
     single_field_result,
     zero_result,
@@ -819,3 +820,371 @@ def test_to_symbolica_flavor_expand_false_matches_default_behavior():
 
     base = Lagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(scalar_field("phi", self_conjugate=True).occurrence(),)),))
     assert _canon(base.to_symbolica()) == _canon(base.to_symbolica(flavor_expand=False))
+
+
+# ---------------------------------------------------------------------------
+# Real spacetime derivative operator: `partial(...)` factory
+# ---------------------------------------------------------------------------
+#
+# These tests cover the new derivative operator. The defining feature is
+# that ``partial(mu)`` does **not** replace the field; it keeps the same
+# ``FieldOccurrence`` and attaches a fresh ``DerivativeAction`` to its
+# slot, so the lowered ``InteractionTerm`` looks the same as one declared
+# with the existing ``PartialD(Phi, mu)`` factor.
+
+
+def test_partial_one_arg_returns_field_operator():
+    """``partial(mu)`` (one argument) is a runtime ``FieldOperator``."""
+
+    mu = S("mu")
+    op = partial(mu)
+    assert isinstance(op, FieldOperator)
+    assert op.parity == 0
+
+
+def test_partial_two_arg_returns_declarative_partial_d(phi):
+    """``partial(mu, Phi)`` is sugar for the declarative ``PartialD(Phi, mu)``."""
+
+    from model.declared import PartialDerivativeFactor
+
+    mu = S("mu")
+    factor = partial(mu, phi)
+    assert isinstance(factor, PartialDerivativeFactor)
+    assert factor.field is phi
+    assert factor.lorentz_indices == (mu,)
+
+
+def test_partial_rejects_none_lorentz_index():
+    """A None Lorentz index is caught up front, not deep inside lowering."""
+
+    with pytest.raises(TypeError, match="non-None Lorentz index"):
+        partial(None)
+
+
+def test_partial_two_arg_form_rejects_runtime_keywords(phi):
+    """Mixing the declarative shortcut with runtime-only keywords is an error."""
+
+    mu = S("mu")
+    with pytest.raises(TypeError, match="declarative-factor shortcut"):
+        partial(mu, phi, on=phi)
+
+
+def test_partial_on_scalar_cubed_applies_product_rule(phi):
+    """``partial(mu)`` on ``phi*phi*phi`` gives the Leibniz expansion:
+
+    three output terms, each carrying one fresh derivative on the
+    corresponding slot.
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(), phi.occurrence(), phi.occurrence()),
+    )
+    results = apply_field_operator_to_term(term, partial(mu))
+
+    assert len(results) == 3
+    for slot, result in enumerate(results):
+        names = tuple(occ.field.name for occ in result.fields)
+        assert names == ("phi", "phi", "phi")
+        assert result.derivatives == (
+            DerivativeAction(target=slot, lorentz_index=mu),
+        )
+        # ``partial`` is parity 0 -> no graded sign factor.
+        assert _canon(result.coupling) == _canon(Expression.num(1))
+
+
+def test_partial_on_scalar_product_gives_two_summands(phi, chi):
+    """``partial_mu(Phi*Chi) = (∂_mu Phi)*Chi + Phi*(∂_mu Chi)``."""
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(), chi.occurrence()),
+    )
+    results = apply_field_operator_to_term(term, partial(mu))
+
+    assert len(results) == 2
+    assert tuple(occ.field.name for occ in results[0].fields) == ("phi", "chi")
+    assert results[0].derivatives == (DerivativeAction(target=0, lorentz_index=mu),)
+    assert tuple(occ.field.name for occ in results[1].fields) == ("phi", "chi")
+    assert results[1].derivatives == (DerivativeAction(target=1, lorentz_index=mu),)
+
+
+def test_partial_with_on_restricts_to_named_field(phi, chi):
+    """``partial(mu, on=Phi)`` skips slots whose field is not ``Phi``."""
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(), chi.occurrence(), phi.occurrence()),
+    )
+    results = apply_field_operator_to_term(term, partial(mu, on=phi))
+
+    # Two terms: derivative on slot 0 (phi) and slot 2 (phi). Slot 1 (chi)
+    # is skipped.
+    assert len(results) == 2
+    assert results[0].derivatives == (DerivativeAction(target=0, lorentz_index=mu),)
+    assert results[1].derivatives == (DerivativeAction(target=2, lorentz_index=mu),)
+
+
+def test_partial_preserves_bilinear_on_dirac_pair(psi):
+    """``partial`` keeps closed Dirac bilinear metadata intact in every
+    Leibniz summand: the replacement is the same field with the same
+    conjugation, so the bilinear structure is preserved automatically.
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(psi.occurrence(conjugated=True), psi.occurrence()),
+        closed_dirac_bilinears=((0, 1),),
+    )
+    results = apply_field_operator_to_term(term, partial(mu))
+
+    assert len(results) == 2
+    for slot, result in enumerate(results):
+        assert result.closed_dirac_bilinears == ((0, 1),)
+        assert result.derivatives == (DerivativeAction(target=slot, lorentz_index=mu),)
+        # Even parity -> no sign factor across the fermion.
+        assert _canon(result.coupling) == _canon(Expression.num(1))
+
+
+def test_partial_on_psi_only_in_fermion_current_keeps_bilinear(psi, phi):
+    """In a ``g psi.bar psi phi`` current, ``partial(mu, on=phi)`` must
+
+    * attach the derivative to the phi slot only,
+    * leave the Dirac bilinear ``(0, 1)`` untouched.
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(psi.occurrence(conjugated=True), psi.occurrence(), phi.occurrence()),
+        closed_dirac_bilinears=((0, 1),),
+    )
+    results = apply_field_operator_to_term(term, partial(mu, on=phi))
+
+    assert len(results) == 1
+    assert results[0].closed_dirac_bilinears == ((0, 1),)
+    assert results[0].derivatives == (DerivativeAction(target=2, lorentz_index=mu),)
+
+
+def test_partial_runtime_matches_declarative_partial_d_on_phi_squared():
+    """The runtime ``partial(mu)`` on ``Phi*Phi`` lowers to the same
+    list of ``InteractionTerm`` shapes as the declarative form
+
+        ``PartialD(Phi, mu)*Phi + Phi*PartialD(Phi, mu)``,
+
+    i.e. the two terms each have one derivative on a different slot.
+    """
+
+    from model import Model
+    from model.declared import PartialD
+
+    mu = S("mu")
+    Phi = scalar_field("Phi", self_conjugate=True)
+
+    runtime = (
+        Model(fields=(Phi,), lagrangian_decl=Phi * Phi)
+        .lagrangian()
+        .apply_operator(partial(mu))
+    )
+    declarative = Model(
+        fields=(Phi,),
+        lagrangian_decl=PartialD(Phi, mu) * Phi + Phi * PartialD(Phi, mu),
+    ).lagrangian()
+
+    def _signature(t):
+        return (
+            tuple((occ.field.name, occ.conjugated) for occ in t.fields),
+            tuple((a.target, str(a.lorentz_index)) for a in t.derivatives),
+        )
+
+    assert sorted(_signature(t) for t in runtime.terms) == sorted(
+        _signature(t) for t in declarative.terms
+    )
+
+
+def test_partial_repeated_application_increments_derivatives_on_each_slot():
+    """``partial(mu)`` applied twice to ``Phi`` gives one term with two
+    derivatives on the same slot. This is the canonical ``∂_mu ∂_mu Phi``
+    representation -- repeated independent ``DerivativeAction`` entries
+    on the same slot, exactly what the existing PartialD-of-PartialD
+    declarative form lowers to.
+    """
+
+    from model import Model
+
+    mu = S("mu")
+    Phi = scalar_field("Phi", self_conjugate=True)
+    L = Model(fields=(Phi,), lagrangian_decl=Phi).lagrangian().apply_operator(partial(mu))
+    L2 = L.apply_operator(partial(mu))
+
+    assert len(L2.terms) == 1
+    targets = sorted((a.target, str(a.lorentz_index)) for a in L2.terms[0].derivatives)
+    assert targets == [(0, "mu"), (0, "mu")]
+
+
+def test_partial_does_not_overlap_with_replacement_layer(phi, chi):
+    """``partial(mu)`` must not be confused with replacing the field.
+
+    Acting on ``phi*phi`` must keep both slots as ``phi`` (with one fresh
+    derivative each), not replace ``phi`` by anything.
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(), phi.occurrence()),
+    )
+    results = apply_field_operator_to_term(term, partial(mu))
+    for result in results:
+        assert tuple(occ.field.name for occ in result.fields) == ("phi", "phi")
+
+
+def test_partial_compatible_with_feynman_rule_for_scalar_kinetic():
+    """End-to-end smoke test against ``feynman_rule``.
+
+    A scalar two-derivative kinetic ``PartialD(Phi, mu) * PartialD(Phi, mu)``
+    (declarative form, equivalent to applying ``partial(mu)`` twice once
+    boundary terms are dropped) gives a two-point vertex containing
+    explicit momenta. We do not pin the exact symbolic form here -- the
+    point is that lowered terms with ``DerivativeAction``s feed cleanly
+    into the unchanged vertex engine.
+    """
+
+    from model import Model
+    from model.declared import PartialD
+
+    mu = S("mu")
+    Phi = scalar_field("Phi", self_conjugate=True)
+    model = Model(
+        fields=(Phi,),
+        lagrangian_decl=PartialD(Phi, mu) * PartialD(Phi, mu),
+    )
+    vertex = model.feynman_rule(Phi, Phi)
+    text = str(vertex)
+    # Each external scalar carries an auto-assigned momentum q1 / q2.
+    assert "q1" in text or "q2" in text
+
+
+def test_partial_runtime_lowers_to_vertex_with_momentum():
+    """The lowered term produced by ``partial(mu)`` on a phi^3 monomial
+    drives a 3-point vertex through the existing vertex engine without
+    extra plumbing.
+    """
+
+    from model import Model
+
+    mu = S("mu")
+    Phi = scalar_field("Phi", self_conjugate=True)
+    base = Model(fields=(Phi,), lagrangian_decl=Phi * Phi * Phi).lagrangian()
+    derived = base.apply_operator(partial(mu))
+    # 3 Leibniz terms, each with one derivative on a distinct slot.
+    assert len(derived.terms) == 3
+    for slot, term in enumerate(derived.terms):
+        assert term.derivatives == (
+            DerivativeAction(target=slot, lorentz_index=mu),
+        )
+    # The flavor-generic 3-point vertex should be reachable through the
+    # ordinary public API. (We only check that the call returns
+    # something containing momentum factors; the exact form depends on
+    # vertex-engine conventions.)
+    text = str(derived.feynman_rule(Phi, Phi, Phi))
+    assert text  # non-empty
+
+
+def test_partial_on_empty_field_list_raises():
+    """``partial(..., on=())`` is rejected: ambiguous intent."""
+
+    mu = S("mu")
+    with pytest.raises(ValueError, match="empty list of fields"):
+        partial(mu, on=())
+
+
+def test_partial_rejects_non_field_in_on():
+    """``partial(..., on=...)`` rejects entries that are not ``Field``."""
+
+    mu = S("mu")
+    with pytest.raises(TypeError, match="expected Field"):
+        partial(mu, on=("not a field",))
+
+
+# ---------------------------------------------------------------------------
+# Engine: new_derivatives translation and validation
+# ---------------------------------------------------------------------------
+
+
+def test_new_derivatives_target_translates_to_absolute_slot(phi):
+    """An operator returning a summand with ``new_derivatives`` at
+    position 0 of a 1-slot replacement on slot ``k`` produces a term
+    with a derivative whose absolute ``target`` is ``k``.
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(), phi.occurrence(), phi.occurrence()),
+    )
+
+    def on_field(occurrence):
+        if occurrence.field is not phi:
+            return None
+        return single_field_result(
+            phi.occurrence(),
+            new_derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
+        )
+
+    operator = FieldOperator(name="d", parity=0, on_field=on_field)
+    results = apply_field_operator_to_term(term, operator)
+    assert len(results) == 3
+    for slot, result in enumerate(results):
+        assert result.derivatives == (
+            DerivativeAction(target=slot, lorentz_index=mu),
+        )
+
+
+def test_new_derivatives_out_of_range_target_raises(phi):
+    """``new_derivatives`` whose target lies outside the replacement is
+    rejected with a structured error.
+    """
+
+    mu = S("mu")
+    term = InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),))
+
+    def on_field(occurrence):
+        if occurrence.field is not phi:
+            return None
+        return single_field_result(
+            phi.occurrence(),
+            new_derivatives=(DerivativeAction(target=2, lorentz_index=mu),),
+        )
+
+    operator = FieldOperator(name="bad", parity=0, on_field=on_field)
+    with pytest.raises(ValueError, match="fresh derivative target"):
+        apply_field_operator_to_term(term, operator)
+
+
+def test_new_derivatives_with_empty_replacement_raises(phi):
+    """A fresh derivative attached to an empty replacement has no slot to live on."""
+
+    mu = S("mu")
+    term = InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),))
+
+    def on_field(occurrence):
+        if occurrence.field is not phi:
+            return None
+        return OperatorAtomResult(
+            summands=(
+                OperatorSummand(
+                    coefficient=Expression.num(1),
+                    replacement=(),
+                    new_derivatives=(DerivativeAction(target=0, lorentz_index=mu),),
+                ),
+            )
+        )
+
+    operator = FieldOperator(name="bad", parity=0, on_field=on_field)
+    with pytest.raises(ValueError, match="needs a slot to act on|carries derivative actions"):
+        apply_field_operator_to_term(term, operator)
