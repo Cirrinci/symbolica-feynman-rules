@@ -306,6 +306,14 @@ class Model:
             flavor_expand=flavor_expand,
         )
 
+    def to_symbolica(self, *, flavor_expand: FlavorExpandOption = False):
+        """Render the compiled Lagrangian as one Symbolica expression.
+
+        This is a convenience forwarder to ``model.lagrangian().to_symbolica()``
+        so the top-level ``Model`` API matches the compiled-Lagrangian API.
+        """
+        return self.lagrangian().to_symbolica(flavor_expand=flavor_expand)
+
     def vertex_signatures(
         self,
         *,

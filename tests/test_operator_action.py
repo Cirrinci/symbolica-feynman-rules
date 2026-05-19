@@ -22,6 +22,7 @@ from model import (
     GhostField,
     Lagrangian,
     LORENTZ_INDEX,
+    Model,
     Parameter,
     SPINOR_INDEX,
     dirac_field,
@@ -820,6 +821,37 @@ def test_to_symbolica_flavor_expand_false_matches_default_behavior():
 
     base = Lagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(scalar_field("phi", self_conjugate=True).occurrence(),)),))
     assert _canon(base.to_symbolica()) == _canon(base.to_symbolica(flavor_expand=False))
+
+
+def test_model_to_symbolica_forwards_to_compiled_lagrangian():
+    """``Model.to_symbolica()`` mirrors ``model.lagrangian().to_symbolica()``."""
+
+    phi = scalar_field("phi", self_conjugate=True)
+    model = Model(fields=(phi,), lagrangian_decl=S("g") * phi * phi)
+
+    assert _canon(model.to_symbolica()) == _canon(model.lagrangian().to_symbolica())
+
+
+def test_model_to_symbolica_forwards_flavor_expand():
+    """``Model.to_symbolica(flavor_expand=...)`` forwards the kwarg unchanged."""
+
+    generation = flavor_index("Generation", 3, prefix="f")
+    l = dirac_field(
+        "l",
+        class_members=("e", "mu", "ta"),
+        indices=(generation,),
+        flavor_index=generation,
+    )
+    phi = scalar_field("Phi")
+    f = S("f")
+    model = Model(
+        fields=(l, phi),
+        lagrangian_decl=S("g") * l.bar(f) * l(f) * phi,
+    )
+
+    assert _canon(model.to_symbolica(flavor_expand=True)) == _canon(
+        model.lagrangian().to_symbolica(flavor_expand=True)
+    )
 
 
 # ---------------------------------------------------------------------------
