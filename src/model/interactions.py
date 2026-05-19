@@ -182,21 +182,29 @@ class InteractionTerm:
         self,
         *fields,
         momenta=None,
+        arity=None,
+        select=None,
         simplify=True,
+        key_format="names",
         include_delta: bool = False,
         strip_externals: bool = True,
         simplify_gamma: bool = False,
+        flavor_expand=False,
     ):
-        """Compute one vertex rule without manually wrapping this term."""
+        """Compute one vertex rule or a grouped zero-argument rule mapping."""
         from .lagrangian import Lagrangian
 
         return Lagrangian(terms=(self,)).feynman_rule(
             *fields,
             momenta=momenta,
+            arity=arity,
+            select=select,
             simplify=simplify,
+            key_format=key_format,
             include_delta=include_delta,
             strip_externals=strip_externals,
             simplify_gamma=simplify_gamma,
+            flavor_expand=flavor_expand,
         )
 
     def to_vertex_kwargs(self, external_legs: Sequence[ExternalLeg]) -> dict:

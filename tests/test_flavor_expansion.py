@@ -124,13 +124,13 @@ def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal
     f = S("f")
     lagrangian = Lagrangian(S("g") * l.bar(f) * l(f) * Phi)
 
-    compact = lagrangian.feynman_rules(
+    compact = lagrangian.feynman_rule(
         flavor_expand=False,
         key_format="names",
         simplify=True,
         include_delta=True,
     )
-    expanded = lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -174,7 +174,7 @@ def test_non_diagonal_flavor_tensor_expands_to_all_member_pairs():
     )
     lagrangian = model.lagrangian()
 
-    expanded = lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -291,7 +291,7 @@ def test_diagonal_one_index_flavor_parameter_allows_summation_by_default():
     )
     lagrangian = model.lagrangian()
 
-    expanded = lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -348,7 +348,7 @@ def test_zero_flavor_tensor_components_are_dropped_after_expansion():
     )
     lagrangian = model.lagrangian()
 
-    expanded = lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -459,7 +459,7 @@ def test_flavor_expansion_cache_reuses_expanded_terms_across_rule_queries(monkey
     expanded_first = lagrangian._expanded_terms(flavor_expand=True)
     expanded_second = lagrangian._expanded_terms(flavor_expand=True)
     signatures = lagrangian.vertex_signatures(flavor_expand=True)
-    rules = lagrangian.feynman_rules(
+    rules = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -572,7 +572,7 @@ def test_smeft_like_three_generation_labels_expand_correctly():
     )
     lagrangian = model.lagrangian()
 
-    expanded = lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -672,7 +672,7 @@ def test_two_flavor_classes_can_share_one_generation_label():
     )
     lagrangian = model.lagrangian()
 
-    expanded = lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,
@@ -710,7 +710,7 @@ def test_independent_flavor_labels_expand_across_two_field_classes():
     )
     lagrangian = model.lagrangian()
 
-    expanded = lagrangian.feynman_rules(
+    expanded = lagrangian.feynman_rule(
         flavor_expand=True,
         key_format="names",
         simplify=True,

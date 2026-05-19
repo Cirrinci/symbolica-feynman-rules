@@ -572,7 +572,7 @@ class CompiledLagrangian:
         ``lagrangian.operator_action``); the authoritative ordered
         representation is preserved.
 
-        ``flavor_expand`` mirrors ``feynman_rule``/``feynman_rules``: pass
+        ``flavor_expand`` mirrors ``feynman_rule``: pass
         ``True`` (or a specific flavor index) to act on the
         flavor-expanded view of the terms rather than the flavor-generic
         ones. Parameters are forwarded unchanged.
@@ -593,7 +593,7 @@ class CompiledLagrangian:
         commutative, so fermion / ghost product ordering is not preserved.
         Use the ordered ``terms`` tuple for ordering-sensitive operations.
 
-        ``flavor_expand`` mirrors ``feynman_rule``/``feynman_rules``: pass
+        ``flavor_expand`` mirrors ``feynman_rule``: pass
         ``True`` (or a specific flavor index, or an iterable of flavor
         indices) to export the flavor-expanded view of the terms rather
         than the flavor-generic ones.
@@ -603,64 +603,12 @@ class CompiledLagrangian:
 
         return lagrangian_to_symbolica(self, flavor_expand=flavor_expand)
 
-    def feynman_rules(
-        self,
-        *,
-        arity=None,
-        select=None,
-        simplify=True,
-        key_format="names",
-        include_delta: bool = False,
-        strip_externals: bool = True,
-        simplify_gamma: bool = False,
-        flavor_expand: FlavorExpandOption = False,
-    ):
-        """Compute multiple Feynman rules grouped by field content."""
-        if key_format not in ("names", "fields"):
-            raise ValueError("key_format must be either 'names' or 'fields'.")
-        flavor_expand = _normalize_flavor_expand_option(flavor_expand)
-
-        if select is None:
-            vertex_fields_list = self._vertex_field_tuples(flavor_expand=flavor_expand)
-        else:
-            vertex_fields_list = tuple(tuple(fields) for fields in select)
-
-        if arity is not None:
-            vertex_fields_list = tuple(
-                vertex_fields
-                for vertex_fields in vertex_fields_list
-                if len(vertex_fields) == arity
-            )
-
-        rules_by_field = {
-            tuple(vertex_fields): self.feynman_rule(
-                *vertex_fields,
-                simplify=simplify,
-                include_delta=include_delta,
-                strip_externals=strip_externals,
-                simplify_gamma=simplify_gamma,
-                flavor_expand=flavor_expand,
-            )
-            for vertex_fields in vertex_fields_list
-        }
-        if key_format == "fields":
-            return rules_by_field
-
-        rules_by_name = {}
-        for vertex_fields, expression in rules_by_field.items():
-            name_key = _vertex_name_tuple(vertex_fields)
-            if name_key in rules_by_name:
-                raise ValueError(
-                    "Name-keyed vertex signatures are ambiguous; "
-                    "use key_format='fields'."
-                )
-            rules_by_name[name_key] = expression
-        return rules_by_name
-
     def feynman_rule(
         self,
         *fields,
         momenta=None,
+        arity=None,
+        select=None,
         simplify=True,
         key_format="names",
         include_delta: bool = False,
@@ -675,6 +623,10 @@ class CompiledLagrangian:
         their corresponding vertex rules. By default, zero-argument keys are
         tuples of readable field names. Use ``key_format="fields"`` to return
         tuples of ``Field`` / ``Field.bar`` objects instead.
+
+        Zero-argument extraction also supports:
+        - ``arity=...`` to keep only vertices with that many legs.
+        - ``select=[(...), ...]`` to restrict extraction to exact field tuples.
         """
 
         from symbolic.vertex_engine import simplify_vertex, vertex_factor
@@ -688,14 +640,47 @@ class CompiledLagrangian:
         if n == 0:
             if momenta is not None:
                 raise ValueError("`momenta=` is only supported for explicit vertex extraction.")
-            return self.feynman_rules(
-                simplify=simplify,
-                key_format=key_format,
-                include_delta=include_delta,
-                strip_externals=strip_externals,
-                simplify_gamma=simplify_gamma,
-                flavor_expand=flavor_expand,
-            )
+            if select is None:
+                vertex_fields_list = self._vertex_field_tuples(flavor_expand=flavor_expand)
+            else:
+                vertex_fields_list = tuple(tuple(vertex_fields) for vertex_fields in select)
+
+            if arity is not None:
+                vertex_fields_list = tuple(
+                    vertex_fields
+                    for vertex_fields in vertex_fields_list
+                    if len(vertex_fields) == arity
+                )
+
+            rules_by_field = {
+                tuple(vertex_fields): self.feynman_rule(
+                    *vertex_fields,
+                    simplify=simplify,
+                    include_delta=include_delta,
+                    strip_externals=strip_externals,
+                    simplify_gamma=simplify_gamma,
+                    flavor_expand=flavor_expand,
+                )
+                for vertex_fields in vertex_fields_list
+            }
+            if key_format == "fields":
+                return rules_by_field
+
+            rules_by_name = {}
+            for vertex_fields, expression in rules_by_field.items():
+                name_key = _vertex_name_tuple(vertex_fields)
+                if name_key in rules_by_name:
+                    raise ValueError(
+                        "Name-keyed vertex signatures are ambiguous; "
+                        "use key_format='fields'."
+                    )
+                rules_by_name[name_key] = expression
+            return rules_by_name
+
+        if arity is not None:
+            raise ValueError("`arity=` is only supported for zero-argument vertex extraction.")
+        if select is not None:
+            raise ValueError("`select=` is only supported for zero-argument vertex extraction.")
 
         if momenta is None:
             momenta_list = [S(f"q{k + 1}") for k in range(n)]

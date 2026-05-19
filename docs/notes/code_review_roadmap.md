@@ -1056,7 +1056,7 @@ Suggested rollout order:
   - Example:
     - `L.feynman_rule(psi.bar, psi, A, include_delta=False, strip_externals=True)`
   - Implemented behavior:
-    - `CompiledLagrangian.feynman_rule(...)`, `Lagrangian.feynman_rule(...)`, and the grouped `feynman_rules(...)` path now accept:
+    - `CompiledLagrangian.feynman_rule(...)`, `Lagrangian.feynman_rule(...)`, and the zero-argument grouped `feynman_rule(...)` path now accept:
       - `include_delta: bool = True`
       - `strip_externals: bool = True`
     - The same options are also forwarded by `InteractionTerm.feynman_rule(...)`.
@@ -1075,7 +1075,7 @@ Suggested rollout order:
   - Example:
     - `L.feynman_rule(psi.bar, psi, A, simplify=True, simplify_gamma=True)`
   - Implemented behavior:
-    - `CompiledLagrangian.feynman_rule(...)` and `feynman_rules(...)` now accept `simplify_gamma: bool = False`.
+    - Explicit-vertex and zero-argument grouped `feynman_rule(...)` calls now accept `simplify_gamma: bool = False`.
     - When `simplify=True` and `simplify_gamma=True`, the high-level API forwards the request into the existing `simplify_vertex(..., simplify_gamma=True)` cleanup path.
     - Default behavior remains unchanged when `simplify_gamma=False`.
   - Tests:

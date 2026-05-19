@@ -113,13 +113,12 @@ def lagrangian_to_symbolica(lagrangian, *, flavor_expand=False) -> object:
     as well as any duck-typed container whose ``terms`` attribute is an
     iterable of ``InteractionTerm``.
 
-    ``flavor_expand`` mirrors the keyword of ``CompiledLagrangian.feynman_rule``
-    / ``feynman_rules``. When truthy (or when an explicit flavor index /
-    iterable of flavor indices is supplied), the export reflects the
-    flavor-expanded compiled view of the Lagrangian rather than the
-    flavor-generic source terms. For objects that don't expose
-    ``_expanded_terms`` (i.e. plain duck-typed containers), the parameter is
-    silently ignored and ``.terms`` is used as-is.
+    ``flavor_expand`` mirrors the keyword of ``CompiledLagrangian.feynman_rule``.
+    When truthy (or when an explicit flavor index / iterable of flavor indices
+    is supplied), the export reflects the flavor-expanded compiled view of the
+    Lagrangian rather than the flavor-generic source terms. For objects that
+    don't expose ``_expanded_terms`` (i.e. plain duck-typed containers), the
+    parameter is silently ignored and ``.terms`` is used as-is.
     """
 
     expanded_terms_method = getattr(lagrangian, "_expanded_terms", None)

@@ -112,6 +112,39 @@ def test_vertex_signatures_filter_by_arity():
     assert signatures[0].arity == 3
 
 
+def test_zero_argument_feynman_rule_supports_arity_and_select_filters():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+        InteractionTerm(
+            coupling=S("g"),
+            fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+        ),
+    ))
+
+    arity_rules = lagrangian.feynman_rule(arity=3)
+    selected_rules = lagrangian.feynman_rule(select=[(phi, chi, chi)])
+
+    assert set(arity_rules) == {("Phi", "Chi", "Chi")}
+    assert set(selected_rules) == {("Phi", "Chi", "Chi")}
+    assert _canonical(arity_rules[("Phi", "Chi", "Chi")]) == _canonical(
+        selected_rules[("Phi", "Chi", "Chi")]
+    )
+
+
+def test_explicit_feynman_rule_rejects_zero_argument_only_filters():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = Lagrangian(terms=(
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+    ))
+
+    with pytest.raises(ValueError, match="`arity=` is only supported"):
+        lagrangian.feynman_rule(phi, phi, arity=2)
+    with pytest.raises(ValueError, match="`select=` is only supported"):
+        lagrangian.feynman_rule(phi, phi, select=[(phi, phi)])
+
+
 def test_vertex_signatures_filter_by_exact_qed_signature():
     eQED, qPsi, mu = S("eQED", "qPsi", "mu")
     fermion = make_dirac_fermion(
@@ -874,7 +907,7 @@ def test_unbroken_sm_higgs_potential_vertices_are_frozen():
     g14 = WEAK_FUND_INDEX.representation.g(S("w1"), S("w4")).to_expression()
     g23 = WEAK_FUND_INDEX.representation.g(S("w2"), S("w3")).to_expression()
 
-    rules = lagrangian.feynman_rules(include_delta=False)
+    rules = lagrangian.feynman_rule(include_delta=False)
 
     assert set(rules) == {
         ("H.bar", "H"),
@@ -986,5 +1019,5 @@ def test_unbroken_sm_yukawa_signatures_are_present_and_forbidden_ones_absent():
     assert local_signatures == expected_signatures
     assert local_signatures.isdisjoint(forbidden_signatures)
 
-    rules = lagrangian.feynman_rules(include_delta=False)
+    rules = lagrangian.feynman_rule(include_delta=False)
     assert set(rules) == expected_signatures

@@ -124,7 +124,7 @@ class Model:
     5. build the model with ``Model(gauge_groups=..., fields=...,
        parameters=..., lagrangian_decl=...)``
     6. extract Feynman rules with ``model.feynman_rule(...)`` /
-       ``model.feynman_rules(...)`` / ``model.vertex_signatures(...)``.
+       ``model.vertex_signatures(...)``.
     """
 
     name: str = ""
@@ -247,7 +247,7 @@ class Model:
         """Compile the declared Lagrangian into a ``CompiledLagrangian``.
 
         The result is cached: subsequent calls (and the direct
-        ``feynman_rule`` / ``feynman_rules`` / ``vertex_signatures`` methods)
+        ``feynman_rule`` / ``vertex_signatures`` methods)
         reuse the same compiled object.
         """
         if self._compiled_lagrangian is None:
@@ -263,28 +263,6 @@ class Model:
         self,
         *fields,
         momenta=None,
-        simplify: bool = True,
-        key_format: str = "names",
-        include_delta: bool = False,
-        strip_externals: bool = True,
-        simplify_gamma: bool = False,
-        flavor_expand: FlavorExpandOption = False,
-    ):
-        """Extract one Feynman rule for the requested external fields."""
-        return self.lagrangian().feynman_rule(
-            *fields,
-            momenta=momenta,
-            simplify=simplify,
-            key_format=key_format,
-            include_delta=include_delta,
-            strip_externals=strip_externals,
-            simplify_gamma=simplify_gamma,
-            flavor_expand=flavor_expand,
-        )
-
-    def feynman_rules(
-        self,
-        *,
         arity=None,
         select=None,
         simplify: bool = True,
@@ -294,8 +272,10 @@ class Model:
         simplify_gamma: bool = False,
         flavor_expand: FlavorExpandOption = False,
     ):
-        """Compute multiple Feynman rules grouped by field content."""
-        return self.lagrangian().feynman_rules(
+        """Extract one Feynman rule or a grouped zero-argument rule mapping."""
+        return self.lagrangian().feynman_rule(
+            *fields,
+            momenta=momenta,
             arity=arity,
             select=select,
             simplify=simplify,

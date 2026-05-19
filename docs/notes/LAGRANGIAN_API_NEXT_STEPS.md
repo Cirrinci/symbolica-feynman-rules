@@ -6,8 +6,8 @@ Purpose: user-facing API backlog only.
 
 ### 1. Whole-Lagrangian extraction
 
-Add `feynman_rules(...)` on the compiled extraction object returned by
-`Model.lagrangian()` in addition to single-vertex `feynman_rule(...)`.
+Support whole-Lagrangian extraction directly on `feynman_rule(...)` when it is
+called without explicit external fields.
 
 Why:
 
@@ -16,9 +16,9 @@ Why:
 
 Target examples:
 
-- `L.feynman_rules()`
-- `L.feynman_rules(arity=3)`
-- `L.feynman_rules(select=[(Phi.bar, Phi, A)])`
+- `L.feynman_rule()`
+- `L.feynman_rule(arity=3)`
+- `L.feynman_rule(select=[(Phi.bar, Phi, A)])`
 
 Implementation shape:
 
@@ -81,7 +81,7 @@ Constraint:
 
 ## Recommended order
 
-1. add `feynman_rules(...)`
+1. extend zero-argument `feynman_rule(...)`
 2. make single terms directly usable
 3. add gauge-fixing sugar
 4. keep ghost sugar constrained to structured lowering

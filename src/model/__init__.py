@@ -11,7 +11,7 @@ The public surface is intentionally small. The recommended workflow is:
 5. build the model with ``Model(gauge_groups=..., fields=..., parameters=...,
    lagrangian_decl=...)``
 6. extract Feynman rules with ``model.feynman_rule(...)`` /
-   ``model.feynman_rules(...)`` / ``model.vertex_signatures(...)``.
+   ``model.vertex_signatures(...)``.
 
 Declarative ``lagrangian_decl`` factors live in ``declared.py``:
 ``CovD``, ``PartialD``, ``Gamma``, ``Gamma5``, ``Metric``, ``T``,
