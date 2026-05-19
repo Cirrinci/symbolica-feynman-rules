@@ -297,6 +297,89 @@ def _validate_replacement_against_existing_features(
         )
 
 
+def _inherit_missing_replacement_labels(
+    *,
+    original_occurrence: FieldOccurrence,
+    replacement: tuple[FieldOccurrence, ...],
+) -> tuple[FieldOccurrence, ...]:
+    """Fill missing replacement labels from the acted occurrence when safe.
+
+    This is intentionally conservative. For one exact ``IndexType`` we only
+    inherit labels when:
+
+    * the original occurrence already carries labels for that index type;
+    * all replacement slots of that exact index type live on a single
+      replacement occurrence; and
+    * that occurrence carries the same number of slots of the index type as
+      the original occurrence.
+
+    Explicit replacement labels are preserved. Ambiguous cases -- most
+    importantly product-valued replacements with multiple compatible target
+    occurrences -- are left untouched so callers can specify labels
+    explicitly.
+    """
+
+    if not replacement:
+        return replacement
+
+    source_field = original_occurrence.field
+    source_slot_labels = source_field.unpack_slot_labels(original_occurrence.labels)
+    if not source_slot_labels:
+        return replacement
+
+    replacement_list = list(replacement)
+
+    source_slots_by_index: dict[object, list[int]] = {}
+    for slot, index in enumerate(source_field.indices):
+        source_slots_by_index.setdefault(index, [])
+        source_slots_by_index[index].append(slot)
+    source_slots_by_index = {
+        index: tuple(slots) for index, slots in source_slots_by_index.items()
+    }
+
+    replacement_occurrences_by_index: dict[object, set[int]] = {}
+    for occurrence_index, occurrence in enumerate(replacement_list):
+        for index in occurrence.field.indices:
+            replacement_occurrences_by_index.setdefault(index, set()).add(occurrence_index)
+
+    for index, source_slots in source_slots_by_index.items():
+        if not any(slot in source_slot_labels for slot in source_slots):
+            continue
+
+        target_occurrence_indices = replacement_occurrences_by_index.get(index, set())
+        if len(target_occurrence_indices) != 1:
+            continue
+
+        target_occurrence_index = next(iter(target_occurrence_indices))
+        target_occurrence = replacement_list[target_occurrence_index]
+        target_slots = target_occurrence.field.index_positions(index=index)
+        if len(target_slots) != len(source_slots):
+            continue
+
+        target_slot_labels = target_occurrence.field.unpack_slot_labels(
+            target_occurrence.labels
+        )
+        changed = False
+        for source_slot, target_slot in zip(source_slots, target_slots):
+            if target_slot in target_slot_labels and target_slot_labels[target_slot] is not None:
+                continue
+            source_label = source_slot_labels.get(source_slot)
+            if source_label is None:
+                continue
+            target_slot_labels[target_slot] = source_label
+            changed = True
+
+        if not changed:
+            continue
+
+        replacement_list[target_occurrence_index] = target_occurrence.field.occurrence(
+            conjugated=target_occurrence.conjugated,
+            labels=target_occurrence.field.pack_slot_labels(target_slot_labels),
+        )
+
+    return tuple(replacement_list)
+
+
 def _matching_fermion_positions_in_replacement(
     replacement: Sequence[FieldOccurrence],
     *,
@@ -558,7 +641,10 @@ def apply_field_operator_to_term(
         bilinears_with_slot = tuple(bilinears_by_slot.get(slot, ()))
 
         for summand in result.summands:
-            replacement = tuple(summand.replacement)
+            replacement = _inherit_missing_replacement_labels(
+                original_occurrence=occurrence,
+                replacement=tuple(summand.replacement),
+            )
             _validate_replacement_against_existing_features(
                 operator=operator,
                 slot=slot,

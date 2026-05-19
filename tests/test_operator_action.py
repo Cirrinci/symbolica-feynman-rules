@@ -637,6 +637,47 @@ def test_ghost_replacement_in_dirac_bilinear_is_rejected(psi, ghost):
         apply_field_operator_to_term(term, operator)
 
 
+def test_replacement_inherits_spinor_labels_so_feynman_rule_still_works():
+    """Custom replacements with matching fermion structure should inherit the
+    acted slot's spinor labels automatically.
+
+    This keeps the resulting lowered terms compatible with the ordinary
+    ``feynman_rule(...)`` path, so notebook-style BRST/odd derivations do
+    not need to rebuild spinor labels by hand in every ``on_field`` hook.
+    """
+
+    g = S("g")
+    psi = dirac_field("psi", indices=())
+    xi = dirac_field("xi", indices=())
+    phi = scalar_field("phi", self_conjugate=True)
+    chi = scalar_field("chi", self_conjugate=True)
+    model = Model(
+        fields=(psi, xi, phi, chi),
+        lagrangian_decl=g * psi.bar() * psi() * phi,
+    )
+
+    def on_field(occurrence):
+        if occurrence.field is psi:
+            return single_field_result(xi.occurrence(conjugated=occurrence.conjugated))
+        if occurrence.field is phi:
+            return single_field_result(chi.occurrence())
+        return None
+
+    out = model.lagrangian().apply_operator(
+        FieldOperator(name="s", parity=1, on_field=on_field)
+    )
+
+    assert out.terms[0].fields[0].labels == out.terms[0].fields[1].labels
+    assert out.terms[1].fields[0].labels == out.terms[1].fields[1].labels
+
+    rules = out.feynman_rule()
+    assert set(rules) == {
+        ("xi.bar", "psi", "phi"),
+        ("psi.bar", "xi", "phi"),
+        ("psi.bar", "psi", "chi"),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Derivative Leibniz expansion (finding 2)
 # ---------------------------------------------------------------------------
