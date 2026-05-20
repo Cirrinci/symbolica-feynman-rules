@@ -68,6 +68,14 @@ from model.metadata import Field, FieldRole, is_lorentz_index
 Parity = int  # 0 = even (bosonic), 1 = odd (fermionic / BRST / ghost-like)
 
 
+def _validate_operator_parity(name: str, parity: Parity) -> None:
+    if parity not in (0, 1):
+        raise ValueError(
+            f"Operator {name!r} got parity={parity!r}; "
+            "expected 0 (even) or 1 (odd)."
+        )
+
+
 @dataclass(frozen=True)
 class OperatorSummand:
     """One summand contributed by ``FieldOperator.on_field(occurrence)``.
@@ -221,11 +229,7 @@ class FieldOperator:
     commute_with_partial_derivative: bool = True
 
     def __post_init__(self):
-        if self.parity not in (0, 1):
-            raise ValueError(
-                f"FieldOperator {self.name!r} got parity={self.parity!r}; "
-                "expected 0 (even) or 1 (odd)."
-            )
+        _validate_operator_parity(self.name, self.parity)
 
     def __call__(self, occurrence: FieldOccurrence) -> Optional[OperatorAtomResult]:
         if self.on_field is None:
@@ -233,9 +237,116 @@ class FieldOperator:
         return self.on_field(occurrence)
 
 
+@dataclass(frozen=True)
+class TermOperator:
+    """A whole-term operator acting directly on ``InteractionTerm`` objects.
+
+    This is the escape hatch for operators whose action cannot be expressed
+    safely as an independent slot-wise derivation. The returned terms are
+    assumed to already preserve any ordered-field, derivative-target, and
+    bilinear metadata invariants required by the rest of the pipeline.
+    """
+
+    name: str
+    parity: Parity = 0
+    apply_to_term: Optional[Callable[[InteractionTerm], Sequence[InteractionTerm]]] = None
+
+    def __post_init__(self):
+        _validate_operator_parity(self.name, self.parity)
+
+    def __call__(self, term: InteractionTerm) -> tuple[InteractionTerm, ...]:
+        if self.apply_to_term is None:
+            return ()
+        return tuple(self.apply_to_term(term))
+
+
+@dataclass(frozen=True)
+class OperatorExpansionError(ValueError):
+    """Raised when one operator application would exceed an output-term cap."""
+
+    operator_name: str
+    origin: str
+    slot: Optional[int]
+    replacement_len: Optional[int]
+    derivative_count_on_slot: Optional[int]
+    projected_terms: int
+    max_generated_terms: int
+
+    def __str__(self) -> str:
+        details = [f"operator={self.operator_name!r}"]
+        if self.origin:
+            details.append(f"origin={self.origin!r}")
+        if self.slot is not None:
+            details.append(f"slot={self.slot}")
+        if self.replacement_len is not None:
+            details.append(f"replacement_len={self.replacement_len}")
+        if self.derivative_count_on_slot is not None:
+            details.append(f"derivative_count_on_slot={self.derivative_count_on_slot}")
+        details.append(f"projected_terms={self.projected_terms}")
+        details.append(f"max_generated_terms={self.max_generated_terms}")
+        return "Operator expansion exceeds configured limit (" + ", ".join(details) + ")."
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+
+@dataclass
+class _OperatorApplicationMemo:
+    inherited_replacements: dict[tuple[object, ...], tuple[FieldOccurrence, ...]] = dataclass_field(
+        default_factory=dict
+    )
+    bilinear_remaps: dict[tuple[object, ...], tuple[tuple[int, int], ...]] = dataclass_field(
+        default_factory=dict
+    )
+    derivative_arrangements: dict[tuple[object, ...], tuple[tuple[DerivativeAction, ...], ...]] = dataclass_field(
+        default_factory=dict
+    )
+
+
+def _symbolic_cache_key(value):
+    if isinstance(value, tuple):
+        return tuple(_symbolic_cache_key(item) for item in value)
+    if isinstance(value, list):
+        return tuple(_symbolic_cache_key(item) for item in value)
+    if hasattr(value, "to_canonical_string"):
+        return ("expr", value.to_canonical_string())
+    return value
+
+
+def _labels_cache_key(labels: dict) -> tuple[tuple[object, object], ...]:
+    if not labels:
+        return ()
+    return tuple(
+        sorted(
+            (kind, _symbolic_cache_key(value))
+            for kind, value in labels.items()
+        )
+    )
+
+
+def _occurrence_cache_key(occurrence: FieldOccurrence) -> tuple[object, ...]:
+    return (
+        id(occurrence.field),
+        bool(occurrence.conjugated),
+        _labels_cache_key(occurrence.labels),
+    )
+
+
+def _replacement_cache_key(
+    replacement: Sequence[FieldOccurrence],
+) -> tuple[tuple[object, ...], ...]:
+    return tuple(_occurrence_cache_key(occurrence) for occurrence in replacement)
+
+
+def _derivative_cache_key(
+    derivatives: Sequence[DerivativeAction],
+) -> tuple[tuple[object, object], ...]:
+    return tuple(
+        (action.target, _symbolic_cache_key(action.lorentz_index))
+        for action in derivatives
+    )
 
 
 def _occurrence_parity(occurrence: FieldOccurrence) -> int:
@@ -401,6 +512,28 @@ def _matching_fermion_positions_in_replacement(
     ]
 
 
+def _validate_closed_bilinear_pair_structure(
+    bilinears: Sequence[tuple[int, int]],
+    *,
+    error_prefix: str,
+) -> tuple[tuple[int, int], ...]:
+    intervals = sorted(
+        (
+            min(psibar_slot, psi_slot),
+            max(psibar_slot, psi_slot),
+            (psibar_slot, psi_slot),
+        )
+        for psibar_slot, psi_slot in bilinears
+    )
+    for (_, prev_end, _), (next_start, _, _) in zip(intervals, intervals[1:]):
+        if next_start <= prev_end:
+            raise ValueError(
+                f"{error_prefix} would produce overlapping or interleaved closed "
+                "Dirac bilinears, which are not supported."
+            )
+    return tuple(pair for _, _, pair in intervals)
+
+
 def _validate_and_remap_bilinears(
     *,
     operator: FieldOperator,
@@ -469,7 +602,12 @@ def _validate_and_remap_bilinears(
             remapped.append((shift_index(psibar_slot), slot + matches[0]))
             continue
         remapped.append((shift_index(psibar_slot), shift_index(psi_slot)))
-    return tuple(remapped)
+    return _validate_closed_bilinear_pair_structure(
+        remapped,
+        error_prefix=(
+            f"Operator {operator.name!r} acting on slot {slot}"
+        ),
+    )
 
 
 def _enumerate_derivative_arrangements(
@@ -478,7 +616,7 @@ def _enumerate_derivative_arrangements(
     slot: int,
     replacement_len: int,
     derivatives: tuple[DerivativeAction, ...],
-) -> list[tuple[DerivativeAction, ...]]:
+) -> tuple[tuple[DerivativeAction, ...], ...]:
     """Enumerate output ``derivatives`` tuples for the bosonic Leibniz
     expansion of derivatives across one splice.
 
@@ -508,7 +646,7 @@ def _enumerate_derivative_arrangements(
     )
 
     if not on_slot:
-        return [off_slot]
+        return (off_slot,)
 
     if replacement_len == 0:
         raise ValueError(
@@ -528,7 +666,17 @@ def _enumerate_derivative_arrangements(
             for action, offset in zip(on_slot, assignment)
         )
         arrangements.append(off_slot + placed)
-    return arrangements
+    return tuple(arrangements)
+
+
+def _project_derivative_arrangements_count(
+    *,
+    replacement_len: int,
+    derivative_count_on_slot: int,
+) -> int:
+    if derivative_count_on_slot == 0:
+        return 1
+    return replacement_len ** derivative_count_on_slot
 
 
 def _translate_new_derivatives(
@@ -603,6 +751,9 @@ def _coupling_product(*pieces: object) -> object:
 def apply_field_operator_to_term(
     term: InteractionTerm,
     operator: FieldOperator,
+    *,
+    max_generated_terms: Optional[int] = None,
+    _memo: Optional[_OperatorApplicationMemo] = None,
 ) -> tuple[InteractionTerm, ...]:
     """Apply ``operator`` to one lowered ``InteractionTerm``.
 
@@ -617,6 +768,9 @@ def apply_field_operator_to_term(
     the left of slot ``k``. The action on one slot can produce multiple
     summands; each summand becomes a fresh ``InteractionTerm``.
     """
+
+    if _memo is None:
+        _memo = _OperatorApplicationMemo()
 
     parity_to_the_left = 0
     new_terms: list[InteractionTerm] = []
@@ -641,10 +795,18 @@ def apply_field_operator_to_term(
         bilinears_with_slot = tuple(bilinears_by_slot.get(slot, ()))
 
         for summand in result.summands:
-            replacement = _inherit_missing_replacement_labels(
-                original_occurrence=occurrence,
-                replacement=tuple(summand.replacement),
+            raw_replacement = tuple(summand.replacement)
+            replacement_key = (
+                _occurrence_cache_key(occurrence),
+                _replacement_cache_key(raw_replacement),
             )
+            replacement = _memo.inherited_replacements.get(replacement_key)
+            if replacement is None:
+                replacement = _inherit_missing_replacement_labels(
+                    original_occurrence=occurrence,
+                    replacement=raw_replacement,
+                )
+                _memo.inherited_replacements[replacement_key] = replacement
             _validate_replacement_against_existing_features(
                 operator=operator,
                 slot=slot,
@@ -654,13 +816,23 @@ def apply_field_operator_to_term(
             )
 
             new_fields = term.fields[:slot] + replacement + term.fields[slot + 1 :]
-            new_bilinears = _validate_and_remap_bilinears(
-                operator=operator,
-                slot=slot,
-                original_occurrence=occurrence,
-                replacement=replacement,
-                bilinears=term.closed_dirac_bilinears,
+            bilinear_key = (
+                operator.name,
+                slot,
+                _occurrence_cache_key(occurrence),
+                _replacement_cache_key(replacement),
+                term.closed_dirac_bilinears,
             )
+            new_bilinears = _memo.bilinear_remaps.get(bilinear_key)
+            if new_bilinears is None:
+                new_bilinears = _validate_and_remap_bilinears(
+                    operator=operator,
+                    slot=slot,
+                    original_occurrence=occurrence,
+                    replacement=replacement,
+                    bilinears=term.closed_dirac_bilinears,
+                )
+                _memo.bilinear_remaps[bilinear_key] = new_bilinears
             new_coupling = _coupling_product(
                 sign,
                 summand.coefficient,
@@ -674,12 +846,39 @@ def apply_field_operator_to_term(
                 new_derivatives=summand.new_derivatives,
             )
 
-            arrangements = _enumerate_derivative_arrangements(
-                operator=operator,
-                slot=slot,
-                replacement_len=len(replacement),
-                derivatives=term.derivatives,
+            arrangement_key = (
+                operator.name,
+                slot,
+                len(replacement),
+                operator.commute_with_partial_derivative,
+                _derivative_cache_key(term.derivatives),
             )
+            arrangements = _memo.derivative_arrangements.get(arrangement_key)
+            projected_terms = _project_derivative_arrangements_count(
+                replacement_len=len(replacement),
+                derivative_count_on_slot=len(derivatives_on_slot),
+            )
+            if (
+                max_generated_terms is not None
+                and len(new_terms) + projected_terms > max_generated_terms
+            ):
+                raise OperatorExpansionError(
+                    operator_name=operator.name,
+                    origin=term.origin,
+                    slot=slot,
+                    replacement_len=len(replacement),
+                    derivative_count_on_slot=len(derivatives_on_slot),
+                    projected_terms=projected_terms,
+                    max_generated_terms=max_generated_terms,
+                )
+            if arrangements is None:
+                arrangements = _enumerate_derivative_arrangements(
+                    operator=operator,
+                    slot=slot,
+                    replacement_len=len(replacement),
+                    derivatives=term.derivatives,
+                )
+                _memo.derivative_arrangements[arrangement_key] = arrangements
             for arrangement in arrangements:
                 new_terms.append(
                     replace(
@@ -700,13 +899,125 @@ def apply_field_operator_to_term(
 def apply_field_operator(
     terms: Sequence[InteractionTerm],
     operator: FieldOperator,
+    *,
+    max_generated_terms: Optional[int] = None,
 ) -> tuple[InteractionTerm, ...]:
     """Apply ``operator`` to a sequence of ``InteractionTerm`` objects."""
 
+    memo = _OperatorApplicationMemo()
     expanded: list[InteractionTerm] = []
     for term in terms:
-        expanded.extend(apply_field_operator_to_term(term, operator))
+        remaining = None
+        if max_generated_terms is not None:
+            remaining = max_generated_terms - len(expanded)
+        expanded.extend(
+            apply_field_operator_to_term(
+                term,
+                operator,
+                max_generated_terms=remaining,
+                _memo=memo,
+            )
+        )
     return tuple(expanded)
+
+
+def apply_term_operator_to_term(
+    term: InteractionTerm,
+    operator: TermOperator,
+    *,
+    max_generated_terms: Optional[int] = None,
+) -> tuple[InteractionTerm, ...]:
+    """Apply one whole-term operator to one lowered interaction term."""
+
+    results = tuple(operator(term))
+    if max_generated_terms is not None and len(results) > max_generated_terms:
+        raise OperatorExpansionError(
+            operator_name=operator.name,
+            origin=term.origin,
+            slot=None,
+            replacement_len=None,
+            derivative_count_on_slot=None,
+            projected_terms=len(results),
+            max_generated_terms=max_generated_terms,
+        )
+    return results
+
+
+def apply_term_operator(
+    terms: Sequence[InteractionTerm],
+    operator: TermOperator,
+    *,
+    max_generated_terms: Optional[int] = None,
+) -> tuple[InteractionTerm, ...]:
+    """Apply one whole-term operator to a sequence of interaction terms."""
+
+    expanded: list[InteractionTerm] = []
+    for term in terms:
+        remaining = None
+        if max_generated_terms is not None:
+            remaining = max_generated_terms - len(expanded)
+        expanded.extend(
+            apply_term_operator_to_term(
+                term,
+                operator,
+                max_generated_terms=remaining,
+            )
+        )
+    return tuple(expanded)
+
+
+def apply_operator_to_term(
+    term: InteractionTerm,
+    operator: Union[FieldOperator, TermOperator],
+    *,
+    max_generated_terms: Optional[int] = None,
+) -> tuple[InteractionTerm, ...]:
+    """Apply either a ``FieldOperator`` or a ``TermOperator`` to one term."""
+
+    if isinstance(operator, FieldOperator):
+        return apply_field_operator_to_term(
+            term,
+            operator,
+            max_generated_terms=max_generated_terms,
+        )
+    if isinstance(operator, TermOperator):
+        return apply_term_operator_to_term(
+            term,
+            operator,
+            max_generated_terms=max_generated_terms,
+        )
+    raise TypeError(
+        "operator must be a FieldOperator or TermOperator, got "
+        f"{type(operator).__name__}."
+    )
+
+
+def apply_operator(
+    terms: Sequence[InteractionTerm],
+    operator: Union[FieldOperator, TermOperator],
+    *,
+    max_generated_terms: Optional[int] = None,
+) -> tuple[InteractionTerm, ...]:
+    """Apply either a ``FieldOperator`` or a ``TermOperator`` to terms."""
+
+    if max_generated_terms is not None and max_generated_terms < 0:
+        raise ValueError("max_generated_terms must be >= 0 or None.")
+    if isinstance(operator, FieldOperator):
+        return apply_field_operator(
+            terms,
+            operator,
+            max_generated_terms=max_generated_terms,
+        )
+    if isinstance(operator, TermOperator):
+        return apply_term_operator(
+            terms,
+            operator,
+            max_generated_terms=max_generated_terms,
+        )
+    raise TypeError(
+        "operator must be a FieldOperator or TermOperator, got "
+        f"{type(operator).__name__}."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1011,42 +1322,39 @@ def gauge_variation(
         if rep_and_slots is None:
             return None
         rep, slots = rep_and_slots
-        if len(slots) != 1:
-            # Multi-slot reps (rare, slot_policy='sum') are out of scope for
-            # the minimal first-cut gauge variation.
-            raise ValueError(
-                f"gauge_variation({group.name!r}): field {field.name!r} "
-                "carries multiple representation slots; the current "
-                "implementation only supports unique slots."
-            )
-        slot = slots[0]
         slot_labels = field.unpack_slot_labels(occurrence.labels)
-        old_rep_label = slot_labels.get(slot)
-        if old_rep_label is None:
-            raise ValueError(
-                f"gauge_variation({group.name!r}): field {field.name!r} has "
-                "no explicit label on its representation slot; cannot insert "
-                "a contracted generator without one."
+        summands: list[OperatorSummand] = []
+        for slot in slots:
+            old_rep_label = slot_labels.get(slot)
+            if old_rep_label is None:
+                raise ValueError(
+                    f"gauge_variation({group.name!r}): field {field.name!r} has "
+                    f"no explicit label on representation slot {slot + 1}; cannot "
+                    "insert a contracted generator without one."
+                )
+            new_rep_label = _next(rep.index.prefix)
+            adj_label = _fresh_adj_label()
+
+            new_phi = _replace_slot_label(field, occurrence, slot, new_rep_label)
+            alpha_occ = _alpha_occurrence(adj_label)
+
+            if occurrence.conjugated:
+                # δ Φ̄_i = -i g α^a Φ̄_j T^a_{ji}: generator's "left" index is
+                # the new (dummy) label, "right" is the old label.
+                generator = rep.build_generator(adj_label, new_rep_label, old_rep_label)
+                sign = -1
+            else:
+                generator = rep.build_generator(adj_label, old_rep_label, new_rep_label)
+                sign = 1
+
+            summands.append(
+                OperatorSummand(
+                    coefficient=sign * Expression.I * gauge_coupling * generator,
+                    replacement=(alpha_occ, new_phi),
+                )
             )
-        new_rep_label = _next(rep.index.prefix)
-        adj_label = _fresh_adj_label()
 
-        new_phi = _replace_slot_label(field, occurrence, slot, new_rep_label)
-        alpha_occ = _alpha_occurrence(adj_label)
-
-        if occurrence.conjugated:
-            # δ Φ̄_i = -i g α^a Φ̄_j T^a_{ji}: generator's "left" index is
-            # the new (dummy) label, "right" is the old label.
-            generator = rep.build_generator(adj_label, new_rep_label, old_rep_label)
-            sign = -1
-        else:
-            generator = rep.build_generator(adj_label, old_rep_label, new_rep_label)
-            sign = 1
-
-        return single_field_result(
-            (alpha_occ, new_phi),
-            coefficient=sign * Expression.I * gauge_coupling * generator,
-        )
+        return OperatorAtomResult(summands=tuple(summands))
 
     def _gauge_boson_variation(occurrence: FieldOccurrence):
         lorentz_label = _lorentz_label_of(occurrence)
@@ -1121,12 +1429,18 @@ def gauge_variation(
 
 
 __all__ = (
+    "OperatorExpansionError",
     "FieldOperator",
     "OperatorAtomResult",
     "OperatorSummand",
     "Parity",
+    "TermOperator",
+    "apply_operator",
+    "apply_operator_to_term",
     "apply_field_operator",
     "apply_field_operator_to_term",
+    "apply_term_operator",
+    "apply_term_operator_to_term",
     "constant_result",
     "gauge_variation",
     "partial",

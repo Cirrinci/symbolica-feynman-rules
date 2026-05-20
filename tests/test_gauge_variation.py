@@ -36,6 +36,7 @@ from model import (
     scalar_field,
 )
 from model.metadata import COLOR_ADJ_INDEX, COLOR_FUND_INDEX
+from model.interactions import InteractionTerm
 from lagrangian.operator_action import (
     FieldOperator,
     apply_field_operator_to_term,
@@ -361,6 +362,32 @@ def _su3_setup():
     return g, Ag, SU3
 
 
+def _su3_sum_setup():
+    g = S("gS")
+    Ag = Field(
+        "G",
+        spin=1,
+        indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+        self_conjugate=True,
+    )
+    SU3 = GaugeGroup(
+        name="SU3sum",
+        abelian=False,
+        coupling=g,
+        gauge_boson=Ag,
+        structure_constant=structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=COLOR_FUND_INDEX,
+                generator_builder=gauge_generator,
+                name="fundamental_sum",
+                slot_policy="sum",
+            ),
+        ),
+    )
+    return g, Ag, SU3
+
+
 def test_non_abelian_scalar_mass_term_is_gauge_invariant():
     """For a complex scalar in the fundamental of SU(3), the colour-singlet
     mass ``m^2 Phibar Phi`` (with a contracted colour index) is gauge
@@ -453,6 +480,62 @@ def test_non_abelian_non_singlet_is_not_gauge_invariant():
         adjoint_indices=(S("a_delta_SU3_2"), S("a_delta_SU3_4")),
     ).to_canonical_string()
     assert canonical != "0", f"expected nonzero variation but got 0: {canonical}"
+
+
+def test_non_abelian_slot_policy_sum_emits_one_variation_per_active_slot():
+    """Repeated active representation slots contribute in first-seen slot order."""
+
+    g, Ag, SU3 = _su3_sum_setup()
+    phi = scalar_field(
+        "PhiBi",
+        self_conjugate=False,
+        indices=(COLOR_FUND_INDEX, COLOR_FUND_INDEX),
+    )
+    c1, c2 = S("c1"), S("c2")
+
+    L = Model(
+        gauge_groups=(SU3,),
+        fields=(phi, Ag),
+        lagrangian_decl=phi(c1, c2),
+    ).lagrangian()
+
+    delta = gauge_variation(group=SU3, parameter="alpha")
+    results = apply_field_operator_to_term(L.terms[0], delta)
+
+    assert len(results) == 2
+    first_labels = results[0].fields[1].field.unpack_slot_labels(results[0].fields[1].labels)
+    second_labels = results[1].fields[1].field.unpack_slot_labels(results[1].fields[1].labels)
+
+    assert first_labels[1] == c2
+    assert first_labels[0] != c1
+    assert second_labels[0] == c1
+    assert second_labels[1] != c2
+
+    first_coupling = str(results[0].coupling)
+    second_coupling = str(results[1].coupling)
+    assert "c1" in first_coupling
+    assert "c2" in second_coupling
+    assert "t(" in first_coupling.lower()
+    assert "t(" in second_coupling.lower()
+
+
+def test_non_abelian_slot_policy_sum_still_requires_explicit_labels():
+    """Each active repeated slot must carry a concrete label."""
+
+    g, Ag, SU3 = _su3_sum_setup()
+    phi = scalar_field(
+        "PhiBi",
+        self_conjugate=False,
+        indices=(COLOR_FUND_INDEX, COLOR_FUND_INDEX),
+    )
+
+    L = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(labels={COLOR_FUND_INDEX.kind: (S("c1"), None)}),),
+    )
+    delta = gauge_variation(group=SU3, parameter="alpha")
+    with pytest.raises(ValueError, match="representation slot 2"):
+        apply_field_operator_to_term(L, delta)
 
 
 # ---------------------------------------------------------------------------

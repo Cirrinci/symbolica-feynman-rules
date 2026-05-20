@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field as dataclass_field
+from dataclasses import dataclass, field as dataclass_field, replace
 from typing import Iterable, Optional, Union
 
 from symbolica import Expression, S
@@ -72,6 +72,26 @@ def _merge_unique_metadata(left, right):
             continue
         merged.append(item)
     return tuple(merged)
+
+
+def _scaled_terms(
+    terms: Iterable[InteractionTerm],
+    factor,
+) -> tuple[InteractionTerm, ...]:
+    return tuple(
+        replace(term, coupling=term.coupling * factor)
+        for term in terms
+    )
+
+
+def _operator_parity(operator) -> int:
+    parity = getattr(operator, "parity", None)
+    if parity not in (0, 1):
+        raise TypeError(
+            "operator must expose parity 0 or 1; got "
+            f"{type(operator).__name__}."
+        )
+    return parity
 
 
 def _normalize_flavor_expand_option(flavor_expand):
@@ -563,14 +583,16 @@ class CompiledLagrangian:
         operator,
         *,
         flavor_expand: FlavorExpandOption = False,
+        max_generated_terms: Optional[int] = None,
     ) -> "CompiledLagrangian":
-        """Apply a ``FieldOperator`` to every compiled interaction term.
+        """Apply one runtime operator to every compiled interaction term.
 
         Returns a new ``CompiledLagrangian`` whose terms are the graded
-        Leibniz expansion of ``operator`` over the current terms. The
-        action is implemented at the ``InteractionTerm`` level (see
-        ``lagrangian.operator_action``); the authoritative ordered
-        representation is preserved.
+        Leibniz expansion of ``operator`` over the current terms when
+        ``operator`` is a ``FieldOperator``, or the direct whole-term
+        rewrite when it is a ``TermOperator``. The action is implemented
+        at the ``InteractionTerm`` level (see ``lagrangian.operator_action``);
+        the authoritative ordered representation is preserved.
 
         ``flavor_expand`` mirrors ``feynman_rule``: pass
         ``True`` (or a specific flavor index) to act on the
@@ -578,13 +600,102 @@ class CompiledLagrangian:
         ones. Parameters are forwarded unchanged.
         """
 
-        from lagrangian.operator_action import apply_field_operator
+        from lagrangian.operator_action import apply_operator as apply_runtime_operator
 
         source_terms = self._expanded_terms(flavor_expand=flavor_expand)
         return CompiledLagrangian(
-            terms=apply_field_operator(source_terms, operator),
+            terms=apply_runtime_operator(
+                source_terms,
+                operator,
+                max_generated_terms=max_generated_terms,
+            ),
             parameters=self.parameters,
         )
+
+    def apply_operators(
+        self,
+        *operators,
+        flavor_expand: FlavorExpandOption = False,
+        max_generated_terms: Optional[int] = None,
+    ) -> "CompiledLagrangian":
+        """Apply several runtime operators in strict left-to-right order."""
+
+        current = self if not flavor_expand else CompiledLagrangian(
+            terms=self._expanded_terms(flavor_expand=flavor_expand),
+            parameters=self.parameters,
+        )
+        for operator in operators:
+            current = current.apply_operator(
+                operator,
+                max_generated_terms=max_generated_terms,
+            )
+        return current
+
+    def operator_bracket(
+        self,
+        left,
+        right,
+        *,
+        graded: bool = True,
+        flavor_expand: FlavorExpandOption = False,
+        max_generated_terms: Optional[int] = None,
+    ) -> "CompiledLagrangian":
+        """Return ``left(right(L)) - (-1)^(|left||right|) right(left(L))``."""
+
+        left_after_right = self.apply_operators(
+            right,
+            left,
+            flavor_expand=flavor_expand,
+            max_generated_terms=max_generated_terms,
+        )
+        right_after_left = self.apply_operators(
+            left,
+            right,
+            flavor_expand=flavor_expand,
+            max_generated_terms=max_generated_terms,
+        )
+        sign = 1
+        if graded:
+            sign = 1 if (_operator_parity(left) * _operator_parity(right)) % 2 == 0 else -1
+        return CompiledLagrangian(
+            terms=left_after_right.terms + _scaled_terms(right_after_left.terms, -sign),
+            parameters=_merge_unique_metadata(left_after_right.parameters, right_after_left.parameters),
+        )
+
+    def operator_anticommutator(
+        self,
+        left,
+        right,
+        *,
+        flavor_expand: FlavorExpandOption = False,
+        max_generated_terms: Optional[int] = None,
+    ) -> "CompiledLagrangian":
+        """Return ``left(right(L)) + (-1)^(|left||right|) right(left(L))``."""
+
+        left_after_right = self.apply_operators(
+            right,
+            left,
+            flavor_expand=flavor_expand,
+            max_generated_terms=max_generated_terms,
+        )
+        right_after_left = self.apply_operators(
+            left,
+            right,
+            flavor_expand=flavor_expand,
+            max_generated_terms=max_generated_terms,
+        )
+        sign = 1 if (_operator_parity(left) * _operator_parity(right)) % 2 == 0 else -1
+        return CompiledLagrangian(
+            terms=left_after_right.terms + _scaled_terms(right_after_left.terms, sign),
+            parameters=_merge_unique_metadata(left_after_right.parameters, right_after_left.parameters),
+        )
+
+    def ibp_normal_form(self) -> "CompiledLagrangian":
+        """Return the scalar IBP normal form of the compiled Lagrangian."""
+
+        from lagrangian.ibp import ibp_normal_form
+
+        return ibp_normal_form(self)
 
     def to_symbolica(self, *, flavor_expand: FlavorExpandOption = False):
         """Render the compiled Lagrangian as a single Symbolica expression.

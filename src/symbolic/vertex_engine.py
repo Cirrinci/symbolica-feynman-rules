@@ -405,6 +405,23 @@ def _default_leg_index_labels(num_legs: int):
     return [{SPINOR_KIND: S(f"i{k + 1}")} for k in range(num_legs)]
 
 
+def _validate_closed_dirac_bilinear_pair_structure(candidate_bilinears):
+    intervals = sorted(
+        (
+            min(left_slot, right_slot),
+            max(left_slot, right_slot),
+            (left_slot, right_slot),
+        )
+        for left_slot, right_slot in candidate_bilinears
+    )
+    for (_, prev_end, _), (next_start, _, _) in zip(intervals, intervals[1:]):
+        if next_start <= prev_end:
+            raise ValueError(
+                "closed_dirac_bilinears must define disjoint source-order Dirac pairings."
+            )
+    return tuple(pair for _, _, pair in intervals)
+
+
 def _external_factor_for_contraction(*, role, alpha, beta, p, spin, spinor_index):
     if _role_is_psi(role):
         return delta(alpha, beta) * UF(beta, p, spin, spinor_index)
@@ -617,6 +634,9 @@ def contract_to_full_expression(
                 for slot in fermion_slots
             )
             if valid_dirac_roles:
+                candidate_bilinears = _validate_closed_dirac_bilinear_pair_structure(
+                    candidate_bilinears
+                )
                 for left_slot, right_slot in candidate_bilinears:
                     if (
                         left_slot < 0

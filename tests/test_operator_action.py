@@ -12,6 +12,8 @@ fermion ordering -- the export is documented to be commutative.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from symbolica import Expression, S
@@ -32,8 +34,11 @@ from model import (
 from model.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
 from lagrangian.operator_action import (
     FieldOperator,
+    OperatorExpansionError,
     OperatorAtomResult,
     OperatorSummand,
+    TermOperator,
+    apply_operator,
     apply_field_operator,
     apply_field_operator_to_term,
     constant_result,
@@ -397,6 +402,146 @@ def test_compiled_lagrangian_apply_operator_returns_new_object(phi, chi):
     assert isinstance(out, CompiledLagrangian)
     assert len(out.terms) == 1
     assert tuple(occ.field.name for occ in out.terms[0].fields) == ("chi",)
+
+
+def test_compiled_lagrangian_apply_operator_accepts_term_operator(phi):
+    """Whole-term operators dispatch through the same public entry point."""
+
+    base = Lagrangian(
+        terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
+    )
+
+    def apply_to_term(term):
+        return (
+            replace(term, coupling=term.coupling * S("a")),
+            replace(term, coupling=term.coupling * S("b")),
+        )
+
+    out = base.apply_operator(TermOperator(name="split", apply_to_term=apply_to_term))
+    assert len(out.terms) == 2
+    assert {_canon(term.coupling) for term in out.terms} == {
+        _canon(S("a")),
+        _canon(S("b")),
+    }
+
+
+def test_model_apply_operator_forwards_to_compiled_lagrangian(phi, chi):
+    """``Model.apply_operator(...)`` is a top-level forwarder."""
+
+    model = Model(fields=(phi, chi), lagrangian_decl=phi)
+    out = model.apply_operator(replacement_operator("O", {phi: chi.occurrence()}))
+    assert len(out.terms) == 1
+    assert tuple(occ.field.name for occ in out.terms[0].fields) == ("chi",)
+
+
+def test_apply_operators_is_left_to_right(phi, chi):
+    """``apply_operators(A, B)`` means ``B(A(L))``."""
+
+    rho = scalar_field("rho", self_conjugate=True)
+    base = Lagrangian(
+        terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
+    )
+    first = replacement_operator("first", {phi: chi.occurrence()})
+    second = replacement_operator("second", {chi: rho.occurrence()})
+
+    out = base.apply_operators(first, second)
+    assert len(out.terms) == 1
+    assert tuple(occ.field.name for occ in out.terms[0].fields) == ("rho",)
+
+
+def test_operator_bracket_uses_graded_sign(phi):
+    """Odd-odd brackets use the graded sign in the second composition."""
+
+    chi = scalar_field("chi", self_conjugate=True)
+    rho = scalar_field("rho", self_conjugate=True)
+    base = Lagrangian(
+        terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
+    )
+    left = replacement_operator("left", {phi: chi.occurrence()}, parity=1)
+    right = replacement_operator("right", {chi: rho.occurrence()}, parity=1)
+
+    bracket = base.operator_bracket(left, right)
+    assert len(bracket.terms) == 1
+    assert tuple(occ.field.name for occ in bracket.terms[0].fields) == ("rho",)
+    assert _canon(bracket.terms[0].coupling) == _canon(Expression.num(1))
+
+
+def test_operator_bracket_even_even_is_ordinary_commutator(phi):
+    chi = scalar_field("chi", self_conjugate=True)
+    rho = scalar_field("rho", self_conjugate=True)
+    base = Lagrangian(
+        terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
+    )
+    left = replacement_operator("left", {phi: chi.occurrence()}, parity=0)
+    right = replacement_operator("right", {chi: rho.occurrence()}, parity=0)
+
+    bracket = base.operator_bracket(left, right)
+    assert len(bracket.terms) == 1
+    assert tuple(occ.field.name for occ in bracket.terms[0].fields) == ("rho",)
+    assert _canon(bracket.terms[0].coupling) == _canon(-Expression.num(1))
+
+
+def test_operator_bracket_even_odd_is_ordinary_commutator(phi):
+    chi = scalar_field("chi", self_conjugate=True)
+    rho = scalar_field("rho", self_conjugate=True)
+    base = Lagrangian(
+        terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
+    )
+    left = replacement_operator("left", {phi: chi.occurrence()}, parity=0)
+    right = replacement_operator("right", {chi: rho.occurrence()}, parity=1)
+
+    bracket = base.operator_bracket(left, right)
+    assert len(bracket.terms) == 1
+    assert tuple(occ.field.name for occ in bracket.terms[0].fields) == ("rho",)
+    assert _canon(bracket.terms[0].coupling) == _canon(-Expression.num(1))
+
+
+def test_operator_anticommutator_uses_graded_sign(phi):
+    """For odd-odd pairs the graded anticommutator carries the extra minus."""
+
+    chi = scalar_field("chi", self_conjugate=True)
+    rho = scalar_field("rho", self_conjugate=True)
+    base = Lagrangian(
+        terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
+    )
+    left = replacement_operator("left", {phi: chi.occurrence()}, parity=1)
+    right = replacement_operator("right", {chi: rho.occurrence()}, parity=1)
+
+    anticommutator = base.operator_anticommutator(left, right)
+    assert len(anticommutator.terms) == 1
+    assert tuple(occ.field.name for occ in anticommutator.terms[0].fields) == ("rho",)
+    assert _canon(anticommutator.terms[0].coupling) == _canon(-Expression.num(1))
+
+
+def test_apply_operator_limit_raises_before_materializing_fanout(phi, chi):
+    """Large derivative fan-out is rejected with a structured expansion error."""
+
+    mu = S("mu")
+    nu = S("nu")
+    term = InteractionTerm(
+        coupling=Expression.num(1),
+        fields=(phi.occurrence(),),
+        derivatives=(
+            DerivativeAction(target=0, lorentz_index=mu),
+            DerivativeAction(target=0, lorentz_index=nu),
+        ),
+    )
+
+    operator = FieldOperator(
+        name="fanout",
+        parity=0,
+        on_field=lambda occ: single_field_result((chi.occurrence(), phi.occurrence())),
+    )
+
+    with pytest.raises(OperatorExpansionError) as exc_info:
+        apply_operator((term,), operator, max_generated_terms=3)
+
+    exc = exc_info.value
+    assert exc.operator_name == "fanout"
+    assert exc.slot == 0
+    assert exc.replacement_len == 2
+    assert exc.derivative_count_on_slot == 2
+    assert exc.projected_terms == 4
 
 
 def test_zero_result_keeps_term_count_consistent(phi):

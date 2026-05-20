@@ -844,6 +844,7 @@ def _infer_explicit_local_dirac_bilinears(
         original_labels.setdefault(key, label)
 
     inferred: list[tuple[int, int]] = []
+    intervals: list[tuple[int, int, tuple[int, int]]] = []
     covered_slots: list[int] = []
     for key, slots in by_spinor_label.items():
         if len(slots) != 2:
@@ -858,12 +859,10 @@ def _infer_explicit_local_dirac_bilinears(
             psibar_slot, psi_slot = second_slot, first_slot
         else:
             return None
-        if any(
-            field_entries[mid].field.kind == "fermion"
-            for mid in range(first_slot + 1, second_slot)
-        ):
-            return None
-        inferred.append((psibar_slot, psi_slot))
+        pair = (psibar_slot, psi_slot)
+        interval = (min(first_slot, second_slot), max(first_slot, second_slot), pair)
+        intervals.append(interval)
+        inferred.append(pair)
         covered_slots.extend(slots)
 
     covered_counts = Counter(covered_slots)
@@ -874,7 +873,15 @@ def _infer_explicit_local_dirac_bilinears(
     ):
         return None
 
-    return tuple(sorted(inferred))
+    ordered_intervals = sorted(intervals, key=lambda item: item[:2])
+    for (_, prev_end, _), (next_start, _, _) in zip(
+        ordered_intervals,
+        ordered_intervals[1:],
+    ):
+        if next_start <= prev_end:
+            return None
+
+    return tuple(pair for _, _, pair in ordered_intervals)
 
 
 def _infer_closed_local_dirac_bilinears(
@@ -884,6 +891,17 @@ def _infer_closed_local_dirac_bilinears(
     slot_labels: Optional[Sequence[dict[int, object]]] = None,
     explicit_slot_labels: Optional[Sequence[dict[int, object]]] = None,
 ) -> tuple[tuple[int, int], ...]:
+    if slot_labels is not None:
+        if explicit_slot_labels is None:
+            explicit_slot_labels = tuple({} for _ in field_entries)
+        explicit_bilinears = _infer_explicit_local_dirac_bilinears(
+            field_entries=field_entries,
+            slot_labels=slot_labels,
+            explicit_slot_labels=explicit_slot_labels,
+        )
+        if explicit_bilinears is not None:
+            return explicit_bilinears
+
     closed_dirac_bilinears: list[tuple[int, int]] = []
     occupied_slots: set[int] = set()
     for interval_idx, (left, right) in enumerate(zip(field_entries, field_entries[1:])):
@@ -917,22 +935,7 @@ def _infer_closed_local_dirac_bilinears(
         or set(covered_slots) != set(fermion_slots)
         or any(count != 1 for count in covered_counts.values())
     ):
-        if slot_labels is None:
-            raise _unsupported_local_fermion_ordering_error()
-        if explicit_slot_labels is None:
-            explicit_slot_labels = tuple({} for _ in field_entries)
-        explicit_bilinears = _infer_explicit_local_dirac_bilinears(
-            field_entries=field_entries,
-            slot_labels=slot_labels,
-            explicit_slot_labels=explicit_slot_labels,
-        )
-        if explicit_bilinears is None:
-            raise _unsupported_local_fermion_ordering_error()
-        merged = list(closed_dirac_bilinears)
-        for pair in explicit_bilinears:
-            if pair not in merged:
-                merged.append(pair)
-        return tuple(merged)
+        raise _unsupported_local_fermion_ordering_error()
 
     return closed_dirac_bilinears
 

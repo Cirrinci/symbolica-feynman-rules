@@ -369,6 +369,21 @@ class Model:
             flavor_expand=flavor_expand,
         )
 
+    def apply_operator(
+        self,
+        operator,
+        *,
+        flavor_expand: FlavorExpandOption = False,
+        max_generated_terms: Optional[int] = None,
+    ) -> CompiledLagrangian:
+        """Apply one runtime operator to the compiled Lagrangian."""
+
+        return self.lagrangian().apply_operator(
+            operator,
+            flavor_expand=flavor_expand,
+            max_generated_terms=max_generated_terms,
+        )
+
     def to_symbolica(self, *, flavor_expand: FlavorExpandOption = False):
         """Render the compiled Lagrangian as one Symbolica expression.
 
