@@ -1,6 +1,8 @@
+import pytest
+
 from symbolica import S
 
-from model import Model, PartialD, scalar_field
+from model import Model, PartialD, dirac_field, scalar_field
 
 
 def test_scalar_total_derivative_current_is_representable():
@@ -21,7 +23,7 @@ def test_scalar_total_derivative_current_is_representable():
     ] == [(2, "mu")]
 
 
-def test_scalar_total_derivative_manual_expansion_matches_l1_minus_l2_export():
+def test_scalar_total_derivative_ibp_normal_form_vanishes_on_divergence():
     mu = S("mu")
     c = S("c")
     phi = scalar_field("Phi", self_conjugate=True)
@@ -42,7 +44,45 @@ def test_scalar_total_derivative_manual_expansion_matches_l1_minus_l2_export():
         ),
     ).lagrangian()
 
-    assert (
-        l1_minus_l2.to_symbolica().expand().to_canonical_string()
-        == (c * expanded_divergence.to_symbolica()).expand().to_canonical_string()
-    )
+    assert expanded_divergence.ibp_normal_form().terms == ()
+    assert l1_minus_l2.ibp_normal_form().terms == ()
+
+
+def test_scalar_total_derivative_ibp_normal_form_drops_one_derivative_total_derivative():
+    mu = S("mu")
+    phi = scalar_field("Phi", self_conjugate=True)
+
+    lagrangian = Model(
+        fields=(phi,),
+        lagrangian_decl=phi * PartialD(phi, mu),
+    ).lagrangian()
+
+    normal = lagrangian.ibp_normal_form()
+    assert normal.terms == ()
+
+
+def test_ibp_normal_form_rejects_mixed_scalar_species():
+    mu = S("mu")
+    phi = scalar_field("Phi", self_conjugate=True)
+    chi = scalar_field("Chi", self_conjugate=True)
+
+    lagrangian = Model(
+        fields=(phi, chi),
+        lagrangian_decl=phi * PartialD(chi, mu),
+    ).lagrangian()
+
+    with pytest.raises(ValueError, match="mixed scalar species"):
+        lagrangian.ibp_normal_form()
+
+
+def test_ibp_normal_form_rejects_fermions():
+    mu = S("mu")
+    psi = dirac_field("psi", indices=())
+
+    lagrangian = Model(
+        fields=(psi,),
+        lagrangian_decl=psi.bar() * PartialD(psi, mu),
+    ).lagrangian()
+
+    with pytest.raises(ValueError, match="Dirac bilinears|only scalar terms"):
+        lagrangian.ibp_normal_form()
