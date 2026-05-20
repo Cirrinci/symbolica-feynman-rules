@@ -47,6 +47,23 @@ def _append_gauge_group(gauge_groups: list[GaugeGroup], gauge_group):
         _append_unique_identity(gauge_groups, gauge_group)
 
 
+def _looks_like_lagrangian_decl(item) -> bool:
+    try:
+        DeclaredLagrangian.from_item(item)
+    except TypeError:
+        return False
+    return True
+
+
+_MISSING = object()
+
+
+def _assign_model_argument(values: dict[str, object], slot: str, value):
+    if values[slot] is not _MISSING:
+        raise TypeError(f"Model() got multiple values for argument '{slot}'")
+    values[slot] = value
+
+
 _GAUGE_GROUP_DECLARATION_TERM_TYPES = (
     GaugeKineticTerm,
     GaugeFixingTerm,
@@ -109,7 +126,7 @@ def _infer_model_metadata(
     return tuple(fields), tuple(gauge_groups)
 
 
-@dataclass
+@dataclass(init=False)
 class Model:
     """Top-level FeynRules-style model container.
 
@@ -122,7 +139,9 @@ class Model:
        ``flavor_index=...`` for FeynRules-like flavor-class declarations)
     4. declare parameters with ``Parameter(...)``
     5. build the model with ``Model(gauge_groups=..., fields=...,
-       parameters=..., lagrangian_decl=...)``
+       parameters=..., lagrangian_decl=...)`` or the shorthand
+       ``Model(declared_term, name=..., gauge_groups=..., fields=...,
+       parameters=...)``
     6. extract Feynman rules with ``model.feynman_rule(...)`` /
        ``model.vertex_signatures(...)``.
     """
@@ -139,7 +158,71 @@ class Model:
         compare=False,
     )
 
+    def __init__(
+        self,
+        *args,
+        name=_MISSING,
+        gauge_groups=_MISSING,
+        fields=_MISSING,
+        parameters=_MISSING,
+        lagrangian_decl=_MISSING,
+    ):
+        values = {
+            "name": _MISSING,
+            "gauge_groups": _MISSING,
+            "fields": _MISSING,
+            "parameters": _MISSING,
+            "lagrangian_decl": _MISSING,
+        }
+
+        if (
+            args
+            and lagrangian_decl is _MISSING
+            and not isinstance(args[0], str)
+            and _looks_like_lagrangian_decl(args[0])
+        ):
+            if len(args) > 5:
+                raise TypeError(f"Model() takes at most 5 positional arguments but {len(args)} were given")
+            _assign_model_argument(values, "lagrangian_decl", args[0])
+            for slot, value in zip(("name", "gauge_groups", "fields", "parameters"), args[1:]):
+                _assign_model_argument(values, slot, value)
+        else:
+            if len(args) > 5:
+                raise TypeError(f"Model() takes at most 5 positional arguments but {len(args)} were given")
+            for slot, value in zip(
+                ("name", "gauge_groups", "fields", "parameters", "lagrangian_decl"),
+                args,
+            ):
+                _assign_model_argument(values, slot, value)
+
+        for slot, value in (
+            ("name", name),
+            ("gauge_groups", gauge_groups),
+            ("fields", fields),
+            ("parameters", parameters),
+            ("lagrangian_decl", lagrangian_decl),
+        ):
+            if value is not _MISSING:
+                _assign_model_argument(values, slot, value)
+
+        self.name = "" if values["name"] is _MISSING else values["name"]
+        self.gauge_groups = () if values["gauge_groups"] is _MISSING else values["gauge_groups"]
+        self.fields = () if values["fields"] is _MISSING else values["fields"]
+        self.parameters = () if values["parameters"] is _MISSING else values["parameters"]
+        self.lagrangian_decl = None if values["lagrangian_decl"] is _MISSING else values["lagrangian_decl"]
+        self._compiled_lagrangian = None
+
+        self.__post_init__()
+
     def __post_init__(self):
+        if (
+            self.lagrangian_decl is None
+            and not isinstance(self.name, str)
+            and _looks_like_lagrangian_decl(self.name)
+        ):
+            self.lagrangian_decl = self.name
+            self.name = ""
+
         if self.lagrangian_decl is None:
             self.lagrangian_decl = DeclaredLagrangian()
         elif not isinstance(self.lagrangian_decl, DeclaredLagrangian):
