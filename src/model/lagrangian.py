@@ -19,7 +19,7 @@ from .interactions import (
 from .metadata import IndexType
 
 
-FlavorExpandOption = bool | IndexType | Iterable[IndexType]
+FlavorExpandOption = Union[bool, IndexType, Iterable[IndexType]]
 _EXPAND_ALL_FLAVOR_INDICES = object()
 
 

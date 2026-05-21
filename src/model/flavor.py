@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import replace
 from itertools import product
+from typing import Optional
 
 from symbolica import Expression, S
 
@@ -57,7 +58,7 @@ def _parameter_head_map(parameters: tuple[Parameter, ...]) -> dict[str, Paramete
 
 def _index_is_selected(
     index: IndexType,
-    selected_indices: frozenset[IndexType] | None,
+    selected_indices: Optional[frozenset[IndexType]],
 ) -> bool:
     return selected_indices is None or index in selected_indices
 
@@ -126,7 +127,7 @@ def _collect_parameter_flavor_labels(
 def _collect_term_flavor_labels(
     term: InteractionTerm,
     parameters: tuple[Parameter, ...],
-    selected_indices: frozenset[IndexType] | None,
+    selected_indices: Optional[frozenset[IndexType]],
 ):
     label_entries: dict[str, tuple[object, object]] = {}
     label_counts: Counter = Counter()
@@ -265,7 +266,7 @@ def expand_flavor_terms(
     terms,
     *,
     parameters: tuple[Parameter, ...] = (),
-    selected_indices: tuple[IndexType, ...] | None = None,
+    selected_indices: Optional[tuple[IndexType, ...]] = None,
 ) -> tuple[InteractionTerm, ...]:
     """Expand flavor-generic fields in compiled interaction terms."""
 
