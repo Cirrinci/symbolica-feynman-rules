@@ -26,6 +26,7 @@ What it is **not**:
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Optional, Sequence
@@ -38,6 +39,36 @@ from model.metadata import Field
 
 PARTIAL_DERIVATIVE_HEAD = "PartialD"
 """Symbolica function head used to wrap a derivative action in the export."""
+
+DERIVATIVE_STYLE_PARTIALD = "partiald"
+DERIVATIVE_STYLE_COORDINATE = "coordinate"
+
+
+def _sanitize_symbolica_identifier(text: str) -> str:
+    cleaned = re.sub(r"[^0-9A-Za-z_]+", "_", text).strip("_")
+    if not cleaned:
+        cleaned = "coord"
+    if cleaned[0].isdigit():
+        cleaned = f"v_{cleaned}"
+    return cleaned
+
+
+def _coordinate_symbol_for_lorentz_index(lorentz_index: object):
+    text = str(lorentz_index)
+    return S(f"x_{_sanitize_symbolica_identifier(text)}")
+
+
+def _normalize_derivative_export(
+    *,
+    derivative_style: str,
+    coordinate_map: Optional[Mapping[object, object]],
+):
+    if derivative_style not in (DERIVATIVE_STYLE_PARTIALD, DERIVATIVE_STYLE_COORDINATE):
+        raise ValueError(
+            "derivative_style must be 'partiald' or 'coordinate'."
+        )
+    normalized_coordinate_map = dict(coordinate_map or {})
+    return derivative_style, normalized_coordinate_map
 
 
 def _occurrence_label_arguments(occurrence: FieldOccurrence) -> tuple[object, ...]:
@@ -54,27 +85,68 @@ def _occurrence_label_arguments(occurrence: FieldOccurrence) -> tuple[object, ..
     return tuple(slot_labels.get(slot, placeholder) for slot in range(len(occurrence.field.indices)))
 
 
-def _occurrence_atom(occurrence: FieldOccurrence) -> object:
+def _occurrence_atom(
+    occurrence: FieldOccurrence,
+    *,
+    coordinate_arguments: Sequence[object] = (),
+) -> object:
     """Build the bare ``species(label_1, ..., label_n)`` Symbolica atom."""
 
     species = occurrence.species
-    arguments = _occurrence_label_arguments(occurrence)
+    arguments = _occurrence_label_arguments(occurrence) + tuple(coordinate_arguments)
     if not arguments:
         return species
     return species(*arguments)
 
 
-def _wrap_with_derivatives(atom: object, derivative_indices: Sequence[object]) -> object:
+def _wrap_with_derivatives(
+    atom: object,
+    derivative_indices: Sequence[object],
+    *,
+    derivative_style: str,
+    coordinate_map: Mapping[object, object],
+) -> object:
     """Wrap an occurrence atom in ``PartialD(..., mu)`` per derivative action."""
 
-    partial = S(PARTIAL_DERIVATIVE_HEAD)
     result = atom
     for lorentz_index in derivative_indices:
-        result = partial(result, lorentz_index)
+        if derivative_style == DERIVATIVE_STYLE_PARTIALD:
+            partial = S(PARTIAL_DERIVATIVE_HEAD)
+            result = partial(result, lorentz_index)
+            continue
+        coordinate = coordinate_map.get(lorentz_index)
+        if coordinate is None:
+            coordinate = _coordinate_symbol_for_lorentz_index(lorentz_index)
+        result = result.derivative(coordinate)
     return result
 
 
-def interaction_term_to_symbolica(term: InteractionTerm) -> object:
+def _term_derivative_indices(term: InteractionTerm) -> tuple[object, ...]:
+    ordered_unique: list[object] = []
+    for action in term.derivatives:
+        if any(existing == action.lorentz_index for existing in ordered_unique):
+            continue
+        ordered_unique.append(action.lorentz_index)
+    return tuple(ordered_unique)
+
+
+def _terms_derivative_indices(terms: Iterable[InteractionTerm]) -> tuple[object, ...]:
+    ordered_unique: list[object] = []
+    for term in terms:
+        for lorentz_index in _term_derivative_indices(term):
+            if any(existing == lorentz_index for existing in ordered_unique):
+                continue
+            ordered_unique.append(lorentz_index)
+    return tuple(ordered_unique)
+
+
+def interaction_term_to_symbolica(
+    term: InteractionTerm,
+    *,
+    derivative_style: str = DERIVATIVE_STYLE_PARTIALD,
+    coordinate_map: Optional[Mapping[object, object]] = None,
+    coordinate_arguments: Optional[Sequence[object]] = None,
+) -> object:
     """Render a single ``InteractionTerm`` as a Symbolica expression.
 
     The result is the coupling multiplied by one atom per
@@ -85,28 +157,78 @@ def interaction_term_to_symbolica(term: InteractionTerm) -> object:
     commutative); see the module docstring for the implications.
     """
 
+    derivative_style, normalized_coordinate_map = _normalize_derivative_export(
+        derivative_style=derivative_style,
+        coordinate_map=coordinate_map,
+    )
+    if coordinate_arguments is None:
+        term_coordinate_indices = _term_derivative_indices(term)
+        coordinate_arguments = tuple(
+            normalized_coordinate_map.get(index, _coordinate_symbol_for_lorentz_index(index))
+            for index in term_coordinate_indices
+        ) if derivative_style == DERIVATIVE_STYLE_COORDINATE else ()
+    else:
+        coordinate_arguments = tuple(coordinate_arguments)
+
     derivatives_by_slot: dict[int, list[object]] = {}
     for action in term.derivatives:
         derivatives_by_slot.setdefault(action.target, []).append(action.lorentz_index)
 
     expression: object = term.coupling
     for slot, occurrence in enumerate(term.fields):
-        atom = _occurrence_atom(occurrence)
-        wrapped = _wrap_with_derivatives(atom, derivatives_by_slot.get(slot, ()))
+        atom = _occurrence_atom(
+            occurrence,
+            coordinate_arguments=coordinate_arguments if derivative_style == DERIVATIVE_STYLE_COORDINATE else (),
+        )
+        wrapped = _wrap_with_derivatives(
+            atom,
+            derivatives_by_slot.get(slot, ()),
+            derivative_style=derivative_style,
+            coordinate_map=normalized_coordinate_map,
+        )
         expression = expression * wrapped
     return expression
 
 
-def interaction_terms_to_symbolica(terms: Iterable[InteractionTerm]) -> object:
+def interaction_terms_to_symbolica(
+    terms: Iterable[InteractionTerm],
+    *,
+    derivative_style: str = DERIVATIVE_STYLE_PARTIALD,
+    coordinate_map: Optional[Mapping[object, object]] = None,
+) -> object:
     """Sum the Symbolica expressions of a sequence of interaction terms."""
+
+    terms = tuple(terms)
+    derivative_style, normalized_coordinate_map = _normalize_derivative_export(
+        derivative_style=derivative_style,
+        coordinate_map=coordinate_map,
+    )
+    if derivative_style == DERIVATIVE_STYLE_COORDINATE:
+        coordinate_arguments = tuple(
+            normalized_coordinate_map.get(index, _coordinate_symbol_for_lorentz_index(index))
+            for index in _terms_derivative_indices(terms)
+        )
+    else:
+        coordinate_arguments = ()
 
     total: object = Expression.num(0)
     for term in terms:
-        total = total + interaction_term_to_symbolica(term)
+        total = total + interaction_term_to_symbolica(
+            term,
+            derivative_style=derivative_style,
+            coordinate_map=normalized_coordinate_map,
+            coordinate_arguments=coordinate_arguments,
+        )
     return total
 
 
-def lagrangian_to_symbolica(lagrangian, *, flavor_expand=False) -> object:
+def lagrangian_to_symbolica(
+    lagrangian,
+    *,
+    flavor_expand=False,
+    derivative_style: str = DERIVATIVE_STYLE_PARTIALD,
+    coordinate_map: Optional[Mapping[object, object]] = None,
+) -> object:
     """Render any object exposing a ``terms`` attribute as a Symbolica sum.
 
     Works for ``CompiledLagrangian`` / ``Lagrangian`` instances directly,
@@ -126,7 +248,11 @@ def lagrangian_to_symbolica(lagrangian, *, flavor_expand=False) -> object:
         terms = expanded_terms_method(flavor_expand=flavor_expand)
     else:
         terms = lagrangian.terms
-    return interaction_terms_to_symbolica(terms)
+    return interaction_terms_to_symbolica(
+        terms,
+        derivative_style=derivative_style,
+        coordinate_map=coordinate_map,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -179,6 +305,8 @@ class SymbolicaFieldRegistry:
 
 
 __all__ = (
+    "DERIVATIVE_STYLE_COORDINATE",
+    "DERIVATIVE_STYLE_PARTIALD",
     "PARTIAL_DERIVATIVE_HEAD",
     "SymbolicaFieldRegistry",
     "interaction_term_to_symbolica",

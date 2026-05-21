@@ -697,7 +697,13 @@ class CompiledLagrangian:
 
         return ibp_normal_form(self)
 
-    def to_symbolica(self, *, flavor_expand: FlavorExpandOption = False):
+    def to_symbolica(
+        self,
+        *,
+        flavor_expand: FlavorExpandOption = False,
+        derivative_style: str = "partiald",
+        coordinate_map=None,
+    ):
         """Render the compiled Lagrangian as a single Symbolica expression.
 
         Display / simplification only -- Symbolica multiplication is
@@ -712,7 +718,12 @@ class CompiledLagrangian:
 
         from lagrangian.symbolica_export import lagrangian_to_symbolica
 
-        return lagrangian_to_symbolica(self, flavor_expand=flavor_expand)
+        return lagrangian_to_symbolica(
+            self,
+            flavor_expand=flavor_expand,
+            derivative_style=derivative_style,
+            coordinate_map=coordinate_map,
+        )
 
     def feynman_rule(
         self,

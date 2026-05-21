@@ -623,6 +623,27 @@ def test_interaction_term_to_symbolica_wraps_derivatives(phi):
     assert PARTIAL_DERIVATIVE_HEAD in rendered
 
 
+def test_lagrangian_to_symbolica_coordinate_export_uses_symbolica_derivatives():
+    mu = S("mu")
+    phi = scalar_field("Phi", self_conjugate=True)
+    model = Model(
+        fields=(phi,),
+        lagrangian_decl=phi * phi * phi + phi * partial(mu, phi),
+    )
+
+    exported = model.lagrangian().to_symbolica(derivative_style="coordinate")
+    rendered = str(exported)
+    assert "Phi(x_mu)" in rendered
+    assert "der(1,Phi(x_mu))" in rendered
+
+    differentiated = exported.derivative(S("x_mu"))
+    assert _canon(differentiated) == _canon(
+        Expression.parse(
+            "3*der(1,Phi(x_mu))*Phi(x_mu)^2 + der(2,Phi(x_mu))*Phi(x_mu) + der(1,Phi(x_mu))^2"
+        )
+    )
+
+
 def test_interaction_terms_to_symbolica_sums_term_expressions(phi, chi):
     term_a = InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),))
     term_b = InteractionTerm(coupling=Expression.num(2), fields=(chi.occurrence(),))
@@ -1037,6 +1058,18 @@ def test_model_to_symbolica_forwards_flavor_expand():
 
     assert _canon(model.to_symbolica(flavor_expand=True)) == _canon(
         model.lagrangian().to_symbolica(flavor_expand=True)
+    )
+
+
+def test_model_to_symbolica_forwards_derivative_export_options():
+    phi = scalar_field("Phi", self_conjugate=True)
+    mu = S("mu")
+    model = Model(fields=(phi,), lagrangian_decl=phi * partial(mu, phi))
+
+    assert _canon(
+        model.to_symbolica(derivative_style="coordinate")
+    ) == _canon(
+        model.lagrangian().to_symbolica(derivative_style="coordinate")
     )
 
 
