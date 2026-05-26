@@ -380,6 +380,33 @@ class CompiledLagrangian:
             return "0"
         return " + ".join(str(term) for term in self.terms)
 
+    def __getattr__(self, name):
+        """Forward missing attributes/methods to the default Symbolica export.
+
+        This lets a compiled Lagrangian behave like its Symbolica expression
+        view for read-only algebraic manipulations such as ``expand()``,
+        ``collect(...)``, ``match(...)``, or ``coefficient(...)`` without
+        forcing callers to spell ``to_symbolica()`` first.
+
+        The forwarded view always uses the default export options. If a caller
+        needs non-default ``flavor_expand`` or ``derivative_style`` settings,
+        they should call ``to_symbolica(...)`` explicitly.
+        """
+
+        expression = self.to_symbolica()
+        if not hasattr(expression, name):
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {name!r}."
+            )
+        return getattr(expression, name)
+
+    def __dir__(self):
+        """Expose Symbolica-expression methods in interactive completion."""
+
+        return sorted(
+            set(super().__dir__()) | set(dir(Expression))
+        )
+
     def _expanded_terms(self, *, flavor_expand: FlavorExpandOption = False) -> tuple[InteractionTerm, ...]:
         flavor_expand = _normalize_flavor_expand_option(flavor_expand)
         if not flavor_expand:
@@ -723,6 +750,56 @@ class CompiledLagrangian:
             flavor_expand=flavor_expand,
             derivative_style=derivative_style,
             coordinate_map=coordinate_map,
+        )
+
+    def pattern_matches(
+        self,
+        pattern,
+        *,
+        flavor_expand: FlavorExpandOption = False,
+        derivative_style: str = "partiald",
+        coordinate_map=None,
+        expand: bool = False,
+        deduplicate: bool = True,
+    ):
+        """Enumerate top-level wildcard matches in the Symbolica export."""
+
+        from lagrangian.symbolica_export import pattern_matches
+
+        return pattern_matches(
+            self.to_symbolica(
+                flavor_expand=flavor_expand,
+                derivative_style=derivative_style,
+                coordinate_map=coordinate_map,
+            ),
+            pattern,
+            expand=expand,
+            deduplicate=deduplicate,
+        )
+
+    def pattern_coefficient(
+        self,
+        pattern,
+        *,
+        flavor_expand: FlavorExpandOption = False,
+        derivative_style: str = "partiald",
+        coordinate_map=None,
+        expand: bool = False,
+        deduplicate: bool = True,
+    ):
+        """Return the summed residual coefficient of a wildcard pattern."""
+
+        from lagrangian.symbolica_export import pattern_coefficient
+
+        return pattern_coefficient(
+            self.to_symbolica(
+                flavor_expand=flavor_expand,
+                derivative_style=derivative_style,
+                coordinate_map=coordinate_map,
+            ),
+            pattern,
+            expand=expand,
+            deduplicate=deduplicate,
         )
 
     def feynman_rule(

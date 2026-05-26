@@ -1,4 +1,4 @@
-"""Display-only Symbolica export for lowered ``InteractionTerm`` objects.
+"""Symbolica export helpers for lowered ``InteractionTerm`` objects.
 
 This module exposes a way to view a compiled / lowered / flavor-expanded
 Lagrangian as a single Symbolica expression. The resulting expression is
@@ -22,6 +22,18 @@ What it is **not**:
   ``Field`` declaration. Reverse reconstruction (Symbolica ->
   ``InteractionTerm``) therefore requires extra metadata; see
   ``SymbolicaFieldRegistry`` below for the shape of such a registry.
+
+On top of the raw export, this module also provides a small amount of
+ergonomics for structural manipulations that users naturally expect when
+working with Symbolica:
+
+* ``pattern_matches(...)`` enumerates top-level wildcard matches together
+  with the residual coefficient of each matched factor;
+* ``pattern_coefficient(...)`` sums those residual coefficients.
+
+This fills a gap in Symbolica's native ``Expression.coefficient(...)``,
+which is literal-only and therefore does not treat wildcards in the
+coefficient argument as pattern variables.
 """
 
 from __future__ import annotations
@@ -31,7 +43,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Optional, Sequence
 
-from symbolica import Expression, S
+from symbolica import AtomType, Expression, S
 
 from model.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
 from model.metadata import Field
@@ -256,6 +268,109 @@ def lagrangian_to_symbolica(
 
 
 # ---------------------------------------------------------------------------
+# Pattern-oriented Symbolica helpers
+# ---------------------------------------------------------------------------
+
+
+def _top_level_terms(expr: Expression) -> tuple[Expression, ...]:
+    """Return additive top-level terms, or ``(expr,)`` for non-sums."""
+
+    if expr.get_type() == AtomType.Add:
+        return tuple(expr)
+    return (expr,)
+
+
+def _canonical_key(expr: Expression) -> str:
+    return expr.to_canonical_string()
+
+
+@dataclass(frozen=True)
+class PatternCoefficientMatch:
+    """One top-level wildcard match together with its residual coefficient."""
+
+    term: Expression
+    matched_factor: Expression
+    coefficient: Expression
+    bindings: tuple[tuple[Expression, Expression], ...]
+
+
+def pattern_matches(
+    expr: Expression,
+    pattern: Expression,
+    *,
+    expand: bool = False,
+    deduplicate: bool = True,
+) -> tuple[PatternCoefficientMatch, ...]:
+    """Enumerate top-level wildcard matches and their residual coefficients.
+
+    Each match is computed against one additive term of ``expr``. The helper
+    only considers matches rooted at the top level of that term
+    (``min_level=max_level=0``), which is the useful notion for Lagrangian
+    monomials where one wants to identify a matched factor and keep the
+    leftover multiplicative coefficient.
+
+    ``deduplicate=True`` removes purely commutative duplicate matches inside
+    one additive term, e.g. the two wildcard orderings of ``A(mu)*A(nu)``
+    against the same bilinear.
+    """
+
+    if expand and hasattr(expr, "expand"):
+        expr = expr.expand()
+
+    matches: list[PatternCoefficientMatch] = []
+    for term in _top_level_terms(expr):
+        seen_factors: set[str] = set()
+        for match_map in term.match(
+            pattern,
+            min_level=0,
+            max_level=0,
+            partial=True,
+        ):
+            matched_factor = pattern.replace_wildcards(match_map)
+            matched_key = _canonical_key(matched_factor)
+            if deduplicate and matched_key in seen_factors:
+                continue
+            seen_factors.add(matched_key)
+
+            coefficient = term.coefficient(matched_factor)
+            bindings = tuple(
+                sorted(
+                    match_map.items(),
+                    key=lambda item: item[0].to_canonical_string(),
+                )
+            )
+            matches.append(
+                PatternCoefficientMatch(
+                    term=term,
+                    matched_factor=matched_factor,
+                    coefficient=coefficient,
+                    bindings=bindings,
+                )
+            )
+    return tuple(matches)
+
+
+def pattern_coefficient(
+    expr: Expression,
+    pattern: Expression,
+    *,
+    expand: bool = False,
+    deduplicate: bool = True,
+) -> Expression:
+    """Return the summed residual coefficient of a wildcard pattern."""
+
+    total = Expression.num(0)
+    for match in pattern_matches(
+        expr,
+        pattern,
+        expand=expand,
+        deduplicate=deduplicate,
+    ):
+        total += match.coefficient
+    return total
+
+
+# ---------------------------------------------------------------------------
 # Reverse-direction stub
 # ---------------------------------------------------------------------------
 
@@ -308,8 +423,11 @@ __all__ = (
     "DERIVATIVE_STYLE_COORDINATE",
     "DERIVATIVE_STYLE_PARTIALD",
     "PARTIAL_DERIVATIVE_HEAD",
+    "PatternCoefficientMatch",
     "SymbolicaFieldRegistry",
     "interaction_term_to_symbolica",
     "interaction_terms_to_symbolica",
     "lagrangian_to_symbolica",
+    "pattern_coefficient",
+    "pattern_matches",
 )

@@ -49,10 +49,13 @@ from lagrangian.operator_action import (
 )
 from lagrangian.symbolica_export import (
     PARTIAL_DERIVATIVE_HEAD,
+    PatternCoefficientMatch,
     SymbolicaFieldRegistry,
     interaction_term_to_symbolica,
     interaction_terms_to_symbolica,
     lagrangian_to_symbolica,
+    pattern_coefficient,
+    pattern_matches,
 )
 
 
@@ -658,6 +661,66 @@ def test_lagrangian_to_symbolica_delegates_to_terms(phi):
     direct = lagrangian_to_symbolica(base)
     via_method = base.to_symbolica()
     assert _canon(direct) == _canon(via_method)
+
+
+def test_compiled_lagrangian_forwards_symbolica_methods(phi):
+    g = S("g")
+    lagrangian = Lagrangian(
+        terms=(
+            InteractionTerm(
+                coupling=g,
+                fields=(phi.occurrence(), phi.occurrence()),
+            ),
+        )
+    )
+
+    assert _canon(lagrangian.expand()) == _canon(lagrangian.to_symbolica().expand())
+    assert _canon(lagrangian.coefficient(phi.symbol * phi.symbol)) == _canon(g)
+
+
+def test_pattern_matches_deduplicate_commutative_wildcard_orderings():
+    a, b, c = S("a", "b", "c")
+    x_, y_ = S("x_", "y_")
+
+    matches = pattern_matches(a * b * c, x_ * y_)
+
+    assert all(isinstance(match, PatternCoefficientMatch) for match in matches)
+    assert {_canon(match.matched_factor) for match in matches} == {
+        _canon(a * b),
+        _canon(a * c),
+        _canon(b * c),
+    }
+    assert {_canon(match.coefficient) for match in matches} == {
+        _canon(a),
+        _canon(b),
+        _canon(c),
+    }
+
+
+def test_pattern_coefficient_sums_unique_wildcard_matches():
+    a, b, c = S("a", "b", "c")
+    x_, y_ = S("x_", "y_")
+
+    assert _canon(pattern_coefficient(a * b * c, x_ * y_)) == _canon(a + b + c)
+
+
+def test_compiled_lagrangian_pattern_coefficient_supports_wildcard_labels():
+    g = S("g")
+    mu, nu = S("mu", "nu")
+    mu_, nu_ = S("mu_", "nu_")
+    vector = Field("A", spin=1, indices=(LORENTZ_INDEX,), self_conjugate=True)
+    lagrangian = Lagrangian(
+        terms=(
+            InteractionTerm(
+                coupling=g,
+                fields=(vector(mu), vector(nu)),
+            ),
+        )
+    )
+
+    assert _canon(
+        lagrangian.pattern_coefficient(vector.symbol(mu_) * vector.symbol(nu_))
+    ) == _canon(g)
 
 
 def test_symbolica_field_registry_reverse_pass_is_not_implemented():
