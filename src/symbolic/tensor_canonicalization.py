@@ -22,13 +22,15 @@ the rest of the pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import combinations
 from typing import Iterable, Sequence
 
-from symbolica import Expression, S
+from symbolica import AtomType, Expression, S
 
-from .spenso_structures import lorentz_metric, simplify_invariants
+from .spenso_structures import COLOR_ADJ, LORENTZ, WEAK_ADJ, lorentz_metric, simplify_invariants
 
 pcomp = S("pcomp")
+_PARTIAL_DERIVATIVE_NAME = S("PartialD").get_name()
 
 _DUMMY_GROUP_STEMS = {
     0: "mu_mid",
@@ -272,6 +274,478 @@ def contract_spenso_lorentz_metrics(expr, *, max_passes: int = 8):
     return result
 
 
+def _contract_plain_metric_heads(expr, *, max_passes: int = 8):
+    """Contract Lorentz/adjoint metrics against plain exported field heads.
+
+    The Symbolica export uses ordinary commutative function heads such as
+    ``G(mu, a)``, ``alpha(a)``, and ``PartialD(...)``.  ``simplify_metrics``
+    already contracts typed Spenso tensors like ``f`` and ``t``, but it does
+    not know that these plain heads carry Lorentz/adjoint labels in specific
+    argument slots.  This lightweight pass covers the patterns that appear in
+    the lowered gauge-variation expressions without introducing a separate
+    field-aware tensor system.
+    """
+
+    wildcard_a = S("canon_plain_metric_a_")
+    wildcard_b = S("canon_plain_metric_b_")
+    wildcard_x = S("canon_plain_metric_x_")
+    wildcard_y = S("canon_plain_metric_y_")
+    wildcard_h = S("canon_plain_metric_h_")
+    partial = S("PartialD")
+
+    metrics = (
+        LORENTZ.g(wildcard_a, wildcard_b).to_expression(),
+        COLOR_ADJ.g(wildcard_a, wildcard_b).to_expression(),
+        WEAK_ADJ.g(wildcard_a, wildcard_b).to_expression(),
+    )
+
+    rewrites = []
+    for metric in metrics:
+        rewrites.extend(
+            [
+                (metric * wildcard_h(wildcard_b), wildcard_h(wildcard_a)),
+                (wildcard_h(wildcard_b) * metric, wildcard_h(wildcard_a)),
+                (metric * wildcard_h(wildcard_b, wildcard_x), wildcard_h(wildcard_a, wildcard_x)),
+                (wildcard_h(wildcard_b, wildcard_x) * metric, wildcard_h(wildcard_a, wildcard_x)),
+                (metric * wildcard_h(wildcard_x, wildcard_b), wildcard_h(wildcard_x, wildcard_a)),
+                (wildcard_h(wildcard_x, wildcard_b) * metric, wildcard_h(wildcard_x, wildcard_a)),
+                (metric * partial(wildcard_x, wildcard_b), partial(wildcard_x, wildcard_a)),
+                (partial(wildcard_x, wildcard_b) * metric, partial(wildcard_x, wildcard_a)),
+                (metric * partial(wildcard_h(wildcard_b), wildcard_x), partial(wildcard_h(wildcard_a), wildcard_x)),
+                (partial(wildcard_h(wildcard_b), wildcard_x) * metric, partial(wildcard_h(wildcard_a), wildcard_x)),
+                (
+                    metric * partial(wildcard_h(wildcard_b, wildcard_x), wildcard_y),
+                    partial(wildcard_h(wildcard_a, wildcard_x), wildcard_y),
+                ),
+                (
+                    partial(wildcard_h(wildcard_b, wildcard_x), wildcard_y) * metric,
+                    partial(wildcard_h(wildcard_a, wildcard_x), wildcard_y),
+                ),
+                (
+                    metric * partial(wildcard_h(wildcard_x, wildcard_b), wildcard_y),
+                    partial(wildcard_h(wildcard_x, wildcard_a), wildcard_y),
+                ),
+                (
+                    partial(wildcard_h(wildcard_x, wildcard_b), wildcard_y) * metric,
+                    partial(wildcard_h(wildcard_x, wildcard_a), wildcard_y),
+                ),
+                (
+                    metric * partial(partial(wildcard_x, wildcard_b), wildcard_y),
+                    partial(partial(wildcard_x, wildcard_a), wildcard_y),
+                ),
+                (
+                    partial(partial(wildcard_x, wildcard_b), wildcard_y) * metric,
+                    partial(partial(wildcard_x, wildcard_a), wildcard_y),
+                ),
+                (
+                    metric * partial(partial(wildcard_x, wildcard_y), wildcard_b),
+                    partial(partial(wildcard_x, wildcard_y), wildcard_a),
+                ),
+                (
+                    partial(partial(wildcard_x, wildcard_y), wildcard_b) * metric,
+                    partial(partial(wildcard_x, wildcard_y), wildcard_a),
+                ),
+                (
+                    metric * partial(partial(wildcard_h(wildcard_b), wildcard_x), wildcard_y),
+                    partial(partial(wildcard_h(wildcard_a), wildcard_x), wildcard_y),
+                ),
+                (
+                    partial(partial(wildcard_h(wildcard_b), wildcard_x), wildcard_y) * metric,
+                    partial(partial(wildcard_h(wildcard_a), wildcard_x), wildcard_y),
+                ),
+            ]
+        )
+
+    result = expr.expand() if hasattr(expr, "expand") else expr
+    for _ in range(max_passes):
+        previous = (
+            result.to_canonical_string()
+            if hasattr(result, "to_canonical_string")
+            else str(result)
+        )
+        for pattern, replacement in rewrites:
+            result = result.replace(pattern, replacement)
+        if hasattr(result, "expand"):
+            result = result.expand()
+        current = (
+            result.to_canonical_string()
+            if hasattr(result, "to_canonical_string")
+            else str(result)
+        )
+        if current == previous:
+            break
+    return result
+
+
+def _build_function_expression(name: str, args: Sequence[Expression]) -> Expression:
+    """Rebuild a function atom from its fully qualified head name and args."""
+
+    if not args:
+        return Expression.parse(name)
+    args_text = ",".join(arg.to_canonical_string() for arg in args)
+    return Expression.parse(f"{name}({args_text})")
+
+
+def _canonicalize_commuting_partial_derivatives(expr):
+    """Sort nested ``PartialD`` chains so flat partial derivatives commute.
+
+    This turns, e.g., ``PartialD(PartialD(alpha(a), mu), nu)`` into the same
+    canonical nested call as ``PartialD(PartialD(alpha(a), nu), mu)``.  The
+    pass is intentionally local: it only reorders repeated ``PartialD`` calls
+    on the same subexpression and leaves the rest of the term structure alone.
+    """
+
+    atom_type = expr.get_type() if isinstance(expr, Expression) else None
+    if atom_type == AtomType.Add:
+        total = Expression.num(0)
+        for term in expr:
+            total += _canonicalize_commuting_partial_derivatives(term)
+        return total
+    if atom_type == AtomType.Mul:
+        total = Expression.num(1)
+        for factor in expr:
+            total *= _canonicalize_commuting_partial_derivatives(factor)
+        return total
+    if atom_type != AtomType.Fn:
+        return expr
+
+    args = tuple(_canonicalize_commuting_partial_derivatives(arg) for arg in expr)
+    name = expr.get_name()
+    if name != _PARTIAL_DERIVATIVE_NAME:
+        return _build_function_expression(name, args)
+
+    base, derivative_index = args
+    derivative_indices = [derivative_index]
+    while (
+        isinstance(base, Expression)
+        and base.get_type() == AtomType.Fn
+        and base.get_name() == _PARTIAL_DERIVATIVE_NAME
+    ):
+        inner_base, inner_index = tuple(base)
+        base = inner_base
+        derivative_indices.append(inner_index)
+
+    result = base
+    partial = S("PartialD")
+    for ordered_index in sorted(
+        derivative_indices,
+        key=lambda item: item.to_canonical_string(),
+    ):
+        result = partial(result, ordered_index)
+    return result
+
+
+def _term_factors(term) -> tuple[Expression, ...]:
+    if isinstance(term, Expression) and term.get_type() == AtomType.Mul:
+        return tuple(term)
+    return (term,)
+
+
+def _term_structure_constants(term) -> tuple[Expression, ...]:
+    return tuple(
+        factor
+        for factor in _term_factors(term)
+        if isinstance(factor, Expression)
+        and factor.get_type() == AtomType.Fn
+        and factor.get_name() == "spenso::f"
+    )
+
+
+def _swap_symbols(expr, swaps: Sequence[tuple[Expression, Expression]]):
+    """Swap several symbol pairs in one expression using temporary placeholders."""
+
+    result = expr
+    placeholders: list[tuple[Expression, Expression]] = []
+    for slot, (left, right) in enumerate(swaps):
+        placeholder = S(f"canon_swap_placeholder_{slot}")
+        result = result.replace(left, placeholder)
+        result = result.replace(right, left)
+        placeholders.append((placeholder, right))
+    for placeholder, right in placeholders:
+        result = result.replace(placeholder, right)
+    return result
+
+
+def _present_indices(term, index_pool: Sequence[object]) -> tuple[Expression, ...]:
+    symbols = tuple(term.get_all_symbols())
+    return tuple(
+        index
+        for index in index_pool
+        if any(symbol == index for symbol in symbols)
+    )
+
+
+def _perm_sign(current: Sequence[Expression], target: Sequence[Expression]) -> int:
+    working = list(current)
+    sign = 1
+    for slot, desired in enumerate(target):
+        current_slot = working.index(desired, slot)
+        while current_slot > slot:
+            working[current_slot], working[current_slot - 1] = (
+                working[current_slot - 1],
+                working[current_slot],
+            )
+            sign *= -1
+            current_slot -= 1
+    return sign
+
+
+def _rebuild_like(template: Expression, args: Sequence[Expression]) -> Expression:
+    rebuilt = template
+    for current, target in zip(tuple(template), args):
+        rebuilt = rebuilt.replace(current, target)
+    return rebuilt
+
+
+def _shared_structure_constant_index(pair: tuple[Expression, Expression], rest: Expression):
+    left, right = pair
+    left_args = tuple(left)
+    right_args = tuple(right)
+    shared = [arg for arg in left_args if any(arg == candidate for candidate in right_args)]
+    if len(shared) != 1:
+        return None
+    candidate = shared[0]
+    if candidate.to_canonical_string() in rest.to_canonical_string():
+        return None
+    return candidate
+
+
+def _jacobi_reduce_structure_constant_products(expr):
+    """Reduce ``f f`` products to a deterministic Jacobi basis.
+
+    The standard Jacobi identity,
+
+        ``f(a,b,e)f(c,d,e) - f(a,c,e)f(b,d,e) + f(a,d,e)f(b,c,e) = 0``,
+
+    spans three commutative ``f f`` pairings of the same four free adjoint
+    indices and one shared contracted adjoint index.  We use it to eliminate
+    the middle pairing in favour of a fixed two-element basis.  This keeps the
+    color structure in the ``f`` basis instead of expanding to generators.
+    """
+
+    terms = tuple(expr) if isinstance(expr, Expression) and expr.get_type() == AtomType.Add else (expr,)
+    untouched: list[Expression] = []
+    groups: dict[tuple[str, tuple[str, ...], str], dict] = {}
+
+    for term in terms:
+        structure_constants = _term_structure_constants(term)
+        selected_pair = None
+        for left_slot, left in enumerate(structure_constants):
+            for right in structure_constants[left_slot + 1:]:
+                rest = term.coefficient(left * right)
+                shared = _shared_structure_constant_index((left, right), rest)
+                if shared is None:
+                    continue
+                selected_pair = (left, right, shared, rest)
+                break
+            if selected_pair is not None:
+                break
+
+        if selected_pair is None:
+            untouched.append(term)
+            continue
+
+        left, right, shared, rest = selected_pair
+        left_free = tuple(arg for arg in left if arg != shared)
+        right_free = tuple(arg for arg in right if arg != shared)
+        free = tuple(
+            sorted(
+                left_free + right_free,
+                key=lambda item: item.to_canonical_string(),
+            )
+        )
+        if len({item.to_canonical_string() for item in free}) != 4:
+            untouched.append(term)
+            continue
+
+        a, b, c, d = free
+        targets = {
+            "p12": ((a, b, shared), (c, d, shared)),
+            "p13": ((a, c, shared), (b, d, shared)),
+            "p14": ((a, d, shared), (b, c, shared)),
+        }
+
+        actual_pair_sets = [
+            frozenset(item.to_canonical_string() for item in left_free),
+            frozenset(item.to_canonical_string() for item in right_free),
+        ]
+
+        kind = None
+        sign = None
+        for name, (target_left, target_right) in targets.items():
+            left_pair = frozenset(item.to_canonical_string() for item in target_left[:2])
+            right_pair = frozenset(item.to_canonical_string() for item in target_right[:2])
+            if actual_pair_sets == [left_pair, right_pair]:
+                kind = name
+                sign = _perm_sign(tuple(left), target_left) * _perm_sign(tuple(right), target_right)
+                break
+            if actual_pair_sets == [right_pair, left_pair]:
+                kind = name
+                sign = _perm_sign(tuple(left), target_right) * _perm_sign(tuple(right), target_left)
+                break
+
+        if kind is None:
+            untouched.append(term)
+            continue
+
+        key = (
+            rest.to_canonical_string(),
+            tuple(item.to_canonical_string() for item in free),
+            shared.to_canonical_string(),
+        )
+        entry = groups.setdefault(
+            key,
+            {
+                "rest": rest,
+                "free": free,
+                "shared": shared,
+                "coefficients": {
+                    "p12": Expression.num(0),
+                    "p13": Expression.num(0),
+                    "p14": Expression.num(0),
+                },
+                "templates": (left, right),
+            },
+        )
+        entry["coefficients"][kind] += sign
+
+    total = Expression.num(0)
+    for term in untouched:
+        total += term
+
+    for entry in groups.values():
+        a, b, c, d = entry["free"]
+        shared = entry["shared"]
+        rest = entry["rest"]
+        left_template, right_template = entry["templates"]
+        coefficients = entry["coefficients"]
+
+        pairing_12 = _rebuild_like(left_template, (a, b, shared)) * _rebuild_like(
+            right_template, (c, d, shared)
+        )
+        pairing_14 = _rebuild_like(left_template, (a, d, shared)) * _rebuild_like(
+            right_template, (b, c, shared)
+        )
+
+        reduced_coeff_12 = coefficients["p12"] + coefficients["p13"]
+        reduced_coeff_14 = coefficients["p14"] + coefficients["p13"]
+        total += rest * (
+            reduced_coeff_12 * pairing_12
+            + reduced_coeff_14 * pairing_14
+        )
+
+    return total.expand() if hasattr(total, "expand") else total
+
+
+def _canonize_term_for_swap_check(
+    expr,
+    *,
+    lorentz_indices: Sequence[object],
+    adjoint_indices: Sequence[object],
+    color_fund_indices: Sequence[object],
+    spinor_indices: Sequence[object],
+    weak_fund_indices: Sequence[object],
+    weak_adj_indices: Sequence[object],
+    extra_index_groups: Sequence[tuple[object, object]],
+):
+    normalized = _canonicalize_commuting_partial_derivatives(expr)
+    canonical, _, _ = canonize_spenso_tensors(
+        normalized,
+        lorentz_indices=lorentz_indices,
+        adjoint_indices=adjoint_indices,
+        color_fund_indices=color_fund_indices,
+        spinor_indices=spinor_indices,
+        weak_fund_indices=weak_fund_indices,
+        weak_adj_indices=weak_adj_indices,
+        extra_index_groups=extra_index_groups,
+    )
+    return canonical.expand() if hasattr(canonical, "expand") else canonical
+
+
+def _drop_zero_terms_from_antisymmetric_structure_constants(
+    expr,
+    *,
+    lorentz_indices: Sequence[object],
+    adjoint_indices: Sequence[object],
+    color_fund_indices: Sequence[object],
+    spinor_indices: Sequence[object],
+    weak_fund_indices: Sequence[object],
+    weak_adj_indices: Sequence[object],
+    extra_index_groups: Sequence[tuple[object, object]],
+):
+    """Drop terms that are odd under a structure-constant slot swap.
+
+    After the main tensor canonicalisation pass, some bosonic products are
+    still not recognised as symmetric by Symbolica because the symmetry lives
+    in the combination of commutative factors and repeated dummy labels rather
+    than in one explicit tensor head.  For each additive term we therefore try
+    antisymmetric swaps on the slots of every ``f`` factor and re-canonize.  If
+    a swapped term comes back as the negative of the original one, the term is
+    provably zero and can be dropped.
+    """
+
+    terms = (
+        tuple(expr)
+        if isinstance(expr, Expression) and expr.get_type() == AtomType.Add
+        else (expr,)
+    )
+    kept_terms: list[Expression] = []
+
+    for term in terms:
+        canonical_term = _canonize_term_for_swap_check(
+            term,
+            lorentz_indices=lorentz_indices,
+            adjoint_indices=adjoint_indices,
+            color_fund_indices=color_fund_indices,
+            spinor_indices=spinor_indices,
+            weak_fund_indices=weak_fund_indices,
+            weak_adj_indices=weak_adj_indices,
+            extra_index_groups=extra_index_groups,
+        )
+
+        zero_by_swap = False
+        present_lorentz = _present_indices(canonical_term, tuple(lorentz_indices))
+        lorentz_swaps = [()] + list(combinations(present_lorentz, 2))
+
+        for structure_constant in _term_structure_constants(canonical_term):
+            args = tuple(structure_constant)
+            for left_slot, right_slot in combinations(range(len(args)), 2):
+                color_swap = (args[left_slot], args[right_slot])
+                for lorentz_swap in lorentz_swaps:
+                    swaps = [color_swap]
+                    if lorentz_swap:
+                        swaps.append(lorentz_swap)
+                    swapped = _swap_symbols(canonical_term, swaps)
+                    swapped_canonical = _canonize_term_for_swap_check(
+                        swapped,
+                        lorentz_indices=lorentz_indices,
+                        adjoint_indices=adjoint_indices,
+                        color_fund_indices=color_fund_indices,
+                        spinor_indices=spinor_indices,
+                        weak_fund_indices=weak_fund_indices,
+                        weak_adj_indices=weak_adj_indices,
+                        extra_index_groups=extra_index_groups,
+                    )
+                    trial = (
+                        canonical_term + swapped_canonical
+                    ).expand()
+                    if trial.to_canonical_string() == "0":
+                        zero_by_swap = True
+                        break
+                if zero_by_swap:
+                    break
+            if zero_by_swap:
+                break
+
+        if not zero_by_swap:
+            kept_terms.append(canonical_term)
+
+    total = Expression.num(0)
+    for term in kept_terms:
+        total += term
+    return total.expand() if hasattr(total, "expand") else total
+
+
 # ---------------------------------------------------------------------------
 # One-shot orchestrator
 # ---------------------------------------------------------------------------
@@ -288,20 +762,61 @@ def canonize_full(
     weak_adj_indices: Iterable[object] = (),
     extra_index_groups: Iterable[tuple[object, object]] = (),
     run_gamma: bool = True,
+    run_color: bool = True,
 ):
     """One-call simplification + canonicalisation.
 
     Threads the idenso simplification chain (``simplify_invariants`` from
     ``spenso_structures``), the project's own metric/momentum contraction
-    pass, and the symmetry-aware tensor canonicalisation in a single
-    deterministic order.  Returns just the canonical expression (the dummy
-    bookkeeping returned by :func:`canonize_spenso_tensors` is dropped here
-    for ergonomic reasons).
+    pass, commuting-partial normalisation, local Jacobi reduction, and the
+    symmetry-aware tensor canonicalisation in a single deterministic order.
+    Returns just the canonical expression (the dummy bookkeeping returned by
+    :func:`canonize_spenso_tensors` is dropped here for ergonomic reasons).
+
+    Set ``run_color=False`` when the expression should stay in the
+    structure-constant basis so the local Jacobi reducer can act on explicit
+    ``f f`` products instead of letting ``simplify_color`` expand them into
+    generators first.
     """
-    expr = simplify_invariants(expr, run_gamma=run_gamma)
+    expr = simplify_invariants(expr, run_gamma=run_gamma, run_color=run_color)
     expr = contract_spenso_lorentz_metrics(expr)
+    expr = _contract_plain_metric_heads(expr)
     canonical, _, _ = canonize_spenso_tensors(
         expr,
+        lorentz_indices=lorentz_indices,
+        adjoint_indices=adjoint_indices,
+        color_fund_indices=color_fund_indices,
+        spinor_indices=spinor_indices,
+        weak_fund_indices=weak_fund_indices,
+        weak_adj_indices=weak_adj_indices,
+        extra_index_groups=extra_index_groups,
+    )
+    reduced = _jacobi_reduce_structure_constant_products(canonical)
+    reduced = _canonicalize_commuting_partial_derivatives(reduced)
+    if hasattr(reduced, "expand"):
+        reduced = reduced.expand()
+    canonical, _, _ = canonize_spenso_tensors(
+        reduced,
+        lorentz_indices=lorentz_indices,
+        adjoint_indices=adjoint_indices,
+        color_fund_indices=color_fund_indices,
+        spinor_indices=spinor_indices,
+        weak_fund_indices=weak_fund_indices,
+        weak_adj_indices=weak_adj_indices,
+        extra_index_groups=extra_index_groups,
+    )
+    reduced = _drop_zero_terms_from_antisymmetric_structure_constants(
+        canonical,
+        lorentz_indices=tuple(lorentz_indices),
+        adjoint_indices=tuple(adjoint_indices),
+        color_fund_indices=tuple(color_fund_indices),
+        spinor_indices=tuple(spinor_indices),
+        weak_fund_indices=tuple(weak_fund_indices),
+        weak_adj_indices=tuple(weak_adj_indices),
+        extra_index_groups=tuple(extra_index_groups),
+    )
+    canonical, _, _ = canonize_spenso_tensors(
+        reduced,
         lorentz_indices=lorentz_indices,
         adjoint_indices=adjoint_indices,
         color_fund_indices=color_fund_indices,

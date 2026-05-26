@@ -362,6 +362,32 @@ def _su3_setup():
     return g, Ag, SU3
 
 
+def _su3_pure_yang_mills_indices():
+    lorentz = tuple(
+        S(name)
+        for name in (
+            "mu",
+            "nu",
+            "mu_G_SU3_1",
+            "mu_G_SU3_2",
+            "mu_G_SU3_3",
+            "mu_G_SU3_4",
+            "rho_G_SU3",
+            "rho_left_G_SU3",
+            "rho_right_G_SU3",
+            "rho_G_SU3_cubic",
+        )
+    )
+    adjoint = (
+        S("a_G_color_adj_id"),
+        S("a_bar_G_color_adj_id"),
+        *(S(f"a_delta_SU3_{slot}") for slot in range(1, 23)),
+        *(S(f"color_adj_G_SU3_{slot}") for slot in range(1, 5)),
+        S("a_mid_G_SU3"),
+    )
+    return lorentz, adjoint
+
+
 def _su3_sum_setup():
     g = S("gS")
     Ag = Field(
@@ -630,3 +656,37 @@ def test_pure_yang_mills_variation_is_well_formed():
     # derivatives).
     exported = dL.to_symbolica().expand()
     assert "PartialD(alpha" in str(exported)
+
+
+def test_pure_yang_mills_variation_canonicalizes_to_zero_in_f_basis():
+    """The fully expanded YM variation vanishes after the local tensor passes.
+
+    The check intentionally keeps the color algebra in the explicit
+    structure-constant basis so the Jacobi and antisymmetry reductions can act
+    directly on ``f`` products.
+    """
+
+    g, Ag, SU3 = _su3_setup()
+    mu, nu = S("mu"), S("nu")
+    L = Model(
+        gauge_groups=(SU3,),
+        fields=(Ag,),
+        lagrangian_decl=(
+            -Expression.num(1) / Expression.num(4)
+            * FieldStrength(SU3, mu, nu)
+            * FieldStrength(SU3, mu, nu)
+        ),
+    ).lagrangian()
+
+    delta = gauge_variation(group=SU3, parameter="alpha")
+    exported = L.apply_operator(delta).to_symbolica().expand()
+    lorentz, adjoint = _su3_pure_yang_mills_indices()
+
+    canonical = canonize_full(
+        exported,
+        lorentz_indices=lorentz,
+        adjoint_indices=adjoint,
+        run_gamma=False,
+        run_color=False,
+    )
+    assert canonical.to_canonical_string() == "0"

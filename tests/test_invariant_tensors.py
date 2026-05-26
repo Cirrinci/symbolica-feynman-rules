@@ -23,6 +23,7 @@ from symbolic.spenso_structures import (
     dirac_charge_conjugation,
     lorentz_levi_civita,
     simplify_invariants,
+    structure_constant,
     weak_eps2,
 )
 from symbolic.tensor_canonicalization import (
@@ -142,3 +143,43 @@ def test_canonize_full_simplifies_eps2_pair_in_yukawa_form():
     canon = canonize_full(expr, weak_fund_indices=(i, j))
     expected = 2 * weak_eps2(i, j)
     assert _canon(canon) == _canon(expected)
+
+
+def test_canonize_full_applies_jacobi_identity_in_f_basis():
+    """The Jacobi combination of two structure constants must vanish.
+
+    ``run_color=False`` is intentional: the project-level Jacobi pass works in
+    the ``f`` basis, whereas ``simplify_color`` may expand the same color
+    algebra into generator chains.
+    """
+
+    a, b, c, d, e = S("a"), S("b"), S("c"), S("d"), S("e")
+    expr = (
+        structure_constant(a, b, e) * structure_constant(c, d, e)
+        - structure_constant(a, c, e) * structure_constant(b, d, e)
+        + structure_constant(a, d, e) * structure_constant(b, c, e)
+    )
+
+    canon = canonize_full(
+        expr,
+        adjoint_indices=(a, b, c, d, e),
+        run_gamma=False,
+        run_color=False,
+    )
+    assert _canon(canon) == _canon(Expression.num(0))
+
+
+def test_canonize_full_commutes_nested_partial_derivatives():
+    mu, nu, a = S("mu"), S("nu"), S("a")
+    partial = S("PartialD")
+    alpha = S("alpha")
+    expr = partial(partial(alpha(a), mu), nu) - partial(partial(alpha(a), nu), mu)
+
+    canon = canonize_full(
+        expr,
+        lorentz_indices=(mu, nu),
+        adjoint_indices=(a,),
+        run_gamma=False,
+        run_color=False,
+    )
+    assert _canon(canon) == _canon(Expression.num(0))

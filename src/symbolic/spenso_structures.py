@@ -221,15 +221,15 @@ def simplify_gamma_chain(expr):
     return expr
 
 
-def simplify_invariants(expr, *, run_gamma: bool = True):
+def simplify_invariants(expr, *, run_gamma: bool = True, run_color: bool = True):
     """One-call idenso simplification pass over a tensor expression.
 
     Composes Symbolica's idenso primitives in a stable order:
 
     1. ``simplify_metrics`` to contract obvious ``g(mu, nu) g(nu, rho)``-type
        chains and absorb metric-against-tensor contractions.
-    2. ``simplify_color`` to apply SU(N) color identities (Fierz-style
-       collapses on ``T^a`` and ``f^{abc}``).
+    2. (optional) ``simplify_color`` to apply SU(N) color identities
+       (Fierz-style collapses on ``T^a`` and ``f^{abc}``).
     3. (optional) ``simplify_gamma`` for Dirac chains.
     4. ``simplify_metrics`` again because the previous passes can expose new
        metric pairs.
@@ -239,7 +239,8 @@ def simplify_invariants(expr, *, run_gamma: bool = True):
     """
 
     expr = simplify_metrics(expr)
-    expr = simplify_color(expr)
+    if run_color:
+        expr = simplify_color(expr)
     if run_gamma:
         expr = simplify_gamma(expr)
     expr = simplify_metrics(expr)
