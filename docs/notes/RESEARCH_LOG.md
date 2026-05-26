@@ -1473,3 +1473,63 @@ What this achieved:
   the main operator walkthrough now demonstrates features that are actually
   implemented end-to-end, including fresh derivatives, gauge variation, and
   vertex extraction from operator outputs
+
+### 2026-05-26: Yang-Mills canonicalization pipeline hardening and regression split
+
+What happened:
+
+- the recent Yang-Mills canonicalization work in
+  `src/symbolic/tensor_canonicalization.py` (plain-head metric contraction,
+  commuting `PartialD` normalization, local Jacobi reduction in the `f*f`
+  basis, antisymmetry-based zero-term dropping, and one-shot
+  `canonize_full(...)` orchestration) was reviewed as a safety/maintainability
+  pass rather than refactored wholesale
+- plain-head metric contraction was tightened around an explicit lightweight
+  slot-kind registry for the currently exported heads (`G`, `alpha`) so metric
+  rewrites stay tied to declared Lorentz/adjoint slots instead of matching
+  arbitrary plain function heads
+- derivative-index contraction was kept Lorentz-only for `PartialD(...)`,
+  avoiding accidental application of non-Lorentz adjoint metrics to derivative
+  slots
+- the commuting-derivative pass remained local to the exact `PartialD` head and
+  was guarded to leave malformed/non-standard arity calls untouched
+- the Jacobi reducer documentation was clarified with the explicit coefficient
+  elimination step (`p13 = p12 + p14`) used to compute deterministic basis
+  coefficients
+- antisymmetry zero dropping was narrowed to legal dummy-index relabelings:
+  swap trials are now attempted only on symbols recognized as dummy labels
+  after canonicalization, reducing the risk of dropping terms with free/external
+  indices
+- the internal pass was renamed to the more explicit
+  `_drop_yang_mills_antisymmetric_zero_terms(...)` with a compatibility wrapper
+  kept for the previous private helper name
+- `canonize_full(...)` gained explicit pass toggles:
+  - `run_commuting_partial_derivatives`
+  - `run_jacobi_reduction`
+  - `run_yang_mills_antisymmetric_zero_drop`
+  so users can opt out of YM-specific assumptions when they want a more purely
+  algebraic canonicalization path
+- focused regression coverage was added in
+  `tests/test_tensor_canonicalization_pipeline.py` for:
+  - plain-head metric contraction on `G`, `alpha`, and `PartialD(G,...)`
+  - commuting `PartialD` behavior on second/third derivatives and non-`PartialD`
+    heads
+  - Jacobi identity reduction (including sign/permutation variants) and
+    preservation of non-Jacobi `f*f` structures
+  - YM antisymmetry-based zero dropping and a nearby nonzero negative case
+  - explicit disabling of YM antisymmetry dropping through `canonize_full(...)`
+
+What this achieved:
+
+- preserved the working YM-cancellation pipeline while reducing over-broad
+  rewrite scope in its highest-risk passes
+- made the distinction clearer between:
+  - generic tensor canonicalization
+  - ordinary-flat-derivative assumptions
+  - YM/color-specific compact identities
+- improved confidence that future additions (for example, non-commuting
+  covariant-derivative heads) will not be silently simplified by the current
+  `PartialD` normalizer
+- turned the recent notebook success (`delta L_YM -> 0`) into a broader,
+  fine-grained regression safety net that can catch local regressions before
+  they reach the full end-to-end YM check

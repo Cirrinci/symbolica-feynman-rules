@@ -1,22 +1,19 @@
 """
-Generic tensor canonicalization helpers.
+Tensor canonicalization helpers for Symbolica/Spenso expressions.
 
-This module is intentionally separate from the gauge compiler:
+The module exposes two layers:
 
-- it provides a generic tensor-head canonicalization pass
-- it does not know any physics-specific compact identities
+- a generic tensor-head canonicalization pass (`canonize_spenso_tensors`)
+- optional physics-aware passes used by `canonize_full` (commuting flat
+  partial derivatives, local Jacobi reduction in the ``f`` basis, and
+  Yang-Mills-specific antisymmetric zero-term detection)
 
-The intended layering is:
-
-1. canonize tensor heads and dummy indices here
-2. apply gauge-/physics-specific compact rewrites elsewhere when desired
-
-The canonicalisation works by *swapping* every Spenso tensor head for a
+The tensor canonicalization works by *swapping* every Spenso tensor head for a
 plain Symbolica symbol that carries the right ``is_symmetric`` /
 ``is_antisymmetric`` attribute, running ``Expression.canonize_tensors`` on the
-result, and swapping back.  This is the cleanest way to give Symbolica access
-to the tensor symmetries while keeping the expression idiomatic Spenso for
-the rest of the pipeline.
+result, and swapping back.  This gives Symbolica direct access to tensor
+symmetry metadata while keeping expressions in the usual Spenso naming scheme
+elsewhere in the pipeline.
 """
 
 from __future__ import annotations
@@ -39,6 +36,12 @@ _DUMMY_GROUP_STEMS = {
     3: "i_mid",
     4: "w_mid",
     5: "aw_mid",
+}
+
+_PLAIN_HEAD_SLOT_KINDS: dict[str, dict[int, str]] = {
+    # Exported gauge-variation heads used in the current YM pipeline.
+    "G": {0: "lorentz", 1: "adjoint"},
+    "alpha": {0: "adjoint"},
 }
 
 
@@ -290,71 +293,87 @@ def _contract_plain_metric_heads(expr, *, max_passes: int = 8):
     wildcard_b = S("canon_plain_metric_b_")
     wildcard_x = S("canon_plain_metric_x_")
     wildcard_y = S("canon_plain_metric_y_")
-    wildcard_h = S("canon_plain_metric_h_")
     partial = S("PartialD")
-
-    metrics = (
-        LORENTZ.g(wildcard_a, wildcard_b).to_expression(),
-        COLOR_ADJ.g(wildcard_a, wildcard_b).to_expression(),
-        WEAK_ADJ.g(wildcard_a, wildcard_b).to_expression(),
-    )
+    metrics_by_kind = {
+        "lorentz": LORENTZ.g(wildcard_a, wildcard_b).to_expression(),
+        "adjoint": COLOR_ADJ.g(wildcard_a, wildcard_b).to_expression(),
+        "weak_adj": WEAK_ADJ.g(wildcard_a, wildcard_b).to_expression(),
+    }
 
     rewrites = []
-    for metric in metrics:
-        rewrites.extend(
-            [
-                (metric * wildcard_h(wildcard_b), wildcard_h(wildcard_a)),
-                (wildcard_h(wildcard_b) * metric, wildcard_h(wildcard_a)),
-                (metric * wildcard_h(wildcard_b, wildcard_x), wildcard_h(wildcard_a, wildcard_x)),
-                (wildcard_h(wildcard_b, wildcard_x) * metric, wildcard_h(wildcard_a, wildcard_x)),
-                (metric * wildcard_h(wildcard_x, wildcard_b), wildcard_h(wildcard_x, wildcard_a)),
-                (wildcard_h(wildcard_x, wildcard_b) * metric, wildcard_h(wildcard_x, wildcard_a)),
-                (metric * partial(wildcard_x, wildcard_b), partial(wildcard_x, wildcard_a)),
-                (partial(wildcard_x, wildcard_b) * metric, partial(wildcard_x, wildcard_a)),
-                (metric * partial(wildcard_h(wildcard_b), wildcard_x), partial(wildcard_h(wildcard_a), wildcard_x)),
-                (partial(wildcard_h(wildcard_b), wildcard_x) * metric, partial(wildcard_h(wildcard_a), wildcard_x)),
-                (
-                    metric * partial(wildcard_h(wildcard_b, wildcard_x), wildcard_y),
-                    partial(wildcard_h(wildcard_a, wildcard_x), wildcard_y),
-                ),
-                (
-                    partial(wildcard_h(wildcard_b, wildcard_x), wildcard_y) * metric,
-                    partial(wildcard_h(wildcard_a, wildcard_x), wildcard_y),
-                ),
-                (
-                    metric * partial(wildcard_h(wildcard_x, wildcard_b), wildcard_y),
-                    partial(wildcard_h(wildcard_x, wildcard_a), wildcard_y),
-                ),
-                (
-                    partial(wildcard_h(wildcard_x, wildcard_b), wildcard_y) * metric,
-                    partial(wildcard_h(wildcard_x, wildcard_a), wildcard_y),
-                ),
-                (
-                    metric * partial(partial(wildcard_x, wildcard_b), wildcard_y),
-                    partial(partial(wildcard_x, wildcard_a), wildcard_y),
-                ),
-                (
-                    partial(partial(wildcard_x, wildcard_b), wildcard_y) * metric,
-                    partial(partial(wildcard_x, wildcard_a), wildcard_y),
-                ),
-                (
-                    metric * partial(partial(wildcard_x, wildcard_y), wildcard_b),
-                    partial(partial(wildcard_x, wildcard_y), wildcard_a),
-                ),
-                (
-                    partial(partial(wildcard_x, wildcard_y), wildcard_b) * metric,
-                    partial(partial(wildcard_x, wildcard_y), wildcard_a),
-                ),
-                (
-                    metric * partial(partial(wildcard_h(wildcard_b), wildcard_x), wildcard_y),
-                    partial(partial(wildcard_h(wildcard_a), wildcard_x), wildcard_y),
-                ),
-                (
-                    partial(partial(wildcard_h(wildcard_b), wildcard_x), wildcard_y) * metric,
-                    partial(partial(wildcard_h(wildcard_a), wildcard_x), wildcard_y),
-                ),
-            ]
-        )
+
+    # Ordinary partial derivatives carry one Lorentz derivative slot by design.
+    lorentz_metric = metrics_by_kind["lorentz"]
+    rewrites.extend(
+        [
+            (lorentz_metric * partial(wildcard_x, wildcard_b), partial(wildcard_x, wildcard_a)),
+            (partial(wildcard_x, wildcard_b) * lorentz_metric, partial(wildcard_x, wildcard_a)),
+            (
+                lorentz_metric * partial(partial(wildcard_x, wildcard_b), wildcard_y),
+                partial(partial(wildcard_x, wildcard_a), wildcard_y),
+            ),
+            (
+                partial(partial(wildcard_x, wildcard_b), wildcard_y) * lorentz_metric,
+                partial(partial(wildcard_x, wildcard_a), wildcard_y),
+            ),
+            (
+                lorentz_metric * partial(partial(wildcard_x, wildcard_y), wildcard_b),
+                partial(partial(wildcard_x, wildcard_y), wildcard_a),
+            ),
+            (
+                partial(partial(wildcard_x, wildcard_y), wildcard_b) * lorentz_metric,
+                partial(partial(wildcard_x, wildcard_y), wildcard_a),
+            ),
+        ]
+    )
+
+    for head_name, slot_kinds in _PLAIN_HEAD_SLOT_KINDS.items():
+        head = S(head_name)
+        arity = max(slot_kinds) + 1
+        head_args = [S(f"canon_plain_metric_head_{head_name}_{slot}_") for slot in range(arity)]
+        for slot, kind in slot_kinds.items():
+            metrics = [metrics_by_kind[kind]]
+            if kind == "adjoint":
+                # Keep both current adjoint metrics supported by the pipeline.
+                metrics.append(metrics_by_kind["weak_adj"])
+            for metric in metrics:
+                args_before = list(head_args)
+                args_before[slot] = wildcard_b
+                args_after = list(head_args)
+                args_after[slot] = wildcard_a
+                base_before = head(*args_before)
+                base_after = head(*args_after)
+                rewrites.extend(
+                    [
+                        (metric * base_before, base_after),
+                        (base_before * metric, base_after),
+                        (metric * partial(base_before, wildcard_x), partial(base_after, wildcard_x)),
+                        (partial(base_before, wildcard_x) * metric, partial(base_after, wildcard_x)),
+                        (
+                            metric * partial(partial(base_before, wildcard_x), wildcard_y),
+                            partial(partial(base_after, wildcard_x), wildcard_y),
+                        ),
+                        (
+                            partial(partial(base_before, wildcard_x), wildcard_y) * metric,
+                            partial(partial(base_after, wildcard_x), wildcard_y),
+                        ),
+                    ]
+                )
+
+                # Cover the common "derivative index outermost" nesting:
+                # metric * PartialD(PartialD(H(...), x), b) -> ...a
+                rewrites.extend(
+                    [
+                        (
+                            metric * partial(partial(base_before, wildcard_x), wildcard_b),
+                            partial(partial(base_after, wildcard_x), wildcard_a),
+                        ),
+                        (
+                            partial(partial(base_before, wildcard_x), wildcard_b) * metric,
+                            partial(partial(base_after, wildcard_x), wildcard_a),
+                        ),
+                    ]
+                )
 
     result = expr.expand() if hasattr(expr, "expand") else expr
     for _ in range(max_passes):
@@ -412,6 +431,10 @@ def _canonicalize_commuting_partial_derivatives(expr):
     args = tuple(_canonicalize_commuting_partial_derivatives(arg) for arg in expr)
     name = expr.get_name()
     if name != _PARTIAL_DERIVATIVE_NAME:
+        return _build_function_expression(name, args)
+
+    if len(args) != 2:
+        # Keep malformed / non-standard PartialD calls untouched.
         return _build_function_expression(name, args)
 
     base, derivative_index = args
@@ -627,6 +650,10 @@ def _jacobi_reduce_structure_constant_products(expr):
             right_template, (b, c, shared)
         )
 
+        # Jacobi: p12 - p13 + p14 = 0  =>  p13 = p12 + p14.
+        # Eliminating p13 gives:
+        #   c12*p12 + c13*p13 + c14*p14
+        # = (c12 + c13)*p12 + (c14 + c13)*p14.
         reduced_coeff_12 = coefficients["p12"] + coefficients["p13"]
         reduced_coeff_14 = coefficients["p14"] + coefficients["p13"]
         total += rest * (
@@ -649,7 +676,7 @@ def _canonize_term_for_swap_check(
     extra_index_groups: Sequence[tuple[object, object]],
 ):
     normalized = _canonicalize_commuting_partial_derivatives(expr)
-    canonical, _, _ = canonize_spenso_tensors(
+    canonical, external_indices, dummy_indices = canonize_spenso_tensors(
         normalized,
         lorentz_indices=lorentz_indices,
         adjoint_indices=adjoint_indices,
@@ -659,10 +686,27 @@ def _canonize_term_for_swap_check(
         weak_adj_indices=weak_adj_indices,
         extra_index_groups=extra_index_groups,
     )
-    return canonical.expand() if hasattr(canonical, "expand") else canonical
+    canonical = canonical.expand() if hasattr(canonical, "expand") else canonical
+    return canonical, tuple(external_indices), tuple(dummy_indices)
 
 
-def _drop_zero_terms_from_antisymmetric_structure_constants(
+def _contains_external_symbol(expr: Expression, external_names: set[str]) -> bool:
+    return any(
+        symbol.to_canonical_string() in external_names
+        for symbol in expr.get_all_symbols()
+    )
+
+
+def _external_symbol_names(external_indices) -> set[str]:
+    names: set[str] = set()
+    for item in external_indices:
+        symbol = item[0] if isinstance(item, tuple) else item
+        if hasattr(symbol, "to_canonical_string"):
+            names.add(symbol.to_canonical_string())
+    return names
+
+
+def _drop_yang_mills_antisymmetric_zero_terms(
     expr,
     *,
     lorentz_indices: Sequence[object],
@@ -673,15 +717,12 @@ def _drop_zero_terms_from_antisymmetric_structure_constants(
     weak_adj_indices: Sequence[object],
     extra_index_groups: Sequence[tuple[object, object]],
 ):
-    """Drop terms that are odd under a structure-constant slot swap.
+    """Drop terms that are odd under legal YM dummy-index relabelings.
 
-    After the main tensor canonicalisation pass, some bosonic products are
-    still not recognised as symmetric by Symbolica because the symmetry lives
-    in the combination of commutative factors and repeated dummy labels rather
-    than in one explicit tensor head.  For each additive term we therefore try
-    antisymmetric swaps on the slots of every ``f`` factor and re-canonize.  If
-    a swapped term comes back as the negative of the original one, the term is
-    provably zero and can be dropped.
+    This pass is intentionally conservative: swap checks are only attempted on
+    symbols that canonization has identified as dummy labels. This avoids
+    accidentally dropping terms that are odd under swaps involving free/external
+    indices.
     """
 
     terms = (
@@ -692,7 +733,7 @@ def _drop_zero_terms_from_antisymmetric_structure_constants(
     kept_terms: list[Expression] = []
 
     for term in terms:
-        canonical_term = _canonize_term_for_swap_check(
+        canonical_term, external_indices, _dummy_indices = _canonize_term_for_swap_check(
             term,
             lorentz_indices=lorentz_indices,
             adjoint_indices=adjoint_indices,
@@ -702,21 +743,35 @@ def _drop_zero_terms_from_antisymmetric_structure_constants(
             weak_adj_indices=weak_adj_indices,
             extra_index_groups=extra_index_groups,
         )
+        external_names = _external_symbol_names(external_indices)
 
         zero_by_swap = False
         present_lorentz = _present_indices(canonical_term, tuple(lorentz_indices))
-        lorentz_swaps = [()] + list(combinations(present_lorentz, 2))
+        lorentz_swaps = [
+            pair
+            for pair in combinations(present_lorentz, 2)
+            if pair[0].to_canonical_string() not in external_names
+            and pair[1].to_canonical_string() not in external_names
+        ]
+        lorentz_swaps = [()] + lorentz_swaps
 
         for structure_constant in _term_structure_constants(canonical_term):
             args = tuple(structure_constant)
             for left_slot, right_slot in combinations(range(len(args)), 2):
-                color_swap = (args[left_slot], args[right_slot])
+                left = args[left_slot]
+                right = args[right_slot]
+                if (
+                    _contains_external_symbol(left, external_names)
+                    or _contains_external_symbol(right, external_names)
+                ):
+                    continue
+
                 for lorentz_swap in lorentz_swaps:
-                    swaps = [color_swap]
+                    swaps = [(left, right)]
                     if lorentz_swap:
                         swaps.append(lorentz_swap)
                     swapped = _swap_symbols(canonical_term, swaps)
-                    swapped_canonical = _canonize_term_for_swap_check(
+                    swapped_canonical, _, _ = _canonize_term_for_swap_check(
                         swapped,
                         lorentz_indices=lorentz_indices,
                         adjoint_indices=adjoint_indices,
@@ -746,6 +801,31 @@ def _drop_zero_terms_from_antisymmetric_structure_constants(
     return total.expand() if hasattr(total, "expand") else total
 
 
+def _drop_zero_terms_from_antisymmetric_structure_constants(
+    expr,
+    *,
+    lorentz_indices: Sequence[object],
+    adjoint_indices: Sequence[object],
+    color_fund_indices: Sequence[object],
+    spinor_indices: Sequence[object],
+    weak_fund_indices: Sequence[object],
+    weak_adj_indices: Sequence[object],
+    extra_index_groups: Sequence[tuple[object, object]],
+):
+    """Backward-compatible wrapper for YM antisymmetric zero-term dropping."""
+
+    return _drop_yang_mills_antisymmetric_zero_terms(
+        expr,
+        lorentz_indices=lorentz_indices,
+        adjoint_indices=adjoint_indices,
+        color_fund_indices=color_fund_indices,
+        spinor_indices=spinor_indices,
+        weak_fund_indices=weak_fund_indices,
+        weak_adj_indices=weak_adj_indices,
+        extra_index_groups=extra_index_groups,
+    )
+
+
 # ---------------------------------------------------------------------------
 # One-shot orchestrator
 # ---------------------------------------------------------------------------
@@ -763,12 +843,16 @@ def canonize_full(
     extra_index_groups: Iterable[tuple[object, object]] = (),
     run_gamma: bool = True,
     run_color: bool = True,
+    run_commuting_partial_derivatives: bool = True,
+    run_jacobi_reduction: bool = True,
+    run_yang_mills_antisymmetric_zero_drop: bool = True,
 ):
     """One-call simplification + canonicalisation.
 
     Threads the idenso simplification chain (``simplify_invariants`` from
     ``spenso_structures``), the project's own metric/momentum contraction
-    pass, commuting-partial normalisation, local Jacobi reduction, and the
+    pass, optional commuting-partial normalization, optional local Jacobi
+    reduction, optional Yang-Mills antisymmetry zero dropping, and the
     symmetry-aware tensor canonicalisation in a single deterministic order.
     Returns just the canonical expression (the dummy bookkeeping returned by
     :func:`canonize_spenso_tensors` is dropped here for ergonomic reasons).
@@ -791,8 +875,11 @@ def canonize_full(
         weak_adj_indices=weak_adj_indices,
         extra_index_groups=extra_index_groups,
     )
-    reduced = _jacobi_reduce_structure_constant_products(canonical)
-    reduced = _canonicalize_commuting_partial_derivatives(reduced)
+    reduced = canonical
+    if run_jacobi_reduction:
+        reduced = _jacobi_reduce_structure_constant_products(reduced)
+    if run_commuting_partial_derivatives:
+        reduced = _canonicalize_commuting_partial_derivatives(reduced)
     if hasattr(reduced, "expand"):
         reduced = reduced.expand()
     canonical, _, _ = canonize_spenso_tensors(
@@ -805,16 +892,18 @@ def canonize_full(
         weak_adj_indices=weak_adj_indices,
         extra_index_groups=extra_index_groups,
     )
-    reduced = _drop_zero_terms_from_antisymmetric_structure_constants(
-        canonical,
-        lorentz_indices=tuple(lorentz_indices),
-        adjoint_indices=tuple(adjoint_indices),
-        color_fund_indices=tuple(color_fund_indices),
-        spinor_indices=tuple(spinor_indices),
-        weak_fund_indices=tuple(weak_fund_indices),
-        weak_adj_indices=tuple(weak_adj_indices),
-        extra_index_groups=tuple(extra_index_groups),
-    )
+    reduced = canonical
+    if run_yang_mills_antisymmetric_zero_drop:
+        reduced = _drop_yang_mills_antisymmetric_zero_terms(
+            canonical,
+            lorentz_indices=tuple(lorentz_indices),
+            adjoint_indices=tuple(adjoint_indices),
+            color_fund_indices=tuple(color_fund_indices),
+            spinor_indices=tuple(spinor_indices),
+            weak_fund_indices=tuple(weak_fund_indices),
+            weak_adj_indices=tuple(weak_adj_indices),
+            extra_index_groups=tuple(extra_index_groups),
+        )
     canonical, _, _ = canonize_spenso_tensors(
         reduced,
         lorentz_indices=lorentz_indices,
@@ -850,9 +939,9 @@ def canonize_structure_constant_products(
       stems such as ``a_mid`` or ``mu_mid``
     - commutative products are sorted and like terms are collected
 
-    Unlike :func:`canonize_full`, this helper does not contract explicit
-    Lorentz metrics against momenta. It is intended for direct comparison of
-    fully expanded tensor expressions.
+    Unlike :func:`canonize_full`, this helper does not run the Yang-Mills
+    derivative/Jacobi/antisymmetry-specific passes. It is intended for direct
+    comparison of fully expanded tensor expressions.
     """
 
     expanded = expr.expand() if hasattr(expr, "expand") else expr

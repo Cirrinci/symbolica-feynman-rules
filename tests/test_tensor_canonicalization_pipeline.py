@@ -1,0 +1,196 @@
+from __future__ import annotations
+
+from symbolica import Expression, S
+
+from symbolic.spenso_structures import COLOR_ADJ, LORENTZ, structure_constant
+from symbolic.tensor_canonicalization import (
+    _canonicalize_commuting_partial_derivatives,
+    _contract_plain_metric_heads,
+    _jacobi_reduce_structure_constant_products,
+    canonize_full,
+)
+
+
+def _canon(expr):
+    return expr.expand().to_canonical_string()
+
+
+def test_plain_metric_contracts_into_g_lorentz_slot():
+    mu, nu, a = S("mu"), S("nu"), S("a")
+    G = S("G")
+    expr = LORENTZ.g(mu, nu).to_expression() * G(nu, a)
+    assert _canon(_contract_plain_metric_heads(expr)) == _canon(G(mu, a))
+
+
+def test_plain_metric_contracts_into_alpha_adjoint_slot():
+    a, b = S("a"), S("b")
+    alpha = S("alpha")
+    expr = COLOR_ADJ.g(a, b).to_expression() * alpha(b)
+    assert _canon(_contract_plain_metric_heads(expr)) == _canon(alpha(a))
+
+
+def test_plain_metric_contracts_into_partiald_of_g():
+    mu, nu, rho, a = S("mu"), S("nu"), S("rho"), S("a")
+    partial = S("PartialD")
+    G = S("G")
+    expr = LORENTZ.g(mu, nu).to_expression() * partial(G(nu, a), rho)
+    assert _canon(_contract_plain_metric_heads(expr)) == _canon(partial(G(mu, a), rho))
+
+
+def test_canonicalize_commuting_partiald_second_derivatives_on_alpha():
+    mu, nu, a = S("mu"), S("nu"), S("a")
+    partial = S("PartialD")
+    alpha = S("alpha")
+    expr = partial(partial(alpha(a), mu), nu) - partial(partial(alpha(a), nu), mu)
+    canon = canonize_full(
+        expr,
+        lorentz_indices=(mu, nu),
+        adjoint_indices=(a,),
+        run_gamma=False,
+        run_color=False,
+        run_jacobi_reduction=False,
+        run_yang_mills_antisymmetric_zero_drop=False,
+    )
+    assert _canon(canon) == _canon(Expression.num(0))
+
+
+def test_canonicalize_commuting_partiald_third_derivatives():
+    mu, nu, rho, a = S("mu"), S("nu"), S("rho"), S("a")
+    partial = S("PartialD")
+    alpha = S("alpha")
+    lhs = partial(partial(partial(alpha(a), mu), nu), rho)
+    rhs = partial(partial(partial(alpha(a), rho), mu), nu)
+    canon = canonize_full(
+        lhs - rhs,
+        lorentz_indices=(mu, nu, rho),
+        adjoint_indices=(a,),
+        run_gamma=False,
+        run_color=False,
+        run_jacobi_reduction=False,
+        run_yang_mills_antisymmetric_zero_drop=False,
+    )
+    assert _canon(canon) == _canon(Expression.num(0))
+
+
+def test_canonicalize_commuting_partiald_on_field_head():
+    mu, nu, a = S("mu"), S("nu"), S("a")
+    partial = S("PartialD")
+    G = S("G")
+    lhs = partial(partial(G(mu, a), nu), mu)
+    rhs = partial(partial(G(mu, a), mu), nu)
+    canon = canonize_full(
+        lhs - rhs,
+        lorentz_indices=(mu, nu),
+        adjoint_indices=(a,),
+        run_gamma=False,
+        run_color=False,
+        run_jacobi_reduction=False,
+        run_yang_mills_antisymmetric_zero_drop=False,
+    )
+    assert _canon(canon) == _canon(Expression.num(0))
+
+
+def test_non_partiald_heads_are_not_reordered():
+    mu, nu, a = S("mu"), S("nu"), S("a")
+    covd = S("CovD")
+    alpha = S("alpha")
+    expr = covd(covd(alpha(a), mu), nu)
+    assert _canon(_canonicalize_commuting_partial_derivatives(expr)) == _canon(expr)
+
+
+def test_jacobi_reduction_basic_combination_vanishes():
+    a, b, c, d, e = S("a"), S("b"), S("c"), S("d"), S("e")
+    p12 = structure_constant(a, b, e) * structure_constant(c, d, e)
+    p13 = structure_constant(a, c, e) * structure_constant(b, d, e)
+    p14 = structure_constant(a, d, e) * structure_constant(b, c, e)
+    reduced = _jacobi_reduce_structure_constant_products(p12 - p13 + p14)
+    assert _canon(reduced) == _canon(Expression.num(0))
+
+
+def test_jacobi_reduction_opposite_sign_combination_vanishes():
+    a, b, c, d, e = S("a"), S("b"), S("c"), S("d"), S("e")
+    p12 = structure_constant(a, b, e) * structure_constant(c, d, e)
+    p13 = structure_constant(a, c, e) * structure_constant(b, d, e)
+    p14 = structure_constant(a, d, e) * structure_constant(b, c, e)
+    reduced = _jacobi_reduce_structure_constant_products(-p12 + p13 - p14)
+    assert _canon(reduced) == _canon(Expression.num(0))
+
+
+def test_jacobi_reduction_handles_antisymmetric_slot_permutations():
+    a, b, c, d, e = S("a"), S("b"), S("c"), S("d"), S("e")
+    f = structure_constant
+    expr = -f(b, a, e) * f(c, d, e) - f(c, a, e) * f(d, b, e) - f(d, a, e) * f(b, c, e)
+    reduced = _jacobi_reduce_structure_constant_products(expr)
+    assert _canon(reduced) == _canon(Expression.num(0))
+
+
+def test_non_jacobi_structure_constant_products_are_preserved():
+    a, b, c, d, e1, e2 = S("a"), S("b"), S("c"), S("d"), S("e1"), S("e2")
+    expr = structure_constant(a, b, e1) * structure_constant(c, d, e2)
+    reduced = _jacobi_reduce_structure_constant_products(expr)
+    assert _canon(reduced) == _canon(expr)
+
+
+def test_symmetric_derivative_times_antisymmetric_f_is_dropped():
+    mu, nu = S("mu"), S("nu")
+    a, b, c = S("a"), S("b"), S("c")
+    partial = S("PartialD")
+    G = S("G")
+    alpha = S("alpha")
+
+    x_ab = partial(G(mu, a), nu) * partial(partial(alpha(b), mu), nu)
+    x_ba = partial(G(mu, b), nu) * partial(partial(alpha(a), mu), nu)
+    expr = structure_constant(a, b, c) * (x_ab + x_ba)
+
+    canon = canonize_full(
+        expr,
+        lorentz_indices=(mu, nu),
+        adjoint_indices=(a, b, c),
+        run_gamma=False,
+        run_color=False,
+        run_jacobi_reduction=False,
+    )
+    assert _canon(canon) == _canon(Expression.num(0))
+
+
+def test_similar_antisymmetric_term_is_not_dropped():
+    a, b, c = S("a"), S("b"), S("c")
+    X = S("X")
+    expr = structure_constant(a, b, c) * X(a)
+
+    canon = canonize_full(
+        expr,
+        adjoint_indices=(a, b, c),
+        run_gamma=False,
+        run_color=False,
+        run_jacobi_reduction=False,
+    )
+    assert _canon(canon) != _canon(Expression.num(0))
+
+
+def test_jacobi_pass_can_be_disabled_in_canonize_full():
+    a, b, c, d, e = S("a"), S("b"), S("c"), S("d"), S("e")
+    p12 = structure_constant(a, b, e) * structure_constant(c, d, e)
+    p13 = structure_constant(a, c, e) * structure_constant(b, d, e)
+    p14 = structure_constant(a, d, e) * structure_constant(b, c, e)
+    expr = p12 - p13 + p14
+
+    with_jacobi = canonize_full(
+        expr,
+        adjoint_indices=(a, b, c, d, e),
+        run_gamma=False,
+        run_color=False,
+        run_commuting_partial_derivatives=False,
+        run_yang_mills_antisymmetric_zero_drop=False,
+    )
+    without_jacobi = canonize_full(
+        expr,
+        adjoint_indices=(a, b, c, d, e),
+        run_gamma=False,
+        run_color=False,
+        run_commuting_partial_derivatives=False,
+        run_jacobi_reduction=False,
+        run_yang_mills_antisymmetric_zero_drop=False,
+    )
+    assert _canon(with_jacobi) == _canon(Expression.num(0))
+    assert _canon(without_jacobi) != _canon(Expression.num(0))
