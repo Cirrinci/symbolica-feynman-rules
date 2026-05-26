@@ -32,6 +32,8 @@ from model import (
     LORENTZ_INDEX,
     Model,
     PartialD,
+    WEAK_ADJ_INDEX,
+    WEAK_FUND_INDEX,
     dirac_field,
     scalar_field,
 )
@@ -46,6 +48,8 @@ from symbolic.spenso_structures import (
     gauge_generator,
     lorentz_metric,
     structure_constant,
+    weak_gauge_generator,
+    weak_structure_constant,
 )
 from symbolic.tensor_canonicalization import canonize_full
 
@@ -414,6 +418,31 @@ def _su3_sum_setup():
     return g, Ag, SU3
 
 
+def _su2_setup():
+    g = S("g2")
+    Wg = Field(
+        "W",
+        spin=1,
+        indices=(LORENTZ_INDEX, WEAK_ADJ_INDEX),
+        self_conjugate=True,
+    )
+    SU2 = GaugeGroup(
+        name="SU2L",
+        abelian=False,
+        coupling=g,
+        gauge_boson=Wg,
+        structure_constant=weak_structure_constant,
+        representations=(
+            GaugeRepresentation(
+                index=WEAK_FUND_INDEX,
+                generator_builder=weak_gauge_generator,
+                name="doublet",
+            ),
+        ),
+    )
+    return g, Wg, SU2
+
+
 def test_non_abelian_scalar_mass_term_is_gauge_invariant():
     """For a complex scalar in the fundamental of SU(3), the colour-singlet
     mass ``m^2 Phibar Phi`` (with a contracted colour index) is gauge
@@ -716,3 +745,65 @@ def test_pure_yang_mills_variation_canonicalizes_to_zero_with_inferred_indices()
         infer_indices=True,
     )
     assert canonical.to_canonical_string() == "0"
+
+
+def test_mixed_field_strength_bilinear_monomial_compiles_and_varies_to_zero():
+    """A higher field-strength operator can mix multiple gauge symmetries.
+
+    This exercises the declarative path
+
+    ``kappa * (G^a_{mu nu} G^{a mu nu}) * (W^i_{rho sigma} W^{i rho sigma})``
+
+    on top of the ordinary SU(3) x SU(2) x U(1) kinetic stack. The new
+    monomial route should compile, and the infinitesimal SU(3) / SU(2)
+    variations should still vanish after the local tensor passes.
+    """
+
+    _g3, Gg, SU3 = _su3_setup()
+    _g2, Wg, SU2 = _su2_setup()
+    B = Field("B", spin=1, indices=(LORENTZ_INDEX,), self_conjugate=True)
+    U1 = GaugeGroup(
+        name="U1Y",
+        abelian=True,
+        coupling=S("g1"),
+        gauge_boson=B,
+        charge="Y",
+    )
+
+    mu3, nu3 = S("mu3"), S("nu3")
+    mu2, nu2 = S("mu2"), S("nu2")
+    mu1, nu1 = S("mu1"), S("nu1")
+    model = Model(
+        gauge_groups=(SU3, SU2, U1),
+        fields=(Gg, Wg, B),
+        lagrangian_decl=(
+            -(Expression.num(1) / Expression.num(4))
+            * FieldStrength(SU3, mu3, nu3)
+            * FieldStrength(SU3, mu3, nu3)
+            - (Expression.num(1) / Expression.num(4))
+            * FieldStrength(SU2, mu2, nu2)
+            * FieldStrength(SU2, mu2, nu2)
+            - (Expression.num(1) / Expression.num(4))
+            * FieldStrength(U1, mu1, nu1)
+            * FieldStrength(U1, mu1, nu1)
+            + S("kappa")
+            * FieldStrength(SU3, mu3, nu3)
+            * FieldStrength(SU3, mu3, nu3)
+            * FieldStrength(SU2, mu2, nu2)
+            * FieldStrength(SU2, mu2, nu2)
+        ),
+    )
+
+    compiled = model.lagrangian()
+    assert compiled.terms
+
+    for gauge_group in (SU3, SU2):
+        delta = gauge_variation(group=gauge_group, parameter="alpha")
+        exported = compiled.apply_operator(delta).to_symbolica().expand()
+        canonical = canonize_full(
+            exported,
+            run_gamma=False,
+            run_color=False,
+            infer_indices=True,
+        )
+        assert canonical.to_canonical_string() == "0"

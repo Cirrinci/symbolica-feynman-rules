@@ -83,6 +83,7 @@ class AnalyzedSourceTerm:
     covariant_spectators: tuple[tuple[object, bool], ...] = ()
     generic_covariant_monomial: Optional[_DeclaredMonomial] = None
     gauge_kinetic: Optional[GaugeKineticTerm] = None
+    field_strength_monomial: Optional[_DeclaredMonomial] = None
     gauge_fixing: Optional[GaugeFixingTerm] = None
     ghost: Optional[GhostTerm] = None
 
@@ -93,10 +94,18 @@ class AnalyzedSourceTerm:
                 self.covariant_core is not None,
                 self.generic_covariant_monomial is not None,
                 self.gauge_kinetic is not None,
+                self.field_strength_monomial is not None,
                 self.gauge_fixing is not None,
                 self.ghost is not None,
             )
         )
+
+
+@dataclass(frozen=True)
+class _FieldStrengthBilinearBlock:
+    gauge_group: object
+    left_index: object
+    right_index: object
 
 
 def _match_covariant_monomial(
@@ -1206,6 +1215,72 @@ def _lower_field_strength_monomial(term: _DeclaredMonomial):
     )
 
 
+def _field_strength_group_key(target) -> tuple[str, str]:
+    if hasattr(target, "name"):
+        return ("group", str(target.name))
+    return ("raw", str(target))
+
+
+def _field_strength_bilinear_blocks(
+    term: _DeclaredMonomial,
+) -> Optional[tuple[_FieldStrengthBilinearBlock, ...]]:
+    fs_factors = [
+        factor for factor in term.factors if isinstance(factor, FieldStrengthFactor)
+    ]
+    if not fs_factors or len(fs_factors) != len(term.factors):
+        return None
+
+    remaining = list(fs_factors)
+    blocks: list[_FieldStrengthBilinearBlock] = []
+    seen_groups: set[tuple[str, str]] = set()
+
+    while remaining:
+        left = remaining.pop(0)
+        if _expr_equal_impl(left.left_index, left.right_index):
+            raise ValueError(
+                "FieldStrength indices must be distinct within one factor; "
+                f"got {left.left_index} twice in {left}."
+            )
+
+        match_slot = None
+        for slot, candidate in enumerate(remaining):
+            if candidate.gauge_group != left.gauge_group:
+                continue
+            if not _expr_equal_impl(candidate.left_index, left.left_index):
+                continue
+            if not _expr_equal_impl(candidate.right_index, left.right_index):
+                continue
+            match_slot = slot
+            break
+
+        if match_slot is None:
+            return None
+
+        right = remaining.pop(match_slot)
+        if _expr_equal_impl(right.left_index, right.right_index):
+            raise ValueError(
+                "FieldStrength indices must be distinct within one factor; "
+                f"got {right.left_index} twice in {right}."
+            )
+
+        group_key = _field_strength_group_key(left.gauge_group)
+        if group_key in seen_groups:
+            raise ValueError(
+                "Products of canonical FieldStrength(...) pairs currently support "
+                "at most one bilinear block per gauge group."
+            )
+        seen_groups.add(group_key)
+        blocks.append(
+            _FieldStrengthBilinearBlock(
+                gauge_group=left.gauge_group,
+                left_index=left.left_index,
+                right_index=left.right_index,
+            )
+        )
+
+    return tuple(blocks)
+
+
 def _analyze_declared_source_term(
     term,
     *,
@@ -1244,6 +1319,11 @@ def _analyze_declared_source_term(
     if gauge_kinetic is not None:
         return AnalyzedSourceTerm(term=term, gauge_kinetic=gauge_kinetic)
 
+    if isinstance(term, _DeclaredMonomial):
+        field_strength_blocks = _field_strength_bilinear_blocks(term)
+        if field_strength_blocks is not None:
+            return AnalyzedSourceTerm(term=term, field_strength_monomial=term)
+
     gauge_fixing = _source_term_gauge_fixing(term)
     if gauge_fixing is not None:
         return AnalyzedSourceTerm(term=term, gauge_fixing=gauge_fixing)
@@ -1267,6 +1347,7 @@ def _unsupported_declared_source_term_error():
         "more general local monomials with one or more CovD(...) factors that can be "
         "expanded using model gauge metadata, "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
+        "products of canonical FieldStrength(G, mu, nu) pairs across distinct gauge groups, "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
         "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
@@ -1286,6 +1367,8 @@ def _validate_declared_monomial(
         return
     if _lower_field_strength_monomial(term) is not None:
         return
+    if _field_strength_bilinear_blocks(term) is not None:
+        return
     if _lower_local_interaction_monomial(term) is not None:
         return
     raise ValueError(
@@ -1296,6 +1379,7 @@ def _validate_declared_monomial(
         "more general local monomials with one or more CovD(...) factors that can be "
         "expanded using model gauge metadata, "
         "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
+        "products of canonical FieldStrength(G, mu, nu) pairs across distinct gauge groups, "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
         "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
@@ -1467,6 +1551,8 @@ def _source_term_needs_compilation(term) -> bool:
         if _is_generic_covariant_monomial_candidate(term):
             return True
         if _lower_field_strength_monomial(term) is not None:
+            return True
+        if _field_strength_bilinear_blocks(term) is not None:
             return True
     return False
 

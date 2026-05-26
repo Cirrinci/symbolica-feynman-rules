@@ -66,7 +66,11 @@ from model.lagrangian import (
     GaugeKineticTerm,
     GhostTerm,
 )
-from model.lowering import _analyze_declared_source_term, _lower_local_interaction_monomial
+from model.lowering import (
+    _analyze_declared_source_term,
+    _field_strength_bilinear_blocks,
+    _lower_local_interaction_monomial,
+)
 from symbolic.spenso_structures import lorentz_metric
 from model.metadata import (
     is_lorentz_index,
@@ -1232,6 +1236,67 @@ def _compile_generic_declared_covariant_monomial(
     return tuple(interactions)
 
 
+def _combine_interaction_terms(
+    left: InteractionTerm,
+    right: InteractionTerm,
+) -> InteractionTerm:
+    field_offset = len(left.fields)
+    right_derivatives = tuple(
+        DerivativeAction(
+            target=field_offset + derivative.target,
+            lorentz_index=derivative.lorentz_index,
+        )
+        for derivative in right.derivatives
+    )
+    right_bilinears = tuple(
+        (field_offset + left_slot, field_offset + right_slot)
+        for left_slot, right_slot in right.closed_dirac_bilinears
+    )
+
+    label_parts = [part for part in (left.label, right.label) if part]
+    return InteractionTerm(
+        coupling=left.coupling * right.coupling,
+        fields=left.fields + right.fields,
+        derivatives=left.derivatives + right_derivatives,
+        closed_dirac_bilinears=left.closed_dirac_bilinears + right_bilinears,
+        label=" * ".join(label_parts),
+    )
+
+
+def _compile_field_strength_bilinear_monomial(
+    model: Model,
+    term: _DeclaredMonomial,
+) -> tuple[InteractionTerm, ...]:
+    blocks = _field_strength_bilinear_blocks(term)
+    if blocks is None:
+        raise ValueError(
+            "Expected a product of canonical FieldStrength(...) bilinear blocks."
+        )
+
+    # One bare ``FieldStrength(...) * FieldStrength(...)`` block equals
+    # ``-4`` times the canonical ``-1/4 F^2`` normalization compiled elsewhere.
+    compiled_blocks = [
+        compile_gauge_kinetic_term(
+            model,
+            GaugeKineticTerm(
+                gauge_group=block.gauge_group,
+                coefficient=-Expression.num(4),
+            ),
+        )
+        for block in blocks
+    ]
+
+    combined = (InteractionTerm(coupling=term.coefficient, fields=()),)
+    for block_terms in compiled_blocks:
+        next_combined: list[InteractionTerm] = []
+        for partial in combined:
+            for block_term in block_terms:
+                next_combined.append(_combine_interaction_terms(partial, block_term))
+        combined = tuple(next_combined)
+
+    return tuple(interaction for interaction in combined if interaction.fields)
+
+
 def compile_fermion_gauge_current(
     *,
     fermion: Field,
@@ -1959,6 +2024,7 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
       ``i Psi.bar Gamma(mu) CovD(Psi, mu)``)
     - generic ``CovD(...)`` monomials that need gauge-metadata expansion
     - field-strength gauge kinetic terms (``-1/4 F F``)
+    - products of canonical field-strength bilinears across distinct groups
     - explicit ``GaugeFixing(...)`` and ``GhostLagrangian(...)`` declarations
     - pure local interaction monomials.
     """
@@ -1994,6 +2060,15 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
 
         if analyzed.gauge_kinetic is not None:
             interactions.extend(compile_gauge_kinetic_term(model, analyzed.gauge_kinetic))
+            continue
+
+        if analyzed.field_strength_monomial is not None:
+            interactions.extend(
+                _compile_field_strength_bilinear_monomial(
+                    model,
+                    analyzed.field_strength_monomial,
+                )
+            )
             continue
 
         if analyzed.gauge_fixing is not None:
