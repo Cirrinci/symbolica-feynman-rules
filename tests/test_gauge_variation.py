@@ -690,3 +690,29 @@ def test_pure_yang_mills_variation_canonicalizes_to_zero_in_f_basis():
         run_color=False,
     )
     assert canonical.to_canonical_string() == "0"
+
+
+def test_pure_yang_mills_variation_canonicalizes_to_zero_with_inferred_indices():
+    """YM zero check can infer Lorentz/adjoint index pools automatically."""
+
+    g, Ag, SU3 = _su3_setup()
+    mu, nu = S("mu"), S("nu")
+    L = Model(
+        gauge_groups=(SU3,),
+        fields=(Ag,),
+        lagrangian_decl=(
+            -Expression.num(1) / Expression.num(4)
+            * FieldStrength(SU3, mu, nu)
+            * FieldStrength(SU3, mu, nu)
+        ),
+    ).lagrangian()
+
+    delta = gauge_variation(group=SU3, parameter="alpha")
+    exported = L.apply_operator(delta).to_symbolica().expand()
+    canonical = canonize_full(
+        exported,
+        run_gamma=False,
+        run_color=False,
+        infer_indices=True,
+    )
+    assert canonical.to_canonical_string() == "0"

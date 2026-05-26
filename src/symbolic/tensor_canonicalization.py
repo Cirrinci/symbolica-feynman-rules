@@ -513,11 +513,8 @@ def _perm_sign(current: Sequence[Expression], target: Sequence[Expression]) -> i
     return sign
 
 
-def _rebuild_like(template: Expression, args: Sequence[Expression]) -> Expression:
-    rebuilt = template
-    for current, target in zip(tuple(template), args):
-        rebuilt = rebuilt.replace(current, target)
-    return rebuilt
+def _rebuild_function_like(template: Expression, args: Sequence[Expression]) -> Expression:
+    return _build_function_expression(template.get_name(), args)
 
 
 def _shared_structure_constant_index(pair: tuple[Expression, Expression], rest: Expression):
@@ -643,10 +640,10 @@ def _jacobi_reduce_structure_constant_products(expr):
         left_template, right_template = entry["templates"]
         coefficients = entry["coefficients"]
 
-        pairing_12 = _rebuild_like(left_template, (a, b, shared)) * _rebuild_like(
+        pairing_12 = _rebuild_function_like(left_template, (a, b, shared)) * _rebuild_function_like(
             right_template, (c, d, shared)
         )
-        pairing_14 = _rebuild_like(left_template, (a, d, shared)) * _rebuild_like(
+        pairing_14 = _rebuild_function_like(left_template, (a, d, shared)) * _rebuild_function_like(
             right_template, (b, c, shared)
         )
 
@@ -704,6 +701,68 @@ def _external_symbol_names(external_indices) -> set[str]:
         if hasattr(symbol, "to_canonical_string"):
             names.add(symbol.to_canonical_string())
     return names
+
+
+def _append_symbol_group(
+    target: dict[str, Expression],
+    atom: Expression,
+):
+    for symbol in atom.get_all_symbols():
+        target.setdefault(symbol.to_canonical_string(), symbol)
+
+
+def _infer_index_groups_from_expression(expr):
+    """Infer index pools from known YM-export head slots.
+
+    This is intentionally conservative and local to currently supported heads:
+    - ``G(mu, a)``: slot 0 Lorentz, slot 1 adjoint
+    - ``alpha(a)``: slot 0 adjoint
+    - ``PartialD(base, mu)``: derivative slot Lorentz
+    - ``spenso::f(a,b,c)``: all slots adjoint
+    """
+
+    lorentz: dict[str, Expression] = {}
+    adjoint: dict[str, Expression] = {}
+
+    def walk(atom):
+        if not isinstance(atom, Expression):
+            return
+        atom_type = atom.get_type()
+        if atom_type == AtomType.Fn:
+            name = atom.get_name()
+            args = tuple(atom)
+            bare_name = name.rsplit("::", 1)[-1]
+            if bare_name == "PartialD" and len(args) == 2:
+                _append_symbol_group(lorentz, args[1])
+            elif bare_name == "G" and len(args) >= 2:
+                _append_symbol_group(lorentz, args[0])
+                _append_symbol_group(adjoint, args[1])
+            elif bare_name == "alpha" and len(args) >= 1:
+                _append_symbol_group(adjoint, args[0])
+            elif name == "spenso::f" and len(args) == 3:
+                _append_symbol_group(adjoint, args[0])
+                _append_symbol_group(adjoint, args[1])
+                _append_symbol_group(adjoint, args[2])
+
+        if atom_type in (AtomType.Add, AtomType.Mul, AtomType.Fn):
+            for child in atom:
+                walk(child)
+
+    walk(expr)
+    lorentz_inferred = tuple(lorentz[key] for key in sorted(lorentz))
+    adjoint_inferred = tuple(adjoint[key] for key in sorted(adjoint))
+    return lorentz_inferred, adjoint_inferred
+
+
+def _merge_index_groups(explicit: Sequence[object], inferred: Sequence[object]) -> tuple[object, ...]:
+    merged: dict[str, object] = {}
+    for item in explicit:
+        if hasattr(item, "to_canonical_string"):
+            merged[item.to_canonical_string()] = item
+    for item in inferred:
+        if hasattr(item, "to_canonical_string"):
+            merged.setdefault(item.to_canonical_string(), item)
+    return tuple(merged[key] for key in sorted(merged))
 
 
 def _drop_yang_mills_antisymmetric_zero_terms(
@@ -846,6 +905,7 @@ def canonize_full(
     run_commuting_partial_derivatives: bool = True,
     run_jacobi_reduction: bool = True,
     run_yang_mills_antisymmetric_zero_drop: bool = True,
+    infer_indices: bool = False,
 ):
     """One-call simplification + canonicalisation.
 
@@ -861,10 +921,27 @@ def canonize_full(
     structure-constant basis so the local Jacobi reducer can act on explicit
     ``f f`` products instead of letting ``simplify_color`` expand them into
     generators first.
+
+    Set ``infer_indices=True`` to infer Lorentz/adjoint index pools directly
+    from known YM-export heads (``G``, ``alpha``, ``PartialD``, ``spenso::f``)
+    so callers do not need to pass the full explicit index tuples manually.
     """
+    lorentz_indices = tuple(lorentz_indices)
+    adjoint_indices = tuple(adjoint_indices)
+    color_fund_indices = tuple(color_fund_indices)
+    spinor_indices = tuple(spinor_indices)
+    weak_fund_indices = tuple(weak_fund_indices)
+    weak_adj_indices = tuple(weak_adj_indices)
+    extra_index_groups = tuple(extra_index_groups)
+
     expr = simplify_invariants(expr, run_gamma=run_gamma, run_color=run_color)
     expr = contract_spenso_lorentz_metrics(expr)
     expr = _contract_plain_metric_heads(expr)
+    if infer_indices:
+        inferred_lorentz, inferred_adjoint = _infer_index_groups_from_expression(expr)
+        lorentz_indices = _merge_index_groups(lorentz_indices, inferred_lorentz)
+        adjoint_indices = _merge_index_groups(adjoint_indices, inferred_adjoint)
+
     canonical, _, _ = canonize_spenso_tensors(
         expr,
         lorentz_indices=lorentz_indices,
@@ -896,13 +973,13 @@ def canonize_full(
     if run_yang_mills_antisymmetric_zero_drop:
         reduced = _drop_yang_mills_antisymmetric_zero_terms(
             canonical,
-            lorentz_indices=tuple(lorentz_indices),
-            adjoint_indices=tuple(adjoint_indices),
-            color_fund_indices=tuple(color_fund_indices),
-            spinor_indices=tuple(spinor_indices),
-            weak_fund_indices=tuple(weak_fund_indices),
-            weak_adj_indices=tuple(weak_adj_indices),
-            extra_index_groups=tuple(extra_index_groups),
+            lorentz_indices=lorentz_indices,
+            adjoint_indices=adjoint_indices,
+            color_fund_indices=color_fund_indices,
+            spinor_indices=spinor_indices,
+            weak_fund_indices=weak_fund_indices,
+            weak_adj_indices=weak_adj_indices,
+            extra_index_groups=extra_index_groups,
         )
     canonical, _, _ = canonize_spenso_tensors(
         reduced,
