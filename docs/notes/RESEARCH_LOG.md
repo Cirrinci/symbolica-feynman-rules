@@ -1474,7 +1474,7 @@ What this achieved:
   implemented end-to-end, including fresh derivatives, gauge variation, and
   vertex extraction from operator outputs
 
-### 2026-05-26: Yang-Mills canonicalization pipeline hardening and regression split
+### 2026-05-26: Yang-Mills canonicalization hardening, BRST milestone, and regression split
 
 What happened:
 
@@ -1518,6 +1518,64 @@ What happened:
     preservation of non-Jacobi `f*f` structures
   - YM antisymmetry-based zero dropping and a nearby nonzero negative case
   - explicit disabling of YM antisymmetry dropping through `canonize_full(...)`
+- a first BRST runtime operator was added in
+  `src/lagrangian/operator_action.py` alongside the existing even
+  `gauge_variation(...)` machinery, instead of trying to fake BRST as
+  "gauge variation with `alpha -> c`"
+- the implementation was kept deliberately narrow and Yang-Mills-focused:
+  it acts only on
+  - the chosen gauge boson
+  - its ghost
+  - its antighost
+  - the auxiliary Nakanishi-Lautrup field
+- the BRST operator was made explicitly odd (`parity = 1`) so the existing
+  graded Leibniz rule on ordered `InteractionTerm` slots supplies the needed
+  sign changes automatically
+- the non-abelian elementary rules were implemented with the current
+  convention
+  - `s A^a_mu = partial_mu c^a + g f^{abc} A^b_mu c^c`
+  - `s c^a = -1/2 g f^{abc} c^b c^c`
+  - `s cbar^a = B^a`
+  - `s B^a = 0`
+- the abelian specialization was implemented in the same layer:
+  - `s A_mu = partial_mu c`
+  - `s c = 0`
+  - `s cbar = B`
+  - `s B = 0`
+- the ghost/antighost path was aligned with the repository's existing field
+  convention:
+  the common constructor path is now
+  `brst_transformation(group=..., ghost=c, auxiliary=B)`, with the
+  antighost inferred as the conjugated occurrence `c.bar(...)` when the ghost
+  declares a concrete `conjugate_symbol`
+- explicit validation/negative-path checks were added for:
+  - non-odd ghost input
+  - non-abelian BRST without a structure constant
+  - antighost handling without an auxiliary field
+  - the inferred-antighost path when the ghost has no explicit
+    `conjugate_symbol`
+- focused regression coverage was added in `tests/test_brst_transformation.py`
+  for:
+  - operator/interface construction
+  - elementary field variations
+  - graded ghost-antighost Leibniz signs
+  - nilpotency on `A`, `c`, `cbar`, and `B`
+  - the abelian specialization
+  - unrelated-field non-action and the negative construction cases above
+- the operator walkthrough notebook
+  `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
+  gained a new section
+  `BRST transformations and nilpotency`
+  that:
+  - defines the ghost and auxiliary fields
+  - constructs the BRST operator
+  - prints `sG`, `sc`, `s cbar`, and `sB`
+  - checks `s^2 G = 0` and `s^2 c = 0` with
+    `canonize_full(..., run_color=False, infer_indices=True)`
+- the BRST additions were validated against the surrounding operator/gauge
+  stack:
+  `tests/test_operator_action.py`, `tests/test_gauge_variation.py`, and
+  `tests/test_brst_transformation.py` passed together after the change
 
 What this achieved:
 
@@ -1533,3 +1591,21 @@ What this achieved:
 - turned the recent notebook success (`delta L_YM -> 0`) into a broader,
   fine-grained regression safety net that can catch local regressions before
   they reach the full end-to-end YM check
+- the project now has a physically correct first BRST layer on the compiled
+  Lagrangian side, not just an ordinary gauge-variation surrogate
+- the existing ordered-slot operator engine proved flexible enough to support
+  odd derivations and ghost-sector sign logic without another architectural
+  rewrite
+- the crucial non-abelian identities behind BRST nilpotency are now exercised
+  end-to-end in the live code path:
+  ghost anticommutation through ordered factors,
+  graded Leibniz signs through operator parity,
+  and Jacobi cancellation through the current `f`-basis canonicalizer
+- the user-facing BRST entry point became simpler in the common FP case while
+  still allowing an explicit separate antighost field when needed
+- the notebook story now covers a second major symmetry operation beyond
+  infinitesimal gauge variation, which makes the operator-action layer much
+  closer to the eventual gauge-fixing / ghost-sector workflow
+- the project reached the first BRST milestone cleanly without overextending
+  into matter BRST rules or integration-by-parts-dependent gauge-fixing
+  identities too early
