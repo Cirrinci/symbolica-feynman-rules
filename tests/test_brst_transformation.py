@@ -20,13 +20,17 @@ from lagrangian.operator_action import (
 from model import (
     COLOR_ADJ_INDEX,
     Field,
+    FieldStrength,
     GaugeGroup,
     GhostField,
     LORENTZ_INDEX,
     Lagrangian,
+    Model,
+    PartialD,
 )
 from model.interactions import InteractionTerm
 from symbolic.spenso_structures import structure_constant
+from symbolic.spenso_structures import lorentz_metric
 from symbolic.tensor_canonicalization import canonize_full
 
 
@@ -285,6 +289,117 @@ def test_brst_nilpotency_on_antighost_and_auxiliary():
 
     assert s2_cbar.to_symbolica().expand().to_canonical_string() == "0"
     assert s2_B.to_symbolica().expand().to_canonical_string() == "0"
+
+
+def test_brst_exact_gauge_fixing_fermion_and_yang_mills_sum_are_invariant():
+    gluon, ghost, _antighost, auxiliary, su3 = _su3_brst_setup()
+    mu, nu, a = S("mu", "nu", "a")
+    xi = S("xi")
+
+    brst = brst_transformation(group=su3, ghost=ghost, auxiliary=auxiliary)
+    psi = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost, auxiliary),
+        lagrangian_decl=(
+            ghost.bar(a) * PartialD(gluon(mu, a), mu)
+            + xi / Expression.num(2) * ghost.bar(a) * auxiliary(a)
+        ),
+    ).lagrangian()
+
+    s_psi = psi.apply_operator(brst)
+    assert _zero(s_psi.apply_operator(brst).to_symbolica().expand())
+
+    yang_mills = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / Expression.num(4))
+            * FieldStrength(su3, mu, nu)
+            * FieldStrength(su3, mu, nu)
+        ),
+    ).lagrangian()
+
+    total = yang_mills + s_psi
+    assert _zero(total.apply_operator(brst).to_symbolica().expand())
+
+
+def test_brst_gauge_fixing_fermion_ghost_block_has_expected_negative_sign():
+    """The ghost block of ``s(Psi)`` carries the sign from odd Leibniz action.
+
+    This regression inspects the ordered ``InteractionTerm`` output rather than
+    the commutative Symbolica export. In the authoritative ordered form
+
+    ``Psi = cbar * partial.G + xi/2 * cbar * B``
+
+    the BRST variation must contain
+
+    * ``- cbar * partial.partial c``
+    * ``- g f cbar * (partial G) * c``
+    * ``- g f cbar * G * (partial c)``
+
+    with the antighost still on the left. If any future change flips the odd
+    Leibniz sign, treats ghosts as even, or silently reorders the factors
+    without the Grassmann minus, this test should fail.
+    """
+
+    gluon, ghost, _antighost, auxiliary, su3 = _su3_brst_setup()
+    mu, a = S("mu", "a")
+    xi = S("xi")
+
+    brst = brst_transformation(group=su3, ghost=ghost, auxiliary=auxiliary)
+    psi = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost, auxiliary),
+        lagrangian_decl=(
+            ghost.bar(a) * PartialD(gluon(mu, a), mu)
+            + xi / Expression.num(2) * ghost.bar(a) * auxiliary(a)
+        ),
+    ).lagrangian()
+
+    s_psi = psi.apply_operator(brst)
+
+    ghost_kinetic = None
+    ghost_covariant = []
+
+    for term in s_psi.terms:
+        field_signature = tuple((occ.field.name, occ.conjugated) for occ in term.fields)
+        derivative_targets = tuple(action.target for action in term.derivatives)
+
+        if field_signature == (("c", True), ("c", False)):
+            ghost_kinetic = term
+        elif field_signature == (("c", True), ("G", False), ("c", False)):
+            ghost_covariant.append(term)
+
+    assert ghost_kinetic is not None
+    assert len(ghost_kinetic.derivatives) == 2
+    assert tuple(action.target for action in ghost_kinetic.derivatives) == (1, 1)
+    assert ghost_kinetic.fields[0].labels == {"color_adj": a}
+    assert ghost_kinetic.fields[1].labels == {"color_adj": a}
+    inner_mu = ghost_kinetic.derivatives[0].lorentz_index
+    assert ghost_kinetic.derivatives[1].lorentz_index == mu
+    assert _canon(ghost_kinetic.coupling) == _canon(-lorentz_metric(mu, inner_mu))
+
+    assert len(ghost_covariant) == 2
+    assert {tuple(action.target for action in term.derivatives) for term in ghost_covariant} == {
+        (1,),
+        (2,),
+    }
+
+    for term in ghost_covariant:
+        cbar_occ, gluon_occ, ghost_occ = term.fields
+        assert cbar_occ.labels == {"color_adj": a}
+        assert gluon_occ.labels["lorentz"] == mu
+        deriv_mu = term.derivatives[0].lorentz_index
+        expected = (
+            -S("gS")
+            * lorentz_metric(mu, deriv_mu)
+            * structure_constant(
+                cbar_occ.labels["color_adj"],
+                gluon_occ.labels["color_adj"],
+                ghost_occ.labels["color_adj"],
+            )
+        )
+        assert _canon(term.coupling) == _canon(expected)
 
 
 def test_abelian_brst_has_derivative_gauge_rule_and_zero_ghost_rule():
