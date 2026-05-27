@@ -87,6 +87,24 @@ class FieldOccurrence:
             )
         ).__radd__(other)
 
+    def apply_operator(self, operator, *, max_generated_terms=None):
+        """Apply one runtime operator to this single field occurrence.
+
+        This is a convenience wrapper for the common exploratory pattern
+        ``field(...).apply_operator(op)``: the occurrence is lifted to a
+        one-term compiled Lagrangian with unit coupling, and the existing
+        compiled-Lagrangian operator pipeline does the actual work.
+        """
+
+        from .lagrangian import Lagrangian
+
+        return Lagrangian(
+            terms=(InteractionTerm(coupling=1, fields=(self,)),)
+        ).apply_operator(
+            operator,
+            max_generated_terms=max_generated_terms,
+        )
+
 
 @dataclass(frozen=True)
 class ExternalLeg:

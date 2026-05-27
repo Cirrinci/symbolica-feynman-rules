@@ -437,6 +437,23 @@ def test_model_apply_operator_forwards_to_compiled_lagrangian(phi, chi):
     assert tuple(occ.field.name for occ in out.terms[0].fields) == ("chi",)
 
 
+def test_field_occurrence_apply_operator_matches_single_slot_lagrangian(phi, chi):
+    """``FieldOccurrence.apply_operator(...)`` is thin sugar over `Lagrangian`."""
+
+    occurrence = phi()
+    operator = replacement_operator("O", {phi: chi.occurrence()})
+
+    direct = occurrence.apply_operator(operator)
+    explicit = Lagrangian(
+        terms=(InteractionTerm(coupling=Expression.num(1), fields=(occurrence,)),)
+    ).apply_operator(operator)
+
+    assert isinstance(direct, CompiledLagrangian)
+    assert len(direct.terms) == 1
+    assert tuple(occ.field.name for occ in direct.terms[0].fields) == ("chi",)
+    assert _canon(direct.to_symbolica()) == _canon(explicit.to_symbolica())
+
+
 def test_apply_operators_is_left_to_right(phi, chi):
     """``apply_operators(A, B)`` means ``B(A(L))``."""
 
