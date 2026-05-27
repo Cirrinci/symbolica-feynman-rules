@@ -1609,3 +1609,78 @@ What this achieved:
 - the project reached the first BRST milestone cleanly without overextending
   into matter BRST rules or integration-by-parts-dependent gauge-fixing
   identities too early
+
+### 2026-05-27: BRST notebook cleanup and wildcard-coefficient notebook examples
+
+What happened:
+
+- the BRST walkthrough section in
+  `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
+  was cleaned up so the gauge-fixing/ghost-sector example uses compiled
+  Lagrangians consistently:
+  - `K_brst` is now created as `Model(...).lagrangian()`
+  - the combined BRST-invariance check now forms
+    `L_total_brst = L_su3_ym.lagrangian() + s_K_brst`
+    instead of trying to add a top-level `Model` to a
+    `CompiledLagrangian`
+- this removes the notebook runtime error
+  `TypeError: unsupported operand type(s) for +: 'Model' and 'CompiledLagrangian'`
+  and makes the intended `s(L_YM + s(K)) = 0` check executable again
+- chapter 13 of the same notebook was rewritten into a shorter and more
+  explicit coefficient-manipulation story centered on the distinction between:
+  - native Symbolica `coefficient(...)` on exact literals
+  - wildcard-aware coefficient extraction through the project helper
+    `pattern_coefficient(...)`
+  - the equivalent pure-Symbolica manual workaround based on
+    `match(...)`, `replace_wildcards(...)`, and then literal
+    `coefficient(...)`
+- the new first cells in chapter 13 now use a deliberately tiny toy
+  expression so the key behavior is obvious:
+  `coefficient(pattern_with_wildcards)` returns `0`, while both the helper and
+  the manual match-and-substitute path recover the expected summed result
+- a compact physics-facing example was kept in chapter 13 as well:
+  the BRST-exact gauge-fixing/ghost expression `s_K_brst.to_symbolica().expand()`
+  is used to show that literal `coefficient(...)` is still useful for
+  extracting pieces such as the `xi` and `gS` sectors of a concrete exported
+  expression
+- the old pure-SU(3) Yang-Mills subfactor-extraction example was restored as
+  the final cell of chapter 13, using the same built-in-only workflow as
+  before:
+  - `expr = L_su3_ym.to_symbolica()`
+  - wildcard `pattern = G(mu1_, a1_) * G(mu2_, a2_)`
+  - `expr.match(..., partial=True)`
+  - `pattern.replace_wildcards(match)`
+  - `expr.coefficient(factor)`
+  so the notebook still preserves the more realistic nontrivial example after
+  the new minimal toy introduction
+- the trailing scratch/blank cells at the end of chapter 13 were removed so
+  the notebook now ends on the restored SU(3) Yang-Mills example instead of an
+  incomplete experiment
+- the updated chapter-13 cells were checked in the project `.venv`, confirming
+  that:
+  - native wildcard `coefficient(...)` returns `0`
+  - the helper and manual workaround agree on the toy example
+  - the restored SU(3) Yang-Mills cell reproduces the earlier sequence of
+    matched `G*G` factors and residual coefficients
+
+What this achieved:
+
+- the BRST section of the walkthrough now matches the actual container/API
+  distinction in the codebase:
+  top-level `Model` convenience methods can forward to compiled behavior, but
+  additive composition still has to happen at the compiled-Lagrangian level
+- chapter 13 now teaches the coefficient issue in the right order:
+  a minimal failure case first, then the project solution, then the pure
+  Symbolica fallback, and only then the more complicated SU(3) Yang-Mills
+  example
+- the notebook now makes a sharper conceptual distinction between:
+  - exact coefficient extraction
+  - wildcard pattern extraction
+  - subfactor matching inside larger interaction monomials
+- the restored final SU(3) cell preserves the old research/debugging example
+  without forcing the reader to infer the basic wildcard limitation from a very
+  large expression
+- the operator-action walkthrough is now more coherent as a document:
+  the BRST section runs cleanly, and the final chapter closes with working,
+  concrete Symbolica manipulation patterns that are directly useful for
+  physics-side inspection of exported Lagrangians
