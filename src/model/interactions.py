@@ -3,21 +3,242 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fractions import Fraction
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from symbolica import S
 
 from .metadata import (
+    LORENTZ_INDEX,
     ConjugateField,
     Field,
     FieldRole,
+    IndexType,
     Statistics,
     _copy_index_labels,
+    _normalize_index_labels,
+    is_lorentz_index,
+    lorentz_index_for,
     lorentz_kind_for,
-    spinor_kind_for,
+    spinor_slots_for,
+    unique_spinor_slot,
 )
+
+
+def _symbolic_key(value) -> str:
+    if hasattr(value, "to_canonical_string"):
+        return value.to_canonical_string()
+    return str(value)
+
+
+@dataclass(frozen=True)
+class SlotLabels:
+    """Slot-ordered index labels for one field occurrence or external leg."""
+
+    field: Field
+    values: tuple[object | None, ...]
+
+    def __post_init__(self):
+        if len(self.values) != len(self.field.indices):
+            raise ValueError(
+                f"SlotLabels for field {self.field.name!r} need {len(self.field.indices)} "
+                f"entries, got {len(self.values)}."
+            )
+
+    @classmethod
+    def from_legacy(
+        cls,
+        field: Field,
+        labels: Mapping | None,
+    ) -> "SlotLabels":
+        slot_map = field.unpack_slot_labels(labels)
+        return cls(
+            field=field,
+            values=tuple(slot_map.get(slot) for slot in range(len(field.indices))),
+        )
+
+    @classmethod
+    def from_slot_map(
+        cls,
+        field: Field,
+        slot_labels: Mapping[int, object],
+    ) -> "SlotLabels":
+        return cls(
+            field=field,
+            values=tuple(slot_labels.get(slot) for slot in range(len(field.indices))),
+        )
+
+    def to_slot_map(self) -> dict[int, object]:
+        return {
+            slot: label
+            for slot, label in enumerate(self.values)
+            if label is not None
+        }
+
+    def to_legacy(self) -> dict[str, object]:
+        return self.field.pack_slot_labels(self.to_slot_map())
+
+    def get(self, slot: int):
+        return self.values[slot]
+
+    def replace(self, slot: int, value) -> "SlotLabels":
+        updated = list(self.values)
+        updated[slot] = value
+        return SlotLabels(field=self.field, values=tuple(updated))
+
+
+@dataclass(frozen=True)
+class SlotRef:
+    occurrence: int
+    slot: int
+
+
+@dataclass(frozen=True)
+class DerivativeRef:
+    ordinal: int
+    target: int
+
+
+@dataclass(frozen=True)
+class IndexBinding:
+    index: IndexType
+    label: object
+    field_slots: tuple[SlotRef, ...] = ()
+    derivatives: tuple[DerivativeRef, ...] = ()
+
+    @property
+    def multiplicity(self) -> int:
+        return len(self.field_slots) + len(self.derivatives)
+
+    @property
+    def is_open(self) -> bool:
+        return self.multiplicity == 1
+
+
+@dataclass(frozen=True)
+class DiracBilinear:
+    psibar: SlotRef
+    psi: SlotRef
+
+    def as_legacy(self) -> tuple[int, int]:
+        return self.psibar.occurrence, self.psi.occurrence
+
+
+def _normalize_legacy_bilinears(
+    closed_dirac_bilinears: Sequence[tuple[int, int]],
+) -> tuple[tuple[int, int], ...]:
+    normalized: list[tuple[int, int]] = []
+    for pair in closed_dirac_bilinears:
+        if len(pair) != 2:
+            raise ValueError(
+                "closed_dirac_bilinears entries must be (psibar_slot, psi_slot) pairs."
+            )
+        normalized.append((int(pair[0]), int(pair[1])))
+    return tuple(normalized)
+
+
+def _structural_bilinear_from_legacy_pair(
+    fields: Sequence["FieldOccurrence"],
+    pair: tuple[int, int],
+) -> DiracBilinear:
+    psibar_occurrence, psi_occurrence = pair
+    if not (0 <= psibar_occurrence < len(fields) and 0 <= psi_occurrence < len(fields)):
+        raise ValueError(
+            "closed_dirac_bilinears contains a slot outside the interaction arity."
+        )
+    return DiracBilinear(
+        psibar=SlotRef(
+            occurrence=psibar_occurrence,
+            slot=unique_spinor_slot(
+                fields[psibar_occurrence].field,
+                purpose="Dirac bilinear normalization",
+            ),
+        ),
+        psi=SlotRef(
+            occurrence=psi_occurrence,
+            slot=unique_spinor_slot(
+                fields[psi_occurrence].field,
+                purpose="Dirac bilinear normalization",
+            ),
+        ),
+    )
+
+
+def _legacy_bilinears_from_structural(
+    dirac_bilinears: Sequence[DiracBilinear],
+) -> tuple[tuple[int, int], ...]:
+    return tuple(bilinear.as_legacy() for bilinear in dirac_bilinears)
+
+
+def _validate_structural_dirac_bilinears(
+    fields: Sequence["FieldOccurrence"],
+    dirac_bilinears: Sequence[DiracBilinear],
+) -> tuple[DiracBilinear, ...]:
+    validated: list[DiracBilinear] = []
+
+    for bilinear in dirac_bilinears:
+        if not isinstance(bilinear, DiracBilinear):
+            raise TypeError(
+                "dirac_bilinears must contain DiracBilinear entries."
+            )
+
+        for ref, endpoint in (
+            (bilinear.psibar, "psibar"),
+            (bilinear.psi, "psi"),
+        ):
+            if not isinstance(ref, SlotRef):
+                raise TypeError(
+                    f"dirac_bilinears {endpoint} endpoint must be a SlotRef."
+                )
+            if ref.occurrence < 0 or ref.occurrence >= len(fields):
+                raise ValueError(
+                    f"dirac_bilinears {endpoint} endpoint occurrence {ref.occurrence} "
+                    "is outside the interaction arity."
+                )
+
+        psibar_occurrence = fields[bilinear.psibar.occurrence]
+        psi_occurrence = fields[bilinear.psi.occurrence]
+
+        if psibar_occurrence.field.kind != "fermion":
+            raise ValueError(
+                "dirac_bilinears psibar endpoint must point to a fermion occurrence."
+            )
+        if psi_occurrence.field.kind != "fermion":
+            raise ValueError(
+                "dirac_bilinears psi endpoint must point to a fermion occurrence."
+            )
+        if not psibar_occurrence.conjugated:
+            raise ValueError(
+                "dirac_bilinears psibar endpoint must point to a conjugated fermion occurrence."
+            )
+        if psi_occurrence.conjugated:
+            raise ValueError(
+                "dirac_bilinears psi endpoint must point to an unconjugated fermion occurrence."
+            )
+
+        expected_psibar_slot = unique_spinor_slot(
+            psibar_occurrence.field,
+            purpose="Dirac bilinear validation",
+        )
+        expected_psi_slot = unique_spinor_slot(
+            psi_occurrence.field,
+            purpose="Dirac bilinear validation",
+        )
+        if bilinear.psibar.slot != expected_psibar_slot:
+            raise ValueError(
+                f"dirac_bilinears psibar endpoint must target spinor slot "
+                f"{expected_psibar_slot}, got {bilinear.psibar.slot}."
+            )
+        if bilinear.psi.slot != expected_psi_slot:
+            raise ValueError(
+                f"dirac_bilinears psi endpoint must target spinor slot "
+                f"{expected_psi_slot}, got {bilinear.psi.slot}."
+            )
+
+        validated.append(bilinear)
+
+    return tuple(validated)
 
 
 @dataclass(frozen=True)
@@ -27,6 +248,16 @@ class FieldOccurrence:
     field: Field
     conjugated: bool = False
     labels: dict = field(default_factory=dict)
+    slot_labels: SlotLabels = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self):
+        normalized = _normalize_index_labels(self.field, self.labels)
+        object.__setattr__(self, "labels", normalized)
+        object.__setattr__(
+            self,
+            "slot_labels",
+            SlotLabels.from_legacy(self.field, normalized),
+        )
 
     @property
     def species(self):
@@ -38,10 +269,21 @@ class FieldOccurrence:
 
     @property
     def spinor_label(self):
-        spinor = self.labels.get(spinor_kind_for(self.field.indices))
-        if isinstance(spinor, tuple):
-            return spinor[0] if spinor else None
-        return spinor
+        spinor_slots = spinor_slots_for(self.field)
+        if len(spinor_slots) != 1:
+            return None
+        return self.slot_labels.get(spinor_slots[0])
+
+    def label(self, slot: int):
+        return self.slot_labels.get(slot)
+
+    def with_slot_labels(self, slot_labels: SlotLabels) -> "FieldOccurrence":
+        if slot_labels.field is not self.field:
+            raise ValueError("SlotLabels field does not match FieldOccurrence field.")
+        return replace(self, labels=slot_labels.to_legacy())
+
+    def with_slot_label(self, slot: int, value) -> "FieldOccurrence":
+        return self.with_slot_labels(self.slot_labels.replace(slot, value))
 
     def __mul__(self, other):
         from .declared import _DeclaredMonomial, _FieldFactor
@@ -116,6 +358,16 @@ class ExternalLeg:
     species: object = None
     spin: object = None
     labels: dict = field(default_factory=dict)
+    slot_labels: SlotLabels = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self):
+        normalized = _normalize_index_labels(self.field, self.labels)
+        object.__setattr__(self, "labels", normalized)
+        object.__setattr__(
+            self,
+            "slot_labels",
+            SlotLabels.from_legacy(self.field, normalized),
+        )
 
     @property
     def effective_species(self):
@@ -144,10 +396,56 @@ class InteractionTerm:
     fields: tuple[FieldOccurrence, ...]
     derivatives: tuple[DerivativeAction, ...] = ()
     closed_dirac_bilinears: tuple[tuple[int, int], ...] = ()
+    dirac_bilinears: tuple[DiracBilinear, ...] = field(
+        default=(),
+        kw_only=True,
+        repr=False,
+        compare=False,
+    )
     label: str = ""
     sector: str = ""
     origin: str = ""
     origin_group: object = None
+
+    def __post_init__(self):
+        closed_dirac_bilinears = _normalize_legacy_bilinears(
+            self.closed_dirac_bilinears
+        )
+        raw_dirac_bilinears = tuple(self.dirac_bilinears)
+        dirac_bilinears: tuple[DiracBilinear, ...] = ()
+
+        if closed_dirac_bilinears:
+            if raw_dirac_bilinears:
+                try:
+                    validated_structural = _validate_structural_dirac_bilinears(
+                        self.fields,
+                        raw_dirac_bilinears,
+                    )
+                except (TypeError, ValueError):
+                    validated_structural = ()
+                else:
+                    legacy_from_structural = _legacy_bilinears_from_structural(
+                        validated_structural
+                    )
+                    if legacy_from_structural == closed_dirac_bilinears:
+                        dirac_bilinears = validated_structural
+            if not dirac_bilinears:
+                dirac_bilinears = _validate_structural_dirac_bilinears(
+                    self.fields,
+                    tuple(
+                        _structural_bilinear_from_legacy_pair(self.fields, pair)
+                        for pair in closed_dirac_bilinears
+                    ),
+                )
+        elif raw_dirac_bilinears:
+            dirac_bilinears = _validate_structural_dirac_bilinears(
+                self.fields,
+                raw_dirac_bilinears,
+            )
+            closed_dirac_bilinears = _legacy_bilinears_from_structural(dirac_bilinears)
+
+        object.__setattr__(self, "closed_dirac_bilinears", closed_dirac_bilinears)
+        object.__setattr__(self, "dirac_bilinears", dirac_bilinears)
 
     @property
     def statistics(self) -> Statistics:
@@ -155,6 +453,53 @@ class InteractionTerm:
             if occ.field.statistics == "fermion":
                 return "fermion"
         return "boson"
+
+    @property
+    def index_bindings(self) -> tuple[IndexBinding, ...]:
+        grouped: dict[tuple[IndexType, str], dict[str, object]] = {}
+        order: list[tuple[IndexType, str]] = []
+
+        def ensure_group(index: IndexType, label):
+            key = (index, _symbolic_key(label))
+            if key not in grouped:
+                grouped[key] = {
+                    "index": index,
+                    "label": label,
+                    "field_slots": [],
+                    "derivatives": [],
+                }
+                order.append(key)
+            return grouped[key]
+
+        for occurrence_idx, occurrence in enumerate(self.fields):
+            for slot, index in enumerate(occurrence.field.indices):
+                label = occurrence.slot_labels.get(slot)
+                if label is None:
+                    continue
+                group = ensure_group(index, label)
+                group["field_slots"].append(
+                    SlotRef(occurrence=occurrence_idx, slot=slot)
+                )
+
+        for ordinal, action in enumerate(self.derivatives):
+            if not (0 <= action.target < len(self.fields)):
+                continue
+            target_field = self.fields[action.target].field
+            derivative_index = lorentz_index_for(target_field.indices) or LORENTZ_INDEX
+            group = ensure_group(derivative_index, action.lorentz_index)
+            group["derivatives"].append(
+                DerivativeRef(ordinal=ordinal, target=action.target)
+            )
+
+        return tuple(
+            IndexBinding(
+                index=grouped[key]["index"],
+                label=grouped[key]["label"],
+                field_slots=tuple(grouped[key]["field_slots"]),
+                derivatives=tuple(grouped[key]["derivatives"]),
+            )
+            for key in order
+        )
 
     def __add__(self, other):
         from .lagrangian import CompiledLagrangian, DeclaredLagrangian, Lagrangian
@@ -242,9 +587,13 @@ class InteractionTerm:
         field_roles = [occ.role for occ in self.fields]
         leg_roles = [leg.role for leg in external_legs]
 
-        field_index_labels = [_copy_index_labels(occ.labels) for occ in self.fields]
+        field_index_labels = [
+            _copy_index_labels(occ.slot_labels.to_legacy()) for occ in self.fields
+        ]
         field_index_types = [occ.field.indices for occ in self.fields]
-        leg_index_labels = [_copy_index_labels(leg.labels) for leg in external_legs]
+        leg_index_labels = [
+            _copy_index_labels(leg.slot_labels.to_legacy()) for leg in external_legs
+        ]
         leg_index_types = [leg.field.indices for leg in external_legs]
 
         leg_spins = [leg.spin for leg in external_legs]
@@ -254,16 +603,11 @@ class InteractionTerm:
         coupling = self.coupling
 
         if derivative_indices:
-            external_lorentz_labels = set()
-            for slot_labels, index_types in zip(field_index_labels, field_index_types):
-                lorentz_kind = lorentz_kind_for(index_types)
-                value = slot_labels.get(lorentz_kind)
-                if isinstance(value, tuple):
-                    external_lorentz_labels.update(
-                        label for label in value if label is not None
-                    )
-                elif value is not None:
-                    external_lorentz_labels.add(value)
+            external_lorentz_labels = {
+                binding.label
+                for binding in self.index_bindings
+                if is_lorentz_index(binding.index) and binding.field_slots
+            }
 
             internal_lorentz_map: dict[str, object] = {}
             original_lorentz_map: dict[str, object] = {}
@@ -309,7 +653,9 @@ class InteractionTerm:
             leg_spins=leg_spins,
             derivative_indices=derivative_indices,
             derivative_targets=derivative_targets,
-            closed_dirac_bilinears=self.closed_dirac_bilinears,
+            closed_dirac_bilinears=tuple(
+                bilinear.as_legacy() for bilinear in self.dirac_bilinears
+            ),
         )
 
 

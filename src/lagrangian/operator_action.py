@@ -54,10 +54,12 @@ from symbolica import Expression, S
 
 from model.interactions import (
     DerivativeAction,
+    DiracBilinear,
     FieldOccurrence,
     InteractionTerm,
+    SlotRef,
 )
-from model.metadata import Field, FieldRole, is_lorentz_index
+from model.metadata import Field, FieldRole, is_lorentz_index, unique_spinor_slot
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +299,7 @@ class _OperatorApplicationMemo:
     inherited_replacements: dict[tuple[object, ...], tuple[FieldOccurrence, ...]] = dataclass_field(
         default_factory=dict
     )
-    bilinear_remaps: dict[tuple[object, ...], tuple[tuple[int, int], ...]] = dataclass_field(
+    bilinear_remaps: dict[tuple[object, ...], tuple[DiracBilinear, ...]] = dataclass_field(
         default_factory=dict
     )
     derivative_arrangements: dict[tuple[object, ...], tuple[tuple[DerivativeAction, ...], ...]] = dataclass_field(
@@ -315,22 +317,11 @@ def _symbolic_cache_key(value):
     return value
 
 
-def _labels_cache_key(labels: dict) -> tuple[tuple[object, object], ...]:
-    if not labels:
-        return ()
-    return tuple(
-        sorted(
-            (kind, _symbolic_cache_key(value))
-            for kind, value in labels.items()
-        )
-    )
-
-
 def _occurrence_cache_key(occurrence: FieldOccurrence) -> tuple[object, ...]:
     return (
         id(occurrence.field),
         bool(occurrence.conjugated),
-        _labels_cache_key(occurrence.labels),
+        tuple(_symbolic_cache_key(label) for label in occurrence.slot_labels.values),
     )
 
 
@@ -434,8 +425,8 @@ def _inherit_missing_replacement_labels(
         return replacement
 
     source_field = original_occurrence.field
-    source_slot_labels = source_field.unpack_slot_labels(original_occurrence.labels)
-    if not source_slot_labels:
+    source_slot_labels = original_occurrence.slot_labels
+    if not any(label is not None for label in source_slot_labels.values):
         return replacement
 
     replacement_list = list(replacement)
@@ -454,7 +445,7 @@ def _inherit_missing_replacement_labels(
             replacement_occurrences_by_index.setdefault(index, set()).add(occurrence_index)
 
     for index, source_slots in source_slots_by_index.items():
-        if not any(slot in source_slot_labels for slot in source_slots):
+        if not any(source_slot_labels.get(slot) is not None for slot in source_slots):
             continue
 
         target_occurrence_indices = replacement_occurrences_by_index.get(index, set())
@@ -467,25 +458,22 @@ def _inherit_missing_replacement_labels(
         if len(target_slots) != len(source_slots):
             continue
 
-        target_slot_labels = target_occurrence.field.unpack_slot_labels(
-            target_occurrence.labels
-        )
+        target_slot_labels = target_occurrence.slot_labels
         changed = False
         for source_slot, target_slot in zip(source_slots, target_slots):
-            if target_slot in target_slot_labels and target_slot_labels[target_slot] is not None:
+            if target_slot_labels.get(target_slot) is not None:
                 continue
             source_label = source_slot_labels.get(source_slot)
             if source_label is None:
                 continue
-            target_slot_labels[target_slot] = source_label
+            target_slot_labels = target_slot_labels.replace(target_slot, source_label)
             changed = True
 
         if not changed:
             continue
 
-        replacement_list[target_occurrence_index] = target_occurrence.field.occurrence(
-            conjugated=target_occurrence.conjugated,
-            labels=target_occurrence.field.pack_slot_labels(target_slot_labels),
+        replacement_list[target_occurrence_index] = target_occurrence.with_slot_labels(
+            target_slot_labels
         )
 
     return tuple(replacement_list)
@@ -495,7 +483,7 @@ def _matching_fermion_positions_in_replacement(
     replacement: Sequence[FieldOccurrence],
     *,
     conjugated_target: bool,
-) -> list[int]:
+) -> list[SlotRef]:
     """Find positions in ``replacement`` that look like a Dirac-fermion of
     the requested conjugation.
 
@@ -504,26 +492,36 @@ def _matching_fermion_positions_in_replacement(
     spinor index -- are not accidentally picked up as bilinear endpoints.
     """
 
-    return [
-        position
-        for position, occurrence in enumerate(replacement)
-        if occurrence.field.kind == "fermion"
-        and bool(occurrence.conjugated) == bool(conjugated_target)
-    ]
+    matches: list[SlotRef] = []
+    for position, occurrence in enumerate(replacement):
+        if occurrence.field.kind != "fermion":
+            continue
+        if bool(occurrence.conjugated) != bool(conjugated_target):
+            continue
+        matches.append(
+            SlotRef(
+                occurrence=position,
+                slot=unique_spinor_slot(
+                    occurrence.field,
+                    purpose="Operator bilinear remapping",
+                ),
+            )
+        )
+    return matches
 
 
 def _validate_closed_bilinear_pair_structure(
-    bilinears: Sequence[tuple[int, int]],
+    bilinears: Sequence[DiracBilinear],
     *,
     error_prefix: str,
-) -> tuple[tuple[int, int], ...]:
+) -> tuple[DiracBilinear, ...]:
     intervals = sorted(
         (
-            min(psibar_slot, psi_slot),
-            max(psibar_slot, psi_slot),
-            (psibar_slot, psi_slot),
+            min(bilinear.psibar.occurrence, bilinear.psi.occurrence),
+            max(bilinear.psibar.occurrence, bilinear.psi.occurrence),
+            bilinear,
         )
-        for psibar_slot, psi_slot in bilinears
+        for bilinear in bilinears
     )
     for (_, prev_end, _), (next_start, _, _) in zip(intervals, intervals[1:]):
         if next_start <= prev_end:
@@ -531,7 +529,7 @@ def _validate_closed_bilinear_pair_structure(
                 f"{error_prefix} would produce overlapping or interleaved closed "
                 "Dirac bilinears, which are not supported."
             )
-    return tuple(pair for _, _, pair in intervals)
+    return tuple(bilinear for _, _, bilinear in intervals)
 
 
 def _validate_and_remap_bilinears(
@@ -540,11 +538,11 @@ def _validate_and_remap_bilinears(
     slot: int,
     original_occurrence: FieldOccurrence,
     replacement: tuple[FieldOccurrence, ...],
-    bilinears: tuple[tuple[int, int], ...],
-) -> tuple[tuple[int, int], ...]:
+    bilinears: tuple[DiracBilinear, ...],
+) -> tuple[DiracBilinear, ...]:
     """Validate and remap ``closed_dirac_bilinears`` across one splice.
 
-    For each ``(psibar_slot, psi_slot)`` pair:
+    For each structural Dirac bilinear:
 
     * Bilinears not involving ``slot`` are shifted by ``len(replacement) -
       1`` for endpoints ``> slot``.
@@ -564,14 +562,14 @@ def _validate_and_remap_bilinears(
 
     shift = len(replacement) - 1
 
-    def shift_index(idx: int) -> int:
-        if idx > slot:
-            return idx + shift
-        return idx
+    def shift_slot_ref(ref: SlotRef) -> SlotRef:
+        if ref.occurrence > slot:
+            return SlotRef(occurrence=ref.occurrence + shift, slot=ref.slot)
+        return ref
 
-    remapped: list[tuple[int, int]] = []
-    for psibar_slot, psi_slot in bilinears:
-        if psibar_slot == slot:
+    remapped: list[DiracBilinear] = []
+    for bilinear in bilinears:
+        if bilinear.psibar.occurrence == slot:
             matches = _matching_fermion_positions_in_replacement(
                 replacement, conjugated_target=True
             )
@@ -584,9 +582,17 @@ def _validate_and_remap_bilinears(
                     "bilinear structure, or drop the bilinear metadata before "
                     "applying the operator."
                 )
-            remapped.append((slot + matches[0], shift_index(psi_slot)))
+            remapped.append(
+                DiracBilinear(
+                    psibar=SlotRef(
+                        occurrence=slot + matches[0].occurrence,
+                        slot=matches[0].slot,
+                    ),
+                    psi=shift_slot_ref(bilinear.psi),
+                )
+            )
             continue
-        if psi_slot == slot:
+        if bilinear.psi.occurrence == slot:
             matches = _matching_fermion_positions_in_replacement(
                 replacement, conjugated_target=False
             )
@@ -599,9 +605,22 @@ def _validate_and_remap_bilinears(
                     "the bilinear structure, or drop the bilinear metadata before "
                     "applying the operator."
                 )
-            remapped.append((shift_index(psibar_slot), slot + matches[0]))
+            remapped.append(
+                DiracBilinear(
+                    psibar=shift_slot_ref(bilinear.psibar),
+                    psi=SlotRef(
+                        occurrence=slot + matches[0].occurrence,
+                        slot=matches[0].slot,
+                    ),
+                )
+            )
             continue
-        remapped.append((shift_index(psibar_slot), shift_index(psi_slot)))
+        remapped.append(
+            DiracBilinear(
+                psibar=shift_slot_ref(bilinear.psibar),
+                psi=shift_slot_ref(bilinear.psi),
+            )
+        )
     return _validate_closed_bilinear_pair_structure(
         remapped,
         error_prefix=(
@@ -779,10 +798,10 @@ def apply_field_operator_to_term(
     for action in term.derivatives:
         derivatives_by_slot.setdefault(action.target, []).append(action)
 
-    bilinears_by_slot: dict[int, list[tuple[int, int]]] = {}
-    for psibar_slot, psi_slot in term.closed_dirac_bilinears:
-        bilinears_by_slot.setdefault(psibar_slot, []).append((psibar_slot, psi_slot))
-        bilinears_by_slot.setdefault(psi_slot, []).append((psibar_slot, psi_slot))
+    bilinears_by_slot: dict[int, list[DiracBilinear]] = {}
+    for bilinear in term.dirac_bilinears:
+        bilinears_by_slot.setdefault(bilinear.psibar.occurrence, []).append(bilinear)
+        bilinears_by_slot.setdefault(bilinear.psi.occurrence, []).append(bilinear)
 
     for slot, occurrence in enumerate(term.fields):
         result = operator(occurrence)
@@ -821,7 +840,7 @@ def apply_field_operator_to_term(
                 slot,
                 _occurrence_cache_key(occurrence),
                 _replacement_cache_key(replacement),
-                term.closed_dirac_bilinears,
+                term.dirac_bilinears,
             )
             new_bilinears = _memo.bilinear_remaps.get(bilinear_key)
             if new_bilinears is None:
@@ -830,7 +849,7 @@ def apply_field_operator_to_term(
                     slot=slot,
                     original_occurrence=occurrence,
                     replacement=replacement,
-                    bilinears=term.closed_dirac_bilinears,
+                    bilinears=term.dirac_bilinears,
                 )
                 _memo.bilinear_remaps[bilinear_key] = new_bilinears
             new_coupling = _coupling_product(
@@ -886,7 +905,10 @@ def apply_field_operator_to_term(
                         coupling=new_coupling,
                         fields=new_fields,
                         derivatives=arrangement + fresh_derivatives,
-                        closed_dirac_bilinears=new_bilinears,
+                        closed_dirac_bilinears=tuple(
+                            bilinear.as_legacy() for bilinear in new_bilinears
+                        ),
+                        dirac_bilinears=new_bilinears,
                         origin=(term.origin + (";" if term.origin else "") + f"op:{operator.name}@slot{slot}"),
                     )
                 )
@@ -1162,12 +1184,8 @@ def _replace_slot_label(field: Field, occurrence: FieldOccurrence, slot: int, ne
     by ``new_label`` and everything else preserved.
     """
 
-    slot_labels = field.unpack_slot_labels(occurrence.labels)
-    slot_labels[slot] = new_label
-    return field.occurrence(
-        conjugated=occurrence.conjugated,
-        labels=field.pack_slot_labels(slot_labels),
-    )
+    del field
+    return occurrence.with_slot_label(slot, new_label)
 
 
 def _copy_occurrence(occurrence: FieldOccurrence) -> FieldOccurrence:
@@ -1175,7 +1193,7 @@ def _copy_occurrence(occurrence: FieldOccurrence) -> FieldOccurrence:
 
     return occurrence.field.occurrence(
         conjugated=occurrence.conjugated,
-        labels=dict(occurrence.labels) if occurrence.labels else None,
+        labels=occurrence.slot_labels.to_legacy(),
     )
 
 
@@ -1183,10 +1201,9 @@ def _lorentz_label_of(occurrence: FieldOccurrence):
     """Return the unique Lorentz label of ``occurrence``, or ``None``."""
 
     field = occurrence.field
-    slot_labels = field.unpack_slot_labels(occurrence.labels)
     for slot, index in enumerate(field.indices):
         if is_lorentz_index(index):
-            label = slot_labels.get(slot)
+            label = occurrence.slot_labels.get(slot)
             if label is not None:
                 return label
     return None
@@ -1353,7 +1370,7 @@ def gauge_variation(
         if rep_and_slots is None:
             return None
         rep, slots = rep_and_slots
-        slot_labels = field.unpack_slot_labels(occurrence.labels)
+        slot_labels = occurrence.slot_labels
         summands: list[OperatorSummand] = []
         for slot in slots:
             old_rep_label = slot_labels.get(slot)
@@ -1400,7 +1417,7 @@ def gauge_variation(
             inhom_alpha_occ = _alpha_occurrence(None)
         else:
             adj_kind = adjoint_index.kind
-            slot_labels = occurrence.field.unpack_slot_labels(occurrence.labels)
+            slot_labels = occurrence.slot_labels
             # The gauge boson's first non-Lorentz slot carries its adjoint.
             adj_slot = next(
                 (s for s, idx in enumerate(occurrence.field.indices) if idx.kind == adj_kind),
@@ -1619,7 +1636,7 @@ def brst_transformation(
                 index=adjoint_index,
                 context=f"brst_transformation({group.name!r}) gauge boson",
             )
-            slot_labels = occurrence.field.unpack_slot_labels(occurrence.labels)
+            slot_labels = occurrence.slot_labels
             old_adj_label = slot_labels.get(adj_slot)
             if old_adj_label is None:
                 raise ValueError(
@@ -1654,7 +1671,7 @@ def brst_transformation(
         if abelian:
             return zero_result()
 
-        slot_labels = ghost.unpack_slot_labels(occurrence.labels)
+        slot_labels = occurrence.slot_labels
         old_adj_label = slot_labels.get(ghost_slot)
         if old_adj_label is None:
             raise ValueError(

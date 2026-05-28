@@ -967,7 +967,7 @@ class Field:
         return FieldOccurrence(
             field=self,
             conjugated=conjugated,
-            labels=_normalize_index_labels(self, labels),
+            labels=labels,
         )
 
     @property
@@ -993,7 +993,7 @@ class Field:
             conjugated=conjugated,
             species=species,
             spin=spin,
-            labels=_normalize_index_labels(self, labels),
+            labels=labels,
         )
 
     def __mul__(self, other):

@@ -92,9 +92,11 @@ def _occurrence_label_arguments(occurrence: FieldOccurrence) -> tuple[object, ..
     slot. This keeps the export robust on partial / hand-built terms.
     """
 
-    slot_labels = occurrence.field.unpack_slot_labels(occurrence.labels)
     placeholder = S("?")
-    return tuple(slot_labels.get(slot, placeholder) for slot in range(len(occurrence.field.indices)))
+    return tuple(
+        label if label is not None else placeholder
+        for label in occurrence.slot_labels.values
+    )
 
 
 def _occurrence_atom(

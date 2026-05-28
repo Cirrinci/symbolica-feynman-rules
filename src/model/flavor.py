@@ -133,7 +133,7 @@ def _collect_term_flavor_labels(
     label_counts: Counter = Counter()
 
     for occurrence in term.fields:
-        slot_labels = occurrence.field.unpack_slot_labels(occurrence.labels)
+        slot_labels = occurrence.slot_labels
         for slot, index in enumerate(occurrence.field.indices):
             if not index.is_flavor or not _index_is_selected(
                 index,
@@ -179,7 +179,7 @@ def _apply_parameter_components(expr, parameters: tuple[Parameter, ...]):
 
 def _expand_occurrence(occurrence, assignment_by_name, selected_indices):
     field = occurrence.field
-    slot_labels = field.unpack_slot_labels(occurrence.labels)
+    slot_labels = occurrence.slot_labels
     flavor_slot = field.flavor_index_slot()
 
     if flavor_slot is None:
@@ -210,8 +210,8 @@ def _expand_occurrence(occurrence, assignment_by_name, selected_indices):
 
     member = field.class_member_for(assignment_by_name[_label_name(label)])
     member_slot_labels = {}
-    for slot, slot_label in slot_labels.items():
-        if slot == flavor_slot:
+    for slot, slot_label in enumerate(slot_labels.values):
+        if slot == flavor_slot or slot_label is None:
             continue
         member_slot = slot if slot < flavor_slot else slot - 1
         member_slot_labels[member_slot] = slot_label
@@ -228,12 +228,7 @@ def _term_structure_key(term: InteractionTerm):
             (
                 occurrence.field,
                 occurrence.conjugated,
-                tuple(
-                    sorted(
-                        (kind, _canonical_value_key(value))
-                        for kind, value in occurrence.labels.items()
-                    )
-                ),
+                tuple(_canonical_value_key(value) for value in occurrence.slot_labels.values),
             )
             for occurrence in term.fields
         ),
@@ -241,7 +236,15 @@ def _term_structure_key(term: InteractionTerm):
             (action.target, _canonical_value_key(action.lorentz_index))
             for action in term.derivatives
         ),
-        term.closed_dirac_bilinears,
+        tuple(
+            (
+                bilinear.psibar.occurrence,
+                bilinear.psibar.slot,
+                bilinear.psi.occurrence,
+                bilinear.psi.slot,
+            )
+            for bilinear in term.dirac_bilinears
+        ),
         term.sector,
     )
 

@@ -19,9 +19,7 @@ def _symbolic_key(value):
 
 
 def _occurrence_key(occurrence: FieldOccurrence) -> tuple[object, ...]:
-    labels = tuple(
-        sorted((kind, _symbolic_key(value)) for kind, value in occurrence.labels.items())
-    ) if occurrence.labels else ()
+    labels = tuple(_symbolic_key(value) for value in occurrence.slot_labels.values)
     return (id(occurrence.field), bool(occurrence.conjugated), labels)
 
 
@@ -34,7 +32,15 @@ def _term_key(term: InteractionTerm) -> tuple[object, ...]:
     return (
         tuple(_occurrence_key(occurrence) for occurrence in term.fields),
         tuple((action.target, _symbolic_key(action.lorentz_index)) for action in derivatives),
-        term.closed_dirac_bilinears,
+        tuple(
+            (
+                bilinear.psibar.occurrence,
+                bilinear.psibar.slot,
+                bilinear.psi.occurrence,
+                bilinear.psi.slot,
+            )
+            for bilinear in term.dirac_bilinears
+        ),
     )
 
 
