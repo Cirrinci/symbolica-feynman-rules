@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import pytest
 from symbolica import Expression, S
 
-from model import COLOR_FUND_INDEX, PartialD, scalar_field
+from model import COLOR_FUND_INDEX, PartialD, T, dirac_field, scalar_field
 from model.lowering import _lower_standalone_lagrangian_source_term
 from tests.support.builders import make_photon
 
@@ -111,3 +112,31 @@ def test_local_lowering_manual_gauge_fixing_is_dummy_rename_invariant():
     assert first.sector == second.sector == "gauge_fixing"
     assert first.origin == second.origin == "manual_gauge_fixing"
     assert _normalized_lowering_signature(first) == _normalized_lowering_signature(second)
+
+
+def test_local_lowering_explicit_and_implicit_yukawa_match():
+    phi = scalar_field("PhiY", self_conjugate=True)
+    psi = dirac_field("psiY", indices=(COLOR_FUND_INDEX,))
+    eta = dirac_field("etaY", indices=(COLOR_FUND_INDEX,))
+    i = S("i")
+
+    explicit = _lower_standalone_lagrangian_source_term(
+        S("y") * phi * psi.bar(i) * eta(i)
+    )
+    implicit = _lower_standalone_lagrangian_source_term(
+        S("y") * phi * psi.bar * eta
+    )
+
+    assert _normalized_lowering_signature(explicit) == _normalized_lowering_signature(implicit)
+
+
+def test_local_lowering_repeated_kind_chain_attachment_requires_explicit_labels():
+    psi = dirac_field(
+        "psiRep",
+        indices=(COLOR_FUND_INDEX, COLOR_FUND_INDEX),
+    )
+
+    with pytest.raises(ValueError, match="repeated color_fund slots"):
+        _lower_standalone_lagrangian_source_term(
+            S("g") * psi.bar * T(S("a")) * psi
+        )

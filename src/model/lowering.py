@@ -191,6 +191,26 @@ class _CollectedLocalTypedIndexLabels:
     refs: tuple[tuple[str, object], ...]
 
 
+@dataclass(frozen=True)
+class _LocalSlotRef:
+    field_idx: int
+    slot: int
+
+
+@dataclass
+class _LocalLoweringState:
+    parsed: _ParsedLocalMonomial
+    typed_index_labels: tuple[_CollectedLocalTypedIndexLabels, ...]
+    coupling: object
+    slot_labels: list[dict[int, object]]
+    explicit_slot_labels: list[dict[int, object]]
+    counters: dict[str, int]
+
+    @property
+    def field_entries(self) -> tuple[_LocalFieldEntry, ...]:
+        return self.parsed.field_entries
+
+
 def _local_field_entry_from_factor(factor) -> Optional[_LocalFieldEntry]:
     if isinstance(factor, _FieldFactor):
         return _LocalFieldEntry(
@@ -509,11 +529,90 @@ def _fresh_local_label(prefix: str, counters: dict[str, int]):
     return S(f"{prefix}_decl_{counters[prefix]}")
 
 
-def _single_slot_position(field_obj: Field, kind: str) -> Optional[int]:
-    positions = field_obj.index_positions(kind=kind)
-    if len(positions) != 1:
-        return None
-    return positions[0]
+def _local_slot_key(ref: _LocalSlotRef) -> tuple[int, int]:
+    return (ref.field_idx, ref.slot)
+
+
+def _local_slot_index(
+    state: _LocalLoweringState,
+    ref: _LocalSlotRef,
+) -> IndexType:
+    return state.field_entries[ref.field_idx].field.indices[ref.slot]
+
+
+def _local_slot_label(
+    state: _LocalLoweringState,
+    ref: _LocalSlotRef,
+):
+    return state.slot_labels[ref.field_idx].get(ref.slot)
+
+
+def _local_slot_is_unlabeled(
+    state: _LocalLoweringState,
+    ref: _LocalSlotRef,
+) -> bool:
+    return ref.slot not in state.slot_labels[ref.field_idx]
+
+
+def _assign_local_slot_label(
+    state: _LocalLoweringState,
+    ref: _LocalSlotRef,
+    label,
+):
+    state.slot_labels[ref.field_idx][ref.slot] = label
+
+
+def _fresh_local_slot_label(
+    state: _LocalLoweringState,
+    ref: _LocalSlotRef,
+):
+    index = _local_slot_index(state, ref)
+    return _fresh_local_label(index.prefix or index.kind, state.counters)
+
+
+def _local_slot_refs_for_kind(
+    state: _LocalLoweringState,
+    kind: str,
+) -> tuple[_LocalSlotRef, ...]:
+    refs: list[_LocalSlotRef] = []
+    for field_idx, entry in enumerate(state.field_entries):
+        refs.extend(
+            _LocalSlotRef(field_idx=field_idx, slot=slot)
+            for slot in entry.field.index_positions(kind=kind)
+        )
+    return tuple(refs)
+
+
+def _local_open_slot_refs_by_kind(
+    state: _LocalLoweringState,
+    *,
+    include_lorentz: bool = False,
+) -> dict[str, list[_LocalSlotRef]]:
+    grouped: dict[str, list[_LocalSlotRef]] = {}
+    for field_idx, entry in enumerate(state.field_entries):
+        for slot, index in enumerate(entry.field.indices):
+            if not include_lorentz and is_lorentz_index(index):
+                continue
+            if slot in state.slot_labels[field_idx]:
+                continue
+            grouped.setdefault(index.kind, []).append(
+                _LocalSlotRef(field_idx=field_idx, slot=slot)
+            )
+    return grouped
+
+
+def _ambiguous_local_chain_attachment_error(
+    *,
+    field: Field,
+    kind: str,
+    positions: Sequence[int],
+) -> ValueError:
+    rendered_positions = ", ".join(str(slot + 1) for slot in positions)
+    return ValueError(
+        "Ambiguous local chain attachment in declarative local monomial: "
+        f"{field.name} has repeated {kind} slots [{rendered_positions}] "
+        "and needs explicit labels to choose the chain endpoint."
+    )
 
 
 def _resolve_endpoint_slot(
@@ -528,6 +627,12 @@ def _resolve_endpoint_slot(
     labeled_positions = [slot for slot in positions if slot in slot_label_map]
     if len(labeled_positions) == 1:
         return labeled_positions[0]
+    if len(positions) > 1:
+        raise _ambiguous_local_chain_attachment_error(
+            field=field_obj,
+            kind=kind,
+            positions=positions,
+        )
     return None
 
 
@@ -618,43 +723,6 @@ def _build_chain_expression(
         expr *= piece
     return expr
 
-
-def _assign_default_pair_labels(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    slot_labels: Sequence[dict[int, object]],
-    interval_chain_factors: Sequence[tuple[object, ...]],
-    counters: dict[str, int],
-):
-    for interval_idx, (left, right) in enumerate(zip(field_entries, field_entries[1:])):
-        if not left.conjugated or right.conjugated:
-            continue
-        if left.field != right.field:
-            continue
-        interval_kinds = {
-            _local_chain_kind(
-                factor,
-                spinor_kind=spinor_kind_for(left.field.indices),
-            )
-            for factor in interval_chain_factors[interval_idx]
-        }
-        for slot, index in enumerate(left.field.indices):
-            if is_lorentz_index(index):
-                continue
-            if slot >= len(right.field.indices):
-                continue
-            if right.field.indices[slot] != index:
-                continue
-            if index.kind in interval_kinds:
-                continue
-            if slot in slot_labels[interval_idx] or slot in slot_labels[interval_idx + 1]:
-                continue
-
-            label = _fresh_local_label(index.prefix or index.kind, counters)
-            slot_labels[interval_idx][slot] = label
-            slot_labels[interval_idx + 1][slot] = label
-
-
 def _ambiguous_local_attachment_error(
     *,
     factor,
@@ -690,162 +758,6 @@ def _collect_local_typed_index_labels(
     return tuple(collected)
 
 
-def _bind_local_typed_index_labels_to_field_slots(
-    *,
-    factor,
-    typed_index_labels: Sequence[tuple[str, object]],
-    field_entries: Sequence[_LocalFieldEntry],
-    slot_labels: Sequence[dict[int, object]],
-):
-    if not typed_index_labels:
-        return
-
-    by_kind: dict[str, list[object]] = {}
-    for kind, label in typed_index_labels:
-        by_kind.setdefault(kind, []).append(label)
-
-    for kind, labels in by_kind.items():
-        used_slots: set[tuple[int, int]] = set()
-        unresolved_labels: list[object] = []
-
-        for label in labels:
-            matches: list[tuple[int, int]] = []
-            for field_idx, entry in enumerate(field_entries):
-                for slot in entry.field.index_positions(kind=kind):
-                    key = (field_idx, slot)
-                    if key in used_slots:
-                        continue
-                    slot_label = slot_labels[field_idx].get(slot)
-                    if slot_label is not None and _expr_equal_impl(slot_label, label):
-                        matches.append(key)
-
-            if len(matches) > 1:
-                raise _ambiguous_local_attachment_error(
-                    factor=factor,
-                    kind=kind,
-                    labels=(label,),
-                    available_slots=matches,
-                )
-            if len(matches) == 1:
-                used_slots.add(matches[0])
-                continue
-            unresolved_labels.append(label)
-
-        if not unresolved_labels:
-            continue
-
-        available_slots: list[tuple[int, int]] = []
-        for field_idx, entry in enumerate(field_entries):
-            for slot in entry.field.index_positions(kind=kind):
-                key = (field_idx, slot)
-                if key in used_slots or slot in slot_labels[field_idx]:
-                    continue
-                available_slots.append(key)
-
-        if not available_slots:
-            continue
-        if len(available_slots) != len(unresolved_labels):
-            raise _ambiguous_local_attachment_error(
-                factor=factor,
-                kind=kind,
-                labels=tuple(unresolved_labels),
-                available_slots=available_slots,
-            )
-
-        for (field_idx, slot), label in zip(available_slots, unresolved_labels):
-            slot_labels[field_idx][slot] = label
-
-
-def _bind_collected_local_index_labels_to_field_slots(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    slot_labels: Sequence[dict[int, object]],
-    typed_index_labels: Sequence[_CollectedLocalTypedIndexLabels],
-):
-    for collected in typed_index_labels:
-        _bind_local_typed_index_labels_to_field_slots(
-            factor=collected.factor,
-            typed_index_labels=collected.refs,
-            field_entries=field_entries,
-            slot_labels=slot_labels,
-        )
-
-
-def _assign_unique_global_pair_labels(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    slot_labels: Sequence[dict[int, object]],
-    counters: dict[str, int],
-):
-    """Share one remaining unique internal index pair across the whole monomial.
-
-    This is the generic fallback for compact mixed-species bilinears such as
-    Yukawas. If, after explicit-label binding, exactly two unlabeled slots of
-    one non-Lorentz kind remain in the whole local monomial, and they sit on
-    one conjugated and one unconjugated field occurrence, we treat that as the
-    unique implied contraction and assign one shared label.
-    """
-
-    kinds = []
-    seen = set()
-    for entry in field_entries:
-        for index in entry.field.indices:
-            if is_lorentz_index(index) or index.kind in seen:
-                continue
-            seen.add(index.kind)
-            kinds.append(index.kind)
-
-    for kind in kinds:
-        unlabeled_slots: list[tuple[int, int, object]] = []
-        for field_idx, entry in enumerate(field_entries):
-            for slot in entry.field.index_positions(kind=kind):
-                if slot in slot_labels[field_idx]:
-                    continue
-                unlabeled_slots.append((field_idx, slot, entry.field.indices[slot]))
-
-        if len(unlabeled_slots) != 2:
-            continue
-
-        first_idx, first_slot, first_index = unlabeled_slots[0]
-        second_idx, second_slot, second_index = unlabeled_slots[1]
-        if first_index != second_index:
-            continue
-
-        first_conj = bool(field_entries[first_idx].conjugated)
-        second_conj = bool(field_entries[second_idx].conjugated)
-        if first_conj and not second_conj:
-            conj_idx, conj_slot = first_idx, first_slot
-            bare_idx, bare_slot = second_idx, second_slot
-        elif second_conj and not first_conj:
-            conj_idx, conj_slot = second_idx, second_slot
-            bare_idx, bare_slot = first_idx, first_slot
-        else:
-            continue
-        if any(
-            field_entries[mid].field.kind == "fermion"
-            for mid in range(first_idx + 1, second_idx)
-        ):
-            continue
-
-        label = _fresh_local_label(first_index.prefix or first_index.kind, counters)
-        slot_labels[conj_idx][conj_slot] = label
-        slot_labels[bare_idx][bare_slot] = label
-
-
-def _fill_unassigned_local_slot_labels(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    slot_labels: Sequence[dict[int, object]],
-    counters: dict[str, int],
-):
-    for field_idx, entry in enumerate(field_entries):
-        for slot, index in enumerate(entry.field.indices):
-            if slot in slot_labels[field_idx]:
-                continue
-            prefix = index.prefix or index.kind
-            slot_labels[field_idx][slot] = _fresh_local_label(prefix, counters)
-
-
 def _build_local_tensor_coupling(
     *,
     coefficient,
@@ -867,12 +779,12 @@ def _seed_local_field_slot_labels(
     return slot_labels, [dict(labels) for labels in slot_labels]
 
 
-def _identify_local_field_slot_labels(
+def _initialize_local_lowering_state(
     *,
     coefficient,
     parsed: _ParsedLocalMonomial,
     typed_index_labels: Sequence[_CollectedLocalTypedIndexLabels],
-) -> Optional[tuple[object, tuple[dict[int, object], ...], tuple[dict[int, object], ...], dict[str, int]]]:
+):
     coupling = _build_local_tensor_coupling(
         coefficient=coefficient,
         free_tensor_factors=parsed.free_tensor_factors,
@@ -880,14 +792,172 @@ def _identify_local_field_slot_labels(
     slot_labels, explicit_slot_labels = _seed_local_field_slot_labels(
         parsed.field_entries
     )
-    counters: dict[str, int] = {}
+    return _LocalLoweringState(
+        parsed=parsed,
+        typed_index_labels=tuple(typed_index_labels),
+        coupling=coupling,
+        slot_labels=slot_labels,
+        explicit_slot_labels=explicit_slot_labels,
+        counters={},
+    )
 
-    for interval_idx, factors in enumerate(parsed.interval_chain_factors):
+
+def _bind_state_typed_index_labels_to_slots(
+    state: _LocalLoweringState,
+):
+    for collected in state.typed_index_labels:
+        by_kind: dict[str, list[object]] = {}
+        for kind, label in collected.refs:
+            by_kind.setdefault(kind, []).append(label)
+
+        for kind, labels in by_kind.items():
+            candidates = _local_slot_refs_for_kind(state, kind)
+            used_slots: set[tuple[int, int]] = set()
+            unresolved_labels: list[object] = []
+
+            for label in labels:
+                matches = [
+                    ref
+                    for ref in candidates
+                    if _local_slot_key(ref) not in used_slots
+                    and (slot_label := _local_slot_label(state, ref)) is not None
+                    and _expr_equal_impl(slot_label, label)
+                ]
+                if len(matches) > 1:
+                    raise _ambiguous_local_attachment_error(
+                        factor=collected.factor,
+                        kind=kind,
+                        labels=(label,),
+                        available_slots=tuple(_local_slot_key(ref) for ref in matches),
+                    )
+                if len(matches) == 1:
+                    used_slots.add(_local_slot_key(matches[0]))
+                    continue
+                unresolved_labels.append(label)
+
+            if not unresolved_labels:
+                continue
+
+            available = [
+                ref
+                for ref in candidates
+                if _local_slot_key(ref) not in used_slots
+                and _local_slot_is_unlabeled(state, ref)
+            ]
+            if not available:
+                continue
+            if len(available) != len(unresolved_labels):
+                raise _ambiguous_local_attachment_error(
+                    factor=collected.factor,
+                    kind=kind,
+                    labels=tuple(unresolved_labels),
+                    available_slots=tuple(_local_slot_key(ref) for ref in available),
+                )
+
+            for ref, label in zip(available, unresolved_labels):
+                _assign_local_slot_label(state, ref, label)
+
+
+def _adjacent_local_pair_candidates(
+    state: _LocalLoweringState,
+) -> tuple[tuple[_LocalSlotRef, _LocalSlotRef], ...]:
+    candidates: list[tuple[_LocalSlotRef, _LocalSlotRef]] = []
+    for interval_idx, (left, right) in enumerate(
+        zip(state.field_entries, state.field_entries[1:])
+    ):
+        if not left.conjugated or right.conjugated:
+            continue
+        if left.field != right.field:
+            continue
+        interval_kinds = {
+            _local_chain_kind(
+                factor,
+                spinor_kind=spinor_kind_for(left.field.indices),
+            )
+            for factor in state.parsed.interval_chain_factors[interval_idx]
+        }
+        for slot, index in enumerate(left.field.indices):
+            if is_lorentz_index(index):
+                continue
+            if slot >= len(right.field.indices):
+                continue
+            if right.field.indices[slot] != index:
+                continue
+            if index.kind in interval_kinds:
+                continue
+            candidates.append(
+                (
+                    _LocalSlotRef(field_idx=interval_idx, slot=slot),
+                    _LocalSlotRef(field_idx=interval_idx + 1, slot=slot),
+                )
+            )
+    return tuple(candidates)
+
+
+def _can_share_unique_open_pair(
+    state: _LocalLoweringState,
+    left: _LocalSlotRef,
+    right: _LocalSlotRef,
+) -> bool:
+    if _local_slot_index(state, left) != _local_slot_index(state, right):
+        return False
+    left_conj = bool(state.field_entries[left.field_idx].conjugated)
+    right_conj = bool(state.field_entries[right.field_idx].conjugated)
+    if left_conj == right_conj:
+        return False
+    start = min(left.field_idx, right.field_idx)
+    end = max(left.field_idx, right.field_idx)
+    return not any(
+        state.field_entries[mid].field.kind == "fermion"
+        for mid in range(start + 1, end)
+    )
+
+
+def _resolve_structural_local_slot_labels(
+    state: _LocalLoweringState,
+):
+    for left, right in _adjacent_local_pair_candidates(state):
+        if not _local_slot_is_unlabeled(state, left):
+            continue
+        if not _local_slot_is_unlabeled(state, right):
+            continue
+        label = _fresh_local_slot_label(state, left)
+        _assign_local_slot_label(state, left, label)
+        _assign_local_slot_label(state, right, label)
+
+    _bind_state_typed_index_labels_to_slots(state)
+
+    for kind, refs in _local_open_slot_refs_by_kind(state).items():
+        if len(refs) != 2:
+            continue
+        first, second = refs
+        if not _can_share_unique_open_pair(state, first, second):
+            continue
+        label = _fresh_local_slot_label(state, first)
+        _assign_local_slot_label(state, first, label)
+        _assign_local_slot_label(state, second, label)
+
+    for field_idx, entry in enumerate(state.field_entries):
+        for slot, index in enumerate(entry.field.indices):
+            ref = _LocalSlotRef(field_idx=field_idx, slot=slot)
+            if not _local_slot_is_unlabeled(state, ref):
+                continue
+            _assign_local_slot_label(
+                state,
+                ref,
+                _fresh_local_label(index.prefix or index.kind, state.counters),
+            )
+
+
+def _apply_local_chain_factor_bindings(
+    state: _LocalLoweringState,
+) -> bool:
+    for interval_idx, factors in enumerate(state.parsed.interval_chain_factors):
         if not factors:
             continue
 
-        left = parsed.field_entries[interval_idx]
-        right = parsed.field_entries[interval_idx + 1]
+        left = state.field_entries[interval_idx]
+        right = state.field_entries[interval_idx + 1]
         grouped: dict[str, list[object]] = {}
         group_order: list[str] = []
         spinor_kind = spinor_kind_for(left.field.indices)
@@ -901,52 +971,48 @@ def _identify_local_field_slot_labels(
         for kind in group_order:
             if kind == spinor_kind:
                 if left.field.kind != "fermion" or right.field.kind != "fermion":
-                    return None
+                    return False
                 if bool(left.conjugated) == bool(right.conjugated):
-                    return None
+                    return False
 
             endpoints = _ensure_endpoint_labels(
-                field_entries=parsed.field_entries,
-                slot_labels=slot_labels,
+                field_entries=state.field_entries,
+                slot_labels=state.slot_labels,
                 left_idx=interval_idx,
                 right_idx=interval_idx + 1,
                 kind=kind,
-                counters=counters,
+                counters=state.counters,
                 distinct=True,
             )
             if endpoints is None:
-                return None
+                return False
             left_label, right_label = endpoints
-            coupling *= _build_chain_expression(
+            state.coupling *= _build_chain_expression(
                 grouped[kind],
                 kind=kind,
                 left_label=left_label,
                 right_label=right_label,
-                counters=counters,
+                counters=state.counters,
             )
 
-    _assign_default_pair_labels(
-        field_entries=parsed.field_entries,
-        slot_labels=slot_labels,
-        interval_chain_factors=parsed.interval_chain_factors,
-        counters=counters,
-    )
-    _bind_collected_local_index_labels_to_field_slots(
-        field_entries=parsed.field_entries,
-        slot_labels=slot_labels,
+    return True
+
+
+def _identify_local_field_slot_labels(
+    *,
+    coefficient,
+    parsed: _ParsedLocalMonomial,
+    typed_index_labels: Sequence[_CollectedLocalTypedIndexLabels],
+) -> Optional[_LocalLoweringState]:
+    state = _initialize_local_lowering_state(
+        coefficient=coefficient,
+        parsed=parsed,
         typed_index_labels=typed_index_labels,
     )
-    _assign_unique_global_pair_labels(
-        field_entries=parsed.field_entries,
-        slot_labels=slot_labels,
-        counters=counters,
-    )
-    _fill_unassigned_local_slot_labels(
-        field_entries=parsed.field_entries,
-        slot_labels=slot_labels,
-        counters=counters,
-    )
-    return coupling, tuple(slot_labels), tuple(explicit_slot_labels), counters
+    if not _apply_local_chain_factor_bindings(state):
+        return None
+    _resolve_structural_local_slot_labels(state)
+    return state
 
 
 def _local_label_key(label) -> str:
@@ -1036,15 +1102,12 @@ def _rewrite_local_lorentz_slot_contractions(
 
 
 def _identify_local_derivative_labels(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    explicit_slot_labels: Sequence[dict[int, object]],
-    counters: dict[str, int],
+    state: _LocalLoweringState,
 ):
     return _rewrite_local_lorentz_slot_contractions(
-        field_entries=field_entries,
-        explicit_slot_labels=explicit_slot_labels,
-        counters=counters,
+        field_entries=state.field_entries,
+        explicit_slot_labels=state.explicit_slot_labels,
+        counters=state.counters,
     )
 
 
@@ -1187,33 +1250,29 @@ def _infer_closed_local_dirac_bilinears(
 
 
 def _identify_local_contraction_pairs(
-    *,
-    parsed: _ParsedLocalMonomial,
-    slot_labels: Sequence[dict[int, object]],
+    state: _LocalLoweringState,
 ) -> tuple[tuple[int, int], ...]:
     return _infer_closed_local_dirac_bilinears(
-        field_entries=parsed.field_entries,
-        interval_supports_closed_dirac_bilinear=parsed.interval_supports_closed_dirac_bilinear,
-        slot_labels=slot_labels,
+        field_entries=state.field_entries,
+        interval_supports_closed_dirac_bilinear=state.parsed.interval_supports_closed_dirac_bilinear,
+        slot_labels=state.slot_labels,
     )
 
 
 def _build_local_interaction_term(
+    state: _LocalLoweringState,
     *,
-    field_entries: Sequence[_LocalFieldEntry],
-    coupling,
-    slot_labels: Sequence[dict[int, object]],
     rewritten_derivatives: Sequence[tuple[object, ...]],
     closed_dirac_bilinears: tuple[tuple[int, int], ...],
 ) -> InteractionTerm:
     return InteractionTerm(
-        coupling=coupling,
+        coupling=state.coupling,
         fields=tuple(
             entry.field.occurrence(
                 conjugated=bool(entry.conjugated and not entry.field.self_conjugate),
-                labels=entry.field.pack_slot_labels(slot_labels[idx]),
+                labels=entry.field.pack_slot_labels(state.slot_labels[idx]),
             )
-            for idx, entry in enumerate(field_entries)
+            for idx, entry in enumerate(state.field_entries)
         ),
         derivatives=tuple(
             DerivativeAction(target=idx, lorentz_index=lorentz_index)
@@ -1314,24 +1373,16 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     )
     if field_slot_state is None:
         return None
-    coupling, slot_labels, explicit_slot_labels, counters = field_slot_state
 
     divergence_coupling, rewritten_derivatives = _identify_local_derivative_labels(
-        field_entries=parsed.field_entries,
-        explicit_slot_labels=explicit_slot_labels,
-        counters=counters,
+        field_slot_state
     )
-    coupling *= divergence_coupling
+    field_slot_state.coupling *= divergence_coupling
 
-    closed_dirac_bilinears = _identify_local_contraction_pairs(
-        parsed=parsed,
-        slot_labels=slot_labels,
-    )
+    closed_dirac_bilinears = _identify_local_contraction_pairs(field_slot_state)
 
     interaction = _build_local_interaction_term(
-        field_entries=parsed.field_entries,
-        coupling=coupling,
-        slot_labels=slot_labels,
+        field_slot_state,
         rewritten_derivatives=rewritten_derivatives,
         closed_dirac_bilinears=closed_dirac_bilinears,
     )
