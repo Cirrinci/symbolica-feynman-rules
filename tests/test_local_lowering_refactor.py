@@ -3,8 +3,17 @@ from __future__ import annotations
 import pytest
 from symbolica import Expression, S
 
-from model import COLOR_FUND_INDEX, PartialD, T, dirac_field, scalar_field
-from model.lowering import _lower_standalone_lagrangian_source_term
+from model import COLOR_FUND_INDEX, Gamma, PartialD, T, dirac_field, scalar_field
+from model.lowering import (
+    _LocalChainBinding,
+    _LocalFieldEntry,
+    _LocalLoweringState,
+    _LocalSlotRef,
+    _ParsedLocalMonomial,
+    _build_local_resolved_bindings,
+    _identify_local_contraction_pairs,
+    _lower_standalone_lagrangian_source_term,
+)
 from tests.support.builders import make_photon
 
 
@@ -130,6 +139,21 @@ def test_local_lowering_explicit_and_implicit_yukawa_match():
     assert _normalized_lowering_signature(explicit) == _normalized_lowering_signature(implicit)
 
 
+def test_local_lowering_gamma_chain_bilinear_is_dummy_rename_invariant():
+    psi = dirac_field("psiChain")
+    mu, nu = S("mu"), S("nu")
+
+    first = _lower_standalone_lagrangian_source_term(
+        S("g") * psi.bar * Gamma(mu) * psi
+    )
+    second = _lower_standalone_lagrangian_source_term(
+        S("g") * psi.bar * Gamma(nu) * psi
+    )
+
+    assert first.closed_dirac_bilinears == second.closed_dirac_bilinears == ((0, 1),)
+    assert _normalized_lowering_signature(first)[1:] == _normalized_lowering_signature(second)[1:]
+
+
 def test_local_lowering_repeated_kind_chain_attachment_requires_explicit_labels():
     psi = dirac_field(
         "psiRep",
@@ -140,3 +164,59 @@ def test_local_lowering_repeated_kind_chain_attachment_requires_explicit_labels(
         _lower_standalone_lagrangian_source_term(
             S("g") * psi.bar * T(S("a")) * psi
         )
+
+
+def test_local_lowering_rejects_conflicting_chain_and_resolved_fermion_pairings():
+    psi_bar = dirac_field("psiBarConflict")
+    psi = dirac_field("psiConflict")
+    chi = dirac_field("chiConflict")
+    alpha, beta = S("alpha"), S("beta")
+
+    parsed = _ParsedLocalMonomial(
+        field_entries=(
+            _LocalFieldEntry(
+                field=psi_bar,
+                conjugated=True,
+                derivative_indices=(),
+                labels={"spinor": alpha},
+            ),
+            _LocalFieldEntry(
+                field=psi,
+                conjugated=False,
+                derivative_indices=(),
+                labels={"spinor": beta},
+            ),
+            _LocalFieldEntry(
+                field=chi,
+                conjugated=False,
+                derivative_indices=(),
+                labels={"spinor": alpha},
+            ),
+        ),
+        declared_factors=(),
+        free_tensor_factors=(),
+        interval_chain_factors=((), ()),
+    )
+    state = _LocalLoweringState(
+        parsed=parsed,
+        typed_index_labels=(),
+        coupling=Expression.num(1),
+        slot_labels=[{0: alpha}, {0: beta}, {0: alpha}],
+        explicit_slot_labels=[{0: alpha}, {0: beta}, {0: alpha}],
+        counters={},
+        chain_bindings=[
+            _LocalChainBinding(
+                kind="spinor",
+                left=_LocalSlotRef(field_idx=0, slot=0),
+                right=_LocalSlotRef(field_idx=1, slot=0),
+                factors=(),
+            )
+        ],
+    )
+    state.resolved_bindings = _build_local_resolved_bindings(
+        state,
+        slot_labels=state.slot_labels,
+    )
+
+    with pytest.raises(ValueError, match="Inconsistent local fermion pairing"):
+        _identify_local_contraction_pairs(state)

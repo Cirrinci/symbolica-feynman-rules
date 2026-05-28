@@ -182,7 +182,6 @@ class _ParsedLocalMonomial:
     declared_factors: tuple[object, ...]
     free_tensor_factors: tuple[object, ...]
     interval_chain_factors: tuple[tuple[object, ...], ...]
-    interval_supports_closed_dirac_bilinear: tuple[bool, ...]
 
 
 @dataclass(frozen=True)
@@ -197,14 +196,57 @@ class _LocalSlotRef:
     slot: int
 
 
+@dataclass(frozen=True)
+class _LocalDerivativeRef:
+    field_idx: int
+    ordinal: int
+
+
+@dataclass(frozen=True)
+class _LocalResolvedBinding:
+    kind: str
+    label: object
+    field_slots: tuple[_LocalSlotRef, ...] = ()
+    derivatives: tuple[_LocalDerivativeRef, ...] = ()
+
+
+@dataclass(frozen=True)
+class _LocalChainBinding:
+    kind: str
+    left: _LocalSlotRef
+    right: _LocalSlotRef
+    factors: tuple[object, ...]
+
+
 @dataclass
 class _LocalLoweringState:
+    """Mutable local-lowering state.
+
+    Phase order matters:
+    1. initialize with parsed factors and source-provided ``explicit_slot_labels``
+    2. apply chain bindings; this may seed additional slot labels and records
+       endpoint topology in ``chain_bindings``
+    3. resolve all remaining slot labels structurally, then refresh
+       ``resolved_bindings`` from the final ``slot_labels``
+    4. derivative rewriting and fermion-pair extraction only read the resolved
+       state; they must not mutate slot topology
+
+    Authoritative fields:
+    - ``slot_labels``: final field-slot labels after local lowering
+    - ``explicit_slot_labels``: labels written explicitly in the source term;
+      only used for derivative-slot contraction detection
+    - ``chain_bindings``: explicit local chain endpoint topology
+    - ``resolved_bindings``: grouped structural view derived from ``slot_labels``
+    """
+
     parsed: _ParsedLocalMonomial
     typed_index_labels: tuple[_CollectedLocalTypedIndexLabels, ...]
     coupling: object
     slot_labels: list[dict[int, object]]
     explicit_slot_labels: list[dict[int, object]]
     counters: dict[str, int]
+    chain_bindings: list[_LocalChainBinding]
+    resolved_bindings: tuple[_LocalResolvedBinding, ...] = ()
 
     @property
     def field_entries(self) -> tuple[_LocalFieldEntry, ...]:
@@ -311,9 +353,6 @@ def _parse_local_interaction_factors(
     interval_chain_factors: list[tuple[object, ...]] = [
         () for _ in range(max(len(field_entries) - 1, 0))
     ]
-    interval_supports_closed_dirac_bilinear = [
-        True for _ in range(max(len(field_entries) - 1, 0))
-    ]
     for interval_idx, (left_pos, right_pos) in enumerate(
         zip(field_token_positions, field_token_positions[1:])
     ):
@@ -329,16 +368,12 @@ def _parse_local_interaction_factors(
                 value for kind, value in between if kind == "chain"
             )
             continue
-        interval_supports_closed_dirac_bilinear[interval_idx] = False
 
     return _ParsedLocalMonomial(
         field_entries=tuple(field_entries),
         declared_factors=tuple(declared_factors),
         free_tensor_factors=tuple(free_tensor_factors),
         interval_chain_factors=tuple(interval_chain_factors),
-        interval_supports_closed_dirac_bilinear=tuple(
-            interval_supports_closed_dirac_bilinear
-        ),
     )
 
 
@@ -601,6 +636,65 @@ def _local_open_slot_refs_by_kind(
     return grouped
 
 
+def _local_derivative_index_type(entry: _LocalFieldEntry) -> IndexType:
+    return lorentz_index_for(entry.field.indices) or LORENTZ_INDEX
+
+
+def _build_local_resolved_bindings(
+    state: _LocalLoweringState,
+    *,
+    slot_labels: Sequence[dict[int, object]],
+) -> tuple[_LocalResolvedBinding, ...]:
+    grouped: dict[tuple[str, str], dict[str, object]] = {}
+    order: list[tuple[str, str]] = []
+
+    def ensure_group(kind: str, label):
+        key = (kind, _local_label_key(label))
+        if key not in grouped:
+            grouped[key] = {
+                "kind": kind,
+                "label": label,
+                "field_slots": [],
+                "derivatives": [],
+            }
+            order.append(key)
+        return grouped[key]
+
+    for field_idx, entry in enumerate(state.field_entries):
+        for slot, label in slot_labels[field_idx].items():
+            if label is None:
+                continue
+            kind = entry.field.indices[slot].kind
+            group = ensure_group(kind, label)
+            group["field_slots"].append(_LocalSlotRef(field_idx=field_idx, slot=slot))
+
+        for ordinal, derivative_label in enumerate(entry.derivative_indices):
+            group = ensure_group(
+                _local_derivative_index_type(entry).kind,
+                derivative_label,
+            )
+            group["derivatives"].append(
+                _LocalDerivativeRef(field_idx=field_idx, ordinal=ordinal)
+            )
+
+    return tuple(
+        _LocalResolvedBinding(
+            kind=grouped[key]["kind"],
+            label=grouped[key]["label"],
+            field_slots=tuple(grouped[key]["field_slots"]),
+            derivatives=tuple(grouped[key]["derivatives"]),
+        )
+        for key in order
+    )
+
+
+def _refresh_state_resolved_bindings(state: _LocalLoweringState):
+    state.resolved_bindings = _build_local_resolved_bindings(
+        state,
+        slot_labels=state.slot_labels,
+    )
+
+
 def _ambiguous_local_chain_attachment_error(
     *,
     field: Field,
@@ -645,7 +739,7 @@ def _ensure_endpoint_labels(
     kind: str,
     counters: dict[str, int],
     distinct: bool,
-) -> Optional[tuple[object, object]]:
+) -> Optional[tuple[int, int, object, object]]:
     left_slot = _resolve_endpoint_slot(
         field_entries[left_idx].field,
         slot_labels[left_idx],
@@ -676,7 +770,7 @@ def _ensure_endpoint_labels(
     if distinct and _expr_equal_impl(left_label, right_label):
         return None
 
-    return left_label, right_label
+    return left_slot, right_slot, left_label, right_label
 
 
 def _build_chain_expression(
@@ -799,6 +893,7 @@ def _initialize_local_lowering_state(
         slot_labels=slot_labels,
         explicit_slot_labels=explicit_slot_labels,
         counters={},
+        chain_bindings=[],
     )
 
 
@@ -986,7 +1081,15 @@ def _apply_local_chain_factor_bindings(
             )
             if endpoints is None:
                 return False
-            left_label, right_label = endpoints
+            left_slot, right_slot, left_label, right_label = endpoints
+            state.chain_bindings.append(
+                _LocalChainBinding(
+                    kind=kind,
+                    left=_LocalSlotRef(field_idx=interval_idx, slot=left_slot),
+                    right=_LocalSlotRef(field_idx=interval_idx + 1, slot=right_slot),
+                    factors=tuple(grouped[kind]),
+                )
+            )
             state.coupling *= _build_chain_expression(
                 grouped[kind],
                 kind=kind,
@@ -1012,6 +1115,7 @@ def _identify_local_field_slot_labels(
     if not _apply_local_chain_factor_bindings(state):
         return None
     _resolve_structural_local_slot_labels(state)
+    _refresh_state_resolved_bindings(state)
     return state
 
 
@@ -1019,81 +1123,44 @@ def _local_label_key(label) -> str:
     return label.to_canonical_string() if hasattr(label, "to_canonical_string") else str(label)
 
 
-def _count_local_field_label_occurrences(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    slot_labels: Sequence[dict[int, object]],
-) -> Counter:
-    counts = Counter()
-    for field_idx, entry in enumerate(field_entries):
-        for slot, label in slot_labels[field_idx].items():
-            if label is None:
-                continue
-            kind = entry.field.indices[slot].kind
-            counts[(kind, _local_label_key(label))] += 1
-    return counts
-
-
-def _rewrite_local_lorentz_slot_contraction(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    explicit_slot_labels: Sequence[dict[int, object]],
-    field_label_counts: Counter,
-    lorentz_index,
-    counters: dict[str, int],
-) -> Optional[tuple[object, object]]:
-    matches: list[object] = []
-    lorentz_key = _local_label_key(lorentz_index)
-    lorentz_kinds = {
-        entry.field.indices[slot].kind
-        for entry in field_entries
-        for slot in lorentz_slots_for(entry.field)
-    }
-    if sum(field_label_counts[(kind, lorentz_key)] for kind in lorentz_kinds) != 1:
-        return None
-
-    for field_idx, entry in enumerate(field_entries):
-        for slot in lorentz_slots_for(entry.field):
-            slot_label = explicit_slot_labels[field_idx].get(slot)
-            if slot_label is None:
-                continue
-            if _expr_equal_impl(slot_label, lorentz_index):
-                matches.append(slot_label)
-
-    if len(matches) != 1:
-        return None
-    slot_label = matches[0]
-    fresh_internal = _fresh_local_label("mu", counters)
-    return slot_label, fresh_internal
-
-
 def _rewrite_local_lorentz_slot_contractions(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    explicit_slot_labels: Sequence[dict[int, object]],
-    counters: dict[str, int],
+    state: _LocalLoweringState,
 ):
-    field_label_counts = _count_local_field_label_occurrences(
-        field_entries=field_entries,
-        slot_labels=explicit_slot_labels,
+    explicit_bindings = _build_local_resolved_bindings(
+        state,
+        slot_labels=state.explicit_slot_labels,
     )
+    lorentz_field_slot_by_label: dict[str, _LocalSlotRef | None] = {}
+    for binding in explicit_bindings:
+        lorentz_slots = [
+            ref
+            for ref in binding.field_slots
+            if is_lorentz_index(_local_slot_index(state, ref))
+        ]
+        if not lorentz_slots:
+            continue
+        key = _local_label_key(binding.label)
+        current = lorentz_field_slot_by_label.get(key)
+        if current is None and key not in lorentz_field_slot_by_label:
+            if len(lorentz_slots) == 1:
+                lorentz_field_slot_by_label[key] = lorentz_slots[0]
+            else:
+                lorentz_field_slot_by_label[key] = None
+            continue
+        lorentz_field_slot_by_label[key] = None
+
     extra_coupling = Expression.num(1)
     rewritten_derivatives: list[tuple[object, ...]] = []
 
-    for idx, entry in enumerate(field_entries):
+    for idx, entry in enumerate(state.field_entries):
         rewritten_indices: list[object] = []
         for lorentz_index in entry.derivative_indices:
-            rewrite = _rewrite_local_lorentz_slot_contraction(
-                field_entries=field_entries,
-                explicit_slot_labels=explicit_slot_labels,
-                field_label_counts=field_label_counts,
-                lorentz_index=lorentz_index,
-                counters=counters,
-            )
-            if rewrite is None:
+            slot_ref = lorentz_field_slot_by_label.get(_local_label_key(lorentz_index))
+            if slot_ref is None:
                 rewritten_indices.append(lorentz_index)
                 continue
-            slot_label, fresh_internal = rewrite
+            slot_label = state.explicit_slot_labels[slot_ref.field_idx][slot_ref.slot]
+            fresh_internal = _fresh_local_label("mu", state.counters)
             extra_coupling *= lorentz_metric(slot_label, fresh_internal)
             rewritten_indices.append(fresh_internal)
         rewritten_derivatives.append(tuple(rewritten_indices))
@@ -1104,11 +1171,7 @@ def _rewrite_local_lorentz_slot_contractions(
 def _identify_local_derivative_labels(
     state: _LocalLoweringState,
 ):
-    return _rewrite_local_lorentz_slot_contractions(
-        field_entries=state.field_entries,
-        explicit_slot_labels=state.explicit_slot_labels,
-        counters=state.counters,
-    )
+    return _rewrite_local_lorentz_slot_contractions(state)
 
 
 def _unsupported_local_fermion_ordering_error() -> ValueError:
@@ -1119,125 +1182,70 @@ def _unsupported_local_fermion_ordering_error() -> ValueError:
     )
 
 
-def _infer_explicit_local_dirac_bilinears(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    slot_labels: Sequence[dict[int, object]],
-) -> Optional[tuple[tuple[int, int], ...]]:
-    """Infer fermion chains from explicit/reused spinor labels.
+def _inconsistent_local_fermion_pairing_error() -> ValueError:
+    return ValueError(
+        "Inconsistent local fermion pairing inferred from chain and resolved "
+        "spinor bindings."
+    )
 
-    This accepts mixed-species local bilinears such as Yukawas when the source
-    monomial already makes the spinor contraction explicit through repeated
-    spinor labels on one ``fermion.bar`` slot and one ``fermion`` slot.
 
-    The interaction field order is preserved exactly as written.  This helper
-    only normalizes the bilinear metadata to ``(psibar_slot, psi_slot)`` so the
-    downstream fermion-sign logic can recognize the chain regardless of whether
-    the source monomial was written as ψ̄ … ψ or ψ … ψ̄.
-    """
+def _spinor_pair_from_slot_refs(
+    state: _LocalLoweringState,
+    left: _LocalSlotRef,
+    right: _LocalSlotRef,
+) -> Optional[tuple[int, int]]:
+    left_entry = state.field_entries[left.field_idx]
+    right_entry = state.field_entries[right.field_idx]
+    if left_entry.field.kind != "fermion" or right_entry.field.kind != "fermion":
+        return None
 
-    fermion_slots = [
-        idx for idx, entry in enumerate(field_entries) if entry.field.kind == "fermion"
-    ]
+    left_spinor_slots = spinor_slots_for(left_entry.field)
+    right_spinor_slots = spinor_slots_for(right_entry.field)
+    if len(left_spinor_slots) != 1 or len(right_spinor_slots) != 1:
+        return None
+    if left.slot != left_spinor_slots[0] or right.slot != right_spinor_slots[0]:
+        return None
+
+    left_conj = bool(left_entry.conjugated)
+    right_conj = bool(right_entry.conjugated)
+    if left_conj and not right_conj:
+        return (left.field_idx, right.field_idx)
+    if right_conj and not left_conj:
+        return (right.field_idx, left.field_idx)
+    return None
+
+
+def _register_local_dirac_pair(
+    pairs_by_slot: dict[int, tuple[int, int]],
+    pair_order: list[tuple[int, int]],
+    pair: tuple[int, int],
+):
+    for slot in pair:
+        prior = pairs_by_slot.get(slot)
+        if prior is not None and prior != pair:
+            raise _inconsistent_local_fermion_pairing_error()
+
+    if pair in pair_order:
+        for slot in pair:
+            pairs_by_slot[slot] = pair
+        return
+
+    pair_order.append(pair)
+    for slot in pair:
+        pairs_by_slot[slot] = pair
+
+
+def _ordered_local_dirac_bilinears(
+    state: _LocalLoweringState,
+    pairs: Sequence[tuple[int, int]],
+) -> tuple[tuple[int, int], ...]:
+    fermion_slots = tuple(
+        idx for idx, entry in enumerate(state.field_entries) if entry.field.kind == "fermion"
+    )
     if not fermion_slots:
         return ()
 
-    by_spinor_label: dict[str, list[int]] = {}
-
-    for idx in fermion_slots:
-        entry = field_entries[idx]
-        spinor_slots = spinor_slots_for(entry.field)
-        if len(spinor_slots) != 1:
-            return None
-        spinor_slot = spinor_slots[0]
-        label = slot_labels[idx].get(spinor_slot)
-        if label is None:
-            return None
-        key = _local_label_key(label)
-        by_spinor_label.setdefault(key, []).append(idx)
-
-    inferred: list[tuple[int, int]] = []
-    intervals: list[tuple[int, int, tuple[int, int]]] = []
-    covered_slots: list[int] = []
-    for key, slots in by_spinor_label.items():
-        if len(slots) != 2:
-            return None
-        first_slot, second_slot = slots
-        first_conj = bool(field_entries[first_slot].conjugated)
-        second_conj = bool(field_entries[second_slot].conjugated)
-
-        if first_conj and not second_conj:
-            psibar_slot, psi_slot = first_slot, second_slot
-        elif second_conj and not first_conj:
-            psibar_slot, psi_slot = second_slot, first_slot
-        else:
-            return None
-        pair = (psibar_slot, psi_slot)
-        interval = (min(first_slot, second_slot), max(first_slot, second_slot), pair)
-        intervals.append(interval)
-        inferred.append(pair)
-        covered_slots.extend(slots)
-
-    covered_counts = Counter(covered_slots)
-    if (
-        len(covered_slots) != len(fermion_slots)
-        or set(covered_slots) != set(fermion_slots)
-        or any(count != 1 for count in covered_counts.values())
-    ):
-        return None
-
-    ordered_intervals = sorted(intervals, key=lambda item: item[:2])
-    for (_, prev_end, _), (next_start, _, _) in zip(
-        ordered_intervals,
-        ordered_intervals[1:],
-    ):
-        if next_start <= prev_end:
-            return None
-
-    return tuple(pair for _, _, pair in ordered_intervals)
-
-
-def _infer_closed_local_dirac_bilinears(
-    *,
-    field_entries: Sequence[_LocalFieldEntry],
-    interval_supports_closed_dirac_bilinear: Sequence[bool],
-    slot_labels: Optional[Sequence[dict[int, object]]] = None,
-) -> tuple[tuple[int, int], ...]:
-    if slot_labels is not None:
-        explicit_bilinears = _infer_explicit_local_dirac_bilinears(
-            field_entries=field_entries,
-            slot_labels=slot_labels,
-        )
-        if explicit_bilinears is not None:
-            return explicit_bilinears
-
-    closed_dirac_bilinears: list[tuple[int, int]] = []
-    occupied_slots: set[int] = set()
-    for interval_idx, (left, right) in enumerate(zip(field_entries, field_entries[1:])):
-        if not interval_supports_closed_dirac_bilinear[interval_idx]:
-            continue
-        if left.field.kind != "fermion" or right.field.kind != "fermion":
-            continue
-        if left.field.self_conjugate or right.field.self_conjugate:
-            continue
-        if bool(left.conjugated) == bool(right.conjugated):
-            continue
-        if interval_idx in occupied_slots or (interval_idx + 1) in occupied_slots:
-            continue
-        if bool(left.conjugated):
-            closed_dirac_bilinears.append((interval_idx, interval_idx + 1))
-        else:
-            closed_dirac_bilinears.append((interval_idx + 1, interval_idx))
-        occupied_slots.update((interval_idx, interval_idx + 1))
-    closed_dirac_bilinears = tuple(closed_dirac_bilinears)
-
-    fermion_slots = tuple(
-        idx for idx, entry in enumerate(field_entries) if entry.field.kind == "fermion"
-    )
-    if not fermion_slots:
-        return closed_dirac_bilinears
-
-    covered_slots = [slot for pair in closed_dirac_bilinears for slot in pair]
+    covered_slots = [slot for pair in pairs for slot in pair]
     covered_counts = Counter(covered_slots)
     if (
         len(covered_slots) != len(fermion_slots)
@@ -1246,17 +1254,53 @@ def _infer_closed_local_dirac_bilinears(
     ):
         raise _unsupported_local_fermion_ordering_error()
 
-    return closed_dirac_bilinears
+    ordered_intervals = sorted(
+        (min(psibar, psi), max(psibar, psi), (psibar, psi))
+        for psibar, psi in pairs
+    )
+    for (_, prev_end, _), (next_start, _, _) in zip(
+        ordered_intervals,
+        ordered_intervals[1:],
+    ):
+        if next_start <= prev_end:
+            raise _unsupported_local_fermion_ordering_error()
+
+    return tuple(pair for _, _, pair in ordered_intervals)
 
 
 def _identify_local_contraction_pairs(
     state: _LocalLoweringState,
 ) -> tuple[tuple[int, int], ...]:
-    return _infer_closed_local_dirac_bilinears(
-        field_entries=state.field_entries,
-        interval_supports_closed_dirac_bilinear=state.parsed.interval_supports_closed_dirac_bilinear,
-        slot_labels=state.slot_labels,
-    )
+    pair_order: list[tuple[int, int]] = []
+    pairs_by_slot: dict[int, tuple[int, int]] = {}
+
+    for binding in state.chain_bindings:
+        pair = _spinor_pair_from_slot_refs(state, binding.left, binding.right)
+        if pair is not None:
+            _register_local_dirac_pair(pairs_by_slot, pair_order, pair)
+
+    for binding in state.resolved_bindings:
+        spinor_refs = [
+            ref
+            for ref in binding.field_slots
+            if ref.slot in spinor_slots_for(state.field_entries[ref.field_idx].field)
+        ]
+        if not spinor_refs:
+            continue
+        if len(spinor_refs) == 1 and len(binding.field_slots) == 1:
+            continue
+        if len(spinor_refs) != 2 or len(spinor_refs) != len(binding.field_slots):
+            raise _unsupported_local_fermion_ordering_error()
+        pair = _spinor_pair_from_slot_refs(
+            state,
+            spinor_refs[0],
+            spinor_refs[1],
+        )
+        if pair is None:
+            raise _unsupported_local_fermion_ordering_error()
+        _register_local_dirac_pair(pairs_by_slot, pair_order, pair)
+
+    return _ordered_local_dirac_bilinears(state, pair_order)
 
 
 def _build_local_interaction_term(
@@ -1365,6 +1409,10 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     if parsed is None:
         return None
 
+    # Phase order is fixed here:
+    # parse -> seed/apply chain endpoints -> resolve remaining slot labels ->
+    # refresh resolved bindings -> rewrite derivatives / infer fermion pairs ->
+    # build the final InteractionTerm.
     typed_index_labels = _collect_local_typed_index_labels(parsed.declared_factors)
     field_slot_state = _identify_local_field_slot_labels(
         coefficient=term.coefficient,
