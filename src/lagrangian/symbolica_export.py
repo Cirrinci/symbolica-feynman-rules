@@ -144,6 +144,41 @@ def _term_derivative_indices(term: InteractionTerm) -> tuple[object, ...]:
     return tuple(ordered_unique)
 
 
+def _atom_sort_key(atom: object) -> str:
+    if hasattr(atom, "to_canonical_string"):
+        return atom.to_canonical_string()
+    return str(atom)
+
+
+def _odd_factor_sort_sign(
+    factor_data: Sequence[tuple[object, bool]],
+) -> int:
+    odd_slots = [
+        slot
+        for slot, (_atom, is_odd) in enumerate(factor_data)
+        if is_odd
+    ]
+    if len(odd_slots) < 2:
+        return 1
+
+    target = sorted(
+        odd_slots,
+        key=lambda slot: _atom_sort_key(factor_data[slot][0]),
+    )
+    working = list(odd_slots)
+    sign = 1
+    for slot, desired in enumerate(target):
+        current_slot = working.index(desired, slot)
+        while current_slot > slot:
+            working[current_slot], working[current_slot - 1] = (
+                working[current_slot - 1],
+                working[current_slot],
+            )
+            sign *= -1
+            current_slot -= 1
+    return sign
+
+
 def _terms_derivative_indices(terms: Iterable[InteractionTerm]) -> tuple[object, ...]:
     ordered_unique: list[object] = []
     for term in terms:
@@ -188,7 +223,7 @@ def interaction_term_to_symbolica(
     for action in term.derivatives:
         derivatives_by_slot.setdefault(action.target, []).append(action.lorentz_index)
 
-    expression: object = term.coupling
+    factor_data: list[tuple[object, bool]] = []
     for slot, occurrence in enumerate(term.fields):
         atom = _occurrence_atom(
             occurrence,
@@ -200,6 +235,10 @@ def interaction_term_to_symbolica(
             derivative_style=derivative_style,
             coordinate_map=normalized_coordinate_map,
         )
+        factor_data.append((wrapped, occurrence.field.statistics == "fermion"))
+
+    expression: object = _odd_factor_sort_sign(factor_data) * term.coupling
+    for wrapped, _is_odd in factor_data:
         expression = expression * wrapped
     return expression
 

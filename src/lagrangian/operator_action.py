@@ -1179,6 +1179,16 @@ def _first_non_lorentz_index(field: Field):
     return None
 
 
+@dataclass(frozen=True)
+class _GaugeOperatorContext:
+    group: object
+    operator_name: str
+    abelian: bool
+    gauge_boson: Optional[Field]
+    gauge_coupling: object
+    adjoint_index: Optional[object]
+
+
 def _replace_slot_label(field: Field, occurrence: FieldOccurrence, slot: int, new_label):
     """Build a new occurrence of ``field`` with the label on ``slot`` replaced
     by ``new_label`` and everything else preserved.
@@ -1253,6 +1263,209 @@ def _validate_field_parity(*, field: Field, expected: str, context: str) -> None
         )
 
 
+def _gauge_operator_context(
+    *,
+    group,
+    operator_name: str,
+    require_structure_constant: bool = False,
+) -> _GaugeOperatorContext:
+    abelian = bool(group.abelian)
+    gauge_boson = group.gauge_boson
+    gauge_coupling = group.coupling
+    adjoint_index = None
+
+    if not abelian:
+        if gauge_boson is None:
+            raise ValueError(
+                f"{operator_name}({group.name!r}): non-abelian group has no "
+                "gauge_boson; cannot infer the adjoint index."
+            )
+        if require_structure_constant and group.structure_constant is None:
+            raise ValueError(
+                f"{operator_name}({group.name!r}): non-abelian {operator_name} requires "
+                "a structure_constant."
+            )
+        adjoint_index = _first_non_lorentz_index(gauge_boson)
+        if adjoint_index is None:
+            raise ValueError(
+                f"{operator_name}({group.name!r}): could not find a "
+                "non-Lorentz (adjoint) index on the gauge boson "
+                f"{gauge_boson.name!r}."
+            )
+
+    return _GaugeOperatorContext(
+        group=group,
+        operator_name=operator_name,
+        abelian=abelian,
+        gauge_boson=gauge_boson,
+        gauge_coupling=gauge_coupling,
+        adjoint_index=adjoint_index,
+    )
+
+
+def _gauge_operator_label_factory(
+    *,
+    operator_name: str,
+    adjoint_index,
+):
+    counter = [0]
+
+    def _next(stem: str):
+        counter[0] += 1
+        return S(f"{stem}_{operator_name}_{counter[0]}")
+
+    def _fresh_adj_label():
+        if adjoint_index is None:
+            return None
+        return _next(adjoint_index.prefix)
+
+    return _next, _fresh_adj_label
+
+
+def _field_matches_reference(
+    *,
+    target,
+    field: Field,
+) -> bool:
+    if target is None:
+        return False
+    if isinstance(target, Field):
+        return target is field
+    target_text = str(target)
+    return target_text in (
+        field.name,
+        str(field.symbol),
+        str(field.conjugate_symbol) if field.conjugate_symbol is not None else "",
+    )
+
+
+def _ghost_associated_with_gauge_boson(
+    *,
+    field: Field,
+    gauge_boson: Optional[Field],
+) -> bool:
+    if gauge_boson is None:
+        return False
+    if not field.is_ghost or field.ghost_of is None:
+        return False
+    return _field_matches_reference(target=field.ghost_of, field=gauge_boson)
+
+
+def _validate_brst_ghost_field(
+    *,
+    field: Field,
+    gauge_boson: Optional[Field],
+    context: str,
+) -> None:
+    if not field.is_ghost:
+        raise ValueError(
+            f"{context}: field {field.name!r} must have kind='ghost' "
+            "or equivalent ghost metadata."
+        )
+    if not _ghost_associated_with_gauge_boson(field=field, gauge_boson=gauge_boson):
+        raise ValueError(
+            f"{context}: field {field.name!r} must be associated with the "
+            f"selected gauge boson {getattr(gauge_boson, 'name', gauge_boson)!r} via ghost_of."
+        )
+
+
+def _gauge_boson_adjoint_slot_and_label(
+    *,
+    occurrence: FieldOccurrence,
+    adjoint_index,
+    context: str,
+) -> tuple[int, object]:
+    adj_slot = _single_required_slot(
+        field=occurrence.field,
+        index=adjoint_index,
+        context=context,
+    )
+    old_adj_label = occurrence.slot_labels.get(adj_slot)
+    if old_adj_label is None:
+        raise ValueError(
+            f"{context}: gauge boson {occurrence.field.name!r} occurrence has no adjoint label."
+        )
+    return adj_slot, old_adj_label
+
+
+def _abelian_matter_gauge_result(
+    *,
+    occurrence: FieldOccurrence,
+    group,
+    gauge_coupling,
+    carrier_occurrence_builder,
+):
+    if not group.charge:
+        return None
+    q = occurrence.field.quantum_numbers.get(group.charge)
+    if q is None or q == 0:
+        return None
+    sign = -1 if occurrence.conjugated else 1
+    carrier_occurrence = carrier_occurrence_builder(None)
+    new_occurrence = _copy_occurrence(occurrence)
+    return single_field_result(
+        (carrier_occurrence, new_occurrence),
+        coefficient=sign * Expression.I * gauge_coupling * q,
+    )
+
+
+def _nonabelian_matter_gauge_result(
+    *,
+    occurrence: FieldOccurrence,
+    group,
+    gauge_coupling,
+    carrier_occurrence_builder,
+    next_label,
+    fresh_adj_label,
+    context: str,
+):
+    rep_and_slots = group.matter_representation_and_slots(occurrence.field)
+    if rep_and_slots is None:
+        return None
+    rep, slots = rep_and_slots
+    slot_labels = occurrence.slot_labels
+    summands: list[OperatorSummand] = []
+    for slot in slots:
+        old_rep_label = slot_labels.get(slot)
+        if old_rep_label is None:
+            raise ValueError(
+                f"{context}: field {occurrence.field.name!r} has "
+                f"no explicit label on representation slot {slot + 1}; cannot "
+                "insert a contracted generator without one."
+            )
+        new_rep_label = next_label(rep.index.prefix)
+        adj_label = fresh_adj_label()
+
+        new_occurrence = _replace_slot_label(
+            occurrence.field,
+            occurrence,
+            slot,
+            new_rep_label,
+        )
+        carrier_occurrence = carrier_occurrence_builder(adj_label)
+
+        if occurrence.conjugated:
+            generator = rep.build_generator(adj_label, new_rep_label, old_rep_label)
+            sign = -1
+        else:
+            generator = rep.build_generator(adj_label, old_rep_label, new_rep_label)
+            sign = 1
+
+        summands.append(
+            OperatorSummand(
+                coefficient=sign * Expression.I * gauge_coupling * generator,
+                replacement=(carrier_occurrence, new_occurrence),
+            )
+        )
+
+    return OperatorAtomResult(summands=tuple(summands))
+
+
+def _set_operator_metadata(operator, /, **attrs):
+    for name, value in attrs.items():
+        object.__setattr__(operator, name, value)
+
+
 def gauge_variation(
     *,
     group,
@@ -1304,105 +1517,42 @@ def gauge_variation(
         Optional human-readable operator name (used by diagnostics).
     """
 
-    abelian = bool(group.abelian)
-    gauge_boson = group.gauge_boson
-    gauge_coupling = group.coupling
     op_name = name if name is not None else f"delta_{group.name}"
-
-    if abelian:
-        adjoint_index = None
-    else:
-        if gauge_boson is None:
-            raise ValueError(
-                f"gauge_variation({group.name!r}): non-abelian group has no "
-                "gauge_boson; cannot infer the adjoint index for α^a."
-            )
-        adjoint_index = _first_non_lorentz_index(gauge_boson)
-        if adjoint_index is None:
-            raise ValueError(
-                f"gauge_variation({group.name!r}): could not find a "
-                "non-Lorentz (adjoint) index on the gauge boson "
-                f"{gauge_boson.name!r}."
-            )
-
-    alpha_field = _build_alpha_field(parameter, adjoint_index)
-
-    # Fresh-label counter, scoped per operator instance for readable output.
-    counter = [0]
-
-    def _next(stem: str):
-        counter[0] += 1
-        return S(f"{stem}_{op_name}_{counter[0]}")
-
-    def _fresh_adj_label():
-        if adjoint_index is None:
-            return None
-        return _next(adjoint_index.prefix)
+    context = _gauge_operator_context(
+        group=group,
+        operator_name="gauge_variation",
+    )
+    alpha_field = _build_alpha_field(parameter, context.adjoint_index)
+    _next, _fresh_adj_label = _gauge_operator_label_factory(
+        operator_name=op_name,
+        adjoint_index=context.adjoint_index,
+    )
 
     def _alpha_occurrence(adj_label):
-        if adjoint_index is None:
+        if context.adjoint_index is None:
             return alpha_field.occurrence()
         return alpha_field.occurrence(
             labels=alpha_field.pack_slot_labels({0: adj_label}),
         )
 
     def _matter_abelian(occurrence: FieldOccurrence):
-        field = occurrence.field
-        if not group.charge:
-            return None
-        q = field.quantum_numbers.get(group.charge)
-        if q is None or q == 0:
-            return None
-        sign = -1 if occurrence.conjugated else 1
-        alpha_occ = _alpha_occurrence(None)
-        # Keep the same field occurrence (same labels, same conjugation).
-        # alpha is a separate slot, so the engine's Leibniz fan-out will
-        # distribute any existing ∂ across (alpha, Φ).
-        new_phi = _copy_occurrence(occurrence)
-        return single_field_result(
-            (alpha_occ, new_phi),
-            coefficient=sign * Expression.I * gauge_coupling * q,
+        return _abelian_matter_gauge_result(
+            occurrence=occurrence,
+            group=group,
+            gauge_coupling=context.gauge_coupling,
+            carrier_occurrence_builder=_alpha_occurrence,
         )
 
     def _matter_non_abelian(occurrence: FieldOccurrence):
-        field = occurrence.field
-        rep_and_slots = group.matter_representation_and_slots(field)
-        if rep_and_slots is None:
-            return None
-        rep, slots = rep_and_slots
-        slot_labels = occurrence.slot_labels
-        summands: list[OperatorSummand] = []
-        for slot in slots:
-            old_rep_label = slot_labels.get(slot)
-            if old_rep_label is None:
-                raise ValueError(
-                    f"gauge_variation({group.name!r}): field {field.name!r} has "
-                    f"no explicit label on representation slot {slot + 1}; cannot "
-                    "insert a contracted generator without one."
-                )
-            new_rep_label = _next(rep.index.prefix)
-            adj_label = _fresh_adj_label()
-
-            new_phi = _replace_slot_label(field, occurrence, slot, new_rep_label)
-            alpha_occ = _alpha_occurrence(adj_label)
-
-            if occurrence.conjugated:
-                # δ Φ̄_i = -i g α^a Φ̄_j T^a_{ji}: generator's "left" index is
-                # the new (dummy) label, "right" is the old label.
-                generator = rep.build_generator(adj_label, new_rep_label, old_rep_label)
-                sign = -1
-            else:
-                generator = rep.build_generator(adj_label, old_rep_label, new_rep_label)
-                sign = 1
-
-            summands.append(
-                OperatorSummand(
-                    coefficient=sign * Expression.I * gauge_coupling * generator,
-                    replacement=(alpha_occ, new_phi),
-                )
-            )
-
-        return OperatorAtomResult(summands=tuple(summands))
+        return _nonabelian_matter_gauge_result(
+            occurrence=occurrence,
+            group=group,
+            gauge_coupling=context.gauge_coupling,
+            carrier_occurrence_builder=_alpha_occurrence,
+            next_label=_next,
+            fresh_adj_label=_fresh_adj_label,
+            context=f"gauge_variation({group.name!r})",
+        )
 
     def _gauge_boson_variation(occurrence: FieldOccurrence):
         lorentz_label = _lorentz_label_of(occurrence)
@@ -1413,27 +1563,14 @@ def gauge_variation(
             )
 
         # ---- inhomogeneous part: + ∂_μ α^a  (in the codebase convention)
-        if abelian:
+        if context.abelian:
             inhom_alpha_occ = _alpha_occurrence(None)
         else:
-            adj_kind = adjoint_index.kind
-            slot_labels = occurrence.slot_labels
-            # The gauge boson's first non-Lorentz slot carries its adjoint.
-            adj_slot = next(
-                (s for s, idx in enumerate(occurrence.field.indices) if idx.kind == adj_kind),
-                None,
+            adj_slot, old_adj_label = _gauge_boson_adjoint_slot_and_label(
+                occurrence=occurrence,
+                adjoint_index=context.adjoint_index,
+                context=f"gauge_variation({group.name!r})",
             )
-            if adj_slot is None:
-                raise ValueError(
-                    f"gauge_variation({group.name!r}): gauge boson "
-                    f"{occurrence.field.name!r} has no {adj_kind!r} slot."
-                )
-            old_adj_label = slot_labels.get(adj_slot)
-            if old_adj_label is None:
-                raise ValueError(
-                    f"gauge_variation({group.name!r}): gauge boson "
-                    f"{occurrence.field.name!r} occurrence has no adjoint label."
-                )
             inhom_alpha_occ = _alpha_occurrence(old_adj_label)
 
         inhom = OperatorSummand(
@@ -1444,7 +1581,7 @@ def gauge_variation(
             ),
         )
 
-        if abelian or group.structure_constant is None:
+        if context.abelian or group.structure_constant is None:
             return OperatorAtomResult(summands=(inhom,))
 
         # ---- homogeneous part: - g f^{abc} α^b A^c_μ  (with 'a' = old label)
@@ -1456,23 +1593,24 @@ def gauge_variation(
         )
         f_abc = group.structure_constant(old_adj_label, b_label, c_label)
         hom = OperatorSummand(
-            coefficient=-gauge_coupling * f_abc,
+            coefficient=-context.gauge_coupling * f_abc,
             replacement=(hom_alpha_occ, hom_A_occ),
         )
         return OperatorAtomResult(summands=(inhom, hom))
 
     def on_field(occurrence: FieldOccurrence) -> Optional[OperatorAtomResult]:
         field = occurrence.field
-        if gauge_boson is not None and field is gauge_boson:
+        if context.gauge_boson is not None and field is context.gauge_boson:
             return _gauge_boson_variation(occurrence)
-        if abelian:
+        if context.abelian:
             return _matter_abelian(occurrence)
         return _matter_non_abelian(occurrence)
 
     op = FieldOperator(name=op_name, parity=0, on_field=on_field)
-    # Stash the synthetic α field on the returned operator so tests /
-    # notebooks can read it back deterministically.
-    object.__setattr__(op, "_gauge_parameter_field", alpha_field)
+    _set_operator_metadata(
+        op,
+        _gauge_parameter_field=alpha_field,
+    )
     return op
 
 
@@ -1509,16 +1647,23 @@ def brst_transformation(
     under the existing slot-wise graded derivation engine.
     """
 
-    abelian = bool(group.abelian)
-    gauge_boson = group.gauge_boson
-    gauge_coupling = group.coupling
     op_name = name if name is not None else f"brst_{group.name}"
     inferred_antighost_from_ghost = False
     effective_antighost = antighost
+    context = _gauge_operator_context(
+        group=group,
+        operator_name="brst_transformation",
+        require_structure_constant=True,
+    )
 
     _validate_field_parity(
         field=ghost,
         expected="odd",
+        context=f"brst_transformation({group.name!r}) ghost",
+    )
+    _validate_brst_ghost_field(
+        field=ghost,
+        gauge_boson=context.gauge_boson,
         context=f"brst_transformation({group.name!r}) ghost",
     )
     if effective_antighost is None and auxiliary is not None:
@@ -1538,6 +1683,11 @@ def brst_transformation(
             expected="odd",
             context=f"brst_transformation({group.name!r}) antighost",
         )
+        _validate_brst_ghost_field(
+            field=antighost,
+            gauge_boson=context.gauge_boson,
+            context=f"brst_transformation({group.name!r}) antighost",
+        )
     if auxiliary is not None:
         _validate_field_parity(
             field=auxiliary,
@@ -1551,29 +1701,12 @@ def brst_transformation(
             "antighost rule."
         )
 
-    if abelian:
+    if context.abelian:
         adjoint_index = None
         ghost_slot = None
         auxiliary_slot = None
-        antighost_slot = None
     else:
-        if gauge_boson is None:
-            raise ValueError(
-                f"brst_transformation({group.name!r}): non-abelian group has no "
-                "gauge_boson; cannot infer the adjoint index."
-            )
-        if group.structure_constant is None:
-            raise ValueError(
-                f"brst_transformation({group.name!r}): non-abelian BRST requires "
-                "a structure_constant."
-            )
-        adjoint_index = _first_non_lorentz_index(gauge_boson)
-        if adjoint_index is None:
-            raise ValueError(
-                f"brst_transformation({group.name!r}): could not find a "
-                "non-Lorentz (adjoint) index on the gauge boson "
-                f"{gauge_boson.name!r}."
-            )
+        adjoint_index = context.adjoint_index
         ghost_slot = _single_required_slot(
             field=ghost,
             index=adjoint_index,
@@ -1593,16 +1726,10 @@ def brst_transformation(
                 context=f"brst_transformation({group.name!r}) antighost",
             )
 
-    counter = [0]
-
-    def _next(stem: str):
-        counter[0] += 1
-        return S(f"{stem}_{op_name}_{counter[0]}")
-
-    def _fresh_adj_label():
-        if adjoint_index is None:
-            return None
-        return _next(adjoint_index.prefix)
+    _next, _fresh_adj_label = _gauge_operator_label_factory(
+        operator_name=op_name,
+        adjoint_index=adjoint_index,
+    )
 
     def _ghost_occurrence(adj_label):
         if adjoint_index is None:
@@ -1628,21 +1755,14 @@ def brst_transformation(
                 f"{occurrence.field.name!r} occurrence has no Lorentz label."
             )
 
-        if abelian:
+        if context.abelian:
             inhom_ghost_occ = _ghost_occurrence(None)
         else:
-            adj_slot = _single_required_slot(
-                field=occurrence.field,
-                index=adjoint_index,
-                context=f"brst_transformation({group.name!r}) gauge boson",
+            adj_slot, old_adj_label = _gauge_boson_adjoint_slot_and_label(
+                occurrence=occurrence,
+                adjoint_index=adjoint_index,
+                context=f"brst_transformation({group.name!r})",
             )
-            slot_labels = occurrence.slot_labels
-            old_adj_label = slot_labels.get(adj_slot)
-            if old_adj_label is None:
-                raise ValueError(
-                    f"brst_transformation({group.name!r}): gauge boson "
-                    f"{occurrence.field.name!r} occurrence has no adjoint label."
-                )
             inhom_ghost_occ = _ghost_occurrence(old_adj_label)
 
         inhom = OperatorSummand(
@@ -1653,7 +1773,7 @@ def brst_transformation(
             ),
         )
 
-        if abelian:
+        if context.abelian:
             return OperatorAtomResult(summands=(inhom,))
 
         b_label = _fresh_adj_label()
@@ -1662,13 +1782,13 @@ def brst_transformation(
         hom_ghost_occ = _ghost_occurrence(c_label)
         f_abc = group.structure_constant(old_adj_label, b_label, c_label)
         hom = OperatorSummand(
-            coefficient=gauge_coupling * f_abc,
+            coefficient=context.gauge_coupling * f_abc,
             replacement=(hom_A_occ, hom_ghost_occ),
         )
         return OperatorAtomResult(summands=(inhom, hom))
 
     def _ghost_variation(occurrence: FieldOccurrence):
-        if abelian:
+        if context.abelian:
             return zero_result()
 
         slot_labels = occurrence.slot_labels
@@ -1681,10 +1801,28 @@ def brst_transformation(
         b_label = _fresh_adj_label()
         c_label = _fresh_adj_label()
         f_abc = group.structure_constant(old_adj_label, b_label, c_label)
-        coefficient = -Expression.num(1) / Expression.num(2) * gauge_coupling * f_abc
+        coefficient = -Expression.num(1) / Expression.num(2) * context.gauge_coupling * f_abc
         return single_field_result(
             (_ghost_occurrence(b_label), _ghost_occurrence(c_label)),
             coefficient=coefficient,
+        )
+
+    def _matter_variation(occurrence: FieldOccurrence):
+        if context.abelian:
+            return _abelian_matter_gauge_result(
+                occurrence=occurrence,
+                group=group,
+                gauge_coupling=context.gauge_coupling,
+                carrier_occurrence_builder=_ghost_occurrence,
+            )
+        return _nonabelian_matter_gauge_result(
+            occurrence=occurrence,
+            group=group,
+            gauge_coupling=context.gauge_coupling,
+            carrier_occurrence_builder=_ghost_occurrence,
+            next_label=_next,
+            fresh_adj_label=_fresh_adj_label,
+            context=f"brst_transformation({group.name!r})",
         )
 
     def _antighost_variation(occurrence: FieldOccurrence):
@@ -1695,28 +1833,28 @@ def brst_transformation(
 
     def on_field(occurrence: FieldOccurrence) -> Optional[OperatorAtomResult]:
         field = occurrence.field
-        if gauge_boson is not None and field is gauge_boson:
+        if context.gauge_boson is not None and field is context.gauge_boson:
             return _gauge_boson_variation(occurrence)
         if field is ghost and not occurrence.conjugated:
             return _ghost_variation(occurrence)
         if auxiliary is not None and field is auxiliary:
             return zero_result()
-        if effective_antighost is None:
-            return None
         if effective_antighost is ghost:
             if field is ghost and occurrence.conjugated:
                 return _antighost_variation(occurrence)
-            return None
-        if field is effective_antighost and not occurrence.conjugated:
+        elif effective_antighost is not None and field is effective_antighost and not occurrence.conjugated:
             return _antighost_variation(occurrence)
-        return None
+        return _matter_variation(occurrence)
 
     op = FieldOperator(name=op_name, parity=1, on_field=on_field)
-    object.__setattr__(op, "_brst_group", group)
-    object.__setattr__(op, "_brst_ghost_field", ghost)
-    object.__setattr__(op, "_brst_antighost_field", effective_antighost)
-    object.__setattr__(op, "_brst_antighost_inferred_from_ghost", inferred_antighost_from_ghost)
-    object.__setattr__(op, "_brst_auxiliary_field", auxiliary)
+    _set_operator_metadata(
+        op,
+        _brst_group=group,
+        _brst_ghost_field=ghost,
+        _brst_antighost_field=effective_antighost,
+        _brst_antighost_inferred_from_ghost=inferred_antighost_from_ghost,
+        _brst_auxiliary_field=auxiliary,
+    )
     return op
 
 
