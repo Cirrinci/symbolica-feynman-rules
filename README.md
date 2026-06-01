@@ -33,8 +33,8 @@ Live source code is organized as split packages rather than flat top-level files
   - includes flavor-expansion, SU(2), and electroweak examples
 - `tests/`
   - the main regression suite
-- `docs/notes/`
-  - conventions, roadmap material, and project notes
+- `docs/notes/RESEARCH_LOG.md`
+  - tracked research log; other working notes stay local and out of git
 
 Walkthrough notebooks live under `notebooks/`.
 
@@ -87,9 +87,7 @@ What is still under development:
 
 ### Conventions and entry points
 
-Frozen compiler conventions are documented in:
-
-- `docs/notes/CONVENTIONS.md`
+Frozen compiler conventions are summarized below and reinforced by focused tests.
 
 Core symbolic entry points:
 
@@ -233,21 +231,14 @@ For notebooks, use the repository virtual environment:
 
 ### Notes and roadmap
 
-Project notes are kept in:
+The tracked project note is:
 
-- `docs/notes/CONVENTIONS.md`
-- `docs/notes/FEYNRULES_STYLE_STRATEGY.md`
-- `docs/notes/code_review_roadmap.md`
-- `docs/notes/PROJECT_GOAL.md`
-- `docs/notes/ROADMAP.md`
 - `docs/notes/RESEARCH_LOG.md`
-- `docs/notes/THESIS_PROGRESS.md`
 
-The current day-to-day engineering roadmap is `docs/notes/code_review_roadmap.md`.
+Other working notes and planning material are kept locally and are not part of
+the published repository.
 
 ### Immediate priorities
-
-The current implementation priorities are tracked in `docs/notes/code_review_roadmap.md`.
 
 Near-term themes:
 

@@ -12,3 +12,9 @@
 # Files not intended for public visibility
 archive/
 sandbox/
+viz/outputs/
+
+# Keep only the research log published from docs/notes.
+docs/notes/*
+!docs/notes/
+!docs/notes/RESEARCH_LOG.md

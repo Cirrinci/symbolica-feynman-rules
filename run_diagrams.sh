@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODEL="code/model_symbolica.py"
+MODEL="src/symbolic/vertex_engine.py"
 
 CALL_OUT="viz/outputs/call_graph"
 MATH_OUT="viz/outputs/math_flow"
