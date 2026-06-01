@@ -13,7 +13,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 
 NAME_MAP = {
@@ -419,7 +419,7 @@ def group_by_signature(vertices: list[Vertex]) -> dict[tuple[str, ...], list[Ver
     return grouped
 
 
-def first_rule_for(grouped: dict[tuple[str, ...], list[Vertex]], key: tuple[str, ...]) -> str | None:
+def first_rule_for(grouped: dict[tuple[str, ...], list[Vertex]], key: tuple[str, ...]) -> Optional[str]:
     entries = grouped.get(key)
     if not entries:
         return None
@@ -442,7 +442,7 @@ def compare_signatures(
     return both, fr_only, our_only
 
 
-def selected_vertex_specs() -> list[tuple[tuple[str, ...], list[tuple[str, str]], str | None]]:
+def selected_vertex_specs() -> list[tuple[tuple[str, ...], list[tuple[str, str]], Optional[str]]]:
     # (signature, expected_factors, optional h.c. Yukawa base)
     specs = [
         (

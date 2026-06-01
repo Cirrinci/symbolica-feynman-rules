@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from symbolica import S
 
@@ -37,7 +37,7 @@ class SlotLabels:
     """Slot-ordered index labels for one field occurrence or external leg."""
 
     field: Field
-    values: tuple[object | None, ...]
+    values: tuple[Optional[object], ...]
 
     def __post_init__(self):
         if len(self.values) != len(self.field.indices):
@@ -50,7 +50,7 @@ class SlotLabels:
     def from_legacy(
         cls,
         field: Field,
-        labels: Mapping | None,
+        labels: Optional[Mapping],
     ) -> "SlotLabels":
         slot_map = field.unpack_slot_labels(labels)
         return cls(

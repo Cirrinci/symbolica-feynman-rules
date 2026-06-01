@@ -500,7 +500,7 @@ def _paired_fermion_occurrences(
     left_slot_labels = {left_spinor_slot: left_spinor_label}
     right_slot_labels = {right_spinor_slot: right_spinor_label}
 
-    for slot, (left_index, right_index) in enumerate(zip(left_field.indices, right_field.indices, strict=True)):
+    for slot, (left_index, right_index) in enumerate(zip(left_field.indices, right_field.indices)):
         if slot in (left_spinor_slot, right_spinor_slot):
             continue
         if left_index != right_index:

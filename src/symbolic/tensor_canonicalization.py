@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import combinations
-from typing import Iterable, Sequence
+from typing import Iterable, Optional, Sequence
 
 from symbolica import AtomType, Expression, S
 
@@ -525,7 +525,7 @@ def _contract_plain_metric_heads(
     return result
 
 
-def _plain_odd_factor_key(atom: Expression, odd_head_names: set[str]) -> str | None:
+def _plain_odd_factor_key(atom: Expression, odd_head_names: set[str]) -> Optional[str]:
     if not isinstance(atom, Expression):
         return None
     atom_type = atom.get_type()

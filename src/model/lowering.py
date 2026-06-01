@@ -1130,7 +1130,7 @@ def _rewrite_local_lorentz_slot_contractions(
         state,
         slot_labels=state.explicit_slot_labels,
     )
-    lorentz_field_slot_by_label: dict[str, _LocalSlotRef | None] = {}
+    lorentz_field_slot_by_label: dict[str, Optional[_LocalSlotRef]] = {}
     for binding in explicit_bindings:
         lorentz_slots = [
             ref
