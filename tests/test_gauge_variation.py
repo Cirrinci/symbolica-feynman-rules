@@ -46,54 +46,11 @@ from lagrangian.operator_action import (
 )
 from symbolic.spenso_structures import (
     gauge_generator,
-    lorentz_metric,
     structure_constant,
     weak_gauge_generator,
     weak_structure_constant,
 )
 from symbolic.tensor_canonicalization import canonize_full
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _contract_lorentz_metric_against(expr, heads, *, max_passes: int = 8):
-    """Repeatedly contract ``g(mink(4, a_), mink(4, b_)) * H(...b_...)`` against
-    each Symbolica function head in ``heads``, in both index orders.
-
-    The rewrites cover the patterns that show up in the gauge-variation
-    output for typical matter / gauge-boson Lagrangians: a Minkowski
-    metric multiplying one of ``A(mu)``, ``Phi(mu)`` (none in tests but
-    cheap), ``PartialD(<anything>, mu)``, etc.
-    """
-
-    a_, b_ = S("clm_a_"), S("clm_b_")
-    x_ = S("clm_x_")
-    rewrites = []
-    for head in heads:
-        if head is None:
-            continue
-        rewrites.extend(
-            [
-                (lorentz_metric(a_, b_) * head(b_), head(a_)),
-                (lorentz_metric(b_, a_) * head(b_), head(a_)),
-                (lorentz_metric(a_, b_) * head(x_, b_), head(x_, a_)),
-                (lorentz_metric(b_, a_) * head(x_, b_), head(x_, a_)),
-            ]
-        )
-
-    result = expr.expand() if hasattr(expr, "expand") else expr
-    for _ in range(max_passes):
-        prev = result.to_canonical_string()
-        for pat, repl in rewrites:
-            result = result.replace(pat, repl)
-        if hasattr(result, "expand"):
-            result = result.expand()
-        if result.to_canonical_string() == prev:
-            break
-    return result
 
 
 def _zero(
@@ -103,24 +60,22 @@ def _zero(
     adjoint=(),
     color_fund=(),
     spinor=(),
-    contract_heads=(),
+    weak_fund=(),
+    weak_adj=(),
+    field_heads=(),
 ):
     """Canonicalise ``expr`` with the given dummy index symbols and return
     ``True`` iff the result is the symbolic zero.
-
-    Optionally also contract ``g(mu, nu) * H(... nu)`` against each head in
-    ``contract_heads`` before / after canonicalisation, so that scalar
-    kinetic / Yang-Mills tests can vanish despite intermediate metrics.
     """
-
-    if contract_heads:
-        expr = _contract_lorentz_metric_against(expr, contract_heads)
     canonical = canonize_full(
         expr,
         lorentz_indices=tuple(lorentz),
         adjoint_indices=tuple(adjoint),
         color_fund_indices=tuple(color_fund),
         spinor_indices=tuple(spinor),
+        weak_fund_indices=tuple(weak_fund),
+        weak_adj_indices=tuple(weak_adj),
+        field_heads=tuple(field_heads),
     )
     return canonical.to_canonical_string() == "0"
 
@@ -246,12 +201,10 @@ def test_u1_scalar_kinetic_term_is_gauge_invariant():
     # ``A A`` quartic piece, so contract that first against the relevant
     # tensor heads. Lorentz dummies are ``mu`` (the bare kinetic label)
     # and ``nu`` (the metric's second slot).
-    A_sym = A.symbol
-    alpha_sym = delta._gauge_parameter_field.symbol
     assert _zero(
         dL.to_symbolica(),
         lorentz=(mu, S("nu")),
-        contract_heads=(A_sym, S("PartialD")),
+        field_heads=(A,),
     )
 
 
@@ -743,6 +696,7 @@ def test_pure_yang_mills_variation_canonicalizes_to_zero_with_inferred_indices()
         run_gamma=False,
         run_color=False,
         infer_indices=True,
+        field_heads=(Ag,),
     )
     assert canonical.to_canonical_string() == "0"
 
@@ -805,5 +759,6 @@ def test_mixed_field_strength_bilinear_monomial_compiles_and_varies_to_zero():
             run_gamma=False,
             run_color=False,
             infer_indices=True,
+            field_heads=(gauge_group.gauge_boson,),
         )
         assert canonical.to_canonical_string() == "0"

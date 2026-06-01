@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from symbolica import Expression, S
 
+from model import COLOR_ADJ_INDEX, Field, GhostField, LORENTZ_INDEX
 from symbolic.spenso_structures import COLOR_ADJ, LORENTZ, structure_constant
 from symbolic.tensor_canonicalization import (
     _canonicalize_commuting_partial_derivatives,
@@ -35,6 +36,35 @@ def test_plain_metric_contracts_into_partiald_of_g():
     G = S("G")
     expr = LORENTZ.g(mu, nu).to_expression() * partial(G(nu, a), rho)
     assert _canon(_contract_plain_metric_heads(expr)) == _canon(partial(G(mu, a), rho))
+
+
+def test_plain_metric_contracts_into_generic_vector_head_when_field_metadata_is_supplied():
+    mu, nu = S("mu"), S("nu")
+    photon = Field("A", spin=1, self_conjugate=True, indices=(LORENTZ_INDEX,))
+    expr = LORENTZ.g(mu, nu).to_expression() * photon(nu).species(nu)
+    assert _canon(_contract_plain_metric_heads(expr, field_heads=(photon,))) == _canon(
+        photon(mu).species(mu)
+    )
+
+
+def test_plain_metric_contracts_into_generic_ghost_head_when_field_metadata_is_supplied():
+    a, b = S("a"), S("b")
+    gluon = Field(
+        "G",
+        spin=1,
+        self_conjugate=True,
+        indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+    )
+    ghost = GhostField(
+        "c",
+        ghost_of=gluon,
+        self_conjugate=False,
+        indices=(COLOR_ADJ_INDEX,),
+    )
+    expr = COLOR_ADJ.g(a, b).to_expression() * ghost(b).species(b)
+    assert _canon(_contract_plain_metric_heads(expr, field_heads=(ghost,))) == _canon(
+        ghost(a).species(a)
+    )
 
 
 def test_canonicalize_commuting_partiald_second_derivatives_on_alpha():
@@ -96,6 +126,21 @@ def test_non_partiald_heads_are_not_reordered():
     alpha = S("alpha")
     expr = covd(covd(alpha(a), mu), nu)
     assert _canon(_canonicalize_commuting_partial_derivatives(expr)) == _canon(expr)
+
+
+def test_canonize_full_drops_identical_plain_odd_field_squares():
+    ghost = GhostField(
+        "cA",
+        ghost_of="A",
+        self_conjugate=False,
+    )
+    canon = canonize_full(
+        ghost.symbol * ghost.symbol,
+        run_gamma=False,
+        run_color=False,
+        field_heads=(ghost,),
+    )
+    assert _canon(canon) == _canon(Expression.num(0))
 
 
 def test_jacobi_reduction_basic_combination_vanishes():

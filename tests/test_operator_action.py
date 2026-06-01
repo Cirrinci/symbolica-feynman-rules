@@ -748,12 +748,13 @@ def test_symbolica_field_registry_reverse_pass_is_not_implemented():
         registry.from_symbolica(Expression.num(0))
 
 
-def test_symbolica_export_does_not_distinguish_fermion_ordering(psi):
-    """Documented limitation: Symbolica multiplication is commutative.
+def test_symbolica_export_canonicalizes_fermion_ordering_by_grassmann_sign(psi):
+    """The export normalizes odd-factor order with the corresponding sign.
 
-    ``psibar * psi`` and ``psi * psibar`` produce the same export, so the
-    test asserts that limitation directly and serves as a regression
-    against accidentally over-promising in the future.
+    Symbolica multiplication is still commutative, but the exporter now
+    multiplies each term by the sign required to move odd factors into a
+    canonical order. Reversing a fermion pair therefore flips the exported
+    coefficient.
     """
 
     a = InteractionTerm(
@@ -766,7 +767,7 @@ def test_symbolica_export_does_not_distinguish_fermion_ordering(psi):
         fields=(psi.occurrence(), psi.occurrence(conjugated=True)),
         closed_dirac_bilinears=((1, 0),),
     )
-    assert _canon(interaction_term_to_symbolica(a)) == _canon(interaction_term_to_symbolica(b))
+    assert _canon(interaction_term_to_symbolica(a)) == _canon(-interaction_term_to_symbolica(b))
 
 
 # ---------------------------------------------------------------------------

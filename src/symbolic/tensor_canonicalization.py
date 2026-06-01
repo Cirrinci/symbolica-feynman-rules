@@ -24,7 +24,21 @@ from typing import Iterable, Sequence
 
 from symbolica import AtomType, Expression, S
 
-from .spenso_structures import COLOR_ADJ, LORENTZ, WEAK_ADJ, lorentz_metric, simplify_invariants
+from model.metadata import Field
+
+from .spenso_structures import (
+    COLOR_ADJ,
+    COLOR_ADJ_KIND,
+    COLOR_FUND_KIND,
+    LORENTZ,
+    LORENTZ_KIND,
+    SPINOR_KIND,
+    WEAK_ADJ,
+    WEAK_ADJ_KIND,
+    WEAK_FUND_KIND,
+    lorentz_metric,
+    simplify_invariants,
+)
 
 pcomp = S("pcomp")
 _PARTIAL_DERIVATIVE_NAME = S("PartialD").get_name()
@@ -40,9 +54,20 @@ _DUMMY_GROUP_STEMS = {
 
 _PLAIN_HEAD_SLOT_KINDS: dict[str, dict[int, str]] = {
     # Exported gauge-variation heads used in the current YM pipeline.
-    "G": {0: "lorentz", 1: "adjoint"},
+    "G": {0: LORENTZ_KIND, 1: "adjoint"},
     "alpha": {0: "adjoint"},
 }
+
+_PLAIN_HEAD_INDEX_KINDS = (
+    LORENTZ_KIND,
+    COLOR_ADJ_KIND,
+    COLOR_FUND_KIND,
+    SPINOR_KIND,
+    WEAK_FUND_KIND,
+    WEAK_ADJ_KIND,
+)
+
+_ADJOINT_ALIAS_KIND = "adjoint"
 
 
 @dataclass(frozen=True)
@@ -128,6 +153,96 @@ SPENSO_TENSOR_HEAD_SPECS = (
 
 def _wildcards(arity: int):
     return tuple(S(*(f"canon_arg_{arity}_{slot}_" for slot in range(arity))))
+
+
+def _symbol_name_text(symbol) -> str:
+    if isinstance(symbol, Expression):
+        return symbol.get_name()
+    return str(symbol)
+
+
+def _plain_slot_kinds_compatible(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    return {left, right} <= {_ADJOINT_ALIAS_KIND, COLOR_ADJ_KIND, WEAK_ADJ_KIND}
+
+
+def _merge_plain_slot_kind(left: str, right: str) -> str:
+    if left == right:
+        return left
+    if left == _ADJOINT_ALIAS_KIND:
+        return right
+    if right == _ADJOINT_ALIAS_KIND:
+        return left
+    raise ValueError(
+        f"Conflicting plain-head slot kinds {left!r} and {right!r}."
+    )
+
+
+def _merge_plain_head_slot_kind_maps(
+    *mappings: dict[str, dict[int, str]],
+) -> dict[str, dict[int, str]]:
+    merged: dict[str, dict[int, str]] = {}
+    for mapping in mappings:
+        for head_name, slot_kinds in mapping.items():
+            current = dict(merged.get(head_name, {}))
+            for slot, kind in slot_kinds.items():
+                existing = current.get(slot)
+                if existing is None:
+                    current[slot] = kind
+                    continue
+                if not _plain_slot_kinds_compatible(existing, kind):
+                    raise ValueError(
+                        f"Plain head {head_name!r} has incompatible slot-kind metadata "
+                        f"for slot {slot + 1}: {existing!r} vs {kind!r}."
+                    )
+                current[slot] = _merge_plain_slot_kind(existing, kind)
+            merged[head_name] = current
+    return merged
+
+
+def _field_plain_head_slot_kinds(field_heads: Iterable[Field]) -> dict[str, dict[int, str]]:
+    mapping: dict[str, dict[int, str]] = {}
+    for field in field_heads:
+        if not isinstance(field, Field):
+            raise TypeError(
+                "field_heads must contain Field instances."
+            )
+        slot_kinds = {
+            slot: index.kind
+            for slot, index in enumerate(field.indices)
+        }
+        head_names = {_symbol_name_text(field.species_for(False))}
+        if not field.self_conjugate:
+            head_names.add(_symbol_name_text(field.species_for(True)))
+        field_mapping = {
+            head_name: dict(slot_kinds)
+            for head_name in head_names
+        }
+        mapping = _merge_plain_head_slot_kind_maps(mapping, field_mapping)
+    return mapping
+
+
+def _plain_head_slot_kinds(*, field_heads: Iterable[Field] = ()) -> dict[str, dict[int, str]]:
+    return _merge_plain_head_slot_kind_maps(
+        _PLAIN_HEAD_SLOT_KINDS,
+        _field_plain_head_slot_kinds(field_heads),
+    )
+
+
+def _field_plain_odd_head_names(field_heads: Iterable[Field]) -> set[str]:
+    names: set[str] = set()
+    for field in field_heads:
+        if not isinstance(field, Field):
+            raise TypeError(
+                "field_heads must contain Field instances."
+            )
+        if field.statistics != "fermion":
+            continue
+        names.add(_symbol_name_text(field.species_for(False)))
+        if not field.self_conjugate:
+            names.add(_symbol_name_text(field.species_for(True)))
+    return names
 
 
 def _replace_tensor_heads(expr, specs: Sequence[TensorHeadSpec], *, reverse: bool = False):
@@ -277,7 +392,12 @@ def contract_spenso_lorentz_metrics(expr, *, max_passes: int = 8):
     return result
 
 
-def _contract_plain_metric_heads(expr, *, max_passes: int = 8):
+def _contract_plain_metric_heads(
+    expr,
+    *,
+    field_heads: Iterable[Field] = (),
+    max_passes: int = 8,
+):
     """Contract Lorentz/adjoint metrics against plain exported field heads.
 
     The Symbolica export uses ordinary commutative function heads such as
@@ -295,15 +415,16 @@ def _contract_plain_metric_heads(expr, *, max_passes: int = 8):
     wildcard_y = S("canon_plain_metric_y_")
     partial = S("PartialD")
     metrics_by_kind = {
-        "lorentz": LORENTZ.g(wildcard_a, wildcard_b).to_expression(),
-        "adjoint": COLOR_ADJ.g(wildcard_a, wildcard_b).to_expression(),
-        "weak_adj": WEAK_ADJ.g(wildcard_a, wildcard_b).to_expression(),
+        LORENTZ_KIND: LORENTZ.g(wildcard_a, wildcard_b).to_expression(),
+        COLOR_ADJ_KIND: COLOR_ADJ.g(wildcard_a, wildcard_b).to_expression(),
+        WEAK_ADJ_KIND: WEAK_ADJ.g(wildcard_a, wildcard_b).to_expression(),
     }
+    plain_head_slot_kinds = _plain_head_slot_kinds(field_heads=field_heads)
 
     rewrites = []
 
     # Ordinary partial derivatives carry one Lorentz derivative slot by design.
-    lorentz_metric = metrics_by_kind["lorentz"]
+    lorentz_metric = metrics_by_kind[LORENTZ_KIND]
     rewrites.extend(
         [
             (lorentz_metric * partial(wildcard_x, wildcard_b), partial(wildcard_x, wildcard_a)),
@@ -327,15 +448,23 @@ def _contract_plain_metric_heads(expr, *, max_passes: int = 8):
         ]
     )
 
-    for head_name, slot_kinds in _PLAIN_HEAD_SLOT_KINDS.items():
+    for head_name, slot_kinds in plain_head_slot_kinds.items():
+        if not slot_kinds:
+            continue
         head = S(head_name)
         arity = max(slot_kinds) + 1
         head_args = [S(f"canon_plain_metric_head_{head_name}_{slot}_") for slot in range(arity)]
         for slot, kind in slot_kinds.items():
-            metrics = [metrics_by_kind[kind]]
-            if kind == "adjoint":
-                # Keep both current adjoint metrics supported by the pipeline.
-                metrics.append(metrics_by_kind["weak_adj"])
+            if kind == _ADJOINT_ALIAS_KIND:
+                metrics = [
+                    metrics_by_kind[COLOR_ADJ_KIND],
+                    metrics_by_kind[WEAK_ADJ_KIND],
+                ]
+            else:
+                metric = metrics_by_kind.get(kind)
+                if metric is None:
+                    continue
+                metrics = [metric]
             for metric in metrics:
                 args_before = list(head_args)
                 args_before[slot] = wildcard_b
@@ -394,6 +523,88 @@ def _contract_plain_metric_heads(expr, *, max_passes: int = 8):
         if current == previous:
             break
     return result
+
+
+def _plain_odd_factor_key(atom: Expression, odd_head_names: set[str]) -> str | None:
+    if not isinstance(atom, Expression):
+        return None
+    atom_type = atom.get_type()
+    if atom_type == AtomType.Var:
+        return atom.to_canonical_string() if atom.get_name() in odd_head_names else None
+    if atom_type == AtomType.Pow:
+        base, exponent = tuple(atom)
+        base_key = _plain_odd_factor_key(base, odd_head_names)
+        if base_key is None:
+            return None
+        exponent_text = exponent.to_canonical_string()
+        try:
+            exponent_value = int(exponent_text)
+        except ValueError:
+            return None
+        return atom.to_canonical_string() if exponent_value >= 2 else base_key
+    if atom_type != AtomType.Fn:
+        return None
+
+    name = atom.get_name()
+    bare_name = name.rsplit("::", 1)[-1]
+    if bare_name == "PartialD":
+        args = tuple(atom)
+        if len(args) != 2:
+            return None
+        return atom.to_canonical_string() if _plain_odd_factor_key(args[0], odd_head_names) is not None else None
+
+    if name in odd_head_names or bare_name in odd_head_names:
+        return atom.to_canonical_string()
+    return None
+
+
+def _drop_plain_odd_squares(
+    expr,
+    *,
+    field_heads: Iterable[Field] = (),
+):
+    """Drop monomials containing repeated identical plain odd factors.
+
+    The Symbolica export is commutative, so it cannot encode Grassmann
+    nilpotency on its own.  For the BRST checks we only need a narrow local
+    repair: if a monomial contains the *same* exported odd field factor
+    twice (including identical ``PartialD`` wrappers), that monomial is zero.
+    """
+
+    odd_head_names = _field_plain_odd_head_names(field_heads)
+    if not odd_head_names:
+        return expr
+
+    terms = tuple(expr) if isinstance(expr, Expression) and expr.get_type() == AtomType.Add else (expr,)
+    kept_terms: list[Expression] = []
+    for term in terms:
+        seen: set[str] = set()
+        zero_term = False
+        for factor in _term_factors(term):
+            if isinstance(factor, Expression) and factor.get_type() == AtomType.Pow:
+                base, exponent = tuple(factor)
+                if _plain_odd_factor_key(base, odd_head_names) is not None:
+                    try:
+                        exponent_value = int(exponent.to_canonical_string())
+                    except ValueError:
+                        exponent_value = None
+                    if exponent_value is not None and exponent_value >= 2:
+                        zero_term = True
+                        break
+            factor_key = _plain_odd_factor_key(factor, odd_head_names)
+            if factor_key is None:
+                continue
+            if factor_key in seen:
+                zero_term = True
+                break
+            seen.add(factor_key)
+        if not zero_term:
+            kept_terms.append(term)
+
+    total = Expression.num(0)
+    for term in kept_terms:
+        total += term
+    return total.expand() if hasattr(total, "expand") else total
 
 
 def _build_function_expression(name: str, args: Sequence[Expression]) -> Expression:
@@ -711,18 +922,31 @@ def _append_symbol_group(
         target.setdefault(symbol.to_canonical_string(), symbol)
 
 
-def _infer_index_groups_from_expression(expr):
-    """Infer index pools from known YM-export head slots.
+def _infer_index_groups_from_expression(
+    expr,
+    *,
+    field_heads: Iterable[Field] = (),
+):
+    """Infer index pools from exported field heads and YM support tensors."""
 
-    This is intentionally conservative and local to currently supported heads:
-    - ``G(mu, a)``: slot 0 Lorentz, slot 1 adjoint
-    - ``alpha(a)``: slot 0 adjoint
-    - ``PartialD(base, mu)``: derivative slot Lorentz
-    - ``spenso::f(a,b,c)``: all slots adjoint
-    """
+    groups = {
+        LORENTZ_KIND: {},
+        COLOR_ADJ_KIND: {},
+        COLOR_FUND_KIND: {},
+        SPINOR_KIND: {},
+        WEAK_FUND_KIND: {},
+        WEAK_ADJ_KIND: {},
+    }
+    plain_head_slot_kinds = _plain_head_slot_kinds(field_heads=field_heads)
 
-    lorentz: dict[str, Expression] = {}
-    adjoint: dict[str, Expression] = {}
+    def append(kind: str, atom: Expression):
+        if kind == _ADJOINT_ALIAS_KIND:
+            _append_symbol_group(groups[COLOR_ADJ_KIND], atom)
+            return
+        target = groups.get(kind)
+        if target is None:
+            return
+        _append_symbol_group(target, atom)
 
     def walk(atom):
         if not isinstance(atom, Expression):
@@ -733,25 +957,29 @@ def _infer_index_groups_from_expression(expr):
             args = tuple(atom)
             bare_name = name.rsplit("::", 1)[-1]
             if bare_name == "PartialD" and len(args) == 2:
-                _append_symbol_group(lorentz, args[1])
-            elif bare_name == "G" and len(args) >= 2:
-                _append_symbol_group(lorentz, args[0])
-                _append_symbol_group(adjoint, args[1])
-            elif bare_name == "alpha" and len(args) >= 1:
-                _append_symbol_group(adjoint, args[0])
+                append(LORENTZ_KIND, args[1])
             elif name == "spenso::f" and len(args) == 3:
-                _append_symbol_group(adjoint, args[0])
-                _append_symbol_group(adjoint, args[1])
-                _append_symbol_group(adjoint, args[2])
+                append(COLOR_ADJ_KIND, args[0])
+                append(COLOR_ADJ_KIND, args[1])
+                append(COLOR_ADJ_KIND, args[2])
+
+            slot_kinds = plain_head_slot_kinds.get(name)
+            if slot_kinds is None:
+                slot_kinds = plain_head_slot_kinds.get(bare_name)
+            if slot_kinds is not None:
+                for slot, kind in slot_kinds.items():
+                    if slot < len(args):
+                        append(kind, args[slot])
 
         if atom_type in (AtomType.Add, AtomType.Mul, AtomType.Fn):
             for child in atom:
                 walk(child)
 
     walk(expr)
-    lorentz_inferred = tuple(lorentz[key] for key in sorted(lorentz))
-    adjoint_inferred = tuple(adjoint[key] for key in sorted(adjoint))
-    return lorentz_inferred, adjoint_inferred
+    return {
+        kind: tuple(group[key] for key in sorted(group))
+        for kind, group in groups.items()
+    }
 
 
 def _merge_index_groups(explicit: Sequence[object], inferred: Sequence[object]) -> tuple[object, ...]:
@@ -906,6 +1134,7 @@ def canonize_full(
     run_jacobi_reduction: bool = True,
     run_yang_mills_antisymmetric_zero_drop: bool = True,
     infer_indices: bool = False,
+    field_heads: Iterable[Field] = (),
 ):
     """One-call simplification + canonicalisation.
 
@@ -922,9 +1151,10 @@ def canonize_full(
     ``f f`` products instead of letting ``simplify_color`` expand them into
     generators first.
 
-    Set ``infer_indices=True`` to infer Lorentz/adjoint index pools directly
-    from known YM-export heads (``G``, ``alpha``, ``PartialD``, ``spenso::f``)
-    so callers do not need to pass the full explicit index tuples manually.
+    Set ``infer_indices=True`` to infer index pools directly from known
+    YM-export heads and any concrete ``Field`` objects passed through
+    ``field_heads``.  This lets callers canonicalize exported matter / ghost
+    expressions without spelling out every dummy label explicitly.
     """
     lorentz_indices = tuple(lorentz_indices)
     adjoint_indices = tuple(adjoint_indices)
@@ -933,14 +1163,32 @@ def canonize_full(
     weak_fund_indices = tuple(weak_fund_indices)
     weak_adj_indices = tuple(weak_adj_indices)
     extra_index_groups = tuple(extra_index_groups)
+    field_heads = tuple(field_heads)
 
     expr = simplify_invariants(expr, run_gamma=run_gamma, run_color=run_color)
     expr = contract_spenso_lorentz_metrics(expr)
-    expr = _contract_plain_metric_heads(expr)
+    expr = _contract_plain_metric_heads(expr, field_heads=field_heads)
+    expr = _drop_plain_odd_squares(expr, field_heads=field_heads)
     if infer_indices:
-        inferred_lorentz, inferred_adjoint = _infer_index_groups_from_expression(expr)
-        lorentz_indices = _merge_index_groups(lorentz_indices, inferred_lorentz)
-        adjoint_indices = _merge_index_groups(adjoint_indices, inferred_adjoint)
+        inferred = _infer_index_groups_from_expression(
+            expr,
+            field_heads=field_heads,
+        )
+        lorentz_indices = _merge_index_groups(lorentz_indices, inferred[LORENTZ_KIND])
+        adjoint_indices = _merge_index_groups(adjoint_indices, inferred[COLOR_ADJ_KIND])
+        color_fund_indices = _merge_index_groups(
+            color_fund_indices,
+            inferred[COLOR_FUND_KIND],
+        )
+        spinor_indices = _merge_index_groups(spinor_indices, inferred[SPINOR_KIND])
+        weak_fund_indices = _merge_index_groups(
+            weak_fund_indices,
+            inferred[WEAK_FUND_KIND],
+        )
+        weak_adj_indices = _merge_index_groups(
+            weak_adj_indices,
+            inferred[WEAK_ADJ_KIND],
+        )
 
     canonical, _, _ = canonize_spenso_tensors(
         expr,
@@ -959,6 +1207,7 @@ def canonize_full(
         reduced = _canonicalize_commuting_partial_derivatives(reduced)
     if hasattr(reduced, "expand"):
         reduced = reduced.expand()
+    reduced = _drop_plain_odd_squares(reduced, field_heads=field_heads)
     canonical, _, _ = canonize_spenso_tensors(
         reduced,
         lorentz_indices=lorentz_indices,
