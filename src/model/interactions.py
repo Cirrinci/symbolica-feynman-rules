@@ -398,7 +398,6 @@ class InteractionTerm:
     closed_dirac_bilinears: tuple[tuple[int, int], ...] = ()
     dirac_bilinears: tuple[DiracBilinear, ...] = field(
         default=(),
-        kw_only=True,
         repr=False,
         compare=False,
     )
