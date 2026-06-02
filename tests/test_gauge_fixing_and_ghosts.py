@@ -74,10 +74,14 @@ def _dirac_decl(field):
 
 def _gauge_decl(group):
     mu_decl, nu_decl = S("mu_decl", "nu_decl")
+    prefactor = -(Expression.num(1) / Expression.num(4))
+    if getattr(group, "abelian", False):
+        return prefactor * FieldStrength(group, mu_decl, nu_decl) * FieldStrength(group, mu_decl, nu_decl)
+    a_decl = S("a_decl")
     return (
-        -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(group, mu_decl, nu_decl)
-        * FieldStrength(group, mu_decl, nu_decl)
+        prefactor
+        * FieldStrength(group, mu_decl, nu_decl, a_decl)
+        * FieldStrength(group, mu_decl, nu_decl, a_decl)
     )
 
 
@@ -482,15 +486,26 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
     )
 
     compiled = compile_covariant_terms(model)
-    assert len(compiled) == 9
+    # current (2) + gauge F^2 expansion (4x 2G + 4x 3G + 1x 4G = 9) + gauge fixing (1)
+    # + ghost bilinear (1) + ghost-gauge (1) = 14 local interaction terms.
+    assert len(compiled) == 14
     labels = [interaction.label for interaction in compiled]
     assert any("gamma^mu D_mu" in label for label in labels)
-    assert sum("gauge kinetic bilinear" in label for label in labels) == 2
-    assert any("Yang-Mills cubic" in label for label in labels)
-    assert any("Yang-Mills quartic" in label for label in labels)
     assert any("gauge fixing" in label for label in labels)
     assert any("Faddeev-Popov ghosts bilinear" in label for label in labels)
     assert any("Faddeev-Popov ghosts gauge interaction" in label for label in labels)
+
+    # The pure-gluon self-interactions from -1/4 F^2 distribute into 2G/3G/4G pieces.
+    # The field-strength expansion emits unlabelled local monomials; the gauge-fixing
+    # bilinear (also pure-gluon) keeps its descriptive label, so filter it out by label.
+    pure_gluon_counts = sorted(
+        len(interaction.fields)
+        for interaction in compiled
+        if interaction.fields
+        and not interaction.label
+        and all(occ.field.name == gluon.name for occ in interaction.fields)
+    )
+    assert pure_gluon_counts == [2, 2, 2, 2, 3, 3, 3, 3, 4]
 
     current_term = compiled[0]
     got_current = _model_vertex(

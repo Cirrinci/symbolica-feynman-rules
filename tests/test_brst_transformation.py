@@ -383,8 +383,8 @@ def test_brst_exact_gauge_fixing_fermion_and_yang_mills_sum_are_invariant():
         fields=(gluon,),
         lagrangian_decl=(
             -(Expression.num(1) / Expression.num(4))
-            * FieldStrength(su3, mu, nu)
-            * FieldStrength(su3, mu, nu)
+            * FieldStrength(su3, mu, nu, S("a_decl"))
+            * FieldStrength(su3, mu, nu, S("a_decl"))
         ),
     ).lagrangian()
 

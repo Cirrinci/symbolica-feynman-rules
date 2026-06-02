@@ -162,7 +162,7 @@ MODEL_SU2_YM = Model(
     gauge_groups=(SU2L_GROUP,),
     fields=(WField,),
     lagrangian_decl=-(Expression.num(1) / Expression.num(4))
-    * FieldStrength(SU2L_GROUP, mu, nu) * FieldStrength(SU2L_GROUP, mu, nu),
+    * FieldStrength(SU2L_GROUP, mu, nu, S("aw")) * FieldStrength(SU2L_GROUP, mu, nu, S("aw")),
 )
 
 MODEL_SU2_GAUGE_FIXED = Model(
@@ -171,7 +171,7 @@ MODEL_SU2_GAUGE_FIXED = Model(
     fields=(WField, GhostWField),
     lagrangian_decl=(
         -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(SU2L_GROUP_GHOST, mu, nu) * FieldStrength(SU2L_GROUP_GHOST, mu, nu)
+        * FieldStrength(SU2L_GROUP_GHOST, mu, nu, S("aw")) * FieldStrength(SU2L_GROUP_GHOST, mu, nu, S("aw"))
         + GaugeFixing(SU2L_GROUP_GHOST, xi=xi_W)
         + GhostLagrangian(SU2L_GROUP_GHOST)
     ),

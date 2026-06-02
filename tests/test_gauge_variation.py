@@ -620,8 +620,8 @@ def test_pure_yang_mills_variation_is_well_formed():
         fields=(Ag,),
         lagrangian_decl=(
             -Expression.num(1) / Expression.num(4)
-            * FieldStrength(SU3, mu, nu)
-            * FieldStrength(SU3, mu, nu)
+            * FieldStrength(SU3, mu, nu, S("aC"))
+            * FieldStrength(SU3, mu, nu, S("aC"))
         ),
     ).lagrangian()
 
@@ -655,8 +655,8 @@ def test_pure_yang_mills_variation_canonicalizes_to_zero_in_f_basis():
         fields=(Ag,),
         lagrangian_decl=(
             -Expression.num(1) / Expression.num(4)
-            * FieldStrength(SU3, mu, nu)
-            * FieldStrength(SU3, mu, nu)
+            * FieldStrength(SU3, mu, nu, S("aC"))
+            * FieldStrength(SU3, mu, nu, S("aC"))
         ),
     ).lagrangian()
 
@@ -684,8 +684,8 @@ def test_pure_yang_mills_variation_canonicalizes_to_zero_with_inferred_indices()
         fields=(Ag,),
         lagrangian_decl=(
             -Expression.num(1) / Expression.num(4)
-            * FieldStrength(SU3, mu, nu)
-            * FieldStrength(SU3, mu, nu)
+            * FieldStrength(SU3, mu, nu, S("aC"))
+            * FieldStrength(SU3, mu, nu, S("aC"))
         ),
     ).lagrangian()
 
@@ -732,19 +732,19 @@ def test_mixed_field_strength_bilinear_monomial_compiles_and_varies_to_zero():
         fields=(Gg, Wg, B),
         lagrangian_decl=(
             -(Expression.num(1) / Expression.num(4))
-            * FieldStrength(SU3, mu3, nu3)
-            * FieldStrength(SU3, mu3, nu3)
+            * FieldStrength(SU3, mu3, nu3, S("aC"))
+            * FieldStrength(SU3, mu3, nu3, S("aC"))
             - (Expression.num(1) / Expression.num(4))
-            * FieldStrength(SU2, mu2, nu2)
-            * FieldStrength(SU2, mu2, nu2)
+            * FieldStrength(SU2, mu2, nu2, S("aW"))
+            * FieldStrength(SU2, mu2, nu2, S("aW"))
             - (Expression.num(1) / Expression.num(4))
             * FieldStrength(U1, mu1, nu1)
             * FieldStrength(U1, mu1, nu1)
             + S("kappa")
-            * FieldStrength(SU3, mu3, nu3)
-            * FieldStrength(SU3, mu3, nu3)
-            * FieldStrength(SU2, mu2, nu2)
-            * FieldStrength(SU2, mu2, nu2)
+            * FieldStrength(SU3, mu3, nu3, S("aC"))
+            * FieldStrength(SU3, mu3, nu3, S("aC"))
+            * FieldStrength(SU2, mu2, nu2, S("aW"))
+            * FieldStrength(SU2, mu2, nu2, S("aW"))
         ),
     )
 

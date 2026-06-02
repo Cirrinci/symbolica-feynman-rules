@@ -13,7 +13,6 @@ from model import (  # noqa: E402
 from model.lagrangian import (  # noqa: E402
     ComplexScalarKineticTerm,
     DiracKineticTerm,
-    GaugeKineticTerm,
 )
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 from tests.support.builders import make_complex_scalar, make_dirac_fermion, make_ghost, make_gluon, make_photon  # noqa: E402
@@ -205,10 +204,18 @@ def test_model_validate_accepts_canonical_vector_kinetic_term():
         gauge_boson=gluon.symbol,
         structure_constant=structure_constant,
     )
+    from symbolica import Expression
+    from model import FieldStrength
+
+    mu, nu, a = S("mu"), S("nu"), S("a")
     model = Model(
         gauge_groups=(su3,),
         fields=(gluon,),
-        lagrangian_decl=GaugeKineticTerm(gauge_group=su3),
+        lagrangian_decl=(
+            -(Expression.num(1) / Expression.num(4))
+            * FieldStrength(su3, mu, nu, a)
+            * FieldStrength(su3, mu, nu, a)
+        ),
     )
 
     report = model.validate()
@@ -480,8 +487,8 @@ def test_compiled_validate_skips_kinetic_bilinears_with_derivatives():
     mu, nu = S("mu_d"), S("nu_d")
     decl = (
         -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(su3, mu, nu)
-        * FieldStrength(su3, mu, nu)
+        * FieldStrength(su3, mu, nu, S("aC"))
+        * FieldStrength(su3, mu, nu, S("aC"))
         + GaugeFixing(su3, xi=S("xiQCD"))
         + GhostLagrangian(su3)
         + dirac_covd_decl(quark, mu=mu)

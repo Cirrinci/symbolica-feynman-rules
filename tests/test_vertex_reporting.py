@@ -210,8 +210,8 @@ def _qcd_with_quark_and_ghost_compiled():
     su3 = make_su3(gS, gluon.symbol, ghost_sym=ghost.symbol, name="SU3C")
     decl = (
         -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(su3, mu, nu)
-        * FieldStrength(su3, mu, nu)
+        * FieldStrength(su3, mu, nu, S("aC"))
+        * FieldStrength(su3, mu, nu, S("aC"))
         + GaugeFixing(su3, xi=S("xiQCD"))
         + GhostLagrangian(su3)
         + dirac_covd_decl(quark, mu=mu)
@@ -334,8 +334,8 @@ def _unbroken_sm_gauge_model():
             + I * lL.bar * Gamma(mu) * CovD(lL, mu)
             + I * eR.bar * Gamma(mu) * CovD(eR, mu)
             + CovD(higgs.bar, mu) * CovD(higgs, mu)
-            - (Expression.num(1) / Expression.num(4)) * FieldStrength(su3, mu, nu) * FieldStrength(su3, mu, nu)
-            - (Expression.num(1) / Expression.num(4)) * FieldStrength(su2, mu, nu) * FieldStrength(su2, mu, nu)
+            - (Expression.num(1) / Expression.num(4)) * FieldStrength(su3, mu, nu, S("aC")) * FieldStrength(su3, mu, nu, S("aC"))
+            - (Expression.num(1) / Expression.num(4)) * FieldStrength(su2, mu, nu, S("aW")) * FieldStrength(su2, mu, nu, S("aW"))
             - (Expression.num(1) / Expression.num(4)) * FieldStrength(u1, mu, nu) * FieldStrength(u1, mu, nu)
         ),
     )
@@ -773,7 +773,8 @@ def test_vertex_report_sector_filter_preserves_total_counts():
     assert pure_gauge_report.total_terms == full_report.total_terms
     assert pure_gauge_report.total_signatures == full_report.total_signatures
     assert pure_gauge_report.matched_signatures < full_report.matched_signatures
-    assert pure_gauge_report.matched_terms == 4
+    # The general field-strength expansion emits 4 (2G) + 4 (3G) + 1 (4G) = 9 pure-gauge terms.
+    assert pure_gauge_report.matched_terms == 9
     assert gauge_fixing_report.matched_terms == 1
     for signature in pure_gauge_report.signatures:
         assert signature.sectors == ("pure_gauge",)
@@ -786,10 +787,10 @@ def test_vertex_signatures_mixed_sector_bilinear_has_local_counts_per_filter():
     pure_gauge_signatures = {sig.names: sig for sig in compiled.vertex_signatures(sector="pure_gauge")}
     gauge_fixing_signatures = {sig.names: sig for sig in compiled.vertex_signatures(sector="gauge_fixing")}
 
-    assert all_signatures[("G", "G")].term_count == 3
+    assert all_signatures[("G", "G")].term_count == 5
     assert all_signatures[("G", "G")].sectors == ("gauge_fixing", "pure_gauge")
 
-    assert pure_gauge_signatures[("G", "G")].term_count == 2
+    assert pure_gauge_signatures[("G", "G")].term_count == 4
     assert pure_gauge_signatures[("G", "G")].sectors == ("pure_gauge",)
 
     assert gauge_fixing_signatures[("G", "G")].term_count == 1
@@ -854,20 +855,22 @@ def test_unbroken_sm_gauge_signature_regression_matches_current_28_and_19_split(
         ("uR.bar", "uR", "W"),
         ("dR.bar", "dR", "W"),
     }
+    # Pure-gauge bilinears/cubics now carry the algebraically-equal summands emitted
+    # by the general field-strength expansion (4 each for 2G/3G); the quartic stays 1.
     expected_rows = [
-        (("B", "B"), 2, 2, ("pure_gauge",)),
-        (("G", "G"), 2, 2, ("pure_gauge",)),
+        (("B", "B"), 2, 4, ("pure_gauge",)),
+        (("G", "G"), 2, 4, ("pure_gauge",)),
         (("H.bar", "H"), 2, 1, ("matter",)),
-        (("W", "W"), 2, 2, ("pure_gauge",)),
+        (("W", "W"), 2, 4, ("pure_gauge",)),
         (("dR.bar", "dR"), 2, 1, ("matter",)),
         (("eR.bar", "eR"), 2, 1, ("matter",)),
         (("lL.bar", "lL"), 2, 1, ("matter",)),
         (("qL.bar", "qL"), 2, 1, ("matter",)),
         (("uR.bar", "uR"), 2, 1, ("matter",)),
-        (("G", "G", "G"), 3, 1, ("pure_gauge",)),
+        (("G", "G", "G"), 3, 4, ("pure_gauge",)),
         (("H.bar", "H", "B"), 3, 2, ("matter",)),
         (("H.bar", "H", "W"), 3, 2, ("matter",)),
-        (("W", "W", "W"), 3, 1, ("pure_gauge",)),
+        (("W", "W", "W"), 3, 4, ("pure_gauge",)),
         (("dR.bar", "dR", "B"), 3, 1, ("matter",)),
         (("dR.bar", "dR", "G"), 3, 1, ("matter",)),
         (("eR.bar", "eR", "B"), 3, 1, ("matter",)),

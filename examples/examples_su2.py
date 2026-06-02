@@ -101,7 +101,7 @@ ym_model = Model(
     gauge_groups=(SU2L,),
     fields=(WField,),
     lagrangian_decl=-(Expression.num(1) / Expression.num(4))
-    * FieldStrength(SU2L, mu, nu) * FieldStrength(SU2L, mu, nu),
+    * FieldStrength(SU2L, mu, nu, S("aW")) * FieldStrength(SU2L, mu, nu, S("aW")),
 )
 
 

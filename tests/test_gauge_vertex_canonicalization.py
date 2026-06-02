@@ -122,7 +122,7 @@ def test_canonized_yang_mills_quartic_matches_grouped_color_channels():
     canon_got, _, _ = canonize_spenso_tensors(
         vertex,
         lorentz_indices=(S("mu1"), S("mu2"), S("mu3"), S("mu4")),
-        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("a_mid_G_SU3C")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("a_decl")),
     )
 
     compact = (
@@ -133,14 +133,14 @@ def test_canonized_yang_mills_quartic_matches_grouped_color_channels():
         * yang_mills_four_vertex_raw(
             S("a1"), S("a2"), S("a3"), S("a4"),
             S("mu1"), S("mu2"), S("mu3"), S("mu4"),
-            S("a_mid_G_SU3C"),
+            S("a_decl"),
         )
         * D4
     )
     canon_compact, _, _ = canonize_spenso_tensors(
         compact,
         lorentz_indices=(S("mu1"), S("mu2"), S("mu3"), S("mu4")),
-        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("a_mid_G_SU3C")),
+        adjoint_indices=(S("a1"), S("a2"), S("a3"), S("a4"), S("a_decl")),
     )
 
     assert _canon(canon_got) == _canon(canon_compact)
@@ -195,12 +195,12 @@ def test_quartic_gluon_vertex_matches_feynrules_after_structure_constant_canonic
     canon_vertex = canonize_structure_constant_products(
         vertex,
         lorentz_indices=(mu1, mu2, mu3, mu4),
-        adjoint_indices=(a1, a2, a3, a4, b, S("a_mid_G_SU3C")),
+        adjoint_indices=(a1, a2, a3, a4, b, S("a_decl")),
     )
     canon_feynrules = canonize_structure_constant_products(
         feynrules,
         lorentz_indices=(mu1, mu2, mu3, mu4),
-        adjoint_indices=(a1, a2, a3, a4, b, S("a_mid_G_SU3C")),
+        adjoint_indices=(a1, a2, a3, a4, b, S("a_decl")),
     )
 
     assert _canon(canon_vertex) == _canon(canon_feynrules)
