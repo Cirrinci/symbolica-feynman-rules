@@ -292,17 +292,19 @@ def build_unbroken_standard_model(
     cc = S("cc")
     ff1 = S("ff1")
     ff2 = S("ff2")
+    aW = S("aW")
+    aC = S("aC")
 
     LGauge = (
         -(_ONE / _FOUR)
         * FieldStrength(gauge_groups.U1Y, mu, nu)
         * FieldStrength(gauge_groups.U1Y, mu, nu)
         - (_ONE / _FOUR)
-        * FieldStrength(gauge_groups.SU2L, mu, nu)
-        * FieldStrength(gauge_groups.SU2L, mu, nu)
+        * FieldStrength(gauge_groups.SU2L, mu, nu, aW)
+        * FieldStrength(gauge_groups.SU2L, mu, nu, aW)
         - (_ONE / _FOUR)
-        * FieldStrength(gauge_groups.SU3C, mu, nu)
-        * FieldStrength(gauge_groups.SU3C, mu, nu)
+        * FieldStrength(gauge_groups.SU3C, mu, nu, aC)
+        * FieldStrength(gauge_groups.SU3C, mu, nu, aC)
     )
 
     LFermions = (

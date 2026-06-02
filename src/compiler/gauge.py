@@ -63,12 +63,11 @@ from model.lagrangian import (
     ComplexScalarKineticTerm,
     DiracKineticTerm,
     GaugeFixingTerm,
-    GaugeKineticTerm,
     GhostTerm,
 )
 from model.lowering import (
     _analyze_declared_source_term,
-    _field_strength_bilinear_blocks,
+    _expand_field_strengths_in_monomial,
     _lower_local_interaction_monomial,
 )
 from symbolic.spenso_structures import lorentz_metric
@@ -1236,65 +1235,36 @@ def _compile_generic_declared_covariant_monomial(
     return tuple(interactions)
 
 
-def _combine_interaction_terms(
-    left: InteractionTerm,
-    right: InteractionTerm,
-) -> InteractionTerm:
-    field_offset = len(left.fields)
-    right_derivatives = tuple(
-        DerivativeAction(
-            target=field_offset + derivative.target,
-            lorentz_index=derivative.lorentz_index,
-        )
-        for derivative in right.derivatives
-    )
-    right_bilinears = tuple(
-        (field_offset + left_slot, field_offset + right_slot)
-        for left_slot, right_slot in right.closed_dirac_bilinears
-    )
-
-    label_parts = [part for part in (left.label, right.label) if part]
-    return InteractionTerm(
-        coupling=left.coupling * right.coupling,
-        fields=left.fields + right.fields,
-        derivatives=left.derivatives + right_derivatives,
-        closed_dirac_bilinears=left.closed_dirac_bilinears + right_bilinears,
-        label=" * ".join(label_parts),
-    )
-
-
-def _compile_field_strength_bilinear_monomial(
+def compile_field_strength_monomial(
     model: Model,
     term: _DeclaredMonomial,
 ) -> tuple[InteractionTerm, ...]:
-    blocks = _field_strength_bilinear_blocks(term)
-    if blocks is None:
+    """Compile any monomial containing ``FieldStrength(...)`` factors.
+
+    Each field strength is expanded into its explicit local pieces
+    (``d_mu A_nu - d_nu A_mu`` plus ``g f^{abc} A^b_mu A^c_nu`` for non-abelian
+    groups) and the full product is distributed into a sum of plain local
+    monomials. Every resulting monomial is then lowered through the ordinary
+    local-monomial machinery, so arbitrary ``F^n`` operators compile without any
+    dedicated cubic/quartic handlers.
+    """
+    monomials = _expand_field_strengths_in_monomial(term, model)
+    if monomials is None:
         raise ValueError(
-            "Expected a product of canonical FieldStrength(...) bilinear blocks."
+            "Expected a declarative monomial containing FieldStrength(...) factors."
         )
 
-    # One bare ``FieldStrength(...) * FieldStrength(...)`` block equals
-    # ``-4`` times the canonical ``-1/4 F^2`` normalization compiled elsewhere.
-    compiled_blocks = [
-        compile_gauge_kinetic_term(
-            model,
-            GaugeKineticTerm(
-                gauge_group=block.gauge_group,
-                coefficient=-Expression.num(4),
-            ),
-        )
-        for block in blocks
-    ]
-
-    combined = (InteractionTerm(coupling=term.coefficient, fields=()),)
-    for block_terms in compiled_blocks:
-        next_combined: list[InteractionTerm] = []
-        for partial in combined:
-            for block_term in block_terms:
-                next_combined.append(_combine_interaction_terms(partial, block_term))
-        combined = tuple(next_combined)
-
-    return tuple(interaction for interaction in combined if interaction.fields)
+    interactions: list[InteractionTerm] = []
+    for monomial in monomials:
+        interaction = _lower_local_interaction_monomial(monomial)
+        if interaction is None:
+            raise ValueError(
+                "FieldStrength expansion produced a monomial that could not be "
+                f"lowered into a local interaction: {monomial}."
+            )
+        if interaction.fields:
+            interactions.append(interaction)
+    return tuple(interactions)
 
 
 def compile_fermion_gauge_current(
@@ -1564,172 +1534,6 @@ def compile_mixed_complex_scalar_contact_terms(
         contact_prefactor=contact_prefactor,
         label_prefix=label_prefix,
         label_kind="mixed_group",
-    )
-
-
-def compile_gauge_kinetic_bilinear_terms(
-    *,
-    gauge_group: GaugeGroup,
-    gauge_field: Field,
-    coefficient=1,
-    label_prefix: str = "",
-):
-    """Compile the two-point part of ``-1/4 F_{mu nu} F^{mu nu}``."""
-    layout = _GaugeFieldLayout.from_field(
-        gauge_field,
-        purpose="Gauge kinetic compilation",
-    )
-    alpha, beta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 2)
-    rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}")
-    rho_left = _symbol(f"rho_left_{gauge_field.name}_{gauge_group.name}")
-    rho_right = _symbol(f"rho_right_{gauge_field.name}_{gauge_group.name}")
-    identity_factor, shared_fields = layout.bilinear_occurrences(alpha, beta)
-    prefix = label_prefix + " " if label_prefix else ""
-
-    return (
-        InteractionTerm(
-            coupling=-coefficient * _HALF * identity_factor * lorentz_metric(alpha, beta),
-            fields=shared_fields,
-            derivatives=(
-                DerivativeAction(target=0, lorentz_index=rho),
-                DerivativeAction(target=1, lorentz_index=rho),
-            ),
-            label=prefix + f"{gauge_group.name}: gauge kinetic bilinear (metric)",
-        ),
-        InteractionTerm(
-            coupling=(
-                coefficient
-                * _HALF
-                * identity_factor
-                * lorentz_metric(rho_left, beta)
-                * lorentz_metric(rho_right, alpha)
-            ),
-            fields=shared_fields,
-            derivatives=(
-                DerivativeAction(target=0, lorentz_index=rho_left),
-                DerivativeAction(target=1, lorentz_index=rho_right),
-            ),
-            label=prefix + f"{gauge_group.name}: gauge kinetic bilinear (cross)",
-        ),
-    )
-
-
-def compile_yang_mills_cubic_term(
-    *,
-    gauge_group: GaugeGroup,
-    gauge_field: Field,
-    coefficient=1,
-    label_prefix: str = "",
-):
-    """Compile the cubic Yang-Mills term from ``-1/4 F^a_{mu nu} F^{a mu nu}``."""
-    if gauge_group.abelian:
-        raise ValueError("Abelian gauge groups do not have Yang-Mills cubic self-interactions.")
-    layout = _GaugeFieldLayout.from_field(
-        gauge_field,
-        purpose="Yang-Mills cubic compilation",
-        require_adjoint=True,
-    )
-    alpha, beta, gamma = _default_gauge_lorentz_labels(gauge_field, gauge_group, 3)
-    adj_left, adj_middle, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 3)
-    rho = _symbol(f"rho_{gauge_field.name}_{gauge_group.name}_cubic")
-    coupling = (
-        coefficient
-        * (-gauge_group.coupling)
-        * _build_structure_constant(gauge_group, adj_left, adj_middle, adj_right)
-        * lorentz_metric(alpha, gamma)
-        * lorentz_metric(rho, beta)
-    )
-
-    return InteractionTerm(
-        coupling=coupling,
-        fields=(
-            layout.occurrence(alpha, adj_left),
-            layout.occurrence(beta, adj_middle),
-            layout.occurrence(gamma, adj_right),
-        ),
-        derivatives=(DerivativeAction(target=0, lorentz_index=rho),),
-        label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills cubic",
-    )
-
-
-def compile_yang_mills_quartic_term(
-    *,
-    gauge_group: GaugeGroup,
-    gauge_field: Field,
-    coefficient=1,
-    label_prefix: str = "",
-):
-    """Compile the quartic Yang-Mills term from ``-1/4 F^a_{mu nu} F^{a mu nu}``."""
-    if gauge_group.abelian:
-        raise ValueError("Abelian gauge groups do not have Yang-Mills quartic self-interactions.")
-    layout = _GaugeFieldLayout.from_field(
-        gauge_field,
-        purpose="Yang-Mills quartic compilation",
-        require_adjoint=True,
-    )
-    alpha, beta, gamma, delta = _default_gauge_lorentz_labels(gauge_field, gauge_group, 4)
-    adj_left, adj_mid_left, adj_mid_right, adj_right = _default_adjoint_labels(gauge_field, gauge_group, 4)
-    internal = _default_internal_adjoint_label(gauge_field, gauge_group)
-    coupling = (
-        -coefficient
-        * _QUARTER
-        * (gauge_group.coupling ** 2)
-        * _build_structure_constant(gauge_group, adj_left, adj_mid_left, internal)
-        * _build_structure_constant(gauge_group, adj_mid_right, adj_right, internal)
-        * lorentz_metric(alpha, gamma)
-        * lorentz_metric(beta, delta)
-    )
-
-    return InteractionTerm(
-        coupling=coupling,
-        fields=(
-            layout.occurrence(alpha, adj_left),
-            layout.occurrence(beta, adj_mid_left),
-            layout.occurrence(gamma, adj_mid_right),
-            layout.occurrence(delta, adj_right),
-        ),
-        label=(label_prefix + " " if label_prefix else "") + f"{gauge_group.name}: Yang-Mills quartic",
-    )
-
-
-def compile_gauge_kinetic_term(model: Model, term: GaugeKineticTerm) -> tuple[InteractionTerm, ...]:
-    """Compile ``-1/4 F_{mu nu} F^{mu nu}`` for one declared gauge group.
-
-    For abelian groups this yields only the gauge-boson bilinear.
-    For non-abelian groups it also appends the Yang-Mills cubic and quartic
-    self-interaction terms.
-    """
-    gauge_group = _require_declared_gauge_group(
-        model,
-        term.gauge_group,
-        purpose="Gauge-kinetic compilation",
-    )
-
-    gauge_field = model.gauge_boson_field(gauge_group)
-    label_prefix = term.label or f"-1/4 {gauge_group.name} field strength squared"
-
-    bilinear_terms = compile_gauge_kinetic_bilinear_terms(
-        gauge_group=gauge_group,
-        gauge_field=gauge_field,
-        coefficient=term.coefficient,
-        label_prefix=label_prefix,
-    )
-    if gauge_group.abelian:
-        return bilinear_terms
-
-    return bilinear_terms + (
-        compile_yang_mills_cubic_term(
-            gauge_group=gauge_group,
-            gauge_field=gauge_field,
-            coefficient=term.coefficient,
-            label_prefix=label_prefix,
-        ),
-        compile_yang_mills_quartic_term(
-            gauge_group=gauge_group,
-            gauge_field=gauge_field,
-            coefficient=term.coefficient,
-            label_prefix=label_prefix,
-        ),
     )
 
 
@@ -2058,13 +1862,9 @@ def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
             )
             continue
 
-        if analyzed.gauge_kinetic is not None:
-            interactions.extend(compile_gauge_kinetic_term(model, analyzed.gauge_kinetic))
-            continue
-
         if analyzed.field_strength_monomial is not None:
             interactions.extend(
-                _compile_field_strength_bilinear_monomial(
+                compile_field_strength_monomial(
                     model,
                     analyzed.field_strength_monomial,
                 )

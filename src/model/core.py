@@ -23,7 +23,6 @@ from .lagrangian import (
     DiracKineticTerm,
     FlavorExpandOption,
     GaugeFixingTerm,
-    GaugeKineticTerm,
     GhostTerm,
 )
 from .lowering import (
@@ -65,7 +64,6 @@ def _assign_model_argument(values: dict[str, object], slot: str, value):
 
 
 _GAUGE_GROUP_DECLARATION_TERM_TYPES = (
-    GaugeKineticTerm,
     GaugeFixingTerm,
     GhostTerm,
     GaugeFixingDeclaration,

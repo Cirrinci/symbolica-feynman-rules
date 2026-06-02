@@ -75,29 +75,79 @@ def lower_scalar_covd_monomial(
     )
 
 
-def lower_field_strength_monomial(
-    term,
+def expand_field_strength_factor(
     *,
-    field_strength_factor_cls,
-    gauge_kinetic_term_cls,
+    gauge_field,
+    abelian,
+    lorentz_slot,
+    adjoint_slot,
+    left_index,
+    right_index,
+    adjoint_index,
+    coupling,
+    structure_constant_builder,
+    fresh_adjoint_label,
+    field_factor_cls,
+    partial_derivative_factor_cls,
+    declared_monomial_cls,
     expression_module,
 ):
-    fs_factors = [factor for factor in term.factors if isinstance(factor, field_strength_factor_cls)]
-    if len(term.factors) != 2 or len(fs_factors) != 2:
-        return None
-    left, right = fs_factors
-    if left.gauge_group != right.gauge_group:
-        return None
-    if expr_equal(left.left_index, left.right_index):
-        raise ValueError(
-            "FieldStrength indices must be distinct within one factor; "
-            f"got {left.left_index} twice in {left}."
-        )
-    if left.left_index != right.left_index or left.right_index != right.right_index:
-        return None
+    """Expand one ``FieldStrength(...)`` factor into additive local monomials.
 
-    normalized = -expression_module.num(4) * term.coefficient
-    return gauge_kinetic_term_cls(
-        gauge_group=left.gauge_group,
-        coefficient=normalized,
+    Returns a tuple of ``declared_monomial_cls`` pieces summing to the field
+    strength in the convention
+
+    ``F^a_{mu nu} = d_mu A^a_nu - d_nu A^a_mu + g f^{abc} A^b_mu A^c_nu``
+
+    (abelian groups drop the structure-constant piece). Each piece is a plain
+    local monomial built from ``field_factor_cls`` / ``partial_derivative_factor_cls``
+    so the existing local-monomial lowering can compile it unchanged. The
+    structure constant for non-abelian groups is folded into the piece
+    coefficient using ``structure_constant_builder`` so the correct
+    representation (e.g. color vs weak adjoint) is preserved.
+    """
+
+    def packed(lorentz_label, adjoint_label):
+        slot_map = {lorentz_slot: lorentz_label}
+        if adjoint_slot is not None and adjoint_label is not None:
+            slot_map[adjoint_slot] = adjoint_label
+        return gauge_field.pack_slot_labels(slot_map)
+
+    one = expression_module.num(1)
+    pieces = [
+        declared_monomial_cls(
+            coefficient=one,
+            factors=(
+                partial_derivative_factor_cls(
+                    field=gauge_field,
+                    lorentz_indices=(left_index,),
+                    labels=packed(right_index, adjoint_index),
+                ),
+            ),
+        ),
+        declared_monomial_cls(
+            coefficient=-one,
+            factors=(
+                partial_derivative_factor_cls(
+                    field=gauge_field,
+                    lorentz_indices=(right_index,),
+                    labels=packed(left_index, adjoint_index),
+                ),
+            ),
+        ),
+    ]
+    if abelian:
+        return tuple(pieces)
+
+    b_label = fresh_adjoint_label()
+    c_label = fresh_adjoint_label()
+    pieces.append(
+        declared_monomial_cls(
+            coefficient=coupling * structure_constant_builder(adjoint_index, b_label, c_label),
+            factors=(
+                field_factor_cls(gauge_field, labels=packed(left_index, b_label)),
+                field_factor_cls(gauge_field, labels=packed(right_index, c_label)),
+            ),
+        )
     )
+    return tuple(pieces)

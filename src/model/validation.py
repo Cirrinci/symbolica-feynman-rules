@@ -10,13 +10,12 @@ from .lagrangian import (
     ComplexScalarKineticTerm,
     DiracKineticTerm,
     GaugeFixingTerm,
-    GaugeKineticTerm,
     GhostTerm,
 )
 from .lowering import (
+    _canonical_field_strength_kinetic_info,
     _source_term_covariant_core,
     _source_term_gauge_fixing,
-    _source_term_gauge_kinetic,
     _source_term_ghost,
 )
 from .metadata import Field, GaugeGroup
@@ -162,21 +161,22 @@ def validate_model(model: Model) -> ValidationReport:
             )
 
     for term in source_terms:
-        gauge_kinetic = _source_term_gauge_kinetic(term)
-        if gauge_kinetic is None:
+        kinetic_info = _canonical_field_strength_kinetic_info(term)
+        if kinetic_info is None:
             continue
+        group_target, normalized_coefficient = kinetic_info
 
-        duplicate_key = ("vector", normalize_group_target(gauge_kinetic.gauge_group))
+        duplicate_key = ("vector", normalize_group_target(group_target))
         kinetic_duplicates[duplicate_key] = kinetic_duplicates.get(duplicate_key, 0) + 1
 
-        status = coefficient_status(gauge_kinetic.coefficient)
+        status = coefficient_status(normalized_coefficient)
         if status is False:
-            group = model.find_gauge_group(gauge_kinetic.gauge_group)
-            group_name = group.name if group is not None else repr(gauge_kinetic.gauge_group)
+            group = model.find_gauge_group(group_target)
+            group_name = group.name if group is not None else repr(group_target)
             add_issue(
                 "kinetic_normalization",
                 f"Gauge kinetic term for gauge group {group_name!r} has "
-                f"non-canonical coefficient {gauge_kinetic.coefficient!r}; expected 1.",
+                f"non-canonical coefficient; expected -1/4 * F(G, mu, nu, a)^2.",
             )
 
     for key, count in kinetic_duplicates.items():

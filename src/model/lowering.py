@@ -12,7 +12,7 @@ from lagrangian.lowering import (
     expr_equal as _expr_equal_impl,
     lower_dirac_monomial as _lower_dirac_monomial_impl,
     lower_scalar_covd_monomial as _lower_scalar_covd_monomial_impl,
-    lower_field_strength_monomial as _lower_field_strength_monomial_impl,
+    expand_field_strength_factor as _expand_field_strength_factor_impl,
 )
 
 from .declared import (
@@ -63,7 +63,6 @@ from .lagrangian import (
     ComplexScalarKineticTerm,
     DiracKineticTerm,
     GaugeFixingTerm,
-    GaugeKineticTerm,
     GhostTerm,
 )
 
@@ -82,7 +81,6 @@ class AnalyzedSourceTerm:
     covariant_core: Optional[Union[DiracKineticTerm, ComplexScalarKineticTerm]] = None
     covariant_spectators: tuple[tuple[object, bool], ...] = ()
     generic_covariant_monomial: Optional[_DeclaredMonomial] = None
-    gauge_kinetic: Optional[GaugeKineticTerm] = None
     field_strength_monomial: Optional[_DeclaredMonomial] = None
     gauge_fixing: Optional[GaugeFixingTerm] = None
     ghost: Optional[GhostTerm] = None
@@ -93,19 +91,11 @@ class AnalyzedSourceTerm:
             (
                 self.covariant_core is not None,
                 self.generic_covariant_monomial is not None,
-                self.gauge_kinetic is not None,
                 self.field_strength_monomial is not None,
                 self.gauge_fixing is not None,
                 self.ghost is not None,
             )
         )
-
-
-@dataclass(frozen=True)
-class _FieldStrengthBilinearBlock:
-    gauge_group: object
-    left_index: object
-    right_index: object
 
 
 def _match_covariant_monomial(
@@ -481,6 +471,8 @@ def _declared_factor_explicit_label_refs(
     elif isinstance(factor, FieldStrengthFactor):
         refs.append((lorentz_index, factor.left_index, "FieldStrength"))
         refs.append((lorentz_index, factor.right_index, "FieldStrength"))
+        if factor.adjoint_index is not None:
+            refs.append((COLOR_ADJ_INDEX, factor.adjoint_index, "FieldStrength"))
     return tuple(refs)
 
 
@@ -1443,79 +1435,187 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     return interaction
 
 
-def _lower_field_strength_monomial(term: _DeclaredMonomial):
-    return _lower_field_strength_monomial_impl(
-        term,
-        field_strength_factor_cls=FieldStrengthFactor,
-        gauge_kinetic_term_cls=GaugeKineticTerm,
+def _monomial_has_field_strength(term: _DeclaredMonomial) -> bool:
+    return any(isinstance(factor, FieldStrengthFactor) for factor in term.factors)
+
+
+def _field_strength_adjoint_label_counts(term: _DeclaredMonomial) -> Counter:
+    """Count user-declared adjoint labels across one field-strength monomial.
+
+    Adjoint labels come from ``FieldStrength`` adjoint indices and any explicit
+    color tensor factors (``StructureConstant`` / ``T``). Internally generated
+    expansion labels are not counted here; they are always contracted.
+    """
+    counts: Counter = Counter()
+    for factor in term.factors:
+        if isinstance(factor, FieldStrengthFactor) and factor.adjoint_index is not None:
+            counts[_local_label_key(factor.adjoint_index)] += 1
+        elif isinstance(factor, StructureConstantFactor):
+            for idx in (factor.left_index, factor.middle_index, factor.right_index):
+                counts[_local_label_key(idx)] += 1
+        elif isinstance(factor, GeneratorFactor):
+            counts[_local_label_key(factor.adjoint_index)] += 1
+    return counts
+
+
+def _validate_field_strength_scalar(term: _DeclaredMonomial) -> None:
+    counts = _field_strength_adjoint_label_counts(term)
+    open_labels = sorted(label for label, count in counts.items() if count == 1)
+    if open_labels:
+        raise ValueError(
+            "FieldStrength monomial has open (uncontracted) adjoint index/indices "
+            f"{open_labels}; the Lagrangian term must be a gauge singlet. Contract "
+            "them against another field strength or a StructureConstant(a, b, c)."
+        )
+
+
+def _gauge_field_lorentz_slot(gauge_field: Field, *, purpose: str) -> int:
+    slots = [slot for slot, index in enumerate(gauge_field.indices) if is_lorentz_index(index)]
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} requires gauge field {gauge_field.name!r} to expose exactly one "
+            f"Lorentz slot; found {len(slots)}."
+        )
+    return slots[0]
+
+
+def _gauge_field_adjoint_slot(gauge_field: Field, *, purpose: str) -> int:
+    slots = [
+        slot for slot, index in enumerate(gauge_field.indices) if not is_lorentz_index(index)
+    ]
+    if len(slots) != 1:
+        raise ValueError(
+            f"{purpose} requires gauge field {gauge_field.name!r} to expose exactly one "
+            f"adjoint slot; found {len(slots)}."
+        )
+    return slots[0]
+
+
+def _expand_one_field_strength(fs: FieldStrengthFactor, model, fresh_adjoint_label):
+    purpose = "FieldStrength compilation"
+    gauge_group = model.find_gauge_group(fs.gauge_group)
+    if gauge_group is None:
+        raise ValueError(
+            f"{purpose} could not resolve gauge group {fs.gauge_group!r} in model.gauge_groups."
+        )
+    if _expr_equal_impl(fs.left_index, fs.right_index):
+        raise ValueError(
+            "FieldStrength indices must be distinct within one factor; "
+            f"got {fs.left_index} twice in {fs}."
+        )
+    gauge_field = model.gauge_boson_field(gauge_group)
+    lorentz_slot = _gauge_field_lorentz_slot(gauge_field, purpose=purpose)
+
+    if gauge_group.abelian:
+        if fs.adjoint_index is not None:
+            raise ValueError(
+                f"{purpose}: abelian gauge group {gauge_group.name!r} field strength does "
+                "not take an adjoint index; write FieldStrength(group, mu, nu)."
+            )
+        adjoint_slot = None
+        coupling = None
+        structure_constant_builder = None
+    else:
+        if fs.adjoint_index is None:
+            raise ValueError(
+                f"{purpose}: non-abelian gauge group {gauge_group.name!r} field strength "
+                "requires an explicit adjoint index, e.g. FieldStrength(group, mu, nu, a)."
+            )
+        if gauge_group.structure_constant is None or not callable(gauge_group.structure_constant):
+            raise ValueError(
+                f"{purpose}: non-abelian gauge group {gauge_group.name!r} needs a callable "
+                "structure_constant builder for field-strength expansion."
+            )
+        adjoint_slot = _gauge_field_adjoint_slot(gauge_field, purpose=purpose)
+        coupling = gauge_group.coupling
+        structure_constant_builder = gauge_group.structure_constant
+
+    return _expand_field_strength_factor_impl(
+        gauge_field=gauge_field,
+        abelian=gauge_group.abelian,
+        lorentz_slot=lorentz_slot,
+        adjoint_slot=adjoint_slot,
+        left_index=fs.left_index,
+        right_index=fs.right_index,
+        adjoint_index=fs.adjoint_index,
+        coupling=coupling,
+        structure_constant_builder=structure_constant_builder,
+        fresh_adjoint_label=fresh_adjoint_label,
+        field_factor_cls=_FieldFactor,
+        partial_derivative_factor_cls=PartialDerivativeFactor,
+        declared_monomial_cls=_DeclaredMonomial,
         expression_module=Expression,
     )
 
 
-def _field_strength_group_key(target) -> tuple[str, str]:
-    if hasattr(target, "name"):
-        return ("group", str(target.name))
-    return ("raw", str(target))
+def _expand_field_strengths_in_monomial(term: _DeclaredMonomial, model):
+    """Expand every ``FieldStrength`` factor in one declared monomial.
 
-
-def _field_strength_bilinear_blocks(
-    term: _DeclaredMonomial,
-) -> Optional[tuple[_FieldStrengthBilinearBlock, ...]]:
-    fs_factors = [
-        factor for factor in term.factors if isinstance(factor, FieldStrengthFactor)
-    ]
-    if not fs_factors or len(fs_factors) != len(term.factors):
+    Returns the additive tuple of plain local monomials (the Cartesian product
+    over each field strength's expansion pieces), or ``None`` when the monomial
+    has no field-strength factors. The resulting monomials are ordinary local
+    products of fields / derivatives / structure constants that
+    ``_lower_local_interaction_monomial`` compiles unchanged, so the number of
+    emitted interactions is determined entirely by the expansion.
+    """
+    if not _monomial_has_field_strength(term):
         return None
+    _validate_field_strength_scalar(term)
 
-    remaining = list(fs_factors)
-    blocks: list[_FieldStrengthBilinearBlock] = []
-    seen_groups: set[tuple[str, str]] = set()
+    fs_factors = [factor for factor in term.factors if isinstance(factor, FieldStrengthFactor)]
+    other_factors = tuple(
+        factor for factor in term.factors if not isinstance(factor, FieldStrengthFactor)
+    )
 
-    while remaining:
-        left = remaining.pop(0)
-        if _expr_equal_impl(left.left_index, left.right_index):
-            raise ValueError(
-                "FieldStrength indices must be distinct within one factor; "
-                f"got {left.left_index} twice in {left}."
+    counters = {"adj": 0}
+
+    def fresh_adjoint_label():
+        counters["adj"] += 1
+        return S(f"fs_adj_decl_{counters['adj']}")
+
+    monomials = [_DeclaredMonomial(coefficient=term.coefficient, factors=other_factors)]
+    for fs in fs_factors:
+        pieces = _expand_one_field_strength(fs, model, fresh_adjoint_label)
+        monomials = [
+            _DeclaredMonomial(
+                coefficient=base.coefficient * piece.coefficient,
+                factors=base.factors + piece.factors,
             )
+            for base in monomials
+            for piece in pieces
+        ]
+    return tuple(monomials)
 
-        match_slot = None
-        for slot, candidate in enumerate(remaining):
-            if candidate.gauge_group != left.gauge_group:
-                continue
-            if not _expr_equal_impl(candidate.left_index, left.left_index):
-                continue
-            if not _expr_equal_impl(candidate.right_index, left.right_index):
-                continue
-            match_slot = slot
-            break
 
-        if match_slot is None:
-            return None
+def _canonical_field_strength_kinetic_info(term):
+    """Recognize a canonical ``c * F(G,...) F(G,...)`` bilinear for diagnostics.
 
-        right = remaining.pop(match_slot)
-        if _expr_equal_impl(right.left_index, right.right_index):
-            raise ValueError(
-                "FieldStrength indices must be distinct within one factor; "
-                f"got {right.left_index} twice in {right}."
-            )
-
-        group_key = _field_strength_group_key(left.gauge_group)
-        if group_key in seen_groups:
-            raise ValueError(
-                "Products of canonical FieldStrength(...) pairs currently support "
-                "at most one bilinear block per gauge group."
-            )
-        seen_groups.add(group_key)
-        blocks.append(
-            _FieldStrengthBilinearBlock(
-                gauge_group=left.gauge_group,
-                left_index=left.left_index,
-                right_index=left.right_index,
-            )
-        )
-
-    return tuple(blocks)
+    Returns ``(gauge_group_target, normalized_coefficient)`` where the
+    normalized coefficient equals ``-4 * c`` (so a canonical ``-1/4 F^2`` maps
+    to ``1``), or ``None`` for non-canonical / higher field-strength monomials.
+    This is a read-only validation helper and plays no role in compilation.
+    """
+    if not isinstance(term, _DeclaredMonomial):
+        return None
+    if any(not isinstance(factor, FieldStrengthFactor) for factor in term.factors):
+        return None
+    fs_factors = [factor for factor in term.factors if isinstance(factor, FieldStrengthFactor)]
+    if len(fs_factors) != 2:
+        return None
+    left, right = fs_factors
+    if left.gauge_group != right.gauge_group:
+        return None
+    if not _expr_equal_impl(left.left_index, right.left_index):
+        return None
+    if not _expr_equal_impl(left.right_index, right.right_index):
+        return None
+    if (left.adjoint_index is None) != (right.adjoint_index is None):
+        return None
+    if left.adjoint_index is not None and not _expr_equal_impl(
+        left.adjoint_index, right.adjoint_index
+    ):
+        return None
+    return left.gauge_group, -Expression.num(4) * term.coefficient
 
 
 def _analyze_declared_source_term(
@@ -1552,14 +1652,8 @@ def _analyze_declared_source_term(
                 covariant_spectators=spectators,
             )
 
-    gauge_kinetic = _source_term_gauge_kinetic(term)
-    if gauge_kinetic is not None:
-        return AnalyzedSourceTerm(term=term, gauge_kinetic=gauge_kinetic)
-
-    if isinstance(term, _DeclaredMonomial):
-        field_strength_blocks = _field_strength_bilinear_blocks(term)
-        if field_strength_blocks is not None:
-            return AnalyzedSourceTerm(term=term, field_strength_monomial=term)
+    if isinstance(term, _DeclaredMonomial) and _monomial_has_field_strength(term):
+        return AnalyzedSourceTerm(term=term, field_strength_monomial=term)
 
     gauge_fixing = _source_term_gauge_fixing(term)
     if gauge_fixing is not None:
@@ -1583,8 +1677,9 @@ def _unsupported_declared_source_term_error():
         "either optionally multiplied by local spectator fields, "
         "more general local monomials with one or more CovD(...) factors that can be "
         "expanded using model gauge metadata, "
-        "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
-        "products of canonical FieldStrength(G, mu, nu) pairs across distinct gauge groups, "
+        "arbitrary products of FieldStrength(G, mu, nu[, a]) factors (e.g. "
+        "-1/4 * FieldStrength(G, mu, nu, a) * FieldStrength(G, mu, nu, a), or higher "
+        "F^n operators contracted with StructureConstant(...)), "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
         "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
@@ -1602,26 +1697,12 @@ def _validate_declared_monomial(
         return
     if _is_generic_covariant_monomial_candidate(term):
         return
-    if _lower_field_strength_monomial(term) is not None:
-        return
-    if _field_strength_bilinear_blocks(term) is not None:
+    if _monomial_has_field_strength(term):
+        _validate_field_strength_scalar(term)
         return
     if _lower_local_interaction_monomial(term) is not None:
         return
-    raise ValueError(
-        "Unsupported declarative Lagrangian term. Supported canonical forms are: "
-        "I * Psi.bar * Gamma(mu) * CovD(Psi, mu), "
-        "CovD(Phi.bar, mu) * CovD(Phi, mu), "
-        "either optionally multiplied by local spectator fields, "
-        "more general local monomials with one or more CovD(...) factors that can be "
-        "expanded using model gauge metadata, "
-        "-1/4 * FieldStrength(G, mu, nu) * FieldStrength(G, mu, nu), "
-        "products of canonical FieldStrength(G, mu, nu) pairs across distinct gauge groups, "
-        "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
-        "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
-        "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
-        "or the legacy GaugeFixingTerm / GhostTerm declarations."
-    )
+    raise ValueError(_unsupported_declared_source_term_error().args[0])
 
 
 def _declared_source_terms_from_item(item):
@@ -1635,7 +1716,6 @@ def _declared_source_terms_from_item(item):
             _DeclaredMonomial,
             DiracKineticTerm,
             ComplexScalarKineticTerm,
-            GaugeKineticTerm,
             GaugeFixingDeclaration,
             GaugeFixingTerm,
             GhostLagrangianDeclaration,
@@ -1744,14 +1824,6 @@ def _source_term_covariant_core(term) -> Optional[Union[DiracKineticTerm, Comple
     return None
 
 
-def _source_term_gauge_kinetic(term) -> Optional[GaugeKineticTerm]:
-    if isinstance(term, GaugeKineticTerm):
-        return term
-    if isinstance(term, _DeclaredMonomial):
-        return _lower_field_strength_monomial(term)
-    return None
-
-
 def _source_term_gauge_fixing(term) -> Optional[GaugeFixingTerm]:
     if isinstance(term, GaugeFixingTerm):
         return term
@@ -1778,7 +1850,7 @@ def _source_term_ghost(term) -> Optional[GhostTerm]:
 
 
 def _source_term_needs_compilation(term) -> bool:
-    if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm, GaugeKineticTerm, GaugeFixingTerm, GhostTerm)):
+    if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm, GaugeFixingTerm, GhostTerm)):
         return True
     if isinstance(term, (GaugeFixingDeclaration, GhostLagrangianDeclaration)):
         return True
@@ -1787,9 +1859,7 @@ def _source_term_needs_compilation(term) -> bool:
             return True
         if _is_generic_covariant_monomial_candidate(term):
             return True
-        if _lower_field_strength_monomial(term) is not None:
-            return True
-        if _field_strength_bilinear_blocks(term) is not None:
+        if _monomial_has_field_strength(term):
             return True
     return False
 
@@ -1840,7 +1910,6 @@ def _validate_declared_source_term(term, *, parameters: Sequence[Parameter] = ()
             InteractionTerm,
             DiracKineticTerm,
             ComplexScalarKineticTerm,
-            GaugeKineticTerm,
             GaugeFixingDeclaration,
             GaugeFixingTerm,
             GhostLagrangianDeclaration,

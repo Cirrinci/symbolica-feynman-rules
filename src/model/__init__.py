@@ -140,7 +140,7 @@ from .ssb import *  # noqa: F401,F403
 # ---- internal symbols still used across the codebase ---------------------
 from .declared import _DeclaredMonomial
 from .lowering import (
-    _lower_field_strength_monomial,
+    _expand_field_strengths_in_monomial,
     _match_covariant_monomial,
     _source_term_needs_compilation,
 )

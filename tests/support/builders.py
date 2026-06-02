@@ -148,11 +148,16 @@ def scalar_covd_decl(field, *, mu=None):
     return CovD(field.bar, mu) * CovD(field, mu)
 
 
-def gauge_kinetic_decl(group, *, mu=None, nu=None):
+def gauge_kinetic_decl(group, *, mu=None, nu=None, adjoint=None):
     if mu is None or nu is None:
         mu, nu = S("mu_decl", "nu_decl")
+    prefactor = -(Expression.num(1) / Expression.num(4))
+    if getattr(group, "abelian", False):
+        return prefactor * FieldStrength(group, mu, nu) * FieldStrength(group, mu, nu)
+    if adjoint is None:
+        adjoint = S("a_decl")
     return (
-        -(Expression.num(1) / Expression.num(4))
-        * FieldStrength(group, mu, nu)
-        * FieldStrength(group, mu, nu)
+        prefactor
+        * FieldStrength(group, mu, nu, adjoint)
+        * FieldStrength(group, mu, nu, adjoint)
     )

@@ -156,9 +156,15 @@ class FieldStrengthFactor(_DeclaredFactorMixin):
     gauge_group: object
     left_index: object
     right_index: object
+    adjoint_index: object = None
 
     def __str__(self):
         group_name = getattr(self.gauge_group, "name", self.gauge_group)
+        if self.adjoint_index is not None:
+            return (
+                f"FieldStrength({group_name}, {self.left_index}, "
+                f"{self.right_index}, {self.adjoint_index})"
+            )
         return f"FieldStrength({group_name}, {self.left_index}, {self.right_index})"
 
 
@@ -281,7 +287,6 @@ def _is_decl_scalar(value) -> bool:
         DeclaredLagrangian,
         DiracKineticTerm,
         GaugeFixingTerm,
-        GaugeKineticTerm,
         GhostTerm,
     )
 
@@ -306,7 +311,6 @@ def _is_decl_scalar(value) -> bool:
             InteractionTerm,
             DiracKineticTerm,
             ComplexScalarKineticTerm,
-            GaugeKineticTerm,
             GaugeFixingDeclaration,
             GaugeFixingTerm,
             GhostLagrangianDeclaration,
@@ -547,17 +551,24 @@ def StructureConstant(left_index, middle_index, right_index) -> StructureConstan
     )
 
 
-def FieldStrength(gauge_group, left_index, right_index) -> FieldStrengthFactor:
+def FieldStrength(gauge_group, left_index, right_index, adjoint_index=None) -> FieldStrengthFactor:
     """Declarative field-strength placeholder for ``DeclaredLagrangian``.
 
     ``FieldStrength(...)`` participates in metadata-dependent gauge-sector
     lowering and should be declared through ``Model(..., lagrangian_decl=...)``
     rather than standalone ``Lagrangian(...)``.
+
+    For non-abelian gauge groups the adjoint index is mandatory, e.g.
+    ``FieldStrength(SU3, mu, nu, a)``; the compiler expands it into
+    ``d_mu A^a_nu - d_nu A^a_mu + g f^{abc} A^b_mu A^c_nu``. Abelian groups
+    must omit it (``FieldStrength(U1, mu, nu)``) and expand into
+    ``d_mu A_nu - d_nu A_mu``.
     """
     return FieldStrengthFactor(
         gauge_group=gauge_group,
         left_index=left_index,
         right_index=right_index,
+        adjoint_index=adjoint_index,
     )
 
 

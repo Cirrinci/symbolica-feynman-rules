@@ -1070,29 +1070,6 @@ class ComplexScalarKineticTerm:
 
 
 @dataclass(frozen=True)
-class GaugeKineticTerm:
-    """Model-level declaration for ``-1/4 F_{mu nu} F^{mu nu}``."""
-
-    gauge_group: object
-    coefficient: object = 1
-    label: str = ""
-
-    def __add__(self, other):
-        terms = _declared_source_terms_from_item(other)
-        if terms is None:
-            return NotImplemented
-        return DeclaredLagrangian(source_terms=(self,) + terms)
-
-    def __radd__(self, other):
-        if other == 0:
-            return DeclaredLagrangian(source_terms=(self,))
-        terms = _declared_source_terms_from_item(other)
-        if terms is None:
-            return NotImplemented
-        return DeclaredLagrangian(source_terms=terms + (self,))
-
-
-@dataclass(frozen=True)
 class GaugeFixingTerm:
     """Model-level declaration for ``-(1/2 xi) (partial.A)^2``."""
 
