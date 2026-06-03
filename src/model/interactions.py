@@ -585,6 +585,12 @@ class InteractionTerm:
 
         field_roles = [occ.role for occ in self.fields]
         leg_roles = [leg.role for leg in external_legs]
+        field_match_keys = [
+            _field_match_key(occ.field, occ.conjugated) for occ in self.fields
+        ]
+        leg_match_keys = [
+            _field_match_key(leg.field, leg.conjugated) for leg in external_legs
+        ]
 
         field_index_labels = [
             _copy_index_labels(occ.slot_labels.to_legacy()) for occ in self.fields
@@ -645,6 +651,8 @@ class InteractionTerm:
             statistics=self.statistics,
             field_roles=field_roles,
             leg_roles=leg_roles,
+            field_match_keys=field_match_keys,
+            leg_match_keys=leg_match_keys,
             field_index_labels=field_index_labels,
             field_index_types=field_index_types,
             leg_index_labels=leg_index_labels,

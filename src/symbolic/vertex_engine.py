@@ -245,12 +245,28 @@ def normalize_vertex_inputs_for_engine(
     return field_index_labels, leg_index_labels
 
 
-def factor_leg_compatible(i, j, alphas, betas, field_roles=None, leg_roles=None):
+def factor_leg_compatible(
+    i,
+    j,
+    alphas,
+    betas,
+    field_roles=None,
+    leg_roles=None,
+    field_match_keys=None,
+    leg_match_keys=None,
+):
     """Compatibility check for matching factor i with external leg j.
 
-    Uses FieldRole.compatible_with() when roles are typed objects,
-    falls back to equality for legacy strings.
+    When available, exact field-identity match keys are used to reject
+    cross-species contractions early. Role compatibility is then checked via
+    ``FieldRole.compatible_with()`` for typed objects, or by equality for
+    legacy string roles.
     """
+    if field_match_keys is not None and leg_match_keys is not None:
+        if field_match_keys[i] != leg_match_keys[j]:
+            return False
+    elif _species_key(alphas[i]) != _species_key(betas[j]):
+        return False
     if field_roles is not None and leg_roles is not None:
         return _roles_compatible(field_roles[i], leg_roles[j])
     return True
@@ -528,6 +544,8 @@ def contract_to_full_expression(
     field_spinor_indices: Optional[Sequence] = None,
     leg_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
+    field_match_keys: Optional[Sequence] = None,
+    leg_match_keys: Optional[Sequence] = None,
     coupling=None,
     closed_dirac_bilinears: Optional[Sequence[tuple[int, int]]] = None,
 ):
@@ -581,6 +599,10 @@ def contract_to_full_expression(
         raise ValueError("leg_index_labels must have the same length as betas")
     if leg_spins is not None and len(leg_spins) != n:
         raise ValueError("leg_spins must have the same length as ps")
+    if field_match_keys is not None and len(field_match_keys) != n:
+        raise ValueError("field_match_keys must have the same length as alphas")
+    if leg_match_keys is not None and len(leg_match_keys) != n:
+        raise ValueError("leg_match_keys must have the same length as betas")
 
     if statistics == "fermion":
         if field_roles is None or leg_roles is None:
@@ -693,6 +715,8 @@ def contract_to_full_expression(
             if not factor_leg_compatible(
                 i, j, alphas, betas,
                 field_roles=field_roles, leg_roles=leg_roles,
+                field_match_keys=field_match_keys,
+                leg_match_keys=leg_match_keys,
             ):
                 valid = False
                 break
@@ -819,6 +843,8 @@ def vertex_factor(
     field_spinor_indices=None,
     leg_spinor_indices=None,
     leg_spins=None,
+    field_match_keys=None,
+    leg_match_keys=None,
     closed_dirac_bilinears: Optional[Sequence[tuple[int, int]]] = None,
     strip_externals: bool = True,
     include_delta: bool = True,
@@ -850,6 +876,8 @@ def vertex_factor(
         leg_index_labels = kwargs["leg_index_labels"]
         leg_index_types = kwargs.get("leg_index_types")
         leg_spins = kwargs["leg_spins"]
+        field_match_keys = kwargs.get("field_match_keys")
+        leg_match_keys = kwargs.get("leg_match_keys")
         derivative_indices = kwargs["derivative_indices"]
         derivative_targets = kwargs["derivative_targets"]
         closed_dirac_bilinears = kwargs["closed_dirac_bilinears"]
@@ -898,6 +926,8 @@ def vertex_factor(
         leg_index_labels=leg_index_labels,
         leg_index_types=leg_index_types,
         leg_spins=leg_spins,
+        field_match_keys=field_match_keys,
+        leg_match_keys=leg_match_keys,
         coupling=coupling,
         closed_dirac_bilinears=closed_dirac_bilinears,
     )

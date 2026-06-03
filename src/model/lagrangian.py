@@ -501,6 +501,43 @@ class CompiledLagrangian:
 
         return ValueError("\n".join(lines))
 
+    def matching_terms(
+        self,
+        *fields,
+        sector=None,
+        flavor_expand: FlavorExpandOption = False,
+    ) -> tuple[InteractionTerm, ...]:
+        """Return compiled interaction terms matching one exact field signature.
+
+        Matching uses the same field-argument syntax accepted by
+        ``feynman_rule(...)`` and compares the full field multiset, not just
+        the arity. This is useful when a single vertex signature is assembled
+        from several raw local monomials, as happens for generic
+        ``FieldStrength(...)`` lowering.
+        """
+
+        if not fields:
+            raise ValueError("matching_terms requires at least one field argument.")
+        if sector is not None and sector not in KNOWN_VERTEX_SECTORS:
+            raise ValueError(
+                f"Unknown sector {sector!r}; expected one of "
+                f"{KNOWN_VERTEX_SECTORS}."
+            )
+
+        parsed_fields = tuple(_parse_field_arg(field_arg) for field_arg in fields)
+        matched_terms = tuple(
+            term
+            for term in self._expanded_terms(flavor_expand=flavor_expand)
+            if _term_matches_fields(term, parsed_fields)
+            and (sector is None or _classify_term_sector(term) == sector)
+        )
+        if matched_terms:
+            return matched_terms
+        raise self._no_matching_interaction_terms_error(
+            parsed_fields,
+            flavor_expand=flavor_expand,
+        )
+
     def vertex_signatures(
         self,
         *,

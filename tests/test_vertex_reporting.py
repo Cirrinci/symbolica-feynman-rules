@@ -112,6 +112,28 @@ def test_vertex_signatures_filter_by_arity():
     assert signatures[0].arity == 3
 
 
+def test_matching_terms_filters_by_exact_signature_not_arity():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
+    phi_term = InteractionTerm(
+        coupling=S("g_phi"),
+        fields=(phi.occurrence(), phi.occurrence(), phi.occurrence()),
+    )
+    mixed_term = InteractionTerm(
+        coupling=S("g_mix"),
+        fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
+    )
+    chi_term = InteractionTerm(
+        coupling=S("g_chi"),
+        fields=(chi.occurrence(), chi.occurrence(), chi.occurrence()),
+    )
+    lagrangian = Lagrangian(terms=(phi_term, mixed_term, chi_term))
+
+    matched = lagrangian.matching_terms(phi, chi, chi)
+
+    assert matched == (mixed_term,)
+
+
 def test_zero_argument_feynman_rule_supports_arity_and_select_filters():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
@@ -194,6 +216,32 @@ def test_vertex_signatures_contains_fields_is_multiplicity_aware_for_qcd():
         ("G", "G", "G"),
         ("G", "G", "G", "G"),
     ]
+
+
+def test_matching_terms_can_isolate_exact_pure_gauge_signatures():
+    gS, mu, nu = S("gS", "mu_mt", "nu_mt")
+    gluon = make_gluon(name="G", symbol=S("G0"))
+    su3 = make_su3(gS, gluon.symbol, name="SU3C")
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=gauge_kinetic_decl(su3, mu=mu, nu=nu),
+    )
+
+    lagrangian = model.lagrangian()
+    gg_terms = lagrangian.matching_terms(gluon, gluon, sector="pure_gauge")
+    ggg_terms = lagrangian.matching_terms(gluon, gluon, gluon, sector="pure_gauge")
+    gggg_terms = lagrangian.matching_terms(
+        gluon,
+        gluon,
+        gluon,
+        gluon,
+        sector="pure_gauge",
+    )
+
+    assert len(gg_terms) == 4
+    assert len(ggg_terms) == 4
+    assert len(gggg_terms) == 1
 
 
 def _qcd_with_quark_and_ghost_compiled():
