@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from symbolica import Expression, S
 
-from model import COLOR_FUND_INDEX, Gamma, PartialD, T, dirac_field, scalar_field
+from model import COLOR_FUND_INDEX, Gamma, PartialD, T, dirac_field, flavor_index, scalar_field
 from model.lowering import (
     _LocalChainBinding,
     _LocalFieldEntry,
@@ -137,6 +137,24 @@ def test_local_lowering_explicit_and_implicit_yukawa_match():
     )
 
     assert _normalized_lowering_signature(explicit) == _normalized_lowering_signature(implicit)
+
+
+def test_local_lowering_preserves_raw_indexed_yukawa_function():
+    generation = flavor_index("GenerationY", dimension=3, prefix="f")
+    phi = scalar_field("PhiYraw", self_conjugate=True)
+    psi = dirac_field("psiYraw", indices=(generation,))
+    eta = dirac_field("etaYraw", indices=(generation,))
+    f1, f2 = S("f1"), S("f2")
+
+    interaction = _lower_standalone_lagrangian_source_term(
+        S("Y")(f1, f2)
+        * phi
+        * psi.bar(index_labels={generation.kind: f1})
+        * eta(index_labels={generation.kind: f2})
+    )
+
+    assert "Y" in interaction.coupling.to_canonical_string()
+    assert len(interaction.closed_dirac_bilinears) == 1
 
 
 def test_local_lowering_gamma_chain_bilinear_is_dummy_rename_invariant():

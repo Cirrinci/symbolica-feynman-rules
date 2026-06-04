@@ -38,6 +38,7 @@ from .interactions import (
     _field_match_key,
 )
 from .metadata import (
+    COLOR_FUND_INDEX,
     COLOR_ADJ_INDEX,
     COLOR_ADJ_KIND,
     IndexType,
@@ -49,10 +50,13 @@ from .metadata import (
     Field,
     indices_compatible_for_labels,
     is_lorentz_index,
+    representation_family,
     lorentz_index_for,
     lorentz_slots_for,
     spinor_kind_for,
     spinor_slots_for,
+    WEAK_ADJ_INDEX,
+    WEAK_FUND_INDEX,
     gamma5_matrix,
     gamma_matrix,
     gauge_generator,
@@ -414,6 +418,184 @@ def _parameter_head_map(parameters: Sequence[Parameter]) -> dict[str, Parameter]
     }
 
 
+_SPENSO_SLOT_HEAD_TO_FAMILY_PREFIX = {
+    "spenso::bis": "bis",
+    "spenso::mink": "mink",
+    "spenso::cof": "cof",
+    "spenso::coad": "coad",
+}
+
+_CANONICAL_INDEX_TYPES_BY_REP_FAMILY = {
+    representation_family(index.representation): index
+    for index in (
+        SPINOR_INDEX,
+        LORENTZ_INDEX,
+        COLOR_FUND_INDEX,
+        COLOR_ADJ_INDEX,
+        WEAK_FUND_INDEX,
+        WEAK_ADJ_INDEX,
+    )
+}
+
+
+def _spenso_slot_ref(node) -> Optional[tuple[str, str]]:
+    if str(node.atom_type) != "AtomType.Fn":
+        return None
+    family_prefix = _SPENSO_SLOT_HEAD_TO_FAMILY_PREFIX.get(node.head)
+    if family_prefix is None or len(node.tail) != 2:
+        return None
+    dim_node, label_node = node.tail
+    if str(label_node.atom_type) != "AtomType.Var":
+        return None
+    try:
+        dimension = int(str(dim_node.head))
+    except Exception:
+        return None
+    return f"{family_prefix}({dimension})", _atom_symbol_name(label_node.head)
+
+
+def _rep_family_matches_index_type(rep_family: str, index: IndexType) -> bool:
+    return representation_family(index.representation) == rep_family
+
+
+def _coefficient_index_type_candidates(
+    term: _DeclaredMonomial,
+    *,
+    parameters: Sequence[Parameter] = (),
+) -> tuple[IndexType, ...]:
+    candidates: list[IndexType] = []
+
+    def append_candidate(index: IndexType):
+        if any(existing == index for existing in candidates):
+            return
+        candidates.append(index)
+
+    for factor in term.factors:
+        field_entry = _local_field_entry_from_factor(factor)
+        if field_entry is not None:
+            for index in field_entry.field.indices:
+                append_candidate(index)
+
+    for parameter in parameters:
+        for index in parameter.indices:
+            append_candidate(index)
+
+    for index in _CANONICAL_INDEX_TYPES_BY_REP_FAMILY.values():
+        append_candidate(index)
+
+    return tuple(candidates)
+
+
+def _resolve_spenso_slot_index_type(
+    *,
+    rep_family: str,
+    label_name: str,
+    label_bindings: Mapping[str, tuple[IndexType, str]],
+    candidates: Sequence[IndexType],
+) -> Optional[IndexType]:
+    prior = label_bindings.get(label_name)
+    if prior is not None:
+        prior_index, _origin = prior
+        if _rep_family_matches_index_type(rep_family, prior_index):
+            return prior_index
+
+    matches = [
+        index
+        for index in candidates
+        if _rep_family_matches_index_type(rep_family, index)
+    ]
+    if len(matches) == 1:
+        return matches[0]
+
+    return _CANONICAL_INDEX_TYPES_BY_REP_FAMILY.get(rep_family)
+
+
+def _coefficient_typed_index_refs(
+    term: _DeclaredMonomial,
+    *,
+    label_bindings: Mapping[str, tuple[IndexType, str]],
+    parameters: Sequence[Parameter] = (),
+) -> tuple[tuple[IndexType, object, str], ...]:
+    if not hasattr(term.coefficient, "to_atom_tree"):
+        return ()
+    try:
+        root = term.coefficient.to_atom_tree()
+    except Exception:
+        return ()
+
+    parameter_heads = _parameter_head_map(parameters)
+    candidates = _coefficient_index_type_candidates(term, parameters=parameters)
+    refs: list[tuple[IndexType, object, str]] = []
+
+    def visit(node):
+        if str(node.atom_type) == "AtomType.Fn":
+            parameter = parameter_heads.get(node.head)
+            if parameter is not None and len(node.tail) == len(parameter.indices):
+                for slot, (index, arg) in enumerate(zip(parameter.indices, node.tail), start=1):
+                    if str(arg.atom_type) != "AtomType.Var":
+                        continue
+                    refs.append(
+                        (
+                            index,
+                            S(_atom_symbol_name(arg.head)),
+                            f"{parameter.name} slot {slot}",
+                        )
+                    )
+
+            slot_ref = _spenso_slot_ref(node)
+            if slot_ref is not None:
+                rep_family, label_name = slot_ref
+                index = _resolve_spenso_slot_index_type(
+                    rep_family=rep_family,
+                    label_name=label_name,
+                    label_bindings=label_bindings,
+                    candidates=candidates,
+                )
+                if index is not None:
+                    refs.append(
+                        (
+                            index,
+                            S(label_name),
+                            f"coefficient tensor {node.head}",
+                        )
+                    )
+
+        for child in node.tail:
+            visit(child)
+
+    visit(root)
+    return tuple(refs)
+
+
+def _coefficient_spinor_label_edges(expr) -> tuple[tuple[object, object], ...]:
+    if not hasattr(expr, "to_atom_tree"):
+        return ()
+    try:
+        root = expr.to_atom_tree()
+    except Exception:
+        return ()
+
+    edges: list[tuple[object, object]] = []
+
+    def visit(node):
+        if str(node.atom_type) == "AtomType.Fn":
+            spinor_labels: list[object] = []
+            for child in node.tail:
+                slot_ref = _spenso_slot_ref(child)
+                if slot_ref is None:
+                    continue
+                rep_family, label_name = slot_ref
+                if rep_family.startswith("bis("):
+                    spinor_labels.append(S(label_name))
+            if len(spinor_labels) == 2:
+                edges.append((spinor_labels[0], spinor_labels[1]))
+        for child in node.tail:
+            visit(child)
+
+    visit(root)
+    return tuple(edges)
+
+
 def _register_declared_label_binding(
     label_bindings: dict[str, tuple[IndexType, str]],
     label,
@@ -517,26 +699,17 @@ def _validate_declared_label_bindings(
                 origin=origin,
             )
 
-    if parameters and hasattr(term.coefficient, "to_atom_tree"):
-        parameter_heads = _parameter_head_map(parameters)
-
-        def visit(node):
-            if str(node.atom_type) == "AtomType.Fn":
-                parameter = parameter_heads.get(node.head)
-                if parameter is not None and len(node.tail) == len(parameter.indices):
-                    for slot, (index, arg) in enumerate(zip(parameter.indices, node.tail), start=1):
-                        if str(arg.atom_type) != "AtomType.Var":
-                            continue
-                        _register_declared_label_binding(
-                            label_bindings,
-                            _atom_symbol_name(arg.head),
-                            index,
-                            origin=f"{parameter.name} slot {slot}",
-                        )
-            for child in node.tail:
-                visit(child)
-
-        visit(term.coefficient.to_atom_tree())
+    for index, label, origin in _coefficient_typed_index_refs(
+        term,
+        label_bindings=label_bindings,
+        parameters=parameters,
+    ):
+        _register_declared_label_binding(
+            label_bindings,
+            label,
+            index,
+            origin=origin,
+        )
 
 
 def _build_local_free_tensor_expression(factor):
@@ -1227,6 +1400,79 @@ def _register_local_dirac_pair(
         pairs_by_slot[slot] = pair
 
 
+def _register_local_pairs_from_coefficient_spinor_graph(
+    state: _LocalLoweringState,
+    *,
+    pairs_by_slot: dict[int, tuple[int, int]],
+    pair_order: list[tuple[int, int]],
+):
+    edges = _coefficient_spinor_label_edges(state.coupling)
+    if not edges:
+        return
+
+    adjacency: dict[str, set[str]] = {}
+
+    def add_node(label) -> str:
+        key = _local_label_key(label)
+        adjacency.setdefault(key, set())
+        return key
+
+    for left_label, right_label in edges:
+        left_key = add_node(left_label)
+        right_key = add_node(right_label)
+        adjacency[left_key].add(right_key)
+        adjacency[right_key].add(left_key)
+
+    unpaired_spinor_refs = [
+        _LocalSlotRef(field_idx=field_idx, slot=spinor_slots_for(entry.field)[0])
+        for field_idx, entry in enumerate(state.field_entries)
+        if entry.field.kind == "fermion"
+        and field_idx not in pairs_by_slot
+        and len(spinor_slots_for(entry.field)) == 1
+    ]
+    if not unpaired_spinor_refs:
+        return
+
+    refs_by_component: dict[str, list[_LocalSlotRef]] = {}
+    visited: set[str] = set()
+    component_root_by_label: dict[str, str] = {}
+
+    def register_component(start: str) -> str:
+        stack = [start]
+        component: list[str] = []
+        while stack:
+            current = stack.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            component.append(current)
+            stack.extend(adjacency.get(current, ()))
+        root = min(component)
+        for label_key in component:
+            component_root_by_label[label_key] = root
+        return root
+
+    for ref in unpaired_spinor_refs:
+        label = _local_slot_label(state, ref)
+        if label is None:
+            continue
+        key = _local_label_key(label)
+        if key not in adjacency:
+            continue
+        root = component_root_by_label.get(key)
+        if root is None:
+            root = register_component(key)
+        refs_by_component.setdefault(root, []).append(ref)
+
+    for refs in refs_by_component.values():
+        if len(refs) != 2:
+            raise _unsupported_local_fermion_ordering_error()
+        pair = _spinor_pair_from_slot_refs(state, refs[0], refs[1])
+        if pair is None:
+            raise _unsupported_local_fermion_ordering_error()
+        _register_local_dirac_pair(pairs_by_slot, pair_order, pair)
+
+
 def _ordered_local_dirac_bilinears(
     state: _LocalLoweringState,
     pairs: Sequence[tuple[int, int]],
@@ -1291,6 +1537,12 @@ def _identify_local_contraction_pairs(
         if pair is None:
             raise _unsupported_local_fermion_ordering_error()
         _register_local_dirac_pair(pairs_by_slot, pair_order, pair)
+
+    _register_local_pairs_from_coefficient_spinor_graph(
+        state,
+        pairs_by_slot=pairs_by_slot,
+        pair_order=pair_order,
+    )
 
     return _ordered_local_dirac_bilinears(state, pair_order)
 
@@ -1443,8 +1695,9 @@ def _field_strength_adjoint_label_counts(term: _DeclaredMonomial) -> Counter:
     """Count user-declared adjoint labels across one field-strength monomial.
 
     Adjoint labels come from ``FieldStrength`` adjoint indices and any explicit
-    color tensor factors (``StructureConstant`` / ``T``). Internally generated
-    expansion labels are not counted here; they are always contracted.
+    tensor factors that carry the matching adjoint slots, including raw Spenso
+    tensors that live in ``term.coefficient``. Internally generated expansion
+    labels are not counted here; they are always contracted.
     """
     counts: Counter = Counter()
     for factor in term.factors:
@@ -1455,6 +1708,14 @@ def _field_strength_adjoint_label_counts(term: _DeclaredMonomial) -> Counter:
                 counts[_local_label_key(idx)] += 1
         elif isinstance(factor, GeneratorFactor):
             counts[_local_label_key(factor.adjoint_index)] += 1
+
+    if hasattr(term.coefficient, "to_atom_tree"):
+        for index, label, _origin in _coefficient_typed_index_refs(
+            term,
+            label_bindings={},
+        ):
+            if representation_family(index.representation).startswith("coad("):
+                counts[_local_label_key(label)] += 1
     return counts
 
 
@@ -1465,7 +1726,8 @@ def _validate_field_strength_scalar(term: _DeclaredMonomial) -> None:
         raise ValueError(
             "FieldStrength monomial has open (uncontracted) adjoint index/indices "
             f"{open_labels}; the Lagrangian term must be a gauge singlet. Contract "
-            "them against another field strength or a StructureConstant(a, b, c)."
+            "them against another field strength or a tensor carrying the matching "
+            "adjoint label(s)."
         )
 
 
