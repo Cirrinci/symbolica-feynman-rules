@@ -1684,3 +1684,188 @@ What this achieved:
   the BRST section runs cleanly, and the final chapter closes with working,
   concrete Symbolica manipulation patterns that are directly useful for
   physics-side inspection of exported Lagrangians
+
+### 2026-06-02: generic `FieldStrength(...)` compiler, arbitrary `F^n` support, and walkthrough expansion
+
+What happened:
+
+- the old special-case `FieldStrength * FieldStrength -> GaugeKineticTerm`
+  recognition path from `main` was replaced by a generic declarative
+  `FieldStrength(...)` lowering path
+- before this branch, the code mainly recognized canonical `F^2` bilinears and
+  dispatched them into dedicated compact pure-gauge compilers:
+  - bilinear-block recognition in `src/model/lowering.py` on `main`
+  - specialized `compile_gauge_kinetic_bilinear_terms(...)`,
+    `compile_yang_mills_cubic_term(...)`,
+    `compile_yang_mills_quartic_term(...)`, and
+    `compile_gauge_kinetic_term(...)` in `src/compiler/gauge.py` on `main`
+- the new branch made `FieldStrength(...)` itself the primary declarative
+  operator:
+  - declaration/front-end change in `src/model/declared.py`
+  - non-abelian groups now require an explicit adjoint index
+    `FieldStrength(group, mu, nu, a)`
+  - abelian groups still use `FieldStrength(group, mu, nu)` with no adjoint
+    slot
+- one `FieldStrength(...)` factor is now expanded explicitly into local pieces
+  in `src/lagrangian/lowering.py`:
+  - abelian:
+    `F_{mu nu} = d_mu A_nu - d_nu A_mu`
+  - non-abelian:
+    `F^a_{mu nu} = d_mu A^a_nu - d_nu A^a_mu + g f^{abc} A^b_mu A^c_nu`
+- the model-side expansion path was added in `src/model/lowering.py`:
+  - `_expand_one_field_strength(...)`
+  - `_expand_field_strengths_in_monomial(...)`
+  - `_validate_field_strength_scalar(...)`
+- the compiler now treats any monomial containing `FieldStrength(...)` as:
+  1. expand each field-strength factor
+  2. distribute the full Cartesian product of pieces
+  3. lower each resulting local monomial through the ordinary
+     `InteractionTerm` path
+  via `compile_field_strength_monomial(...)` in `src/compiler/gauge.py`
+- this general path removed the need for dedicated pure-gauge cubic/quartic
+  handlers for `FieldStrength`-based declarations and enabled arbitrary
+  operators such as:
+  - abelian `F^2`
+  - non-abelian `F^2`
+  - `f^{abc} F^a F^b F^c`
+  - same-group `F^4`
+  - mixed-group products such as `F_SU3^2 * F_SU2^2`
+- a read-only canonical `-1/4 F^2` recognition helper for validation was kept
+  in `src/model/lowering.py` as `_canonical_field_strength_kinetic_info(...)`
+  and used from `src/model/validation.py` so diagnostics still recognize the
+  standard gauge-kinetic normalization
+- focused coverage for the new generic `FieldStrength` path was added in
+  `tests/test_field_strength_compiler.py` covering:
+  - abelian `F^2`
+  - non-abelian `F^2`
+  - mandatory vs forbidden adjoint-index cases
+  - open-adjoint singlet rejection
+  - `f F^3`
+  - same-group `F^4`
+  - mixed-group `F_SU3^2 * F_SU2^2`
+- notebook coverage was expanded substantially:
+  - a new dedicated walkthrough
+    `notebooks/field_strength_operators_walkthrough.ipynb`
+    was added to explain the generic `FieldStrength` compiler and its output
+  - `notebooks/codebase_workflow_walkthrough.ipynb`,
+    `notebooks/list_lagrangians.ipynb`,
+    `notebooks/final_walkthrough_capabilities_and_usage.ipynb`,
+    `notebooks/playground.ipynb`, and
+    `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
+    were updated to the new declaration shape and current examples
+- one visible behavioral consequence of the new generic path is that raw
+  compiled `F^2` output is more expanded than on `main`:
+  - abelian `F^2` now distributes into `2 x 2 = 4` local bilinears
+  - non-abelian `F^2` now distributes into `3 x 3 = 9` local monomials
+    split across `2G`, `3G`, and `4G` sectors
+  - this is a change in raw compiled basis, not in the final physical vertex
+    rules after exact-signature aggregation
+
+What this achieved:
+
+- the code no longer treats `FieldStrength(...)` as a narrow alias for one
+  special `F^2` case; it is now a genuine declarative building block for
+  higher-dimensional gauge operators
+- the project gained a single uniform compilation path for abelian and
+  non-abelian field strengths instead of maintaining a dedicated Yang-Mills-only
+  compiler branch
+- explicit adjoint-index handling made the non-abelian declaration contract
+  clearer and removed hidden inference about which color/weak adjoint slot is
+  meant
+- the compiler can now express and test operator classes that were previously
+  outside scope, especially `f F^3`, `F^4`, and mixed-group field-strength
+  products
+- the notebook story now matches the new compiler architecture:
+  `FieldStrength(...)` expands generically first, and pure-gauge vertices are
+  assembled from that expansion rather than being hard-wired as a separate
+  special case
+
+### 2026-06-03 to 2026-06-04: exact-signature matching, mixed-vertex runtime fix, and notebook hardening
+
+What happened:
+
+- follow-up analysis on the new `FieldStrength` branch showed that the long
+  runtime in the last model of
+  `notebooks/field_strength_operators_walkthrough.ipynb`
+  was not caused mainly by `model.lagrangian()` or by `FieldStrength`
+  distribution itself
+- the expensive call was the zero-argument path
+  `lagrangian.feynman_rule(include_delta=False)` used by `show_model(...)`
+  in the notebook:
+  it asks for every available vertex signature and evaluates each rule
+  separately
+- the heavy work sits in `src/model/lagrangian.py` and then in the central
+  contraction engine `src/symbolic/vertex_engine.py`, where
+  `contract_to_full_expression(...)` performs a permutation sum over external
+  legs
+- the crucial bottleneck was that contraction compatibility was checked only at
+  the level of broad field role (`vector`, `scalar`, `psi`, `psibar`, ...)
+  rather than exact field identity
+- for mixed signatures such as `G,G,G,G,W,W,W,W`, this meant the engine still
+  iterated over all `8!` permutations even though gluon slots should never be
+  matched to weak-boson legs
+- a field-aware pruning path was added:
+  - `InteractionTerm.to_vertex_kwargs(...)` in `src/model/interactions.py`
+    now emits `field_match_keys` and `leg_match_keys`
+  - `factor_leg_compatible(...)` in `src/symbolic/vertex_engine.py`
+    now rejects cross-species contractions immediately when those keys differ
+  - `contract_to_full_expression(...)` uses those keys during the permutation
+    loop
+- this pruning was implemented carefully so it still works with aliased
+  external species labels such as `b1`, `b2`, ... rather than requiring literal
+  `alpha == beta` symbol equality
+- dedicated regression coverage for this was added in
+  `tests/test_vertex_engine_species.py`
+- representative before/after measurements on the mixed
+  `F_SU3^2 * F_SU2^2` example showed the runtime collapse from notebook-scale
+  minutes to a few seconds:
+  - 6-point mixed rule: about `4s -> 0.34s`
+  - 7-point mixed rule: about `14s -> 0.53s`
+  - 8-point mixed rule: from `>20s` in the old path to about `0.8s`
+  - the full zero-argument notebook extraction dropped from more than two
+    minutes to roughly three seconds
+- direct equality checks were run on representative pre- and post-pruning
+  `feynman_rule(...)` outputs for:
+  - abelian 2-point
+  - SU(3) 2-, 3-, and 4-point YM
+  - mixed `GGWW`, `GGGWW`, `GGWWW`, `GGGWWW`, and `GGGGWWW`
+  confirming that the pruning changed performance, not the resulting rules
+- a second follow-up issue appeared in the Yang-Mills notebook examples:
+  some walkthrough cells selected raw terms by `len(term.fields) == n`
+  instead of matching the exact external-field signature
+- this was too broad on the new branch because generic `FieldStrength^2`
+  lowering now produces several distinct raw local monomials with the same
+  arity, especially in the `G,G,G` sector
+- to fix that inspection problem, a new helper
+  `CompiledLagrangian.matching_terms(...)` was added in
+  `src/model/lagrangian.py`
+  so callers can retrieve the exact compiled terms matching one chosen external
+  signature, with optional sector filtering
+- regression coverage for exact-signature term matching was added in
+  `tests/test_vertex_reporting.py`
+- `notebooks/codebase_workflow_walkthrough.ipynb` was then updated to use
+  `matching_terms(...)` for the `G,G`, `G,G,G`, and `G,G,G,G` pure-gauge
+  signature examples instead of raw arity buckets
+
+What this achieved:
+
+- the project now has a precise explanation for the mixed `FieldStrength`
+  runtime issue:
+  the branch itself introduced more high-leg local monomials, but the real
+  slowdown came from the old permutation engine wasting most of its work on
+  impossible cross-species contractions
+- the field-aware pruning fix preserved the existing vertex formulas while
+  making the new generic `FieldStrength` notebook usable again on large mixed
+  operators
+- the contraction engine is now more faithful to the actual interaction
+  signature: equal broad role is no longer enough to treat two slots as
+  contractible
+- the notebook and inspection API now distinguish correctly between:
+  - exact external-field signatures
+  - raw interaction arity
+  which is especially important once one physical vertex is split across
+  several local monomials by generic `FieldStrength` expansion
+- the codebase now has a cleaner post-branch story:
+  generic `FieldStrength` lowering is kept, the resulting high-leg operators are
+  inspectable, and the main performance regression triggered by that broader
+  capability has been brought back under control
