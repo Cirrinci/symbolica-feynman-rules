@@ -40,9 +40,7 @@ from .interactions import (
 from .metadata import (
     COLOR_FUND_INDEX,
     COLOR_ADJ_INDEX,
-    COLOR_ADJ_KIND,
     IndexType,
-    LORENTZ_KIND,
     LORENTZ_INDEX,
     Parameter,
     SPINOR_KIND,
@@ -180,8 +178,18 @@ class _ParsedLocalMonomial:
 
 @dataclass(frozen=True)
 class _CollectedLocalTypedIndexLabels:
+    """Typed index references that may attach to local field slots.
+
+    ``refs`` carries the full ``IndexType`` (not just a ``kind`` string) so a
+    single coherent pipeline can distinguish, e.g., color-adjoint from
+    weak-adjoint labels regardless of whether they originate from a declarative
+    factor, a raw Spenso tensor, or an indexed-symbol parameter. ``factor`` is
+    either the originating declared factor or a short origin description for
+    refs collected from the monomial coefficient.
+    """
+
     factor: object
-    refs: tuple[tuple[str, object], ...]
+    refs: tuple[tuple[IndexType, object], ...]
 
 
 @dataclass(frozen=True)
@@ -281,25 +289,15 @@ def _local_chain_kind(factor, *, spinor_kind: str = SPINOR_KIND) -> str:
     raise TypeError(f"Unsupported local chain factor {type(factor).__name__}")
 
 
-def _local_declared_index_refs(factor) -> tuple[tuple[str, object], ...]:
-    if isinstance(factor, PartialDerivativeFactor):
-        return tuple((LORENTZ_KIND, index) for index in factor.lorentz_indices)
-    if isinstance(factor, GammaFactor):
-        return ((LORENTZ_KIND, factor.lorentz_index),)
-    if isinstance(factor, MetricFactor):
-        return (
-            (LORENTZ_KIND, factor.left_index),
-            (LORENTZ_KIND, factor.right_index),
-        )
-    if isinstance(factor, GeneratorFactor):
-        return ((COLOR_ADJ_KIND, factor.adjoint_index),)
-    if isinstance(factor, StructureConstantFactor):
-        return (
-            (COLOR_ADJ_KIND, factor.left_index),
-            (COLOR_ADJ_KIND, factor.middle_index),
-            (COLOR_ADJ_KIND, factor.right_index),
-        )
-    return ()
+def _factor_has_typed_index_refs(factor) -> bool:
+    """Whether a declared factor exposes typed index labels for local binding.
+
+    This is the single gate used to decide which declared factors participate in
+    the unified typed-index pipeline; it shares the same extractor
+    (``_declared_factor_explicit_label_refs``) as validation and slot binding so
+    there is no second, divergent notion of "which indices a factor carries".
+    """
+    return bool(_declared_factor_explicit_label_refs(factor))
 
 
 def _parse_local_interaction_factors(
@@ -315,18 +313,18 @@ def _parse_local_interaction_factors(
         if field_entry is not None:
             field_entries.append(field_entry)
             tokens.append(("field", len(field_entries) - 1))
-            if _local_declared_index_refs(factor):
+            if _factor_has_typed_index_refs(factor):
                 declared_factors.append(factor)
             continue
         if _is_local_chain_factor(factor):
             tokens.append(("chain", factor))
-            if _local_declared_index_refs(factor):
+            if _factor_has_typed_index_refs(factor):
                 declared_factors.append(factor)
             continue
         if _is_local_free_tensor_factor(factor):
             tokens.append(("tensor", factor))
             free_tensor_factors.append(factor)
-            if _local_declared_index_refs(factor):
+            if _factor_has_typed_index_refs(factor):
                 declared_factors.append(factor)
             continue
         return None
@@ -619,6 +617,26 @@ def _register_declared_label_binding(
         )
 
 
+def _gauge_group_adjoint_index_type(gauge_group) -> Optional[IndexType]:
+    """Resolve the adjoint ``IndexType`` carried by a gauge group's boson.
+
+    The adjoint representation is read from the gauge boson field rather than
+    assumed to be color, so an SU(2) field strength yields the weak adjoint and
+    an SU(3) field strength yields the color adjoint through one code path.
+    Returns ``None`` when the group cannot be resolved (e.g. it was supplied by
+    name only) so callers can fall back to a sensible default.
+    """
+    gauge_boson = getattr(gauge_group, "gauge_boson", None)
+    if gauge_boson is None or not hasattr(gauge_boson, "indices"):
+        return None
+    adjoint_indices = [
+        index for index in gauge_boson.indices if not is_lorentz_index(index)
+    ]
+    if len(adjoint_indices) == 1:
+        return adjoint_indices[0]
+    return None
+
+
 def _declared_factor_explicit_label_refs(
     factor,
     *,
@@ -654,7 +672,10 @@ def _declared_factor_explicit_label_refs(
         refs.append((lorentz_index, factor.left_index, "FieldStrength"))
         refs.append((lorentz_index, factor.right_index, "FieldStrength"))
         if factor.adjoint_index is not None:
-            refs.append((COLOR_ADJ_INDEX, factor.adjoint_index, "FieldStrength"))
+            adjoint_index = (
+                _gauge_group_adjoint_index_type(factor.gauge_group) or COLOR_ADJ_INDEX
+            )
+            refs.append((adjoint_index, factor.adjoint_index, "FieldStrength"))
     return tuple(refs)
 
 
@@ -669,11 +690,17 @@ def _resolve_lorentz_index_from_term(term: _DeclaredMonomial) -> IndexType:
     return LORENTZ_INDEX
 
 
-def _validate_declared_label_bindings(
+def _declared_only_label_bindings(
     term: _DeclaredMonomial,
     *,
     parameters: Sequence[Parameter] = (),
-):
+) -> dict[str, tuple[IndexType, str]]:
+    """Typed label bindings from field slots and declared factors only.
+
+    This deliberately excludes raw coefficient tensors so it can be used as the
+    *prior context* when resolving the index types of raw coefficient slots
+    (which may be ambiguous on their own).
+    """
     label_bindings: dict[str, tuple[IndexType, str]] = {}
     lorentz_index = _resolve_lorentz_index_from_term(term)
 
@@ -698,6 +725,16 @@ def _validate_declared_label_bindings(
                 index,
                 origin=origin,
             )
+
+    return label_bindings
+
+
+def _validate_declared_label_bindings(
+    term: _DeclaredMonomial,
+    *,
+    parameters: Sequence[Parameter] = (),
+):
+    label_bindings = _declared_only_label_bindings(term, parameters=parameters)
 
     for index, label, origin in _coefficient_typed_index_refs(
         term,
@@ -1000,20 +1037,73 @@ def _ambiguous_local_attachment_error(
     )
 
 
-def _collect_local_typed_index_labels(
-    declared_factors: Sequence[object],
-) -> tuple[_CollectedLocalTypedIndexLabels, ...]:
-    collected: list[_CollectedLocalTypedIndexLabels] = []
-    for factor in declared_factors:
-        refs = _local_declared_index_refs(factor)
-        if not refs:
+def _free_coefficient_index_refs(
+    coeff_refs: Sequence[tuple[IndexType, object, str]],
+) -> tuple[tuple[IndexType, object], ...]:
+    """Coefficient index labels that are free (appear exactly once).
+
+    A label that appears more than once inside the coefficient is internally
+    contracted (Einstein summation, e.g. the shared spinor index of a raw
+    ``gamma(s1,s2,mu) gamma(s2,s3,nu)`` chain) and must not be attached to a
+    field slot. Only genuinely free labels are candidates for slot binding.
+    """
+    counts: Counter = Counter(_local_label_key(label) for _index, label, _origin in coeff_refs)
+    free: list[tuple[IndexType, object]] = []
+    seen: set[str] = set()
+    for index, label, _origin in coeff_refs:
+        key = _local_label_key(label)
+        if counts[key] != 1 or key in seen:
             continue
+        seen.add(key)
+        free.append((index, label))
+    return tuple(free)
+
+
+def _collect_local_typed_index_labels(
+    term: _DeclaredMonomial,
+    parsed: _ParsedLocalMonomial,
+    *,
+    parameters: Sequence[Parameter] = (),
+) -> tuple[_CollectedLocalTypedIndexLabels, ...]:
+    """Collect every typed index reference that may bind to a field slot.
+
+    This is the single, source-agnostic entry point: declarative factors, raw
+    Spenso coefficient tensors, and indexed-symbol parameters all contribute
+    refs carrying their resolved ``IndexType``, so slot attachment follows one
+    coherent path regardless of how the index was written.
+    """
+    lorentz_index = _resolve_lorentz_index_from_term(term)
+    collected: list[_CollectedLocalTypedIndexLabels] = []
+
+    for factor in parsed.declared_factors:
+        refs = tuple(
+            (index, label)
+            for index, label, _origin in _declared_factor_explicit_label_refs(
+                factor,
+                lorentz_index=lorentz_index,
+            )
+            if _is_symbolic_index_label(label)
+        )
+        if refs:
+            collected.append(
+                _CollectedLocalTypedIndexLabels(factor=factor, refs=refs)
+            )
+
+    declared_bindings = _declared_only_label_bindings(term, parameters=parameters)
+    coeff_refs = _coefficient_typed_index_refs(
+        term,
+        label_bindings=declared_bindings,
+        parameters=parameters,
+    )
+    free_refs = _free_coefficient_index_refs(coeff_refs)
+    if free_refs:
         collected.append(
             _CollectedLocalTypedIndexLabels(
-                factor=factor,
-                refs=refs,
+                factor="coefficient tensors",
+                refs=free_refs,
             )
         )
+
     return tuple(collected)
 
 
@@ -1066,9 +1156,13 @@ def _bind_state_typed_index_labels_to_slots(
     state: _LocalLoweringState,
 ):
     for collected in state.typed_index_labels:
+        # Group by ``kind`` (derived from the resolved IndexType). Distinct
+        # adjoint families such as color-adjoint and weak-adjoint carry distinct
+        # kinds, so grouping by kind keeps them apart while remaining lenient for
+        # compatible-but-distinct Lorentz/spinor index types.
         by_kind: dict[str, list[object]] = {}
-        for kind, label in collected.refs:
-            by_kind.setdefault(kind, []).append(label)
+        for index, label in collected.refs:
+            by_kind.setdefault(index.kind, []).append(label)
 
         for kind, labels in by_kind.items():
             candidates = _local_slot_refs_for_kind(state, kind)
@@ -1083,15 +1177,13 @@ def _bind_state_typed_index_labels_to_slots(
                     and (slot_label := _local_slot_label(state, ref)) is not None
                     and _expr_equal_impl(slot_label, label)
                 ]
-                if len(matches) > 1:
-                    raise _ambiguous_local_attachment_error(
-                        factor=collected.factor,
-                        kind=kind,
-                        labels=(label,),
-                        available_slots=tuple(_local_slot_key(ref) for ref in matches),
-                    )
-                if len(matches) == 1:
-                    used_slots.add(_local_slot_key(matches[0]))
+                if matches:
+                    # The label is already present on one or more slots, i.e. it
+                    # is already placed/contracted (e.g. a shared flavor label
+                    # joining two field slots). Mark those slots used; there is
+                    # nothing to assign.
+                    for ref in matches:
+                        used_slots.add(_local_slot_key(ref))
                     continue
                 unresolved_labels.append(label)
 
@@ -1176,6 +1268,11 @@ def _can_share_unique_open_pair(
 def _resolve_structural_local_slot_labels(
     state: _LocalLoweringState,
 ):
+    # Explicit typed indices (declarative factors *and* raw coefficient tensors
+    # / indexed-symbol parameters) bind first, so an index written on a tensor
+    # always claims its matching field slot before any structural defaulting.
+    _bind_state_typed_index_labels_to_slots(state)
+
     for left, right in _adjacent_local_pair_candidates(state):
         if not _local_slot_is_unlabeled(state, left):
             continue
@@ -1184,8 +1281,6 @@ def _resolve_structural_local_slot_labels(
         label = _fresh_local_slot_label(state, left)
         _assign_local_slot_label(state, left, label)
         _assign_local_slot_label(state, right, label)
-
-    _bind_state_typed_index_labels_to_slots(state)
 
     for kind, refs in _local_open_slot_refs_by_kind(state).items():
         if len(refs) != 2:
@@ -1647,8 +1742,12 @@ def _interaction_term_matches_canonical_gauge_fixing(term: InteractionTerm) -> b
     return _expression_variable_names(ratio).isdisjoint(blocked_labels)
 
 
-def _lower_local_interaction_monomial(term: _DeclaredMonomial):
-    _validate_declared_label_bindings(term)
+def _lower_local_interaction_monomial(
+    term: _DeclaredMonomial,
+    *,
+    parameters: Sequence[Parameter] = (),
+):
+    _validate_declared_label_bindings(term, parameters=parameters)
     parsed = _parse_local_interaction_factors(term)
     if parsed is None:
         return None
@@ -1657,7 +1756,11 @@ def _lower_local_interaction_monomial(term: _DeclaredMonomial):
     # parse -> seed/apply chain endpoints -> resolve remaining slot labels ->
     # refresh resolved bindings -> rewrite derivatives / infer fermion pairs ->
     # build the final InteractionTerm.
-    typed_index_labels = _collect_local_typed_index_labels(parsed.declared_factors)
+    typed_index_labels = _collect_local_typed_index_labels(
+        term,
+        parsed,
+        parameters=parameters,
+    )
     field_slot_state = _identify_local_field_slot_labels(
         coefficient=term.coefficient,
         parsed=parsed,
@@ -1887,7 +1990,7 @@ def _analyze_declared_source_term(
 ) -> Optional[AnalyzedSourceTerm]:
     if isinstance(term, _DeclaredMonomial):
         _validate_declared_label_bindings(term, parameters=parameters)
-    interaction = _source_term_interaction(term)
+    interaction = _source_term_interaction(term, parameters=parameters)
     if interaction is not None:
         return AnalyzedSourceTerm(term=term, interaction=interaction)
 
@@ -1962,7 +2065,7 @@ def _validate_declared_monomial(
     if _monomial_has_field_strength(term):
         _validate_field_strength_scalar(term)
         return
-    if _lower_local_interaction_monomial(term) is not None:
+    if _lower_local_interaction_monomial(term, parameters=parameters) is not None:
         return
     raise ValueError(_unsupported_declared_source_term_error().args[0])
 
@@ -2067,11 +2170,15 @@ def _lower_standalone_lagrangian_source_term(term) -> InteractionTerm:
     raise TypeError(f"Cannot lower {type(term).__name__} into a standalone Lagrangian.")
 
 
-def _source_term_interaction(term) -> Optional[InteractionTerm]:
+def _source_term_interaction(
+    term,
+    *,
+    parameters: Sequence[Parameter] = (),
+) -> Optional[InteractionTerm]:
     if isinstance(term, InteractionTerm):
         return term
     if isinstance(term, _DeclaredMonomial):
-        return _lower_local_interaction_monomial(term)
+        return _lower_local_interaction_monomial(term, parameters=parameters)
     return None
 
 
