@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field as dataclass_field, replace
 
-from .metadata import COLOR_FUND_KIND, ConjugateField, Field, gauge_generator
+from .metadata import (
+    COLOR_FUND_KIND,
+    ConjugateField,
+    Field,
+    gamma_matrix,
+    gauge_generator,
+)
 # ---------------------------------------------------------------------------
 # Declarative Lagrangian factors  (CovD / Gamma / FieldStrength DSL)
 # ---------------------------------------------------------------------------
@@ -503,9 +509,22 @@ def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialD
     )
 
 
-def Gamma(lorentz_index) -> GammaFactor:
-    """Declarative gamma-matrix placeholder for ``DeclaredLagrangian``."""
-    return GammaFactor(lorentz_index=lorentz_index)
+def Gamma(*indices):
+    """Gamma-matrix helper for declarative and fully explicit local operators.
+
+    Supported forms:
+    - ``Gamma(mu)``: declarative chain placeholder
+    - ``Gamma(i, j, mu)``: fully explicit raw tensor ``gamma(i, j, mu)``
+    """
+    if len(indices) == 1:
+        return GammaFactor(lorentz_index=indices[0])
+    if len(indices) == 3:
+        left_spinor, right_spinor, lorentz_index = indices
+        return gamma_matrix(left_spinor, right_spinor, lorentz_index)
+    raise TypeError(
+        "Gamma(...) expects either 1 index (Gamma(mu)) or 3 indices "
+        "(Gamma(i, j, mu))."
+    )
 
 
 def Gamma5() -> Gamma5Factor:
@@ -518,18 +537,21 @@ def Metric(left_index, right_index) -> MetricFactor:
     return MetricFactor(left_index=left_index, right_index=right_index)
 
 
-def T(adjoint_index) -> GeneratorFactor:
-    """Local generator placeholder for already-expanded tensor monomials.
+def T(*indices):
+    """Generator helper for declarative and fully explicit local operators.
 
-    ``T(...)`` is currently a lightweight helper for local terms that already
-    spell out the desired slot structure. It does not by itself resolve a gauge
-    group, choose a representation, or infer normalization conventions from
-    ``GaugeGroup`` metadata.
-
-    For gauge-aware matter currents and covariant derivatives, prefer
-    ``Model(..., lagrangian_decl=...)`` with declared ``GaugeGroup`` metadata.
+    Supported forms:
+    - ``T(a)``: declarative chain placeholder
+    - ``T(a, i, j)``: fully explicit raw tensor ``t(a, i, j)``
     """
-    return GeneratorFactor(adjoint_index=adjoint_index)
+    if len(indices) == 1:
+        return GeneratorFactor(adjoint_index=indices[0])
+    if len(indices) == 3:
+        adjoint_index, left_index, right_index = indices
+        return gauge_generator(adjoint_index, left_index, right_index)
+    raise TypeError(
+        "T(...) expects either 1 index (T(a)) or 3 indices (T(a, i, j))."
+    )
 
 
 def StructureConstant(left_index, middle_index, right_index) -> StructureConstantFactor:

@@ -1019,6 +1019,12 @@ class Field:
     def __call__(self, *labels, conjugated: bool = False, index_labels: Optional[Mapping] = None):
         """Shorthand for ``field.occurrence(...)`` with positional slot labels.
 
+        Positional labels follow ``field.indices`` order exactly. For example,
+        if ``field.indices == (SPINOR_INDEX, COLOR_FUND_INDEX)``, then
+        ``field(s, c)`` means spinor label ``s`` and color label ``c``.
+        Prefer ``index_labels={...}`` when you want the call site to stay
+        independent of the field's declared slot order.
+
         Examples:
         - ``Photon(mu)`` for a vector field with one Lorentz index
         - ``Gluon(mu, a)`` for a field with ``(Lorentz, adjoint)`` slots
@@ -1060,7 +1066,11 @@ class ConjugateField:
         return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__radd__(other)
 
     def __call__(self, *labels, index_labels: Optional[Mapping] = None):
-        """Shorthand for ``field.occurrence(conjugated=True, ...)``."""
+        """Shorthand for ``field.occurrence(conjugated=True, ...)``.
+
+        Positional labels follow ``field.indices`` order exactly, just like
+        ``Field.__call__``.
+        """
         return self.field.occurrence(
             conjugated=True,
             labels=_occurrence_labels_from_call(self.field, labels, index_labels),

@@ -15,6 +15,7 @@ The guiding properties are:
 
 from __future__ import annotations
 
+from fractions import Fraction
 import re
 
 import pytest
@@ -191,6 +192,57 @@ def test_implicit_raw_matches_declarative_and_explicit_labels():
             raw_implicit.lagrangian().feynman_rule(*legs, include_delta=False)
         ) == _canon(
             raw_explicit.lagrangian().feynman_rule(*legs, include_delta=False)
+        )
+
+
+def test_explicit_gamma_and_t_api_matches_raw_tensor_form():
+    mu, nu, a = S("mu"), S("nu"), S("a")
+    s1, s2, s3, i, j = S("s1"), S("s2"), S("s3"), S("i"), S("j")
+    gluon = make_gluon(name="G", symbol=S("G0"))
+    su3 = make_su3(S("gS"), gluon.symbol, name="SU3C")
+    psi = Field(
+        "PsiC",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psiC"),
+        conjugate_symbol=S("psibarC"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+    )
+
+    explicit_api = Model(
+        gauge_groups=(su3,),
+        fields=(psi, gluon),
+        lagrangian_decl=FieldStrength(su3, mu, nu, a)
+        * psi.bar(s1, i)
+        * Gamma(s1, s2, mu)
+        * Gamma(s2, s3, nu)
+        * T(a, i, j)
+        * psi(s3, j),
+    )
+    raw = Model(
+        gauge_groups=(su3,),
+        fields=(psi, gluon),
+        lagrangian_decl=FieldStrength(su3, mu, nu, a)
+        * psi.bar(s1, i)
+        * gamma_matrix(s1, s2, mu)
+        * gamma_matrix(s2, s3, nu)
+        * gauge_generator(a, i, j)
+        * psi(s3, j),
+    )
+
+    explicit_compiled = compile_covariant_terms(explicit_api)
+    raw_compiled = compile_covariant_terms(raw)
+
+    assert len(explicit_compiled) == len(raw_compiled) == 3
+    assert explicit_api.lagrangian().vertex_signatures() == raw.lagrangian().vertex_signatures()
+    for legs in (
+        (psi.bar, psi, gluon),
+        (psi.bar, psi, gluon, gluon),
+    ):
+        assert _canon(
+            explicit_api.lagrangian().feynman_rule(*legs, include_delta=False)
+        ) == _canon(
+            raw.lagrangian().feynman_rule(*legs, include_delta=False)
         )
 
 
