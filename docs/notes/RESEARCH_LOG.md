@@ -1869,3 +1869,79 @@ What this achieved:
   generic `FieldStrength` lowering is kept, the resulting high-leg operators are
   inspectable, and the main performance regression triggered by that broader
   capability has been brought back under control
+
+### 2026-06-04 to 2026-06-05: typed local-index unification, explicit `Gamma/T` tensors, and field-strength notebook refresh
+
+What happened:
+
+- follow-up work on local `FieldStrength` operators focused on the remaining
+  gap between the compact declarative helpers
+  (`Gamma(mu)`, `T(a)`) and the fully explicit tensor notation already used by
+  raw Spenso expressions
+- the local lowering path was tightened so typed labels written on raw
+  coefficient tensors are treated as first-class slot-binding inputs rather
+  than as a separate special case:
+  - free typed labels from raw coefficient tensors are collected centrally
+  - internally contracted labels such as the shared `s2` in
+    `gamma(s1,s2,mu) * gamma(s2,s3,nu)` are filtered out before field-slot
+    attachment
+  - the remaining free labels bind to matching unlabeled field slots before any
+    structural default labels are invented
+- this made the raw local operator
+  `FieldStrength(...) * psi.bar * gamma(...) * gamma(...) * t(...) * psi`
+  work for the right reason:
+  the spinor/color slot labels come from the typed coefficient tensors, not
+  from hard-wired assumptions about this one operator shape
+- regression coverage was expanded in `tests/test_general_index_handling.py`
+  around:
+  - implicit unlabeled raw `gamma(...) * gauge_generator(...) * psi`
+  - weak-adjoint typing in raw `FieldStrength` operators
+  - mixed SU(3)/SU(2) raw generators in one monomial
+  - ambiguity rejection when one raw label could attach to multiple repeated
+    slots
+- the public helper API in `src/model/declared.py` was then extended so the
+  same names support both the compact placeholder form and the fully explicit
+  tensor form:
+  - `Gamma(mu)` still means “build the spinor chain from neighboring fields”
+  - `Gamma(i, j, mu)` now returns the explicit raw tensor `gamma(i, j, mu)`
+  - `T(a)` still means the compact chain placeholder
+  - `T(a, i, j)` now returns the explicit raw tensor `t(a, i, j)`
+- a direct regression test was added to confirm that
+  `FieldStrength(...) * psi.bar(s1,i) * Gamma(s1,s2,mu) * Gamma(s2,s3,nu)
+  * T(a,i,j) * psi(s3,j)` compiles to the same rules as the raw
+  `gamma_matrix(...) * gauge_generator(...)` form
+- the field-slot-order convention was documented in `src/model/metadata.py`:
+  positional field labels follow `field.indices` exactly, while
+  `index_labels={...}` remains the order-independent way to label one
+  occurrence
+- `notebooks/field_strength_operators_walkthrough.ipynb` was updated to reflect
+  the new recommended explicit indexed notation:
+  - the U(1) example now uses
+    `Psi.bar(s1) * Gamma(s1,s2,mu) * Gamma(s2,s3,nu) * Psi(s3)`
+  - the SU(3) example now uses
+    `PsiColor.bar(s1,i) * Gamma(s1,s2,mu) * Gamma(s2,s3,nu) * T(a,i,j) * PsiColor(s3,j)`
+  - the notebook now states explicitly that these positional labels follow
+    `PsiColor.indices == (SPINOR_INDEX, COLOR_FUND_INDEX)`
+  - the parallel raw `gamma(...) * t(...)` example was kept as the
+    coefficient-tensor equivalent, now framed as the same operator with no
+    field slot labels written by hand
+- the notebook regression cell was updated with the new expected digest for the
+  explicit U(1) indexed example and the whole notebook was re-executed after
+  the API/documentation change
+
+What this achieved:
+
+- the local operator API now supports the physically explicit notation the
+  notebook examples were aiming at, without forcing users to drop down to raw
+  `gamma_matrix(...)` / `gauge_generator(...)` names just to write all indices
+- the project now has one clearer story for local fermion-tensor operators:
+  - compact one-index `Gamma/T` helpers for shorthand
+  - three-index `Gamma/T` calls for explicit tensor notation
+  - unlabeled fields are still allowed when the surrounding typed tensors
+    determine the attachment uniquely
+- the field-slot-order rule is now written down in the API layer and in the
+  notebook itself, reducing confusion about when `psi.bar(s1, i)` is correct
+  and when `psi.bar(i, s1)` would be required by a different field declaration
+- the field-strength walkthrough now presents the explicit indexed form as a
+  first-class supported input rather than as something that only works through
+  a lower-level raw-tensor escape hatch
