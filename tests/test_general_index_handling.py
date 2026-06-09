@@ -21,7 +21,6 @@ import re
 import pytest
 from symbolica import S
 
-from compiler.gauge import compile_covariant_terms
 from model import (
     COLOR_FUND_INDEX,
     Field,
@@ -47,6 +46,10 @@ from symbolic.spenso_structures import (
 from tests.support.builders import make_gluon, make_su3
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _compiled_terms(model):
+    return model.lagrangian().terms
 
 
 def _plain(text) -> str:
@@ -117,7 +120,7 @@ def test_implicit_raw_gamma_generator_attaches_color_slots():
         * quark,
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 3
     for term in compiled:
         qbar = next(o for o in term.fields if o.field.name == "qFS" and o.conjugated)
@@ -230,8 +233,8 @@ def test_explicit_gamma_and_t_api_matches_raw_tensor_form():
         * psi(s3, j),
     )
 
-    explicit_compiled = compile_covariant_terms(explicit_api)
-    raw_compiled = compile_covariant_terms(raw)
+    explicit_compiled = _compiled_terms(explicit_api)
+    raw_compiled = _compiled_terms(raw)
 
     assert len(explicit_compiled) == len(raw_compiled) == 3
     assert explicit_api.lagrangian().vertex_signatures() == raw.lagrangian().vertex_signatures()
@@ -264,7 +267,7 @@ def test_raw_weak_structure_constant_uses_weak_adjoint():
         * FieldStrength(su2, rho, mu, c),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 27
     assert set(sorted(len(t.fields) for t in compiled)) == {3, 4, 5, 6}
 
@@ -326,7 +329,7 @@ def test_mixed_su3_su2_raw_generators_attach_per_group():
         * lepton,
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert compiled  # it lowers at all
 
     # The color generator must carry the color adjoint (coad 8) with fundamental
@@ -367,7 +370,7 @@ def test_repeated_slot_with_single_raw_label_is_ambiguous():
     y = Parameter("Yc", indices=(COLOR_FUND_INDEX,))
 
     with pytest.raises(ValueError, match="[Aa]mbiguous"):
-        compile_covariant_terms(
+        _compiled_terms(
             Model(
                 gauge_groups=(su3,),
                 fields=(bi_color, gluon),

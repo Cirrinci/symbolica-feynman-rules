@@ -2,7 +2,6 @@ from fractions import Fraction
 
 from symbolica import S, Expression  # noqa: E402
 
-from compiler.gauge import compile_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -29,6 +28,10 @@ from lagrangian.operators import (  # noqa: E402
     yang_mills_three_vertex_metric_raw,
 )
 from symbolic.spenso_structures import gauge_generator, structure_constant, simplify_gamma_chain  # noqa: E402
+
+
+def _compiled_terms(model):
+    return model.lagrangian().terms
 
 
 def _model_vertex(*, interaction, external_legs, species_map):
@@ -147,7 +150,7 @@ def test_covariant_dirac_qcd_current():
         lagrangian_decl=_dirac_decl(quark),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 2
 
     legs = (
@@ -193,7 +196,7 @@ def test_covariant_dirac_qed_current():
         lagrangian_decl=_dirac_decl(fermion),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 2
 
     legs = (
@@ -245,7 +248,7 @@ def test_covariant_mixed_fermion_expands_over_qcd_and_qed():
         lagrangian_decl=_dirac_decl(fermion),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 3
 
     # The compiler emits contributions in model.gauge_groups order.
@@ -313,7 +316,7 @@ def test_covariant_scalar_qed_current_and_contact():
         lagrangian_decl=_scalar_decl(scalar),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 4
     current_plus, current_minus, contact, _partial_term = compiled
     current_index = current_plus.derivatives[0].lorentz_index
@@ -381,7 +384,7 @@ def test_covariant_scalar_qcd_current_and_contact():
         lagrangian_decl=_scalar_decl(scalar),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 4
     current_plus, current_minus, contact, _partial_term = compiled
     current_index = current_plus.derivatives[0].lorentz_index
@@ -469,7 +472,7 @@ def test_covariant_mixed_scalar_currents_and_contact():
         lagrangian_decl=_scalar_decl(scalar),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 9
 
     qcd_terms = [term for term in compiled if "SU3C: scalar current" in term.label]
@@ -580,7 +583,7 @@ def test_covariant_abelian_gauge_bilinear():
         lagrangian_decl=_gauge_decl(u1),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     # The general field-strength expansion lowers F_{mu nu} -> (d_mu A_nu - d_nu A_mu),
     # so the abelian F^2 kinetic term distributes into 2 x 2 = 4 derivative bilinears
     # whose sum reproduces the canonical gauge-boson two-point vertex.
@@ -638,7 +641,7 @@ def test_covariant_yang_mills_bilinear_cubic_and_quartic():
         lagrangian_decl=_gauge_decl(su3),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     # The non-abelian F^2 kinetic term expands into the full set of derivative and
     # g f A A pieces: 2x2 = 4 two-gluon bilinears, 4 three-gluon (cubic) pieces, and
     # 1 four-gluon (quartic) piece. Their sums reproduce the standard 2G/3G/4G vertices

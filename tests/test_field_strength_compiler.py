@@ -14,7 +14,6 @@ from __future__ import annotations
 import pytest
 from symbolica import Expression, S
 
-from compiler.gauge import compile_covariant_terms
 from model import (
     COLOR_FUND_INDEX,
     Field,
@@ -40,6 +39,10 @@ from symbolic.spenso_structures import (
 )
 from symbolic.tensor_canonicalization import canonize_full
 from tests.support.builders import make_gluon, make_photon, make_su3, make_u1
+
+
+def _compiled_terms(model):
+    return model.lagrangian().terms
 
 
 def _quarter():
@@ -108,7 +111,7 @@ def test_abelian_field_strength_square_emits_only_bilinears():
         * FieldStrength(u1, mu, nu) * FieldStrength(u1, mu, nu),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     # d_mu A_nu - d_nu A_mu distributes 2 x 2 = 4 derivative bilinears.
     assert _field_counts(compiled) == [2, 2, 2, 2]
     # No coupling-powered self-interactions appear in an abelian field strength.
@@ -127,7 +130,7 @@ def test_abelian_field_strength_with_adjoint_index_raises():
         * FieldStrength(u1, mu, nu, a) * FieldStrength(u1, mu, nu, a),
     )
     with pytest.raises(ValueError, match="does not take an adjoint index"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 # ---------------------------------------------------------------------------
@@ -144,7 +147,7 @@ def test_non_abelian_field_strength_square_emits_2g_3g_4g():
         * FieldStrength(su3, mu, nu, a) * FieldStrength(su3, mu, nu, a),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert _field_counts(compiled) == [2, 2, 2, 2, 3, 3, 3, 3, 4]
 
     for term in compiled:
@@ -168,7 +171,7 @@ def test_non_abelian_field_strength_without_adjoint_index_raises():
         * FieldStrength(su3, mu, nu) * FieldStrength(su3, mu, nu),
     )
     with pytest.raises(ValueError, match="requires an explicit adjoint index"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_single_field_strength_open_adjoint_index_raises():
@@ -181,7 +184,7 @@ def test_single_field_strength_open_adjoint_index_raises():
         lagrangian_decl=S("c") * FieldStrength(su3, mu, nu, a),
     )
     with pytest.raises(ValueError, match="open .*adjoint"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_uncontracted_field_strength_product_raises():
@@ -197,7 +200,7 @@ def test_uncontracted_field_strength_product_raises():
         * FieldStrength(su3, mu, nu, a) * FieldStrength(su3, rho, sigma, b),
     )
     with pytest.raises(ValueError, match="open .*adjoint"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 # ---------------------------------------------------------------------------
@@ -218,7 +221,7 @@ def test_structure_constant_f_cubed_emits_3g_through_6g():
         * FieldStrength(su3, rho, mu, c),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     # 3 field strengths, each expanding into (2 derivative + 1 g f A A) pieces,
     # so a monomial with k structure-constant pieces has 3 + k gluons (k = 0..3).
     assert len(compiled) == 27
@@ -250,8 +253,8 @@ def test_raw_spenso_structure_constant_matches_declared_f_cubed():
         * FieldStrength(su3, rho, mu, c),
     )
 
-    declared_compiled = compile_covariant_terms(declared)
-    raw_compiled = compile_covariant_terms(raw)
+    declared_compiled = _compiled_terms(declared)
+    raw_compiled = _compiled_terms(raw)
 
     assert len(raw_compiled) == len(declared_compiled) == 27
     assert _field_counts(raw_compiled) == _field_counts(declared_compiled)
@@ -275,7 +278,7 @@ def test_color_contracted_f_to_the_fourth_emits_4g_through_8g():
         * FieldStrength(su3, rho, sigma, b) * FieldStrength(su3, rho, sigma, b),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     # 4 field strengths -> 3^4 = 81 distributed monomials, 4..8 gluons.
     assert len(compiled) == 81
     assert set(_field_counts(compiled)) == {4, 5, 6, 7, 8}
@@ -317,8 +320,8 @@ def test_raw_spenso_gamma_and_generator_match_declared_chain_with_field_strength
         * q,
     )
 
-    declared_compiled = compile_covariant_terms(declared)
-    raw_compiled = compile_covariant_terms(raw)
+    declared_compiled = _compiled_terms(declared)
+    raw_compiled = _compiled_terms(raw)
 
     assert len(raw_compiled) == len(declared_compiled) == 3
     assert raw.lagrangian().vertex_signatures() == declared.lagrangian().vertex_signatures()
@@ -351,7 +354,7 @@ def test_mixed_group_field_strength_product_compiles():
         * FieldStrength(su2, mu2, nu2, aW) * FieldStrength(su2, mu2, nu2, aW),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     # Two SU(3) and two SU(2) field strengths -> 3^4 = 81 distributed monomials.
     assert len(compiled) == 81
     assert set(_field_counts(compiled)) == {4, 5, 6, 7, 8}

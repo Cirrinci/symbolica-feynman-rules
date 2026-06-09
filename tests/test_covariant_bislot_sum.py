@@ -4,7 +4,6 @@ from symbolica import S, Expression  # noqa: E402
 
 from compiler.gauge import (  # noqa: E402
     compile_complex_scalar_gauge_terms,
-    compile_covariant_terms,
     compile_mixed_complex_scalar_contact_terms,
     expand_cov_der,
 )
@@ -25,6 +24,10 @@ from symbolic.vertex_engine import Delta, I, pi, pcomp, simplify_deltas, vertex_
 from lagrangian.operators import scalar_gauge_contact  # noqa: E402
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
 from symbolic.tensor_canonicalization import canonize_spenso_tensors  # noqa: E402
+
+
+def _compiled_terms(model):
+    return model.lagrangian().terms
 
 
 def _make_bislot_scalar():
@@ -126,12 +129,12 @@ def test_ambiguity_is_error_by_default_for_repeated_slots():
     )
 
     with pytest.raises(ValueError, match=r"repeated index type|slot_policy='sum'|slot=\\.+"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_slot_policy_sum_expands_currents_and_contacts_over_slots():
     model, _, _, _ = _make_bislot_sum_model()
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
 
     # Complex-scalar kinetic term, bislot with slot_policy='sum':
     # - currents: 2 slots * 2 (phi vs phidag derivative placement) = 4 terms
@@ -226,7 +229,7 @@ def test_slot_policy_sum_current_matches_expected_bislot_vertex():
     gS = S("gS")
 
     model, scalar, gluon, _ = _make_bislot_sum_model()
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     current_terms = [term for term in compiled if "current" in term.label]
     assert len(current_terms) == 4
 
@@ -276,7 +279,7 @@ def test_slot_policy_sum_contact_matches_expected_bislot_tensor_structure():
     k1, k2 = S("k1", "k2")
 
     model, scalar, gluon, _ = _make_bislot_sum_model()
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     contact_terms = [term for term in compiled if "contact" in term.label]
     assert len(contact_terms) == 4
 

@@ -2,7 +2,6 @@ import pytest
 
 from symbolica import S, Expression  # noqa: E402
 
-from compiler.gauge import compile_covariant_terms  # noqa: E402
 from model import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
@@ -24,6 +23,10 @@ from model import (  # noqa: E402
 from symbolic.vertex_engine import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
 from lagrangian.operators import gauge_fixing_bilinear_raw, ghost_gauge_raw, ghost_kinetic_raw, psi_bar_gamma_psi, quark_gluon_current  # noqa: E402
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
+
+
+def _compiled_terms(model):
+    return model.lagrangian().terms
 
 
 def _model_vertex(*, interaction, external_legs, species_map):
@@ -107,7 +110,7 @@ def test_compile_abelian_gauge_fixing_term():
         lagrangian_decl=GaugeFixing(u1, xi=xi_qed),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 1
 
     legs = (
@@ -151,7 +154,7 @@ def test_compile_nonabelian_gauge_fixing_term():
         lagrangian_decl=GaugeFixing(su3, xi=xi_qcd),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 1
 
     legs = (
@@ -200,7 +203,7 @@ def test_compile_nonabelian_ghost_terms():
         lagrangian_decl=GhostLagrangian(su3),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 2
     bilinear, cubic = compiled
 
@@ -265,7 +268,7 @@ def test_compile_abelian_ghost_term_is_rejected():
     )
 
     with pytest.raises(ValueError, match=r"only supported for non-abelian gauge groups"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_self_conjugate_ghost_field_is_rejected():
@@ -293,7 +296,7 @@ def test_compile_self_conjugate_ghost_field_is_rejected():
     )
 
     with pytest.raises(ValueError, match=r"non-self-conjugate"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_gauge_fixing_term_rejects_xi_zero():
@@ -312,7 +315,7 @@ def test_compile_gauge_fixing_term_rejects_xi_zero():
     )
 
     with pytest.raises(ValueError, match=r"xi to be non-zero"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_gauge_fixing_term_rejects_symbolically_zero_xi():
@@ -331,7 +334,7 @@ def test_compile_gauge_fixing_term_rejects_symbolically_zero_xi():
     )
 
     with pytest.raises(ValueError, match=r"xi to be non-zero"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_gauge_fixing_term_rejects_non_vector_gauge_boson():
@@ -355,7 +358,7 @@ def test_compile_gauge_fixing_term_rejects_non_vector_gauge_boson():
     )
 
     with pytest.raises(ValueError, match=r"requires a vector field"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_ghost_term_rejects_missing_ghost_field_declaration():
@@ -374,7 +377,7 @@ def test_compile_ghost_term_rejects_missing_ghost_field_declaration():
     )
 
     with pytest.raises(ValueError, match=r"declare ghost_field"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_ghost_term_rejects_non_ghost_field_kind():
@@ -401,7 +404,7 @@ def test_compile_ghost_term_rejects_non_ghost_field_kind():
     )
 
     with pytest.raises(ValueError, match=r"kind='ghost'"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_ghost_term_rejects_adjoint_index_mismatch():
@@ -430,7 +433,7 @@ def test_compile_ghost_term_rejects_adjoint_index_mismatch():
     )
 
     with pytest.raises(ValueError, match=r"requires field .* exactly one .* slot"):
-        compile_covariant_terms(model)
+        _compiled_terms(model)
 
 
 def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
@@ -485,7 +488,7 @@ def test_compile_mixed_covariant_gauge_fixed_stack_counts_and_shapes():
         ),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     # current (2) + gauge F^2 expansion (4x 2G + 4x 3G + 1x 4G = 9) + gauge fixing (1)
     # + ghost bilinear (1) + ghost-gauge (1) = 14 local interaction terms.
     assert len(compiled) == 14
@@ -608,7 +611,7 @@ def test_mixed_group_covariant_with_qcd_only_gauge_fixing_and_ghosts_keeps_order
         ),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 6
 
     qcd_term, qed_term, _partial_term, gauge_fixing_term, ghost_bilinear_term, ghost_gauge_term = compiled
@@ -706,5 +709,5 @@ def test_model_infers_gauge_groups_from_gauge_fixing_and_ghost_declarations():
     assert gauge_fixing_model.gauge_groups == (su3,)
     assert ghost_model.gauge_groups == (su3,)
     assert combined_model.gauge_groups == (su3,)
-    assert len(compile_covariant_terms(gauge_fixing_model)) == 1
-    assert len(compile_covariant_terms(ghost_model)) == 2
+    assert len(_compiled_terms(gauge_fixing_model)) == 1
+    assert len(_compiled_terms(ghost_model)) == 2

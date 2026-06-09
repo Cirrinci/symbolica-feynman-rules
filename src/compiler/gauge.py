@@ -1749,7 +1749,7 @@ def _compile_declared_covariant_core(
     )
 
 
-def compile_covariant_terms(model: Model) -> tuple[InteractionTerm, ...]:
+def _compile_declared_lagrangian_terms(model: Model) -> tuple[InteractionTerm, ...]:
     """Compile all declared source terms in ``Model.lagrangian_decl``.
 
     This expands every declared term, including:

@@ -4,7 +4,7 @@ from fractions import Fraction
 
 from symbolica import S
 
-from compiler.gauge import compile_covariant_terms, expand_cov_der
+from compiler.gauge import expand_cov_der
 from lagrangian.operators import scalar_gauge_contact
 from model import (
     CovD,
@@ -139,11 +139,15 @@ def _assert_equal(got, expected):
 
 
 def _compiled_lagrangian(model: Model) -> CompiledLagrangian:
-    return CompiledLagrangian(terms=compile_covariant_terms(model))
+    return model.lagrangian()
+
+
+def _compiled_terms(model: Model):
+    return _compiled_lagrangian(model).terms
 
 
 def _assert_model_matches_compiled(model: Model, *fields):
-    got = model.lagrangian().feynman_rule(*fields)
+    got = model.feynman_rule(*fields)
     ref = _compiled_lagrangian(model).feynman_rule(*fields)
     _assert_equal(got, ref)
 
@@ -160,7 +164,7 @@ def test_expand_cov_der_resolves_both_electroweak_groups():
 
 
 def test_unbroken_electroweak_doublet_w_current():
-    compiled = compile_covariant_terms(MODEL_EW_DOUBLET_FERMION)
+    compiled = _compiled_terms(MODEL_EW_DOUBLET_FERMION)
     assert len(compiled) == 3
 
     got_w = MODEL_EW_DOUBLET_FERMION.lagrangian().feynman_rule(
@@ -200,7 +204,7 @@ def test_unbroken_electroweak_doublet_b_current():
 
 
 def test_unbroken_electroweak_singlet_b_current():
-    compiled = compile_covariant_terms(MODEL_EW_SINGLET_FERMION)
+    compiled = _compiled_terms(MODEL_EW_SINGLET_FERMION)
     assert len(compiled) == 2
 
     got_b = MODEL_EW_SINGLET_FERMION.lagrangian().feynman_rule(
@@ -221,7 +225,7 @@ def test_unbroken_electroweak_singlet_b_current():
 
 
 def test_unbroken_electroweak_higgs_w_current():
-    compiled = compile_covariant_terms(MODEL_EW_HIGGS)
+    compiled = _compiled_terms(MODEL_EW_HIGGS)
     assert len(compiled) == 9
 
     got = MODEL_EW_HIGGS.lagrangian().feynman_rule(

@@ -1,7 +1,6 @@
 from symbolica import S, Expression  # noqa: E402
 
 from compiler.gauge import (  # noqa: E402
-    compile_covariant_terms,
     compile_mixed_complex_scalar_contact_terms,
 )
 from model import (  # noqa: E402
@@ -20,6 +19,10 @@ from model import (  # noqa: E402
 from symbolic.vertex_engine import Delta, I, pi, simplify_deltas, vertex_factor  # noqa: E402
 from lagrangian.operators import scalar_gauge_contact  # noqa: E402
 from symbolic.spenso_structures import gauge_generator, structure_constant  # noqa: E402
+
+
+def _compiled_terms(model):
+    return model.lagrangian().terms
 
 
 def _model_vertex(*, interaction, external_legs, species_map):
@@ -407,7 +410,7 @@ def test_mixed_scalar_covariant_term_includes_cross_group_contact():
         lagrangian_decl=_scalar_decl(scalar),
     )
 
-    compiled = compile_covariant_terms(model)
+    compiled = _compiled_terms(model)
     assert len(compiled) == 9
 
     qcd_currents = [term for term in compiled if "SU3: scalar current" in term.label]

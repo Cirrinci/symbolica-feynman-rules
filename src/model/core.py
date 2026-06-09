@@ -332,10 +332,10 @@ class Model:
         reuse the same compiled object.
         """
         if self._compiled_lagrangian is None:
-            from compiler.gauge import compile_covariant_terms
+            from compiler.gauge import _compile_declared_lagrangian_terms
 
             self._compiled_lagrangian = CompiledLagrangian(
-                terms=compile_covariant_terms(self),
+                terms=_compile_declared_lagrangian_terms(self),
                 parameters=self.parameters,
             )
         return self._compiled_lagrangian

@@ -4,7 +4,6 @@ from fractions import Fraction
 
 from symbolica import Expression, S
 
-from compiler.gauge import compile_covariant_terms
 from lagrangian.operators import scalar_gauge_contact
 from model import (
     CovD,
@@ -208,9 +207,13 @@ def _lagrangian_vertex(compiled_terms, *fields):
     return CompiledLagrangian(terms=compiled_terms).feynman_rule(*fields)
 
 
+def _compiled_terms(model):
+    return model.lagrangian().terms
+
+
 def _cross_check(model, *fields):
-    got = model.lagrangian().feynman_rule(*fields)
-    ref = _lagrangian_vertex(compile_covariant_terms(model), *fields)
+    got = model.feynman_rule(*fields)
+    ref = _lagrangian_vertex(_compiled_terms(model), *fields)
     _assert_equal(got, ref)
 
 
