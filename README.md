@@ -15,7 +15,7 @@ Live source code is organized as split packages rather than flat top-level files
 - `src/model/`
   - model metadata and declarations
   - `Field`, `GaugeGroup`, `GaugeRepresentation`, `Model`
-  - compiled interaction objects, `Lagrangian`, and lowering from declarative source terms
+  - compiled interaction objects, `CompiledLagrangian`, and lowering from declarative source terms
   - electroweak symmetry-breaking helpers in `ssb.py`
 - `src/compiler/`
   - convention-fixed gauge / covariant compilation
@@ -45,7 +45,7 @@ What is already solid in the active code path:
 - local scalar, fermion, and mixed-species interaction lowering
 - derivative interactions with explicit derivative-target bookkeeping
 - fermion sign handling for the currently supported closed-bilinear structures
-- stripped and unstripped external-leg output through `vertex_factor(...)`
+- stripped and unstripped external-leg output through `feynman_rule(...)`
 - Spenso-backed gamma matrices, Lorentz metrics, generators, and structure constants
 - declarative source syntax around:
   - `Gamma(...)`
@@ -89,14 +89,19 @@ What is still under development:
 
 Frozen compiler conventions are summarized below and reinforced by focused tests.
 
-Core symbolic entry points:
+User-facing entry point:
+
+- `Model(...).lagrangian().feynman_rule(...)`
+  - declare a `Model`, compile it, and extract a chosen vertex
+
+Internal symbolic entry points (used underneath the model layer):
 
 - `symbolic.vertex_engine.contract_to_full_expression(...)`
   - low-level contraction/permutation engine
-- `symbolic.vertex_engine.vertex_factor(...)`
-  - high-level vertex extraction façade
+- `symbolic.vertex_engine.vertex_factor(interaction=..., external_legs=...)`
+  - vertex extraction over a compiled `InteractionTerm`
 - `symbolic.vertex_engine.simplify_vertex(...)`
-  - high-level post-processing helper
+  - post-processing helper
 - `symbolic.vertex_engine.simplify_deltas(...)`
 - `symbolic.vertex_engine.simplify_spinor_indices(...)`
 
@@ -125,43 +130,41 @@ Gauge/compiler conventions:
 - ordinary non-abelian ghosts use the integrated form
   `L_gh = (partial cbar)(partial c) + g f (partial cbar) A c`
 
-### Recommended workflows
+### Recommended workflow
 
-Choose the front door based on whether the source term is already local and
-expanded, or whether it still needs model metadata:
+`Model(...)` is the single source-declaration front door. It accepts both
+local/already-expanded operators and metadata-dependent declarations, and
+`model.lagrangian()` compiles them into the term container on which you call
+`feynman_rule(...)`:
 
-- Use `Lagrangian(...)` for local/already-expanded operators.
-  - Good fit: explicit products of fields, `PartialD(...)`, `Gamma(...)`,
-    `Metric(...)`, `T(...)`, and `StructureConstant(...)`.
-  - `Lagrangian(...)` does not consult `GaugeGroup` metadata and does not
-    compile covariant derivatives, gauge kinetic terms, gauge fixing, or ghost
-    sectors.
-- Use `Model(..., lagrangian_decl=...)` for metadata-dependent declarations.
-  - Good fit: `CovD(...)`, `FieldStrength(...)`, gauge kinetic terms,
-    `GaugeFixing(...)`, `GhostLagrangian(...)`, and any declaration that needs
-    charges, representations, gauge-boson assignments, or ghost-field
-    metadata.
+- Local operators: explicit products of fields, `PartialD(...)`, `Gamma(...)`,
+  `Metric(...)`, `T(...)`, and `StructureConstant(...)`.
+- Metadata-dependent declarations: `CovD(...)`, `FieldStrength(...)`, gauge
+  kinetic terms, `GaugeFixing(...)`, `GhostLagrangian(...)`, and any
+  declaration that needs charges, representations, gauge-boson assignments, or
+  ghost-field metadata.
+
+There is no separate `Lagrangian` source class. `model.lagrangian()` compiles a
+declaration into a `CompiledLagrangian` term container, which is also
+constructible directly as `CompiledLagrangian(terms=...)` from already-lowered
+`InteractionTerm` objects.
 
 For compact FeynRules-style index notation, plain symbols such as
 `f, h, col = S("f", "h", "col")` are still valid. During lowering, each label
 name is bound to one index space per monomial, so reusing one name across
-incompatible slots is rejected. Full parameter-aware label checks require the
-`Model(..., parameters=..., lagrangian_decl=...)` path because standalone
-`Lagrangian(...)` does not carry a parameter table.
+incompatible slots is rejected. Full parameter-aware label checks use the
+`Model(..., parameters=..., lagrangian_decl=...)` path, which carries a
+parameter table.
 
-For metadata-free local operators, use `Lagrangian(...)` directly:
+For metadata-free local operators, pass them straight to `Model(...)`:
 
 ```python
-L = Lagrangian(
+model = Model(
     g4 * psi.bar * Gamma(mu) * psi * chi.bar * Gamma(mu) * chi
 )
 
-vertex = L.feynman_rule(psi.bar, psi, chi.bar, chi)
+vertex = model.lagrangian().feynman_rule(psi.bar, psi, chi.bar, chi)
 ```
-
-This path is intended for terms that are already written in local form. It is
-not the right entry point for `CovD(...)`, `FieldStrength(...)`,
-`GaugeFixing(...)`, or `GhostLagrangian(...)`.
 
 For model declarations that need gauge metadata, use `Model(..., lagrangian_decl=...)`:
 
@@ -196,9 +199,12 @@ When the interaction should be derived from declared gauge data, prefer
 `Model(..., lagrangian_decl=...)` and let the compiler build the corresponding
 generator or structure-constant insertions from `GaugeGroup` metadata.
 
-Use the lower-level direct engine only when you explicitly want to supply the
+The lower-level engine `contract_to_full_expression(...)` still accepts
 parallel-list contraction input (`coupling`, `alphas`, `betas`, `ps`, roles,
-index labels, and derivative targets) yourself.
+index labels, and derivative targets), but this is an internal interface used
+underneath the model layer. User code should go through `Model(...)` and
+`feynman_rule(...)`; the removed direct `vertex_factor(coupling=..., alphas=...)`
+entry point now raises.
 
 Legacy split declaration slots such as `covariant_terms`,
 `gauge_kinetic_terms`, `gauge_fixing_terms`, and `ghost_terms` are still

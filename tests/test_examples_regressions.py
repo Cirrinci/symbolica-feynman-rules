@@ -6,7 +6,7 @@ from symbolica import S
 
 from model import (
     Field,
-    Lagrangian,
+    InteractionTerm,
     Model,
     ROLE_PSI,
     ROLE_PSIBAR,
@@ -30,19 +30,6 @@ def test_direct_vertex_factor_kwargs_are_rejected():
             ps=[S("p1"), S("p2"), S("p3")],
             x=S("x"),
         )
-
-
-def test_lagrangian_source_declarations_are_rejected():
-    phi = Field(
-        "PhiC",
-        spin=0,
-        self_conjugate=False,
-        symbol=S("phiC0"),
-        conjugate_symbol=S("phiCdag0"),
-    )
-
-    with pytest.raises(TypeError, match="Use Model"):
-        Lagrangian(S("lamC") * phi.bar * phi)
 
 
 def test_model_tuple_field_syntax_matches_complex_scalar_bilinear():
@@ -80,6 +67,22 @@ def test_model_same_symbol_distinct_roles_do_not_match():
 
     with pytest.raises(ValueError, match="No matching interaction terms"):
         model.feynman_rule(vector)
+
+
+def test_interaction_term_arithmetic_with_declared_expr_keeps_feynman_rule_api():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    g = S("g")
+    y = S("y")
+    term = InteractionTerm(coupling=g, fields=(phi.occurrence(),))
+    declared_expr = y * phi * phi
+
+    left = term + declared_expr
+    right = declared_expr + term
+
+    assert _canon(left.feynman_rule(phi)) == _canon(I * g)
+    assert _canon(left.feynman_rule(phi, phi)) == _canon(2 * I * y)
+    assert _canon(right.feynman_rule(phi)) == _canon(I * g)
+    assert _canon(right.feynman_rule(phi, phi)) == _canon(2 * I * y)
 
 
 def test_field_role_object_semantics():

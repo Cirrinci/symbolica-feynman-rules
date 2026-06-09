@@ -16,7 +16,7 @@ from model import (
     GhostLagrangian,
     Gamma,
     LORENTZ_INDEX,
-    Lagrangian,
+    CompiledLagrangian,
     Model,
     SPINOR_INDEX,
     WEAK_ADJ_INDEX,
@@ -205,7 +205,7 @@ def _assert_nonzero(expr):
 
 
 def _lagrangian_vertex(compiled_terms, *fields):
-    return Lagrangian(terms=compiled_terms).feynman_rule(*fields)
+    return CompiledLagrangian(terms=compiled_terms).feynman_rule(*fields)
 
 
 def _cross_check(model, *fields):

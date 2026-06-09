@@ -16,7 +16,7 @@ from model import (
     GaugeRepresentation,
     GhostLagrangian,
     InteractionTerm,
-    Lagrangian,
+    CompiledLagrangian,
     LORENTZ_INDEX,
     SPINOR_INDEX,
     WEAK_ADJ_INDEX,
@@ -72,7 +72,7 @@ def _canonical(expr):
 def test_vertex_report_enumerates_scalar_signatures_deterministically():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
         InteractionTerm(
             coupling=S("g"),
@@ -102,7 +102,7 @@ def test_vertex_report_enumerates_scalar_signatures_deterministically():
 def test_vertex_signatures_filter_by_arity():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
         InteractionTerm(
             coupling=S("g"),
@@ -132,7 +132,7 @@ def test_matching_terms_filters_by_exact_signature_not_arity():
         coupling=S("g_chi"),
         fields=(chi.occurrence(), chi.occurrence(), chi.occurrence()),
     )
-    lagrangian = Lagrangian(terms=(phi_term, mixed_term, chi_term))
+    lagrangian = CompiledLagrangian(terms=(phi_term, mixed_term, chi_term))
 
     matched = lagrangian.matching_terms(phi, chi, chi)
 
@@ -142,7 +142,7 @@ def test_matching_terms_filters_by_exact_signature_not_arity():
 def test_zero_argument_feynman_rule_supports_arity_and_select_filters():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
         InteractionTerm(
             coupling=S("g"),
@@ -162,7 +162,7 @@ def test_zero_argument_feynman_rule_supports_arity_and_select_filters():
 
 def test_explicit_feynman_rule_rejects_zero_argument_only_filters():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
     ))
 
@@ -572,7 +572,7 @@ def _unbroken_sm_yukawa_model():
 
 def test_vertex_signatures_invalid_sector_is_rejected():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
     ))
 
@@ -695,7 +695,7 @@ def test_vertex_report_non_gauge_fixing_vector_bilinear_is_not_misclassified():
     rho = S("rho_not_gf")
     mu = S("mu_not_gf")
     nu = S("nu_not_gf")
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=Expression.num(1),
             fields=(photon(mu), photon(nu)),
@@ -792,7 +792,7 @@ def test_vertex_signatures_qed_sector_split():
 def test_vertex_signatures_local_scalar_sector_is_matter():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
         InteractionTerm(
             coupling=S("g"),

@@ -4,7 +4,7 @@ import pytest
 
 from symbolica import Expression, S
 
-from model import InteractionTerm, Lagrangian, Model, dirac_field, scalar_field
+from model import InteractionTerm, CompiledLagrangian, Model, dirac_field, scalar_field
 from model.metadata import SPINOR_KIND
 
 
@@ -51,4 +51,4 @@ def test_vertex_engine_rejects_overlapping_manual_closed_dirac_bilinears():
     )
 
     with pytest.raises(ValueError, match="disjoint source-order Dirac pairings"):
-        Lagrangian(terms=(term,)).feynman_rule(psi.bar, chi.bar, psi, chi)
+        CompiledLagrangian(terms=(term,)).feynman_rule(psi.bar, chi.bar, psi, chi)

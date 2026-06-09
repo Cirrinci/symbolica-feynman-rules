@@ -972,7 +972,7 @@ class Field:
 
     @property
     def bar(self) -> "ConjugateField":
-        """Return a conjugated-field marker for use in ``Lagrangian.feynman_rule()``."""
+        """Return a conjugated-field marker for use in ``feynman_rule()``."""
         return ConjugateField(self)
 
     def leg(
@@ -1042,7 +1042,7 @@ class Field:
 
 @dataclass(frozen=True)
 class ConjugateField:
-    """Lightweight marker for a conjugated field in ``Lagrangian.feynman_rule()``."""
+    """Lightweight marker for a conjugated field in ``feynman_rule()``."""
     field: Field
 
     def __mul__(self, other):

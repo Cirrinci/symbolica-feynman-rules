@@ -26,7 +26,7 @@ from model import (
     GaugeRepresentation,
     GhostField,
     LORENTZ_INDEX,
-    Lagrangian,
+    CompiledLagrangian,
     Model,
     PartialD,
     WEAK_ADJ_INDEX,
@@ -60,7 +60,7 @@ def _apply_single(operator, occurrence):
 
 
 def _single_slot_lagrangian(occurrence):
-    return Lagrangian(terms=(_single_slot_term(occurrence),))
+    return CompiledLagrangian(terms=(_single_slot_term(occurrence),))
 
 
 def _zero(expr, *, field_heads=(), run_gamma=False, run_color=False):

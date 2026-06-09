@@ -12,7 +12,7 @@ from model import (
     Gamma,
     GaugeGroup,
     GaugeRepresentation,
-    Lagrangian,
+    CompiledLagrangian,
     LORENTZ_INDEX,
     Model,
     SPINOR_INDEX,
@@ -138,8 +138,8 @@ def _assert_equal(got, expected):
     assert _canonical(got) == _canonical(expected)
 
 
-def _compiled_lagrangian(model: Model) -> Lagrangian:
-    return Lagrangian(terms=compile_covariant_terms(model))
+def _compiled_lagrangian(model: Model) -> CompiledLagrangian:
+    return CompiledLagrangian(terms=compile_covariant_terms(model))
 
 
 def _assert_model_matches_compiled(model: Model, *fields):

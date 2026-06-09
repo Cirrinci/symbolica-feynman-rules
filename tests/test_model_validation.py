@@ -327,10 +327,10 @@ def test_model_validate_reports_missing_nonabelian_representation_for_explicit_t
 
 
 def test_compiled_validate_diagonal_complex_scalar_mass_term_passes_silently():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     scalar = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("m"),
             fields=(scalar.occurrence(conjugated=True), scalar.occurrence()),
@@ -344,10 +344,10 @@ def test_compiled_validate_diagonal_complex_scalar_mass_term_passes_silently():
 
 
 def test_compiled_validate_diagonal_real_scalar_mass_term_passes_silently():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
     ))
 
@@ -358,10 +358,10 @@ def test_compiled_validate_diagonal_real_scalar_mass_term_passes_silently():
 
 
 def test_compiled_validate_diagonal_dirac_mass_term_passes_silently():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("mPsi"),
             fields=(psi.occurrence(conjugated=True), psi.occurrence()),
@@ -375,11 +375,11 @@ def test_compiled_validate_diagonal_dirac_mass_term_passes_silently():
 
 
 def test_compiled_validate_reports_scalar_mass_mixing():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     phi1 = make_complex_scalar("Phi1", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
     phi2 = make_complex_scalar("Phi2", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("m12"),
             fields=(phi1.occurrence(conjugated=True), phi2.occurrence()),
@@ -398,11 +398,11 @@ def test_compiled_validate_reports_scalar_mass_mixing():
 
 
 def test_compiled_validate_reports_scalar_mass_mixing_for_same_name_distinct_fields():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     phi1 = make_complex_scalar("Phi", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
     phi2 = make_complex_scalar("Phi", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("m12_same_name"),
             fields=(phi1.occurrence(conjugated=True), phi2.occurrence()),
@@ -417,11 +417,11 @@ def test_compiled_validate_reports_scalar_mass_mixing_for_same_name_distinct_fie
 
 
 def test_compiled_validate_reports_fermion_mass_mixing():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
     chi = make_dirac_fermion("Chi", symbol=S("chi"), conjugate_symbol=S("chibar"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("mMix"),
             fields=(psi.occurrence(conjugated=True), chi.occurrence()),
@@ -440,11 +440,11 @@ def test_compiled_validate_reports_fermion_mass_mixing():
 
 
 def test_compiled_validate_skips_noncanonical_complex_scalar_pair():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     phi1 = make_complex_scalar("Phi1", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
     phi2 = make_complex_scalar("Phi2", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("c_noncanon"),
             fields=(phi1.occurrence(), phi2.occurrence()),
@@ -458,11 +458,11 @@ def test_compiled_validate_skips_noncanonical_complex_scalar_pair():
 
 
 def test_compiled_validate_skips_noncanonical_fermion_pair():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
     chi = make_dirac_fermion("Chi", symbol=S("chi"), conjugate_symbol=S("chibar"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("c_noncanon_f"),
             fields=(psi.occurrence(), chi.occurrence()),
@@ -507,11 +507,11 @@ def test_compiled_validate_skips_kinetic_bilinears_with_derivatives():
 
 
 def test_compiled_validate_ignores_higher_arity_interactions():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("g"),
             fields=(phi.occurrence(), chi.occurrence(), chi.occurrence()),
@@ -529,11 +529,11 @@ def test_compiled_validate_ignores_higher_arity_interactions():
 
 
 def test_compiled_validate_skips_mixed_statistics_bilinears():
-    from model import InteractionTerm, Lagrangian
+    from model import InteractionTerm, CompiledLagrangian
 
     phi = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
-    lagrangian = Lagrangian(terms=(
+    lagrangian = CompiledLagrangian(terms=(
         InteractionTerm(
             coupling=S("c"),
             fields=(phi.occurrence(), psi.occurrence()),

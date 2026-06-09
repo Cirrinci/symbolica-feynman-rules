@@ -22,7 +22,7 @@ from model import (
     CompiledLagrangian,
     Field,
     GhostField,
-    Lagrangian,
+    CompiledLagrangian,
     LORENTZ_INDEX,
     Model,
     Parameter,
@@ -398,7 +398,7 @@ def test_apply_field_operator_lifts_to_a_sequence_of_terms(phi, chi):
 def test_compiled_lagrangian_apply_operator_returns_new_object(phi, chi):
     """``CompiledLagrangian.apply_operator`` preserves the public API."""
 
-    base = Lagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),))
+    base = CompiledLagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),))
     operator = replacement_operator("O", {phi: chi.occurrence()})
 
     out = base.apply_operator(operator)
@@ -410,7 +410,7 @@ def test_compiled_lagrangian_apply_operator_returns_new_object(phi, chi):
 def test_compiled_lagrangian_apply_operator_accepts_term_operator(phi):
     """Whole-term operators dispatch through the same public entry point."""
 
-    base = Lagrangian(
+    base = CompiledLagrangian(
         terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
     )
 
@@ -438,13 +438,13 @@ def test_model_apply_operator_forwards_to_compiled_lagrangian(phi, chi):
 
 
 def test_field_occurrence_apply_operator_matches_single_slot_lagrangian(phi, chi):
-    """``FieldOccurrence.apply_operator(...)`` is thin sugar over `Lagrangian`."""
+    """``FieldOccurrence.apply_operator(...)`` is thin sugar over `CompiledLagrangian`."""
 
     occurrence = phi()
     operator = replacement_operator("O", {phi: chi.occurrence()})
 
     direct = occurrence.apply_operator(operator)
-    explicit = Lagrangian(
+    explicit = CompiledLagrangian(
         terms=(InteractionTerm(coupling=Expression.num(1), fields=(occurrence,)),)
     ).apply_operator(operator)
 
@@ -458,7 +458,7 @@ def test_apply_operators_is_left_to_right(phi, chi):
     """``apply_operators(A, B)`` means ``B(A(L))``."""
 
     rho = scalar_field("rho", self_conjugate=True)
-    base = Lagrangian(
+    base = CompiledLagrangian(
         terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
     )
     first = replacement_operator("first", {phi: chi.occurrence()})
@@ -474,7 +474,7 @@ def test_operator_bracket_uses_graded_sign(phi):
 
     chi = scalar_field("chi", self_conjugate=True)
     rho = scalar_field("rho", self_conjugate=True)
-    base = Lagrangian(
+    base = CompiledLagrangian(
         terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
     )
     left = replacement_operator("left", {phi: chi.occurrence()}, parity=1)
@@ -489,7 +489,7 @@ def test_operator_bracket_uses_graded_sign(phi):
 def test_operator_bracket_even_even_is_ordinary_commutator(phi):
     chi = scalar_field("chi", self_conjugate=True)
     rho = scalar_field("rho", self_conjugate=True)
-    base = Lagrangian(
+    base = CompiledLagrangian(
         terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
     )
     left = replacement_operator("left", {phi: chi.occurrence()}, parity=0)
@@ -504,7 +504,7 @@ def test_operator_bracket_even_even_is_ordinary_commutator(phi):
 def test_operator_bracket_even_odd_is_ordinary_commutator(phi):
     chi = scalar_field("chi", self_conjugate=True)
     rho = scalar_field("rho", self_conjugate=True)
-    base = Lagrangian(
+    base = CompiledLagrangian(
         terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
     )
     left = replacement_operator("left", {phi: chi.occurrence()}, parity=0)
@@ -521,7 +521,7 @@ def test_operator_anticommutator_uses_graded_sign(phi):
 
     chi = scalar_field("chi", self_conjugate=True)
     rho = scalar_field("rho", self_conjugate=True)
-    base = Lagrangian(
+    base = CompiledLagrangian(
         terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),)
     )
     left = replacement_operator("left", {phi: chi.occurrence()}, parity=1)
@@ -674,7 +674,7 @@ def test_interaction_terms_to_symbolica_sums_term_expressions(phi, chi):
 
 
 def test_lagrangian_to_symbolica_delegates_to_terms(phi):
-    base = Lagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),))
+    base = CompiledLagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(phi.occurrence(),)),))
     direct = lagrangian_to_symbolica(base)
     via_method = base.to_symbolica()
     assert _canon(direct) == _canon(via_method)
@@ -682,7 +682,7 @@ def test_lagrangian_to_symbolica_delegates_to_terms(phi):
 
 def test_compiled_lagrangian_forwards_symbolica_methods(phi):
     g = S("g")
-    lagrangian = Lagrangian(
+    lagrangian = CompiledLagrangian(
         terms=(
             InteractionTerm(
                 coupling=g,
@@ -726,7 +726,7 @@ def test_compiled_lagrangian_pattern_coefficient_supports_wildcard_labels():
     mu, nu = S("mu", "nu")
     mu_, nu_ = S("mu_", "nu_")
     vector = Field("A", spin=1, indices=(LORENTZ_INDEX,), self_conjugate=True)
-    lagrangian = Lagrangian(
+    lagrangian = CompiledLagrangian(
         terms=(
             InteractionTerm(
                 coupling=g,
@@ -1068,7 +1068,7 @@ def test_to_symbolica_with_flavor_expand_reflects_class_member_expansion():
     """``CompiledLagrangian.to_symbolica(flavor_expand=True)`` exposes the
     expanded class-member terms, not the flavor-generic source terms.
 
-    Concretely we build a tiny lepton-class Lagrangian with three
+    Concretely we build a tiny lepton-class CompiledLagrangian with three
     class members ``e``, ``mu``, ``ta``. The flavor-expanded export
     should mention each member by name; the un-expanded export must not.
     """
@@ -1107,7 +1107,7 @@ def test_to_symbolica_with_flavor_expand_reflects_class_member_expansion():
 def test_to_symbolica_flavor_expand_false_matches_default_behavior():
     """The default ``flavor_expand=False`` is unchanged by the new kwarg."""
 
-    base = Lagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(scalar_field("phi", self_conjugate=True).occurrence(),)),))
+    base = CompiledLagrangian(terms=(InteractionTerm(coupling=Expression.num(1), fields=(scalar_field("phi", self_conjugate=True).occurrence(),)),))
     assert _canon(base.to_symbolica()) == _canon(base.to_symbolica(flavor_expand=False))
 
 
