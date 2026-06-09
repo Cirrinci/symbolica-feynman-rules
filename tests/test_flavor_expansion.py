@@ -8,7 +8,6 @@ from symbolica import S
 from model import (
     COLOR_FUND_INDEX,
     Field,
-    Lagrangian,
     Model,
     Parameter,
     SPINOR_INDEX,
@@ -21,6 +20,10 @@ from model.interactions import _field_match_key
 
 def _canon(expr):
     return expr.expand().to_canonical_string()
+
+
+def _compiled(expr, *, parameters=()):
+    return Model(parameters=parameters, lagrangian_decl=expr).lagrangian()
 
 
 def _off_diagonal_zero_components(index):
@@ -122,7 +125,7 @@ def test_diagonal_flavor_expansion_keeps_compact_rule_and_produces_only_diagonal
     l, (e, mu, ta) = _charged_lepton_class(Generation)
     Phi = scalar_field("Phi")
     f = S("f")
-    lagrangian = Lagrangian(S("g") * l.bar(f) * l(f) * Phi)
+    lagrangian = _compiled(S("g") * l.bar(f) * l(f) * Phi)
 
     compact = lagrangian.feynman_rule(
         flavor_expand=False,
@@ -222,10 +225,10 @@ def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_te
     f, h = S("f", "h")
     yl = Parameter("yl", indices=(Generation, Generation))
 
-    mixed = Lagrangian(lam * l.bar(f) * yl(f, h) * l(h) * Phi)
-    manual = Lagrangian(lam * e.bar * yl(1, 2) * mu * Phi)
-    compact = Lagrangian(lam * l.bar(f) * l(f) * Phi)
-    manual_diag = Lagrangian(lam * e.bar * e * Phi)
+    mixed = _compiled(lam * l.bar(f) * yl(f, h) * l(h) * Phi, parameters=(yl,))
+    manual = _compiled(lam * e.bar * yl(1, 2) * mu * Phi, parameters=(yl,))
+    compact = _compiled(lam * l.bar(f) * l(f) * Phi)
+    manual_diag = _compiled(lam * e.bar * e * Phi)
 
     mixed_rule = mixed.feynman_rule(
         e.bar,
@@ -377,7 +380,7 @@ def test_flavor_expansion_preserves_colour_indices_in_terms_and_rules():
     Phi = scalar_field("Phi")
     f, colour = S("f", "c")
     gQ = S("gQ")
-    lagrangian = Lagrangian(gQ * uq.bar(f, colour) * uq(f, colour) * Phi)
+    lagrangian = _compiled(gQ * uq.bar(f, colour) * uq(f, colour) * Phi)
 
     signatures = lagrangian.vertex_signatures(flavor_expand=True)
     expanded_terms = lagrangian._expanded_terms(flavor_expand=True)
@@ -389,7 +392,7 @@ def test_flavor_expansion_preserves_colour_indices_in_terms_and_rules():
         include_delta=True,
         flavor_expand=True,
     )
-    manual_rule = Lagrangian(gQ * u.bar(colour) * u(colour) * Phi).feynman_rule(
+    manual_rule = _compiled(gQ * u.bar(colour) * u(colour) * Phi).feynman_rule(
         u.bar,
         u,
         Phi,
@@ -422,7 +425,7 @@ def test_selected_flavor_expand_can_target_one_index_type():
     _chi1, _chi2 = chi.class_members
     Phi = scalar_field("Phi")
     f, d, colour = S("f", "d", "c")
-    lagrangian = Lagrangian(S("g") * uq.bar(f, colour) * chi(d) * Phi)
+    lagrangian = _compiled(S("g") * uq.bar(f, colour) * chi(d) * Phi)
 
     generation_only = lagrangian.vertex_signatures(flavor_expand=Generation)
     su2d_only = lagrangian.vertex_signatures(flavor_expand=SU2D)
@@ -445,7 +448,7 @@ def test_flavor_expansion_cache_reuses_expanded_terms_across_rule_queries(monkey
     l, (e, _mu, _ta) = _charged_lepton_class(Generation)
     Phi = scalar_field("Phi")
     f = S("f")
-    lagrangian = Lagrangian(S("g") * l.bar(f) * l(f) * Phi)
+    lagrangian = _compiled(S("g") * l.bar(f) * l(f) * Phi)
 
     calls = {"count": 0}
     original = flavor_module.expand_flavor_terms
@@ -501,7 +504,7 @@ def test_flavor_expansion_cache_keys_by_normalized_selection(monkeypatch):
     )
     Phi = scalar_field("Phi")
     f, d, colour = S("f", "d", "c")
-    lagrangian = Lagrangian(S("g") * uq.bar(f, colour) * chi(d) * Phi)
+    lagrangian = _compiled(S("g") * uq.bar(f, colour) * chi(d) * Phi)
 
     calls = {"count": 0}
     original = flavor_module.expand_flavor_terms
@@ -600,7 +603,7 @@ def test_flavor_expansion_cache_does_not_leak_across_rebuild_or_term_mutation():
     Phi = scalar_field("Phi")
     Xi = scalar_field("Xi")
     f = S("f")
-    lagrangian = Lagrangian(S("g") * l.bar(f) * l(f) * Phi)
+    lagrangian = _compiled(S("g") * l.bar(f) * l(f) * Phi)
 
     expanded_before = lagrangian._expanded_terms(flavor_expand=True)
     assert len(expanded_before) == 3
@@ -614,15 +617,15 @@ def test_flavor_expansion_cache_does_not_leak_across_rebuild_or_term_mutation():
             flavor_expand=True,
         )
 
-    rebuilt = lagrangian + (S("h") * l.bar(f) * l(f) * Xi)
+    rebuilt = _compiled(S("g") * l.bar(f) * l(f) * Phi + S("h") * l.bar(f) * l(f) * Xi)
     rebuilt_expanded = rebuilt._expanded_terms(flavor_expand=True)
     assert len(rebuilt_expanded) == 6
     assert any(term.fields[-1].field is Xi for term in rebuilt_expanded)
 
-    extra_terms = Lagrangian(S("h") * l.bar(f) * l(f) * Xi).terms
+    extra_terms = _compiled(S("h") * l.bar(f) * l(f) * Xi).terms
     lagrangian.terms = lagrangian.terms + extra_terms
     expanded_after_mutation = lagrangian._expanded_terms(flavor_expand=True)
-    manual_xi = Lagrangian(S("h") * e.bar * e * Xi).feynman_rule(
+    manual_xi = _compiled(S("h") * e.bar * e * Xi).feynman_rule(
         e.bar,
         e,
         Xi,
@@ -783,7 +786,7 @@ def test_invalid_flavor_class_declarations_and_missing_members_raise_clear_error
     )
     Phi = scalar_field("PhiMissing")
     f = S("f")
-    lagrangian = Lagrangian(S("g") * psi.bar(f) * psi(f) * Phi)
+    lagrangian = _compiled(S("g") * psi.bar(f) * psi(f) * Phi)
 
     with pytest.raises(ValueError, match="no class members are defined"):
         lagrangian.vertex_signatures(flavor_expand=True)
@@ -800,17 +803,6 @@ def test_rejects_same_label_used_as_generation_and_colour():
             fields=(uq, Phi),
             lagrangian_decl=uq.bar(f, col) * uq(col, f) * Phi,
         ).lagrangian()
-
-
-def test_standalone_lagrangian_rejects_same_label_used_as_generation_and_colour():
-    Generation = flavor_index("Generation", 3, prefix="f")
-    uq, (_u, _c, _t) = _up_quark_class(Generation)
-    Phi = scalar_field("Phi")
-    f, col = S("f", "col")
-
-    with pytest.raises(ValueError, match="incompatible index types"):
-        Lagrangian(uq.bar(f, col) * uq(col, f) * Phi)
-
 
 def test_rejects_parameter_label_used_in_incompatible_index_space():
     Generation = flavor_index("Generation", 3, prefix="f")

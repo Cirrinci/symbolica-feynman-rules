@@ -1,5 +1,7 @@
 from fractions import Fraction
 
+import pytest
+
 from symbolica import S
 from symbolica.community.spenso import Representation
 
@@ -11,14 +13,13 @@ from model import (
     GaugeGroup,
     GaugeRepresentation,
     IndexType,
-    Lagrangian,
     LORENTZ_INDEX,
     Model,
     SPINOR_INDEX,
 )
 from model.lagrangian import DiracKineticTerm
 from symbolic.spenso_structures import gauge_generator, structure_constant
-from symbolic.vertex_engine import I, simplify_deltas, vertex_factor
+from symbolic.vertex_engine import I
 
 
 def _canon(expr):
@@ -33,108 +34,40 @@ def _custom_indices():
     return spinor, lorentz, color_fund, color_adj
 
 
-def _direct_yukawa_vertex(
-    *,
-    field_index_types,
-    leg_index_types,
-    field_index_labels=None,
-    leg_index_labels=None,
-    field_spinor_indices=None,
-    leg_spinor_indices=None,
-):
-    psibar0, psi0, phi0 = S("psibar0", "psi0", "phi0")
-    b1, b2, b3 = S("b1", "b2", "b3")
-    p1, p2, p3 = S("p1", "p2", "p3")
-    s1, s2, s3 = S("s1", "s2", "s3")
-    x = S("x")
-
-    expr = vertex_factor(
-        coupling=S("y"),
-        alphas=[psibar0, psi0, phi0],
-        betas=[b1, b2, b3],
-        ps=[p1, p2, p3],
-        x=x,
-        statistics="fermion",
-        field_roles=["psibar", "psi", "scalar"],
-        leg_roles=["psibar", "psi", "scalar"],
-        field_index_types=field_index_types,
-        leg_index_types=leg_index_types,
-        field_index_labels=field_index_labels,
-        leg_index_labels=leg_index_labels,
-        field_spinor_indices=field_spinor_indices,
-        leg_spinor_indices=leg_spinor_indices,
-        leg_spins=[s1, s2, s3],
-        strip_externals=True,
-        include_delta=False,
+def _yukawa_rule(spinor_index):
+    alpha = S("alpha")
+    psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(spinor_index,),
     )
-    return simplify_deltas(
-        expr,
-        species_map={b1: psibar0, b2: psi0, b3: phi0},
-    )
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    model = Model(S("y") * psi.bar(alpha) * psi(alpha) * phi)
+    return model.feynman_rule(psi.bar, psi, phi, simplify=True)
 
 
 def test_custom_spinor_kind_matches_default_stripped_fermion_externals():
     spinor, _, _, _ = _custom_indices()
-    alpha, i1, i2 = S("alpha", "i1", "i2")
-
-    default_expr = _direct_yukawa_vertex(
-        field_index_types=[(SPINOR_INDEX,), (SPINOR_INDEX,), ()],
-        leg_index_types=[(SPINOR_INDEX,), (SPINOR_INDEX,), ()],
-        field_index_labels=[
-            {SPINOR_INDEX.kind: alpha},
-            {SPINOR_INDEX.kind: alpha},
-            {},
-        ],
-        leg_index_labels=[
-            {SPINOR_INDEX.kind: i1},
-            {SPINOR_INDEX.kind: i2},
-            {},
-        ],
-    )
-    custom_expr = _direct_yukawa_vertex(
-        field_index_types=[(spinor,), (spinor,), ()],
-        leg_index_types=[(spinor,), (spinor,), ()],
-        field_index_labels=[
-            {spinor.kind: alpha},
-            {spinor.kind: alpha},
-            {},
-        ],
-        leg_index_labels=[
-            {spinor.kind: i1},
-            {spinor.kind: i2},
-            {},
-        ],
-    )
+    default_expr = _yukawa_rule(SPINOR_INDEX)
+    custom_expr = _yukawa_rule(spinor)
 
     assert _canon(custom_expr) == _canon(default_expr)
 
 
-def test_legacy_vertex_factor_spinor_path_matches_explicit_custom_labels():
-    spinor, _, _, _ = _custom_indices()
-    alpha, i1, i2 = S("alpha", "i1", "i2")
+def test_direct_vertex_factor_path_is_removed():
+    with pytest.raises(TypeError, match="unexpected keyword argument 'coupling'"):
+        from symbolic.vertex_engine import vertex_factor
 
-    legacy_expr = _direct_yukawa_vertex(
-        field_index_types=[(spinor,), (spinor,), ()],
-        leg_index_types=[(spinor,), (spinor,), ()],
-        field_spinor_indices=[alpha, alpha, None],
-        leg_spinor_indices=[i1, i2, None],
-    )
-    explicit_expr = _direct_yukawa_vertex(
-        field_index_types=[(spinor,), (spinor,), ()],
-        leg_index_types=[(spinor,), (spinor,), ()],
-        field_index_labels=[
-            {spinor.kind: alpha},
-            {spinor.kind: alpha},
-            {},
-        ],
-        leg_index_labels=[
-            {spinor.kind: i1},
-            {spinor.kind: i2},
-            {},
-        ],
-    )
-
-    assert _canon(legacy_expr) == _canon(explicit_expr)
+        vertex_factor(
+            coupling=S("y"),
+            alphas=[S("psibar0"), S("psi0"), S("phi0")],
+            betas=[S("b1"), S("b2"), S("b3")],
+            ps=[S("p1"), S("p2"), S("p3")],
+            x=S("x"),
+        )
 
 
 def test_custom_lorentz_kind_is_not_contracted_as_spectator():
@@ -271,10 +204,10 @@ def test_custom_kinds_yukawa_feynman_rule_matches_default():
     )
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
 
-    custom_rule = Lagrangian(S("y") * psi_custom.bar * psi_custom * phi).feynman_rule(
+    custom_rule = Model(S("y") * psi_custom.bar * psi_custom * phi).feynman_rule(
         psi_custom.bar, psi_custom, phi, simplify=True
     )
-    default_rule = Lagrangian(S("y") * psi_default.bar * psi_default * phi).feynman_rule(
+    default_rule = Model(S("y") * psi_default.bar * psi_default * phi).feynman_rule(
         psi_default.bar, psi_default, phi, simplify=True
     )
 

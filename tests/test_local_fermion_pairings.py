@@ -4,7 +4,7 @@ import pytest
 
 from symbolica import Expression, S
 
-from model import InteractionTerm, Lagrangian, dirac_field, scalar_field
+from model import InteractionTerm, Lagrangian, Model, dirac_field, scalar_field
 from model.metadata import SPINOR_KIND
 
 
@@ -14,9 +14,9 @@ def test_explicit_disjoint_local_dirac_pairing_overrides_adjacent_heuristic():
     phi = scalar_field("phi", self_conjugate=True)
     alpha, beta = S("alpha", "beta")
 
-    lagrangian = Lagrangian(
+    lagrangian = Model(
         S("g") * psi.bar(alpha) * phi * psi(alpha) * chi.bar(beta) * chi(beta)
-    )
+    ).lagrangian()
 
     assert len(lagrangian.terms) == 1
     assert lagrangian.terms[0].closed_dirac_bilinears == ((0, 2), (3, 4))
@@ -29,9 +29,9 @@ def test_crossed_explicit_local_dirac_pairings_are_rejected():
     alpha, beta = S("alpha", "beta")
 
     with pytest.raises(ValueError, match="Unsupported fermion ordering"):
-        Lagrangian(
+        Model(
             S("g") * psi.bar(alpha) * chi.bar(beta) * psi(alpha) * chi(beta)
-        )
+        ).lagrangian()
 
 
 def test_vertex_engine_rejects_overlapping_manual_closed_dirac_bilinears():

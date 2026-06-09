@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from symbolica import Expression, S
 
-from model import COLOR_FUND_INDEX, Gamma, PartialD, T, dirac_field, flavor_index, scalar_field
+from model import COLOR_FUND_INDEX, Gamma, Model, PartialD, T, dirac_field, flavor_index, scalar_field
 from model.lowering import (
     _LocalChainBinding,
     _LocalFieldEntry,
@@ -12,7 +12,6 @@ from model.lowering import (
     _ParsedLocalMonomial,
     _build_local_resolved_bindings,
     _identify_local_contraction_pairs,
-    _lower_standalone_lagrangian_source_term,
 )
 from tests.support.builders import make_photon
 
@@ -62,12 +61,18 @@ def _normalized_lowering_signature(interaction):
     )
 
 
+def _lower_local(expr):
+    lagrangian = Model(expr).lagrangian()
+    assert len(lagrangian.terms) == 1
+    return lagrangian.terms[0]
+
+
 def test_local_lowering_bilinear_is_dummy_rename_invariant():
     phi = scalar_field("Phi", self_conjugate=False, indices=(COLOR_FUND_INDEX,))
     i, j = S("i"), S("j")
 
-    first = _lower_standalone_lagrangian_source_term(S("m") * phi.bar(i) * phi(i))
-    second = _lower_standalone_lagrangian_source_term(S("m") * phi.bar(j) * phi(j))
+    first = _lower_local(S("m") * phi.bar(i) * phi(i))
+    second = _lower_local(S("m") * phi.bar(j) * phi(j))
 
     assert _normalized_lowering_signature(first) == _normalized_lowering_signature(second)
 
@@ -76,10 +81,10 @@ def test_local_lowering_quartic_is_dummy_rename_invariant():
     phi = scalar_field("Phi", self_conjugate=False, indices=(COLOR_FUND_INDEX,))
     i, j, a, b = S("i", "j", "a", "b")
 
-    first = _lower_standalone_lagrangian_source_term(
+    first = _lower_local(
         -S("lam") * phi.bar(i) * phi(i) * phi.bar(j) * phi(j)
     )
-    second = _lower_standalone_lagrangian_source_term(
+    second = _lower_local(
         -S("lam") * phi.bar(a) * phi(a) * phi.bar(b) * phi(b)
     )
 
@@ -93,7 +98,7 @@ def test_local_lowering_repeated_index_kind_pairs_slots_positionally():
         indices=(COLOR_FUND_INDEX, COLOR_FUND_INDEX),
     )
 
-    interaction = _lower_standalone_lagrangian_source_term(S("m") * phi.bar * phi)
+    interaction = _lower_local(S("m") * phi.bar * phi)
 
     left_labels = interaction.fields[0].slot_labels.values
     right_labels = interaction.fields[1].slot_labels.values
@@ -107,12 +112,12 @@ def test_local_lowering_manual_gauge_fixing_is_dummy_rename_invariant():
     photon = make_photon(name="A", symbol=S("A0"))
     xi = S("xi_local")
 
-    first = _lower_standalone_lagrangian_source_term(
+    first = _lower_local(
         -(Expression.num(1) / (Expression.num(2) * xi))
         * PartialD(photon(S("alpha_label")), S("alpha_label"))
         * PartialD(photon(S("beta_label")), S("beta_label"))
     )
-    second = _lower_standalone_lagrangian_source_term(
+    second = _lower_local(
         -(Expression.num(1) / (Expression.num(2) * xi))
         * PartialD(photon(S("mu_anything")), S("mu_anything"))
         * PartialD(photon(S("nu_anything")), S("nu_anything"))
@@ -129,10 +134,10 @@ def test_local_lowering_explicit_and_implicit_yukawa_match():
     eta = dirac_field("etaY", indices=(COLOR_FUND_INDEX,))
     i = S("i")
 
-    explicit = _lower_standalone_lagrangian_source_term(
+    explicit = _lower_local(
         S("y") * phi * psi.bar(i) * eta(i)
     )
-    implicit = _lower_standalone_lagrangian_source_term(
+    implicit = _lower_local(
         S("y") * phi * psi.bar * eta
     )
 
@@ -146,7 +151,7 @@ def test_local_lowering_preserves_raw_indexed_yukawa_function():
     eta = dirac_field("etaYraw", indices=(generation,))
     f1, f2 = S("f1"), S("f2")
 
-    interaction = _lower_standalone_lagrangian_source_term(
+    interaction = _lower_local(
         S("Y")(f1, f2)
         * phi
         * psi.bar(index_labels={generation.kind: f1})
@@ -161,10 +166,10 @@ def test_local_lowering_gamma_chain_bilinear_is_dummy_rename_invariant():
     psi = dirac_field("psiChain")
     mu, nu = S("mu"), S("nu")
 
-    first = _lower_standalone_lagrangian_source_term(
+    first = _lower_local(
         S("g") * psi.bar * Gamma(mu) * psi
     )
-    second = _lower_standalone_lagrangian_source_term(
+    second = _lower_local(
         S("g") * psi.bar * Gamma(nu) * psi
     )
 
@@ -179,7 +184,7 @@ def test_local_lowering_repeated_kind_chain_attachment_requires_explicit_labels(
     )
 
     with pytest.raises(ValueError, match="repeated color_fund slots"):
-        _lower_standalone_lagrangian_source_term(
+        _lower_local(
             S("g") * psi.bar * T(S("a")) * psi
         )
 

@@ -1,7 +1,7 @@
 from symbolica.community.spenso import Representation  # noqa: E402
 from symbolica import S  # noqa: E402
 
-from model import COLOR_ADJ_INDEX, Field, Gamma, IndexType, Lagrangian, Model  # noqa: E402
+from model import COLOR_ADJ_INDEX, Field, Gamma, IndexType, Model  # noqa: E402
 from model.interactions import ExternalLeg, _auto_leg_labels  # noqa: E402
 from lagrangian.operators import yang_mills_three_vertex_raw  # noqa: E402
 from tests.support.builders import (  # noqa: E402
@@ -51,7 +51,7 @@ MODEL_QCD_GAUGE_COVARIANT = Model(
 def test_vertex_factor_output_policy_matches_manual_postprocessing_for_quartic_scalar():
     lam = S("lam_post")
     phi = Field("phi_post", spin=0, self_conjugate=True, symbol=S("phi_post"))
-    lagrangian = Lagrangian(lam * phi * phi * phi * phi)
+    lagrangian = Model(lam * phi * phi * phi * phi).lagrangian()
     term = lagrangian.terms[0]
 
     q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
@@ -204,7 +204,7 @@ def test_lagrangian_feynman_rule_default_simplify_is_unchanged():
     chi = _make_dirac_fermion("Chi")
     gV = S("gV_post")
     mu = S("mu_post")
-    L = Lagrangian(gV * psi.bar * Gamma(mu) * psi * chi.bar * Gamma(mu) * chi)
+    L = Model(gV * psi.bar * Gamma(mu) * psi * chi.bar * Gamma(mu) * chi).lagrangian()
     term = L.terms[0]
 
     q1, q2, q3, q4 = S("q1"), S("q2"), S("q3"), S("q4")

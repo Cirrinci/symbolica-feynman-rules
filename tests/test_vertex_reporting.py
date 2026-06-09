@@ -23,7 +23,6 @@ from model import (
     WEAK_FUND_INDEX,
     Model,
 )
-from model.lowering import _lower_standalone_lagrangian_source_term
 from model.lagrangian import KNOWN_VERTEX_SECTORS
 from symbolic.spenso_structures import weak_gauge_generator, weak_structure_constant
 from symbolic.vertex_engine import I
@@ -58,6 +57,12 @@ def _assert_empty_sector(lagrangian, sector):
     assert report.signatures == ()
     assert report.matched_signatures == 0
     assert report.matched_terms == 0
+
+
+def _lower_local(expr):
+    lagrangian = Model(expr).lagrangian()
+    assert len(lagrangian.terms) == 1
+    return lagrangian.terms[0]
 
 
 def _canonical(expr):
@@ -980,7 +985,7 @@ def test_unbroken_sm_higgs_potential_vertices_are_frozen():
 def test_compact_higgs_bilinear_local_lowering_shares_weak_label():
     _model, higgs, muH2, _lamH = _unbroken_sm_higgs_potential_model()
 
-    interaction = _lower_standalone_lagrangian_source_term(muH2 * higgs.bar * higgs)
+    interaction = _lower_local(muH2 * higgs.bar * higgs)
 
     left_label = interaction.fields[0].labels["weak_fund"]
     right_label = interaction.fields[1].labels["weak_fund"]
@@ -991,7 +996,7 @@ def test_compact_higgs_bilinear_local_lowering_shares_weak_label():
 def test_compact_higgs_quartic_local_lowering_forms_two_separate_singlets():
     _model, higgs, _muH2, lamH = _unbroken_sm_higgs_potential_model()
 
-    interaction = _lower_standalone_lagrangian_source_term(
+    interaction = _lower_local(
         -lamH * (higgs.bar * higgs) * (higgs.bar * higgs)
     )
 
@@ -1033,7 +1038,7 @@ def test_explicit_higgs_bilinear_distinct_weak_labels_are_preserved():
     iH = S("iH_explicit")
     jH = S("jH_explicit")
 
-    interaction = _lower_standalone_lagrangian_source_term(muH2 * higgs.bar(iH) * higgs(jH))
+    interaction = _lower_local(muH2 * higgs.bar(iH) * higgs(jH))
 
     assert interaction.fields[0].labels["weak_fund"] == iH
     assert interaction.fields[1].labels["weak_fund"] == jH
@@ -1043,7 +1048,7 @@ def test_explicit_higgs_bilinear_distinct_weak_labels_are_preserved():
 def test_plain_higgs_pair_is_not_auto_contracted():
     _model, higgs, muH2, _lamH = _unbroken_sm_higgs_potential_model()
 
-    interaction = _lower_standalone_lagrangian_source_term(muH2 * higgs * higgs)
+    interaction = _lower_local(muH2 * higgs * higgs)
 
     assert interaction.fields[0].labels["weak_fund"] != interaction.fields[1].labels["weak_fund"]
 
