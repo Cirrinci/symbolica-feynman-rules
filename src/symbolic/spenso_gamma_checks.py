@@ -43,6 +43,12 @@ from symbolic.vertex_engine import (
     plane_wave,
     simplify_deltas,
 )
+from symbolic.vertex_engine import (
+    _all_fermion_slots_labeled,
+    _default_leg_index_labels,
+    _fermion_leg_spinor_labels_present,
+    _with_default_fermion_leg_index_labels,
+)
 from symbolic.vertex_postprocessing import apply_vertex_output_policy
 from symbolic.spenso_structures import (
     SPINOR_KIND,
@@ -157,20 +163,42 @@ def _vertex(
     field_spinor_indices,
     closed_dirac_bilinears=(),
 ):
-    """Fermion bilinear vertex using the direct engine API (Delta stripped)."""
+    """Fermion bilinear vertex using the contraction engine (Delta stripped).
+
+    External legs are contracted against the field species themselves
+    (``betas = alphas``). The current engine rejects species-mismatched
+    field/leg pairings in ``factor_leg_compatible`` before any Kronecker delta
+    is formed, so generic placeholder leg symbols would collapse the whole
+    contraction to zero.
+    """
     field_index_labels = [
         {SPINOR_KIND: si} if si is not None else {}
         for si in field_spinor_indices
     ]
+    leg_species = list(alphas)
+    # Mirror vertex_factor: open fermion spinor slots are mapped onto default
+    # external-leg spinor labels (i1, i2, ...) before contraction. Without this
+    # the stripped fermion vertex collapses to zero.
+    leg_index_labels = None
+    if strip_externals and _all_fermion_slots_labeled(field_roles, field_index_labels):
+        if leg_index_labels is None:
+            leg_index_labels = _default_leg_index_labels(len(ps))
+        elif leg_roles is not None and not _fermion_leg_spinor_labels_present(
+            leg_roles, leg_index_labels
+        ):
+            leg_index_labels = _with_default_fermion_leg_index_labels(
+                leg_roles, leg_index_labels
+            )
     contracted = contract_to_full_expression(
         alphas=alphas,
-        betas=betas,
+        betas=leg_species,
         ps=ps,
         x=x,
         statistics="fermion",
         field_roles=field_roles,
         leg_roles=leg_roles,
         field_index_labels=field_index_labels,
+        leg_index_labels=leg_index_labels,
         coupling=coupling,
         closed_dirac_bilinears=closed_dirac_bilinears,
     )
@@ -182,7 +210,7 @@ def _vertex(
             x=x,
             include_delta=False,
             strip_externals=strip_externals,
-            leg_index_labels=None,
+            leg_index_labels=leg_index_labels,
             d=d,
             plane_wave=plane_wave,
             delta_symbol=delta,
@@ -193,7 +221,7 @@ def _vertex(
             dot_symbol=Dot,
             i_symbol=I,
         ),
-        species_map={beta_: species for beta_, species in zip(betas, alphas)},
+        species_map={species: species for species in leg_species},
     )
 
 
@@ -210,10 +238,16 @@ def _boson_vertex(
     field_index_labels=None,
     leg_index_labels=None,
 ):
-    """Boson vertex using the direct engine API (Delta stripped)."""
+    """Boson vertex using the contraction engine (Delta stripped).
+
+    As with ``_vertex``, external legs are contracted against the field species
+    themselves so the engine's species-compatibility filter does not discard the
+    contraction.
+    """
+    leg_species = list(alphas)
     contracted = contract_to_full_expression(
         alphas=alphas,
-        betas=betas,
+        betas=leg_species,
         ps=ps,
         x=x,
         derivative_indices=derivative_indices,
@@ -244,7 +278,7 @@ def _boson_vertex(
             dot_symbol=Dot,
             i_symbol=I,
         ),
-        species_map={beta_: species for beta_, species in zip(betas, alphas)},
+        species_map={species: species for species in leg_species},
     )
 
 

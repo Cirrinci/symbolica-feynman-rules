@@ -953,87 +953,6 @@ class CompiledLagrangian:
         return total
 
 
-@dataclass(init=False)
-class Lagrangian(CompiledLagrangian):
-    """Compiled term container.
-
-    Source-level declarations should be built through ``Model(...)`` and
-    compiled with ``model.lagrangian()``. ``Lagrangian`` remains as the
-    lightweight container for already-lowered ``InteractionTerm`` values.
-    """
-
-    source_terms: tuple[object, ...] = ()
-
-    def __init__(self, *items, terms=None, lagrangian_decl=None):
-        self._expanded_terms_cache = {}
-        if terms is not None and (items or lagrangian_decl is not None):
-            raise TypeError(
-                "Lagrangian accepts either `terms=` or declarative input, not both."
-            )
-
-        if lagrangian_decl is not None:
-            if items:
-                raise TypeError(
-                    "Pass declarative input either positionally or via "
-                    "`lagrangian_decl=`, not both."
-                )
-            items = (lagrangian_decl,)
-
-        if terms is not None:
-            normalized_terms = _normalize_interaction_terms_input(terms)
-            self.terms = normalized_terms
-            self.source_terms = normalized_terms
-            return
-
-        if not items:
-            self.terms = ()
-            self.source_terms = ()
-            return
-
-        raise TypeError(
-            "Lagrangian no longer accepts source-level declarations. "
-            "Use Model(...).lagrangian() for raw field expressions, CovD(...), "
-            "FieldStrength(...), GaugeFixing(...), and GhostLagrangian(...)."
-        )
-
-    @classmethod
-    def from_item(cls, item) -> "Lagrangian":
-        if isinstance(item, Lagrangian):
-            return cls(terms=item.terms)
-        return cls(terms=item)
-
-    def __add__(self, other):
-        if isinstance(other, InteractionTerm):
-            return Lagrangian(terms=self.terms + (other,))
-        if isinstance(other, CompiledLagrangian):
-            return Lagrangian(terms=self.terms + other.terms)
-        if _declared_source_terms_from_item(other) is not None:
-            raise TypeError(
-                "Lagrangian cannot add source-level declarations. "
-                "Build a Model(..., lagrangian_decl=...) instead."
-            )
-        return NotImplemented
-
-    def __radd__(self, other):
-        if other == 0:
-            return self
-        if isinstance(other, InteractionTerm):
-            return Lagrangian(terms=(other,) + self.terms)
-        if isinstance(other, CompiledLagrangian):
-            return Lagrangian(terms=other.terms + self.terms)
-        if _declared_source_terms_from_item(other) is not None:
-            raise TypeError(
-                "Lagrangian cannot add source-level declarations. "
-                "Build a Model(..., lagrangian_decl=...) instead."
-            )
-        return NotImplemented
-
-    def __str__(self):
-        if not self.source_terms:
-            return "0"
-        return " + ".join(str(term) for term in self.source_terms)
-
-
 @dataclass(frozen=True)
 class DiracKineticTerm:
     """Model-level declaration for ``psibar i gamma^mu D_mu psi``."""
@@ -1178,5 +1097,38 @@ class DeclaredLagrangian:
         if not self.source_terms:
             return "0"
         return " + ".join(str(term) for term in self.source_terms)
+
+    def lagrangian(self) -> CompiledLagrangian:
+        """Compile these source terms through the standard ``Model(...)`` path."""
+        from .core import Model
+
+        return Model(self).lagrangian()
+
+    def feynman_rule(
+        self,
+        *fields,
+        momenta=None,
+        arity=None,
+        select=None,
+        simplify: bool = True,
+        key_format: str = "names",
+        include_delta: bool = False,
+        strip_externals: bool = True,
+        simplify_gamma: bool = False,
+        flavor_expand: FlavorExpandOption = False,
+    ):
+        """Compile the declaration and extract one vertex or grouped mapping."""
+        return self.lagrangian().feynman_rule(
+            *fields,
+            momenta=momenta,
+            arity=arity,
+            select=select,
+            simplify=simplify,
+            key_format=key_format,
+            include_delta=include_delta,
+            strip_externals=strip_externals,
+            simplify_gamma=simplify_gamma,
+            flavor_expand=flavor_expand,
+        )
 
 CovariantTerm = Union[DiracKineticTerm, ComplexScalarKineticTerm]

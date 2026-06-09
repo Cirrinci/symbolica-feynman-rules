@@ -435,8 +435,8 @@ def CovD(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor
     Accepts ``Field``, ``Field.bar``, or ``(Field, bool)`` and can be used in
     expressions such as ``I * Psi.bar * Gamma(mu) * CovD(Psi, mu)``.
 
-    ``CovD(...)`` is metadata-dependent: it belongs in
-    ``Model(..., lagrangian_decl=...)``, not standalone ``Lagrangian(...)``.
+    ``CovD(...)`` is metadata-dependent: it belongs in a ``Model(...)``
+    declaration compiled through ``model.lagrangian()``.
     """
     from .interactions import _parse_field_arg
 
@@ -577,8 +577,8 @@ def FieldStrength(gauge_group, left_index, right_index, adjoint_index=None) -> F
     """Declarative field-strength placeholder for ``DeclaredLagrangian``.
 
     ``FieldStrength(...)`` participates in metadata-dependent gauge-sector
-    lowering and should be declared through ``Model(..., lagrangian_decl=...)``
-    rather than standalone ``Lagrangian(...)``.
+    lowering and should be declared through a ``Model(...)`` compiled with
+    ``model.lagrangian()``.
 
     For non-abelian gauge groups the adjoint index is mandatory, e.g.
     ``FieldStrength(SU3, mu, nu, a)``; the compiler expands it into

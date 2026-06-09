@@ -338,9 +338,9 @@ class FieldOccurrence:
         compiled-Lagrangian operator pipeline does the actual work.
         """
 
-        from .lagrangian import Lagrangian
+        from .lagrangian import CompiledLagrangian
 
-        return Lagrangian(
+        return CompiledLagrangian(
             terms=(InteractionTerm(coupling=1, fields=(self,)),)
         ).apply_operator(
             operator,
@@ -501,28 +501,28 @@ class InteractionTerm:
         )
 
     def __add__(self, other):
-        from .lagrangian import CompiledLagrangian, DeclaredLagrangian, Lagrangian
+        from .lagrangian import CompiledLagrangian, DeclaredLagrangian
         from .lowering import _declared_source_terms_from_item
 
         if isinstance(other, InteractionTerm):
-            return Lagrangian(terms=(self, other))
+            return CompiledLagrangian(terms=(self, other))
         if isinstance(other, CompiledLagrangian):
-            return Lagrangian(terms=(self,) + other.terms)
+            return CompiledLagrangian(terms=(self,) + other.terms)
         decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
             return DeclaredLagrangian(source_terms=(self,) + decl_terms)
         return NotImplemented
 
     def __radd__(self, other):
-        from .lagrangian import CompiledLagrangian, DeclaredLagrangian, Lagrangian
+        from .lagrangian import CompiledLagrangian, DeclaredLagrangian
         from .lowering import _declared_source_terms_from_item
 
         if other == 0:
-            return Lagrangian(terms=(self,))
+            return CompiledLagrangian(terms=(self,))
         if isinstance(other, InteractionTerm):
-            return Lagrangian(terms=(other, self))
+            return CompiledLagrangian(terms=(other, self))
         if isinstance(other, CompiledLagrangian):
-            return Lagrangian(terms=other.terms + (self,))
+            return CompiledLagrangian(terms=other.terms + (self,))
         decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
             return DeclaredLagrangian(source_terms=decl_terms + (self,))
@@ -542,9 +542,9 @@ class InteractionTerm:
         flavor_expand=False,
     ):
         """Compute one vertex rule or a grouped zero-argument rule mapping."""
-        from .lagrangian import Lagrangian
+        from .lagrangian import CompiledLagrangian
 
-        return Lagrangian(terms=(self,)).feynman_rule(
+        return CompiledLagrangian(terms=(self,)).feynman_rule(
             *fields,
             momenta=momenta,
             arity=arity,

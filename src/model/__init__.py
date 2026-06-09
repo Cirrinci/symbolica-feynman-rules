@@ -101,7 +101,6 @@ from .lagrangian import (
     CompiledLagrangian,
     DeclaredLagrangian,
     KNOWN_VERTEX_SECTORS,
-    Lagrangian,
     VertexReport,
     VertexSignature,
 )
