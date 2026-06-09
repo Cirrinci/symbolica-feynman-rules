@@ -33,10 +33,17 @@ from symbolic.vertex_engine import (
     I,
     S,
     pcomp,
+    Dot,
+    UF,
+    UbarF,
+    U,
+    contract_to_full_expression,
     delta,
+    pi,
+    plane_wave,
     simplify_deltas,
-    vertex_factor,
 )
+from symbolic.vertex_postprocessing import apply_vertex_output_policy
 from symbolic.spenso_structures import (
     SPINOR_KIND,
     LORENTZ_KIND,
@@ -155,21 +162,36 @@ def _vertex(
         {SPINOR_KIND: si} if si is not None else {}
         for si in field_spinor_indices
     ]
+    contracted = contract_to_full_expression(
+        alphas=alphas,
+        betas=betas,
+        ps=ps,
+        x=x,
+        statistics="fermion",
+        field_roles=field_roles,
+        leg_roles=leg_roles,
+        field_index_labels=field_index_labels,
+        coupling=coupling,
+        closed_dirac_bilinears=closed_dirac_bilinears,
+    )
     return simplify_deltas(
-        vertex_factor(
-            coupling=coupling,
-            alphas=alphas,
-            betas=betas,
+        I
+        * apply_vertex_output_policy(
+            contracted,
             ps=ps,
-            statistics="fermion",
-            field_roles=field_roles,
-            leg_roles=leg_roles,
-            field_index_labels=field_index_labels,
-            closed_dirac_bilinears=closed_dirac_bilinears,
-            strip_externals=strip_externals,
-            include_delta=False,
             x=x,
+            include_delta=False,
+            strip_externals=strip_externals,
+            leg_index_labels=None,
             d=d,
+            plane_wave=plane_wave,
+            delta_symbol=delta,
+            pi_symbol=pi,
+            u_symbol=U,
+            uf_symbol=UF,
+            ubarf_symbol=UbarF,
+            dot_symbol=Dot,
+            i_symbol=I,
         ),
         species_map={beta_: species for beta_, species in zip(betas, alphas)},
     )
@@ -189,23 +211,38 @@ def _boson_vertex(
     leg_index_labels=None,
 ):
     """Boson vertex using the direct engine API (Delta stripped)."""
+    contracted = contract_to_full_expression(
+        alphas=alphas,
+        betas=betas,
+        ps=ps,
+        x=x,
+        derivative_indices=derivative_indices,
+        derivative_targets=derivative_targets,
+        statistics="boson",
+        field_roles=field_roles,
+        leg_roles=leg_roles,
+        field_index_labels=field_index_labels,
+        leg_index_labels=leg_index_labels,
+        coupling=coupling,
+    )
     return simplify_deltas(
-        vertex_factor(
-            coupling=coupling,
-            alphas=alphas,
-            betas=betas,
+        I
+        * apply_vertex_output_policy(
+            contracted,
             ps=ps,
-            derivative_indices=derivative_indices,
-            derivative_targets=derivative_targets,
-            statistics="boson",
-            field_roles=field_roles,
-            leg_roles=leg_roles,
-            field_index_labels=field_index_labels,
-            leg_index_labels=leg_index_labels,
-            strip_externals=True,
-            include_delta=False,
             x=x,
+            include_delta=False,
+            strip_externals=True,
+            leg_index_labels=leg_index_labels,
             d=d,
+            plane_wave=plane_wave,
+            delta_symbol=delta,
+            pi_symbol=pi,
+            u_symbol=U,
+            uf_symbol=UF,
+            ubarf_symbol=UbarF,
+            dot_symbol=Dot,
+            i_symbol=I,
         ),
         species_map={beta_: species for beta_, species in zip(betas, alphas)},
     )

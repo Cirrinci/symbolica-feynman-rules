@@ -1,9 +1,8 @@
 """
 Feynman vertex rule derivation via canonical quantization -- Symbolica engine.
 
-This module owns the contraction logic.  It accepts either:
-  (a) parallel-list kwargs directly (the original interface), or
-  (b) model-layer objects via InteractionTerm.to_vertex_kwargs().
+This module owns the contraction logic. It consumes normalized model-layer
+objects via ``InteractionTerm.to_vertex_kwargs()``.
 
 Current scope:
     - bosonic polynomial interaction terms
@@ -172,18 +171,6 @@ def _spinor_label(labels):
     return _get_label(labels, SPINOR_KIND)
 
 
-def _legacy_spinor_label_dicts(spinor_indices, index_types=None):
-    labels = []
-    for i, spinor_index in enumerate(spinor_indices):
-        if spinor_index is None:
-            labels.append({})
-            continue
-        types = index_types[i] if index_types is not None and i < len(index_types) else ()
-        spinor_kind = spinor_kind_for(types) if types else SPINOR_KIND
-        labels.append({spinor_kind: spinor_index})
-    return labels
-
-
 def _normalize_spinor_label_dict_for_engine(labels, index_types=()):
     if not labels or not index_types:
         return {} if labels is None else dict(labels)
@@ -223,17 +210,7 @@ def normalize_vertex_inputs_for_engine(
     field_index_types,
     leg_index_labels,
     leg_index_types,
-    field_spinor_indices,
-    leg_spinor_indices,
 ):
-    field_index_labels, leg_index_labels = _merge_legacy_spinor_params(
-        field_index_labels,
-        leg_index_labels,
-        field_spinor_indices,
-        leg_spinor_indices,
-        field_index_types=field_index_types,
-        leg_index_types=leg_index_types,
-    )
     field_index_labels = _normalize_spinor_label_sequence_for_engine(
         field_index_labels,
         field_index_types,
@@ -499,30 +476,6 @@ def _validate_supported_fermion_structure(
 
 
 # ---------------------------------------------------------------------------
-# Backward-compat helpers: old params -> new params
-# ---------------------------------------------------------------------------
-
-def _merge_legacy_spinor_params(
-    field_index_labels, leg_index_labels,
-    field_spinor_indices, leg_spinor_indices,
-    field_index_types=None,
-    leg_index_types=None,
-):
-    """Merge old field_spinor_indices/leg_spinor_indices into the new format."""
-    if field_spinor_indices is not None and field_index_labels is None:
-        field_index_labels = _legacy_spinor_label_dicts(
-            field_spinor_indices,
-            field_index_types,
-        )
-    if leg_spinor_indices is not None and leg_index_labels is None:
-        leg_index_labels = _legacy_spinor_label_dicts(
-            leg_spinor_indices,
-            leg_index_types,
-        )
-    return field_index_labels, leg_index_labels
-
-
-# ---------------------------------------------------------------------------
 # Wick contractions (permutation sum)
 # ---------------------------------------------------------------------------
 
@@ -541,8 +494,6 @@ def contract_to_full_expression(
     field_index_types: Optional[Sequence[Sequence]] = None,
     leg_index_labels: Optional[Sequence[dict]] = None,
     leg_index_types: Optional[Sequence[Sequence]] = None,
-    field_spinor_indices: Optional[Sequence] = None,
-    leg_spinor_indices: Optional[Sequence] = None,
     leg_spins: Optional[Sequence] = None,
     field_match_keys: Optional[Sequence] = None,
     leg_match_keys: Optional[Sequence] = None,
@@ -559,9 +510,8 @@ def contract_to_full_expression(
     external leg labels.  Labels appearing twice (bilinear chains) produce
     bispinor metrics connecting the matched legs.
 
-    This function is the core engine.  It stays agnostic about the origin of
-    the inputs: the direct API and the model layer both reduce to the same
-    parallel lists before reaching this point.
+    This function is the core engine. Model-layer objects are normalized into
+    parallel lists by ``InteractionTerm.to_vertex_kwargs`` before reaching this point.
     """
     n = len(alphas)
     if not (len(betas) == len(ps) == n):
@@ -587,8 +537,6 @@ def contract_to_full_expression(
         field_index_types=field_index_types,
         leg_index_labels=leg_index_labels,
         leg_index_types=leg_index_types,
-        field_spinor_indices=field_spinor_indices,
-        leg_spinor_indices=leg_spinor_indices,
     )
 
     if field_index_labels is not None and len(field_index_labels) != n:
@@ -795,95 +743,45 @@ def contract_to_full_expression(
 
 
 # ---------------------------------------------------------------------------
-# Derivative helpers
-# ---------------------------------------------------------------------------
-
-def infer_derivative_targets(field_derivative_map):
-    """Build (derivative_indices, derivative_targets) from a per-field spec.
-
-    Parameters
-    ----------
-    field_derivative_map : list of (field_index, [mu1, mu2, ...]) pairs.
-
-    Returns
-    -------
-    (derivative_indices, derivative_targets) : tuple of two lists
-    """
-    indices = []
-    targets = []
-    for field_idx, lorentz_indices in field_derivative_map:
-        for mu in lorentz_indices:
-            indices.append(mu)
-            targets.append(field_idx)
-    return indices, targets
-
-
-# ---------------------------------------------------------------------------
 # Full vertex factor pipeline
 # ---------------------------------------------------------------------------
 
 def vertex_factor(
     *,
-    interaction=None,
-    external_legs=None,
-    coupling=None,
-    alphas=None,
-    betas=None,
-    ps=None,
+    interaction,
+    external_legs,
     x,
-    derivative_indices=(),
-    derivative_targets=None,
-    statistics: Statistics = "boson",
-    field_roles=None,
-    leg_roles=None,
-    field_index_labels=None,
-    field_index_types=None,
-    leg_index_labels=None,
-    leg_index_types=None,
-    field_spinor_indices=None,
-    leg_spinor_indices=None,
-    leg_spins=None,
-    field_match_keys=None,
-    leg_match_keys=None,
-    closed_dirac_bilinears: Optional[Sequence[tuple[int, int]]] = None,
     strip_externals: bool = True,
     include_delta: bool = True,
     d=None,
 ):
     """Compute the Feynman vertex factor from an interaction term.
 
-    Accepts either model-layer objects (interaction + external_legs) or the
-    direct parallel-list interface.  The workflow is:
+    The workflow is:
 
     1. normalize inputs into the engine format
     2. call contract_to_full_expression(...)
     3. optionally replace the plane wave by the universal momentum delta
     4. optionally strip external wavefunctions
     """
-    if interaction is not None:
-        if external_legs is None:
-            raise ValueError("external_legs required when interaction is provided")
-        kwargs = interaction.to_vertex_kwargs(external_legs)
-        coupling = kwargs["coupling"]
-        alphas = kwargs["alphas"]
-        betas = kwargs["betas"]
-        ps = kwargs["ps"]
-        statistics = kwargs["statistics"]
-        field_roles = kwargs["field_roles"]
-        leg_roles = kwargs["leg_roles"]
-        field_index_labels = kwargs["field_index_labels"]
-        field_index_types = kwargs["field_index_types"]
-        leg_index_labels = kwargs["leg_index_labels"]
-        leg_index_types = kwargs.get("leg_index_types")
-        leg_spins = kwargs["leg_spins"]
-        field_match_keys = kwargs.get("field_match_keys")
-        leg_match_keys = kwargs.get("leg_match_keys")
-        derivative_indices = kwargs["derivative_indices"]
-        derivative_targets = kwargs["derivative_targets"]
-        closed_dirac_bilinears = kwargs["closed_dirac_bilinears"]
-
-    if alphas is None or betas is None or ps is None:
-        raise ValueError("alphas, betas, ps are required")
+    kwargs = interaction.to_vertex_kwargs(external_legs)
+    coupling = kwargs["coupling"]
+    alphas = kwargs["alphas"]
+    betas = kwargs["betas"]
+    ps = kwargs["ps"]
+    statistics = kwargs["statistics"]
+    field_roles = kwargs["field_roles"]
+    leg_roles = kwargs["leg_roles"]
+    field_index_labels = kwargs["field_index_labels"]
+    field_index_types = kwargs["field_index_types"]
+    leg_index_labels = kwargs["leg_index_labels"]
+    leg_index_types = kwargs.get("leg_index_types")
+    leg_spins = kwargs["leg_spins"]
+    field_match_keys = kwargs.get("field_match_keys")
+    leg_match_keys = kwargs.get("leg_match_keys")
+    derivative_indices = kwargs["derivative_indices"]
+    derivative_targets = kwargs["derivative_targets"]
+    closed_dirac_bilinears = kwargs["closed_dirac_bilinears"]
 
     n = len(ps)
     field_index_labels, leg_index_labels = normalize_vertex_inputs_for_engine(
@@ -891,8 +789,6 @@ def vertex_factor(
         field_index_types=field_index_types,
         leg_index_labels=leg_index_labels,
         leg_index_types=leg_index_types,
-        field_spinor_indices=field_spinor_indices,
-        leg_spinor_indices=leg_spinor_indices,
     )
 
     if (
@@ -978,147 +874,3 @@ def simplify_vertex(expr, species_map=None, external_legs=None, simplify_gamma: 
         simplify_gamma=simplify_gamma,
     )
 
-
-# ---------------------------------------------------------------------------
-# Compact notation helpers
-# ---------------------------------------------------------------------------
-
-def derivative_momentum_sum_expression(
-    *,
-    ps: Sequence,
-    derivative_indices,
-    derivative_targets=None,
-    field_species: Optional[Sequence] = None,
-    leg_species: Optional[Sequence] = None,
-):
-    """Build a compact momentum-sum expression for derivative patterns."""
-    n = len(ps)
-    m = len(derivative_indices)
-
-    if derivative_targets is None:
-        derivative_targets = [0] * m
-    if len(derivative_targets) != m:
-        raise ValueError("derivative_targets length must match derivative_indices")
-
-    if field_species is not None and len(field_species) != n:
-        raise ValueError("field_species must have same length as ps")
-    if leg_species is not None and len(leg_species) != n:
-        raise ValueError("leg_species must have same length as ps")
-
-    unique_targets = []
-    for t in derivative_targets:
-        if t < 0 or t >= n:
-            raise ValueError(f"derivative target {t} out of range for {n} fields")
-        if t not in unique_targets:
-            unique_targets.append(t)
-
-    k = len(unique_targets)
-    target_slot = {t: s for s, t in enumerate(unique_targets)}
-    total = Expression.num(0)
-
-    for assigned_legs in permutations(range(n), k):
-        if field_species is not None and leg_species is not None:
-            ok = True
-            for t in unique_targets:
-                slot = target_slot[t]
-                leg = assigned_legs[slot]
-                if _species_key(field_species[t]) != _species_key(leg_species[leg]):
-                    ok = False
-                    break
-            if not ok:
-                continue
-
-        monomial = Expression.num(1)
-        for mu, t in zip(derivative_indices, derivative_targets):
-            leg = assigned_legs[target_slot[t]]
-            monomial *= pcomp(ps[leg], mu)
-
-        if field_species is not None and leg_species is not None:
-            rem_field = [i for i in range(n) if i not in set(unique_targets)]
-            rem_legs = [j for j in range(n) if j not in set(assigned_legs)]
-            cf = Counter(_species_key(field_species[i]) for i in rem_field)
-            cl = Counter(_species_key(leg_species[j]) for j in rem_legs)
-            if cf != cl:
-                continue
-            multiplicity = 1
-            for cnt in cf.values():
-                multiplicity *= factorial(cnt)
-        else:
-            multiplicity = factorial(n - k)
-
-        total += multiplicity * monomial
-
-    return total
-
-
-def compact_vertex_sum_form(
-    *,
-    coupling,
-    ps: Sequence,
-    derivative_indices,
-    derivative_targets=None,
-    d=None,
-    field_species: Optional[Sequence] = None,
-    leg_species: Optional[Sequence] = None,
-):
-    """Compact sum-form vertex for derivative-target patterns."""
-    if d is None:
-        d = S("d")
-
-    p_sum = Expression.num(0)
-    for p in ps:
-        p_sum += p
-
-    m = len(derivative_indices)
-    phase = I * ((-I) ** m)
-    mom_sum = derivative_momentum_sum_expression(
-        ps=ps,
-        derivative_indices=derivative_indices,
-        derivative_targets=derivative_targets,
-        field_species=field_species,
-        leg_species=leg_species,
-    )
-
-    return phase * coupling * (2 * pi) ** d * Delta(p_sum) * mom_sum
-
-
-def compact_sum_notation(
-    *,
-    derivative_indices,
-    derivative_targets=None,
-    n_legs=None,
-):
-    """Human-readable sigma notation for derivative assignment patterns."""
-    if n_legs is None:
-        if derivative_targets:
-            n_legs = max(derivative_targets) + 1
-        else:
-            raise ValueError("n_legs required when derivative_targets is empty")
-
-    if derivative_targets is None:
-        derivative_targets = [0] * len(derivative_indices)
-
-    unique_targets = []
-    for t in derivative_targets:
-        if t not in unique_targets:
-            unique_targets.append(t)
-
-    symbols = "abcdefghijklmnopqrstuvwxyz"
-    t_to_var = {t: symbols[i] for i, t in enumerate(unique_targets)}
-    vars_used = [t_to_var[t] for t in unique_targets]
-
-    terms = []
-    for mu, t in zip(derivative_indices, derivative_targets):
-        v = t_to_var[t]
-        terms.append(f"p_{{{v},{mu}}}")
-
-    product = " ".join(terms) if terms else "1"
-    if len(vars_used) <= 1:
-        cond = vars_used[0] if vars_used else ""
-    else:
-        cond = ", ".join(vars_used) + " distinct"
-
-    pref = f"({n_legs - len(unique_targets)})!"
-    if cond:
-        return f"{pref} * Σ_{{{cond}}} {product}"
-    return f"{pref}"

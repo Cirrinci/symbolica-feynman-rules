@@ -2095,16 +2095,6 @@ def _declared_source_terms_from_item(item):
     return None
 
 
-def _standalone_lagrangian_context_error() -> str:
-    return (
-        "Standalone Lagrangian(...) only supports local terms built from "
-        "fields, PartialD(...), and one optional Gamma(...). "
-        "Use Model(lagrangian_decl=...) for CovD(...), FieldStrength(...), "
-        "GaugeFixing(...), and GhostLagrangian(...), since those need "
-        "model metadata."
-    )
-
-
 def _compiled_lagrangian_context_error() -> str:
     return (
         "CompiledLagrangian accepts only compiled InteractionTerm values. "
@@ -2129,45 +2119,6 @@ def _normalize_interaction_terms_input(terms) -> tuple[InteractionTerm, ...]:
             raise ValueError(_compiled_lagrangian_context_error())
         raise TypeError("`terms=` expects InteractionTerm objects or CompiledLagrangian.")
     return normalized
-
-
-def _standalone_lagrangian_source_terms_from_item(item):
-    from .lagrangian import CompiledLagrangian, Lagrangian
-
-    if isinstance(item, Lagrangian):
-        return item.source_terms
-    if isinstance(item, CompiledLagrangian):
-        return item.terms
-    if isinstance(item, InteractionTerm):
-        return (item,)
-    terms = _declared_source_terms_from_item(item)
-    if terms is None:
-        return None
-    if all(_source_term_interaction(term) is not None for term in terms):
-        return terms
-    return None
-
-
-def _normalize_lagrangian_source_terms(items) -> tuple[object, ...]:
-    normalized: list[object] = []
-    for item in items:
-        terms = _standalone_lagrangian_source_terms_from_item(item)
-        if terms is not None:
-            normalized.extend(terms)
-            continue
-        if _declared_source_terms_from_item(item) is not None:
-            raise ValueError(_standalone_lagrangian_context_error())
-        raise TypeError(f"Cannot build Lagrangian from {type(item).__name__}")
-    return tuple(normalized)
-
-
-def _lower_standalone_lagrangian_source_term(term) -> InteractionTerm:
-    interaction = _source_term_interaction(term)
-    if interaction is not None:
-        return interaction
-    if _source_term_needs_compilation(term):
-        raise ValueError(_standalone_lagrangian_context_error())
-    raise TypeError(f"Cannot lower {type(term).__name__} into a standalone Lagrangian.")
 
 
 def _source_term_interaction(
@@ -2216,21 +2167,6 @@ def _source_term_ghost(term) -> Optional[GhostTerm]:
             label=term.label,
         )
     return None
-
-
-def _source_term_needs_compilation(term) -> bool:
-    if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm, GaugeFixingTerm, GhostTerm)):
-        return True
-    if isinstance(term, (GaugeFixingDeclaration, GhostLagrangianDeclaration)):
-        return True
-    if isinstance(term, _DeclaredMonomial):
-        if _match_covariant_monomial(term) is not None:
-            return True
-        if _is_generic_covariant_monomial_candidate(term):
-            return True
-        if _monomial_has_field_strength(term):
-            return True
-    return False
 
 
 def _declared_monomial_has_covd(term: _DeclaredMonomial) -> bool:

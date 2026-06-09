@@ -1,4 +1,4 @@
-"""Compiled, standalone, and declarative Lagrangian containers."""
+"""Compiled and declarative Lagrangian containers."""
 
 from __future__ import annotations
 
@@ -28,36 +28,10 @@ def _normalize_interaction_terms_input(terms):
 
     return impl(terms)
 
-
-def _normalize_lagrangian_source_terms(items):
-    from .lowering import _normalize_lagrangian_source_terms as impl
-
-    return impl(items)
-
-
-def _lower_standalone_lagrangian_source_term(term):
-    from .lowering import _lower_standalone_lagrangian_source_term as impl
-
-    return impl(term)
-
-
-def _standalone_lagrangian_source_terms_from_item(item):
-    from .lowering import _standalone_lagrangian_source_terms_from_item as impl
-
-    return impl(item)
-
-
 def _declared_source_terms_from_item(item):
     from .lowering import _declared_source_terms_from_item as impl
 
     return impl(item)
-
-
-def _standalone_lagrangian_context_error():
-    from .lowering import _standalone_lagrangian_context_error as impl
-
-    return impl()
-
 
 def _compiled_lagrangian_context_error():
     from .lowering import _compiled_lagrangian_context_error as impl
@@ -981,18 +955,11 @@ class CompiledLagrangian:
 
 @dataclass(init=False)
 class Lagrangian(CompiledLagrangian):
-    """User-facing extraction object for local, already-expanded terms.
+    """Compiled term container.
 
-    Use ``Lagrangian(...)`` when the interaction is already written as a local
-    operator built directly from fields and local placeholders such as
-    ``PartialD(...)``, ``Gamma(...)``, ``Metric(...)``, ``T(...)``, and
-    ``StructureConstant(...)``.
-
-    ``Lagrangian(...)`` does not look up gauge-group metadata and does not
-    perform gauge-sector compilation. Metadata-dependent source declarations
-    such as ``CovD(...)``, ``FieldStrength(...)``, ``GaugeFixing(...)``, and
-    ``GhostLagrangian(...)`` belong in ``Model(..., lagrangian_decl=...)`` and
-    should be compiled through ``model.lagrangian()``.
+    Source-level declarations should be built through ``Model(...)`` and
+    compiled with ``model.lagrangian()``. ``Lagrangian`` remains as the
+    lightweight container for already-lowered ``InteractionTerm`` values.
     """
 
     source_terms: tuple[object, ...] = ()
@@ -1023,33 +990,42 @@ class Lagrangian(CompiledLagrangian):
             self.source_terms = ()
             return
 
-        source_terms = _normalize_lagrangian_source_terms(items)
-        self.terms = tuple(
-            _lower_standalone_lagrangian_source_term(term)
-            for term in source_terms
+        raise TypeError(
+            "Lagrangian no longer accepts source-level declarations. "
+            "Use Model(...).lagrangian() for raw field expressions, CovD(...), "
+            "FieldStrength(...), GaugeFixing(...), and GhostLagrangian(...)."
         )
-        self.source_terms = source_terms
 
     @classmethod
     def from_item(cls, item) -> "Lagrangian":
-        return cls(item)
+        if isinstance(item, Lagrangian):
+            return cls(terms=item.terms)
+        return cls(terms=item)
 
     def __add__(self, other):
-        terms = _standalone_lagrangian_source_terms_from_item(other)
-        if terms is not None:
-            return Lagrangian(*self.source_terms, *terms)
+        if isinstance(other, InteractionTerm):
+            return Lagrangian(terms=self.terms + (other,))
+        if isinstance(other, CompiledLagrangian):
+            return Lagrangian(terms=self.terms + other.terms)
         if _declared_source_terms_from_item(other) is not None:
-            raise ValueError(_standalone_lagrangian_context_error())
+            raise TypeError(
+                "Lagrangian cannot add source-level declarations. "
+                "Build a Model(..., lagrangian_decl=...) instead."
+            )
         return NotImplemented
 
     def __radd__(self, other):
         if other == 0:
             return self
-        terms = _standalone_lagrangian_source_terms_from_item(other)
-        if terms is not None:
-            return Lagrangian(*terms, *self.source_terms)
+        if isinstance(other, InteractionTerm):
+            return Lagrangian(terms=(other,) + self.terms)
+        if isinstance(other, CompiledLagrangian):
+            return Lagrangian(terms=other.terms + self.terms)
         if _declared_source_terms_from_item(other) is not None:
-            raise ValueError(_standalone_lagrangian_context_error())
+            raise TypeError(
+                "Lagrangian cannot add source-level declarations. "
+                "Build a Model(..., lagrangian_decl=...) instead."
+            )
         return NotImplemented
 
     def __str__(self):

@@ -502,18 +502,12 @@ class InteractionTerm:
 
     def __add__(self, other):
         from .lagrangian import CompiledLagrangian, DeclaredLagrangian, Lagrangian
-        from .lowering import (
-            _declared_source_terms_from_item,
-            _standalone_lagrangian_source_terms_from_item,
-        )
+        from .lowering import _declared_source_terms_from_item
 
         if isinstance(other, InteractionTerm):
             return Lagrangian(terms=(self, other))
         if isinstance(other, CompiledLagrangian):
             return Lagrangian(terms=(self,) + other.terms)
-        local_terms = _standalone_lagrangian_source_terms_from_item(other)
-        if local_terms is not None:
-            return Lagrangian(self, *local_terms)
         decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
             return DeclaredLagrangian(source_terms=(self,) + decl_terms)
@@ -521,10 +515,7 @@ class InteractionTerm:
 
     def __radd__(self, other):
         from .lagrangian import CompiledLagrangian, DeclaredLagrangian, Lagrangian
-        from .lowering import (
-            _declared_source_terms_from_item,
-            _standalone_lagrangian_source_terms_from_item,
-        )
+        from .lowering import _declared_source_terms_from_item
 
         if other == 0:
             return Lagrangian(terms=(self,))
@@ -532,9 +523,6 @@ class InteractionTerm:
             return Lagrangian(terms=(other, self))
         if isinstance(other, CompiledLagrangian):
             return Lagrangian(terms=other.terms + (self,))
-        local_terms = _standalone_lagrangian_source_terms_from_item(other)
-        if local_terms is not None:
-            return Lagrangian(*local_terms, self)
         decl_terms = _declared_source_terms_from_item(other)
         if decl_terms is not None:
             return DeclaredLagrangian(source_terms=decl_terms + (self,))

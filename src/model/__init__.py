@@ -142,7 +142,6 @@ from .declared import _DeclaredMonomial
 from .lowering import (
     _expand_field_strengths_in_monomial,
     _match_covariant_monomial,
-    _source_term_needs_compilation,
 )
 
 
