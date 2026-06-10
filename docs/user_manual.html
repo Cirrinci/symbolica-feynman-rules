@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FeynPy — User Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161d;
+    --surface2: #1a1e28;
+    --border: #252a38;
+    --border2: #2e3547;
+    --accent: #4af0a0;
+    --accent2: #6eb8ff;
+    --accent3: #ff9f6b;
+    --accent4: #c97fff;
+    --text: #d8dde8;
+    --text-dim: #7a8299;
+    --text-bright: #eef0f5;
+    --code-bg: #0a0c10;
+    --tag-h: #4af0a0;
+    --tag-p: #6eb8ff;
+    --tag-c: #ff9f6b;
+    --tag-m: #c97fff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  nav {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 32px 0 40px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  .nav-logo {
+    padding: 0 24px 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .nav-logo .wordmark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .nav-logo .sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    letter-spacing: 0.4px;
+  }
+
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 16px 24px 6px;
+  }
+
+  nav a {
+    display: block;
+    padding: 5px 24px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 13px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  nav a:hover {
+    color: var(--text-bright);
+    border-left-color: var(--accent);
+    background: rgba(74,240,160,0.04);
+  }
+
+  nav a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(74,240,160,0.06);
+  }
+
+  /* ── Main ── */
+  main {
+    max-width: 860px;
+    padding: 60px 56px 120px;
+  }
+
+  /* ── Sections ── */
+  section {
+    margin-bottom: 72px;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.4s forwards;
+  }
+  section:nth-child(1)  { animation-delay: 0.05s; }
+  section:nth-child(2)  { animation-delay: 0.10s; }
+  section:nth-child(3)  { animation-delay: 0.15s; }
+  section:nth-child(4)  { animation-delay: 0.20s; }
+  section:nth-child(5)  { animation-delay: 0.25s; }
+  section:nth-child(6)  { animation-delay: 0.30s; }
+  section:nth-child(7)  { animation-delay: 0.35s; }
+  section:nth-child(8)  { animation-delay: 0.40s; }
+  section:nth-child(9)  { animation-delay: 0.45s; }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Headings ── */
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: -1px;
+    margin-bottom: 10px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .page-lead {
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 300;
+    margin-bottom: 40px;
+    max-width: 520px;
+  }
+
+  h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h2 .num {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent2);
+    margin: 24px 0 10px;
+    letter-spacing: 0.2px;
+  }
+
+  p {
+    color: var(--text);
+    margin-bottom: 12px;
+    font-weight: 300;
+  }
+
+  /* ── Divider ── */
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 28px;
+  }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    position: relative;
+  }
+
+  pre::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.8;
+  }
+
+  p code, li code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--accent2);
+    font-size: 12px;
+  }
+
+  /* ── Syntax highlight classes ── */
+  .kw   { color: #c97fff; }   /* keyword: def, class, from, import */
+  .bi   { color: #ff9f6b; }   /* built-in / class name */
+  .str  { color: #9bd97a; }   /* string */
+  .cm   { color: #4a5268; font-style: italic; }  /* comment */
+  .num  { color: #f0c060; }   /* number */
+  .fn   { color: #6eb8ff; }   /* function call */
+  .var  { color: var(--text); }  /* variable */
+  .op   { color: var(--text-dim); }  /* operator */
+
+  /* ── Tags ── */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 3px;
+    padding: 2px 7px;
+    margin-right: 6px;
+  }
+
+  .tag-h { background: rgba(74,240,160,0.12); color: var(--tag-h); border: 1px solid rgba(74,240,160,0.2); }
+  .tag-p { background: rgba(110,184,255,0.12); color: var(--tag-p); border: 1px solid rgba(110,184,255,0.2); }
+  .tag-c { background: rgba(255,159,107,0.12); color: var(--tag-c); border: 1px solid rgba(255,159,107,0.2); }
+  .tag-m { background: rgba(201,127,255,0.12); color: var(--tag-m); border: 1px solid rgba(201,127,255,0.2); }
+
+  /* ── Tables ── */
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 20px;
+    font-size: 13px;
+  }
+
+  .param-table th {
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .param-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .param-table td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    white-space: nowrap;
+    width: 38%;
+  }
+
+  .param-table td:last-child {
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  .param-table tr:last-child td { border-bottom: none; }
+
+  /* ── Callout ── */
+  .callout {
+    background: rgba(74,240,160,0.05);
+    border: 1px solid rgba(74,240,160,0.18);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 300;
+  }
+
+  .callout strong { color: var(--accent); font-weight: 600; }
+
+  .callout-warn {
+    background: rgba(255,159,107,0.05);
+    border-color: rgba(255,159,107,0.18);
+  }
+  .callout-warn strong { color: var(--accent3); }
+
+  .callout-info {
+    background: rgba(110,184,255,0.05);
+    border-color: rgba(110,184,255,0.18);
+  }
+  .callout-info strong { color: var(--accent2); }
+
+  /* ── Field type cards ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 12px 0 20px;
+  }
+
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  .card-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+  }
+
+  .card-desc {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  /* ── Workflow steps ── */
+  .steps {
+    counter-reset: step;
+    margin: 12px 0 20px;
+  }
+
+  .step {
+    counter-increment: step;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    background: rgba(74,240,160,0.1);
+    border: 1px solid rgba(74,240,160,0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 1px;
+  }
+
+  .step-body strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text-bright);
+    margin-bottom: 2px;
+  }
+
+  .step-body span {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  /* ── Reference badge ── */
+  .ref-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* ── Quick-ref row ── */
+  .qr-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .qr-row:last-child { border-bottom: none; }
+
+  .qr-fn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    min-width: 280px;
+  }
+
+  .qr-desc {
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  /* ── Index type pills ── */
+  .index-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 18px;
+  }
+
+  .index-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text);
+  }
+
+  .index-pill .iname { color: var(--accent2); font-weight: 600; }
+  .index-pill .irep  { color: var(--text-dim); font-size: 10.5px; margin-top: 1px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── Sidebar navigation ── -->
+<nav>
+  <div class="nav-logo">
+    <div class="wordmark">feynpy</div>
+    <div class="sub">Lagrangian · Feynman Rules</div>
+  </div>
+
+  <div class="nav-section-label">Getting Started</div>
+  <a href="#overview">Overview</a>
+  <a href="#workflow">Workflow at a glance</a>
+
+  <div class="nav-section-label">Building Blocks</div>
+  <a href="#indices">01 — Index Types</a>
+  <a href="#fields">02 — Fields</a>
+  <a href="#gauge">03 — Gauge Groups &amp; Reps</a>
+  <a href="#flavor">04 — Flavor Indices</a>
+
+  <div class="nav-section-label">Models</div>
+  <a href="#model">05 — Declare a Model</a>
+  <a href="#operators">06 — Operator Catalog</a>
+
+  <div class="nav-section-label">Extraction</div>
+  <a href="#feynman">07 — Feynman Rules</a>
+  <a href="#discovery">08 — Discovery &amp; Filtering</a>
+  <a href="#flavor-expand">09 — Flavor Expansion</a>
+
+  <div class="nav-section-label">Compiled Lagrangian</div>
+  <a href="#symbolica-export">10 — Symbolica Export</a>
+  <a href="#operators-apply">11 — Applying Operators</a>
+  <a href="#ibp">12 — IBP Normal Form</a>
+  <a href="#gauge-variation">13 — Gauge Variation</a>
+  <a href="#brst">14 — BRST Transformations</a>
+  <a href="#expr-manip">15 — Expression Manipulation</a>
+
+  <div class="nav-section-label">Reference</div>
+  <a href="#quickref">Quick Reference</a>
+</nav>
+
+<!-- ── Main content ── -->
+<main>
+
+<!-- HEADER -->
+<section id="overview">
+  <h1><span>//</span> feynpy user manual</h1>
+  <p class="page-lead">A Python library for defining quantum field theory models and extracting Feynman rules symbolically, built on top of <strong>Symbolica</strong> and <strong>Spenso</strong>.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Core imports</h3>
+  <pre data-label="python"><code><span class="kw">from</span> <span class="bi">symbolica</span> <span class="kw">import</span> <span class="fn">S</span>, <span class="bi">Expression</span>
+<span class="kw">from</span> <span class="bi">symbolic.vertex_engine</span> <span class="kw">import</span> <span class="bi">I</span>
+<span class="kw">from</span> <span class="bi">symbolic.spenso_structures</span> <span class="kw">import</span> <span class="fn">gauge_generator</span>, <span class="fn">structure_constant</span>, <span class="fn">weak_gauge_generator</span>
+<span class="kw">from</span> <span class="bi">model</span> <span class="kw">import</span> (
+    <span class="bi">Field</span>, <span class="bi">GaugeGroup</span>, <span class="bi">GaugeRepresentation</span>, <span class="bi">IndexType</span>, <span class="bi">Model</span>,
+    <span class="bi">DeclaredLagrangian</span>, <span class="bi">CompiledLagrangian</span>,
+    <span class="bi">CovD</span>, <span class="bi">PartialD</span>, <span class="bi">Gamma</span>, <span class="bi">Gamma5</span>, <span class="bi">FieldStrength</span>,
+    <span class="bi">GaugeFixing</span>, <span class="bi">GhostLagrangian</span>, <span class="bi">GhostField</span>,
+    <span class="cm"># pre-built index constants</span>
+    <span class="bi">SPINOR_INDEX</span>, <span class="bi">LORENTZ_INDEX</span>, <span class="bi">COLOR_FUND_INDEX</span>, <span class="bi">COLOR_ADJ_INDEX</span>,
+    <span class="bi">WEAK_FUND_INDEX</span>, <span class="bi">WEAK_ADJ_INDEX</span>,
+    <span class="cm"># flavor</span>
+    <span class="fn">flavor_index</span>, <span class="bi">Parameter</span>,
+)</code></pre>
+</section>
+
+<!-- WORKFLOW -->
+<section id="workflow">
+  <h2><span class="num">—</span> Workflow at a glance</h2>
+  <div class="section-divider"></div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Declare index types</strong>
+        <span>Use pre-built constants or create custom <code>IndexType</code> objects.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Declare fields</strong>
+        <span>Instantiate <code>Field</code> with spin, symbol, and which index types it carries.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Declare gauge groups &amp; representations</strong>
+        <span>Create <code>GaugeRepresentation</code> and <code>GaugeGroup</code> objects.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Declare the model with <code>Model(...)</code></strong>
+        <span>Use <code>CovD</code>, <code>FieldStrength</code>, <code>GaugeFixing</code>, spenso tensors, or plain field products.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <strong>Compile with <code>model.lagrangian()</code></strong>
+        <span>Returns a compiled <code>CompiledLagrangian</code> object.</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <strong>Extract rules with <code>model.feynman_rule(...)</code></strong>
+        <span>Pass explicit fields to get one vertex, or pass nothing to discover all.</span>
+      </div>
+    </div>
+  </div>
+
+  <pre data-label="minimal example"><code><span class="cm"># Complete minimal example — scalar phi^4</span>
+<span class="var">Phi</span> <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"Phi"</span>, spin<span class="op">=</span><span class="num">0</span>, self_conjugate<span class="op">=</span><span class="num">True</span>, symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"phi"</span>))
+<span class="var">lam</span>  <span class="op">=</span> <span class="fn">S</span>(<span class="str">"lam"</span>)
+
+<span class="var">model</span>     <span class="op">=</span> <span class="bi">Model</span>(<span class="var">lam</span> <span class="op">*</span> <span class="var">Phi</span> <span class="op">*</span> <span class="var">Phi</span> <span class="op">*</span> <span class="var">Phi</span> <span class="op">*</span> <span class="var">Phi</span>)
+<span class="var">lagrangian</span> <span class="op">=</span> <span class="var">model</span>.<span class="fn">lagrangian</span>()
+<span class="var">vertex</span>    <span class="op">=</span> <span class="var">lagrangian</span>.<span class="fn">feynman_rule</span>(<span class="var">Phi</span>, <span class="var">Phi</span>, <span class="var">Phi</span>, <span class="var">Phi</span>)</code></pre>
+</section>
+
+<!-- SECTION 1: INDICES -->
+<section id="indices">
+  <h2><span class="num">01</span> Index Types</h2>
+  <div class="section-divider"></div>
+
+  <p>Index types pair a Spenso <code>Representation</code> with a string <em>kind</em> used to match indices through the compilation pipeline. The library ships six pre-built constants — use them directly.</p>
+
+  <div class="index-pills">
+    <div class="index-pill"><div class="iname">SPINOR_INDEX</div><div class="irep">bis(4) · kind="spinor"</div></div>
+    <div class="index-pill"><div class="iname">LORENTZ_INDEX</div><div class="irep">mink(4) · kind="lorentz"</div></div>
+    <div class="index-pill"><div class="iname">COLOR_FUND_INDEX</div><div class="irep">cof(3) · kind="color_fund"</div></div>
+    <div class="index-pill"><div class="iname">COLOR_ADJ_INDEX</div><div class="irep">coad(8) · kind="color_adj"</div></div>
+    <div class="index-pill"><div class="iname">WEAK_FUND_INDEX</div><div class="irep">cof(2) · kind="weak_fund"</div></div>
+    <div class="index-pill"><div class="iname">WEAK_ADJ_INDEX</div><div class="irep">coad(3) · kind="weak_adj"</div></div>
+  </div>
+
+  <h3>Custom index type</h3>
+  <pre data-label="python"><code><span class="kw">from</span> <span class="bi">symbolica.community.spenso</span> <span class="kw">import</span> <span class="bi">Representation</span>
+<span class="kw">from</span> <span class="bi">model</span> <span class="kw">import</span> <span class="bi">IndexType</span>
+
+<span class="cm"># IndexType(name, representation, kind, prefix=...)</span>
+<span class="var">MY_FUND</span> <span class="op">=</span> <span class="bi">IndexType</span>(<span class="str">"MyFund"</span>, <span class="bi">Representation</span>.<span class="fn">cof</span>(<span class="num">3</span>), <span class="str">"my_fund"</span>, prefix<span class="op">=</span><span class="str">"m"</span>)</code></pre>
+
+  <h3>Flavor index</h3>
+  <pre data-label="python"><code><span class="cm"># flavor_index(name, dimension, prefix=...)  — sets is_flavor=True automatically</span>
+<span class="var">Generation</span> <span class="op">=</span> <span class="fn">flavor_index</span>(<span class="str">"Generation"</span>, <span class="num">3</span>, prefix<span class="op">=</span><span class="str">"f"</span>)</code></pre>
+</section>
+
+<!-- SECTION 2: FIELDS -->
+<section id="fields">
+  <h2><span class="num">02</span> Fields</h2>
+  <div class="section-divider"></div>
+
+  <p>A <code>Field</code> declares one particle species. It specifies the spin, the Symbolica symbol(s), which index types it carries, and optional quantum numbers.</p>
+
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Description</th></tr>
+    <tr><td>name</td><td>Human-readable identifier string.</td></tr>
+    <tr><td>spin</td><td><code>0</code>, <code>Fraction(1,2)</code>, or <code>1</code>.</td></tr>
+    <tr><td>self_conjugate</td><td><code>True</code> for real scalars and gauge bosons; <code>False</code> for complex fields and fermions.</td></tr>
+    <tr><td>symbol</td><td>Symbolica atom for this field.</td></tr>
+    <tr><td>conjugate_symbol</td><td>Recommended when <code>self_conjugate=False</code>; used as the exported conjugate species.</td></tr>
+    <tr><td>indices</td><td>Tuple of <code>IndexType</code> objects the field carries.</td></tr>
+    <tr><td>quantum_numbers</td><td>Dict of charge labels, e.g. <code>{"Q": S("e")}</code>. Required for abelian gauge coupling.</td></tr>
+    <tr><td>kind</td><td>Set to <code>"ghost"</code> for ghost fields.</td></tr>
+    <tr><td>flavor_index</td><td>The <code>IndexType</code> to use for flavor expansion.</td></tr>
+    <tr><td>class_members</td><td>Tuple of member name strings, one per flavor generation.</td></tr>
+  </table>
+
+  <h3>Field type examples</h3>
+  <div class="card-grid">
+    <div class="card"><div class="card-name">Real scalar</div><div class="card-desc">spin=0, self_conjugate=True, no indices</div></div>
+    <div class="card"><div class="card-name">Complex scalar</div><div class="card-desc">spin=0, self_conjugate=False, symbol + conjugate_symbol</div></div>
+    <div class="card"><div class="card-name">Dirac fermion</div><div class="card-desc">spin=½, self_conjugate=False, carries SPINOR_INDEX</div></div>
+    <div class="card"><div class="card-name">Gauge boson</div><div class="card-desc">spin=1, self_conjugate=True, carries LORENTZ_INDEX (+ adj for non-abelian)</div></div>
+    <div class="card"><div class="card-name">Ghost</div><div class="card-desc">spin=0, kind="ghost", self_conjugate=False, carries adj index</div></div>
+  </div>
+
+  <pre data-label="python"><code><span class="kw">from</span> <span class="bi">fractions</span> <span class="kw">import</span> <span class="bi">Fraction</span>
+
+<span class="cm"># Real scalar</span>
+<span class="var">Phi</span>  <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"Phi"</span>, spin<span class="op">=</span><span class="num">0</span>, self_conjugate<span class="op">=</span><span class="num">True</span>, symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"phi"</span>))
+
+<span class="cm"># Complex scalar with U(1) charge</span>
+<span class="var">PhiC</span> <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"PhiC"</span>, spin<span class="op">=</span><span class="num">0</span>, self_conjugate<span class="op">=</span><span class="num">False</span>,
+             symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"phiC"</span>), conjugate_symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"phiCdag"</span>),
+             quantum_numbers<span class="op">=</span>{<span class="str">"Q"</span>: <span class="fn">S</span>(<span class="str">"Qphi"</span>)})
+
+<span class="cm"># Dirac fermion with spinor index and U(1) charge</span>
+<span class="var">Psi</span>  <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"Psi"</span>, spin<span class="op">=</span><span class="bi">Fraction</span>(<span class="num">1</span>,<span class="num">2</span>), self_conjugate<span class="op">=</span><span class="num">False</span>,
+             symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"psi"</span>), conjugate_symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"psibar"</span>),
+             indices<span class="op">=</span>(<span class="bi">SPINOR_INDEX</span>,),
+             quantum_numbers<span class="op">=</span>{<span class="str">"Q"</span>: <span class="fn">S</span>(<span class="str">"Qpsi"</span>)})
+
+<span class="cm"># Quark — spinor + color</span>
+<span class="var">Quark</span> <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"q"</span>, spin<span class="op">=</span><span class="bi">Fraction</span>(<span class="num">1</span>,<span class="num">2</span>), self_conjugate<span class="op">=</span><span class="num">False</span>,
+              symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"q"</span>), conjugate_symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"qbar"</span>),
+              indices<span class="op">=</span>(<span class="bi">SPINOR_INDEX</span>, <span class="bi">COLOR_FUND_INDEX</span>))
+
+<span class="cm"># Photon (abelian gauge boson)</span>
+<span class="var">Photon</span> <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"A"</span>, spin<span class="op">=</span><span class="num">1</span>, self_conjugate<span class="op">=</span><span class="num">True</span>,
+               symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"A"</span>), indices<span class="op">=</span>(<span class="bi">LORENTZ_INDEX</span>,))
+
+<span class="cm"># Gluon (non-abelian gauge boson)</span>
+<span class="var">Gluon</span>  <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"G"</span>, spin<span class="op">=</span><span class="num">1</span>, self_conjugate<span class="op">=</span><span class="num">True</span>,
+               symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"G"</span>), indices<span class="op">=</span>(<span class="bi">LORENTZ_INDEX</span>, <span class="bi">COLOR_ADJ_INDEX</span>))
+
+<span class="cm"># Ghost (use GhostField for the ghost_of shortcut)</span>
+<span class="kw">from</span> <span class="bi">model</span> <span class="kw">import</span> <span class="bi">GhostField</span>
+<span class="var">GhostG</span> <span class="op">=</span> <span class="bi">GhostField</span>(<span class="str">"ghG"</span>, ghost_of<span class="op">=</span><span class="var">Gluon</span>, self_conjugate<span class="op">=</span><span class="num">False</span>,
+                    symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"ghG"</span>), conjugate_symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"ghGbar"</span>),
+                    indices<span class="op">=</span>(<span class="bi">COLOR_ADJ_INDEX</span>,))</code></pre>
+
+  <div class="callout">
+    <strong>Conjugated fields:</strong> use <code>Field.bar</code> in Lagrangian expressions and <code>feynman_rule</code> calls, e.g. <code>Psi.bar</code>, <code>Higgs.bar</code>.
+  </div>
+</section>
+
+<!-- SECTION 3: GAUGE -->
+<section id="gauge">
+  <h2><span class="num">03</span> Gauge Groups &amp; Representations</h2>
+  <div class="section-divider"></div>
+
+  <p>For non-abelian groups, first create a <code>GaugeRepresentation</code> for each matter representation, then create the <code>GaugeGroup</code>.</p>
+
+  <h3>GaugeRepresentation</h3>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Description</th></tr>
+    <tr><td>index</td><td>The <code>IndexType</code> for the representation (e.g. <code>COLOR_FUND_INDEX</code>).</td></tr>
+    <tr><td>generator_builder</td><td>Function that builds the generator tensor: <code>gauge_generator</code> for SU(N) fundamentals, <code>weak_gauge_generator</code> for SU(2) doublets.</td></tr>
+    <tr><td>name</td><td>Label string.</td></tr>
+    <tr><td>slot</td><td>For fields with repeated same-kind indices, specify which slot (0-based) is the active one.</td></tr>
+    <tr><td>slot_policy</td><td><code>"sum"</code> to sum over all matching slots instead of requiring uniqueness.</td></tr>
+  </table>
+
+  <h3>GaugeGroup</h3>
+  <table class="param-table">
+    <tr><th>Parameter</th><th>Description</th></tr>
+    <tr><td>name</td><td>Identifier string.</td></tr>
+    <tr><td>abelian</td><td><code>True</code> for U(1) groups.</td></tr>
+    <tr><td>coupling</td><td>Symbolica symbol for the coupling constant.</td></tr>
+    <tr><td>gauge_boson</td><td>The gauge boson <code>Field</code>.</td></tr>
+    <tr><td>charge</td><td>For abelian groups: the quantum number key to read from matter fields (e.g. <code>"Q"</code>).</td></tr>
+    <tr><td>structure_constant</td><td>For non-abelian groups: the structure-constant builder (e.g. <code>structure_constant</code>).</td></tr>
+    <tr><td>representations</td><td>Tuple of <code>GaugeRepresentation</code> objects for matter fields.</td></tr>
+    <tr><td>ghost_field</td><td>The ghost <code>Field</code> — required for non-abelian <code>GhostLagrangian(...)</code>.</td></tr>
+  </table>
+
+  <pre data-label="python"><code><span class="cm"># Representation for color fundamental</span>
+<span class="var">COLOR_FUND_REP</span> <span class="op">=</span> <span class="bi">GaugeRepresentation</span>(
+    index<span class="op">=</span><span class="bi">COLOR_FUND_INDEX</span>, generator_builder<span class="op">=</span><span class="fn">gauge_generator</span>, name<span class="op">=</span><span class="str">"fundamental"</span>
+)
+
+<span class="cm"># U(1) QED</span>
+<span class="var">U1QED</span> <span class="op">=</span> <span class="bi">GaugeGroup</span>(name<span class="op">=</span><span class="str">"U1QED"</span>, abelian<span class="op">=</span><span class="num">True</span>, coupling<span class="op">=</span><span class="fn">S</span>(<span class="str">"e"</span>),
+                   gauge_boson<span class="op">=</span><span class="var">Photon</span>, charge<span class="op">=</span><span class="str">"Q"</span>)
+
+<span class="cm"># SU(3) QCD</span>
+<span class="var">SU3C</span> <span class="op">=</span> <span class="bi">GaugeGroup</span>(name<span class="op">=</span><span class="str">"SU3C"</span>, abelian<span class="op">=</span><span class="num">False</span>, coupling<span class="op">=</span><span class="fn">S</span>(<span class="str">"gs"</span>),
+                  gauge_boson<span class="op">=</span><span class="var">Gluon</span>, ghost_field<span class="op">=</span><span class="var">GhostG</span>,
+                  structure_constant<span class="op">=</span><span class="fn">structure_constant</span>,
+                  representations<span class="op">=</span>(<span class="var">COLOR_FUND_REP</span>,))
+
+<span class="cm"># SU(2) weak</span>
+<span class="var">WEAK_DOUBLET_REP</span> <span class="op">=</span> <span class="bi">GaugeRepresentation</span>(
+    index<span class="op">=</span><span class="bi">WEAK_FUND_INDEX</span>, generator_builder<span class="op">=</span><span class="fn">weak_gauge_generator</span>, name<span class="op">=</span><span class="str">"doublet"</span>
+)
+<span class="var">SU2L</span> <span class="op">=</span> <span class="bi">GaugeGroup</span>(name<span class="op">=</span><span class="str">"SU2L"</span>, abelian<span class="op">=</span><span class="num">False</span>, coupling<span class="op">=</span><span class="fn">S</span>(<span class="str">"g2"</span>),
+                  gauge_boson<span class="op">=</span><span class="var">W</span>, ghost_field<span class="op">=</span><span class="var">GhostW</span>,
+                  structure_constant<span class="op">=</span><span class="fn">weak_structure_constant</span>,
+                  representations<span class="op">=</span>(<span class="var">WEAK_DOUBLET_REP</span>,))</code></pre>
+</section>
+
+<!-- SECTION 4: FLAVOR -->
+<section id="flavor">
+  <h2><span class="num">04</span> Flavor Indices &amp; Parameters</h2>
+  <div class="section-divider"></div>
+
+  <p>Flavor indices let you write compact multi-generation expressions and later expand them into per-member rules.</p>
+
+  <pre data-label="python"><code><span class="cm"># 1. Create a flavor index</span>
+<span class="var">Generation</span> <span class="op">=</span> <span class="fn">flavor_index</span>(<span class="str">"Generation"</span>, <span class="num">3</span>, prefix<span class="op">=</span><span class="str">"f"</span>)
+
+<span class="cm"># 2. Field with flavor index + class members</span>
+<span class="var">lepton</span> <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"l"</span>, spin<span class="op">=</span><span class="bi">Fraction</span>(<span class="num">1</span>,<span class="num">2</span>), self_conjugate<span class="op">=</span><span class="num">False</span>,
+               indices<span class="op">=</span>(<span class="var">Generation</span>, <span class="bi">SPINOR_INDEX</span>),
+               symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"l"</span>), conjugate_symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"lbar"</span>),
+               flavor_index<span class="op">=</span><span class="var">Generation</span>,
+               class_members<span class="op">=</span>(<span class="str">"e"</span>, <span class="str">"mu"</span>, <span class="str">"ta"</span>))
+<span class="var">e</span>, <span class="var">mu</span>, <span class="var">ta</span> <span class="op">=</span> <span class="var">lepton</span>.class_members
+
+<span class="cm"># 3. Flavor-aware parameter</span>
+<span class="cm">#    indices= lists the index types the parameter carries</span>
+<span class="cm">#    components= maps (i,j)->value for sparsity (0 drops that component)</span>
+<span class="var">Yu</span> <span class="op">=</span> <span class="bi">Parameter</span>(<span class="str">"Yu"</span>, indices<span class="op">=</span>(<span class="var">Generation</span>, <span class="var">Generation</span>))
+
+<span class="cm"># Diagonal-only parameter</span>
+<span class="var">Ydiag</span> <span class="op">=</span> <span class="bi">Parameter</span>(<span class="str">"Ydiag"</span>, indices<span class="op">=</span>(<span class="var">Generation</span>, <span class="var">Generation</span>),
+                  components<span class="op">=</span>{(i,j): <span class="num">0</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>,<span class="num">4</span>) <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>,<span class="num">4</span>) <span class="kw">if</span> i<span class="op">!=</span>j})</code></pre>
+
+  <div class="callout callout-info">
+    <strong>Usage in expressions:</strong> call the parameter like a function: <code>Yu(f, h)</code>. Summed flavor indices in <code>feynman_rule(..., flavor_expand=True)</code> automatically produce one rule per generation combination.
+  </div>
+</section>
+
+<!-- SECTION 5: MODEL -->
+<section id="model">
+  <h2><span class="num">05</span> Declare a Model</h2>
+  <div class="section-divider"></div>
+
+  <p>Pass the source declaration directly into <code>Model(...)</code>, or explicitly via <code>Model(..., lagrangian_decl=...)</code>. Multiple terms are summed with <code>+</code>.
+  There is no separate source-level <code>Lagrangian(...)</code> constructor in the current API.</p>
+
+  <div class="callout callout-info">
+    <strong>Gauge metadata:</strong> declarations involving <code>CovD</code> need the relevant gauge groups present in the model metadata. For <code>FieldStrength(...)</code>, <code>GaugeFixing(...)</code>, and <code>GhostLagrangian(...)</code>, the group object is carried directly by the declaration.
+  </div>
+
+  <pre data-label="python"><code><span class="cm"># Simple local model — no gauge_groups needed</span>
+<span class="var">m</span> <span class="op">=</span> <span class="bi">Model</span>(<span class="fn">S</span>(<span class="str">"lam"</span>) <span class="op">*</span> <span class="var">Phi</span> <span class="op">*</span> <span class="var">Phi</span> <span class="op">*</span> <span class="var">Phi</span> <span class="op">*</span> <span class="var">Phi</span>)
+
+<span class="cm"># Gauge-aware model — include the relevant gauge-group metadata</span>
+<span class="var">mu</span> <span class="op">=</span> <span class="fn">S</span>(<span class="str">"mu"</span>)
+<span class="var">m</span> <span class="op">=</span> <span class="bi">Model</span>(
+    <span class="var">I</span> <span class="op">*</span> <span class="var">Psi</span>.bar <span class="op">*</span> <span class="fn">Gamma</span>(<span class="var">mu</span>) <span class="op">*</span> <span class="fn">CovD</span>(<span class="var">Psi</span>, <span class="var">mu</span>),
+    gauge_groups<span class="op">=</span>(<span class="var">U1QED</span>,),
+)
+
+<span class="cm"># Multi-term model</span>
+<span class="var">m</span> <span class="op">=</span> <span class="bi">Model</span>(
+    <span class="var">I</span> <span class="op">*</span> <span class="var">Quark</span>.bar <span class="op">*</span> <span class="fn">Gamma</span>(<span class="var">mu</span>) <span class="op">*</span> <span class="fn">CovD</span>(<span class="var">Quark</span>, <span class="var">mu</span>)
+    <span class="op">-</span> (<span class="bi">Expression</span>.<span class="fn">num</span>(<span class="num">1</span>)<span class="op">/</span><span class="bi">Expression</span>.<span class="fn">num</span>(<span class="num">4</span>))
+      <span class="op">*</span> <span class="fn">FieldStrength</span>(<span class="var">SU3C</span>, <span class="var">mu</span>, <span class="fn">S</span>(<span class="str">"nu"</span>), <span class="fn">S</span>(<span class="str">"a"</span>))
+      <span class="op">*</span> <span class="fn">FieldStrength</span>(<span class="var">SU3C</span>, <span class="var">mu</span>, <span class="fn">S</span>(<span class="str">"nu"</span>), <span class="fn">S</span>(<span class="str">"a"</span>))
+    <span class="op">+</span> <span class="fn">GaugeFixing</span>(<span class="var">SU3C</span>, xi<span class="op">=</span><span class="fn">S</span>(<span class="str">"xi"</span>))
+    <span class="op">+</span> <span class="fn">GhostLagrangian</span>(<span class="var">SU3C</span>),
+    gauge_groups<span class="op">=</span>(<span class="var">SU3C</span>,),
+)
+
+<span class="cm"># Compile</span>
+<span class="var">L</span> <span class="op">=</span> <span class="var">m</span>.<span class="fn">lagrangian</span>()</code></pre>
+
+  <h3>Model validation</h3>
+  <pre data-label="python"><code><span class="cm"># Run the source-level validation report before extracting rules</span>
+<span class="var">report</span> <span class="op">=</span> <span class="var">m</span>.<span class="fn">validate</span>()
+<span class="fn">print</span>(<span class="var">report</span>.ok)       <span class="cm"># True if no issues</span>
+<span class="fn">print</span>(<span class="var">report</span>.issues)  <span class="cm"># list of Issue(code, message)</span></code></pre>
+</section>
+
+<!-- SECTION 6: OPERATOR CATALOG -->
+<section id="operators">
+  <h2><span class="num">06</span> Operator Catalog</h2>
+  <div class="section-divider"></div>
+
+  <p>Every builder below is a valid source-level building block inside <code>Model(...)</code> or <code>Model(..., lagrangian_decl=...)</code>.</p>
+
+  <h3>Local monomials</h3>
+  <pre data-label="python"><code><span class="bi">Field</span> <span class="op">*</span> <span class="bi">Field</span> <span class="op">*</span> ...                        <span class="cm"># plain product</span>
+<span class="fn">Psi</span>.bar <span class="op">*</span> <span class="fn">Psi</span> <span class="op">*</span> <span class="fn">Phi</span>                         <span class="cm"># Yukawa</span>
+<span class="fn">Psi</span>.bar <span class="op">*</span> <span class="fn">Gamma</span>(<span class="var">mu</span>) <span class="op">*</span> <span class="fn">Psi</span> <span class="op">*</span> <span class="fn">Photon</span>          <span class="cm"># vector current</span>
+<span class="fn">Psi</span>.bar <span class="op">*</span> <span class="fn">Gamma</span>(<span class="var">mu</span>) <span class="op">*</span> <span class="fn">Gamma5</span>() <span class="op">*</span> <span class="fn">Psi</span> <span class="op">*</span> <span class="fn">V</span>   <span class="cm"># axial current</span></code></pre>
+
+  <h3>Derivative operators — <code>PartialD</code></h3>
+  <pre data-label="python"><code><span class="fn">PartialD</span>(<span class="var">Phi</span>, <span class="var">mu</span>)                          <span class="cm"># ∂_μ Φ</span>
+<span class="fn">PartialD</span>(<span class="fn">PartialD</span>(<span class="var">Phi</span>, <span class="var">mu</span>), <span class="var">nu</span>)            <span class="cm"># ∂_μ ∂_ν Φ (nested)</span>
+<span class="fn">Psi</span>.bar <span class="op">*</span> <span class="fn">Gamma</span>(<span class="var">mu</span>) <span class="op">*</span> <span class="fn">PartialD</span>(<span class="var">Psi</span>, <span class="var">nu</span>) <span class="op">*</span> <span class="fn">Phi</span>  <span class="cm"># fermion derivative operator</span></code></pre>
+
+  <h3>Gauge covariant derivative — <code>CovD</code></h3>
+  <pre data-label="python"><code><span class="var">mu</span> <span class="op">=</span> <span class="fn">S</span>(<span class="str">"mu"</span>)
+<span class="cm"># Fermion kinetic: I * ψ̄ γ^μ D_μ ψ</span>
+<span class="var">I</span> <span class="op">*</span> <span class="fn">Psi</span>.bar <span class="op">*</span> <span class="fn">Gamma</span>(<span class="var">mu</span>) <span class="op">*</span> <span class="fn">CovD</span>(<span class="var">Psi</span>, <span class="var">mu</span>)
+
+<span class="cm"># Complex scalar kinetic: (D_μ Φ†)(D^μ Φ)</span>
+<span class="fn">CovD</span>(<span class="var">PhiC</span>.bar, <span class="var">mu</span>) <span class="op">*</span> <span class="fn">CovD</span>(<span class="var">PhiC</span>, <span class="var">mu</span>)
+
+<span class="cm"># Convention: D_μ = ∂_μ - igA_μ</span></code></pre>
+
+  <h3>Field strength — <code>FieldStrength</code></h3>
+  <pre data-label="python"><code><span class="cm"># Abelian (no adjoint index)</span>
+<span class="fn">FieldStrength</span>(<span class="var">U1QED</span>, <span class="var">mu</span>, <span class="var">nu</span>)
+
+<span class="cm"># Non-abelian (adjoint index required)</span>
+<span class="fn">FieldStrength</span>(<span class="var">SU3C</span>, <span class="var">mu</span>, <span class="var">nu</span>, <span class="fn">S</span>(<span class="str">"a"</span>))
+
+<span class="cm"># Yang-Mills kinetic term</span>
+<span class="op">-</span>(<span class="bi">Expression</span>.<span class="fn">num</span>(<span class="num">1</span>)<span class="op">/</span><span class="bi">Expression</span>.<span class="fn">num</span>(<span class="num">4</span>)) <span class="op">*</span> <span class="fn">FieldStrength</span>(<span class="var">SU3C</span>, <span class="var">mu</span>, <span class="var">nu</span>, <span class="fn">S</span>(<span class="str">"a"</span>)) <span class="op">*</span> <span class="fn">FieldStrength</span>(<span class="var">SU3C</span>, <span class="var">mu</span>, <span class="var">nu</span>, <span class="fn">S</span>(<span class="str">"a"</span>))</code></pre>
+
+  <div class="callout callout-warn">
+    <strong>Strict rules:</strong> non-abelian <code>FieldStrength</code> requires an explicit adjoint index; abelian must not have one. All adjoint indices must be contracted (no open color).
+  </div>
+
+  <h3>Gauge fixing &amp; ghosts</h3>
+  <pre data-label="python"><code><span class="fn">GaugeFixing</span>(<span class="var">SU3C</span>, xi<span class="op">=</span><span class="fn">S</span>(<span class="str">"xi"</span>))   <span class="cm"># linear covariant gauge</span>
+<span class="fn">GhostLagrangian</span>(<span class="var">SU3C</span>)          <span class="cm"># ordinary non-abelian Faddeev-Popov ghosts (group needs ghost_field)</span></code></pre>
+</section>
+
+<!-- SECTION 7: FEYNMAN RULES -->
+<section id="feynman">
+  <h2><span class="num">07</span> Extracting Feynman Rules</h2>
+  <div class="section-divider"></div>
+
+  <p>Call <code>feynman_rule</code> on the <code>Model</code> object or on a compiled <code>CompiledLagrangian</code>.</p>
+
+  <h3>Targeted extraction</h3>
+  <pre data-label="python"><code><span class="var">L</span> <span class="op">=</span> <span class="fn">Model</span>().<span class="fn">lagrangian</span>()
+
+<span class="cm"># Pass fields explicitly to get one vertex</span>
+<span class="var">vertex</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(<span class="var">Psi</span>.bar, <span class="var">Psi</span>)
+
+<span class="cm"># Custom external momenta (default: q1, q2, q3, ...)</span>
+<span class="var">vertex</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(<span class="var">Psi</span>.bar, <span class="var">Psi</span>, <span class="var">Photon</span>,
+                        momenta<span class="op">=</span>[<span class="fn">S</span>(<span class="str">"p_in"</span>), <span class="fn">S</span>(<span class="str">"p_out"</span>), <span class="fn">S</span>(<span class="str">"k"</span>)])</code></pre>
+
+  <h3>Key options</h3>
+  <table class="param-table">
+    <tr><th>Option</th><th>Default</th><th>Description</th></tr>
+    <tr><td>simplify</td><td>True</td><td>Run symbolic simplification on the result.</td></tr>
+    <tr><td>simplify_gamma</td><td>False</td><td>Apply Dirac algebra simplification to gamma chains.</td></tr>
+    <tr><td>include_delta</td><td>False</td><td>Include the overall momentum-conservation <code>Delta(...)</code> factor.</td></tr>
+    <tr><td>strip_externals</td><td>True</td><td>Strip external wavefunction factors (recommended default).</td></tr>
+    <tr><td>flavor_expand</td><td>False</td><td><code>True</code>, one index, or a tuple of indices to expand over generations.</td></tr>
+    <tr><td>key_format</td><td>"names"</td><td>For zero-argument extraction: dict keys are <code>"names"</code> (string tuples) or <code>"fields"</code> (Field objects).</td></tr>
+  </table>
+
+  <h3>Output conventions</h3>
+  <div class="callout callout-info">
+    <strong>Reading the output:</strong> <code>Delta(...)</code> = momentum conservation factor · <code>gamma(...)</code> = open Dirac structure · <code>t(...)</code>, <code>f(...)</code> = generator / structure constant · <code>g(...)</code> = metric · <code>pcomp(p, mu)</code> = momentum component.
+  </div>
+</section>
+
+<!-- SECTION 8: DISCOVERY -->
+<section id="discovery">
+  <h2><span class="num">08</span> Vertex Discovery &amp; Filtering</h2>
+  <div class="section-divider"></div>
+
+  <p>Call <code>feynman_rule()</code> with no arguments to enumerate every available vertex. Use structured filtering methods to inspect without computing all expressions.</p>
+
+  <pre data-label="python"><code><span class="cm"># Enumerate all vertices — returns dict keyed by name tuples</span>
+<span class="var">all_rules</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(simplify<span class="op">=</span><span class="num">False</span>)
+<span class="kw">for</span> sig, expr <span class="kw">in</span> <span class="var">all_rules</span>.items():
+    <span class="fn">print</span>(<span class="var">sig</span>, <span class="str">"→"</span>, <span class="var">expr</span>)
+
+<span class="cm"># Use key_format="fields" for Field-object keys</span>
+<span class="var">all_rules</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(simplify<span class="op">=</span><span class="num">False</span>, key_format<span class="op">=</span><span class="str">"fields"</span>)</code></pre>
+
+  <h3>vertex_signatures — lightweight inspection</h3>
+  <pre data-label="python"><code><span class="cm"># All signatures</span>
+<span class="kw">for</span> sig <span class="kw">in</span> <span class="var">L</span>.<span class="fn">vertex_signatures</span>():
+    <span class="fn">print</span>(<span class="var">sig</span>.names, <span class="str">"arity="</span>, <span class="var">sig</span>.arity, <span class="str">"terms="</span>, <span class="var">sig</span>.term_count)
+
+<span class="cm"># Filter by arity</span>
+<span class="var">three_point</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">vertex_signatures</span>(arity<span class="op">=</span><span class="num">3</span>)
+
+<span class="cm"># Exact signature match (order-independent)</span>
+<span class="var">exact</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">vertex_signatures</span>(signature<span class="op">=</span>(<span class="var">Gluon</span>, <span class="var">Quark</span>.bar, <span class="var">Quark</span>))
+
+<span class="cm"># Contains specific fields</span>
+<span class="var">ghost_related</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">vertex_signatures</span>(contains_fields<span class="op">=</span>(<span class="var">GhostG</span>.bar, <span class="var">GhostG</span>))</code></pre>
+
+  <h3>vertex_report</h3>
+  <pre data-label="python"><code><span class="var">report</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">vertex_report</span>(arity<span class="op">=</span><span class="num">3</span>)
+<span class="fn">print</span>(<span class="var">report</span>.matched_signatures, <span class="str">"of"</span>, <span class="var">report</span>.total_signatures)
+<span class="kw">for</span> sig <span class="kw">in</span> <span class="var">report</span>.signatures:
+    <span class="fn">print</span>(<span class="var">sig</span>.names)</code></pre>
+
+  <div class="callout">
+    <strong>Tip:</strong> use <code>vertex_signatures</code> / <code>vertex_report</code> to inspect a large model before calling <code>feynman_rule</code>, which actually computes the expressions.
+  </div>
+</section>
+
+<!-- SECTION 9: FLAVOR EXPAND -->
+<section id="flavor-expand">
+  <h2><span class="num">09</span> Flavor Expansion</h2>
+  <div class="section-divider"></div>
+
+  <p>Use <code>flavor_expand=True</code> to expand all flavor/generation indices. Alternatively, pass one index or a tuple of indices to expand only selected flavor indices, turning generic multi-generation vertices into explicit per-member vertices. </p>
+  <pre data-label="python"><code><span class="cm"># Compact (generation-generic) rules</span>
+<span class="var">rules_compact</span>  <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(simplify<span class="op">=</span><span class="num">True</span>)
+
+<span class="cm"># Fully expanded rules (all flavor indices)</span>
+<span class="var">rules_expanded</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(simplify<span class="op">=</span><span class="num">True</span>, flavor_expand<span class="op">=</span><span class="num">True</span>)
+
+<span class="cm"># Expand only one specific index</span>
+<span class="var">rules_gen</span>      <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(simplify<span class="op">=</span><span class="num">True</span>, flavor_expand<span class="op">=</span><span class="var">Generation</span>)
+
+<span class="cm"># Specific member vertex (requires flavor_expand)</span>
+<span class="var">vertex_e_mu</span>    <span class="op">=</span> <span class="var">L</span>.<span class="fn">feynman_rule</span>(<span class="var">e</span>.bar, <span class="var">mu</span>, <span class="var">Phi</span>, flavor_expand<span class="op">=</span><span class="num">True</span>)
+
+<span class="cm"># Discovery also supports flavor_expand</span>
+<span class="var">sigs</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">vertex_signatures</span>(flavor_expand<span class="op">=</span><span class="num">True</span>)</code></pre>
+
+  <div class="callout callout-warn">
+    <strong>Off-diagonal zeroes:</strong> if a parameter has <code>components={(i,j): 0}</code> for i≠j, off-diagonal member combinations are automatically absent from the expanded rules.
+  </div>
+</section>
+
+<!-- SECTION 10: SYMBOLICA EXPORT -->
+<section id="symbolica-export">
+  <h2><span class="num">10</span> Symbolica Export</h2>
+  <div class="section-divider"></div>
+
+  <p>Call <code>to_symbolica()</code> on a compiled <code>CompiledLagrangian</code> to get a flat <code>Expression</code> for display, collection, differentiation, and other commutative Symbolica manipulations.</p>
+
+  <h3>Default export</h3>
+  <pre data-label="python"><code><span class="var">expr</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">to_symbolica</span>()
+<span class="fn">print</span>(<span class="var">expr</span>)
+
+<span class="cm"># Standard Symbolica operations work directly</span>
+<span class="var">expr</span>.<span class="fn">expand</span>()
+<span class="var">expr</span>.<span class="fn">derivative</span>(<span class="fn">S</span>(<span class="str">"Phi"</span>))
+<span class="var">expr</span>.<span class="fn">coefficient</span>(<span class="fn">S</span>(<span class="str">"lam"</span>))</code></pre>
+
+  <h3>Coordinate-dependent export</h3>
+  <pre data-label="python"><code><span class="cm"># derivative_style="coordinate" makes spacetime dependence explicit</span>
+<span class="var">expr_coord</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">to_symbolica</span>(derivative_style<span class="op">=</span><span class="str">"coordinate"</span>)
+<span class="var">expr_coord</span>.<span class="fn">derivative</span>(<span class="fn">S</span>(<span class="str">"x_mu"</span>))</code></pre>
+
+  <h3>Flavor-expanded export</h3>
+  <pre data-label="python"><code><span class="cm"># Compact (generation-generic)</span>
+<span class="var">compact</span>  <span class="op">=</span> <span class="var">L_fl</span>.<span class="fn">to_symbolica</span>()
+
+<span class="cm"># Expanded into per-member expressions</span>
+<span class="var">expanded</span> <span class="op">=</span> <span class="var">L_fl</span>.<span class="fn">to_symbolica</span>(flavor_expand<span class="op">=</span><span class="num">True</span>)</code></pre>
+
+  <div class="callout callout-warn">
+    <strong>Ordering caveat:</strong> <code>to_symbolica()</code> is a commutative export view. Fermion and ghost ordering is not preserved there, so ordering-sensitive manipulations should stay on the compiled <code>terms</code> / operator layer.
+  </div>
+</section>
+
+<!-- SECTION 11: APPLYING OPERATORS -->
+<section id="operators-apply">
+  <h2><span class="num">11</span> Applying Operators</h2>
+  <div class="section-divider"></div>
+
+  <p>The operator layer acts on the compiled <code>CompiledLagrangian</code> term-by-term, following a graded Leibniz rule. It is the foundation for field redefinitions, substitutions, gauge variations, and BRST transformations.</p>
+
+  <h3>Required imports</h3>
+  <pre data-label="python"><code><span class="kw">from</span> <span class="bi">lagrangian.operator_action</span> <span class="kw">import</span> (
+    <span class="bi">FieldOperator</span>, <span class="bi">TermOperator</span>,
+    <span class="bi">OperatorAtomResult</span>, <span class="bi">OperatorSummand</span>,
+    <span class="bi">OperatorExpansionError</span>,
+    <span class="fn">replacement_operator</span>, <span class="fn">single_field_result</span>,
+    <span class="fn">partial</span>,
+)</code></pre>
+
+  <h3>Simple field replacement</h3>
+  <pre data-label="python"><code><span class="cm"># replacement_operator — the simplest case: Phi → Chi everywhere</span>
+<span class="var">op</span> <span class="op">=</span> <span class="fn">replacement_operator</span>(<span class="str">"Phi_to_Chi"</span>, {<span class="var">Phi</span>: <span class="var">Chi</span>()})
+<span class="var">L_new</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">apply_operator</span>(<span class="var">op</span>)
+
+<span class="cm"># Also available on Model as a convenience forwarder: it compiles first, then applies</span>
+<span class="var">L_new</span> <span class="op">=</span> <span class="var">model</span>.<span class="fn">apply_operator</span>(<span class="var">op</span>)</code></pre>
+
+  <h3>FieldOperator — slot-wise action</h3>
+  <p>Acts once per matched field slot, expanding via the graded Leibniz rule. The callback receives an <code>FieldOccurrence</code> and returns <code>None</code> (skip) or an <code>OperatorAtomResult</code>.</p>
+  <pre data-label="python"><code><span class="cm"># Phi → a·Chi + b·Omega  (one summand per slot)</span>
+<span class="var">op</span> <span class="op">=</span> <span class="bi">FieldOperator</span>(
+    <span class="str">"phi_to_combo"</span>,
+    on_field<span class="op">=</span><span class="kw">lambda</span> occ: (
+        <span class="kw">None</span> <span class="kw">if</span> occ.field <span class="kw">is not</span> <span class="var">Phi</span> <span class="kw">else</span>
+        <span class="bi">OperatorAtomResult</span>(summands<span class="op">=</span>(
+            <span class="bi">OperatorSummand</span>(coefficient<span class="op">=</span><span class="fn">S</span>(<span class="str">"a"</span>), replacement<span class="op">=</span>(<span class="var">Chi</span>(),)),
+            <span class="bi">OperatorSummand</span>(coefficient<span class="op">=</span><span class="fn">S</span>(<span class="str">"b"</span>), replacement<span class="op">=</span>(<span class="var">Omega</span>(),)),
+        ))
+    ),
+)
+
+<span class="cm"># Odd operator (parity=1 triggers graded Leibniz signs)</span>
+<span class="var">s</span> <span class="op">=</span> <span class="bi">FieldOperator</span>(<span class="str">"s"</span>, parity<span class="op">=</span><span class="num">1</span>, on_field<span class="op">=</span><span class="kw">lambda</span> occ: ...)</code></pre>
+
+  <h3>TermOperator — whole-term action</h3>
+  <pre data-label="python"><code><span class="cm"># Acts on each InteractionTerm as a whole (no Leibniz expansion)</span>
+<span class="kw">from</span> <span class="bi">dataclasses</span> <span class="kw">import</span> <span class="fn">replace</span>
+<span class="var">scale2</span> <span class="op">=</span> <span class="bi">TermOperator</span>(
+    <span class="str">"scale2"</span>,
+    apply_to_term<span class="op">=</span><span class="kw">lambda</span> term: (<span class="fn">replace</span>(term, coupling<span class="op">=</span><span class="num">2</span> <span class="op">*</span> term.coupling),),
+)</code></pre>
+
+  <h3>Spacetime derivative operator — <code>partial(mu)</code></h3>
+  <pre data-label="python"><code><span class="cm"># Applies ∂_μ to every slot (Leibniz expansion)</span>
+<span class="var">L_partial</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">apply_operator</span>(<span class="fn">partial</span>(<span class="var">mu</span>))
+
+<span class="cm"># Restrict to a specific field</span>
+<span class="var">L_partial</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">apply_operator</span>(<span class="fn">partial</span>(<span class="var">mu</span>, on<span class="op">=</span><span class="var">Phi</span>))
+
+<span class="cm"># Declarative shortcut inside lagrangian_decl=... (same as PartialD(Phi, mu))</span>
+<span class="var">dPhi</span> <span class="op">=</span> <span class="fn">partial</span>(<span class="var">mu</span>, <span class="var">Phi</span>)</code></pre>
+
+  <h3>Composition and algebra</h3>
+  <pre data-label="python"><code><span class="cm"># Apply a sequence of operators left-to-right</span>
+<span class="var">L_out</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">apply_operators</span>(<span class="var">op1</span>, <span class="var">op2</span>, <span class="var">op3</span>)
+
+<span class="cm"># Graded commutator [A, B] = A∘B − (−1)^{|A||B|} B∘A</span>
+<span class="var">L</span>.<span class="fn">operator_bracket</span>(<span class="var">opA</span>, <span class="var">opB</span>).<span class="fn">to_symbolica</span>()
+
+<span class="cm"># Expansion guard: raises OperatorExpansionError if too many terms generated</span>
+<span class="kw">try</span>:
+    <span class="var">L</span>.<span class="fn">apply_operator</span>(<span class="var">op</span>, max_generated_terms<span class="op">=</span><span class="num">10</span>)
+<span class="kw">except</span> <span class="bi">OperatorExpansionError</span> <span class="kw">as</span> exc:
+    <span class="fn">print</span>(<span class="var">exc</span>)</code></pre>
+
+  <div class="callout callout-info">
+    <strong>Derivative fan-out:</strong> when a replacement operator maps one field to a product, any pre-existing derivative on that slot fans out via Leibniz automatically — no manual handling needed.
+  </div>
+</section>
+
+<!-- SECTION 12: IBP NORMAL FORM -->
+<section id="ibp">
+  <h2><span class="num">12</span> IBP Normal Form</h2>
+  <div class="section-divider"></div>
+
+  <p>Two scalar Lagrangians that differ by a total derivative are physically equivalent. <code>ibp_normal_form()</code> computes the current v1 scalar IBP normal form of a compiled Lagrangian, so matching normal forms certify equality up to boundary terms within that supported domain.</p>
+
+  <pre data-label="python"><code><span class="cm"># The identity: φ²□φ ≃ −2φ(∂_μφ)(∂_μφ)  (mod total derivative)</span>
+<span class="var">L1_expr</span> <span class="op">=</span> <span class="var">c</span> <span class="op">*</span> <span class="var">phi</span> <span class="op">*</span> <span class="var">phi</span> <span class="op">*</span> <span class="fn">PartialD</span>(<span class="fn">PartialD</span>(<span class="var">phi</span>, <span class="var">mu</span>), <span class="var">mu</span>)
+<span class="var">L2_expr</span> <span class="op">=</span> <span class="op">-</span><span class="num">2</span> <span class="op">*</span> <span class="var">c</span> <span class="op">*</span> <span class="var">phi</span> <span class="op">*</span> <span class="fn">PartialD</span>(<span class="var">phi</span>, <span class="var">mu</span>) <span class="op">*</span> <span class="fn">PartialD</span>(<span class="var">phi</span>, <span class="var">mu</span>)
+
+<span class="var">L1</span> <span class="op">=</span> <span class="bi">Model</span>(<span class="var">L1_expr</span>).<span class="fn">lagrangian</span>()
+<span class="var">L2</span> <span class="op">=</span> <span class="bi">Model</span>(<span class="var">L2_expr</span>).<span class="fn">lagrangian</span>()
+
+<span class="var">NF1</span> <span class="op">=</span> <span class="var">L1</span>.<span class="fn">ibp_normal_form</span>()
+<span class="var">NF2</span> <span class="op">=</span> <span class="var">L2</span>.<span class="fn">ibp_normal_form</span>()
+<span class="kw">assert</span> <span class="var">NF1</span>.terms <span class="op">==</span> <span class="var">NF2</span>.terms
+
+<span class="cm"># Check equivalence: their difference vanishes in normal form</span>
+<span class="var">delta_NF</span> <span class="op">=</span> <span class="bi">Model</span>(<span class="var">L1_expr</span> <span class="op">-</span> <span class="var">L2_expr</span>).<span class="fn">lagrangian</span>().<span class="fn">ibp_normal_form</span>()
+<span class="kw">assert</span> <span class="var">delta_NF</span>.terms <span class="op">==</span> ()  <span class="cm"># empty ⟹ equal modulo boundary terms</span></code></pre>
+
+  <div class="callout callout-warn">
+    <strong>Current scope:</strong> this v1 normalizer is for scalar compiled terms with ordinary partial derivatives. Unsupported gauge / spinor / ordering-sensitive structures are rejected instead of being normalized heuristically.
+  </div>
+
+  <div class="callout">
+    <strong>Tip:</strong> use <code>ibp_normal_form()</code> to verify scalar operator identities or eliminate scalar higher-derivative redundancies before extracting Feynman rules.
+  </div>
+</section>
+
+<!-- SECTION 13: GAUGE VARIATION -->
+<section id="gauge-variation">
+  <h2><span class="num">13</span> Gauge Variation</h2>
+  <div class="section-divider"></div>
+
+  <p><code>gauge_variation(group=..., parameter=...)</code> returns a <code>FieldOperator</code> implementing the infinitesimal gauge variation for a single group. It follows the graded Leibniz rule and materialises the gauge parameter <code>α</code> as a synthetic scalar field carrying the group's adjoint index.</p>
+
+  <h3>Transformation rules</h3>
+  <table class="param-table">
+    <tr><th>Field</th><th>Variation δ</th></tr>
+    <tr><td>Matter rep R: Φ_i</td><td>+ig α^a T^a_{ij} Φ_j</td></tr>
+    <tr><td>Matter rep R: Φ̄_i</td><td>−ig α^a Φ̄_j T^a_{ji}</td></tr>
+    <tr><td>U(1) charge q: Φ</td><td>+igq α Φ</td></tr>
+    <tr><td>Abelian gauge boson A_μ</td><td>+∂_μ α</td></tr>
+    <tr><td>Non-abelian gauge boson A^a_μ</td><td>+∂_μ α^a − g f^{abc} α^b A^c_μ</td></tr>
+  </table>
+
+  <pre data-label="python"><code><span class="kw">from</span> <span class="bi">lagrangian.operator_action</span> <span class="kw">import</span> <span class="fn">gauge_variation</span>
+<span class="kw">from</span> <span class="bi">symbolic.tensor_canonicalization</span> <span class="kw">import</span> <span class="fn">canonize_full</span>
+
+<span class="cm"># Compute δL under a gauge group</span>
+<span class="var">delta</span> <span class="op">=</span> <span class="fn">gauge_variation</span>(group<span class="op">=</span><span class="var">U1QED</span>, parameter<span class="op">=</span><span class="str">"alpha"</span>)
+<span class="var">dL</span>    <span class="op">=</span> <span class="var">L</span>.<span class="fn">apply_operator</span>(<span class="var">delta</span>)
+
+<span class="cm"># Verify invariance using canonize_full</span>
+<span class="var">canon</span> <span class="op">=</span> <span class="fn">canonize_full</span>(
+    <span class="var">dL</span>.<span class="fn">to_symbolica</span>().<span class="fn">expand</span>(),
+    lorentz_indices<span class="op">=</span>(<span class="var">mu</span>,),
+)
+<span class="kw">assert</span> <span class="var">canon</span>.<span class="fn">to_canonical_string</span>() <span class="op">==</span> <span class="str">"0"</span>  <span class="cm"># ⟹ gauge invariant</span></code></pre>
+
+  <h3>Wrong-charge sanity check</h3>
+  <pre data-label="python"><code><span class="cm"># Gauge variation of a charge-violating term is non-zero</span>
+<span class="var">L_wrong</span> <span class="op">=</span> <span class="bi">Model</span>(<span class="fn">S</span>(<span class="str">"y"</span>) <span class="op">*</span> <span class="var">eta_neutral</span>.bar() <span class="op">*</span> <span class="var">eta_neutral</span>() <span class="op">*</span> <span class="var">Phi_charged</span>).<span class="fn">lagrangian</span>()
+<span class="var">dL_wrong</span> <span class="op">=</span> <span class="var">L_wrong</span>.<span class="fn">apply_operator</span>(<span class="fn">gauge_variation</span>(group<span class="op">=</span><span class="var">U1QED</span>, parameter<span class="op">=</span><span class="str">"alpha"</span>))
+<span class="cm"># dL_wrong.to_symbolica().expand() ≠ 0  — charge not conserved</span></code></pre>
+
+  <div class="callout callout-warn">
+    <strong>Non-abelian two-part variation:</strong> the gauge-boson variation has an <em>inhomogeneous</em> piece (+∂_μ α^a) and a <em>homogeneous</em> piece (−g f^{abc} α^b A^c_μ). Both are produced automatically by <code>gauge_variation</code>.
+  </div>
+</section>
+
+<!-- SECTION 14: BRST -->
+<section id="brst">
+  <h2><span class="num">14</span> BRST Transformations</h2>
+  <div class="section-divider"></div>
+
+  <p><code>brst_transformation(group, ghost, antighost=None, auxiliary=...)</code> returns an odd <code>FieldOperator</code> that implements the full BRST transformation for one gauge group. The ghost must be declared with <code>kind="ghost"</code> and <code>ghost_of=&lt;gauge_boson&gt;</code>.</p>
+
+  <h3>Sign conventions</h3>
+  <table class="param-table">
+    <tr><th>Field</th><th>BRST rule s(·)</th></tr>
+    <tr><td>Gauge boson A^a_μ</td><td>D_μ c^a = ∂_μ c^a + g f^{abc} A^b_μ c^c</td></tr>
+    <tr><td>Ghost c^a</td><td>−(g/2) f^{abc} c^b c^c</td></tr>
+    <tr><td>Antighost c̄^a</td><td>B^a  (auxiliary field)</td></tr>
+    <tr><td>Auxiliary B^a</td><td>0</td></tr>
+    <tr><td>Matter Φ_i (non-abelian)</td><td>+ig c^a T^a_{ij} Φ_j</td></tr>
+    <tr><td>Matter Φ̄_i (non-abelian)</td><td>−ig c^a Φ̄_j T^a_{ji}</td></tr>
+    <tr><td>Matter Φ (abelian, charge q)</td><td>+igq c Φ</td></tr>
+  </table>
+
+  <pre data-label="python"><code><span class="kw">from</span> <span class="bi">lagrangian.operator_action</span> <span class="kw">import</span> <span class="fn">brst_transformation</span>
+
+<span class="cm"># Declare ghost and auxiliary fields</span>
+<span class="var">c</span>    <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"c"</span>, spin<span class="op">=</span><span class="num">0</span>, kind<span class="op">=</span><span class="str">"ghost"</span>, ghost_of<span class="op">=</span><span class="var">Gluon</span>,
+             self_conjugate<span class="op">=</span><span class="num">False</span>, conjugate_symbol<span class="op">=</span><span class="fn">S</span>(<span class="str">"cbar"</span>),
+             indices<span class="op">=</span>(<span class="bi">COLOR_ADJ_INDEX</span>,),
+             quantum_numbers<span class="op">=</span>{<span class="str">"GhostNumber"</span>: <span class="num">1</span>})
+<span class="var">Baux</span> <span class="op">=</span> <span class="bi">Field</span>(<span class="str">"B"</span>, spin<span class="op">=</span><span class="num">0</span>, self_conjugate<span class="op">=</span><span class="num">True</span>, indices<span class="op">=</span>(<span class="bi">COLOR_ADJ_INDEX</span>,))
+
+<span class="var">s</span> <span class="op">=</span> <span class="fn">brst_transformation</span>(group<span class="op">=</span><span class="var">SU3C</span>, ghost<span class="op">=</span><span class="var">c</span>, auxiliary<span class="op">=</span><span class="var">Baux</span>)
+
+<span class="cm"># Act on individual fields</span>
+<span class="var">mu</span>, <span class="var">a</span> <span class="op">=</span> <span class="fn">S</span>(<span class="str">"mu"</span>), <span class="fn">S</span>(<span class="str">"a"</span>)
+<span class="fn">print</span>(<span class="var">Gluon</span>(<span class="var">mu</span>, <span class="var">a</span>).<span class="fn">apply_operator</span>(<span class="var">s</span>).<span class="fn">to_symbolica</span>().<span class="fn">expand</span>())  <span class="cm"># s A^a_μ</span>
+<span class="fn">print</span>(<span class="var">c</span>(<span class="var">a</span>).<span class="fn">apply_operator</span>(<span class="var">s</span>).<span class="fn">to_symbolica</span>().<span class="fn">expand</span>())            <span class="cm"># s c^a</span></code></pre>
+
+  <h3>Nilpotency check s² = 0</h3>
+  <pre data-label="python"><code><span class="cm"># Verify s²=0 for the gauge boson</span>
+<span class="var">s2_G</span> <span class="op">=</span> <span class="var">Gluon</span>(<span class="var">mu</span>, <span class="var">a</span>).<span class="fn">apply_operator</span>(<span class="var">s</span>).<span class="fn">apply_operator</span>(<span class="var">s</span>).<span class="fn">to_symbolica</span>().<span class="fn">expand</span>()
+<span class="var">canon</span> <span class="op">=</span> <span class="fn">canonize_full</span>(<span class="var">s2_G</span>, run_gamma<span class="op">=</span><span class="num">False</span>, run_color<span class="op">=</span><span class="num">False</span>, infer_indices<span class="op">=</span><span class="num">True</span>)
+<span class="kw">assert</span> <span class="var">canon</span>.<span class="fn">to_canonical_string</span>() <span class="op">==</span> <span class="str">"0"</span></code></pre>
+
+  <h3>BRST-exact gauge fixing</h3>
+  <pre data-label="python"><code><span class="cm"># Build s(K) to get the gauge-fixed Lagrangian</span>
+<span class="var">K</span> <span class="op">=</span> <span class="bi">Model</span>(
+    gauge_groups<span class="op">=</span>(<span class="var">SU3C</span>,),
+    lagrangian_decl<span class="op">=</span>(
+        <span class="var">c</span>.bar(<span class="var">a</span>) <span class="op">*</span> <span class="fn">PartialD</span>(<span class="var">Gluon</span>(<span class="var">mu</span>, <span class="var">a</span>), <span class="var">mu</span>)
+        <span class="op">+</span> <span class="var">xi</span> <span class="op">/</span> <span class="bi">Expression</span>.<span class="fn">num</span>(<span class="num">2</span>) <span class="op">*</span> <span class="var">c</span>.bar(<span class="var">a</span>) <span class="op">*</span> <span class="var">Baux</span>(<span class="var">a</span>)
+    ),
+).<span class="fn">lagrangian</span>()
+<span class="var">L_gf</span> <span class="op">=</span> <span class="var">L_YM</span> <span class="op">+</span> <span class="var">K</span>.<span class="fn">apply_operator</span>(<span class="var">s</span>)  <span class="cm"># full gauge-fixed L</span></code></pre>
+
+  <div class="callout callout-warn">
+    <strong>Ghost validation:</strong> <code>brst_transformation</code> validates that the ghost field is declared with <code>kind="ghost"</code> and that <code>ghost_of</code> matches the group's gauge boson. A mismatch raises <code>ValueError</code> at construction time.
+  </div>
+</section>
+
+<!-- SECTION 15: EXPRESSION MANIPULATION -->
+<section id="expr-manip">
+  <h2><span class="num">15</span> Expression Manipulation</h2>
+  <div class="section-divider"></div>
+
+  <p>Once a compiled Lagrangian is exported via <code>to_symbolica()</code>, standard Symbolica methods (<code>expand</code>, <code>collect</code>, <code>coefficient</code>) work directly on that commutative view. The main subtlety is that wildcard labels (e.g. <code>mu_</code>) are not interpreted by the native <code>coefficient(...)</code>, so use the helper or a manual match loop instead.</p>
+
+  <h3>Standard operations</h3>
+  <pre data-label="python"><code><span class="var">expr</span> <span class="op">=</span> <span class="var">L</span>.<span class="fn">to_symbolica</span>()
+
+<span class="var">expr</span>.<span class="fn">expand</span>()
+<span class="var">expr</span>.<span class="fn">coefficient</span>(<span class="fn">S</span>(<span class="str">"xi"</span>))     <span class="cm"># works for literal symbols</span>
+<span class="var">expr</span>.<span class="fn">coefficient</span>(<span class="fn">S</span>(<span class="str">"gS"</span>))     <span class="cm"># extract coupling-constant dependence</span></code></pre>
+
+  <h3>Wildcard-aware coefficient extraction</h3>
+  <pre data-label="python"><code><span class="kw">from</span> <span class="bi">lagrangian.symbolica_export</span> <span class="kw">import</span> <span class="fn">pattern_coefficient</span>
+
+<span class="var">G</span>  <span class="op">=</span> <span class="var">Gluon</span>.symbol
+<span class="var">mu1_</span>, <span class="var">a1_</span>, <span class="var">mu2_</span>, <span class="var">a2_</span> <span class="op">=</span> <span class="fn">S</span>(<span class="str">"mu1_"</span>, <span class="str">"a1_"</span>, <span class="str">"mu2_"</span>, <span class="str">"a2_"</span>)  <span class="cm"># trailing _ = wildcard</span>
+<span class="var">pattern</span> <span class="op">=</span> <span class="var">G</span>(<span class="var">mu1_</span>, <span class="var">a1_</span>) <span class="op">*</span> <span class="var">G</span>(<span class="var">mu2_</span>, <span class="var">a2_</span>)
+
+<span class="cm"># Helper handles wildcard matching automatically</span>
+<span class="fn">print</span>(<span class="fn">pattern_coefficient</span>(<span class="var">expr</span>, <span class="var">pattern</span>))</code></pre>
+
+  <h3>Pure Symbolica workaround (no helper)</h3>
+  <pre data-label="python"><code><span class="var">seen</span> <span class="op">=</span> {}
+<span class="kw">for</span> match <span class="kw">in</span> <span class="var">expr</span>.<span class="fn">match</span>(<span class="var">pattern</span>, min_level<span class="op">=</span><span class="num">0</span>, max_level<span class="op">=</span><span class="num">0</span>, partial<span class="op">=</span><span class="num">True</span>):
+    factor <span class="op">=</span> <span class="var">pattern</span>.<span class="fn">replace_wildcards</span>(<span class="var">match</span>)
+    <span class="var">seen</span>.<span class="fn">setdefault</span>(<span class="var">factor</span>.<span class="fn">to_canonical_string</span>(), <span class="var">factor</span>)
+
+<span class="var">total</span> <span class="op">=</span> <span class="bi">Expression</span>.<span class="fn">num</span>(<span class="num">0</span>)
+<span class="kw">for</span> factor <span class="kw">in</span> <span class="var">seen</span>.<span class="fn">values</span>():
+    <span class="var">total</span> <span class="op">+=</span> <span class="var">expr</span>.<span class="fn">coefficient</span>(<span class="var">factor</span>)</code></pre>
+
+  <div class="callout callout-info">
+    <strong>Wildcard convention:</strong> Symbolica treats symbols whose names end with <code>_</code> as wildcards in <code>match(...)</code> and <code>replace_wildcards(...)</code> calls. Use this for index-agnostic pattern extraction.
+  </div>
+</section>
+
+<!-- QUICK REFERENCE -->
+<section id="quickref">
+  <h2><span class="num">—</span> Quick Reference</h2>
+  <div class="section-divider"></div>
+
+  <h3>Construction</h3>
+  <div class="qr-row"><div class="qr-fn">IndexType(name, rep, kind)</div><div class="qr-desc">Define a custom index type</div></div>
+  <div class="qr-row"><div class="qr-fn">flavor_index(name, dim)</div><div class="qr-desc">Create a flavor index (is_flavor=True)</div></div>
+  <div class="qr-row"><div class="qr-fn">Field(name, spin, ...)</div><div class="qr-desc">Declare a particle field</div></div>
+  <div class="qr-row"><div class="qr-fn">GhostField(name, ghost_of, ...)</div><div class="qr-desc">Declare a ghost field tied to a gauge boson</div></div>
+  <div class="qr-row"><div class="qr-fn">GaugeRepresentation(index, gen_builder)</div><div class="qr-desc">Define a matter representation</div></div>
+  <div class="qr-row"><div class="qr-fn">GaugeGroup(name, abelian, coupling, ...)</div><div class="qr-desc">Define a gauge group</div></div>
+  <div class="qr-row"><div class="qr-fn">Parameter(name, symbol=None, indices=(), ...)</div><div class="qr-desc">Parameter or indexed coupling tensor</div></div>
+
+  <h3 style="margin-top:24px">Model &amp; Compilation</h3>
+  <div class="qr-row"><div class="qr-fn">Model(expr, gauge_groups=(...))</div><div class="qr-desc">Declare the model</div></div>
+  <div class="qr-row"><div class="qr-fn">Model(..., lagrangian_decl=expr)</div><div class="qr-desc">Declare source-level factors explicitly</div></div>
+  <div class="qr-row"><div class="qr-fn">DeclaredLagrangian.from_item(expr)</div><div class="qr-desc">Wrap source declarations explicitly</div></div>
+  <div class="qr-row"><div class="qr-fn">model.lagrangian()</div><div class="qr-desc">Compile and cache; returns CompiledLagrangian</div></div>
+  <div class="qr-row"><div class="qr-fn">model.validate()</div><div class="qr-desc">Source-level validation report</div></div>
+
+  <h3 style="margin-top:24px">Declarative Factors (inside <code>lagrangian_decl</code>)</h3>
+  <div class="qr-row"><div class="qr-fn">Gamma(mu)</div><div class="qr-desc">Dirac gamma matrix γ^μ</div></div>
+  <div class="qr-row"><div class="qr-fn">Gamma5()</div><div class="qr-desc">Dirac γ5 matrix</div></div>
+  <div class="qr-row"><div class="qr-fn">PartialD(field, mu)</div><div class="qr-desc">Ordinary partial derivative ∂_μ field</div></div>
+  <div class="qr-row"><div class="qr-fn">CovD(field, mu)</div><div class="qr-desc">Gauge covariant derivative D_μ = ∂_μ - igA_μ</div></div>
+  <div class="qr-row"><div class="qr-fn">FieldStrength(group, mu, nu[, a])</div><div class="qr-desc">Field strength F_{μν}; adjoint index required for non-abelian</div></div>
+  <div class="qr-row"><div class="qr-fn">GaugeFixing(group, xi=...)</div><div class="qr-desc">Linear covariant gauge-fixing term</div></div>
+  <div class="qr-row"><div class="qr-fn">GhostLagrangian(group)</div><div class="qr-desc">Ordinary non-abelian Faddeev-Popov ghost declaration</div></div>
+
+  <h3 style="margin-top:24px">Extraction</h3>
+  <div class="qr-row"><div class="qr-fn">L.feynman_rule(F1, F2, ...)</div><div class="qr-desc">One vertex for those external fields</div></div>
+  <div class="qr-row"><div class="qr-fn">L.feynman_rule()</div><div class="qr-desc">All vertices as dict keyed by name tuple</div></div>
+  <div class="qr-row"><div class="qr-fn">L.vertex_signatures(...)</div><div class="qr-desc">Grouped signatures without computing expressions</div></div>
+  <div class="qr-row"><div class="qr-fn">L.vertex_report(...)</div><div class="qr-desc">Filtered signatures with count summary</div></div>
+
+  <h3 style="margin-top:24px">Compiled Lagrangian Layer</h3>
+  <div class="qr-row"><div class="qr-fn">L.to_symbolica()</div><div class="qr-desc">Export / display compiled L as a Symbolica Expression</div></div>
+  <div class="qr-row"><div class="qr-fn">L.to_symbolica(derivative_style="coordinate")</div><div class="qr-desc">Explicit spacetime-coordinate export</div></div>
+  <div class="qr-row"><div class="qr-fn">L.to_symbolica(flavor_expand=True)</div><div class="qr-desc">Per-member flavor expansion in the export</div></div>
+  <div class="qr-row"><div class="qr-fn">L.apply_operator(op)</div><div class="qr-desc">Apply a FieldOperator or TermOperator to L</div></div>
+  <div class="qr-row"><div class="qr-fn">L.apply_operators(op1, op2, ...)</div><div class="qr-desc">Apply a sequence of operators left-to-right</div></div>
+  <div class="qr-row"><div class="qr-fn">L.operator_bracket(opA, opB)</div><div class="qr-desc">Graded commutator [A, B]</div></div>
+  <div class="qr-row"><div class="qr-fn">L.ibp_normal_form()</div><div class="qr-desc">Scalar-only v1 IBP normal form</div></div>
+
+  <h3 style="margin-top:24px">Operator Constructors</h3>
+  <div class="qr-row"><div class="qr-fn">replacement_operator(name, {F: repl})</div><div class="qr-desc">Simple field substitution</div></div>
+  <div class="qr-row"><div class="qr-fn">FieldOperator(name, parity, on_field)</div><div class="qr-desc">Slot-wise operator with graded Leibniz</div></div>
+  <div class="qr-row"><div class="qr-fn">TermOperator(name, apply_to_term)</div><div class="qr-desc">Whole-term operator (no Leibniz expansion)</div></div>
+  <div class="qr-row"><div class="qr-fn">partial(mu[, on=Field])</div><div class="qr-desc">Runtime spacetime derivative operator</div></div>
+  <div class="qr-row"><div class="qr-fn">partial(mu, Field)</div><div class="qr-desc">Declarative shortcut for PartialD(Field, mu)</div></div>
+  <div class="qr-row"><div class="qr-fn">gauge_variation(group, parameter)</div><div class="qr-desc">Infinitesimal gauge variation δ_α</div></div>
+  <div class="qr-row"><div class="qr-fn">brst_transformation(group, ghost, ...)</div><div class="qr-desc">BRST operator s (odd, nilpotent)</div></div>
+
+  <h3 style="margin-top:24px">Expression Manipulation</h3>
+  <div class="qr-row"><div class="qr-fn">expr.expand() / .coefficient(sym)</div><div class="qr-desc">Standard Symbolica algebra on exported expression</div></div>
+  <div class="qr-row"><div class="qr-fn">pattern_coefficient(expr, pattern)</div><div class="qr-desc">Wildcard-aware coefficient extraction</div></div>
+  <div class="qr-row"><div class="qr-fn">canonize_full(expr, ...)</div><div class="qr-desc">Full tensor canonicalisation (color, Lorentz, gamma)</div></div>
+</section>
+
+</main>
+</div>
+
+<script>
+  // Active nav link tracking
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
