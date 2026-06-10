@@ -723,7 +723,8 @@ What happened:
 - the high-level `feynman_rule(...)` API was extended to expose vertex
   postprocessing options:
 
-  - `include_delta` (default `True`) to control delta-function removal
+  - `include_delta` (default `False`) to control whether the universal
+    momentum-conservation factor is kept in the displayed rule
   - `strip_externals` (default `True`) to toggle removal of external wavefunctions (amputated vs unamputated form)
   - `simplify_gamma` (default `False`) to enable gamma-matrix chain cleanup
 - these options now wire into the existing lower-level vertex postprocessing
