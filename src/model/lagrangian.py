@@ -311,12 +311,6 @@ class CompiledLagrangian:
         self.parameters = tuple(parameters)
         self._expanded_terms_cache = {}
 
-    @classmethod
-    def from_item(cls, item) -> "CompiledLagrangian":
-        if isinstance(item, CompiledLagrangian):
-            return cls(terms=item.terms, parameters=item.parameters)
-        return cls(terms=item)
-
     def __add__(self, other):
         if isinstance(other, InteractionTerm):
             return CompiledLagrangian(

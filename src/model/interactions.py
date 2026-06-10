@@ -267,16 +267,6 @@ class FieldOccurrence:
     def role(self) -> FieldRole:
         return self.field.role_for(self.conjugated)
 
-    @property
-    def spinor_label(self):
-        spinor_slots = spinor_slots_for(self.field)
-        if len(spinor_slots) != 1:
-            return None
-        return self.slot_labels.get(spinor_slots[0])
-
-    def label(self, slot: int):
-        return self.slot_labels.get(slot)
-
     def with_slot_labels(self, slot_labels: SlotLabels) -> "FieldOccurrence":
         if slot_labels.field is not self.field:
             raise ValueError("SlotLabels field does not match FieldOccurrence field.")

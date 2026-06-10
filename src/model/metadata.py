@@ -347,23 +347,6 @@ class GaugeRepresentation:
             )
         return (matches[0],)
 
-    def slot_for(self, field: "Field") -> Optional[int]:
-        """Backward-compatible helper: resolve a unique slot or None.
-
-        This preserves the original strict semantics (ambiguity -> error) unless
-        ``slot`` is explicitly set.
-        """
-        slots = self.slots_for(field)
-        if not slots:
-            return None
-        if len(slots) != 1:
-            raise ValueError(
-                f"GaugeRepresentation for index {self.index.name!r} resolved to {len(slots)} slots; "
-                "use slots_for(...) or set slot=... for a unique slot."
-            )
-        return slots[0]
-
-
 @dataclass(frozen=True)
 class GaugeGroup:
     """Gauge symmetry group declaration (mirrors M$GaugeGroups)."""
