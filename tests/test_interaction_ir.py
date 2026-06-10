@@ -7,15 +7,17 @@ from lagrangian.ibp import _occurrence_key
 from lagrangian.operator_action import _occurrence_cache_key
 from model import (
     COLOR_FUND_INDEX,
+    Field,
+    LORENTZ_INDEX,
+    dirac_field,
+    scalar_field,
+)
+from model.interactions import (
     DerivativeAction,
     DerivativeRef,
     DiracBilinear,
-    Field,
     InteractionTerm,
-    LORENTZ_INDEX,
     SlotRef,
-    dirac_field,
-    scalar_field,
 )
 
 

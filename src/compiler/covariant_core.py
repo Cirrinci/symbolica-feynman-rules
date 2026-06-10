@@ -16,12 +16,8 @@ from .spectators import (
     _spectator_identity_factor,
 )
 from lagrangian.operators import psi_bar_gamma_psi
-from model import (
-    DerivativeAction,
-    Field,
-    InteractionTerm,
-    Model,
-)
+from model import Field, Model
+from model.interactions import DerivativeAction, InteractionTerm
 from model.lagrangian import ComplexScalarKineticTerm, DiracKineticTerm
 from model.metadata import unique_spinor_slot
 
@@ -217,4 +213,3 @@ def _compile_declared_covariant_core(
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
         symbol=symbol,
     )
-

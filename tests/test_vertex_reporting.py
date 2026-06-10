@@ -6,7 +6,6 @@ from symbolica import Expression, S
 from model import (
     COLOR_FUND_INDEX,
     CovD,
-    DerivativeAction,
     PartialD,
     Field,
     FieldStrength,
@@ -15,7 +14,6 @@ from model import (
     GaugeGroup,
     GaugeRepresentation,
     GhostLagrangian,
-    InteractionTerm,
     CompiledLagrangian,
     LORENTZ_INDEX,
     SPINOR_INDEX,
@@ -23,6 +21,7 @@ from model import (
     WEAK_FUND_INDEX,
     Model,
 )
+from model.interactions import DerivativeAction, InteractionTerm
 from model.lagrangian import KNOWN_VERTEX_SECTORS
 from symbolic.spenso_structures import weak_gauge_generator, weak_structure_constant
 from symbolic.vertex_engine import I

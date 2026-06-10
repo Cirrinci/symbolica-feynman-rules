@@ -15,7 +15,6 @@ from .declared import (
     _DeclaredMonomial,
     _FieldFactor,
 )
-from .interactions import InteractionTerm
 from .lagrangian import (
     CompiledLagrangian,
     ComplexScalarKineticTerm,
@@ -72,11 +71,6 @@ _GAUGE_GROUP_DECLARATION_TERM_TYPES = (
 
 
 def _collect_declared_term_metadata(term, *, fields: list[Field], gauge_groups: list[GaugeGroup]):
-    if isinstance(term, InteractionTerm):
-        for occurrence in term.fields:
-            _append_unique_identity(fields, occurrence.field)
-        return
-
     if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
         _append_gauge_group(gauge_groups, term.gauge_group)
         if isinstance(term.field, Field):
@@ -193,6 +187,13 @@ class Model:
             ):
                 _assign_model_argument(values, slot, value)
 
+            if args and not isinstance(args[0], str) and values["lagrangian_decl"] is _MISSING:
+                raise TypeError(
+                    "Model() accepts only modern source declarations as the first positional "
+                    "argument. Compiled InteractionTerm inputs are internal-only; use "
+                    "CompiledLagrangian(terms=...) for already-lowered terms."
+                )
+
         for slot, value in (
             ("name", name),
             ("gauge_groups", gauge_groups),
@@ -220,6 +221,13 @@ class Model:
         ):
             self.lagrangian_decl = self.name
             self.name = ""
+
+        if not isinstance(self.name, str):
+            raise TypeError(
+                "Model.name must be a string. For source declarations, pass a modern "
+                "declarative expression to Model(...). Compiled InteractionTerm inputs "
+                "are internal-only; use CompiledLagrangian(terms=...)."
+            )
 
         if self.lagrangian_decl is None:
             self.lagrangian_decl = DeclaredLagrangian()

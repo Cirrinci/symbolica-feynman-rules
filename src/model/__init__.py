@@ -83,19 +83,6 @@ from .declared import (
     T,
 )
 
-# ---- interactions / compiled terms ---------------------------------------
-from .interactions import (
-    DerivativeRef,
-    DiracBilinear,
-    DerivativeAction,
-    ExternalLeg,
-    FieldOccurrence,
-    IndexBinding,
-    InteractionTerm,
-    SlotLabels,
-    SlotRef,
-)
-
 # ---- lagrangian containers (compiled + declared) -------------------------
 from .lagrangian import (
     CompiledLagrangian,

@@ -4,7 +4,8 @@ import pytest
 
 from symbolica import Expression, S
 
-from model import InteractionTerm, CompiledLagrangian, Model, dirac_field, scalar_field
+from model import CompiledLagrangian, Model, dirac_field, scalar_field
+from model.interactions import InteractionTerm
 from model.metadata import SPINOR_KIND
 
 

@@ -327,7 +327,8 @@ def test_model_validate_reports_missing_nonabelian_representation_for_explicit_t
 
 
 def test_compiled_validate_diagonal_complex_scalar_mass_term_passes_silently():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     scalar = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
     lagrangian = CompiledLagrangian(terms=(
@@ -344,7 +345,8 @@ def test_compiled_validate_diagonal_complex_scalar_mass_term_passes_silently():
 
 
 def test_compiled_validate_diagonal_real_scalar_mass_term_passes_silently():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     lagrangian = CompiledLagrangian(terms=(
@@ -358,7 +360,8 @@ def test_compiled_validate_diagonal_real_scalar_mass_term_passes_silently():
 
 
 def test_compiled_validate_diagonal_dirac_mass_term_passes_silently():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
     lagrangian = CompiledLagrangian(terms=(
@@ -375,7 +378,8 @@ def test_compiled_validate_diagonal_dirac_mass_term_passes_silently():
 
 
 def test_compiled_validate_reports_scalar_mass_mixing():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     phi1 = make_complex_scalar("Phi1", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
     phi2 = make_complex_scalar("Phi2", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
@@ -398,7 +402,8 @@ def test_compiled_validate_reports_scalar_mass_mixing():
 
 
 def test_compiled_validate_reports_scalar_mass_mixing_for_same_name_distinct_fields():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     phi1 = make_complex_scalar("Phi", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
     phi2 = make_complex_scalar("Phi", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
@@ -417,7 +422,8 @@ def test_compiled_validate_reports_scalar_mass_mixing_for_same_name_distinct_fie
 
 
 def test_compiled_validate_reports_fermion_mass_mixing():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
     chi = make_dirac_fermion("Chi", symbol=S("chi"), conjugate_symbol=S("chibar"))
@@ -440,7 +446,8 @@ def test_compiled_validate_reports_fermion_mass_mixing():
 
 
 def test_compiled_validate_skips_noncanonical_complex_scalar_pair():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     phi1 = make_complex_scalar("Phi1", symbol=S("phi1"), conjugate_symbol=S("phi1dag"))
     phi2 = make_complex_scalar("Phi2", symbol=S("phi2"), conjugate_symbol=S("phi2dag"))
@@ -458,7 +465,8 @@ def test_compiled_validate_skips_noncanonical_complex_scalar_pair():
 
 
 def test_compiled_validate_skips_noncanonical_fermion_pair():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))
     chi = make_dirac_fermion("Chi", symbol=S("chi"), conjugate_symbol=S("chibar"))
@@ -507,7 +515,8 @@ def test_compiled_validate_skips_kinetic_bilinears_with_derivatives():
 
 
 def test_compiled_validate_ignores_higher_arity_interactions():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     chi = Field("Chi", spin=0, self_conjugate=True, symbol=S("chi"))
@@ -529,7 +538,8 @@ def test_compiled_validate_ignores_higher_arity_interactions():
 
 
 def test_compiled_validate_skips_mixed_statistics_bilinears():
-    from model import InteractionTerm, CompiledLagrangian
+    from model import CompiledLagrangian
+    from model.interactions import InteractionTerm
 
     phi = make_complex_scalar("Phi", symbol=S("phi"), conjugate_symbol=S("phidag"))
     psi = make_dirac_fermion("Psi", symbol=S("psi"), conjugate_symbol=S("psibar"))

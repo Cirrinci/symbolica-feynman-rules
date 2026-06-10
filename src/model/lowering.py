@@ -2047,8 +2047,8 @@ def _unsupported_declared_source_term_error():
         "F^n operators contracted with StructureConstant(...)), "
         "local monomials built from fields, PartialD(...), and one optional Gamma(...), "
         "pure local field monomials like lam * Phi * Phi * Phi * Phi, "
-        "plus explicit InteractionTerm / GaugeFixing(...) / GhostLagrangian(...) "
-        "or the legacy GaugeFixingTerm / GhostTerm declarations."
+        "plus GaugeFixing(...) / GhostLagrangian(...) or the legacy "
+        "GaugeFixingTerm / GhostTerm declarations."
     )
 
 
@@ -2085,7 +2085,6 @@ def _declared_source_terms_from_item(item):
             GaugeFixingTerm,
             GhostLagrangianDeclaration,
             GhostTerm,
-            InteractionTerm,
         ),
     ):
         return (item,)
@@ -2126,8 +2125,6 @@ def _source_term_interaction(
     *,
     parameters: Sequence[Parameter] = (),
 ) -> Optional[InteractionTerm]:
-    if isinstance(term, InteractionTerm):
-        return term
     if isinstance(term, _DeclaredMonomial):
         return _lower_local_interaction_monomial(term, parameters=parameters)
     return None
@@ -2212,7 +2209,6 @@ def _validate_declared_source_term(term, *, parameters: Sequence[Parameter] = ()
     if isinstance(
         term,
         (
-            InteractionTerm,
             DiracKineticTerm,
             ComplexScalarKineticTerm,
             GaugeFixingDeclaration,

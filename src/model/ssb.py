@@ -29,7 +29,8 @@ from symbolic.spenso_structures import chiral_projector_left, gamma_matrix, lore
 from .core import Model
 from .declared import PartialD
 from .interactions import DerivativeAction, InteractionTerm
-from .lagrangian import DeclaredLagrangian
+from .lagrangian import CompiledLagrangian
+from .lowering import _analyze_declared_source_term
 from .metadata import (
     Field,
     IndexType,
@@ -1618,12 +1619,25 @@ def build_broken_electroweak_sector(
         *(assignment.down_field for assignment in charged_current_mixings),
     )
     fermion_fields = tuple(field for field in physical_fields if field.kind == "fermion")
+    compiled_terms: list[InteractionTerm] = []
+    for term in lagrangian_terms:
+        if isinstance(term, InteractionTerm):
+            compiled_terms.append(term)
+            continue
+
+        analyzed = _analyze_declared_source_term(term)
+        if analyzed is None or analyzed.interaction is None:
+            raise ValueError(
+                "Broken electroweak-sector construction produced a declarative term "
+                "that does not lower directly to one compiled local interaction."
+            )
+        compiled_terms.append(analyzed.interaction)
 
     model = Model(
         name=name,
         fields=physical_fields,
-        lagrangian_decl=DeclaredLagrangian(source_terms=tuple(lagrangian_terms)),
     )
+    model._compiled_lagrangian = CompiledLagrangian(terms=tuple(compiled_terms))
 
     return BrokenElectroweakSector(
         model=model,
@@ -1664,3 +1678,32 @@ def build_broken_electroweak_sector(
         matrix_yukawas=tuple(matrix_yukawas),
         charged_current_mixings=tuple(charged_current_mixings),
     )
+
+
+__all__ = (
+    "FLAVOR_INDEX",
+    "LinearTerm",
+    "LinearRelation",
+    "DiagonalYukawaAssignment",
+    "FlavorMatrix",
+    "FlavorMatrixYukawaAssignment",
+    "CKMChargedCurrentAssignment",
+    "ElectroweakMassSpectrum",
+    "BrokenElectroweakFields",
+    "ElectroweakGaugeCouplings",
+    "HiggsPotentialData",
+    "ElectroweakGaugeFixing",
+    "BrokenElectroweakSector",
+    "electroweak_gz",
+    "electroweak_sin_theta_w",
+    "electroweak_cos_theta_w",
+    "electroweak_mw",
+    "electroweak_mz",
+    "electroweak_e",
+    "electroweak_gwwz",
+    "standard_model_higgs_doublet",
+    "electroweak_higgs_vev_expansion",
+    "electroweak_charged_gauge_mixing",
+    "electroweak_neutral_gauge_mixing",
+    "build_broken_electroweak_sector",
+)

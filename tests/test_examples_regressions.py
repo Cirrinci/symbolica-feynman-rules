@@ -6,7 +6,6 @@ from symbolica import S
 
 from model import (
     Field,
-    InteractionTerm,
     Model,
     ROLE_PSI,
     ROLE_PSIBAR,
@@ -14,6 +13,7 @@ from model import (
     ROLE_SCALAR_DAG,
     ROLE_VECTOR,
 )
+from model.interactions import InteractionTerm
 from symbolic.vertex_engine import Delta, I, pi, vertex_factor
 
 
@@ -69,20 +69,25 @@ def test_model_same_symbol_distinct_roles_do_not_match():
         model.feynman_rule(vector)
 
 
-def test_interaction_term_arithmetic_with_declared_expr_keeps_feynman_rule_api():
+def test_interaction_term_does_not_compose_with_declared_model_source():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     g = S("g")
     y = S("y")
     term = InteractionTerm(coupling=g, fields=(phi.occurrence(),))
     declared_expr = y * phi * phi
 
-    left = term + declared_expr
-    right = declared_expr + term
+    with pytest.raises(TypeError):
+        _ = term + declared_expr
+    with pytest.raises(TypeError):
+        _ = declared_expr + term
 
-    assert _canon(left.feynman_rule(phi)) == _canon(I * g)
-    assert _canon(left.feynman_rule(phi, phi)) == _canon(2 * I * y)
-    assert _canon(right.feynman_rule(phi)) == _canon(I * g)
-    assert _canon(right.feynman_rule(phi, phi)) == _canon(2 * I * y)
+
+def test_model_rejects_compiled_interaction_term_as_source_input():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    term = InteractionTerm(coupling=S("g"), fields=(phi.occurrence(),))
+
+    with pytest.raises(TypeError, match="CompiledLagrangian\\(terms=...\\)"):
+        Model(term)
 
 
 def test_field_role_object_semantics():

@@ -44,11 +44,9 @@ from .spectators import (
 from model import (
     CovD,
     CovariantDerivativeFactor,
-    DerivativeAction,
     Field,
     GaugeGroup,
     GaugeRepresentation,
-    InteractionTerm,
     Model,
     PartialD,
 )
@@ -70,6 +68,7 @@ from model.lowering import (
     _expand_field_strengths_in_monomial,
     _lower_local_interaction_monomial,
 )
+from model.interactions import DerivativeAction, InteractionTerm
 from symbolic.spenso_structures import lorentz_metric
 from model.metadata import (
     is_lorentz_index,
@@ -1229,7 +1228,7 @@ def _compile_generic_declared_covariant_monomial(
         if interaction is None:
             raise ValueError(
                 "Could not lower a declarative monomial after expanding CovD(...). "
-                "Use InteractionTerm(...) for unsupported non-local orderings."
+                "That structure is not covered by the modern declarative Model(...) API."
             )
         interactions.append(interaction)
     return tuple(interactions)

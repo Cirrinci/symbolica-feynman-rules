@@ -961,7 +961,7 @@ class Field:
         return unpacked
 
     def occurrence(self, *, conjugated: bool = False, labels: Optional[dict] = None):
-        """Create a FieldOccurrence of this field in an interaction term."""
+        """Internal helper: create one backend FieldOccurrence."""
         from .interactions import FieldOccurrence
 
         return FieldOccurrence(
@@ -984,7 +984,7 @@ class Field:
         spin=None,
         labels: Optional[dict] = None,
     ):
-        """Create an ExternalLeg for this field."""
+        """Internal helper: create one backend ExternalLeg."""
         from .interactions import ExternalLeg
 
         return ExternalLeg(
@@ -1017,7 +1017,7 @@ class Field:
         return _DeclaredMonomial.from_factor(_FieldFactor(self)).__radd__(other)
 
     def __call__(self, *labels, conjugated: bool = False, index_labels: Optional[Mapping] = None):
-        """Shorthand for ``field.occurrence(...)`` with positional slot labels.
+        """Public shorthand for one labeled field factor in a declaration.
 
         Positional labels follow ``field.indices`` order exactly. For example,
         if ``field.indices == (SPINOR_INDEX, COLOR_FUND_INDEX)``, then
@@ -1066,7 +1066,7 @@ class ConjugateField:
         return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__radd__(other)
 
     def __call__(self, *labels, index_labels: Optional[Mapping] = None):
-        """Shorthand for ``field.occurrence(conjugated=True, ...)``.
+        """Public shorthand for one conjugated labeled field factor.
 
         Positional labels follow ``field.indices`` order exactly, just like
         ``Field.__call__``.

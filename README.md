@@ -38,6 +38,21 @@ Live source code is organized as split packages rather than flat top-level files
 
 Walkthrough notebooks live under `notebooks/`.
 
+### Canonical notebooks for the modern API
+
+The current cleanup target is to keep only the modern public API illustrated in
+the notebooks below. When older entry points or compatibility layers disagree
+with these notebooks, treat the notebook workflow as the source of truth.
+
+- `notebooks/list_lagrangians.ipynb`
+- `notebooks/field_strength_operators_walkthrough.ipynb`
+- `notebooks/flavor_expansion_walkthrough.ipynb`
+- `notebooks/index_handling.ipynb`
+- `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
+
+`notebooks/codebase_workflow_walkthrough.ipynb` is the next workflow notebook to
+bring into line with that modern API surface.
+
 ### Current status
 
 What is already solid in the active code path:
@@ -147,7 +162,7 @@ local/already-expanded operators and metadata-dependent declarations, and
 There is no separate `Lagrangian` source class. `model.lagrangian()` compiles a
 declaration into a `CompiledLagrangian` term container, which is also
 constructible directly as `CompiledLagrangian(terms=...)` from already-lowered
-`InteractionTerm` objects.
+internal compiled terms.
 
 For compact FeynRules-style index notation, plain symbols such as
 `f, h, col = S("f", "h", "col")` are still valid. During lowering, each label

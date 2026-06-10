@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from symbolica import Expression, S
 
-from model import Field, InteractionTerm
+from model import Field
+from model.interactions import InteractionTerm
 from model.metadata import is_lorentz_index
 from typing import Optional
 
@@ -66,8 +67,8 @@ def _materialize_spectator_occurrences(spectators: tuple[tuple[Field, bool], ...
             if len(plain_positions) != len(conj_positions):
                 raise ValueError(
                     f"Declarative spectator fermions for field {field.name!r} must appear in "
-                    "explicit bar/psi pairs. Use InteractionTerm(...) for unpaired or more "
-                    "complicated spinor structures."
+                    "explicit bar/psi pairs. Unpaired or more complicated spinor structures "
+                    "are not covered by the modern declarative Model(...) API."
                 )
             pair_count = len(plain_positions)
         elif field.self_conjugate:

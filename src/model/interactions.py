@@ -501,21 +501,16 @@ class InteractionTerm:
         )
 
     def __add__(self, other):
-        from .lagrangian import CompiledLagrangian, DeclaredLagrangian
-        from .lowering import _declared_source_terms_from_item
+        from .lagrangian import CompiledLagrangian
 
         if isinstance(other, InteractionTerm):
             return CompiledLagrangian(terms=(self, other))
         if isinstance(other, CompiledLagrangian):
             return CompiledLagrangian(terms=(self,) + other.terms)
-        decl_terms = _declared_source_terms_from_item(other)
-        if decl_terms is not None:
-            return DeclaredLagrangian(source_terms=(self,) + decl_terms)
         return NotImplemented
 
     def __radd__(self, other):
-        from .lagrangian import CompiledLagrangian, DeclaredLagrangian
-        from .lowering import _declared_source_terms_from_item
+        from .lagrangian import CompiledLagrangian
 
         if other == 0:
             return CompiledLagrangian(terms=(self,))
@@ -523,9 +518,6 @@ class InteractionTerm:
             return CompiledLagrangian(terms=(other, self))
         if isinstance(other, CompiledLagrangian):
             return CompiledLagrangian(terms=other.terms + (self,))
-        decl_terms = _declared_source_terms_from_item(other)
-        if decl_terms is not None:
-            return DeclaredLagrangian(source_terms=decl_terms + (self,))
         return NotImplemented
 
     def feynman_rule(
