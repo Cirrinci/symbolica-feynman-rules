@@ -467,6 +467,7 @@ class Parameter:
     value: object = None
     components: Mapping[tuple[object, ...], object] = field(default_factory=dict)
     allow_summation: Optional[bool] = None
+    unitary_partner: object = None
 
     def __post_init__(self):
         if self.symbol is None:
@@ -679,6 +680,7 @@ class Field:
     mass: object = None
     quantum_numbers: Mapping[str, object] = field(default_factory=dict)
     ghost_of: object = None
+    goldstone_of: object = None
     flavor_index: Optional[IndexType] = None
     class_members: tuple = ()
 
@@ -814,6 +816,7 @@ class Field:
             str(self.mass),
             quantum_numbers,
             _field_reference_text(self.ghost_of),
+            _field_reference_text(self.goldstone_of),
             None
             if self.flavor_index is None
             else (

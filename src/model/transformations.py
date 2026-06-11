@@ -21,6 +21,7 @@ from .metadata import (
     Field,
     IndexType,
     Parameter,
+    is_spinor_index,
     representation_family,
 )
 
@@ -78,19 +79,29 @@ class TransformationContext:
     occurrence: FieldOccurrence
     term: InteractionTerm
     slot: int
-    _used_labels: set[str] = dataclass_field(default_factory=set)
-    _counter: int = 0
+    _label_pool: "FreshLabelPool" = dataclass_field(
+        default_factory=lambda: FreshLabelPool()
+    )
 
     def label(self, slot: int):
         return self.occurrence.slot_labels.get(slot)
 
     def fresh(self, index: IndexType, stem: str = "transform"):
+        return self._label_pool.fresh(index, stem)
+
+
+@dataclass
+class FreshLabelPool:
+    used_labels: set[str] = dataclass_field(default_factory=set)
+    counter: int = 0
+
+    def fresh(self, index: IndexType, stem: str = "transform"):
         prefix = index.prefix or index.kind
         while True:
-            self._counter += 1
-            candidate = S(f"{prefix}_{stem}_{self._counter}")
-            if _key(candidate) not in self._used_labels:
-                self._used_labels.add(_key(candidate))
+            self.counter += 1
+            candidate = S(f"{prefix}_{stem}_{self.counter}")
+            if _key(candidate) not in self.used_labels:
+                self.used_labels.add(_key(candidate))
                 return candidate
 
 
@@ -207,6 +218,27 @@ def _term_used_labels(term: InteractionTerm) -> set[str]:
     return {_key(binding.label) for binding in term.index_bindings}
 
 
+def _is_symbolic_label(value) -> bool:
+    return value is not None and not _is_fixed_component(value)
+
+
+def _is_conjugated_occurrence(occurrence: FieldOccurrence) -> bool:
+    return bool(occurrence.conjugated and not occurrence.field.self_conjugate)
+
+
+def _rule_handles_occurrence(
+    rule: FieldTransformation,
+    occurrence: FieldOccurrence,
+) -> bool:
+    if not _is_conjugated_occurrence(occurrence):
+        return True
+    return (
+        rule.conjugate_builder is not None
+        or rule.conjugate_terms is not None
+        or rule.auto_conjugate
+    )
+
+
 def _rule_terms(
     rule: FieldTransformation,
     *,
@@ -214,14 +246,15 @@ def _rule_terms(
     term: InteractionTerm,
     slot: int,
     real_symbols: Sequence[object],
+    label_pool: FreshLabelPool,
 ) -> tuple[ReplacementTerm, ...]:
     context = TransformationContext(
         occurrence=occurrence,
         term=term,
         slot=slot,
-        _used_labels=_term_used_labels(term),
+        _label_pool=label_pool,
     )
-    conjugated = bool(occurrence.conjugated and not occurrence.field.self_conjugate)
+    conjugated = _is_conjugated_occurrence(occurrence)
     if conjugated:
         if rule.conjugate_builder is not None:
             return tuple(rule.conjugate_builder(context))
@@ -236,7 +269,9 @@ def _rule_terms(
             )
         if rule.auto_conjugate:
             return _conjugate_terms(rule.terms, real_symbols=real_symbols)
-        return ()
+        raise ValueError(
+            f"Transformation {rule.display_name!r} does not define a conjugate replacement."
+        )
 
     if rule.builder is not None:
         return tuple(rule.builder(context))
@@ -244,40 +279,94 @@ def _rule_terms(
 
 
 def _validate_acyclic(rules: Sequence[FieldTransformation]) -> None:
-    sources = {rule.source for rule in rules}
-    graph = {
-        rule.source: tuple(
-            field for field in rule.referenced_fields() if field in sources
-        )
-        for rule in rules
+    source_to_rule_ids: dict[Field, tuple[int, ...]] = {}
+    for rule_id, rule in enumerate(rules):
+        source_to_rule_ids.setdefault(rule.source, [])
+        source_to_rule_ids[rule.source].append(rule_id)
+    source_to_rule_ids = {
+        field: tuple(rule_ids)
+        for field, rule_ids in source_to_rule_ids.items()
     }
-    visiting: set[Field] = set()
-    visited: set[Field] = set()
 
-    def visit(field: Field, path: tuple[Field, ...]):
-        if field in visiting:
-            cycle = path[path.index(field) :] + (field,)
+    def explicit_targets(rule: FieldTransformation) -> tuple[FieldOccurrence, ...]:
+        terms = tuple(rule.terms)
+        if rule.conjugate_terms is not None:
+            terms += tuple(rule.conjugate_terms)
+        return tuple(
+            occurrence
+            for term in terms
+            for occurrence in term.occurrences()
+        )
+
+    def target_rule_ids_for_occurrence(
+        occurrence: FieldOccurrence,
+    ) -> tuple[int, ...]:
+        return tuple(
+            rule_id
+            for rule_id in source_to_rule_ids.get(occurrence.field, ())
+            if (
+                rules[rule_id].matches(occurrence)
+                and _rule_handles_occurrence(rules[rule_id], occurrence)
+            )
+        )
+
+    graph = {
+        rule_id: tuple(
+            dict.fromkeys(
+                target_rule_id
+                for dependency in rules[rule_id].dependencies
+                for target_rule_id in source_to_rule_ids.get(dependency, ())
+            )
+        ) + tuple(
+            target_rule_id
+            for occurrence in explicit_targets(rules[rule_id])
+            for target_rule_id in target_rule_ids_for_occurrence(occurrence)
+        )
+        for rule_id in range(len(rules))
+    }
+
+    visiting: set[int] = set()
+    visited: set[int] = set()
+
+    def rule_name(rule: FieldTransformation) -> str:
+        if rule.name:
+            return rule.name
+        if not rule.components:
+            return rule.source.name
+        qualifiers = ",".join(
+            f"{slot + 1}={_key(value)}"
+            for slot, value in sorted(rule.components.items())
+        )
+        return f"{rule.source.name}[{qualifiers}]"
+
+    def visit(rule_id: int, path: tuple[int, ...]):
+        if rule_id in visiting:
+            cycle = path[path.index(rule_id) :] + (rule_id,)
             raise CyclicTransformationError(
                 "Cyclic field transformations: "
-                + " -> ".join(item.name for item in cycle)
+                + " -> ".join(rule_name(rules[item]) for item in cycle)
             )
-        if field in visited:
+        if rule_id in visited:
             return
-        visiting.add(field)
-        for target in graph.get(field, ()):
+        visiting.add(rule_id)
+        for target in graph.get(rule_id, ()):
             visit(target, path + (target,))
-        visiting.remove(field)
-        visited.add(field)
+        visiting.remove(rule_id)
+        visited.add(rule_id)
 
-    for source in graph:
-        visit(source, (source,))
+    for rule_id in graph:
+        visit(rule_id, (rule_id,))
 
 
 def _matching_rule(
     occurrence: FieldOccurrence,
     rules: Sequence[FieldTransformation],
 ) -> Optional[FieldTransformation]:
-    matches = [rule for rule in rules if rule.matches(occurrence)]
+    matches = [
+        rule
+        for rule in rules
+        if rule.matches(occurrence) and _rule_handles_occurrence(rule, occurrence)
+    ]
     if len(matches) > 1:
         names = ", ".join(rule.display_name for rule in matches)
         raise ValueError(
@@ -286,14 +375,221 @@ def _matching_rule(
     return matches[0] if matches else None
 
 
+def _parameter_lookup(parameters: Sequence[object]) -> dict[str, Parameter]:
+    lookup: dict[str, Parameter] = {}
+    for parameter in parameters:
+        if not isinstance(parameter, Parameter) or not parameter.indices:
+            continue
+        symbol = parameter.symbol
+        if not hasattr(symbol, "to_atom_tree"):
+            continue
+        lookup[_atom_symbol_name(symbol.to_atom_tree().head)] = parameter
+    return lookup
+
+
+def _field_binding_multiplicities(
+    term: InteractionTerm,
+) -> tuple[dict[tuple[IndexType, str], object], dict[tuple[IndexType, str], int]]:
+    labels: dict[tuple[IndexType, str], object] = {}
+    multiplicities: dict[tuple[IndexType, str], int] = {}
+    for binding in term.index_bindings:
+        if not _is_symbolic_label(binding.label) or is_spinor_index(binding.index):
+            continue
+        key = (binding.index, _key(binding.label))
+        labels[key] = binding.label
+        multiplicities[key] = binding.multiplicity
+    return labels, multiplicities
+
+
+def _known_label_types(
+    *terms: InteractionTerm,
+) -> dict[str, tuple[IndexType, ...]]:
+    labels: dict[str, list[IndexType]] = {}
+    for term in terms:
+        for binding in term.index_bindings:
+            if not _is_symbolic_label(binding.label):
+                continue
+            labels.setdefault(_key(binding.label), [])
+            if binding.index not in labels[_key(binding.label)]:
+                labels[_key(binding.label)].append(binding.index)
+    return {
+        label_key: tuple(indices)
+        for label_key, indices in labels.items()
+    }
+
+
+def _coefficient_label_multiplicities(
+    coupling,
+    *,
+    known_indices: Sequence[IndexType],
+    known_label_types: Mapping[str, Sequence[IndexType]],
+    parameters: Sequence[object],
+) -> tuple[dict[tuple[IndexType, str], object], dict[tuple[IndexType, str], int]]:
+    if not hasattr(coupling, "to_atom_tree"):
+        return {}, {}
+
+    indices_by_family: dict[str, tuple[IndexType, ...]] = {}
+    for index in dict.fromkeys(known_indices):
+        family = representation_family(index.representation)
+        indices_by_family.setdefault(family, [])
+        if index not in indices_by_family[family]:
+            indices_by_family[family].append(index)
+    indices_by_family = {
+        family: tuple(indices)
+        for family, indices in indices_by_family.items()
+    }
+    parameter_lookup = _parameter_lookup(parameters)
+    labels: dict[tuple[IndexType, str], object] = {}
+    multiplicities: dict[tuple[IndexType, str], int] = {}
+
+    def count(index: IndexType, label) -> None:
+        if is_spinor_index(index):
+            return
+        key = (index, _key(label))
+        labels[key] = label
+        multiplicities[key] = multiplicities.get(key, 0) + 1
+
+    def resolve_representation_index(
+        representation: str,
+        label,
+    ) -> Optional[IndexType]:
+        candidates = indices_by_family.get(representation, ())
+        if len(candidates) == 1:
+            return candidates[0]
+        if not candidates:
+            return None
+
+        label_key = _key(label)
+        from_known_labels = tuple(
+            candidate
+            for candidate in candidates
+            if candidate in known_label_types.get(label_key, ())
+        )
+        if len(from_known_labels) == 1:
+            return from_known_labels[0]
+
+        prefix_matches = tuple(
+            candidate
+            for candidate in candidates
+            if label_key.startswith(candidate.prefix or candidate.kind)
+        )
+        if len(prefix_matches) == 1:
+            return prefix_matches[0]
+        return None
+
+    def visit(node) -> None:
+        atom_type = str(node.atom_type)
+        if atom_type == "AtomType.Fn":
+            parameter = parameter_lookup.get(_atom_symbol_name(node.head))
+            if parameter is not None and len(node.tail) == len(parameter.indices):
+                for argument, index in zip(node.tail, parameter.indices):
+                    if str(argument.atom_type) != "AtomType.Var":
+                        continue
+                    count(index, S(_atom_symbol_name(argument.head)))
+
+            if len(node.tail) == 2:
+                dimension_node, label_node = node.tail
+                if str(label_node.atom_type) == "AtomType.Var":
+                    label = S(_atom_symbol_name(label_node.head))
+                    representation = f"{node.head.rsplit('::', 1)[-1]}({dimension_node.head})"
+                    index = resolve_representation_index(representation, label)
+                    if index is not None:
+                        count(index, label)
+
+        for child in node.tail:
+            visit(child)
+
+    visit(coupling.to_atom_tree())
+    return labels, multiplicities
+
+
+def _term_label_multiplicities(
+    term: InteractionTerm,
+    *,
+    reference_terms: Sequence[InteractionTerm],
+    parameters: Sequence[object],
+) -> dict[tuple[IndexType, str], tuple[object, int]]:
+    labels, multiplicities = _field_binding_multiplicities(term)
+    known_label_types = _known_label_types(*reference_terms)
+    known_indices = tuple(
+        dict.fromkeys(
+            binding.index
+            for reference in reference_terms
+            for binding in reference.index_bindings
+        )
+    )
+    coefficient_labels, coefficient_multiplicities = _coefficient_label_multiplicities(
+        term.coupling,
+        known_indices=known_indices,
+        known_label_types=known_label_types,
+        parameters=parameters,
+    )
+    for key, label in coefficient_labels.items():
+        labels.setdefault(key, label)
+        multiplicities[key] = multiplicities.get(key, 0) + coefficient_multiplicities[key]
+    return {
+        key: (labels[key], multiplicity)
+        for key, multiplicity in multiplicities.items()
+    }
+
+
+def _validate_index_structure(
+    *,
+    original: InteractionTerm,
+    transformed: InteractionTerm,
+    transformation_names: Sequence[str],
+    parameters: Sequence[object],
+) -> None:
+    reference_terms = (original, transformed)
+    original_bindings = _term_label_multiplicities(
+        original,
+        reference_terms=reference_terms,
+        parameters=parameters,
+    )
+    transformed_bindings = _term_label_multiplicities(
+        transformed,
+        reference_terms=reference_terms,
+        parameters=parameters,
+    )
+    stage_name = ", ".join(dict.fromkeys(transformation_names)) or "field transformation"
+
+    for key, (label, original_multiplicity) in original_bindings.items():
+        transformed_multiplicity = transformed_bindings.get(key, (label, 0))[1]
+        if transformed_multiplicity == original_multiplicity:
+            continue
+        if original_multiplicity == 1 or transformed_multiplicity == 1:
+            raise ValueError(
+                f"{stage_name} changes free index {label!r} of type "
+                f"{key[0].name!r} from multiplicity {original_multiplicity} to "
+                f"{transformed_multiplicity}. Preserve the index explicitly or use "
+                "a fixed component."
+            )
+        raise ValueError(
+            f"{stage_name} changes index {label!r} of type {key[0].name!r} from "
+            f"multiplicity {original_multiplicity} to {transformed_multiplicity}. "
+            "Preserve contracted labels explicitly in the replacement."
+        )
+
+    for key, (label, multiplicity) in transformed_bindings.items():
+        if key in original_bindings or multiplicity != 1:
+            continue
+        raise ValueError(
+            f"{stage_name} introduces new free index {label!r} of type "
+            f"{key[0].name!r}. Preserve only the source free indices, or close "
+            "new labels inside the replacement."
+        )
+
+
 def _transform_term_once(
     term: InteractionTerm,
     *,
     rules: Sequence[FieldTransformation],
     real_symbols: Sequence[object],
+    parameters: Sequence[object],
 ) -> tuple[InteractionTerm, ...]:
     from lagrangian.operator_action import splice_field_replacement
 
+    label_pool = FreshLabelPool(used_labels=_term_used_labels(term))
     selected: list[Optional[tuple[FieldTransformation, tuple[ReplacementTerm, ...]]]] = []
     for slot, occurrence in enumerate(term.fields):
         rule = _matching_rule(occurrence, rules)
@@ -309,6 +605,7 @@ def _transform_term_once(
                     term=term,
                     slot=slot,
                     real_symbols=real_symbols,
+                    label_pool=label_pool,
                 ),
             )
         )
@@ -323,6 +620,11 @@ def _transform_term_once(
         for slot, item in enumerate(selected)
     ]
     output: list[InteractionTerm] = []
+    transformation_names = tuple(
+        item[0].display_name
+        for item in selected
+        if item is not None
+    )
     for selected_terms in product(*choices):
         branches = (term,)
         for slot in reversed(range(len(term.fields))):
@@ -352,7 +654,14 @@ def _transform_term_once(
                     )
                 )
             branches = tuple(next_branches)
-        output.extend(branches)
+        for branch in branches:
+            _validate_index_structure(
+                original=term,
+                transformed=branch,
+                transformation_names=transformation_names,
+                parameters=parameters,
+            )
+            output.append(branch)
     return tuple(output)
 
 
@@ -387,14 +696,15 @@ def apply_field_transformations(
     passes = 0
     while True:
         transformed = tuple(
-            output
-            for term in current
-            for output in _transform_term_once(
-                term,
-                rules=ordered_rules,
-                real_symbols=real_symbols,
+                output
+                for term in current
+                for output in _transform_term_once(
+                    term,
+                    rules=ordered_rules,
+                    real_symbols=real_symbols,
+                    parameters=lagrangian.parameters,
+                )
             )
-        )
         passes += 1
         if not repeat or not _has_transformable_fields(transformed, ordered_rules):
             return CompiledLagrangian(

@@ -20,7 +20,7 @@ from typing import Literal, Optional, Sequence
 from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 
-from symbolic.spenso_structures import SPINOR_KIND
+from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND
 from model.metadata import is_spinor_index, spinor_kind_for
 from symbolic.vertex_postprocessing import (
     _species_key,
@@ -636,6 +636,18 @@ def contract_to_full_expression(
     open_index_slots = []
     if coupling is not None and field_index_labels is not None:
         open_index_slots = _open_index_labels(field_index_labels, field_roles)
+    derivative_open_lorentz_labels = {}
+    if field_index_labels is not None:
+        for slot_idx, kind, ordinal, label in _open_index_labels(
+            field_index_labels,
+            field_roles,
+        ):
+            if kind != LORENTZ_KIND:
+                continue
+            derivative_open_lorentz_labels[_index_label_key(label)] = (
+                slot_idx,
+                ordinal,
+            )
 
     field_index_label_counts = Counter()
     if field_index_labels is not None:
@@ -675,7 +687,21 @@ def contract_to_full_expression(
             term *= Expression.num(_fermion_sign_from_slots(perm, fermion_slots))
 
         for mu, tgt in zip(derivative_indices, derivative_targets):
-            term *= (-I) * pcomp(ps[perm[tgt]], mu)
+            mapped_mu = mu
+            if leg_index_labels is not None:
+                open_lorentz_target = derivative_open_lorentz_labels.get(
+                    _index_label_key(mu)
+                )
+                if open_lorentz_target is not None:
+                    slot_idx, ordinal = open_lorentz_target
+                    target_label = _get_label(
+                        leg_index_labels[perm[slot_idx]],
+                        LORENTZ_KIND,
+                        ordinal,
+                    )
+                    if target_label is not None:
+                        mapped_mu = target_label
+            term *= (-I) * pcomp(ps[perm[tgt]], mapped_mu)
 
         p_sum = Expression.num(0)
         for i, j in enumerate(perm):
@@ -873,4 +899,3 @@ def simplify_vertex(expr, species_map=None, external_legs=None, simplify_gamma: 
         external_legs=external_legs,
         simplify_gamma=simplify_gamma,
     )
-

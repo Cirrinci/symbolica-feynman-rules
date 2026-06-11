@@ -8,7 +8,7 @@ stage produces the physical basis.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fractions import Fraction
 from typing import Callable
 
@@ -26,7 +26,14 @@ from symbolic.spenso_structures import (
 from symbolic.vertex_engine import I
 
 from .core import Model
-from .declared import CovD, FieldStrength, Gamma, GhostLagrangian, PartialD
+from .declared import (
+    CovD,
+    FieldStrength,
+    Gamma,
+    GaugeFixing,
+    GhostLagrangian,
+    PartialD,
+)
 from .lagrangian import CompiledLagrangian, DeclaredLagrangian
 from .metadata import (
     COLOR_ADJ_INDEX,
@@ -121,9 +128,20 @@ class StandardModelParameters:
     g3: Parameter
     lam: Parameter
     vev: Parameter
+    Mvl: Parameter
+    Ml: Parameter
+    Mu: Parameter
+    Md: Parameter
+    MW: Parameter
+    MZ: Parameter
+    MH: Parameter
     sw: Parameter
     cw: Parameter
     ee: Parameter
+    xiA: Parameter
+    xiZ: Parameter
+    xiW: Parameter
+    xiG: Parameter
     Yu: Parameter
     YuDag: Parameter
     Yd: Parameter
@@ -140,6 +158,7 @@ class StandardModelLagrangians:
     LFermions: DeclaredLagrangian
     LHiggs: DeclaredLagrangian
     LYukawa: DeclaredLagrangian
+    LGaugeFixing: DeclaredLagrangian
     LGhost: DeclaredLagrangian
     LSM: DeclaredLagrangian
 
@@ -205,6 +224,131 @@ def _real_conjugate(value, *real_symbols):
     for symbol in real_symbols:
         result = result.replace(symbol.conj(), symbol)
     return result
+
+
+def _parameter_value_or_symbol(parameter: Parameter):
+    return parameter.value if parameter.value is not None else parameter.symbol
+
+
+def _electroweak_generators_and_vacuum_images(
+    parameters: StandardModelParameters,
+):
+    g1 = parameters.g1.symbol
+    g2 = parameters.g2.symbol
+    vev = parameters.vev.symbol
+    zero = Expression.num(0)
+    half = _HALF
+
+    generators = (
+        (
+            (-I * g1 * half, zero),
+            (zero, -I * g1 * half),
+        ),
+        (
+            (zero, -I * g2 * half),
+            (-I * g2 * half, zero),
+        ),
+        (
+            (zero, -g2 * half),
+            (g2 * half, zero),
+        ),
+        (
+            (-I * g2 * half, zero),
+            (zero, I * g2 * half),
+        ),
+    )
+    vacuum = (zero, vev * _INV_SQRT2)
+    vacuum_images = tuple(
+        tuple(
+            sum(
+                (matrix[row][column] * vacuum[column] for column in range(2)),
+                zero,
+            )
+            for row in range(2)
+        )
+        for matrix in generators
+    )
+    return generators, vacuum_images
+
+
+def _electroweak_omega_coefficients(
+    parameters: StandardModelParameters,
+) -> tuple[tuple[tuple[str, int, object], ...], ...]:
+    generators, vacuum_images = _electroweak_generators_and_vacuum_images(
+        parameters
+    )
+    del generators
+    g1 = parameters.g1.symbol
+    g2 = parameters.g2.symbol
+    vev = parameters.vev.symbol
+    real_symbols = (g1, g2, vev)
+
+    coefficients: list[tuple[tuple[str, int, object], ...]] = []
+    for gauge_index in range(4):
+        components: list[tuple[str, int, object]] = []
+        for component in range(2):
+            phi_coefficient = -_real_conjugate(
+                vacuum_images[gauge_index][component],
+                *real_symbols,
+            )
+            phibar_coefficient = -vacuum_images[gauge_index][component]
+            if not _is_zero(phi_coefficient):
+                components.append(("phi", component + 1, phi_coefficient))
+            if not _is_zero(phibar_coefficient):
+                components.append(("phibar", component + 1, phibar_coefficient))
+        coefficients.append(tuple(components))
+    return tuple(coefficients)
+
+
+def _electroweak_xi_matrices(
+    parameters: StandardModelParameters,
+) -> tuple[dict[tuple[int, int], object], dict[tuple[int, int], object]]:
+    sw = _parameter_value_or_symbol(parameters.sw)
+    cw = _parameter_value_or_symbol(parameters.cw)
+    xiA = _parameter_value_or_symbol(parameters.xiA)
+    xiZ = _parameter_value_or_symbol(parameters.xiZ)
+    xiW = _parameter_value_or_symbol(parameters.xiW)
+    one = Expression.num(1)
+
+    xi_inverse = {
+        (0, 0): cw**2 / xiA + sw**2 / xiZ,
+        (0, 3): cw * sw * (one / xiA - one / xiZ),
+        (1, 1): one / xiW,
+        (2, 2): one / xiW,
+        (3, 0): cw * sw * (one / xiA - one / xiZ),
+        (3, 3): sw**2 / xiA + cw**2 / xiZ,
+    }
+    xi_matrix = {
+        (0, 0): cw**2 * xiA + sw**2 * xiZ,
+        (0, 3): cw * sw * (xiA - xiZ),
+        (1, 1): xiW,
+        (2, 2): xiW,
+        (3, 0): cw * sw * (xiA - xiZ),
+        (3, 3): sw**2 * xiA + cw**2 * xiZ,
+    }
+    return xi_inverse, xi_matrix
+
+
+def _electroweak_gauge_basis_field(
+    fields: StandardModelFields,
+    *,
+    gauge_index: int,
+    lorentz_label,
+):
+    if gauge_index == 0:
+        return fields.B(lorentz_label)
+    return fields.Wi(lorentz_label, Expression.num(gauge_index))
+
+
+def _electroweak_scalar_component(
+    fields: StandardModelFields,
+    *,
+    kind: str,
+    component: int,
+):
+    if kind == "phi":
+        return fields.Phi(Expression.num(component))
+    return fields.Phi.bar(Expression.num(component))
 
 
 def standard_model_weak_tensor_components() -> dict[object, object]:
@@ -274,29 +418,11 @@ def _electroweak_scalar_ghost_lagrangian(
     stage generate the ghost masses and Higgs/Goldstone interactions.
     """
 
-    g1 = parameters.g1.symbol
-    g2 = parameters.g2.symbol
-    vev = parameters.vev.symbol
     zero = Expression.num(0)
-    half = _HALF
-    generators = (
-        (
-            (-I * g1 * half, zero),
-            (zero, -I * g1 * half),
-        ),
-        (
-            (zero, -I * g2 * half),
-            (-I * g2 * half, zero),
-        ),
-        (
-            (zero, -g2 * half),
-            (g2 * half, zero),
-        ),
-        (
-            (-I * g2 * half, zero),
-            (zero, I * g2 * half),
-        ),
+    generators, vacuum_images = _electroweak_generators_and_vacuum_images(
+        parameters
     )
+    _xi_inverse, xi_matrix = _electroweak_xi_matrices(parameters)
     ghosts = (
         fields.ghB,
         fields.ghWi(Expression.num(1)),
@@ -309,60 +435,158 @@ def _electroweak_scalar_ghost_lagrangian(
         fields.ghWi.bar(Expression.num(2)),
         fields.ghWi.bar(Expression.num(3)),
     )
-    vacuum = (zero, vev * _INV_SQRT2)
-    vacuum_images = tuple(
-        tuple(
-            sum(
-                (matrix[row][column] * vacuum[column] for column in range(2)),
-                zero,
-            )
-            for row in range(2)
-        )
-        for matrix in generators
-    )
 
     lagrangian = zero
+    g1 = parameters.g1.symbol
+    g2 = parameters.g2.symbol
+    vev = parameters.vev.symbol
     real_symbols = (g1, g2, vev)
     for left in range(4):
         for right in range(4):
-            for component in range(2):
-                phi_coefficient = -sum(
-                    (
-                        _real_conjugate(
-                            vacuum_images[left][row],
-                            *real_symbols,
-                        )
-                        * generators[right][row][component]
-                        for row in range(2)
-                    ),
-                    zero,
-                )
-                phibar_coefficient = -sum(
-                    (
-                        _real_conjugate(
-                            generators[right][row][component],
-                            *real_symbols,
-                        )
-                        * vacuum_images[left][row]
-                        for row in range(2)
-                    ),
-                    zero,
-                )
-                if not _is_zero(phi_coefficient):
-                    lagrangian += (
-                        phi_coefficient
-                        * antighosts[left]
-                        * ghosts[right]
-                        * fields.Phi(Expression.num(component + 1))
+            for mixed_left in range(4):
+                xi_coefficient = xi_matrix.get((left, mixed_left), zero)
+                if _is_zero(xi_coefficient):
+                    continue
+                for component in range(2):
+                    phi_coefficient = -sum(
+                        (
+                            _real_conjugate(
+                                vacuum_images[mixed_left][row],
+                                *real_symbols,
+                            )
+                            * generators[right][row][component]
+                            for row in range(2)
+                        ),
+                        zero,
                     )
-                if not _is_zero(phibar_coefficient):
-                    lagrangian += (
-                        phibar_coefficient
-                        * antighosts[left]
-                        * ghosts[right]
-                        * fields.Phi.bar(Expression.num(component + 1))
+                    phibar_coefficient = -sum(
+                        (
+                            _real_conjugate(
+                                generators[right][row][component],
+                                *real_symbols,
+                            )
+                            * vacuum_images[mixed_left][row]
+                            for row in range(2)
+                        ),
+                        zero,
                     )
+                    if not _is_zero(phi_coefficient):
+                        lagrangian += (
+                            xi_coefficient
+                            * phi_coefficient
+                            * antighosts[left]
+                            * ghosts[right]
+                            * fields.Phi(Expression.num(component + 1))
+                        )
+                    if not _is_zero(phibar_coefficient):
+                        lagrangian += (
+                            xi_coefficient
+                            * phibar_coefficient
+                            * antighosts[left]
+                            * ghosts[right]
+                            * fields.Phi.bar(Expression.num(component + 1))
+                        )
     return lagrangian
+
+
+def _electroweak_rxi_gauge_fixing_lagrangian(
+    fields: StandardModelFields,
+    parameters: StandardModelParameters,
+):
+    """Electroweak ``R_xi`` gauge fixing in the gauge basis.
+
+    The gauge-fixing functions are built as
+
+        F_a = del.V_a - Omega_a(Phi),
+
+    with ``Omega_a`` determined by the Higgs vacuum vector and gauge-basis
+    generators. Neutral gauge parameters are diagonal in the physical
+    ``(A, Z)`` basis and rotated back into the ``(B, W3)`` basis.
+    """
+
+    mu = S("mu")
+    nu = S("nu")
+    zero = Expression.num(0)
+    xi_inverse, xi_matrix = _electroweak_xi_matrices(parameters)
+    omega_coefficients = _electroweak_omega_coefficients(parameters)
+
+    lagrangian = None
+
+    def add(term):
+        nonlocal lagrangian
+        lagrangian = term if lagrangian is None else lagrangian + term
+
+    for (left, right), coefficient in xi_inverse.items():
+        add(
+            -coefficient
+            * _HALF
+            * PartialD(
+                _electroweak_gauge_basis_field(
+                    fields,
+                    gauge_index=left,
+                    lorentz_label=mu,
+                ),
+                mu,
+            )
+            * PartialD(
+                _electroweak_gauge_basis_field(
+                    fields,
+                    gauge_index=right,
+                    lorentz_label=nu,
+                ),
+                nu,
+            )
+        )
+
+    for gauge_index, components in enumerate(omega_coefficients):
+        gauge_field = _electroweak_gauge_basis_field(
+            fields,
+            gauge_index=gauge_index,
+            lorentz_label=mu,
+        )
+        for kind, component, coefficient in components:
+            add(
+                coefficient
+                * PartialD(
+                    _electroweak_scalar_component(
+                        fields,
+                        kind=kind,
+                        component=component,
+                    ),
+                    mu,
+                )
+                * gauge_field
+            )
+
+    for (left, right), coefficient in xi_matrix.items():
+        if _is_zero(coefficient):
+            continue
+        for left_kind, left_component, left_coefficient in omega_coefficients[left]:
+            left_scalar = _electroweak_scalar_component(
+                fields,
+                kind=left_kind,
+                component=left_component,
+            )
+            for (
+                right_kind,
+                right_component,
+                right_coefficient,
+            ) in omega_coefficients[right]:
+                right_scalar = _electroweak_scalar_component(
+                    fields,
+                    kind=right_kind,
+                    component=right_component,
+                )
+                add(
+                    -coefficient
+                    * _HALF
+                    * left_coefficient
+                    * right_coefficient
+                    * left_scalar
+                    * right_scalar
+                )
+
+    return zero if lagrangian is None else lagrangian
 
 
 def _source_higgs() -> Field:
@@ -384,6 +608,8 @@ def _ghost(
     ghost_of=None,
     symbol=None,
     conjugate_symbol=None,
+    mass=None,
+    quantum_numbers=None,
 ) -> Field:
     return Field(
         name,
@@ -394,6 +620,8 @@ def _ghost(
         ghost_of=ghost_of,
         symbol=symbol or S(name),
         conjugate_symbol=conjugate_symbol or S(f"{name}bar"),
+        mass=mass,
+        quantum_numbers=dict(quantum_numbers or {}),
     )
 
 
@@ -421,11 +649,7 @@ def _fermion_builder(
             for index, label in labels.items()
             if index.is_flavor
         )
-        target_spinor = (
-            source_spinor
-            if conjugated
-            else context.fresh(SPINOR_INDEX, "fermion")
-        )
+        target_spinor = context.fresh(SPINOR_INDEX, "fermion")
         target_generation = source_generation
         coefficient = _ONE
 
@@ -449,12 +673,10 @@ def _fermion_builder(
             elif index in labels:
                 target_labels[slot] = labels[index]
 
-        if conjugated:
-            # In the SM source every fermion appears in a closed bilinear.
-            # Keeping the chiral projector on the unconjugated endpoint gives
-            # the equivalent bilinear form directly: bar(psi) gamma P psi for
-            # kinetic currents and bar(psi) P psi for Yukawa terms.
-            projector = _ONE
+        if conjugated and chirality == "left":
+            projector = chiral_projector_right(target_spinor, source_spinor)
+        elif conjugated:
+            projector = chiral_projector_left(target_spinor, source_spinor)
         elif chirality == "left":
             projector = (
                 chiral_projector_left(source_spinor, target_spinor)
@@ -625,6 +847,11 @@ def build_standard_model(
     *,
     name: str = "Standard Model",
     include_ghosts: bool = True,
+    include_gauge_fixing: bool = True,
+    xiA=1,
+    xiZ=1,
+    xiW=1,
+    xiG=1,
 ) -> StandardModel:
     """Build the broken-phase Standard Model from gauge-basis declarations."""
 
@@ -643,6 +870,9 @@ def build_standard_model(
     lam = Parameter("lam")
     vev = Parameter("vev")
     gz = (g1.symbol**2 + g2.symbol**2) ** _HALF
+    mw_relation = g2.symbol * vev.symbol / 2
+    mz_relation = gz * vev.symbol / 2
+    mh_relation = (2 * lam.symbol * vev.symbol**2) ** _HALF
     sw = Parameter("sw", value=g1.symbol / gz)
     cw = Parameter("cw", value=g2.symbol / gz)
     ee = Parameter("ee", value=g1.symbol * g2.symbol / gz)
@@ -654,9 +884,52 @@ def build_standard_model(
         g3=g3,
         lam=lam,
         vev=vev,
+        Mvl=Parameter(
+            "Mvl",
+            indices=(generation,),
+            components={
+                (1,): Expression.num(0),
+                (2,): Expression.num(0),
+                (3,): Expression.num(0),
+            },
+        ),
+        Ml=Parameter(
+            "Ml",
+            indices=(generation,),
+            components={
+                (1,): _INV_SQRT2 * vev.symbol * S("ye1"),
+                (2,): _INV_SQRT2 * vev.symbol * S("ye2"),
+                (3,): _INV_SQRT2 * vev.symbol * S("ye3"),
+            },
+        ),
+        Mu=Parameter(
+            "Mu",
+            indices=(generation,),
+            components={
+                (1,): _INV_SQRT2 * vev.symbol * S("yu1"),
+                (2,): _INV_SQRT2 * vev.symbol * S("yu2"),
+                (3,): _INV_SQRT2 * vev.symbol * S("yu3"),
+            },
+        ),
+        Md=Parameter(
+            "Md",
+            indices=(generation,),
+            components={
+                (1,): _INV_SQRT2 * vev.symbol * S("yd1"),
+                (2,): _INV_SQRT2 * vev.symbol * S("yd2"),
+                (3,): _INV_SQRT2 * vev.symbol * S("yd3"),
+            },
+        ),
+        MW=Parameter("MW", value=mw_relation),
+        MZ=Parameter("MZ", value=mz_relation),
+        MH=Parameter("MH", value=mh_relation),
         sw=sw,
         cw=cw,
         ee=ee,
+        xiA=Parameter("xiA", internal=False, value=xiA),
+        xiZ=Parameter("xiZ", internal=False, value=xiZ),
+        xiW=Parameter("xiW", internal=False, value=xiW),
+        xiG=Parameter("xiG", internal=False, value=xiG),
         Yu=Parameter(
             "Yu",
             indices=(generation, generation),
@@ -698,12 +971,14 @@ def build_standard_model(
             indices=(generation, generation),
             complex_param=True,
             components=ckm_components,
+            unitary_partner="CKMDag",
         ),
         CKMDag=Parameter(
             "CKMDag",
             indices=(generation, generation),
             complex_param=True,
             components=_transpose_components(ckm_components),
+            unitary_partner="CKM",
         ),
     )
 
@@ -723,6 +998,85 @@ def build_standard_model(
     ghB = _ghost("ghB", ghost_of=B)
     ghWi = _ghost("ghWi", indices=(WEAK_ADJ_INDEX,), ghost_of=Wi)
     ghG = _ghost("ghG", indices=(COLOR_ADJ_INDEX,), ghost_of=G)
+    xiA_value = _parameter_value_or_symbol(parameters.xiA)
+    xiZ_value = _parameter_value_or_symbol(parameters.xiZ)
+    xiW_value = _parameter_value_or_symbol(parameters.xiW)
+    z_ghost_mass = (xiZ_value * parameters.MZ.symbol**2) ** _HALF
+    w_ghost_mass = (xiW_value * parameters.MW.symbol**2) ** _HALF
+
+    W_field = Field(
+        "W",
+        spin=1,
+        self_conjugate=False,
+        conjugate_symbol=S("Wbar"),
+        indices=(LORENTZ_INDEX,),
+        mass=parameters.MW.symbol,
+        quantum_numbers={"Q": _ONE},
+    )
+    Z_field = Field(
+        "Z",
+        spin=1,
+        self_conjugate=True,
+        indices=(LORENTZ_INDEX,),
+        mass=parameters.MZ.symbol,
+        quantum_numbers={"Q": Expression.num(0)},
+    )
+    A_field = Field(
+        "A",
+        spin=1,
+        self_conjugate=True,
+        indices=(LORENTZ_INDEX,),
+        mass=Expression.num(0),
+        quantum_numbers={"Q": Expression.num(0)},
+    )
+    H_field = Field(
+        "H",
+        spin=0,
+        self_conjugate=True,
+        mass=parameters.MH.symbol,
+        quantum_numbers={"Q": Expression.num(0)},
+    )
+    G0_field = Field(
+        "G0",
+        spin=0,
+        self_conjugate=True,
+        mass=z_ghost_mass,
+        quantum_numbers={"Q": Expression.num(0)},
+        goldstone_of=Z_field,
+    )
+    GP_field = Field(
+        "GP",
+        spin=0,
+        self_conjugate=False,
+        conjugate_symbol=S("GM"),
+        mass=w_ghost_mass,
+        quantum_numbers={"Q": _ONE},
+        goldstone_of=W_field,
+    )
+    ghA_field = _ghost(
+        "ghA",
+        ghost_of=A_field,
+        mass=Expression.num(0),
+        quantum_numbers={"GhostNumber": _ONE},
+    )
+    ghZ_field = _ghost(
+        "ghZ",
+        ghost_of=Z_field,
+        mass=z_ghost_mass,
+        quantum_numbers={"GhostNumber": _ONE},
+    )
+    ghWp_field = _ghost(
+        "ghWp",
+        ghost_of=W_field,
+        mass=w_ghost_mass,
+        quantum_numbers={"GhostNumber": _ONE, "Q": _ONE},
+    )
+    ghWm_field = _ghost(
+        "ghWm",
+        ghost_of=W_field,
+        mass=w_ghost_mass,
+        quantum_numbers={"GhostNumber": _ONE, "Q": -_ONE},
+    )
 
     fields = StandardModelFields(
         LL=Field(
@@ -775,6 +1129,8 @@ def build_standard_model(
             spin=Fraction(1, 2),
             self_conjugate=False,
             indices=(SPINOR_INDEX, generation),
+            mass=parameters.Mvl,
+            quantum_numbers={"Q": Expression.num(0), "LeptonNumber": _ONE},
             flavor_index=generation,
             class_members=("ve", "vm", "vt"),
         ),
@@ -783,6 +1139,8 @@ def build_standard_model(
             spin=Fraction(1, 2),
             self_conjugate=False,
             indices=(SPINOR_INDEX, generation),
+            mass=parameters.Ml,
+            quantum_numbers={"Q": -_ONE, "LeptonNumber": _ONE},
             flavor_index=generation,
             class_members=("e", "mu", "ta"),
         ),
@@ -791,6 +1149,8 @@ def build_standard_model(
             spin=Fraction(1, 2),
             self_conjugate=False,
             indices=(SPINOR_INDEX, generation, COLOR_FUND_INDEX),
+            mass=parameters.Mu,
+            quantum_numbers={"Q": _TWO / _THREE},
             flavor_index=generation,
             class_members=("u", "c", "t"),
         ),
@@ -799,31 +1159,22 @@ def build_standard_model(
             spin=Fraction(1, 2),
             self_conjugate=False,
             indices=(SPINOR_INDEX, generation, COLOR_FUND_INDEX),
+            mass=parameters.Md,
+            quantum_numbers={"Q": -(_ONE / _THREE)},
             flavor_index=generation,
             class_members=("d", "s", "b"),
         ),
-        H=Field("H", spin=0, self_conjugate=True),
-        G0=Field("G0", spin=0, self_conjugate=True),
-        GP=Field(
-            "GP",
-            spin=0,
-            self_conjugate=False,
-            conjugate_symbol=S("GM"),
-        ),
-        W=Field(
-            "W",
-            spin=1,
-            self_conjugate=False,
-            conjugate_symbol=S("Wbar"),
-            indices=(LORENTZ_INDEX,),
-        ),
-        Z=Field("Z", spin=1, self_conjugate=True, indices=(LORENTZ_INDEX,)),
-        A=Field("A", spin=1, self_conjugate=True, indices=(LORENTZ_INDEX,)),
+        H=H_field,
+        G0=G0_field,
+        GP=GP_field,
+        W=W_field,
+        Z=Z_field,
+        A=A_field,
         G=G,
-        ghA=_ghost("ghA"),
-        ghZ=_ghost("ghZ"),
-        ghWp=_ghost("ghWp"),
-        ghWm=_ghost("ghWm"),
+        ghA=ghA_field,
+        ghZ=ghZ_field,
+        ghWp=ghWp_field,
+        ghWm=ghWm_field,
         ghG=ghG,
     )
 
@@ -934,6 +1285,16 @@ def build_standard_model(
         * fields.uR.bar(spinor, f2, colour)
         * fields.QL(spinor, weak_left, f1, colour)
     )
+    LGaugeFixing = DeclaredLagrangian()
+    if include_gauge_fixing:
+        LGaugeFixing = DeclaredLagrangian.from_item(
+            _electroweak_rxi_gauge_fixing_lagrangian(fields, parameters)
+            + GaugeFixing(
+                gauge_groups.SU3C,
+                xi=_parameter_value_or_symbol(parameters.xiG),
+            )
+        )
+
     LGhost = DeclaredLagrangian()
     if include_ghosts:
         LGhost = DeclaredLagrangian.from_item(
@@ -944,49 +1305,114 @@ def build_standard_model(
         )
 
     LSM = DeclaredLagrangian.from_item(
-        LGauge + LFermions + LHiggs + LYukawa + LGhost
+        LGauge + LFermions + LHiggs + LYukawa + LGaugeFixing + LGhost
     )
     all_parameters = tuple(parameters.__dict__.values())
+    source_fields = (
+        fields.LL,
+        fields.lR,
+        fields.QL,
+        fields.uR,
+        fields.dR,
+        fields.Phi,
+        fields.B,
+        fields.Wi,
+        fields.G,
+        fields.ghB,
+        fields.ghWi,
+        fields.ghG,
+    )
     source_model = Model(
         name=f"{name} gauge basis",
         gauge_groups=tuple(gauge_groups.__dict__.values()),
-        fields=(
-            fields.LL,
-            fields.lR,
-            fields.QL,
-            fields.uR,
-            fields.dR,
-            fields.Phi,
-            fields.B,
-            fields.Wi,
-            fields.G,
-            fields.ghB,
-            fields.ghWi,
-            fields.ghG,
-        ),
+        fields=source_fields,
         parameters=all_parameters,
         lagrangian_decl=LSM,
     )
 
     transformations = _standard_model_transformations(fields, parameters)
-    component_lagrangian = source_model.lagrangian().expand_index_components(
-        WEAK_FUND_INDEX,
-        WEAK_ADJ_INDEX,
-        tensor_components=standard_model_weak_tensor_components(),
+    transform_real_symbols = (
+        parameters.g1,
+        parameters.g2,
+        parameters.g3,
+        parameters.lam,
+        parameters.vev,
+        parameters.MW,
+        parameters.MZ,
+        parameters.MH,
+        parameters.xiA,
+        parameters.xiZ,
+        parameters.xiW,
+        parameters.xiG,
+        parameters.sw.value,
+        parameters.cw.value,
+        parameters.ee.value,
+        _parameter_value_or_symbol(parameters.xiA),
+        _parameter_value_or_symbol(parameters.xiZ),
+        _parameter_value_or_symbol(parameters.xiW),
+        _parameter_value_or_symbol(parameters.xiG),
     )
-    broken_lagrangian = component_lagrangian.transform_fields(
-        *transformations,
-        repeat=False,
-        real_symbols=(
-            parameters.g1,
-            parameters.g2,
-            parameters.g3,
-            parameters.lam,
-            parameters.vev,
-            parameters.sw.value,
-            parameters.cw.value,
-            parameters.ee.value,
+
+    def compile_source_piece(
+        lagrangian_decl: DeclaredLagrangian,
+        *,
+        sector: str | None = None,
+        origin: str = "",
+    ) -> CompiledLagrangian:
+        if not lagrangian_decl.source_terms:
+            return CompiledLagrangian(parameters=all_parameters)
+        source_piece = Model(
+            name=f"{name} source piece",
+            gauge_groups=tuple(gauge_groups.__dict__.values()),
+            fields=source_fields,
+            parameters=all_parameters,
+            lagrangian_decl=lagrangian_decl,
+        )
+        component_lagrangian = source_piece.lagrangian().expand_index_components(
+            WEAK_FUND_INDEX,
+            WEAK_ADJ_INDEX,
+            tensor_components=standard_model_weak_tensor_components(),
+        )
+        broken_piece = component_lagrangian.transform_fields(
+            *transformations,
+            repeat=False,
+            real_symbols=transform_real_symbols,
+        )
+        broken_piece = broken_piece.simplify_parameter_identities()
+        if sector is None:
+            return broken_piece
+        return CompiledLagrangian(
+            terms=tuple(
+                replace(
+                    term,
+                    sector=sector,
+                    origin=origin or term.origin,
+                )
+                for term in broken_piece.terms
+            ),
+            parameters=broken_piece.parameters,
+        )
+
+    broken_core = compile_source_piece(
+        DeclaredLagrangian.from_item(LGauge + LFermions + LHiggs + LYukawa)
+    )
+    broken_gauge_fixing = compile_source_piece(
+        LGaugeFixing,
+        sector="gauge_fixing",
+        origin="StandardModelGaugeFixing",
+    )
+    broken_ghost = compile_source_piece(
+        LGhost,
+        sector="ghost",
+        origin="StandardModelGhost",
+    )
+    broken_lagrangian = CompiledLagrangian(
+        terms=(
+            broken_core.terms
+            + broken_gauge_fixing.terms
+            + broken_ghost.terms
         ),
+        parameters=all_parameters,
     )
 
     physical_fields = (
@@ -1022,6 +1448,7 @@ def build_standard_model(
         LFermions=DeclaredLagrangian.from_item(LFermions),
         LHiggs=DeclaredLagrangian.from_item(LHiggs),
         LYukawa=DeclaredLagrangian.from_item(LYukawa),
+        LGaugeFixing=LGaugeFixing,
         LGhost=LGhost,
         LSM=LSM,
     )

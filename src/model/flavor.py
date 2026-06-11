@@ -7,7 +7,7 @@ from dataclasses import replace
 from itertools import product
 from typing import Optional
 
-from symbolica import Expression, S
+from symbolica import AtomType, Expression, S
 
 from .interactions import InteractionTerm
 from .metadata import IndexType, Parameter
@@ -35,7 +35,173 @@ def _expression_num(value: int):
     return Expression.num(value)
 
 
-def _simplify_expression(expr):
+def _atom_type_name(expr) -> str:
+    if hasattr(expr, "get_type"):
+        try:
+            return str(expr.get_type())
+        except Exception:
+            return ""
+    return ""
+
+
+def _term_factors(expr):
+    if _atom_type_name(expr) == "AtomType.Mul":
+        return tuple(expr)
+    return (expr,)
+
+
+def _term_product(factors):
+    result = Expression.num(1)
+    for factor in factors:
+        result *= factor
+    return result
+
+
+def _parameter_name_map(parameters: tuple[Parameter, ...]) -> dict[str, Parameter]:
+    return {parameter.name: parameter for parameter in parameters}
+
+
+def _parameter_symbol_map(parameters: tuple[Parameter, ...]) -> dict[str, Parameter]:
+    mapping = {}
+    for parameter in parameters:
+        symbol = parameter.symbol
+        if hasattr(symbol, "to_canonical_string"):
+            mapping[symbol.to_canonical_string()] = parameter
+        mapping[str(symbol)] = parameter
+    return mapping
+
+
+def _resolve_parameter_reference(reference, parameters: tuple[Parameter, ...]) -> Optional[Parameter]:
+    if isinstance(reference, Parameter):
+        return reference
+
+    by_name = _parameter_name_map(parameters)
+    by_symbol = _parameter_symbol_map(parameters)
+
+    if isinstance(reference, str):
+        return by_name.get(reference) or by_symbol.get(reference)
+    if hasattr(reference, "to_canonical_string"):
+        canonical = reference.to_canonical_string()
+        return by_symbol.get(canonical) or by_name.get(canonical)
+    return None
+
+
+def _unitary_partner_lookup(parameters: tuple[Parameter, ...]) -> dict[str, Parameter]:
+    lookup: dict[str, Parameter] = {}
+    for parameter in parameters:
+        if parameter.unitary_partner is None:
+            continue
+        partner = _resolve_parameter_reference(parameter.unitary_partner, parameters)
+        if partner is None:
+            continue
+        lookup[parameter.name] = partner
+    return lookup
+
+
+def _factor_parameter_call(factor, parameters: tuple[Parameter, ...]):
+    if not hasattr(factor, "to_atom_tree"):
+        return None
+    try:
+        node = factor.to_atom_tree()
+    except Exception:
+        return None
+    if str(node.atom_type) != "AtomType.Fn":
+        return None
+
+    head = _atom_symbol_name(node.head)
+    parameter = _parameter_name_map(parameters).get(head)
+    if parameter is None or len(node.tail) != len(parameter.indices):
+        return None
+
+    labels = []
+    for child in node.tail:
+        if str(child.atom_type) != "AtomType.Var":
+            return None
+        labels.append(S(_atom_symbol_name(child.head)))
+    return parameter, tuple(labels)
+
+
+def _unitary_metric(parameter: Parameter, slot: int, left_label, right_label):
+    index = parameter.indices[slot]
+    return index.representation.g(left_label, right_label).to_expression()
+
+
+def _simplify_unitary_parameter_products(expr, parameters: tuple[Parameter, ...]):
+    if not parameters:
+        return expr
+
+    partner_lookup = _unitary_partner_lookup(parameters)
+    if not partner_lookup:
+        return expr
+
+    terms = (
+        tuple(expr)
+        if isinstance(expr, Expression) and expr.get_type() == AtomType.Add
+        else (expr,)
+    )
+    reduced_terms = []
+
+    for term in terms:
+        factors = list(_term_factors(term))
+        changed = True
+        while changed:
+            changed = False
+            for left_pos, left_factor in enumerate(factors):
+                left_call = _factor_parameter_call(left_factor, parameters)
+                if left_call is None:
+                    continue
+                left_parameter, left_labels = left_call
+                partner = partner_lookup.get(left_parameter.name)
+                if partner is None or len(left_parameter.indices) != 2:
+                    continue
+                for right_pos in range(left_pos + 1, len(factors)):
+                    right_factor = factors[right_pos]
+                    right_call = _factor_parameter_call(right_factor, parameters)
+                    if right_call is None:
+                        continue
+                    right_parameter, right_labels = right_call
+                    if right_parameter is not partner:
+                        continue
+
+                    replacement = None
+                    if left_labels[0] == right_labels[1]:
+                        replacement = _unitary_metric(
+                            left_parameter,
+                            1,
+                            left_labels[1],
+                            right_labels[0],
+                        )
+                    elif left_labels[1] == right_labels[0]:
+                        replacement = _unitary_metric(
+                            left_parameter,
+                            0,
+                            left_labels[0],
+                            right_labels[1],
+                        )
+                    if replacement is None:
+                        continue
+
+                    factors = [
+                        factor
+                        for position, factor in enumerate(factors)
+                        if position not in {left_pos, right_pos}
+                    ]
+                    factors.append(replacement)
+                    changed = True
+                    break
+                if changed:
+                    break
+
+        reduced_terms.append(_term_product(factors))
+
+    result = sum(reduced_terms, Expression.num(0))
+    if hasattr(result, "expand"):
+        result = result.expand()
+    return result
+
+
+def _simplify_expression(expr, parameters: tuple[Parameter, ...] = ()):
+    expr = _simplify_unitary_parameter_products(expr, parameters)
     if hasattr(expr, "expand"):
         return expr.expand()
     return expr
@@ -177,6 +343,22 @@ def _apply_parameter_components(expr, parameters: tuple[Parameter, ...]):
     return result
 
 
+def _reduce_concrete_flavor_metrics(expr, indices: tuple[IndexType, ...]):
+    if not hasattr(expr, "replace"):
+        return expr
+    result = expr
+    for index in indices:
+        if index.dimension is None:
+            continue
+        for row in range(1, index.dimension + 1):
+            for col in range(1, index.dimension + 1):
+                result = result.replace(
+                    index.representation.g(row, col).to_expression(),
+                    _expression_num(1 if row == col else 0),
+                )
+    return result
+
+
 def _expand_occurrence(occurrence, assignment_by_name, selected_indices):
     field = occurrence.field
     slot_labels = occurrence.slot_labels
@@ -249,7 +431,11 @@ def _term_structure_key(term: InteractionTerm):
     )
 
 
-def _merge_terms(terms: list[InteractionTerm]) -> tuple[InteractionTerm, ...]:
+def _merge_terms(
+    terms: list[InteractionTerm],
+    *,
+    parameters: tuple[Parameter, ...] = (),
+) -> tuple[InteractionTerm, ...]:
     merged: dict[tuple, InteractionTerm] = {}
     for term in terms:
         key = _term_structure_key(term)
@@ -257,12 +443,31 @@ def _merge_terms(terms: list[InteractionTerm]) -> tuple[InteractionTerm, ...]:
         if prior is None:
             merged[key] = term
             continue
-        coupling = _simplify_expression(prior.coupling + term.coupling)
+        coupling = _simplify_expression(
+            prior.coupling + term.coupling,
+            parameters=parameters,
+        )
         if _is_zero_expression(coupling):
             del merged[key]
             continue
         merged[key] = replace(prior, coupling=coupling)
     return tuple(merged.values())
+
+
+def simplify_parameter_identities(
+    terms,
+    *,
+    parameters: tuple[Parameter, ...] = (),
+) -> tuple[InteractionTerm, ...]:
+    """Apply generic parameter identities, such as unitary matrix contractions."""
+
+    simplified_terms: list[InteractionTerm] = []
+    for term in terms:
+        coupling = _simplify_expression(term.coupling, parameters=parameters)
+        if _is_zero_expression(coupling):
+            continue
+        simplified_terms.append(replace(term, coupling=coupling))
+    return _merge_terms(simplified_terms, parameters=parameters)
 
 
 def expand_flavor_terms(
@@ -287,6 +492,10 @@ def expand_flavor_terms(
             continue
 
         assignment_ranges = [range(1, index.dimension + 1) for _, _label, index in assignments]
+        assigned_indices = tuple(
+            index
+            for _label_name, _label, index in assignments
+        )
         for values in product(*assignment_ranges):
             assignment_by_name = {
                 label_name: value
@@ -298,7 +507,11 @@ def expand_flavor_terms(
                 if hasattr(coupling, "replace"):
                     coupling = coupling.replace(label, _expression_num(assignment_by_name[label_name]))
             coupling = _apply_parameter_components(coupling, parameters)
-            coupling = _simplify_expression(coupling)
+            coupling = _reduce_concrete_flavor_metrics(
+                coupling,
+                assigned_indices,
+            )
+            coupling = _simplify_expression(coupling, parameters=parameters)
             if _is_zero_expression(coupling):
                 continue
 
@@ -313,4 +526,4 @@ def expand_flavor_terms(
                 )
             )
 
-    return _merge_terms(expanded_terms)
+    return _merge_terms(expanded_terms, parameters=parameters)

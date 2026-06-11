@@ -303,7 +303,7 @@ class CompiledLagrangian:
 
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
-        if name in ("terms", "parameters") and hasattr(self, "_expanded_terms_cache"):
+        if name in ("terms", "parameters") and "_expanded_terms_cache" in self.__dict__:
             object.__setattr__(self, "_expanded_terms_cache", {})
 
     def __init__(self, terms=(), parameters=()):
@@ -377,15 +377,20 @@ class CompiledLagrangian:
 
     def _expanded_terms(self, *, flavor_expand: FlavorExpandOption = False) -> tuple[InteractionTerm, ...]:
         flavor_expand = _normalize_flavor_expand_option(flavor_expand)
-        if not flavor_expand:
-            return self.terms
-
         cache_key = _flavor_expand_cache_key(flavor_expand)
         cached = self._expanded_terms_cache.get(cache_key)
         if cached is not None:
             return cached
 
-        from .flavor import expand_flavor_terms
+        from .flavor import expand_flavor_terms, simplify_parameter_identities
+
+        simplified_terms = simplify_parameter_identities(
+            self.terms,
+            parameters=self.parameters,
+        )
+        if not flavor_expand:
+            self._expanded_terms_cache[cache_key] = simplified_terms
+            return simplified_terms
 
         selected_indices = (
             None
@@ -393,7 +398,7 @@ class CompiledLagrangian:
             else tuple(flavor_expand)
         )
         expanded_terms = expand_flavor_terms(
-            self.terms,
+            simplified_terms,
             parameters=self.parameters,
             selected_indices=selected_indices,
         )
@@ -693,6 +698,19 @@ class CompiledLagrangian:
             tensor_components=tensor_components,
         )
 
+    def simplify_parameter_identities(self) -> "CompiledLagrangian":
+        """Apply generic indexed-parameter identities to every interaction term."""
+
+        from .flavor import simplify_parameter_identities
+
+        return CompiledLagrangian(
+            terms=simplify_parameter_identities(
+                self.terms,
+                parameters=self.parameters,
+            ),
+            parameters=self.parameters,
+        )
+
     def operator_bracket(
         self,
         left,
@@ -942,6 +960,10 @@ class CompiledLagrangian:
             if _term_matches_fields(term, parsed)
         ]
         if not matching:
+            if flavor_expand is False and any(
+                _term_matches_fields(term, parsed) for term in self.terms
+            ):
+                return Expression.num(0)
             raise self._no_matching_interaction_terms_error(
                 parsed,
                 flavor_expand=flavor_expand,

@@ -1720,6 +1720,11 @@ def _interaction_term_matches_canonical_gauge_fixing(term: InteractionTerm) -> b
         right_label = second_slot_labels.get(slot)
         if left_label is None or right_label is None:
             return False
+        if not (
+            _is_symbolic_index_label(left_label)
+            and _is_symbolic_index_label(right_label)
+        ):
+            return False
         expected *= index.representation.g(left_label, right_label).to_expression()
 
     try:
