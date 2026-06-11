@@ -1,0 +1,516 @@
+from __future__ import annotations
+
+from collections import Counter
+
+import pytest
+from symbolica import Expression, S
+
+from model import build_standard_model
+from model.interactions import _field_match_key
+from model.lagrangian import CompiledLagrangian
+from symbolic.spenso_structures import (
+    gamma_matrix,
+    lorentz_metric,
+    spinor_metric,
+)
+from symbolic.tensor_canonicalization import canonize_full
+from symbolic.vertex_engine import Delta, I, pcomp, pi
+
+
+ZERO = Expression.num(0)
+ONE = Expression.num(1)
+TWO = Expression.num(2)
+HALF = ONE / TWO
+INV_SQRT2 = HALF**HALF
+
+q1, q2, q3, q4 = S("q1", "q2", "q3", "q4")
+d = S("d")
+D2 = (2 * pi) ** d * Delta(q1 + q2)
+D3 = (2 * pi) ** d * Delta(q1 + q2 + q3)
+D4 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
+
+
+@pytest.fixture(scope="module")
+def sm():
+    return build_standard_model()
+
+
+def _canon(expr):
+    return expr.expand().to_canonical_string()
+
+
+def _field_counter(*field_args):
+    return Counter(
+        _field_match_key(
+            field.field if hasattr(field, "field") else field,
+            hasattr(field, "field"),
+        )
+        for field in field_args
+    )
+
+
+def _sector(lagrangian, *field_args, differentiated: bool):
+    target = _field_counter(*field_args)
+    terms = tuple(
+        term
+        for term in lagrangian.terms
+        if bool(term.derivatives) is differentiated
+        and Counter(
+            _field_match_key(occurrence.field, occurrence.conjugated)
+            for occurrence in term.fields
+        )
+        == target
+    )
+    return CompiledLagrangian(
+        terms=terms,
+        parameters=lagrangian.parameters,
+    )
+
+
+def _rule(sector, *field_args, flavor_expand=False):
+    if not sector.terms:
+        return ZERO
+    return sector.feynman_rule(
+        *field_args,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=flavor_expand,
+    )
+
+
+def _assert_rational_equal(got, expected, denominator):
+    symbols = sorted(
+        denominator.get_all_symbols(),
+        key=lambda symbol: symbol.to_canonical_string(),
+    )
+    for values in ((3, 4), (5, 2)):
+        difference = got - expected
+        for symbol, value in zip(symbols, values):
+            difference = difference.replace(symbol, Expression.num(value))
+        if hasattr(difference, "cancel"):
+            difference = difference.cancel()
+        assert _canon(difference) == _canon(ZERO)
+
+
+def test_standard_model_builds_from_source_basis_and_validates(sm):
+    assert sm.source_model.validate().ok
+    assert sm.model.validate().ok
+    assert sm.lagrangian.terms
+
+    source_fields = {
+        sm.fields.LL,
+        sm.fields.lR,
+        sm.fields.QL,
+        sm.fields.uR,
+        sm.fields.dR,
+        sm.fields.Phi,
+        sm.fields.B,
+        sm.fields.Wi,
+        sm.fields.ghB,
+        sm.fields.ghWi,
+    }
+    assert all(
+        occurrence.field not in source_fields
+        for term in sm.lagrangian.terms
+        for occurrence in term.fields
+    )
+
+
+def test_canonical_scalar_and_vector_kinetic_terms(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    scalar_kinetic = _rule(
+        _sector(L, fields.H, fields.H, differentiated=True),
+        fields.H,
+        fields.H,
+    )
+    expected_scalar = (
+        -I
+        * pcomp(q1, S("mu1_int"))
+        * pcomp(q2, S("mu1_int"))
+        * D2
+    )
+    assert _canon(scalar_kinetic) == _canon(expected_scalar)
+
+    photon_kinetic = _rule(
+        _sector(L, fields.A, fields.A, differentiated=True),
+        fields.A,
+        fields.A,
+    )
+    expected_vector = I * (
+        lorentz_metric(S("mu1"), S("mu2"))
+        * pcomp(q1, S("mu1_int"))
+        * pcomp(q2, S("mu1_int"))
+        - pcomp(q1, S("mu2")) * pcomp(q2, S("mu1"))
+    ) * D2
+    denominator = sm.parameters.g1.symbol**2 + sm.parameters.g2.symbol**2
+    _assert_rational_equal(photon_kinetic, expected_vector, denominator)
+
+
+def test_neutral_kinetic_and_mass_matrices_are_diagonal(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    az_kinetic = _rule(
+        _sector(L, fields.A, fields.Z, differentiated=True),
+        fields.A,
+        fields.Z,
+    )
+    az_mass = _rule(
+        _sector(L, fields.A, fields.Z, differentiated=False),
+        fields.A,
+        fields.Z,
+    )
+    photon_mass = _rule(
+        _sector(L, fields.A, fields.A, differentiated=False),
+        fields.A,
+        fields.A,
+    )
+
+    assert _canon(az_kinetic) == _canon(ZERO)
+    assert _canon(az_mass) == _canon(ZERO)
+    assert _canon(photon_mass) == _canon(ZERO)
+
+
+def test_w_and_z_masses_match_the_higgs_mechanism(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    g1 = sm.parameters.g1.symbol
+    g2 = sm.parameters.g2.symbol
+    vev = sm.parameters.vev.symbol
+    denominator = g1**2 + g2**2
+
+    w_mass = _rule(
+        _sector(L, fields.W.bar, fields.W, differentiated=False),
+        fields.W.bar,
+        fields.W,
+    )
+    expected_w = (
+        I
+        * g2**2
+        * vev**2
+        / 4
+        * lorentz_metric(S("mu1"), S("mu2"))
+        * D2
+    )
+    assert _canon(w_mass) == _canon(expected_w)
+
+    z_mass = _rule(
+        _sector(L, fields.Z, fields.Z, differentiated=False),
+        fields.Z,
+        fields.Z,
+    )
+    expected_z = (
+        I
+        * denominator
+        * vev**2
+        / 4
+        * lorentz_metric(S("mu1"), S("mu2"))
+        * D2
+    )
+    _assert_rational_equal(z_mass, expected_z, denominator)
+
+
+def test_higgs_mass_self_couplings_and_hvv_vertices(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    g1 = sm.parameters.g1.symbol
+    g2 = sm.parameters.g2.symbol
+    lam = sm.parameters.lam.symbol
+    vev = sm.parameters.vev.symbol
+    denominator = g1**2 + g2**2
+
+    higgs_mass = _rule(
+        _sector(L, fields.H, fields.H, differentiated=False),
+        fields.H,
+        fields.H,
+    )
+    assert _canon(higgs_mass) == _canon(-2 * I * lam * vev**2 * D2)
+    assert _canon(
+        L.feynman_rule(fields.H, fields.H, fields.H, simplify=True, include_delta=True)
+    ) == _canon(-6 * I * lam * vev * D3)
+    assert _canon(
+        L.feynman_rule(
+            fields.H,
+            fields.H,
+            fields.H,
+            fields.H,
+            simplify=True,
+            include_delta=True,
+        )
+    ) == _canon(-6 * I * lam * D4)
+
+    hww = L.feynman_rule(
+        fields.H,
+        fields.W.bar,
+        fields.W,
+        simplify=True,
+        include_delta=True,
+    )
+    expected_hww = (
+        I
+        * g2**2
+        * vev
+        / 2
+        * lorentz_metric(S("mu2"), S("mu3"))
+        * D3
+    )
+    assert _canon(hww) == _canon(expected_hww)
+
+    hzz = L.feynman_rule(
+        fields.H,
+        fields.Z,
+        fields.Z,
+        simplify=True,
+        include_delta=True,
+    )
+    expected_hzz = (
+        I
+        * denominator
+        * vev
+        / 2
+        * lorentz_metric(S("mu2"), S("mu3"))
+        * D3
+    )
+    _assert_rational_equal(hzz, expected_hzz, denominator)
+
+
+def test_electromagnetic_and_charged_fermion_currents(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    g1 = sm.parameters.g1.symbol
+    g2 = sm.parameters.g2.symbol
+    ee = sm.parameters.ee.value
+
+    neutrino_photon = canonize_full(
+        L.feynman_rule(
+            fields.vl.bar,
+            fields.vl,
+            fields.A,
+            simplify=True,
+            include_delta=True,
+        ),
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    assert _canon(neutrino_photon) == _canon(ZERO)
+
+    lepton_photon = canonize_full(
+        L.feynman_rule(
+            fields.l.bar,
+            fields.l,
+            fields.A,
+            simplify=True,
+            include_delta=True,
+        ),
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    flavor_metric = sm.indices.generation.representation.g(
+        S("fl1"),
+        S("fl2"),
+    ).to_expression()
+    expected_qed = (
+        -I
+        * ee
+        * flavor_metric
+        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
+        * D3
+    )
+    _assert_rational_equal(lepton_photon, expected_qed, g1**2 + g2**2)
+
+    charged_current = canonize_full(
+        L.feynman_rule(
+            fields.uq.bar,
+            fields.dq,
+            fields.W,
+            simplify=True,
+            include_delta=True,
+        ),
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    text = _canon(charged_current)
+    assert "CKM(" in text
+    assert "gamma5(" in text
+    assert "g2" in text
+
+
+def test_representative_fermion_masses_and_yukawa_vertex(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    vev = sm.parameters.vev.symbol
+    electron = fields.l.class_members[0]
+    up = fields.uq.class_members[0]
+
+    electron_mass = _rule(
+        _sector(L, fields.l.bar, fields.l, differentiated=False),
+        electron.bar,
+        electron,
+        flavor_expand=True,
+    )
+    expected_electron_mass = (
+        -I
+        * INV_SQRT2
+        * vev
+        * S("ye1")
+        * spinor_metric(S("i1"), S("i2"))
+        * D2
+    )
+    assert _canon(electron_mass) == _canon(expected_electron_mass)
+
+    electron_higgs = _rule(
+        _sector(L, fields.l.bar, fields.l, fields.H, differentiated=False),
+        electron.bar,
+        electron,
+        fields.H,
+        flavor_expand=True,
+    )
+    expected_electron_higgs = (
+        -I
+        * INV_SQRT2
+        * S("ye1")
+        * spinor_metric(S("i1"), S("i2"))
+        * D3
+    )
+    assert _canon(electron_higgs) == _canon(expected_electron_higgs)
+
+    up_mass = _rule(
+        _sector(L, fields.uq.bar, fields.uq, differentiated=False),
+        up.bar,
+        up,
+        flavor_expand=True,
+    )
+    text = _canon(up_mass)
+    assert "yu1" in text
+    assert "vev" in text
+    assert "cof(3" in text
+
+
+def test_three_and_four_gauge_boson_vertices(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    ee = sm.parameters.ee.value
+
+    wwa = L.feynman_rule(
+        fields.W.bar,
+        fields.W,
+        fields.A,
+        simplify=True,
+        include_delta=True,
+    )
+    expected_wwa = I * ee * (
+        lorentz_metric(S("mu1"), S("mu2")) * pcomp(q1, S("mu3"))
+        - lorentz_metric(S("mu1"), S("mu2")) * pcomp(q2, S("mu3"))
+        - lorentz_metric(S("mu1"), S("mu3")) * pcomp(q1, S("mu2"))
+        + lorentz_metric(S("mu1"), S("mu3")) * pcomp(q3, S("mu2"))
+        + lorentz_metric(S("mu2"), S("mu3")) * pcomp(q2, S("mu1"))
+        - lorentz_metric(S("mu2"), S("mu3")) * pcomp(q3, S("mu1"))
+    ) * D3
+    assert _canon(wwa) == _canon(expected_wwa)
+
+    quartic_tensor = (
+        2
+        * lorentz_metric(S("mu1"), S("mu2"))
+        * lorentz_metric(S("mu3"), S("mu4"))
+        - lorentz_metric(S("mu1"), S("mu3"))
+        * lorentz_metric(S("mu2"), S("mu4"))
+        - lorentz_metric(S("mu1"), S("mu4"))
+        * lorentz_metric(S("mu2"), S("mu3"))
+    )
+    wwaa = L.feynman_rule(
+        fields.W.bar,
+        fields.W,
+        fields.A,
+        fields.A,
+        simplify=True,
+        include_delta=True,
+    )
+    assert _canon(wwaa) == _canon(-I * ee**2 * quartic_tensor * D4)
+
+
+def test_representative_qcd_vertex_is_present(sm):
+    rule = sm.lagrangian.feynman_rule(
+        sm.fields.uq.bar,
+        sm.fields.uq,
+        sm.fields.G,
+        simplify=True,
+        include_delta=True,
+    )
+    text = _canon(rule)
+    assert "g3" in text
+    assert "gamma(" in text
+    assert "::t(" in text
+
+
+def test_feynman_gauge_ghost_masses_and_interactions(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+    g1 = sm.parameters.g1.symbol
+    g2 = sm.parameters.g2.symbol
+    vev = sm.parameters.vev.symbol
+    denominator = g1**2 + g2**2
+    ghost_momentum = (
+        pcomp(q1, S("mu1_int"))
+        * pcomp(q2, S("mu1_int"))
+    )
+
+    charged = L.feynman_rule(
+        fields.ghWp.bar,
+        fields.ghWp,
+        simplify=True,
+        include_delta=True,
+    )
+    expected_charged = -I * (
+        ghost_momentum + g2**2 * vev**2 / 4
+    ) * D2
+    assert _canon(charged) == _canon(expected_charged)
+
+    neutral = L.feynman_rule(
+        fields.ghZ.bar,
+        fields.ghZ,
+        simplify=True,
+        include_delta=True,
+    )
+    expected_neutral = -I * (
+        ghost_momentum + denominator * vev**2 / 4
+    ) * D2
+    _assert_rational_equal(neutral, expected_neutral, denominator)
+
+    photon = L.feynman_rule(
+        fields.ghA.bar,
+        fields.ghA,
+        simplify=True,
+        include_delta=True,
+    )
+    _assert_rational_equal(
+        photon,
+        -I * ghost_momentum * D2,
+        denominator,
+    )
+
+    charged_goldstone = L.feynman_rule(
+        fields.ghWp.bar,
+        fields.ghWp,
+        fields.G0,
+        simplify=True,
+        include_delta=True,
+    )
+    assert _canon(charged_goldstone) == _canon(g2**2 * vev / 4 * D3)
+
+    charged_photon = L.feynman_rule(
+        fields.ghWp.bar,
+        fields.A,
+        fields.ghWp,
+        simplify=True,
+        include_delta=True,
+    )
+    expected_charged_photon = (
+        -I
+        * sm.parameters.ee.value
+        * pcomp(q1, S("mu2"))
+        * D3
+    )
+    assert _canon(charged_photon) == _canon(expected_charged_photon)

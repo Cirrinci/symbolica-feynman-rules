@@ -1,6 +1,6 @@
 from symbolica import S
 
-from model import GaugeFixing, Model, PartialD, build_unbroken_standard_model
+from model import GaugeFixing, Model, PartialD, build_standard_model
 from tests.support.builders import make_complex_scalar
 
 
@@ -24,7 +24,7 @@ def test_model_single_string_positional_argument_still_sets_name():
 
 
 def test_model_accepts_positional_declared_term_with_name_and_metadata_keywords():
-    sm = build_unbroken_standard_model()
+    sm = build_standard_model(include_ghosts=False)
     xiB = S("xiB")
     xiW = S("xiW")
     xiG = S("xiG")
