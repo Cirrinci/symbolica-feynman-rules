@@ -762,6 +762,97 @@ def _coupling_product(*pieces: object) -> object:
     return result
 
 
+def splice_field_replacement(
+    term: InteractionTerm,
+    *,
+    slot: int,
+    replacement: Sequence[FieldOccurrence],
+    coefficient: object = 1,
+    new_derivatives: Sequence[DerivativeAction] = (),
+    name: str = "replacement",
+    commute_with_partial_derivative: bool = True,
+) -> tuple[InteractionTerm, ...]:
+    """Splice one replacement into a lowered interaction term.
+
+    This shared structural primitive preserves ordered fields, remaps Dirac
+    bilinears and distributes existing partial derivatives over
+    product-valued replacements.
+    """
+
+    if not (0 <= slot < len(term.fields)):
+        raise IndexError(
+            f"Replacement slot {slot} is outside interaction arity {len(term.fields)}."
+        )
+
+    operator = FieldOperator(
+        name=name,
+        parity=0,
+        commute_with_partial_derivative=commute_with_partial_derivative,
+    )
+    original_occurrence = term.fields[slot]
+    replacement_tuple = _inherit_missing_replacement_labels(
+        original_occurrence=original_occurrence,
+        replacement=tuple(replacement),
+    )
+    derivatives_on_slot = tuple(
+        action for action in term.derivatives if action.target == slot
+    )
+    bilinears_with_slot = tuple(
+        bilinear
+        for bilinear in term.dirac_bilinears
+        if slot in (bilinear.psibar.occurrence, bilinear.psi.occurrence)
+    )
+    _validate_replacement_against_existing_features(
+        operator=operator,
+        slot=slot,
+        replacement=replacement_tuple,
+        derivatives_on_slot=derivatives_on_slot,
+        bilinears_containing_slot=bilinears_with_slot,
+    )
+    new_bilinears = _validate_and_remap_bilinears(
+        operator=operator,
+        slot=slot,
+        original_occurrence=original_occurrence,
+        replacement=replacement_tuple,
+        bilinears=term.dirac_bilinears,
+    )
+    fresh_derivatives = _translate_new_derivatives(
+        operator=operator,
+        slot=slot,
+        replacement_len=len(replacement_tuple),
+        new_derivatives=tuple(new_derivatives),
+    )
+    new_fields = (
+        term.fields[:slot]
+        + replacement_tuple
+        + term.fields[slot + 1 :]
+    )
+
+    return tuple(
+        replace(
+            term,
+            coupling=_coupling_product(coefficient, term.coupling),
+            fields=new_fields,
+            derivatives=arrangement + fresh_derivatives,
+            closed_dirac_bilinears=tuple(
+                bilinear.as_legacy() for bilinear in new_bilinears
+            ),
+            dirac_bilinears=new_bilinears,
+            origin=(
+                term.origin
+                + (";" if term.origin else "")
+                + f"transform:{name}@slot{slot}"
+            ),
+        )
+        for arrangement in _enumerate_derivative_arrangements(
+            operator=operator,
+            slot=slot,
+            replacement_len=len(replacement_tuple),
+            derivatives=term.derivatives,
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # Core engine
 # ---------------------------------------------------------------------------
@@ -1877,5 +1968,6 @@ __all__ = (
     "partial",
     "replacement_operator",
     "single_field_result",
+    "splice_field_replacement",
     "zero_result",
 )

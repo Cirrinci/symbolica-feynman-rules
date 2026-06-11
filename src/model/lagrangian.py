@@ -663,6 +663,36 @@ class CompiledLagrangian:
             )
         return current
 
+    def transform_fields(
+        self,
+        *rules,
+        repeat: bool = True,
+        max_passes: int = 32,
+        real_symbols=(),
+    ) -> "CompiledLagrangian":
+        """Apply one simultaneous declarative field-transformation stage."""
+
+        from .transformations import apply_field_transformations
+
+        return apply_field_transformations(
+            self,
+            rules,
+            repeat=repeat,
+            max_passes=max_passes,
+            real_symbols=real_symbols,
+        )
+
+    def expand_index_components(self, *indices, tensor_components=()):
+        """Expand selected finite index types into explicit components."""
+
+        from .transformations import expand_index_components
+
+        return expand_index_components(
+            self,
+            indices,
+            tensor_components=tensor_components,
+        )
+
     def operator_bracket(
         self,
         left,

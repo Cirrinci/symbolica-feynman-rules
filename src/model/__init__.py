@@ -20,9 +20,6 @@ Declarative ``lagrangian_decl`` factors live in ``declared.py``:
 
 from __future__ import annotations
 
-from importlib import import_module
-from typing import TYPE_CHECKING
-
 # ---- metadata ------------------------------------------------------------
 from .metadata import (
     COLOR_ADJ_INDEX,
@@ -95,33 +92,27 @@ from .lagrangian import (
 # ---- top-level model -----------------------------------------------------
 from .core import Model
 from .validation import ValidationIssue, ValidationReport
-
-# ---- unbroken Standard Model helper --------------------------------------
-_SM_EXPORTS = frozenset(
-    {
-        "UnbrokenStandardModel",
-        "UnbrokenStandardModelFields",
-        "UnbrokenStandardModelGaugeGroups",
-        "UnbrokenStandardModelIndices",
-        "UnbrokenStandardModelLagrangians",
-        "UnbrokenStandardModelParameters",
-        "build_unbroken_standard_model",
-    }
+from .transformations import (
+    CyclicTransformationError,
+    FieldTransformation,
+    ReplacementTerm,
+    TransformationContext,
+    apply_field_transformations,
+    expand_index_components,
+    replacement,
 )
 
-if TYPE_CHECKING:
-    from .standard_model_unbroken import (
-        UnbrokenStandardModel,
-        UnbrokenStandardModelFields,
-        UnbrokenStandardModelGaugeGroups,
-        UnbrokenStandardModelIndices,
-        UnbrokenStandardModelLagrangians,
-        UnbrokenStandardModelParameters,
-        build_unbroken_standard_model,
-    )
-
-# ---- SSB helpers (kept for the existing electroweak workflow) ------------
-from .ssb import *  # noqa: F401,F403
+# ---- Standard Model ------------------------------------------------------
+from .standard_model import (
+    StandardModel,
+    StandardModelFields,
+    StandardModelGaugeGroups,
+    StandardModelIndices,
+    StandardModelLagrangians,
+    StandardModelParameters,
+    build_standard_model,
+    standard_model_weak_tensor_components,
+)
 
 # ---- internal symbols still used across the codebase ---------------------
 from .declared import _DeclaredMonomial
@@ -129,12 +120,3 @@ from .lowering import (
     _expand_field_strengths_in_monomial,
     _match_covariant_monomial,
 )
-
-
-def __getattr__(name: str):
-    if name in _SM_EXPORTS:
-        module = import_module(".standard_model_unbroken", __name__)
-        value = getattr(module, name)
-        globals()[name] = value
-        return value
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

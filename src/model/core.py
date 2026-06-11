@@ -390,6 +390,22 @@ class Model:
             max_generated_terms=max_generated_terms,
         )
 
+    def transform_fields(
+        self,
+        *rules,
+        repeat: bool = True,
+        max_passes: int = 32,
+        real_symbols=(),
+    ) -> CompiledLagrangian:
+        """Compile in the original gauge basis, then transform fields."""
+
+        return self.lagrangian().transform_fields(
+            *rules,
+            repeat=repeat,
+            max_passes=max_passes,
+            real_symbols=real_symbols,
+        )
+
     def to_symbolica(
         self,
         *,
