@@ -238,7 +238,7 @@ def test_unbroken_electroweak_higgs_w_current():
         I
         * g2_sym
         * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
-        * (pcomp(q2, mu) - pcomp(q1, mu))
+        * (pcomp(q2, S("mu3")) - pcomp(q1, S("mu3")))
         * D3
     )
     _assert_equal(got, expected)
@@ -257,7 +257,7 @@ def test_unbroken_electroweak_higgs_b_current():
         * g1_sym
         * yH
         * WEAK_FUND_INDEX.representation.g(S("w1"), S("w2")).to_expression()
-        * (pcomp(q2, mu) - pcomp(q1, mu))
+        * (pcomp(q2, S("mu3")) - pcomp(q1, S("mu3")))
         * D3
     )
     _assert_equal(got, expected)

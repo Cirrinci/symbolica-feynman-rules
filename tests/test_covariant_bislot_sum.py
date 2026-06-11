@@ -233,7 +233,6 @@ def test_slot_policy_sum_current_matches_expected_bislot_vertex():
     current_terms = [term for term in compiled if "current" in term.label]
     assert len(current_terms) == 4
 
-    current_index = current_terms[0].derivatives[0].lorentz_index
     legs = (
         scalar.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: (c1, c3)}),
         scalar.leg(p2, species=b2, labels={COLOR_FUND_KIND: (c2, c4)}),
@@ -261,7 +260,7 @@ def test_slot_policy_sum_current_matches_expected_bislot_vertex():
             gauge_generator(a3, c1, c2) * spectator_slot_2
             + gauge_generator(a3, c3, c4) * spectator_slot_1
         )
-        * (pcomp(p2, current_index) - pcomp(p1, current_index))
+        * (pcomp(p2, mu3) - pcomp(p1, mu3))
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )

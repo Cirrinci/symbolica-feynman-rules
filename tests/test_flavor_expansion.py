@@ -217,6 +217,106 @@ def test_non_diagonal_flavor_tensor_expands_to_all_member_pairs():
     )
 
 
+def test_generic_unitary_parameter_products_contract_to_flavor_metric():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, _ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
+    f, h, g = S("f", "h", "g")
+    U = Parameter(
+        "U",
+        indices=(Generation, Generation),
+        unitary_partner="UDag",
+    )
+    UDag = Parameter(
+        "UDag",
+        indices=(Generation, Generation),
+        unitary_partner="U",
+    )
+    lagrangian = _compiled(
+        S("lam") * l.bar(f) * U(f, h) * UDag(h, g) * l(g) * Phi,
+        parameters=(U, UDag),
+    )
+
+    compact = lagrangian.feynman_rule(
+        l.bar,
+        l,
+        Phi,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=False,
+    )
+    compact_text = _canon(compact)
+    assert "U(" not in compact_text
+    assert "UDag(" not in compact_text
+    assert _canon(Generation.representation.g(S("f1"), S("f2")).to_expression()) in compact_text
+
+    diagonal = lagrangian.feynman_rule(
+        e.bar,
+        e,
+        Phi,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=True,
+    )
+    diagonal_text = _canon(diagonal)
+    assert "U(" not in diagonal_text
+    assert "UDag(" not in diagonal_text
+
+    with pytest.raises(ValueError, match="No matching interaction terms"):
+        lagrangian.feynman_rule(
+            e.bar,
+            mu,
+            Phi,
+            simplify=True,
+            include_delta=True,
+            flavor_expand=True,
+        )
+
+
+def test_generic_unitary_contraction_handles_transposed_orientation():
+    Generation = flavor_index("Generation", 3, prefix="f")
+    l, (e, mu, _ta) = _charged_lepton_class(Generation)
+    Phi = scalar_field("Phi")
+    f, h, g = S("f", "h", "g")
+    U = Parameter(
+        "U",
+        indices=(Generation, Generation),
+        unitary_partner="UDag",
+    )
+    UDag = Parameter(
+        "UDag",
+        indices=(Generation, Generation),
+        unitary_partner="U",
+    )
+    lagrangian = _compiled(
+        S("lam") * l.bar(f) * U(h, f) * UDag(g, h) * l(g) * Phi,
+        parameters=(U, UDag),
+    )
+
+    compact = lagrangian.feynman_rule(
+        l.bar,
+        l,
+        Phi,
+        simplify=True,
+        include_delta=True,
+        flavor_expand=False,
+    )
+    compact_text = _canon(compact)
+    assert "U(" not in compact_text
+    assert "UDag(" not in compact_text
+    assert _canon(Generation.representation.g(S("f1"), S("f2")).to_expression()) in compact_text
+
+    with pytest.raises(ValueError, match="No matching interaction terms"):
+        lagrangian.feynman_rule(
+            e.bar,
+            mu,
+            Phi,
+            simplify=True,
+            include_delta=True,
+            flavor_expand=True,
+        )
+
+
 def test_flavor_expansion_matches_manual_normalization_for_mixed_and_diagonal_terms():
     Generation = flavor_index("Generation", 3, prefix="f")
     l, (e, mu, ta) = _charged_lepton_class(Generation)

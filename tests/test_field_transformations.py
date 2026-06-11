@@ -278,6 +278,137 @@ def test_callable_builder_freshens_dummy_indices_against_existing_labels():
     assert result.terms[0].fields[2].slot_labels.get(0) == replacement_label
 
 
+def test_callable_builder_freshens_each_replaced_occurrence_independently():
+    phi = _scalar("Phi")
+    x = _scalar("X", indices=(COLOR_FUND_INDEX,))
+    y = _scalar("Y", indices=(COLOR_FUND_INDEX,))
+    source = _lagrangian(
+        InteractionTerm(coupling=1, fields=(phi(), phi()))
+    )
+
+    def build(context):
+        label = context.fresh(COLOR_FUND_INDEX)
+        return (replacement(1, x(label), y(label)),)
+
+    result = source.transform_fields(
+        FieldTransformation(phi, builder=build, auto_conjugate=False),
+        repeat=False,
+    )
+
+    assert len(result.terms) == 1
+    labels = [occurrence.slot_labels.get(0) for occurrence in result.terms[0].fields]
+    assert labels[0] == labels[1]
+    assert labels[2] == labels[3]
+    assert labels[0] != labels[2]
+
+
+def test_invalid_transformation_cannot_drop_a_free_index():
+    phi = _scalar("Phi", indices=(COLOR_FUND_INDEX,))
+    x = _scalar("X")
+    source = _lagrangian(
+        InteractionTerm(coupling=1, fields=(phi(S("c_open")),))
+    )
+
+    with pytest.raises(ValueError, match="free index"):
+        source.transform_fields(
+            FieldTransformation(phi, terms=(replacement(1, x),)),
+            repeat=False,
+        )
+
+
+def test_invalid_transformation_cannot_introduce_a_new_free_index():
+    phi = _scalar("Phi")
+    x = _scalar("X", indices=(COLOR_FUND_INDEX,))
+    source = _lagrangian(
+        InteractionTerm(coupling=1, fields=(phi(),))
+    )
+
+    with pytest.raises(ValueError, match="free index"):
+        source.transform_fields(
+            FieldTransformation(phi, terms=(replacement(1, x(S("c_new"))),)),
+            repeat=False,
+        )
+
+
+def test_missing_conjugate_rule_with_auto_conjugate_disabled_leaves_field_unchanged():
+    phi = _scalar("Phi", complex_field=True)
+    x = _scalar("X")
+    source = _lagrangian(
+        InteractionTerm(coupling=1, fields=(phi.bar(),))
+    )
+
+    result = source.transform_fields(
+        FieldTransformation(
+            phi,
+            terms=(replacement(1, x),),
+            auto_conjugate=False,
+        ),
+        repeat=False,
+    )
+
+    assert len(result.terms) == 1
+    assert _field_names(result.terms[0]) == ("Phi.bar",)
+
+
+def test_explicit_empty_conjugate_replacement_annihilates_term():
+    phi = _scalar("Phi", complex_field=True)
+    x = _scalar("X")
+    source = _lagrangian(
+        InteractionTerm(coupling=1, fields=(phi.bar(),))
+    )
+
+    result = source.transform_fields(
+        FieldTransformation(
+            phi,
+            terms=(replacement(1, x),),
+            conjugate_terms=(),
+            auto_conjugate=False,
+        ),
+        repeat=False,
+    )
+
+    assert result.terms == ()
+
+
+def test_nested_partial_derivatives_expand_all_leibniz_arrangements():
+    phi = _scalar("Phi")
+    a = _scalar("A")
+    b = _scalar("B")
+    c = _scalar("C")
+    source = _lagrangian(
+        InteractionTerm(
+            coupling=1,
+            fields=(phi(),),
+            derivatives=(
+                DerivativeAction(target=0, lorentz_index=S("mu")),
+                DerivativeAction(target=0, lorentz_index=S("nu")),
+            ),
+        )
+    )
+
+    result = source.transform_fields(
+        FieldTransformation(phi, terms=(replacement(1, a, b, c),)),
+        repeat=False,
+    )
+
+    assert len(result.terms) == 9
+    assert {_field_names(term) for term in result.terms} == {("A", "B", "C")}
+    assert {
+        tuple((action.target, str(action.lorentz_index)) for action in term.derivatives)
+        for term in result.terms
+    } == {
+        ((0, "mu"), (0, "nu")),
+        ((0, "mu"), (1, "nu")),
+        ((0, "mu"), (2, "nu")),
+        ((1, "mu"), (0, "nu")),
+        ((1, "mu"), (1, "nu")),
+        ((1, "mu"), (2, "nu")),
+        ((2, "mu"), (0, "nu")),
+        ((2, "mu"), (1, "nu")),
+        ((2, "mu"), (2, "nu")),
+    }
+
+
 def test_dependent_transformations_reach_fixed_point():
     a_field = _scalar("A")
     b_field = _scalar("B")
@@ -325,6 +456,34 @@ def test_callable_transformation_dependencies_are_cycle_checked():
                 builder=lambda _context: (replacement(1, a_field),),
                 dependencies=(a_field,),
                 auto_conjugate=False,
+            ),
+        )
+
+
+def test_component_specific_cycles_are_rejected():
+    multiplet = _scalar("A", indices=(WEAK_FUND_INDEX,))
+    b_field = _scalar("B")
+    c_field = _scalar("C")
+    source = _lagrangian(InteractionTerm(coupling=1, fields=(multiplet(1),)))
+
+    with pytest.raises(CyclicTransformationError, match="A"):
+        source.transform_fields(
+            FieldTransformation(
+                multiplet,
+                components={0: 1},
+                terms=(replacement(1, b_field),),
+                name="A[1]",
+            ),
+            FieldTransformation(
+                multiplet,
+                components={0: 2},
+                terms=(replacement(1, c_field),),
+                name="A[2]",
+            ),
+            FieldTransformation(
+                b_field,
+                terms=(replacement(1, multiplet(1)),),
+                name="B",
             ),
         )
 

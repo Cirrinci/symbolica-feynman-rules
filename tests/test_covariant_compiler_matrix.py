@@ -319,8 +319,6 @@ def test_covariant_scalar_qed_current_and_contact():
     compiled = _compiled_terms(model)
     assert len(compiled) == 4
     current_plus, current_minus, contact, _partial_term = compiled
-    current_index = current_plus.derivatives[0].lorentz_index
-
     current_legs = (
         scalar.leg(p1, conjugated=True, species=b1),
         scalar.leg(p2, species=b2),
@@ -338,7 +336,7 @@ def test_covariant_scalar_qed_current_and_contact():
             species_map={b1: phidag, b2: phi, b3: photon_symbol},
         )
     )
-    expected_current = I * eQED * qPhi * (pcomp(p2, current_index) - pcomp(p1, current_index)) * (2 * pi) ** d * Delta(p1 + p2 + p3)
+    expected_current = I * eQED * qPhi * (pcomp(p2, mu3) - pcomp(p1, mu3)) * (2 * pi) ** d * Delta(p1 + p2 + p3)
     assert got_current.expand().to_canonical_string() == expected_current.expand().to_canonical_string()
 
     contact_legs = (
@@ -387,8 +385,6 @@ def test_covariant_scalar_qcd_current_and_contact():
     compiled = _compiled_terms(model)
     assert len(compiled) == 4
     current_plus, current_minus, contact, _partial_term = compiled
-    current_index = current_plus.derivatives[0].lorentz_index
-
     current_legs = (
         scalar.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
         scalar.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
@@ -410,7 +406,7 @@ def test_covariant_scalar_qcd_current_and_contact():
         I
         * gS
         * gauge_generator(a3, c1, c2)
-        * (pcomp(p2, current_index) - pcomp(p1, current_index))
+        * (pcomp(p2, mu3) - pcomp(p1, mu3))
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )
@@ -482,7 +478,6 @@ def test_covariant_mixed_scalar_currents_and_contact():
     assert len(qed_terms) == 2
     assert len(mixed_contact_terms) == 2
 
-    qcd_index = qcd_terms[0].derivatives[0].lorentz_index
     qcd_legs = (
         scalar.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
         scalar.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
@@ -503,13 +498,12 @@ def test_covariant_mixed_scalar_currents_and_contact():
         I
         * gS
         * gauge_generator(a3, c1, c2)
-        * (pcomp(p2, qcd_index) - pcomp(p1, qcd_index))
+        * (pcomp(p2, mu3) - pcomp(p1, mu3))
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )
     assert got_qcd.expand().to_canonical_string() == expected_qcd.expand().to_canonical_string()
 
-    qed_index = qed_terms[0].derivatives[0].lorentz_index
     qed_legs = (
         scalar.leg(p1, conjugated=True, species=b1, labels={COLOR_FUND_KIND: c1}),
         scalar.leg(p2, species=b2, labels={COLOR_FUND_KIND: c2}),
@@ -531,7 +525,7 @@ def test_covariant_mixed_scalar_currents_and_contact():
         * eQED
         * qPhiMix
         * COLOR_FUND_INDEX.representation.g(c1, c2).to_expression()
-        * (pcomp(p2, qed_index) - pcomp(p1, qed_index))
+        * (pcomp(p2, mu3) - pcomp(p1, mu3))
         * (2 * pi) ** d
         * Delta(p1 + p2 + p3)
     )

@@ -238,7 +238,7 @@ def test_su2_scalar_doublet_vertices():
     expected_3pt = (
         I * g2_sym
         * weak_gauge_generator(S("aw3"), S("w1"), S("w2"))
-        * (pcomp(q2, mu) - pcomp(q1, mu))
+        * (pcomp(q2, S("mu3")) - pcomp(q1, S("mu3")))
         * D3
     )
     _assert_equal(got_3pt, expected_3pt)

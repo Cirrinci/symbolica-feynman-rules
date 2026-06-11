@@ -6,9 +6,11 @@ import pytest
 from symbolica import Expression, S
 
 from model import build_standard_model
-from model.interactions import _field_match_key
+from model.interactions import InteractionTerm, _field_match_key
 from model.lagrangian import CompiledLagrangian
 from symbolic.spenso_structures import (
+    chiral_projector_left,
+    chiral_projector_right,
     gamma_matrix,
     lorentz_metric,
     spinor_metric,
@@ -33,6 +35,16 @@ D4 = (2 * pi) ** d * Delta(q1 + q2 + q3 + q4)
 @pytest.fixture(scope="module")
 def sm():
     return build_standard_model()
+
+
+@pytest.fixture(scope="module")
+def sm_rxi():
+    return build_standard_model(
+        xiA=S("xiA"),
+        xiZ=S("xiZ"),
+        xiW=S("xiW"),
+        xiG=S("xiG"),
+    )
 
 
 def _canon(expr):
@@ -92,6 +104,25 @@ def _assert_rational_equal(got, expected, denominator):
         assert _canon(difference) == _canon(ZERO)
 
 
+def _assert_symbolic_equal(got, expected):
+    difference = got - expected
+    symbols = sorted(
+        difference.get_all_symbols(),
+        key=lambda symbol: symbol.to_canonical_string(),
+    )
+    samples = (
+        (2, 3, 5, 7, 11, 13, 17, 19),
+        (23, 29, 31, 37, 41, 43, 47, 53),
+    )
+    for sample in samples:
+        candidate = difference
+        for symbol, value in zip(symbols, sample):
+            candidate = candidate.replace(symbol, Expression.num(value))
+        if hasattr(candidate, "cancel"):
+            candidate = candidate.cancel()
+        assert _canon(candidate) == _canon(ZERO)
+
+
 def test_standard_model_builds_from_source_basis_and_validates(sm):
     assert sm.source_model.validate().ok
     assert sm.model.validate().ok
@@ -113,6 +144,47 @@ def test_standard_model_builds_from_source_basis_and_validates(sm):
         occurrence.field not in source_fields
         for term in sm.lagrangian.terms
         for occurrence in term.fields
+    )
+    assert sm.fields.A.mass == ZERO
+    assert sm.fields.W.mass == sm.parameters.MW.symbol
+    assert sm.fields.Z.mass == sm.parameters.MZ.symbol
+    assert sm.fields.H.mass == sm.parameters.MH.symbol
+    assert sm.fields.G0.goldstone_of is sm.fields.Z
+    assert sm.fields.GP.goldstone_of is sm.fields.W
+    assert sm.fields.ghZ.ghost_of is sm.fields.Z
+    assert sm.fields.ghWp.ghost_of is sm.fields.W
+    assert sm.fields.GP.quantum_numbers["Q"] == ONE
+    assert sm.fields.ghWm.quantum_numbers["Q"] == -ONE
+
+
+def test_barred_source_fermion_transformations_include_conjugated_projectors(sm):
+    source = CompiledLagrangian(
+        terms=(
+            InteractionTerm(
+                coupling=1,
+                fields=(sm.fields.LL.bar(S("sp1"), 1, S("ff1")),),
+            ),
+        )
+    )
+    rule = next(
+        transformation
+        for transformation in sm.transformations
+        if transformation.source is sm.fields.LL
+        and transformation.components == {1: 1}
+    )
+
+    result = source.transform_fields(rule, repeat=False)
+
+    assert len(result.terms) == 1
+    occurrence = result.terms[0].fields[0]
+    assert occurrence.field is sm.fields.vl
+    assert occurrence.conjugated is True
+    assert occurrence.slot_labels.get(1) == S("ff1")
+    assert _canon(result.terms[0].coupling) == _canon(
+        chiral_projector_right(
+            occurrence.slot_labels.get(0),
+            S("sp1"),
+        )
     )
 
 
@@ -142,9 +214,60 @@ def test_canonical_scalar_and_vector_kinetic_terms(sm):
         * pcomp(q1, S("mu1_int"))
         * pcomp(q2, S("mu1_int"))
         - pcomp(q1, S("mu2")) * pcomp(q2, S("mu1"))
+        + pcomp(q1, S("mu1")) * pcomp(q2, S("mu2"))
     ) * D2
     denominator = sm.parameters.g1.symbol**2 + sm.parameters.g2.symbol**2
     _assert_rational_equal(photon_kinetic, expected_vector, denominator)
+
+
+def test_rxi_longitudinal_vector_terms_and_gauge_goldstone_cancellation(sm_rxi):
+    L = sm_rxi.lagrangian
+    fields = sm_rxi.fields
+
+    photon_kinetic = _rule(
+        _sector(L, fields.A, fields.A, differentiated=True),
+        fields.A,
+        fields.A,
+    )
+    expected_photon = I * (
+        lorentz_metric(S("mu1"), S("mu2"))
+        * pcomp(q1, S("mu1_int"))
+        * pcomp(q2, S("mu1_int"))
+        - pcomp(q1, S("mu2")) * pcomp(q2, S("mu1"))
+        + sm_rxi.parameters.xiA.symbol**-1
+        * pcomp(q1, S("mu1"))
+        * pcomp(q2, S("mu2"))
+    ) * D2
+    _assert_symbolic_equal(photon_kinetic, expected_photon)
+
+    w_kinetic = _rule(
+        _sector(L, fields.W.bar, fields.W, differentiated=True),
+        fields.W.bar,
+        fields.W,
+    )
+    expected_w = I * (
+        lorentz_metric(S("mu1"), S("mu2"))
+        * pcomp(q1, S("mu1_int"))
+        * pcomp(q2, S("mu1_int"))
+        - pcomp(q1, S("mu2")) * pcomp(q2, S("mu1"))
+        + sm_rxi.parameters.xiW.symbol**-1
+        * pcomp(q1, S("mu1"))
+        * pcomp(q2, S("mu2"))
+    ) * D2
+    _assert_symbolic_equal(w_kinetic, expected_w)
+
+    zg0 = _rule(
+        _sector(L, fields.Z, fields.G0, differentiated=True),
+        fields.Z,
+        fields.G0,
+    )
+    wgp = _rule(
+        _sector(L, fields.W.bar, fields.GP, differentiated=True),
+        fields.W.bar,
+        fields.GP,
+    )
+    assert _canon(zg0) == _canon(ZERO)
+    assert _canon(wgp) == _canon(ZERO)
 
 
 def test_neutral_kinetic_and_mass_matrices_are_diagonal(sm):
@@ -169,6 +292,46 @@ def test_neutral_kinetic_and_mass_matrices_are_diagonal(sm):
     assert _canon(az_kinetic) == _canon(ZERO)
     assert _canon(az_mass) == _canon(ZERO)
     assert _canon(photon_mass) == _canon(ZERO)
+
+
+def test_rxi_goldstone_and_ghost_masses_follow_xi_parameters(sm_rxi):
+    L = sm_rxi.lagrangian
+    fields = sm_rxi.fields
+    g1 = sm_rxi.parameters.g1.symbol
+    g2 = sm_rxi.parameters.g2.symbol
+    vev = sm_rxi.parameters.vev.symbol
+
+    g0_mass = _rule(
+        _sector(L, fields.G0, fields.G0, differentiated=False),
+        fields.G0,
+        fields.G0,
+    )
+    expected_g0 = -I * sm_rxi.parameters.xiZ.symbol * (g1**2 + g2**2) * vev**2 / 4 * D2
+    _assert_symbolic_equal(g0_mass, expected_g0)
+
+    gp_mass = _rule(
+        _sector(L, fields.GP.bar, fields.GP, differentiated=False),
+        fields.GP.bar,
+        fields.GP,
+    )
+    expected_gp = -I * sm_rxi.parameters.xiW.symbol * g2**2 * vev**2 / 4 * D2
+    _assert_symbolic_equal(gp_mass, expected_gp)
+
+    ghz_mass = _rule(
+        _sector(L, fields.ghZ.bar, fields.ghZ, differentiated=False),
+        fields.ghZ.bar,
+        fields.ghZ,
+    )
+    expected_ghz = -I * sm_rxi.parameters.xiZ.symbol * (g1**2 + g2**2) * vev**2 / 4 * D2
+    _assert_symbolic_equal(ghz_mass, expected_ghz)
+
+    ghwp_mass = _rule(
+        _sector(L, fields.ghWp.bar, fields.ghWp, differentiated=False),
+        fields.ghWp.bar,
+        fields.ghWp,
+    )
+    expected_ghwp = -I * sm_rxi.parameters.xiW.symbol * g2**2 * vev**2 / 4 * D2
+    _assert_symbolic_equal(ghwp_mass, expected_ghwp)
 
 
 def test_w_and_z_masses_match_the_higgs_mechanism(sm):
@@ -311,14 +474,29 @@ def test_electromagnetic_and_charged_fermion_currents(sm):
         S("fl1"),
         S("fl2"),
     ).to_expression()
+    projector_left = chiral_projector_left(S("k"), S("i2"))
+    projector_right = chiral_projector_right(S("k"), S("i2"))
     expected_qed = (
         -I
         * ee
         * flavor_metric
-        * gamma_matrix(S("i1"), S("i2"), S("mu3"))
+        * (
+            chiral_projector_right(S("i1"), S("a"))
+            * gamma_matrix(S("a"), S("k"), S("mu3"))
+            * projector_left
+            + chiral_projector_left(S("i1"), S("a"))
+            * gamma_matrix(S("a"), S("k"), S("mu3"))
+            * projector_right
+        )
         * D3
     )
-    _assert_rational_equal(lepton_photon, expected_qed, g1**2 + g2**2)
+    expected_qed = canonize_full(
+        expected_qed,
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    assert _canon(lepton_photon) == _canon(expected_qed)
 
     charged_current = canonize_full(
         L.feynman_rule(
@@ -336,6 +514,59 @@ def test_electromagnetic_and_charged_fermion_currents(sm):
     assert "CKM(" in text
     assert "gamma5(" in text
     assert "g2" in text
+
+
+def test_ckm_orientation_and_neutral_current_unitarity(sm):
+    L = sm.lagrangian
+    fields = sm.fields
+
+    charged_current = canonize_full(
+        L.feynman_rule(
+            fields.uq.bar,
+            fields.dq,
+            fields.W,
+            simplify=True,
+            include_delta=True,
+        ),
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    charged_conjugate = canonize_full(
+        L.feynman_rule(
+            fields.dq.bar,
+            fields.uq,
+            fields.W.bar,
+            simplify=True,
+            include_delta=True,
+        ),
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    neutral_current = canonize_full(
+        L.feynman_rule(
+            fields.uq.bar,
+            fields.uq,
+            fields.Z,
+            simplify=True,
+            include_delta=True,
+        ),
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+
+    charged_text = _canon(charged_current)
+    charged_conjugate_text = _canon(charged_conjugate)
+    neutral_text = _canon(neutral_current)
+
+    assert "CKM(" in charged_text
+    assert "CKMDag(" not in charged_text
+    assert "CKMDag(" in charged_conjugate_text
+    assert "CKM(" not in charged_conjugate_text
+    assert "CKM(" not in neutral_text
+    assert "CKMDag(" not in neutral_text
 
 
 def test_representative_fermion_masses_and_yukawa_vertex(sm):
@@ -356,8 +587,25 @@ def test_representative_fermion_masses_and_yukawa_vertex(sm):
         * INV_SQRT2
         * vev
         * S("ye1")
-        * spinor_metric(S("i1"), S("i2"))
+        * (
+            chiral_projector_right(S("i1"), S("k"))
+            * chiral_projector_right(S("k"), S("i2"))
+            + chiral_projector_left(S("i1"), S("k"))
+            * chiral_projector_left(S("k"), S("i2"))
+        )
         * D2
+    )
+    electron_mass = canonize_full(
+        electron_mass,
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    expected_electron_mass = canonize_full(
+        expected_electron_mass,
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
     )
     assert _canon(electron_mass) == _canon(expected_electron_mass)
 
@@ -372,8 +620,25 @@ def test_representative_fermion_masses_and_yukawa_vertex(sm):
         -I
         * INV_SQRT2
         * S("ye1")
-        * spinor_metric(S("i1"), S("i2"))
+        * (
+            chiral_projector_right(S("i1"), S("k"))
+            * chiral_projector_right(S("k"), S("i2"))
+            + chiral_projector_left(S("i1"), S("k"))
+            * chiral_projector_left(S("k"), S("i2"))
+        )
         * D3
+    )
+    electron_higgs = canonize_full(
+        electron_higgs,
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    expected_electron_higgs = canonize_full(
+        expected_electron_higgs,
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
     )
     assert _canon(electron_higgs) == _canon(expected_electron_higgs)
 
