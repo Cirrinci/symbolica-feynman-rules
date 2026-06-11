@@ -1,6 +1,7 @@
 from symbolica import S  # noqa: E402
 
 from model import (  # noqa: E402
+    COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
     Field,
     GaugeFixing,
@@ -119,6 +120,155 @@ def test_model_validate_reports_missing_structure_constant_for_nonabelian_ghosts
     assert not report.ok
     assert [issue.code for issue in report.issues] == ["missing_structure_constant"]
     assert "callable structure_constant" in report.issues[0].message
+
+
+def test_model_validate_reports_missing_gauge_boson_for_gauge_kinetic_term():
+    from symbolica import Expression
+    from model import FieldStrength
+
+    gluon = make_gluon(symbol=S("G"))
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=S("Gmissing"),
+        structure_constant=structure_constant,
+    )
+    mu, nu, a = S("mu_missing"), S("nu_missing"), S("a_missing")
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon,),
+        lagrangian_decl=(
+            -(Expression.num(1) / Expression.num(4))
+            * FieldStrength(su3, mu, nu, a)
+            * FieldStrength(su3, mu, nu, a)
+        ),
+    )
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["missing_gauge_boson"]
+    assert "Gauge kinetic validation" in report.issues[0].message
+
+
+def test_model_validate_reports_missing_gauge_boson_for_auto_abelian_covariant_term():
+    psi = make_dirac_fermion(
+        "Psi",
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        charge=S("qPsi"),
+    )
+    u1 = GaugeGroup(
+        name="U1QED",
+        abelian=True,
+        coupling=S("eQED"),
+        gauge_boson=S("Amissing"),
+        charge="Q",
+    )
+    model = Model(
+        gauge_groups=(u1,),
+        fields=(psi,),
+        lagrangian_decl=DiracKineticTerm(field=psi),
+    )
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["missing_gauge_boson"]
+    assert "Covariant validation" in report.issues[0].message
+
+
+def test_model_validate_reports_non_ghost_field_kind():
+    gluon = make_gluon(symbol=S("G"))
+    bad_field = Field(
+        "phiAdj",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("phiAdj"),
+        conjugate_symbol=S("phiAdjDag"),
+        indices=(COLOR_ADJ_INDEX,),
+    )
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        ghost_field=bad_field.symbol,
+        structure_constant=structure_constant,
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, bad_field),
+        lagrangian_decl=GhostLagrangian(su3),
+    )
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["invalid_ghost_field"]
+    assert "kind='ghost'" in report.issues[0].message
+
+
+def test_model_validate_reports_self_conjugate_ghost_field():
+    gluon = make_gluon(symbol=S("G"))
+    ghost = Field(
+        "ghBad",
+        spin=0,
+        kind="ghost",
+        self_conjugate=True,
+        symbol=S("ghBad"),
+        indices=(COLOR_ADJ_INDEX,),
+    )
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        ghost_field=ghost.symbol,
+        structure_constant=structure_constant,
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, ghost),
+        lagrangian_decl=GhostLagrangian(su3),
+    )
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["invalid_ghost_field"]
+    assert "non-self-conjugate" in report.issues[0].message
+
+
+def test_model_validate_reports_ghost_association_mismatch():
+    gluon = make_gluon(name="G", symbol=S("G"))
+    other_gluon = make_gluon(name="H", symbol=S("H"))
+    ghost = make_ghost(
+        name="ghG",
+        ghost_of=other_gluon,
+        symbol=S("ghG"),
+        conjugate_symbol=S("ghGbar"),
+    )
+    su3 = GaugeGroup(
+        name="SU3C",
+        abelian=False,
+        coupling=S("gS"),
+        gauge_boson=gluon.symbol,
+        ghost_field=ghost.symbol,
+        structure_constant=structure_constant,
+    )
+    model = Model(
+        gauge_groups=(su3,),
+        fields=(gluon, other_gluon, ghost),
+        lagrangian_decl=GhostLagrangian(su3),
+    )
+
+    report = model.validate()
+
+    assert not report.ok
+    assert [issue.code for issue in report.issues] == ["invalid_ghost_field"]
+    assert "associated with the gauge boson" in report.issues[0].message
 
 
 def test_model_validate_accepts_valid_nonabelian_ghost_and_gauge_fixing_setup():

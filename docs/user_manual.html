@@ -698,7 +698,7 @@
   <table class="param-table">
     <tr><th>Parameter</th><th>Description</th></tr>
     <tr><td>index</td><td>The <code>IndexType</code> for the representation (e.g. <code>COLOR_FUND_INDEX</code>).</td></tr>
-    <tr><td>generator_builder</td><td>Function that builds the generator tensor: <code>gauge_generator</code> for SU(N) fundamentals, <code>weak_gauge_generator</code> for SU(2) doublets.</td></tr>
+    <tr><td>generator_builder</td><td>Function that builds the generator tensor: <code>gauge_generator</code> for the built-in color/SU(3) fundamental, <code>weak_gauge_generator</code> for the built-in SU(2) doublet, or a custom builder for other groups.</td></tr>
     <tr><td>name</td><td>Label string.</td></tr>
     <tr><td>slot</td><td>For fields with repeated same-kind indices, specify which slot (0-based) is the active one.</td></tr>
     <tr><td>slot_policy</td><td><code>"sum"</code> to sum over all matching slots instead of requiring uniqueness.</td></tr>

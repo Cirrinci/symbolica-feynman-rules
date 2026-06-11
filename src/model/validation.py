@@ -136,6 +136,56 @@ def validate_model(model: Model) -> ValidationReport:
             return target.name
         return repr(target)
 
+    def resolve_gauge_boson(
+        gauge_group: GaugeGroup,
+        *,
+        context: str,
+    ) -> Field | None:
+        if gauge_group.gauge_boson is None:
+            add_issue(
+                "missing_gauge_boson",
+                f"{context} requires gauge group {gauge_group.name!r} to declare gauge_boson.",
+            )
+            return None
+        try:
+            return model.gauge_boson_field(gauge_group)
+        except ValueError as exc:
+            add_issue(
+                "missing_gauge_boson",
+                f"{context} could not resolve the gauge boson for gauge group "
+                f"{gauge_group.name!r}: {exc}",
+            )
+            return None
+
+    def ghost_matches_gauge_boson(
+        ghost_field: Field,
+        gauge_group: GaugeGroup,
+        gauge_boson: Field,
+    ) -> bool:
+        if not ghost_field.is_ghost or ghost_field.ghost_of is None:
+            return True
+
+        associated = model.find_field(ghost_field.ghost_of)
+        if associated is not None:
+            return gauge_boson is associated
+
+        target_text = str(ghost_field.ghost_of)
+        return target_text in (
+            gauge_boson.name,
+            str(gauge_boson.symbol),
+            str(gauge_group.gauge_boson),
+        )
+
+    def field_couples_to_group(field: Field, gauge_group: GaugeGroup) -> bool:
+        if gauge_group.abelian:
+            if gauge_group.charge is None:
+                return False
+            return field.quantum_numbers.get(gauge_group.charge, 0) != 0
+        try:
+            return gauge_group.matter_representation(field) is not None
+        except ValueError:
+            return True
+
     kinetic_duplicates: dict[tuple[object, ...], int] = {}
 
     for term in source_terms:
@@ -165,14 +215,22 @@ def validate_model(model: Model) -> ValidationReport:
         if kinetic_info is None:
             continue
         group_target, normalized_coefficient = kinetic_info
+        gauge_group = model.find_gauge_group(group_target)
+        if gauge_group is None:
+            add_issue(
+                "undeclared_gauge_group",
+                "Gauge kinetic validation could not resolve gauge group "
+                f"{group_target!r} in model.gauge_groups.",
+            )
+        else:
+            resolve_gauge_boson(gauge_group, context="Gauge kinetic validation")
 
         duplicate_key = ("vector", normalize_group_target(group_target))
         kinetic_duplicates[duplicate_key] = kinetic_duplicates.get(duplicate_key, 0) + 1
 
         status = coefficient_status(normalized_coefficient)
         if status is False:
-            group = model.find_gauge_group(group_target)
-            group_name = group.name if group is not None else repr(group_target)
+            group_name = gauge_group.name if gauge_group is not None else repr(group_target)
             add_issue(
                 "kinetic_normalization",
                 f"Gauge kinetic term for gauge group {group_name!r} has "
@@ -215,6 +273,8 @@ def validate_model(model: Model) -> ValidationReport:
                 "Gauge-fixing validation could not resolve gauge group "
                 f"{gauge_fixing.gauge_group!r} in model.gauge_groups.",
             )
+            continue
+        resolve_gauge_boson(gauge_group, context="Gauge-fixing validation")
 
     for term in source_terms:
         ghost = _source_term_ghost(term)
@@ -238,6 +298,8 @@ def validate_model(model: Model) -> ValidationReport:
             )
             continue
 
+        gauge_boson = resolve_gauge_boson(gauge_group, context="Ghost validation")
+
         if gauge_group.structure_constant is None or not callable(gauge_group.structure_constant):
             add_issue(
                 "missing_structure_constant",
@@ -260,6 +322,33 @@ def validate_model(model: Model) -> ValidationReport:
                 "Ghost validation could not resolve ghost_field "
                 f"{gauge_group.ghost_field!r} for gauge group {gauge_group.name!r} "
                 "in model.fields.",
+            )
+            continue
+
+        if not ghost_field.is_ghost:
+            add_issue(
+                "invalid_ghost_field",
+                f"Ghost validation requires field {ghost_field.name!r} to have kind='ghost'.",
+            )
+            continue
+
+        if ghost_field.self_conjugate:
+            add_issue(
+                "invalid_ghost_field",
+                f"Ghost validation requires field {ghost_field.name!r} to be non-self-conjugate.",
+            )
+            continue
+
+        if gauge_boson is not None and not ghost_matches_gauge_boson(
+            ghost_field,
+            gauge_group,
+            gauge_boson,
+        ):
+            add_issue(
+                "invalid_ghost_field",
+                "Ghost validation requires ghost field "
+                f"{ghost_field.name!r} to be associated with the gauge boson "
+                f"of gauge group {gauge_group.name!r}.",
             )
 
     def normalize_explicit_groups(group_target):
@@ -290,7 +379,9 @@ def validate_model(model: Model) -> ValidationReport:
 
         explicit_groups = normalize_explicit_groups(covariant.gauge_group)
         if explicit_groups is None:
-            candidate_groups = tuple(group for group in model.gauge_groups if not group.abelian)
+            candidate_groups = tuple(
+                group for group in model.gauge_groups if field_couples_to_group(field, group)
+            )
         else:
             candidate_groups = []
             for group_target in explicit_groups:
@@ -307,7 +398,10 @@ def validate_model(model: Model) -> ValidationReport:
 
         for gauge_group in candidate_groups:
             if gauge_group.abelian:
+                resolve_gauge_boson(gauge_group, context="Covariant validation")
                 continue
+
+            resolve_gauge_boson(gauge_group, context="Covariant validation")
 
             try:
                 rep_info = gauge_group.matter_representation_and_slots(field)
