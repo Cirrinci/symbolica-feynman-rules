@@ -56,6 +56,16 @@ _PLAIN_HEAD_SLOT_KINDS: dict[str, dict[int, str]] = {
     # Exported gauge-variation heads used in the current YM pipeline.
     "G": {0: LORENTZ_KIND, 1: "adjoint"},
     "alpha": {0: "adjoint"},
+    # Dirac tensors exported by Spenso.
+    "spenso::gamma": {
+        0: SPINOR_KIND,
+        1: SPINOR_KIND,
+        2: LORENTZ_KIND,
+    },
+    "spenso::gamma5": {
+        0: SPINOR_KIND,
+        1: SPINOR_KIND,
+    },
 }
 
 _PLAIN_HEAD_INDEX_KINDS = (
@@ -114,6 +124,18 @@ SPENSO_TENSOR_HEAD_SPECS = (
         canonical_name="canon::f",
         arity=3,
         head_kwargs={"is_antisymmetric": True},
+    ),
+    TensorHeadSpec(
+        raw_name="spenso::gamma",
+        canonical_name="canon::gamma",
+        arity=3,
+        head_kwargs={},
+    ),
+    TensorHeadSpec(
+        raw_name="spenso::gamma5",
+        canonical_name="canon::gamma5",
+        arity=2,
+        head_kwargs={},
     ),
     # Project-defined invariant tensors.  See ``spenso_structures`` for the
     # corresponding ``TensorName`` declarations.  We register these here so

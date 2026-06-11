@@ -36,7 +36,7 @@ As of 2026-05-13:
   - `examples/examples_flavor_expansion.py`
   - `examples/examples_su2.py`
   - `examples/examples_electroweak_unbroken.py`
-  - `examples/examples_electroweak_ssb.py`
+  - `examples/examples_standard_model.py`
 - dedicated regression coverage now lives in `tests/`
 - the walkthrough notebook is `notebooks/codebase_workflow_walkthrough.ipynb`
 - the final user-facing walkthrough notebook is
@@ -65,7 +65,7 @@ As of 2026-05-13:
   symbolic engine
 - legacy split declaration slots are still supported for compatibility, but are
   now deprecated in favor of the unified Lagrangian entry point
-- broken-phase electroweak helpers now live in `src/model/ssb.py`
+- broken phases now use the declarative field-transformation pipeline
 - the long-term goal remains a Python analogue of FeynRules using Symbolica for
   symbolic rewriting and Spenso for tensor/index structures
 
@@ -1280,9 +1280,9 @@ and FeynRules-output comparison
 
 What happened:
 
-- a first non-BFM unbroken Standard Model builder was added under
-  `src/model/standard_model_unbroken.py`, together with a walkthrough notebook
-  and smoke tests
+- a first non-BFM unbroken Standard Model builder was added, together with a
+  walkthrough notebook and smoke tests; it was later superseded by the
+  gauge-basis-to-broken builder
 - the builder was then tightened so the Yukawa sector uses explicit stand-in
   conjugate matrices for the hermitian-conjugate terms and more explicit index
   contractions matching the intended FeynRules structure

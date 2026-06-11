@@ -170,13 +170,21 @@ def unique_spinor_slot(field, *, purpose: str) -> int:
     return slots[0]
 
 
-SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, prefix="i")
-LORENTZ_INDEX = IndexType("Lorentz", LORENTZ, LORENTZ_KIND, prefix="mu")
-COLOR_FUND_INDEX = IndexType("ColorFund", COLOR_FUND, COLOR_FUND_KIND, prefix="c")
-COLOR_ADJ_INDEX = IndexType("ColorAdj", COLOR_ADJ, COLOR_ADJ_KIND, prefix="a")
+SPINOR_INDEX = IndexType("Spinor", BISPINOR, SPINOR_KIND, dimension=4, prefix="i")
+LORENTZ_INDEX = IndexType("Lorentz", LORENTZ, LORENTZ_KIND, dimension=4, prefix="mu")
+COLOR_FUND_INDEX = IndexType(
+    "ColorFund", COLOR_FUND, COLOR_FUND_KIND, dimension=3, prefix="c"
+)
+COLOR_ADJ_INDEX = IndexType(
+    "ColorAdj", COLOR_ADJ, COLOR_ADJ_KIND, dimension=8, prefix="a"
+)
 # SU(2)_L weak isospin: doublet (fundamental) and triplet (adjoint).
-WEAK_FUND_INDEX = IndexType("WeakFund", WEAK_FUND, WEAK_FUND_KIND, prefix="w")
-WEAK_ADJ_INDEX = IndexType("WeakAdj", WEAK_ADJ, WEAK_ADJ_KIND, prefix="aw")
+WEAK_FUND_INDEX = IndexType(
+    "WeakFund", WEAK_FUND, WEAK_FUND_KIND, dimension=2, prefix="w"
+)
+WEAK_ADJ_INDEX = IndexType(
+    "WeakAdj", WEAK_ADJ, WEAK_ADJ_KIND, dimension=3, prefix="aw"
+)
 
 
 def flavor_index(

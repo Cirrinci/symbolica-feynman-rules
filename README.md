@@ -16,7 +16,8 @@ Live source code is organized as split packages rather than flat top-level files
   - model metadata and declarations
   - `Field`, `GaugeGroup`, `GaugeRepresentation`, `Model`
   - compiled interaction objects, `CompiledLagrangian`, and lowering from declarative source terms
-  - electroweak symmetry-breaking helpers in `ssb.py`
+  - declarative field transformations in `transformations.py`
+  - the gauge-basis-to-broken Standard Model builder in `standard_model.py`
 - `src/compiler/`
   - convention-fixed gauge / covariant compilation
   - public compiler entry points in `gauge.py`
@@ -30,7 +31,7 @@ Live source code is organized as split packages rather than flat top-level files
   - reusable operator builders such as bilinears, currents, and gauge-contact structures
 - `examples/`
   - runnable example/regression scripts
-  - includes flavor-expansion, SU(2), and electroweak examples
+  - includes flavor-expansion, SU(2), electroweak, and full Standard Model examples
 - `tests/`
   - the main regression suite
 - `docs/notes/RESEARCH_LOG.md`
@@ -82,7 +83,11 @@ What is already solid in the active code path:
   - declarative Lagrangian lowering
   - flavor-class declarations and selective flavor expansion
   - pure-gauge canonicalization
-  - electroweak unbroken and SSB examples
+  - general field transformations and the broken Standard Model
+- simultaneous FeynRules-style field definitions with fixed-point dependency
+  handling, conjugation, component decomposition, and derivative propagation
+- a broken-phase Standard Model generated from gauge-basis declarations,
+  including CKM, Yukawa, Higgs/Goldstone, gauge, QCD, and ghost sectors
 - FeynRules-style flavor classes through
   `dirac_field(..., class_members=..., flavor_index=...)` and
   selective `flavor_expand=...`
@@ -158,6 +163,21 @@ local/already-expanded operators and metadata-dependent declarations, and
   kinetic terms, `GaugeFixing(...)`, `GhostLagrangian(...)`, and any
   declaration that needs charges, representations, gauge-boson assignments, or
   ghost-field metadata.
+
+Field transformations are applied after metadata-dependent compilation:
+
+```python
+broken = model.transform_fields(
+    FieldTransformation(
+        B,
+        terms=(replacement(-sw, Z), replacement(cw, A)),
+    ),
+)
+```
+
+See `docs/FIELD_TRANSFORMATIONS.md` for simultaneous/fixed-point semantics,
+conjugation, index handling, derivative propagation, and the ordering relative
+to covariant-derivative expansion.
 
 There is no separate `Lagrangian` source class. `model.lagrangian()` compiles a
 declaration into a `CompiledLagrangian` term container, which is also
@@ -242,7 +262,7 @@ Run the main example/regression scripts from the repository root:
 - `./.venv/bin/python -m examples.examples_flavor_expansion`
 - `./.venv/bin/python examples/examples_su2.py`
 - `./.venv/bin/python examples/examples_electroweak_unbroken.py`
-- `./.venv/bin/python examples/examples_electroweak_ssb.py`
+- `./.venv/bin/python examples/examples_standard_model.py`
 - `./.venv/bin/python src/symbolic/spenso_gamma_checks.py`
 - `./.venv/bin/python -m pytest -q`
 
