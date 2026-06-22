@@ -14,22 +14,26 @@ Rule:
 
 ### Current status snapshot
 
-As of 2026-05-13:
+As of 2026-06-22:
 
 - the active source tree is modularized under `src/`
 - the core symbolic extraction engine now lives in `src/symbolic/vertex_engine.py`
 - tensor and canonicalization helpers live in:
   - `src/symbolic/spenso_structures.py`
   - `src/symbolic/tensor_canonicalization.py`
-- the model/declaration layer now lives in:
-  - `src/model/core.py`
-  - `src/model/interactions.py`
-  - `src/model/declared.py`
-  - `src/model/lagrangian.py`
-  - `src/model/lowering.py`
-  - `src/model/metadata.py`
+- the reusable toolkit/engine now lives in:
+  - `src/feynpy/core.py`
+  - `src/feynpy/interactions.py`
+  - `src/feynpy/declared.py`
+  - `src/feynpy/lagrangian.py`
+  - `src/feynpy/lowering.py`
+  - `src/feynpy/metadata.py`
+  - `src/feynpy/transformations.py`
 - concrete theory definitions now live under:
   - `src/theories/standard_model.py`
+- the public package split is now explicit:
+  - `feynpy` = reusable toolkit/engine
+  - `theories` = concrete theory packages, analogous to FeynRules model files
 - declarative helper/building-block code lives in:
   - `src/lagrangian/operators.py`
   - `src/lagrangian/lowering.py`
@@ -70,6 +74,8 @@ As of 2026-05-13:
 - broken phases now use the declarative field-transformation pipeline
 - the long-term goal remains a Python analogue of FeynRules using Symbolica for
   symbolic rewriting and Spenso for tensor/index structures
+- historical entries below use the source-tree names that were live at the
+  time they were written
 
 ### 2026-03-11: repository setup
 
@@ -1948,3 +1954,22 @@ What this achieved:
 - the field-strength walkthrough now presents the explicit indexed form as a
   first-class supported input rather than as something that only works through
   a lower-level raw-tensor escape hatch
+
+### 2026-06-22: public engine/theory split cleanup
+
+What happened:
+
+- the live engine package boundary was finalized as `src/feynpy/`
+- concrete theory definitions were consolidated under `src/theories/`
+- the transitional `src/model/` and `src/models/` package names were removed
+- tests, examples, README text, and stable design notes were updated to use the
+  `feynpy` / `theories` split consistently
+
+What this achieved:
+
+- the codebase now presents one clear distinction between the reusable toolkit
+  and concrete theory applications
+- the Standard Model reads as an application of the engine rather than as part
+  of the engine itself
+- the package layout now mirrors the intended FeynRules-style mental model more
+  closely: toolkit on one side, theory definitions on the other
