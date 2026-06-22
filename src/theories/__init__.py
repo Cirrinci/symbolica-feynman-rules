@@ -1,8 +1,4 @@
-"""Concrete model definitions built on top of the FeynPy toolkit.
-
-This package plays the role that model files play in FeynRules: the reusable
-engine lives under ``model``, while concrete theories live here.
-"""
+"""Concrete theory definitions built on top of the public FeynPy toolkit."""
 
 from __future__ import annotations
 

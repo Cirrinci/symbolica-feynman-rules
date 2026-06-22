@@ -1,4 +1,4 @@
-"""FeynPy engine package (metadata, declarations, compilation, vertices).
+"""Internal FeynPy engine implementation package.
 
 The public surface is intentionally small. The recommended workflow is:
 
@@ -13,8 +13,8 @@ The public surface is intentionally small. The recommended workflow is:
 6. extract Feynman rules with ``model.feynman_rule(...)`` /
    ``model.vertex_signatures(...)``.
 
-Concrete theories are intentionally not part of this engine package. They live
-in the sibling ``models`` package, which plays the role that model files play
+Concrete theories are intentionally not part of this implementation package.
+They live in the sibling ``theories`` package, which plays the role that model files play
 in FeynRules.
 
 Declarative ``lagrangian_decl`` factors live in ``declared.py``:

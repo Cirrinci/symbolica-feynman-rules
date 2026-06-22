@@ -29,7 +29,7 @@ As of 2026-05-13:
   - `src/model/lowering.py`
   - `src/model/metadata.py`
 - concrete theory definitions now live under:
-  - `src/models/standard_model.py`
+  - `src/theories/standard_model.py`
 - declarative helper/building-block code lives in:
   - `src/lagrangian/operators.py`
   - `src/lagrangian/lowering.py`

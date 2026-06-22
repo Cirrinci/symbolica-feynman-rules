@@ -7,12 +7,12 @@ index-aware callable replacements.
 
 ## Declaring Rules
 
-Use `FieldTransformation` and `replacement`:
+Use `FieldTransformation` and `replacement` from the public `feynpy` toolkit:
 
 ```python
 from symbolica import Expression, S
 
-from model import FieldTransformation, replacement
+from feynpy import FieldTransformation, replacement
 from symbolic.vertex_engine import I
 
 half = Expression.num(1) / Expression.num(2)
@@ -133,12 +133,12 @@ generated terms through the shared operator-splicing implementation.
 
 ## Broken Standard Model
 
-`models.build_standard_model()` declares the gauge-basis Standard Model, compiles its
+`theories.build_standard_model()` declares the gauge-basis Standard Model, compiles its
 covariant derivatives and field strengths, expands the weak doublet/triplet
 indices, and applies the `SM.fr` transformations in one simultaneous stage:
 
 ```python
-from models import build_standard_model
+from theories import build_standard_model
 
 sm = build_standard_model()
 L = sm.lagrangian
@@ -148,7 +148,7 @@ hff = L.feynman_rule(sm.fields.l.bar, sm.fields.l, sm.fields.H)
 ```
 
 This is deliberate package layering: the reusable transformation engine lives
-under `model`, while concrete theories live under `models`.
+under `feynpy`, while concrete theories live under `theories`.
 
 `sm.source_model` exposes the gauge-basis declarations for inspection.
 `sm.transformations` contains the declarative rules, while `sm.model` and

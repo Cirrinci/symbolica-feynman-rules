@@ -15,7 +15,7 @@ if str(REPO_ROOT) not in sys.path:
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from model import (  # noqa: E402
+from feynpy import (  # noqa: E402
     COLOR_FUND_INDEX,
     GaugeGroup,
     GaugeRepresentation,

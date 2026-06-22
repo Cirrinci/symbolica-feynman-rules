@@ -5,7 +5,7 @@ from collections import Counter
 import pytest
 from symbolica import Expression, S
 
-from models import build_standard_model
+from theories import build_standard_model
 from model.interactions import InteractionTerm, _field_match_key
 from model.lagrangian import CompiledLagrangian
 from symbolic.spenso_structures import (

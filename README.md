@@ -10,20 +10,20 @@ model layer that maps FeynRules-style declarations into that engine.
 
 The package boundary follows the FeynRules split:
 
-- `model` is the reusable toolkit/engine
-- `models` contains concrete theory definitions, analogous to model files
+- `feynpy` is the reusable toolkit/engine
+- `theories` contains concrete theory definitions, analogous to model files
 
 ### Repository layout
 
 Live source code is organized as split packages rather than flat top-level files:
 
+- `src/feynpy/`
+  - public FeynPy engine API
 - `src/model/`
-  - FeynPy engine: model metadata and declarations
-  - `Field`, `GaugeGroup`, `GaugeRepresentation`, `Model`
-  - compiled interaction objects, `CompiledLagrangian`, and lowering from declarative source terms
-  - declarative field transformations in `transformations.py`
-- `src/models/`
-  - concrete model definitions built on top of the engine
+  - internal engine implementation modules
+  - metadata/declarations, compiled interaction objects, lowering, and field transformations
+- `src/theories/`
+  - concrete theory definitions built on top of the engine
   - the gauge-basis-to-broken Standard Model builder in `standard_model.py`
 - `src/compiler/`
   - convention-fixed gauge / covariant compilation

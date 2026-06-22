@@ -25,34 +25,31 @@ from symbolic.spenso_structures import (
 )
 from symbolic.vertex_engine import I
 
-from model.core import Model
-from model.declared import (
-    CovD,
-    FieldStrength,
-    Gamma,
-    GaugeFixing,
-    GhostLagrangian,
-    PartialD,
-)
-from model.lagrangian import CompiledLagrangian, DeclaredLagrangian
-from model.metadata import (
+from feynpy import (
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
+    CovD,
+    DeclaredLagrangian,
     Field,
+    FieldStrength,
+    FieldTransformation,
+    Gamma,
+    GaugeFixing,
     GaugeGroup,
     GaugeRepresentation,
+    GhostLagrangian,
     IndexType,
     LORENTZ_INDEX,
+    Model,
     Parameter,
+    PartialD,
+    ReplacementTerm,
     SPINOR_INDEX,
+    TransformationContext,
     WEAK_ADJ_INDEX,
     WEAK_FUND_INDEX,
+    CompiledLagrangian,
     flavor_index,
-)
-from model.transformations import (
-    FieldTransformation,
-    ReplacementTerm,
-    TransformationContext,
     replacement,
 )
 
