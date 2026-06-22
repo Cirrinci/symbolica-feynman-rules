@@ -17,7 +17,7 @@ from lagrangian.operator_action import (
     apply_field_operator_to_term,
     brst_transformation,
 )
-from model import (
+from feynpy import (
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
     Field,
@@ -34,7 +34,7 @@ from model import (
     dirac_field,
     scalar_field,
 )
-from model.interactions import InteractionTerm
+from feynpy.interactions import InteractionTerm
 from symbolic.spenso_structures import (
     gauge_generator,
     lorentz_metric,
@@ -954,7 +954,7 @@ def test_nonabelian_matter_singlet_mass_term_is_brst_invariant():
 
 
 def test_abelian_covariant_scalar_kinetic_term_is_brst_invariant():
-    from model import CovD
+    from feynpy import CovD
 
     photon, ghost, _auxiliary, u1 = _u1_brst_setup()
     mu = S("mu")
@@ -974,7 +974,7 @@ def test_abelian_covariant_scalar_kinetic_term_is_brst_invariant():
 
 
 def test_abelian_fermion_kinetic_term_is_brst_invariant():
-    from model import CovD, Gamma
+    from feynpy import CovD, Gamma
 
     photon, ghost, _auxiliary, u1 = _u1_brst_setup()
     mu = S("mu")

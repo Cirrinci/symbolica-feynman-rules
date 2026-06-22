@@ -5,7 +5,7 @@ from fractions import Fraction
 from symbolica import Expression, S
 
 from lagrangian.operators import scalar_gauge_contact
-from model import (
+from feynpy import (
     CovD,
     Field,
     FieldStrength,

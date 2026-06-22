@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from symbolica import Expression, S
 
-from model import COLOR_FUND_INDEX, Gamma, Model, PartialD, T, dirac_field, flavor_index, scalar_field
-from model.lowering import (
+from feynpy import COLOR_FUND_INDEX, Gamma, Model, PartialD, T, dirac_field, flavor_index, scalar_field
+from feynpy.lowering import (
     _LocalChainBinding,
     _LocalFieldEntry,
     _LocalLoweringState,

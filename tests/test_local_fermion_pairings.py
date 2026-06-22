@@ -4,9 +4,9 @@ import pytest
 
 from symbolica import Expression, S
 
-from model import CompiledLagrangian, Model, dirac_field, scalar_field
-from model.interactions import InteractionTerm
-from model.metadata import SPINOR_KIND
+from feynpy import CompiledLagrangian, Model, dirac_field, scalar_field
+from feynpy.interactions import InteractionTerm
+from feynpy.metadata import SPINOR_KIND
 
 
 def test_explicit_disjoint_local_dirac_pairing_overrides_adjacent_heuristic():

@@ -18,10 +18,9 @@ The package boundary follows the FeynRules split:
 Live source code is organized as split packages rather than flat top-level files:
 
 - `src/feynpy/`
-  - public FeynPy engine API
-- `src/model/`
-  - internal engine implementation modules
-  - metadata/declarations, compiled interaction objects, lowering, and field transformations
+  - public FeynPy engine API and implementation modules
+  - metadata/declarations, compiled interaction objects, lowering, validation,
+    and field transformations
 - `src/theories/`
   - concrete theory definitions built on top of the engine
   - the gauge-basis-to-broken Standard Model builder in `standard_model.py`
@@ -109,7 +108,7 @@ What is still under development:
   - hermiticity
   - kinetic normalization
   - mass-diagonalization / mass-spectrum consistency
-- remaining maintainability work in `src/model/lowering.py`
+- remaining maintainability work in `src/feynpy/lowering.py`
 - some integration-style assertions still live in `examples/` instead of focused tests
 
 ### Conventions and entry points
@@ -291,6 +290,6 @@ the published repository.
 Near-term themes:
 
 1. keep conventions and validation checks aligned with the test suite
-2. continue shrinking large multi-responsibility modules such as `src/model/lowering.py`
+2. continue shrinking large multi-responsibility modules such as `src/feynpy/lowering.py`
 3. reduce string-based equality/canonical-form workarounds where Symbolica/Spenso can do the job directly
 4. extend physics-facing validation and user-facing diagnostics without changing conventions implicitly

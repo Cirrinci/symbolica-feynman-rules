@@ -16,7 +16,7 @@ from fractions import Fraction
 
 from symbolica import Expression, S
 
-from model import Field, Model
+from feynpy import Field, Model
 from symbolic.spenso_structures import (
     color_levi_civita,
     color_symmetric_constant,
@@ -85,7 +85,7 @@ def test_typed_eps2_in_yukawa_model_runs_and_carries_eps2_head():
     """End-to-end: typed weak_eps2 in a Lagrangian Model produces a vertex
     that still contains the typed eps2 head (no silent collapse) and that
     runs cleanly through the simplifier."""
-    from model import (
+    from feynpy import (
         SPINOR_INDEX,
         COLOR_FUND_INDEX,
         WEAK_FUND_INDEX,

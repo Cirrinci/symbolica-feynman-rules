@@ -44,7 +44,7 @@ class FieldRole:
     """Typed role that a field plays in an interaction or on an external leg.
 
     The engine uses duck typing on this object (.is_fermion, .compatible_with)
-    so the engine module never needs to import model.py.
+    so the symbolic layer never needs to import the top-level ``feynpy`` API.
     """
     name: str
     statistics: Statistics

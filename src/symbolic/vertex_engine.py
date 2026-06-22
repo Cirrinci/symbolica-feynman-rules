@@ -21,7 +21,7 @@ from symbolica import S, Expression
 from symbolica.community.spenso import Representation
 
 from symbolic.spenso_structures import LORENTZ_KIND, SPINOR_KIND
-from model.metadata import is_spinor_index, spinor_kind_for
+from feynpy.metadata import is_spinor_index, spinor_kind_for
 from symbolic.vertex_postprocessing import (
     _species_key,
     apply_vertex_output_policy as _apply_vertex_output_policy,

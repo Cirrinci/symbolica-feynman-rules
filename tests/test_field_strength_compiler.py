@@ -14,7 +14,7 @@ from __future__ import annotations
 import pytest
 from symbolica import Expression, S
 
-from model import (
+from feynpy import (
     COLOR_FUND_INDEX,
     Field,
     FieldStrength,

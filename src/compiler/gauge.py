@@ -41,7 +41,7 @@ from .spectators import (
     _materialize_spectator_occurrences,
     _spectator_identity_factor,
 )
-from model import (
+from feynpy import (
     CovD,
     CovariantDerivativeFactor,
     Field,
@@ -50,27 +50,27 @@ from model import (
     Model,
     PartialD,
 )
-from model.declared import (
+from feynpy.declared import (
     _DeclaredMonomial,
     _FieldFactor,
     DifferentiatedCovariantFactor,
     GeneratorFactor,
     PartialDerivativeFactor,
 )
-from model.lagrangian import (
+from feynpy.lagrangian import (
     ComplexScalarKineticTerm,
     DiracKineticTerm,
     GaugeFixingTerm,
     GhostTerm,
 )
-from model.lowering import (
+from feynpy.lowering import (
     _analyze_declared_source_term,
     _expand_field_strengths_in_monomial,
     _lower_local_interaction_monomial,
 )
-from model.interactions import DerivativeAction, InteractionTerm
+from feynpy.interactions import DerivativeAction, InteractionTerm
 from symbolic.spenso_structures import lorentz_metric
-from model.metadata import (
+from feynpy.metadata import (
     is_lorentz_index,
     is_spinor_index,
     lorentz_kind_for,

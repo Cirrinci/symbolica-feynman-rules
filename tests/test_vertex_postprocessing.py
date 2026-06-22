@@ -1,8 +1,8 @@
 from symbolica.community.spenso import Representation  # noqa: E402
 from symbolica import S  # noqa: E402
 
-from model import COLOR_ADJ_INDEX, Field, Gamma, IndexType, Model  # noqa: E402
-from model.interactions import ExternalLeg, _auto_leg_labels  # noqa: E402
+from feynpy import COLOR_ADJ_INDEX, Field, Gamma, IndexType, Model  # noqa: E402
+from feynpy.interactions import ExternalLeg, _auto_leg_labels  # noqa: E402
 from lagrangian.operators import yang_mills_three_vertex_raw  # noqa: E402
 from tests.support.builders import (  # noqa: E402
     canon as _canon,

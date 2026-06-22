@@ -1,6 +1,6 @@
 from symbolic.vertex_engine import Delta, Expression, I, S, pi
 
-from model import GhostLagrangian, Model
+from feynpy import GhostLagrangian, Model
 from tests.support.builders import (
     canon as _canon,
     gauge_kinetic_decl,

@@ -6,8 +6,8 @@ import pytest
 from symbolica import Expression, S
 
 from theories import build_standard_model
-from model.interactions import InteractionTerm, _field_match_key
-from model.lagrangian import CompiledLagrangian
+from feynpy.interactions import InteractionTerm, _field_match_key
+from feynpy.lagrangian import CompiledLagrangian
 from symbolic.spenso_structures import (
     chiral_projector_left,
     chiral_projector_right,

@@ -24,7 +24,7 @@ from typing import Iterable, Optional, Sequence
 
 from symbolica import AtomType, Expression, S
 
-from model.metadata import Field
+from feynpy.metadata import Field
 
 from .spenso_structures import (
     COLOR_ADJ,

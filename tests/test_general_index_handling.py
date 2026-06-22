@@ -21,7 +21,7 @@ import re
 import pytest
 from symbolica import S
 
-from model import (
+from feynpy import (
     COLOR_FUND_INDEX,
     Field,
     FieldStrength,

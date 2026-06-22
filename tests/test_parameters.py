@@ -1,6 +1,6 @@
 from symbolica import S  # noqa: E402
 
-from model import Model, Parameter  # noqa: E402
+from feynpy import Model, Parameter  # noqa: E402
 from tests.support.builders import make_complex_scalar  # noqa: E402
 
 

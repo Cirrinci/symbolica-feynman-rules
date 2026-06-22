@@ -6,7 +6,7 @@ from dataclasses import replace
 import pytest
 from symbolica import Expression, S
 
-from model import (
+from feynpy import (
     COLOR_FUND_INDEX,
     LORENTZ_INDEX,
     WEAK_ADJ_INDEX,
@@ -21,8 +21,8 @@ from model import (
     apply_field_transformations,
     replacement,
 )
-from model.interactions import DerivativeAction, InteractionTerm
-from model.lagrangian import CompiledLagrangian
+from feynpy.interactions import DerivativeAction, InteractionTerm
+from feynpy.lagrangian import CompiledLagrangian
 
 
 ONE = Expression.num(1)

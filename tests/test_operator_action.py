@@ -18,7 +18,7 @@ import pytest
 
 from symbolica import Expression, S
 
-from model import (
+from feynpy import (
     CompiledLagrangian,
     Field,
     GhostField,
@@ -31,7 +31,7 @@ from model import (
     flavor_index,
     scalar_field,
 )
-from model.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
+from feynpy.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
 from lagrangian.operator_action import (
     FieldOperator,
     OperatorExpansionError,
@@ -1083,7 +1083,7 @@ def test_to_symbolica_with_flavor_expand_reflects_class_member_expansion():
     Phi = scalar_field("Phi")
     f = S("f")
 
-    from model import Model
+    from feynpy import Model
 
     model = Model(
         fields=(l, Phi),
@@ -1177,7 +1177,7 @@ def test_partial_one_arg_returns_field_operator():
 def test_partial_two_arg_returns_declarative_partial_d(phi):
     """``partial(mu, Phi)`` is sugar for the declarative ``PartialD(Phi, mu)``."""
 
-    from model.declared import PartialDerivativeFactor
+    from feynpy.declared import PartialDerivativeFactor
 
     mu = S("mu")
     factor = partial(mu, phi)
@@ -1311,8 +1311,8 @@ def test_partial_runtime_matches_declarative_partial_d_on_phi_squared():
     i.e. the two terms each have one derivative on a different slot.
     """
 
-    from model import Model
-    from model.declared import PartialD
+    from feynpy import Model
+    from feynpy.declared import PartialD
 
     mu = S("mu")
     Phi = scalar_field("Phi", self_conjugate=True)
@@ -1346,7 +1346,7 @@ def test_partial_repeated_application_increments_derivatives_on_each_slot():
     declarative form lowers to.
     """
 
-    from model import Model
+    from feynpy import Model
 
     mu = S("mu")
     Phi = scalar_field("Phi", self_conjugate=True)
@@ -1386,8 +1386,8 @@ def test_partial_compatible_with_feynman_rule_for_scalar_kinetic():
     into the unchanged vertex engine.
     """
 
-    from model import Model
-    from model.declared import PartialD
+    from feynpy import Model
+    from feynpy.declared import PartialD
 
     mu = S("mu")
     Phi = scalar_field("Phi", self_conjugate=True)
@@ -1407,7 +1407,7 @@ def test_partial_runtime_lowers_to_vertex_with_momentum():
     extra plumbing.
     """
 
-    from model import Model
+    from feynpy import Model
 
     mu = S("mu")
     Phi = scalar_field("Phi", self_conjugate=True)

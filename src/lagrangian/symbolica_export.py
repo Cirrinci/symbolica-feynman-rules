@@ -45,8 +45,8 @@ from typing import Iterable, Mapping, Optional, Sequence
 
 from symbolica import AtomType, Expression, S
 
-from model.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
-from model.metadata import Field
+from feynpy.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
+from feynpy.metadata import Field
 
 
 PARTIAL_DERIVATIVE_HEAD = "PartialD"

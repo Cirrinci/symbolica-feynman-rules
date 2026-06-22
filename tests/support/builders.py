@@ -4,7 +4,7 @@ from fractions import Fraction
 
 from symbolica import Expression, S
 
-from model import (
+from feynpy import (
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
     CovD,

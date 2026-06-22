@@ -22,7 +22,7 @@ import pytest
 
 from symbolica import Expression, S
 
-from model import (
+from feynpy import (
     CovD,
     Field,
     FieldStrength,
@@ -37,8 +37,8 @@ from model import (
     dirac_field,
     scalar_field,
 )
-from model.metadata import COLOR_ADJ_INDEX, COLOR_FUND_INDEX
-from model.interactions import InteractionTerm
+from feynpy.metadata import COLOR_ADJ_INDEX, COLOR_FUND_INDEX
+from feynpy.interactions import InteractionTerm
 from lagrangian.operator_action import (
     FieldOperator,
     apply_field_operator_to_term,

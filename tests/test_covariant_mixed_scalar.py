@@ -3,7 +3,7 @@ from symbolica import S, Expression  # noqa: E402
 from compiler.gauge import (  # noqa: E402
     compile_mixed_complex_scalar_contact_terms,
 )
-from model import (  # noqa: E402
+from feynpy import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
     LORENTZ_INDEX,

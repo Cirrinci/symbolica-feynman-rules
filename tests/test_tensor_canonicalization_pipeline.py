@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from symbolica import Expression, S
 
-from model import COLOR_ADJ_INDEX, Field, GhostField, LORENTZ_INDEX
+from feynpy import COLOR_ADJ_INDEX, Field, GhostField, LORENTZ_INDEX
 from symbolic.spenso_structures import COLOR_ADJ, LORENTZ, structure_constant
 from symbolic.tensor_canonicalization import (
     _canonicalize_commuting_partial_derivatives,

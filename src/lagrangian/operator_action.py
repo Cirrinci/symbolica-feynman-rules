@@ -52,14 +52,14 @@ from typing import Callable, Optional, Sequence, Union
 
 from symbolica import Expression, S
 
-from model.interactions import (
+from feynpy.interactions import (
     DerivativeAction,
     DiracBilinear,
     FieldOccurrence,
     InteractionTerm,
     SlotRef,
 )
-from model.metadata import Field, FieldRole, is_lorentz_index, unique_spinor_slot
+from feynpy.metadata import Field, FieldRole, is_lorentz_index, unique_spinor_slot
 
 
 # ---------------------------------------------------------------------------
@@ -1203,7 +1203,7 @@ def partial(
       the natural reading "the partial in direction mu, applied to Phi".
 
     The two roles are *disjoint*: the runtime operator lives in this
-    module, the declarative factor lives in ``model.declared``. Both are
+    module, the declarative factor lives in ``feynpy.declared``. Both are
     exposed here so users have one obvious name to reach for, and the
     polymorphism is decided by whether a ``field`` argument is provided.
 
@@ -1222,7 +1222,7 @@ def partial(
                 "partial(mu, field) is a declarative-factor shortcut and "
                 "does not accept on=/name= keyword arguments."
             )
-        from model.declared import PartialD
+        from feynpy.declared import PartialD
 
         return PartialD(field, lorentz_index)
 
@@ -1319,7 +1319,7 @@ def _build_alpha_field(parameter, adjoint_index) -> Field:
     the right index layout and prints as ``alpha(a)`` in Symbolica.
     """
 
-    from model.metadata import scalar_field
+    from feynpy.metadata import scalar_field
 
     name = str(parameter)
     indices = () if adjoint_index is None else (adjoint_index,)

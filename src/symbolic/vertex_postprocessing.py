@@ -5,7 +5,7 @@ from __future__ import annotations
 from symbolica import Expression, S
 from symbolica.community.idenso import simplify_color, simplify_metrics
 
-from model.metadata import is_lorentz_index, lorentz_slots_for
+from feynpy.metadata import is_lorentz_index, lorentz_slots_for
 from symbolic.spenso_structures import WEAK_ADJ, simplify_gamma_chain
 from symbolic.tensor_canonicalization import (
     canonize_spenso_tensors,

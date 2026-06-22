@@ -2,7 +2,7 @@ import pytest
 
 from symbolica import S, Expression  # noqa: E402
 
-from model import (  # noqa: E402
+from feynpy import (  # noqa: E402
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
     CovD,

@@ -4,7 +4,7 @@ import pytest
 
 from symbolica import S
 
-from model import (
+from feynpy import (
     Field,
     Model,
     ROLE_PSI,
@@ -13,7 +13,7 @@ from model import (
     ROLE_SCALAR_DAG,
     ROLE_VECTOR,
 )
-from model.interactions import InteractionTerm
+from feynpy.interactions import InteractionTerm
 from symbolic.vertex_engine import Delta, I, pi, vertex_factor
 
 

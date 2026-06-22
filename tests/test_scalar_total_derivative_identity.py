@@ -2,7 +2,7 @@ import pytest
 
 from symbolica import S
 
-from model import Model, PartialD, dirac_field, scalar_field
+from feynpy import Model, PartialD, dirac_field, scalar_field
 
 
 def test_scalar_total_derivative_current_is_representable():

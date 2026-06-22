@@ -16,10 +16,10 @@ from .spectators import (
     _spectator_identity_factor,
 )
 from lagrangian.operators import psi_bar_gamma_psi
-from model import Field, Model
-from model.interactions import DerivativeAction, InteractionTerm
-from model.lagrangian import ComplexScalarKineticTerm, DiracKineticTerm
-from model.metadata import unique_spinor_slot
+from feynpy import Field, Model
+from feynpy.interactions import DerivativeAction, InteractionTerm
+from feynpy.lagrangian import ComplexScalarKineticTerm, DiracKineticTerm
+from feynpy.metadata import unique_spinor_slot
 
 
 def _compile_dirac_partial_term(

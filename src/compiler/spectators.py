@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from symbolica import Expression, S
 
-from model import Field
-from model.interactions import InteractionTerm
-from model.metadata import is_lorentz_index
+from feynpy import Field
+from feynpy.interactions import InteractionTerm
+from feynpy.metadata import is_lorentz_index
 from typing import Optional
 
 

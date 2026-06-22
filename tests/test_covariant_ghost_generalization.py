@@ -1,7 +1,7 @@
 from symbolica import S  # noqa: E402
 
 from compiler.gauge import expand_cov_der  # noqa: E402
-from model import COLOR_ADJ_INDEX, CovD, Field, GaugeGroup, GhostField, LORENTZ_INDEX, Model, PartialD  # noqa: E402
+from feynpy import COLOR_ADJ_INDEX, CovD, Field, GaugeGroup, GhostField, LORENTZ_INDEX, Model, PartialD  # noqa: E402
 from symbolic.spenso_structures import structure_constant  # noqa: E402
 from symbolic.vertex_engine import pcomp  # noqa: E402
 from tests.support.builders import canon  # noqa: E402

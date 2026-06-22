@@ -6,7 +6,7 @@ from symbolica import S
 from symbolica.community.spenso import Representation
 
 from compiler.spectators import _spectator_identity_factor
-from model import (
+from feynpy import (
     CovD,
     Field,
     Gamma,
@@ -17,7 +17,7 @@ from model import (
     Model,
     SPINOR_INDEX,
 )
-from model.lagrangian import DiracKineticTerm
+from feynpy.lagrangian import DiracKineticTerm
 from symbolic.spenso_structures import gauge_generator, structure_constant
 from symbolic.vertex_engine import I
 

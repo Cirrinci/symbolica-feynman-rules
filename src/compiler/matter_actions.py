@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
 from lagrangian.operators import psi_bar_gamma_psi, scalar_gauge_contact
-from model import Field
-from model.interactions import DerivativeAction, InteractionTerm
+from feynpy import Field
+from feynpy.interactions import DerivativeAction, InteractionTerm
 
 from .spectators import _spectator_identity_factor
 

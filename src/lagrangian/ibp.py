@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from itertools import permutations as iter_permutations
 
-from model.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
+from feynpy.interactions import DerivativeAction, FieldOccurrence, InteractionTerm
 
 
 def _symbolic_key(value):
@@ -257,7 +257,7 @@ def _ibp_normalize_term(
 def ibp_normal_form(lagrangian):
     """Return the v1 scalar IBP normal form of a compiled Lagrangian."""
 
-    from model.lagrangian import CompiledLagrangian
+    from feynpy.lagrangian import CompiledLagrangian
 
     memo: dict[tuple[object, ...], tuple[InteractionTerm, ...]] = {}
     expanded: list[InteractionTerm] = []

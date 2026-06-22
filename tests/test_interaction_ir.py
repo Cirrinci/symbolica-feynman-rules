@@ -5,14 +5,14 @@ from symbolica import Expression, S
 
 from lagrangian.ibp import _occurrence_key
 from lagrangian.operator_action import _occurrence_cache_key
-from model import (
+from feynpy import (
     COLOR_FUND_INDEX,
     Field,
     LORENTZ_INDEX,
     dirac_field,
     scalar_field,
 )
-from model.interactions import (
+from feynpy.interactions import (
     DerivativeAction,
     DerivativeRef,
     DiracBilinear,

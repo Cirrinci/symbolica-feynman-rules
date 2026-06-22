@@ -7,7 +7,7 @@ from compiler.gauge import (  # noqa: E402
     compile_mixed_complex_scalar_contact_terms,
     expand_cov_der,
 )
-from model import (  # noqa: E402
+from feynpy import (  # noqa: E402
     COLOR_FUND_INDEX,
     COLOR_ADJ_INDEX,
     LORENTZ_INDEX,

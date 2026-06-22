@@ -1,11 +1,11 @@
 from collections import Counter
 
 import pytest
-import model.flavor as flavor_module
+import feynpy.flavor as flavor_module
 
 from symbolica import S
 
-from model import (
+from feynpy import (
     COLOR_FUND_INDEX,
     Field,
     Model,
@@ -15,7 +15,7 @@ from model import (
     flavor_index,
     scalar_field,
 )
-from model.interactions import _field_match_key
+from feynpy.interactions import _field_match_key
 
 
 def _canon(expr):

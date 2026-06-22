@@ -6,7 +6,7 @@ from symbolica import S
 
 from compiler.gauge import expand_cov_der
 from lagrangian.operators import scalar_gauge_contact
-from model import (
+from feynpy import (
     CovD,
     Field,
     Gamma,
