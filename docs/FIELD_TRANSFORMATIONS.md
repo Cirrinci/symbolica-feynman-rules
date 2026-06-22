@@ -133,12 +133,12 @@ generated terms through the shared operator-splicing implementation.
 
 ## Broken Standard Model
 
-`build_standard_model()` declares the gauge-basis Standard Model, compiles its
+`models.build_standard_model()` declares the gauge-basis Standard Model, compiles its
 covariant derivatives and field strengths, expands the weak doublet/triplet
 indices, and applies the `SM.fr` transformations in one simultaneous stage:
 
 ```python
-from model import build_standard_model
+from models import build_standard_model
 
 sm = build_standard_model()
 L = sm.lagrangian
@@ -146,6 +146,9 @@ L = sm.lagrangian
 wwa = L.feynman_rule(sm.fields.W.bar, sm.fields.W, sm.fields.A)
 hff = L.feynman_rule(sm.fields.l.bar, sm.fields.l, sm.fields.H)
 ```
+
+This is deliberate package layering: the reusable transformation engine lives
+under `model`, while concrete theories live under `models`.
 
 `sm.source_model` exposes the gauge-basis declarations for inspection.
 `sm.transformations` contains the declarative rules, while `sm.model` and

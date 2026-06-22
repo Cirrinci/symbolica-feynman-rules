@@ -25,8 +25,8 @@ from symbolic.spenso_structures import (
 )
 from symbolic.vertex_engine import I
 
-from .core import Model
-from .declared import (
+from model.core import Model
+from model.declared import (
     CovD,
     FieldStrength,
     Gamma,
@@ -34,8 +34,8 @@ from .declared import (
     GhostLagrangian,
     PartialD,
 )
-from .lagrangian import CompiledLagrangian, DeclaredLagrangian
-from .metadata import (
+from model.lagrangian import CompiledLagrangian, DeclaredLagrangian
+from model.metadata import (
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
     Field,
@@ -49,7 +49,7 @@ from .metadata import (
     WEAK_FUND_INDEX,
     flavor_index,
 )
-from .transformations import (
+from model.transformations import (
     FieldTransformation,
     ReplacementTerm,
     TransformationContext,

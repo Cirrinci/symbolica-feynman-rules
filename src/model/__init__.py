@@ -1,4 +1,4 @@
-"""FeynRules-style model package (metadata, declarations, compilation, vertices).
+"""FeynPy engine package (metadata, declarations, compilation, vertices).
 
 The public surface is intentionally small. The recommended workflow is:
 
@@ -12,6 +12,10 @@ The public surface is intentionally small. The recommended workflow is:
    lagrangian_decl=...)``
 6. extract Feynman rules with ``model.feynman_rule(...)`` /
    ``model.vertex_signatures(...)``.
+
+Concrete theories are intentionally not part of this engine package. They live
+in the sibling ``models`` package, which plays the role that model files play
+in FeynRules.
 
 Declarative ``lagrangian_decl`` factors live in ``declared.py``:
 ``CovD``, ``PartialD``, ``Gamma``, ``Gamma5``, ``Metric``, ``T``,
@@ -100,18 +104,6 @@ from .transformations import (
     apply_field_transformations,
     expand_index_components,
     replacement,
-)
-
-# ---- Standard Model ------------------------------------------------------
-from .standard_model import (
-    StandardModel,
-    StandardModelFields,
-    StandardModelGaugeGroups,
-    StandardModelIndices,
-    StandardModelLagrangians,
-    StandardModelParameters,
-    build_standard_model,
-    standard_model_weak_tensor_components,
 )
 
 # ---- internal symbols still used across the codebase ---------------------

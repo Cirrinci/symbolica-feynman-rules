@@ -10,7 +10,7 @@ SRC = REPO_ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from model import build_standard_model  # noqa: E402
+from models import build_standard_model  # noqa: E402
 from symbolic.tensor_canonicalization import canonize_full  # noqa: E402
 
 

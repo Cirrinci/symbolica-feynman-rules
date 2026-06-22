@@ -1,6 +1,9 @@
+import model as model_pkg
+import models as concrete_models_pkg
 from symbolica import S
 
-from model import GaugeFixing, Model, PartialD, build_standard_model
+from model import GaugeFixing, Model, PartialD
+from models import build_standard_model
 from tests.support.builders import make_complex_scalar
 
 
@@ -21,6 +24,11 @@ def test_model_single_string_positional_argument_still_sets_name():
 
     assert model.name == "fan_model"
     assert model.lagrangian_decl.source_terms == ()
+
+
+def test_engine_and_concrete_model_packages_are_separate():
+    assert not hasattr(model_pkg, "build_standard_model")
+    assert hasattr(concrete_models_pkg, "build_standard_model")
 
 
 def test_model_accepts_positional_declared_term_with_name_and_metadata_keywords():

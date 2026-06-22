@@ -5,7 +5,7 @@ from collections import Counter
 import pytest
 from symbolica import Expression, S
 
-from model import build_standard_model
+from models import build_standard_model
 from model.interactions import InteractionTerm, _field_match_key
 from model.lagrangian import CompiledLagrangian
 from symbolic.spenso_structures import (
@@ -121,6 +121,38 @@ def _assert_symbolic_equal(got, expected):
         if hasattr(candidate, "cancel"):
             candidate = candidate.cancel()
         assert _canon(candidate) == _canon(ZERO)
+
+
+def _internal_momentum_square(expr):
+    internal_labels = sorted(
+        (
+            symbol
+            for symbol in expr.get_all_symbols()
+            if symbol.to_canonical_string().endswith("_int")
+        ),
+        key=lambda symbol: symbol.to_canonical_string(),
+    )
+    assert internal_labels
+    mu = internal_labels[0]
+    return pcomp(q1, mu) * pcomp(q2, mu)
+
+
+def _collapse_internal_labels(expr):
+    internal_labels = sorted(
+        (
+            symbol
+            for symbol in expr.get_all_symbols()
+            if symbol.to_canonical_string().endswith("_int")
+        ),
+        key=lambda symbol: symbol.to_canonical_string(),
+    )
+    if not internal_labels:
+        return expr
+    collapsed = expr
+    base = internal_labels[0]
+    for label in internal_labels[1:]:
+        collapsed = collapsed.replace(label, base)
+    return collapsed
 
 
 def test_standard_model_builds_from_source_basis_and_validates(sm):
@@ -717,39 +749,44 @@ def test_feynman_gauge_ghost_masses_and_interactions(sm):
     g2 = sm.parameters.g2.symbol
     vev = sm.parameters.vev.symbol
     denominator = g1**2 + g2**2
-    ghost_momentum = (
-        pcomp(q1, S("mu1_int"))
-        * pcomp(q2, S("mu1_int"))
-    )
 
-    charged = L.feynman_rule(
-        fields.ghWp.bar,
-        fields.ghWp,
-        simplify=True,
-        include_delta=True,
+    charged = _collapse_internal_labels(
+        L.feynman_rule(
+            fields.ghWp.bar,
+            fields.ghWp,
+            simplify=True,
+            include_delta=True,
+        )
     )
+    ghost_momentum = _internal_momentum_square(charged)
     expected_charged = -I * (
         ghost_momentum + g2**2 * vev**2 / 4
     ) * D2
     assert _canon(charged) == _canon(expected_charged)
 
-    neutral = L.feynman_rule(
-        fields.ghZ.bar,
-        fields.ghZ,
-        simplify=True,
-        include_delta=True,
+    neutral = _collapse_internal_labels(
+        L.feynman_rule(
+            fields.ghZ.bar,
+            fields.ghZ,
+            simplify=True,
+            include_delta=True,
+        )
     )
+    ghost_momentum = _internal_momentum_square(neutral)
     expected_neutral = -I * (
         ghost_momentum + denominator * vev**2 / 4
     ) * D2
     _assert_rational_equal(neutral, expected_neutral, denominator)
 
-    photon = L.feynman_rule(
-        fields.ghA.bar,
-        fields.ghA,
-        simplify=True,
-        include_delta=True,
+    photon = _collapse_internal_labels(
+        L.feynman_rule(
+            fields.ghA.bar,
+            fields.ghA,
+            simplify=True,
+            include_delta=True,
+        )
     )
+    ghost_momentum = _internal_momentum_square(photon)
     _assert_rational_equal(
         photon,
         -I * ghost_momentum * D2,

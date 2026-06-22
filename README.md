@@ -8,15 +8,22 @@ This repository explores a Python-based analogue of FeynRules built around:
 The current codebase is centered on a Symbolica contraction engine plus a thin
 model layer that maps FeynRules-style declarations into that engine.
 
+The package boundary follows the FeynRules split:
+
+- `model` is the reusable toolkit/engine
+- `models` contains concrete theory definitions, analogous to model files
+
 ### Repository layout
 
 Live source code is organized as split packages rather than flat top-level files:
 
 - `src/model/`
-  - model metadata and declarations
+  - FeynPy engine: model metadata and declarations
   - `Field`, `GaugeGroup`, `GaugeRepresentation`, `Model`
   - compiled interaction objects, `CompiledLagrangian`, and lowering from declarative source terms
   - declarative field transformations in `transformations.py`
+- `src/models/`
+  - concrete model definitions built on top of the engine
   - the gauge-basis-to-broken Standard Model builder in `standard_model.py`
 - `src/compiler/`
   - convention-fixed gauge / covariant compilation
