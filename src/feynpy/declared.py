@@ -3,13 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field as dataclass_field, replace
+from typing import Callable
 
 from .metadata import (
     COLOR_FUND_KIND,
+    SPINOR_INDEX,
     ConjugateField,
     Field,
+    IndexType,
+    Parameter,
     gamma_matrix,
     gauge_generator,
+)
+from symbolic.spenso_structures import (
+    chiral_projector_left,
+    chiral_projector_right,
 )
 # ---------------------------------------------------------------------------
 # Declarative Lagrangian factors  (CovD / Gamma / FieldStrength DSL)
@@ -123,6 +131,26 @@ class GammaFactor(_DeclaredFactorMixin):
 class Gamma5Factor(_DeclaredFactorMixin):
     def __str__(self):
         return "Gamma5()"
+
+
+@dataclass(frozen=True)
+class _MatrixFactor(_DeclaredFactorMixin):
+    """A matrix acting on one index family inside a replacement expression.
+
+    The factor multiplies a single target field on one of its indices, e.g. a
+    chiral projector on the spinor index (``ProjM * l``) or a flavor rotation on
+    the generation index (``rotation(CKM, CKMDag) * dq``). ``build`` and
+    ``conjugate_build`` are ``(left, right) -> Expression`` callables; the
+    conjugate is used (with swapped legs) for ``field.bar`` occurrences.
+    """
+
+    name: str
+    index: IndexType
+    build: Callable
+    conjugate_build: Callable
+
+    def __str__(self):
+        return self.name
 
 
 @dataclass(frozen=True)
@@ -308,6 +336,7 @@ def _is_decl_scalar(value) -> bool:
             PartialDerivativeFactor,
             GammaFactor,
             Gamma5Factor,
+            _MatrixFactor,
             MetricFactor,
             GeneratorFactor,
             StructureConstantFactor,
@@ -347,6 +376,7 @@ def _coerce_decl_factor(value):
             PartialDerivativeFactor,
             GammaFactor,
             Gamma5Factor,
+            _MatrixFactor,
             MetricFactor,
             GeneratorFactor,
             StructureConstantFactor,
@@ -535,6 +565,44 @@ def Gamma5() -> Gamma5Factor:
 def Metric(left_index, right_index) -> MetricFactor:
     """Declarative Lorentz metric placeholder for local tensor monomials."""
     return MetricFactor(left_index=left_index, right_index=right_index)
+
+
+#: Left chiral projector ``P_L`` as a replacement-expression matrix factor.
+ProjM = _MatrixFactor(
+    name="ProjM",
+    index=SPINOR_INDEX,
+    build=chiral_projector_left,
+    conjugate_build=chiral_projector_right,
+)
+
+#: Right chiral projector ``P_R`` as a replacement-expression matrix factor.
+ProjP = _MatrixFactor(
+    name="ProjP",
+    index=SPINOR_INDEX,
+    build=chiral_projector_right,
+    conjugate_build=chiral_projector_left,
+)
+
+
+def rotation(forward: Parameter, dagger: Parameter) -> _MatrixFactor:
+    """Flavor-rotation matrix factor for replacement expressions.
+
+    ``forward`` and ``dagger`` are two-index unitary partner parameters such as
+    a CKM matrix and its conjugate. The factor rotates the target field on the
+    parameter's (flavor) index, e.g. ``rotation(CKM, CKMDag) * ProjM * dq``.
+    """
+    if not isinstance(forward, Parameter) or not isinstance(dagger, Parameter):
+        raise TypeError("rotation(...) expects two Parameter matrices.")
+    if len(forward.indices) != 2 or len(dagger.indices) != 2:
+        raise TypeError(
+            f"rotation matrix {forward.name!r} must carry exactly two indices."
+        )
+    return _MatrixFactor(
+        name=forward.name,
+        index=forward.indices[0],
+        build=lambda left, right: forward(left, right),
+        conjugate_build=lambda left, right: dagger(left, right),
+    )
 
 
 def T(*indices):

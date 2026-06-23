@@ -10,13 +10,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from fractions import Fraction
-from typing import Callable
 
 from symbolica import Expression, S
 
 from symbolic.spenso_structures import (
-    chiral_projector_left,
-    chiral_projector_right,
     gauge_generator,
     structure_constant,
     weak_eps2,
@@ -43,14 +40,14 @@ from feynpy import (
     Model,
     Parameter,
     PartialD,
-    ReplacementTerm,
+    ProjM,
+    ProjP,
     SPINOR_INDEX,
-    TransformationContext,
     WEAK_ADJ_INDEX,
     WEAK_FUND_INDEX,
     CompiledLagrangian,
     flavor_index,
-    replacement,
+    rotation,
 )
 
 _ONE = Expression.num(1)
@@ -622,76 +619,6 @@ def _ghost(
     )
 
 
-def _field_labels_by_index(
-    context: TransformationContext,
-) -> dict[IndexType, object]:
-    return {
-        index: context.label(slot)
-        for slot, index in enumerate(context.occurrence.field.indices)
-    }
-
-
-def _fermion_builder(
-    target: Field,
-    *,
-    chirality: str,
-    mixing: Parameter | None = None,
-    conjugated: bool = False,
-) -> Callable[[TransformationContext], tuple[ReplacementTerm, ...]]:
-    def build(context: TransformationContext) -> tuple[ReplacementTerm, ...]:
-        labels = _field_labels_by_index(context)
-        source_spinor = labels[SPINOR_INDEX]
-        source_generation = next(
-            label
-            for index, label in labels.items()
-            if index.is_flavor
-        )
-        target_spinor = context.fresh(SPINOR_INDEX, "fermion")
-        target_generation = source_generation
-        coefficient = _ONE
-
-        if mixing is not None:
-            generation_index = next(
-                index for index in target.indices if index.is_flavor
-            )
-            target_generation = context.fresh(generation_index, "mix")
-            coefficient *= (
-                mixing(target_generation, source_generation)
-                if conjugated
-                else mixing(source_generation, target_generation)
-            )
-
-        target_labels = {}
-        for slot, index in enumerate(target.indices):
-            if index == SPINOR_INDEX:
-                target_labels[slot] = target_spinor
-            elif index.is_flavor:
-                target_labels[slot] = target_generation
-            elif index in labels:
-                target_labels[slot] = labels[index]
-
-        if conjugated and chirality == "left":
-            projector = chiral_projector_right(target_spinor, source_spinor)
-        elif conjugated:
-            projector = chiral_projector_left(target_spinor, source_spinor)
-        elif chirality == "left":
-            projector = (
-                chiral_projector_left(source_spinor, target_spinor)
-            )
-        else:
-            projector = (
-                chiral_projector_right(source_spinor, target_spinor)
-            )
-        coefficient *= projector
-        occurrence = target.occurrence(
-            conjugated=conjugated,
-            labels=target.pack_slot_labels(target_labels),
-        )
-        return (replacement(coefficient, occurrence),)
-
-    return build
-
-
 def _standard_model_transformations(
     fields: StandardModelFields,
     parameters: StandardModelParameters,
@@ -699,143 +626,57 @@ def _standard_model_transformations(
     sw = parameters.sw.value
     cw = parameters.cw.value
     vev = parameters.vev.symbol
+    ckm = rotation(parameters.CKM, parameters.CKMDag)
 
     return (
-        FieldTransformation(
-            fields.B,
-            terms=(replacement(-sw, fields.Z), replacement(cw, fields.A)),
-        ),
+        # gauge-boson definitions (FeynRules SM.fr field expressions)
+        FieldTransformation(fields.B, -sw * fields.Z + cw * fields.A),
         FieldTransformation(
             fields.Wi,
+            _INV_SQRT2 * fields.W.bar + _INV_SQRT2 * fields.W,
             components={1: 1},
-            terms=(
-                replacement(_INV_SQRT2, fields.W.bar),
-                replacement(_INV_SQRT2, fields.W),
-            ),
         ),
         FieldTransformation(
             fields.Wi,
+            _INV_SQRT2 / I * fields.W.bar - _INV_SQRT2 / I * fields.W,
             components={1: 2},
-            terms=(
-                replacement(_INV_SQRT2 / I, fields.W.bar),
-                replacement(-_INV_SQRT2 / I, fields.W),
-            ),
         ),
         FieldTransformation(
             fields.Wi,
+            cw * fields.Z + sw * fields.A,
             components={1: 3},
-            terms=(replacement(cw, fields.Z), replacement(sw, fields.A)),
         ),
+        # Higgs/Goldstone definitions (the bare vev is a vacuum shift)
+        FieldTransformation(fields.Phi, -I * fields.GP, components={0: 1}),
         FieldTransformation(
             fields.Phi,
-            components={0: 1},
-            terms=(replacement(-I, fields.GP),),
-        ),
-        FieldTransformation(
-            fields.Phi,
+            vev * _INV_SQRT2 + _INV_SQRT2 * fields.H + I * _INV_SQRT2 * fields.G0,
             components={0: 2},
-            terms=(
-                replacement(vev * _INV_SQRT2),
-                replacement(_INV_SQRT2, fields.H),
-                replacement(I * _INV_SQRT2, fields.G0),
-            ),
         ),
-        FieldTransformation(
-            fields.LL,
-            components={1: 1},
-            builder=_fermion_builder(fields.vl, chirality="left"),
-            conjugate_builder=_fermion_builder(
-                fields.vl,
-                chirality="left",
-                conjugated=True,
-            ),
-        ),
-        FieldTransformation(
-            fields.LL,
-            components={1: 2},
-            builder=_fermion_builder(fields.l, chirality="left"),
-            conjugate_builder=_fermion_builder(
-                fields.l,
-                chirality="left",
-                conjugated=True,
-            ),
-        ),
-        FieldTransformation(
-            fields.lR,
-            builder=_fermion_builder(fields.l, chirality="right"),
-            conjugate_builder=_fermion_builder(
-                fields.l,
-                chirality="right",
-                conjugated=True,
-            ),
-        ),
-        FieldTransformation(
-            fields.QL,
-            components={1: 1},
-            builder=_fermion_builder(fields.uq, chirality="left"),
-            conjugate_builder=_fermion_builder(
-                fields.uq,
-                chirality="left",
-                conjugated=True,
-            ),
-        ),
-        FieldTransformation(
-            fields.QL,
-            components={1: 2},
-            builder=_fermion_builder(
-                fields.dq,
-                chirality="left",
-                mixing=parameters.CKM,
-            ),
-            conjugate_builder=_fermion_builder(
-                fields.dq,
-                chirality="left",
-                mixing=parameters.CKMDag,
-                conjugated=True,
-            ),
-        ),
-        FieldTransformation(
-            fields.uR,
-            builder=_fermion_builder(fields.uq, chirality="right"),
-            conjugate_builder=_fermion_builder(
-                fields.uq,
-                chirality="right",
-                conjugated=True,
-            ),
-        ),
-        FieldTransformation(
-            fields.dR,
-            builder=_fermion_builder(fields.dq, chirality="right"),
-            conjugate_builder=_fermion_builder(
-                fields.dq,
-                chirality="right",
-                conjugated=True,
-            ),
-        ),
-        FieldTransformation(
-            fields.ghB,
-            terms=(replacement(-sw, fields.ghZ), replacement(cw, fields.ghA)),
-        ),
+        # chiral fermion definitions: source -> Proj * target (SM.fr ProjM/ProjP)
+        FieldTransformation(fields.LL, ProjM * fields.vl, components={1: 1}),
+        FieldTransformation(fields.LL, ProjM * fields.l, components={1: 2}),
+        FieldTransformation(fields.lR, ProjP * fields.l),
+        FieldTransformation(fields.QL, ProjM * fields.uq, components={1: 1}),
+        FieldTransformation(fields.QL, ckm * ProjM * fields.dq, components={1: 2}),
+        FieldTransformation(fields.uR, ProjP * fields.uq),
+        FieldTransformation(fields.dR, ProjP * fields.dq),
+        # ghost definitions
+        FieldTransformation(fields.ghB, -sw * fields.ghZ + cw * fields.ghA),
         FieldTransformation(
             fields.ghWi,
+            _INV_SQRT2 * fields.ghWp + _INV_SQRT2 * fields.ghWm,
             components={0: 1},
-            terms=(
-                replacement(_INV_SQRT2, fields.ghWp),
-                replacement(_INV_SQRT2, fields.ghWm),
-            ),
         ),
         FieldTransformation(
             fields.ghWi,
+            -_INV_SQRT2 / I * fields.ghWp + _INV_SQRT2 / I * fields.ghWm,
             components={0: 2},
-            terms=(
-                replacement(-_INV_SQRT2 / I, fields.ghWp),
-                replacement(_INV_SQRT2 / I, fields.ghWm),
-            ),
         ),
         FieldTransformation(
             fields.ghWi,
+            cw * fields.ghZ + sw * fields.ghA,
             components={0: 3},
-            terms=(replacement(cw, fields.ghZ), replacement(sw, fields.ghA)),
         ),
     )
 

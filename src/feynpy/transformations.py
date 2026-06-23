@@ -127,37 +127,20 @@ def _occurrence_from_field_factor(factor) -> FieldOccurrence:
     )
 
 
-def _monomial_to_replacement_term(monomial) -> ReplacementTerm:
-    from .declared import _FieldFactor
-
-    fields: list[FieldOccurrence] = []
-    for factor in monomial.factors:
-        if not isinstance(factor, _FieldFactor):
-            raise TypeError(
-                "An expression-style FieldTransformation may only contain plain "
-                f"field factors; got {type(factor).__name__}. Operators such as "
-                "CovD, Gamma, PartialD, or FieldStrength are not valid replacement "
-                "targets. Use builder= for index-dependent or matrix replacements."
-            )
-        fields.append(_occurrence_from_field_factor(factor))
-    return ReplacementTerm(coefficient=monomial.coefficient, fields=tuple(fields))
-
-
-def replacement_terms_from_expr(expr) -> tuple[ReplacementTerm, ...]:
-    """Lower a declarative replacement expression to ``ReplacementTerm`` monomials.
+def _expr_monomials(expr) -> tuple[object, ...]:
+    """Parse a replacement expression into ``ReplacementTerm``/``_DeclaredMonomial``.
 
     Accepts the same field-arithmetic DSL used by ``Model(lagrangian_decl=...)``:
-    ``Field``, ``Field.bar``, their scalar-weighted sums and products, bare scalar
-    constants (for vacuum shifts), already-built ``ReplacementTerm`` values, or a
-    tuple/list mixing those. Only plain field monomials are accepted; anything that
-    needs fresh indices or spinor matrices (projectors, CKM rotations) must use
-    ``builder=``.
+    ``Field``, ``Field.bar``, their scalar-weighted sums and products, matrix
+    factors (``ProjM``, ``ProjP``, ``rotation(...)``), bare scalar constants (for
+    vacuum shifts), already-built ``ReplacementTerm`` values, or a tuple/list
+    mixing those.
     """
     from .declared import _DeclaredMonomial
     from .lowering import _declared_source_terms_from_item
 
     items = expr if isinstance(expr, (tuple, list)) else (expr,)
-    out: list[ReplacementTerm] = []
+    out: list[object] = []
     for item in items:
         if isinstance(item, ReplacementTerm):
             out.append(item)
@@ -169,8 +152,9 @@ def replacement_terms_from_expr(expr) -> tuple[ReplacementTerm, ...]:
                 continue
             raise TypeError(
                 "FieldTransformation expression must be built from Fields, "
-                "Field.bar, their scalar-weighted sums/products, scalar constants, "
-                f"or ReplacementTerm values; got {type(item).__name__}."
+                "Field.bar, their scalar-weighted sums/products, matrix factors "
+                "(ProjM/ProjP/rotation), scalar constants, or ReplacementTerm "
+                f"values; got {type(item).__name__}."
             )
         for term in declared:
             if not isinstance(term, _DeclaredMonomial):
@@ -178,8 +162,166 @@ def replacement_terms_from_expr(expr) -> tuple[ReplacementTerm, ...]:
                     "FieldTransformation expression only accepts field monomials; "
                     f"got {type(term).__name__}. Use terms=/builder= instead."
                 )
-            out.append(_monomial_to_replacement_term(term))
+            out.append(term)
     return tuple(out)
+
+
+def _monomial_has_matrix(monomial) -> bool:
+    from .declared import _DeclaredMonomial, _MatrixFactor
+
+    return isinstance(monomial, _DeclaredMonomial) and any(
+        isinstance(factor, _MatrixFactor) for factor in monomial.factors
+    )
+
+
+def _static_term_from_monomial(monomial) -> ReplacementTerm:
+    from .declared import _DeclaredMonomial, _FieldFactor
+
+    if isinstance(monomial, ReplacementTerm):
+        return monomial
+    assert isinstance(monomial, _DeclaredMonomial)
+    fields: list[FieldOccurrence] = []
+    for factor in monomial.factors:
+        if not isinstance(factor, _FieldFactor):
+            raise TypeError(
+                "An expression-style FieldTransformation may only contain plain "
+                f"field factors; got {type(factor).__name__}. Operators such as "
+                "CovD, Gamma, PartialD, or FieldStrength are not valid replacement "
+                "targets. Use builder= for index-dependent replacements."
+            )
+        fields.append(_occurrence_from_field_factor(factor))
+    return ReplacementTerm(coefficient=monomial.coefficient, fields=tuple(fields))
+
+
+def replacement_terms_from_expr(expr) -> tuple[ReplacementTerm, ...]:
+    """Lower a matrix-free replacement expression to ``ReplacementTerm`` monomials."""
+    return tuple(_static_term_from_monomial(item) for item in _expr_monomials(expr))
+
+
+def _matrix_expr_dependencies(monomials: Sequence[object]) -> tuple[Field, ...]:
+    from .declared import _DeclaredMonomial, _FieldFactor
+
+    fields: list[Field] = []
+    for monomial in monomials:
+        if not isinstance(monomial, _DeclaredMonomial):
+            continue
+        for factor in monomial.factors:
+            if isinstance(factor, _FieldFactor):
+                fields.append(factor.field)
+    return tuple(dict.fromkeys(fields))
+
+
+def _resolve_matrix_monomial(
+    monomial,
+    *,
+    occurrence: FieldOccurrence,
+    label_pool: "FreshLabelPool",
+    conjugated: bool,
+) -> tuple[ReplacementTerm, ...]:
+    """Wire one matrix monomial against a concrete occurrence's indices.
+
+    Matrices act on the source's free index of their family; the contracted leg
+    is a fresh label shared with the target field. Conjugated occurrences use the
+    factor's conjugate builder with swapped legs and flip the target's bar.
+    """
+    from .declared import _DeclaredMonomial, _FieldFactor, _MatrixFactor
+
+    if isinstance(monomial, ReplacementTerm):
+        terms = (monomial,)
+        return _conjugate_terms(terms, real_symbols=()) if conjugated else terms
+
+    assert isinstance(monomial, _DeclaredMonomial)
+    matrices = [f for f in monomial.factors if isinstance(f, _MatrixFactor)]
+    field_factors = [f for f in monomial.factors if isinstance(f, _FieldFactor)]
+    extras = [
+        f
+        for f in monomial.factors
+        if not isinstance(f, (_MatrixFactor, _FieldFactor))
+    ]
+    if extras:
+        raise TypeError(
+            "A matrix-valued field definition may only contain matrix factors "
+            f"(ProjM/ProjP/rotation) and one target field; got {type(extras[0]).__name__}."
+        )
+    if len(field_factors) != 1:
+        raise TypeError(
+            "A matrix-valued field definition must contain exactly one target "
+            f"field; got {len(field_factors)}."
+        )
+    target = field_factors[0].field
+
+    source_labels: dict[IndexType, object] = {}
+    for slot, index in enumerate(occurrence.field.indices):
+        label = occurrence.slot_labels.get(slot)
+        if _is_symbolic_label(label):
+            source_labels.setdefault(index, label)
+
+    chains: dict[IndexType, list[_MatrixFactor]] = {}
+    for matrix in matrices:
+        chains.setdefault(matrix.index, []).append(matrix)
+
+    coefficient = (
+        _conjugate_coefficient(monomial.coefficient, ())
+        if conjugated
+        else monomial.coefficient
+    )
+    endpoints: dict[IndexType, object] = {}
+    for index_type, chain in chains.items():
+        source_label = source_labels.get(index_type)
+        if source_label is None:
+            raise ValueError(
+                f"Source {occurrence.field.name!r} has no free {index_type.name!r} "
+                "index for the matrix in its field definition."
+            )
+        points = [source_label] + [
+            label_pool.fresh(index_type, "transform") for _ in chain
+        ]
+        for position, matrix in enumerate(chain):
+            left, right = points[position], points[position + 1]
+            coefficient = coefficient * (
+                matrix.conjugate_build(right, left)
+                if conjugated
+                else matrix.build(left, right)
+            )
+        endpoints[index_type] = points[-1]
+
+    target_labels: dict[int, object] = {}
+    for slot, index in enumerate(target.indices):
+        if index in endpoints:
+            target_labels[slot] = endpoints[index]
+        elif index in source_labels:
+            target_labels[slot] = source_labels[index]
+
+    conjugate_target = field_factors[0].conjugated
+    if conjugated and not target.self_conjugate:
+        conjugate_target = not conjugate_target
+    target_occurrence = target.occurrence(
+        conjugated=conjugate_target,
+        labels=target.pack_slot_labels(target_labels),
+    )
+    return (ReplacementTerm(coefficient=coefficient, fields=(target_occurrence,)),)
+
+
+def _matrix_expr_builders(
+    monomials: Sequence[object],
+) -> tuple[ReplacementBuilder, ReplacementBuilder]:
+    def make(conjugated: bool) -> ReplacementBuilder:
+        def build(context: TransformationContext) -> tuple[ReplacementTerm, ...]:
+            out: list[ReplacementTerm] = []
+            for monomial in monomials:
+                out.extend(
+                    _resolve_matrix_monomial(
+                        monomial,
+                        occurrence=context.occurrence,
+                        label_pool=context._label_pool,
+                        conjugated=conjugated,
+                    )
+                )
+            return tuple(out)
+
+        return build
+
+    return make(False), make(True)
 
 
 @dataclass(frozen=True)
@@ -188,12 +330,16 @@ class FieldTransformation:
 
     The replacement can be given three ways (use exactly one):
 
-    * ``expr=`` (also accepted positionally): a FeynRules-like field expression,
-      e.g. ``FieldTransformation(B, -sw * Z + cw * A)`` or a vacuum shift
-      ``FieldTransformation(Phi, vev * c + c * H + I * c * G0, components={0: 2})``.
+    * ``expr=`` (also accepted positionally): a FeynRules-like field expression.
+      It supports plain mixings ``FieldTransformation(B, -sw * Z + cw * A)``,
+      vacuum shifts ``FieldTransformation(Phi, vev * c + c * H, components={0: 2})``,
+      and matrix factors such as chiral projectors and flavor rotations,
+      ``FieldTransformation(LL, ProjM * l, components={1: 2})`` or
+      ``FieldTransformation(QL, rotation(CKM, CKMDag) * ProjM * dq, components={1: 2})``.
+      Matrix expressions are wired against each occurrence's free indices and are
+      conjugated automatically for ``field.bar`` occurrences.
     * ``terms=``: explicit ``replacement(...)`` monomials.
-    * ``builder=``: a callable for index-dependent or spinor-matrix replacements
-      (projectors, CKM rotations).
+    * ``builder=``: a callable for fully custom index-dependent replacements.
 
     ``components`` maps source index-slot positions to fixed component values.
     Static terms support automatic conjugation. Callable builders can provide
@@ -229,9 +375,26 @@ class FieldTransformation:
                 f"transformation (got {', '.join(provided)})."
             )
         if self.expr is not None:
-            object.__setattr__(
-                self, "terms", replacement_terms_from_expr(self.expr)
-            )
+            monomials = _expr_monomials(self.expr)
+            if any(_monomial_has_matrix(monomial) for monomial in monomials):
+                builder, conjugate_builder = _matrix_expr_builders(monomials)
+                object.__setattr__(self, "builder", builder)
+                object.__setattr__(self, "conjugate_builder", conjugate_builder)
+                object.__setattr__(
+                    self,
+                    "dependencies",
+                    tuple(
+                        dict.fromkeys(
+                            self.dependencies + _matrix_expr_dependencies(monomials)
+                        )
+                    ),
+                )
+            else:
+                object.__setattr__(
+                    self,
+                    "terms",
+                    tuple(_static_term_from_monomial(item) for item in monomials),
+                )
         for slot in self.components:
             if not (0 <= slot < len(self.source.indices)):
                 raise ValueError(

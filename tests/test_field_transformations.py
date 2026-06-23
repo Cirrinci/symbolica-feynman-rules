@@ -663,3 +663,161 @@ def test_expression_syntax_rejects_non_field_operators():
 
     with pytest.raises(TypeError):
         FieldTransformation(chi, CovD(psi, mu))
+
+
+def _dirac(name, indices):
+    from fractions import Fraction
+
+    return Field(
+        name,
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S(name),
+        conjugate_symbol=S(f"{name}bar"),
+        indices=indices,
+    )
+
+
+def test_projector_expression_compiles_to_builder_with_dependencies():
+    from feynpy import SPINOR_INDEX, ProjM, flavor_index
+
+    generation = flavor_index("Generation", 3, prefix="fl")
+    source = _dirac("LL", (SPINOR_INDEX, WEAK_FUND_INDEX, generation))
+    target = _dirac("l", (SPINOR_INDEX, generation))
+
+    rule = FieldTransformation(source, ProjM * target, components={1: 2})
+
+    assert rule.terms == ()
+    assert rule.builder is not None
+    assert rule.conjugate_builder is not None
+    assert target in rule.dependencies
+
+
+def test_projector_expression_wires_spinor_index_and_inherits_flavor():
+    from feynpy import SPINOR_INDEX, ProjM, flavor_index
+
+    generation = flavor_index("Generation", 3, prefix="fl")
+    source = _dirac("LL", (SPINOR_INDEX, WEAK_FUND_INDEX, generation))
+    target = _dirac("l", (SPINOR_INDEX, generation))
+    s = S("s")
+    g = S("g")
+
+    lagrangian = _lagrangian(
+        InteractionTerm(coupling=1, fields=(source(s, 2, g),))
+    )
+    result = lagrangian.transform_fields(
+        FieldTransformation(source, ProjM * target, components={1: 2}),
+        repeat=False,
+    )
+
+    assert len(result.terms) == 1
+    (term,) = result.terms
+    assert _field_names(term) == ("l",)
+    field = term.fields[0]
+    target_spinor = field.slot_labels.get(0)
+    assert _canon(field.slot_labels.get(1)) == _canon(g)  # flavor inherited
+    assert _canon(target_spinor) != _canon(s)  # spinor leg is fresh
+    coupling = _canon(term.coupling)
+    assert "gamma5" in coupling  # the projector is present
+    assert _canon(s) in coupling  # the source (open) spinor index
+    assert _canon(target_spinor) in coupling  # contracted with the target
+
+
+def test_projector_expression_conjugates_for_bar_occurrence():
+    from feynpy import SPINOR_INDEX, ProjM, flavor_index
+
+    generation = flavor_index("Generation", 3, prefix="fl")
+    source = _dirac("LL", (SPINOR_INDEX, WEAK_FUND_INDEX, generation))
+    target = _dirac("l", (SPINOR_INDEX, generation))
+    s = S("s")
+    g = S("g")
+
+    lagrangian = _lagrangian(
+        InteractionTerm(coupling=1, fields=(source.bar(s, 2, g),))
+    )
+    result = lagrangian.transform_fields(
+        FieldTransformation(source, ProjM * target, components={1: 2}),
+        repeat=False,
+    )
+
+    (term,) = result.terms
+    assert _field_names(term) == ("l.bar",)
+
+
+def test_rotation_expression_matches_explicit_builder():
+    from feynpy import (
+        SPINOR_INDEX,
+        Parameter,
+        ProjM,
+        TransformationContext,
+        flavor_index,
+        rotation,
+    )
+    from feynpy.transformations import _rule_terms, FreshLabelPool
+
+    generation = flavor_index("Generation", 3, prefix="fl")
+    source = _dirac("QL", (SPINOR_INDEX, WEAK_FUND_INDEX, generation, COLOR_FUND_INDEX))
+    target = _dirac("dq", (SPINOR_INDEX, generation, COLOR_FUND_INDEX))
+    ckm = Parameter("CKM", indices=(generation, generation), complex_param=True,
+                    unitary_partner="CKMDag")
+    ckm_dag = Parameter("CKMDag", indices=(generation, generation), complex_param=True,
+                        unitary_partner="CKM")
+
+    via_expr = FieldTransformation(
+        source, rotation(ckm, ckm_dag) * ProjM * target, components={1: 2}
+    )
+
+    def builder(context):
+        labels = {
+            index: context.label(slot)
+            for slot, index in enumerate(context.occurrence.field.indices)
+        }
+        s_src = labels[SPINOR_INDEX]
+        g_src = next(lbl for idx, lbl in labels.items() if idx.is_flavor)
+        # Match the resolver's allocation order: flavor chain before spinor chain.
+        g_tgt = context.fresh(generation, "transform")
+        s_tgt = context.fresh(SPINOR_INDEX, "transform")
+        from symbolic.spenso_structures import chiral_projector_left
+
+        coeff = ckm(g_src, g_tgt) * chiral_projector_left(s_src, s_tgt)
+        occ = target.occurrence(
+            labels=target.pack_slot_labels(
+                {0: s_tgt, 1: g_tgt, 2: labels[COLOR_FUND_INDEX]}
+            )
+        )
+        return (replacement(coeff, occ),)
+
+    via_builder = FieldTransformation(source, components={1: 2}, builder=builder)
+
+    occurrence = source(S("s"), 2, S("g"), S("c"))
+    term = InteractionTerm(coupling=1, fields=(occurrence,))
+
+    def first_terms(rule):
+        return _rule_terms(
+            rule,
+            occurrence=occurrence,
+            term=term,
+            slot=0,
+            real_symbols=(),
+            label_pool=FreshLabelPool(),
+        )
+
+    expr_term = first_terms(via_expr)[0]
+    builder_term = first_terms(via_builder)[0]
+    assert _canon(expr_term.coefficient) == _canon(builder_term.coefficient)
+
+
+def test_matrix_expression_rejects_multiple_target_fields():
+    from feynpy import SPINOR_INDEX, ProjM, flavor_index
+
+    generation = flavor_index("Generation", 3, prefix="fl")
+    source = _dirac("LL", (SPINOR_INDEX, WEAK_FUND_INDEX, generation))
+    a = _dirac("a", (SPINOR_INDEX, generation))
+    b = _dirac("b", (SPINOR_INDEX, generation))
+
+    rule = FieldTransformation(source, ProjM * a * b, components={1: 2})
+    lagrangian = _lagrangian(
+        InteractionTerm(coupling=1, fields=(source(S("s"), 2, S("g")),))
+    )
+    with pytest.raises(TypeError):
+        lagrangian.transform_fields(rule, repeat=False)

@@ -37,8 +37,28 @@ broken = model.transform_fields(*rules, repeat=False)
 The expression accepts the same field-arithmetic DSL used by
 `Model(lagrangian_decl=...)`: `Field`, `Field.bar`, their scalar-weighted sums
 and products, bare scalar constants (vacuum shifts), and tuples mixing those.
-Only plain field monomials are accepted; anything that needs fresh indices or
-spinor matrices (chiral projectors, CKM rotations) must use `builder=`.
+
+It also accepts **matrix factors** for index-aware replacements, so chiral
+projectors and flavor rotations read just like `SM.fr`:
+
+```python
+from feynpy import FieldTransformation, ProjM, ProjP, rotation
+
+rules = (
+    # LL[2] -> ProjM l        (a chiral projector on the spinor index)
+    FieldTransformation(LL, ProjM * l, components={1: 2}),
+    # QL[2] -> V_CKM ProjM d  (a flavor rotation plus a projector)
+    FieldTransformation(QL, rotation(CKM, CKMDag) * ProjM * dq, components={1: 2}),
+)
+```
+
+`ProjM`/`ProjP` are the left/right chiral projectors (spinor matrices) and
+`rotation(forward, dagger)` wraps a two-index unitary parameter and its
+conjugate partner. Each matrix factor acts on the source's free index of its
+family (spinor for projectors, the parameter's flavor index for rotations); the
+contracted leg is a fresh label shared with the target field, and FeynPy
+conjugates the rule automatically for `field.bar` occurrences. Use `builder=`
+only for replacements that need fully custom index handling.
 
 ### Explicit `terms=` form
 
@@ -73,8 +93,8 @@ component. Compatible free labels are inherited by replacement fields;
 fixed component slots disappear when the replacement no longer carries that
 index.
 
-For index-dependent rotations, use `builder=`. The builder receives a
-`TransformationContext`:
+For replacements that need fully custom index handling beyond matrix factors,
+use `builder=`. The builder receives a `TransformationContext`:
 
 ```python
 def rotate(context):

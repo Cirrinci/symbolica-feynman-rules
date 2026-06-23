@@ -20,6 +20,8 @@ files play in FeynRules.
 Declarative ``lagrangian_decl`` factors live in ``declared.py``:
 ``CovD``, ``PartialD``, ``Gamma``, ``Gamma5``, ``Metric``, ``T``,
 ``StructureConstant``, ``FieldStrength``, ``GaugeFixing``, ``GhostLagrangian``.
+Replacement-expression matrix factors (``ProjM``, ``ProjP``, ``rotation(...)``)
+let ``FieldTransformation(source, expr)`` carry projectors and flavor rotations.
 """
 
 from __future__ import annotations
@@ -79,9 +81,12 @@ from .declared import (
     MetricFactor,
     PartialD,
     PartialDerivativeFactor,
+    ProjM,
+    ProjP,
     StructureConstant,
     StructureConstantFactor,
     T,
+    rotation,
 )
 
 # ---- lagrangian containers (compiled + declared) -------------------------
