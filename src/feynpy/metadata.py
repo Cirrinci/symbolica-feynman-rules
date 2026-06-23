@@ -1010,6 +1010,21 @@ class Field:
 
         return _DeclaredMonomial.from_factor(_FieldFactor(self)).__radd__(other)
 
+    def __neg__(self):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(_FieldFactor(self)).__neg__()
+
+    def __sub__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(_FieldFactor(self)).__sub__(other)
+
+    def __rsub__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(_FieldFactor(self)).__rsub__(other)
+
     def __call__(self, *labels, conjugated: bool = False, index_labels: Optional[Mapping] = None):
         """Public shorthand for one labeled field factor in a declaration.
 
@@ -1058,6 +1073,21 @@ class ConjugateField:
         from .declared import _DeclaredMonomial, _FieldFactor
 
         return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__radd__(other)
+
+    def __neg__(self):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__neg__()
+
+    def __sub__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__sub__(other)
+
+    def __rsub__(self, other):
+        from .declared import _DeclaredMonomial, _FieldFactor
+
+        return _DeclaredMonomial.from_factor(_FieldFactor(self.field, conjugated=True)).__rsub__(other)
 
     def __call__(self, *labels, index_labels: Optional[Mapping] = None):
         """Public shorthand for one conjugated labeled field factor.

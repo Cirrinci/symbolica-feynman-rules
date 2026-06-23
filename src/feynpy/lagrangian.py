@@ -33,6 +33,31 @@ def _declared_source_terms_from_item(item):
 
     return impl(item)
 
+def _is_scalar_constant_operand(value) -> bool:
+    """True for plain numeric/symbolic scalars (not declarative DSL objects)."""
+    from fractions import Fraction
+
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, (int, float, complex, Fraction, Expression))
+
+def _declared_terms_or_constant(other):
+    """Lower ``other`` to declared source terms, treating bare scalars as constants.
+
+    A bare scalar becomes a constant monomial (no field factors). Such a term is
+    only meaningful as a spacetime-independent piece of a field replacement (for
+    example a vacuum expectation value); the Lagrangian compiler still rejects a
+    pure-constant term, so enabling this here does not weaken model compilation.
+    """
+    terms = _declared_source_terms_from_item(other)
+    if terms is not None:
+        return terms
+    if _is_scalar_constant_operand(other):
+        from .declared import _DeclaredMonomial
+
+        return (_DeclaredMonomial(coefficient=other, factors=()),)
+    return None
+
 def _compiled_lagrangian_context_error():
     from .lowering import _compiled_lagrangian_context_error as impl
 
@@ -1110,7 +1135,7 @@ class DeclaredLagrangian:
         return cls(source_terms=terms)
 
     def __add__(self, other):
-        terms = _declared_source_terms_from_item(other)
+        terms = _declared_terms_or_constant(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(source_terms=self.source_terms + terms)
@@ -1118,13 +1143,13 @@ class DeclaredLagrangian:
     def __radd__(self, other):
         if other == 0:
             return self
-        terms = _declared_source_terms_from_item(other)
+        terms = _declared_terms_or_constant(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(source_terms=terms + self.source_terms)
 
     def __sub__(self, other):
-        terms = _declared_source_terms_from_item(other)
+        terms = _declared_terms_or_constant(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(
@@ -1132,7 +1157,7 @@ class DeclaredLagrangian:
         )
 
     def __rsub__(self, other):
-        terms = _declared_source_terms_from_item(other)
+        terms = _declared_terms_or_constant(other)
         if terms is None:
             return NotImplemented
         return DeclaredLagrangian(

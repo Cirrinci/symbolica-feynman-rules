@@ -7,25 +7,49 @@ index-aware callable replacements.
 
 ## Declaring Rules
 
-Use `FieldTransformation` and `replacement` from the public `feynpy` toolkit:
+The most readable form mirrors the FeynRules `Definitions` block: pass the
+replacement as a field expression. It is the second positional argument (or
+`expr=`):
 
 ```python
 from symbolica import Expression, S
 
-from feynpy import FieldTransformation, replacement
+from feynpy import FieldTransformation
 from symbolic.vertex_engine import I
 
 half = Expression.num(1) / Expression.num(2)
 inv_sqrt2 = half**half
 
 rules = (
+    # B -> -sw Z + cw A
+    FieldTransformation(B, -sw * Z + cw * A),
+    # Phi[2] -> v/sqrt2 + H/sqrt2 + i G0/sqrt2   (the bare v is a vacuum shift)
     FieldTransformation(
-        B,
-        terms=(
-            replacement(-sw, Z),
-            replacement(cw, A),
-        ),
+        Phi,
+        vev * inv_sqrt2 + inv_sqrt2 * H + I * inv_sqrt2 * G0,
+        components={0: 2},
     ),
+)
+
+broken = model.transform_fields(*rules, repeat=False)
+```
+
+The expression accepts the same field-arithmetic DSL used by
+`Model(lagrangian_decl=...)`: `Field`, `Field.bar`, their scalar-weighted sums
+and products, bare scalar constants (vacuum shifts), and tuples mixing those.
+Only plain field monomials are accepted; anything that needs fresh indices or
+spinor matrices (chiral projectors, CKM rotations) must use `builder=`.
+
+### Explicit `terms=` form
+
+The expression form lowers to the lower-level `terms=` API, which remains
+available when you want to build `ReplacementTerm`s directly:
+
+```python
+from feynpy import replacement
+
+rules = (
+    FieldTransformation(B, terms=(replacement(-sw, Z), replacement(cw, A))),
     FieldTransformation(
         Phi,
         components={0: 2},
@@ -36,9 +60,9 @@ rules = (
         ),
     ),
 )
-
-broken = model.transform_fields(*rules, repeat=False)
 ```
+
+Exactly one of `expr`, `terms`, or `builder` may be given per transformation.
 
 Each `ReplacementTerm` is one monomial. Its coefficient can be any Symbolica
 expression and its fields can contain zero, one, or several field

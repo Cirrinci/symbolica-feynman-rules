@@ -111,9 +111,89 @@ ReplacementBuilder = Callable[
 ]
 
 
+def _is_scalar_constant(value) -> bool:
+    """True for plain numeric/symbolic scalars used as constant replacements."""
+    from fractions import Fraction
+
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, (int, float, complex, Fraction, Expression))
+
+
+def _occurrence_from_field_factor(factor) -> FieldOccurrence:
+    return factor.field.occurrence(
+        conjugated=factor.conjugated,
+        labels=factor.labels or None,
+    )
+
+
+def _monomial_to_replacement_term(monomial) -> ReplacementTerm:
+    from .declared import _FieldFactor
+
+    fields: list[FieldOccurrence] = []
+    for factor in monomial.factors:
+        if not isinstance(factor, _FieldFactor):
+            raise TypeError(
+                "An expression-style FieldTransformation may only contain plain "
+                f"field factors; got {type(factor).__name__}. Operators such as "
+                "CovD, Gamma, PartialD, or FieldStrength are not valid replacement "
+                "targets. Use builder= for index-dependent or matrix replacements."
+            )
+        fields.append(_occurrence_from_field_factor(factor))
+    return ReplacementTerm(coefficient=monomial.coefficient, fields=tuple(fields))
+
+
+def replacement_terms_from_expr(expr) -> tuple[ReplacementTerm, ...]:
+    """Lower a declarative replacement expression to ``ReplacementTerm`` monomials.
+
+    Accepts the same field-arithmetic DSL used by ``Model(lagrangian_decl=...)``:
+    ``Field``, ``Field.bar``, their scalar-weighted sums and products, bare scalar
+    constants (for vacuum shifts), already-built ``ReplacementTerm`` values, or a
+    tuple/list mixing those. Only plain field monomials are accepted; anything that
+    needs fresh indices or spinor matrices (projectors, CKM rotations) must use
+    ``builder=``.
+    """
+    from .declared import _DeclaredMonomial
+    from .lowering import _declared_source_terms_from_item
+
+    items = expr if isinstance(expr, (tuple, list)) else (expr,)
+    out: list[ReplacementTerm] = []
+    for item in items:
+        if isinstance(item, ReplacementTerm):
+            out.append(item)
+            continue
+        declared = _declared_source_terms_from_item(item)
+        if declared is None:
+            if _is_scalar_constant(item):
+                out.append(ReplacementTerm(coefficient=item, fields=()))
+                continue
+            raise TypeError(
+                "FieldTransformation expression must be built from Fields, "
+                "Field.bar, their scalar-weighted sums/products, scalar constants, "
+                f"or ReplacementTerm values; got {type(item).__name__}."
+            )
+        for term in declared:
+            if not isinstance(term, _DeclaredMonomial):
+                raise TypeError(
+                    "FieldTransformation expression only accepts field monomials; "
+                    f"got {type(term).__name__}. Use terms=/builder= instead."
+                )
+            out.append(_monomial_to_replacement_term(term))
+    return tuple(out)
+
+
 @dataclass(frozen=True)
 class FieldTransformation:
     """One FeynRules-like field definition.
+
+    The replacement can be given three ways (use exactly one):
+
+    * ``expr=`` (also accepted positionally): a FeynRules-like field expression,
+      e.g. ``FieldTransformation(B, -sw * Z + cw * A)`` or a vacuum shift
+      ``FieldTransformation(Phi, vev * c + c * H + I * c * G0, components={0: 2})``.
+    * ``terms=``: explicit ``replacement(...)`` monomials.
+    * ``builder=``: a callable for index-dependent or spinor-matrix replacements
+      (projectors, CKM rotations).
 
     ``components`` maps source index-slot positions to fixed component values.
     Static terms support automatic conjugation. Callable builders can provide
@@ -121,6 +201,7 @@ class FieldTransformation:
     """
 
     source: Field
+    expr: object = None
     terms: tuple[ReplacementTerm, ...] = ()
     components: Mapping[int, object] = dataclass_field(default_factory=dict)
     builder: Optional[ReplacementBuilder] = None
@@ -133,8 +214,24 @@ class FieldTransformation:
     def __post_init__(self):
         if not isinstance(self.source, Field):
             raise TypeError("FieldTransformation.source must be a Field.")
-        if self.builder is not None and self.terms:
-            raise ValueError("Use either terms= or builder= for one transformation.")
+        provided = [
+            label
+            for label, is_set in (
+                ("expr", self.expr is not None),
+                ("terms", bool(self.terms)),
+                ("builder", self.builder is not None),
+            )
+            if is_set
+        ]
+        if len(provided) > 1:
+            raise ValueError(
+                "Provide only one of expr=, terms=, builder= for one "
+                f"transformation (got {', '.join(provided)})."
+            )
+        if self.expr is not None:
+            object.__setattr__(
+                self, "terms", replacement_terms_from_expr(self.expr)
+            )
         for slot in self.components:
             if not (0 <= slot < len(self.source.indices)):
                 raise ValueError(

@@ -542,3 +542,124 @@ def test_component_expansion_preserves_already_fixed_numeric_labels():
     assert len(result.terms) == 1
     assert str(result.terms[0].fields[0].slot_labels.get(0)) == "2"
     assert _canon(result.terms[0].coupling) == _canon(S("g") + 1)
+
+
+def _replacement_summary(transformation):
+    return [
+        (
+            _canon(term.coefficient),
+            tuple(
+                occurrence.field.name
+                + (".bar" if occurrence.conjugated and not occurrence.field.self_conjugate else "")
+                for occurrence in term.occurrences()
+            ),
+        )
+        for term in transformation.terms
+    ]
+
+
+def test_expression_syntax_matches_explicit_terms_for_linear_mixing():
+    b_field = _vector("B")
+    z_field = _vector("Z")
+    photon = _vector("A")
+    sw = S("sw")
+    cw = S("cw")
+
+    via_expr = FieldTransformation(b_field, -sw * z_field + cw * photon)
+    via_terms = FieldTransformation(
+        b_field,
+        terms=(replacement(-sw, z_field), replacement(cw, photon)),
+    )
+
+    assert _replacement_summary(via_expr) == _replacement_summary(via_terms)
+
+
+def test_expression_syntax_gives_same_feynman_rule_after_transform():
+    b_field = _vector("B")
+    z_field = _vector("Z")
+    photon = _vector("A")
+    mu = S("mu")
+    sw = S("sw")
+    cw = S("cw")
+    source = _lagrangian(InteractionTerm(coupling=1, fields=(b_field(mu),)))
+
+    via_expr = source.transform_fields(
+        FieldTransformation(b_field, -sw * z_field + cw * photon),
+        repeat=False,
+    )
+    via_terms = source.transform_fields(
+        FieldTransformation(
+            b_field,
+            terms=(replacement(-sw, z_field), replacement(cw, photon)),
+        ),
+        repeat=False,
+    )
+
+    assert {_field_names(term) for term in via_expr.terms} == {("Z",), ("A",)}
+    assert {_canon(term.coupling) for term in via_expr.terms} == {
+        _canon(term.coupling) for term in via_terms.terms
+    }
+
+
+def test_expression_syntax_supports_vacuum_shift_constant_in_sum():
+    doublet = _scalar("Phi", complex_field=True, indices=(WEAK_FUND_INDEX,))
+    h = _scalar("h")
+    g0 = _scalar("G0")
+    vev = S("vev")
+
+    transformation = FieldTransformation(
+        doublet,
+        vev * INV_SQRT2 + INV_SQRT2 * h + Expression.I * INV_SQRT2 * g0,
+        components={0: 2},
+    )
+
+    summary = _replacement_summary(transformation)
+    assert ("h",) in [fields for _coeff, fields in summary]
+    assert ("G0",) in [fields for _coeff, fields in summary]
+    # the vacuum piece is a constant monomial with no fields
+    assert () in [fields for _coeff, fields in summary]
+
+
+def test_expression_syntax_accepts_bare_field_and_conjugate():
+    a_field = _vector("A")
+    z_field = _vector("Z")
+    charged = _scalar("G", complex_field=True)
+    phi = _scalar("Phi", complex_field=True)
+
+    assert _replacement_summary(FieldTransformation(a_field, z_field)) == [
+        ("1", ("Z",))
+    ]
+    assert _replacement_summary(FieldTransformation(phi, charged.bar)) == [
+        ("1", ("G.bar",))
+    ]
+
+
+def test_expression_syntax_rejects_multiple_replacement_specs():
+    b_field = _vector("B")
+    z_field = _vector("Z")
+    photon = _vector("A")
+
+    with pytest.raises(ValueError, match="only one of"):
+        FieldTransformation(
+            b_field,
+            -z_field,
+            terms=(replacement(1, photon),),
+        )
+
+
+def test_expression_syntax_rejects_non_field_operators():
+    from fractions import Fraction
+
+    psi = Field(
+        "psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(LORENTZ_INDEX,),
+    )
+    chi = _scalar("chi")
+    mu = S("mu")
+
+    with pytest.raises(TypeError):
+        FieldTransformation(chi, CovD(psi, mu))

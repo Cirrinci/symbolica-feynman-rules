@@ -174,10 +174,7 @@ Field transformations are applied after metadata-dependent compilation:
 
 ```python
 broken = model.transform_fields(
-    FieldTransformation(
-        B,
-        terms=(replacement(-sw, Z), replacement(cw, A)),
-    ),
+    FieldTransformation(B, -sw * Z + cw * A),
 )
 ```
 
