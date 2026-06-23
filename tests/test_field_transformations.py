@@ -821,3 +821,70 @@ def test_matrix_expression_rejects_multiple_target_fields():
     )
     with pytest.raises(TypeError):
         lagrangian.transform_fields(rule, repeat=False)
+
+
+def test_matrix_expression_respects_real_symbols_on_conjugation():
+    from fractions import Fraction
+
+    from feynpy import SPINOR_INDEX, ProjM
+
+    a = S("a")
+    psi = Field(
+        "psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    Psi = Field(
+        "Psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("Psi"),
+        conjugate_symbol=S("Psibar"),
+        indices=(SPINOR_INDEX,),
+    )
+    s = S("s")
+    source = _lagrangian(InteractionTerm(coupling=1, fields=(Psi.bar(s),)))
+    rule = FieldTransformation(Psi, a * ProjM * psi)
+
+    without = source.transform_fields(rule, repeat=False, real_symbols=())
+    with_real = source.transform_fields(rule, repeat=False, real_symbols=(a,))
+
+    coeff_without = without.terms[0].coupling.expand().to_canonical_string()
+    coeff_with = with_real.terms[0].coupling.expand().to_canonical_string()
+    assert "conj" in coeff_without
+    assert "conj" not in coeff_with
+
+
+def test_matrix_expression_records_replacement_term_dependencies():
+    from feynpy import SPINOR_INDEX, ProjM
+
+    B = _dirac("B", (SPINOR_INDEX,))
+    C = _dirac("C", (SPINOR_INDEX,))
+    A = _dirac("A", (SPINOR_INDEX,))
+
+    rule = FieldTransformation(A, (ProjM * B, replacement(1, C)))
+    assert B in rule.dependencies
+    assert C in rule.dependencies
+
+
+def test_matrix_expression_cycle_detection_includes_replacement_terms():
+    from feynpy import SPINOR_INDEX, ProjM
+
+    B = _dirac("B", (SPINOR_INDEX,))
+    C = _dirac("C", (SPINOR_INDEX,))
+    A = _dirac("A", (SPINOR_INDEX,))
+    rules = (
+        FieldTransformation(A, (ProjM * B, replacement(1, C))),
+        FieldTransformation(C, replacement(1, A)),
+    )
+
+    with pytest.raises(CyclicTransformationError):
+        apply_field_transformations(
+            _lagrangian(InteractionTerm(coupling=1, fields=(A(S("s")),))),
+            rules,
+            repeat=True,
+            max_passes=8,
+        )

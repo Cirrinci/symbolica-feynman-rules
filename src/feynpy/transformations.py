@@ -79,6 +79,7 @@ class TransformationContext:
     occurrence: FieldOccurrence
     term: InteractionTerm
     slot: int
+    real_symbols: Sequence[object] = ()
     _label_pool: "FreshLabelPool" = dataclass_field(
         default_factory=lambda: FreshLabelPool()
     )
@@ -198,16 +199,18 @@ def replacement_terms_from_expr(expr) -> tuple[ReplacementTerm, ...]:
     return tuple(_static_term_from_monomial(item) for item in _expr_monomials(expr))
 
 
-def _matrix_expr_dependencies(monomials: Sequence[object]) -> tuple[Field, ...]:
+def _expr_dependencies(monomials: Sequence[object]) -> tuple[Field, ...]:
     from .declared import _DeclaredMonomial, _FieldFactor
 
     fields: list[Field] = []
     for monomial in monomials:
-        if not isinstance(monomial, _DeclaredMonomial):
+        if isinstance(monomial, ReplacementTerm):
+            fields.extend(occurrence.field for occurrence in monomial.occurrences())
             continue
-        for factor in monomial.factors:
-            if isinstance(factor, _FieldFactor):
-                fields.append(factor.field)
+        if isinstance(monomial, _DeclaredMonomial):
+            for factor in monomial.factors:
+                if isinstance(factor, _FieldFactor):
+                    fields.append(factor.field)
     return tuple(dict.fromkeys(fields))
 
 
@@ -217,6 +220,7 @@ def _resolve_matrix_monomial(
     occurrence: FieldOccurrence,
     label_pool: "FreshLabelPool",
     conjugated: bool,
+    real_symbols: Sequence[object],
 ) -> tuple[ReplacementTerm, ...]:
     """Wire one matrix monomial against a concrete occurrence's indices.
 
@@ -228,7 +232,11 @@ def _resolve_matrix_monomial(
 
     if isinstance(monomial, ReplacementTerm):
         terms = (monomial,)
-        return _conjugate_terms(terms, real_symbols=()) if conjugated else terms
+        return (
+            _conjugate_terms(terms, real_symbols=real_symbols)
+            if conjugated
+            else terms
+        )
 
     assert isinstance(monomial, _DeclaredMonomial)
     matrices = [f for f in monomial.factors if isinstance(f, _MatrixFactor)]
@@ -261,7 +269,7 @@ def _resolve_matrix_monomial(
         chains.setdefault(matrix.index, []).append(matrix)
 
     coefficient = (
-        _conjugate_coefficient(monomial.coefficient, ())
+        _conjugate_coefficient(monomial.coefficient, real_symbols)
         if conjugated
         else monomial.coefficient
     )
@@ -315,6 +323,7 @@ def _matrix_expr_builders(
                         occurrence=context.occurrence,
                         label_pool=context._label_pool,
                         conjugated=conjugated,
+                        real_symbols=context.real_symbols,
                     )
                 )
             return tuple(out)
@@ -385,7 +394,7 @@ class FieldTransformation:
                     "dependencies",
                     tuple(
                         dict.fromkeys(
-                            self.dependencies + _matrix_expr_dependencies(monomials)
+                            self.dependencies + _expr_dependencies(monomials)
                         )
                     ),
                 )
@@ -512,6 +521,7 @@ def _rule_terms(
         occurrence=occurrence,
         term=term,
         slot=slot,
+        real_symbols=real_symbols,
         _label_pool=label_pool,
     )
     conjugated = _is_conjugated_occurrence(occurrence)
@@ -549,9 +559,15 @@ def _validate_acyclic(rules: Sequence[FieldTransformation]) -> None:
     }
 
     def explicit_targets(rule: FieldTransformation) -> tuple[FieldOccurrence, ...]:
-        terms = tuple(rule.terms)
+        terms: list[ReplacementTerm] = list(rule.terms)
         if rule.conjugate_terms is not None:
-            terms += tuple(rule.conjugate_terms)
+            terms.extend(rule.conjugate_terms)
+        if rule.expr is not None and rule.builder is not None:
+            for monomial in _expr_monomials(rule.expr):
+                if isinstance(monomial, ReplacementTerm):
+                    terms.append(monomial)
+                elif not _monomial_has_matrix(monomial):
+                    terms.append(_static_term_from_monomial(monomial))
         return tuple(
             occurrence
             for term in terms

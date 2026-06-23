@@ -62,8 +62,12 @@ only for replacements that need fully custom index handling.
 
 ### Explicit `terms=` form
 
-The expression form lowers to the lower-level `terms=` API, which remains
-available when you want to build `ReplacementTerm`s directly:
+Matrix-free expressions lower to static ``terms=``. Expressions that contain
+matrix factors compile to generated ``builder``/``conjugate_builder`` callables
+instead, while still recording their target fields in ``dependencies``.
+
+The explicit ``terms=`` API remains available when you want to build
+``ReplacementTerm`` values directly:
 
 ```python
 from feynpy import replacement
