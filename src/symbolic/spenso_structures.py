@@ -21,7 +21,7 @@ threads Symbolica's idenso passes (``simplify_metrics``, ``simplify_gamma``,
 
 from itertools import count, permutations
 
-from symbolica import Expression
+from symbolica import Expression, S
 from symbolica.community.idenso import (
     simplify_color,
     simplify_gamma,
@@ -50,6 +50,8 @@ _HEP_LIBRARY = TensorLibrary.hep_lib()
 _ONE = Expression.num(1)
 _TWO = Expression.num(2)
 _GAMMA_LOWERED_COUNTER = count()
+_PROJECTOR_LEFT = S("PL", is_real=True)
+_PROJECTOR_RIGHT = S("PR", is_real=True)
 
 SPINOR_KIND = "spinor"
 LORENTZ_KIND = "lorentz"
@@ -154,6 +156,18 @@ def chiral_projector_right(left_spinor, right_spinor):
         spinor_metric(left_spinor, right_spinor)
         + gamma5_matrix(left_spinor, right_spinor)
     )
+
+
+def projector_left(left_spinor, right_spinor):
+    """Return a compact left-chiral projector head ``PL(i, j)``."""
+
+    return _PROJECTOR_LEFT(left_spinor, right_spinor)
+
+
+def projector_right(left_spinor, right_spinor):
+    """Return a compact right-chiral projector head ``PR(i, j)``."""
+
+    return _PROJECTOR_RIGHT(left_spinor, right_spinor)
 
 
 def gauge_generator(adj_index, fund_left, fund_right):

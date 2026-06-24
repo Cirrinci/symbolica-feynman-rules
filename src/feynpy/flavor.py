@@ -467,7 +467,10 @@ def simplify_parameter_identities(
         if _is_zero_expression(coupling):
             continue
         simplified_terms.append(replace(term, coupling=coupling))
-    return _merge_terms(simplified_terms, parameters=parameters)
+    return _canonicalize_projector_terms(
+        _merge_terms(simplified_terms, parameters=parameters),
+        parameters=parameters,
+    )
 
 
 def expand_flavor_terms(
@@ -526,4 +529,34 @@ def expand_flavor_terms(
                 )
             )
 
-    return _merge_terms(expanded_terms, parameters=parameters)
+    return _canonicalize_projector_terms(
+        _merge_terms(expanded_terms, parameters=parameters),
+        parameters=parameters,
+    )
+
+
+def _canonicalize_projector_terms(
+    terms,
+    *,
+    parameters: tuple[Parameter, ...] = (),
+) -> tuple[InteractionTerm, ...]:
+    from .transformation_postprocess import canonicalize_transformed_terms
+
+    direct: list[InteractionTerm] = []
+    projector_terms: list[InteractionTerm] = []
+    for term in terms:
+        text = (
+            term.coupling.to_canonical_string()
+            if hasattr(term.coupling, "to_canonical_string")
+            else str(term.coupling)
+        )
+        if "PL(" in text or "PR(" in text:
+            projector_terms.append(term)
+            continue
+        direct.append(term)
+    if not projector_terms:
+        return tuple(direct)
+    return tuple(direct) + canonicalize_transformed_terms(
+        tuple(projector_terms),
+        parameters=parameters,
+    )

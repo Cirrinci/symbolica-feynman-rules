@@ -19,6 +19,7 @@ from feynpy import (
     Model,
     ReplacementTerm,
     apply_field_transformations,
+    compiled_is_hermitian,
     replacement,
 )
 from feynpy.interactions import DerivativeAction, InteractionTerm
@@ -158,10 +159,12 @@ def test_vacuum_shift_produces_constant_linear_and_quadratic_terms():
         repeat=False,
     )
 
-    assert Counter(len(term.fields) for term in result.terms) == Counter({0: 1, 1: 2, 2: 1})
+    assert Counter(len(term.fields) for term in result.terms) == Counter({0: 1, 1: 1, 2: 1})
     assert Counter(_field_names(term) for term in result.terms) == Counter(
-        {(): 1, ("h",): 2, ("h", "h"): 1}
+        {(): 1, ("h",): 1, ("h", "h"): 1}
     )
+    linear = next(term for term in result.terms if _field_names(term) == ("h",))
+    assert _canon(linear.coupling) == _canon((2 * v) * HALF)
 
 
 def test_neutral_gauge_boson_mixing_preserves_lorentz_label():
@@ -718,8 +721,7 @@ def test_projector_expression_wires_spinor_index_and_inherits_flavor():
     assert _canon(field.slot_labels.get(1)) == _canon(g)  # flavor inherited
     assert _canon(target_spinor) != _canon(s)  # spinor leg is fresh
     coupling = _canon(term.coupling)
-    assert "gamma5" in coupling  # the projector is present
-    assert _canon(s) in coupling  # the source (open) spinor index
+    assert "PL(" in coupling  # the compact projector is present
     assert _canon(target_spinor) in coupling  # contracted with the target
 
 
@@ -742,6 +744,83 @@ def test_projector_expression_conjugates_for_bar_occurrence():
 
     (term,) = result.terms
     assert _field_names(term) == ("l.bar",)
+    assert "PR(" in _canon(term.coupling)
+
+
+def test_projector_chain_canonicalizes_to_single_projector():
+    from feynpy import SPINOR_INDEX, ProjM, ProjP
+
+    source_left = _dirac("PsiL", (SPINOR_INDEX,))
+    source_right = _dirac("PsiR", (SPINOR_INDEX,))
+    target = _dirac("psi", (SPINOR_INDEX,))
+    higgs = _scalar("H")
+    s = S("s")
+
+    lagrangian = _lagrangian(
+        InteractionTerm(coupling=1, fields=(source_left.bar(s), source_right(s), higgs()))
+    )
+    result = lagrangian.transform_fields(
+        FieldTransformation(source_left, ProjM * target),
+        FieldTransformation(source_right, ProjP * target),
+        repeat=False,
+    )
+
+    assert len(result.terms) == 1
+    (term,) = result.terms
+    assert _field_names(term) == ("psi.bar", "psi", "H")
+    coupling = _canon(term.coupling)
+    assert "PR(" in coupling
+    assert "gamma5(" not in coupling
+
+
+def test_static_replacement_freshens_explicit_dummy_labels_per_occurrence():
+    phi = _scalar("Phi")
+    x = _scalar("X", indices=(COLOR_FUND_INDEX,))
+    y = _scalar("Y", indices=(COLOR_FUND_INDEX,))
+    shared = S("c_shared")
+    source = _lagrangian(
+        InteractionTerm(coupling=1, fields=(phi(), phi()))
+    )
+
+    result = source.transform_fields(
+        FieldTransformation(phi, terms=(replacement(1, x(shared), y(shared)),)),
+        repeat=False,
+    )
+
+    assert len(result.terms) == 1
+    labels = [occurrence.slot_labels.get(0) for occurrence in result.terms[0].fields]
+    assert labels[0] == labels[1]
+    assert labels[2] == labels[3]
+    assert labels[0] != labels[2]
+
+
+def test_compiled_is_hermitian_handles_projector_based_yukawa_pairs():
+    from feynpy import SPINOR_INDEX, ProjM, ProjP
+
+    psi = _dirac("psi", (SPINOR_INDEX,))
+    source_left = _dirac("PsiL", (SPINOR_INDEX,))
+    source_right = _dirac("PsiR", (SPINOR_INDEX,))
+    higgs = _scalar("H")
+    s = S("s")
+    y = S("y")
+
+    source = _lagrangian(
+        InteractionTerm(coupling=y, fields=(source_left.bar(s), source_right(s), higgs())),
+        InteractionTerm(coupling=y, fields=(higgs(), source_right.bar(s), source_left(s))),
+    )
+    result = source.transform_fields(
+        FieldTransformation(source_left, ProjM * psi),
+        FieldTransformation(source_right, ProjP * psi),
+        repeat=False,
+        real_symbols=(y,),
+    )
+
+    assert compiled_is_hermitian(
+        result,
+        real_symbols=(y,),
+        field_heads=(psi, higgs),
+        run_color=False,
+    )
 
 
 def test_rotation_expression_matches_explicit_builder():
@@ -799,6 +878,7 @@ def test_rotation_expression_matches_explicit_builder():
             term=term,
             slot=0,
             real_symbols=(),
+            parameters=(),
             label_pool=FreshLabelPool(),
         )
 

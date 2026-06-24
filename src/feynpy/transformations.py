@@ -483,8 +483,68 @@ def _conjugate_terms(
     )
 
 
+def _iter_expression_nodes(expr):
+    if not isinstance(expr, Expression):
+        return
+    yield expr
+    atom_type = expr.get_type()
+    if atom_type in (AtomType.Add, AtomType.Mul, AtomType.Pow, AtomType.Fn):
+        for child in expr:
+            yield from _iter_expression_nodes(child)
+
+
+def _freshen_replacement_term(
+    term: ReplacementTerm,
+    *,
+    label_pool: FreshLabelPool,
+) -> ReplacementTerm:
+    occurrences = term.occurrences()
+    labels_by_key: dict[str, tuple[IndexType, object]] = {}
+    for occurrence in occurrences:
+        for slot, index in enumerate(occurrence.field.indices):
+            label = occurrence.slot_labels.get(slot)
+            if not _is_symbolic_label(label):
+                continue
+            labels_by_key.setdefault(_key(label), (index, label))
+    if not labels_by_key:
+        return term
+
+    replacements = {
+        label_key: label_pool.fresh(index, "transform")
+        for label_key, (index, _label) in labels_by_key.items()
+    }
+    coefficient = term.coefficient
+    for label_key, (_index, label) in labels_by_key.items():
+        if hasattr(coefficient, "replace"):
+            coefficient = coefficient.replace(label, replacements[label_key])
+
+    fresh_occurrences: list[FieldOccurrence] = []
+    for occurrence in occurrences:
+        slot_labels = occurrence.slot_labels
+        changed = False
+        for slot, label in enumerate(slot_labels.values):
+            if label is None:
+                continue
+            new_label = replacements.get(_key(label))
+            if new_label is None:
+                continue
+            slot_labels = slot_labels.replace(slot, new_label)
+            changed = True
+        fresh_occurrences.append(
+            occurrence.with_slot_labels(slot_labels) if changed else occurrence
+        )
+    return ReplacementTerm(
+        coefficient=coefficient,
+        fields=tuple(fresh_occurrences),
+    )
+
+
 def _term_used_labels(term: InteractionTerm) -> set[str]:
-    return {_key(binding.label) for binding in term.index_bindings}
+    labels = {_key(binding.label) for binding in term.index_bindings}
+    for node in _iter_expression_nodes(term.coupling):
+        if node.get_type() == AtomType.Var:
+            labels.add(node.to_canonical_string())
+    return labels
 
 
 def _is_symbolic_label(value) -> bool:
@@ -515,8 +575,11 @@ def _rule_terms(
     term: InteractionTerm,
     slot: int,
     real_symbols: Sequence[object],
+    parameters: Sequence[object],
     label_pool: FreshLabelPool,
 ) -> tuple[ReplacementTerm, ...]:
+    from lagrangian.operator_action import _inherit_missing_replacement_labels
+
     context = TransformationContext(
         occurrence=occurrence,
         term=term,
@@ -525,27 +588,143 @@ def _rule_terms(
         _label_pool=label_pool,
     )
     conjugated = _is_conjugated_occurrence(occurrence)
+    result: tuple[ReplacementTerm, ...]
     if conjugated:
         if rule.conjugate_builder is not None:
-            return tuple(rule.conjugate_builder(context))
-        if rule.conjugate_terms is not None:
-            return tuple(rule.conjugate_terms)
-        if rule.builder is not None:
+            result = tuple(rule.conjugate_builder(context))
+        elif rule.conjugate_terms is not None:
+            result = tuple(
+                _freshen_replacement_term(candidate, label_pool=label_pool)
+                for candidate in rule.conjugate_terms
+            )
+        elif rule.builder is not None:
             if not rule.auto_conjugate:
                 return ()
             raise ValueError(
                 f"Transformation {rule.display_name!r} uses builder=; declare "
                 "conjugate_builder= for conjugated occurrences."
             )
-        if rule.auto_conjugate:
-            return _conjugate_terms(rule.terms, real_symbols=real_symbols)
-        raise ValueError(
-            f"Transformation {rule.display_name!r} does not define a conjugate replacement."
+        elif rule.auto_conjugate:
+            result = tuple(
+                _freshen_replacement_term(candidate, label_pool=label_pool)
+                for candidate in _conjugate_terms(
+                    rule.terms,
+                    real_symbols=real_symbols,
+                )
+            )
+        else:
+            raise ValueError(
+                f"Transformation {rule.display_name!r} does not define a conjugate replacement."
+            )
+    elif rule.builder is not None:
+        result = tuple(rule.builder(context))
+    else:
+        result = tuple(
+            _freshen_replacement_term(candidate, label_pool=label_pool)
+            for candidate in rule.terms
         )
 
-    if rule.builder is not None:
-        return tuple(rule.builder(context))
-    return tuple(rule.terms)
+    normalized: list[ReplacementTerm] = []
+    for candidate in result:
+        candidate = ReplacementTerm(
+            coefficient=candidate.coefficient,
+            fields=_inherit_missing_replacement_labels(
+                original_occurrence=occurrence,
+                replacement=candidate.occurrences(),
+            ),
+        )
+        _validate_replacement_signature(
+            source_occurrence=occurrence,
+            replacement_term=candidate,
+            parameters=parameters,
+            transformation_name=rule.display_name,
+        )
+        normalized.append(candidate)
+    return tuple(normalized)
+
+
+def _validate_replacement_signature(
+    *,
+    source_occurrence: FieldOccurrence,
+    replacement_term: ReplacementTerm,
+    parameters: Sequence[object],
+    transformation_name: str,
+) -> None:
+    expected_open: dict[IndexType, int] = {}
+    for slot, index in enumerate(source_occurrence.field.indices):
+        label = source_occurrence.slot_labels.get(slot)
+        if not _is_symbolic_label(label):
+            continue
+        expected_open[index] = expected_open.get(index, 0) + 1
+
+    occurrences = replacement_term.occurrences()
+    coefficient = (
+        replacement_term.coefficient.expand()
+        if hasattr(replacement_term.coefficient, "expand")
+        else replacement_term.coefficient
+    )
+    coupling_terms = (
+        tuple(coefficient)
+        if isinstance(coefficient, Expression)
+        and coefficient.get_type() == AtomType.Add
+        else (coefficient,)
+    )
+
+    def summarize(counts: Mapping[IndexType, int]) -> str:
+        return ", ".join(
+            f"{index.name}:{count}"
+            for index, count in sorted(
+                counts.items(),
+                key=lambda item: item[0].name,
+            )
+            if count
+        ) or "none"
+
+    for coupling_term in coupling_terms:
+        reference_terms = (
+            InteractionTerm(coupling=1, fields=(source_occurrence,)),
+            InteractionTerm(coupling=coupling_term, fields=occurrences),
+        )
+        known_label_types = _known_label_types(*reference_terms)
+        known_indices = tuple(
+            dict.fromkeys(
+                index
+                for occurrence in (source_occurrence, *occurrences)
+                for index in occurrence.field.indices
+            )
+        )
+        multiplicities: dict[tuple[IndexType, str], int] = {}
+        for occurrence in occurrences:
+            for slot, index in enumerate(occurrence.field.indices):
+                label = occurrence.slot_labels.get(slot)
+                if not _is_symbolic_label(label):
+                    continue
+                key = (index, _key(label))
+                multiplicities[key] = multiplicities.get(key, 0) + 1
+
+        _coefficient_labels, coefficient_multiplicities = _coefficient_label_multiplicities(
+            coupling_term,
+            known_indices=known_indices,
+            known_label_types=known_label_types,
+            parameters=parameters,
+            include_spinor=True,
+        )
+        for key, multiplicity in coefficient_multiplicities.items():
+            multiplicities[key] = multiplicities.get(key, 0) + multiplicity
+
+        actual_open: dict[IndexType, int] = {}
+        for (index, _label_key), multiplicity in multiplicities.items():
+            if multiplicity != 1:
+                continue
+            actual_open[index] = actual_open.get(index, 0) + 1
+
+        if actual_open == expected_open:
+            continue
+        raise ValueError(
+            f"Transformation {transformation_name!r} does not preserve the free index "
+            f"signature of {source_occurrence.field.name!r}: expected "
+            f"{summarize(expected_open)}, got {summarize(actual_open)}."
+        )
 
 
 def _validate_acyclic(rules: Sequence[FieldTransformation]) -> None:
@@ -700,6 +879,7 @@ def _coefficient_label_multiplicities(
     known_indices: Sequence[IndexType],
     known_label_types: Mapping[str, Sequence[IndexType]],
     parameters: Sequence[object],
+    include_spinor: bool = False,
 ) -> tuple[dict[tuple[IndexType, str], object], dict[tuple[IndexType, str], int]]:
     if not hasattr(coupling, "to_atom_tree"):
         return {}, {}
@@ -719,7 +899,7 @@ def _coefficient_label_multiplicities(
     multiplicities: dict[tuple[IndexType, str], int] = {}
 
     def count(index: IndexType, label) -> None:
-        if is_spinor_index(index):
+        if is_spinor_index(index) and not include_spinor:
             return
         key = (index, _key(label))
         labels[key] = label
@@ -881,6 +1061,7 @@ def _transform_term_once(
                     term=term,
                     slot=slot,
                     real_symbols=real_symbols,
+                    parameters=parameters,
                     label_pool=label_pool,
                 ),
             )
@@ -965,6 +1146,7 @@ def apply_field_transformations(
     Replacements created during one pass are not matched until the next pass.
     With ``repeat=True``, dependent rules are reapplied to a fixed point.
     """
+    from .transformation_postprocess import canonicalize_transformed_terms
 
     ordered_rules = tuple(rules)
     _validate_acyclic(ordered_rules)
@@ -983,8 +1165,12 @@ def apply_field_transformations(
             )
         passes += 1
         if not repeat or not _has_transformable_fields(transformed, ordered_rules):
+            canonical_terms = canonicalize_transformed_terms(
+                transformed,
+                parameters=lagrangian.parameters,
+            )
             return CompiledLagrangian(
-                terms=transformed,
+                terms=canonical_terms,
                 parameters=lagrangian.parameters,
             )
         if passes >= max_passes:

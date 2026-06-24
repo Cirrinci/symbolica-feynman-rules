@@ -110,6 +110,14 @@ from .transformations import (
     expand_index_components,
     replacement,
 )
+from .transformation_postprocess import (
+    canonical_compiled_expression,
+    canonicalize_transformed_terms,
+    compiled_is_hermitian,
+    equivalent_canonical_compiled,
+    find_source_basis_occurrences,
+    validate_compiled_index_multiplicities,
+)
 
 # ---- internal symbols still used across the codebase ---------------------
 from .declared import _DeclaredMonomial

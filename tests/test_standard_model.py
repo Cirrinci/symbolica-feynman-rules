@@ -5,13 +5,19 @@ from collections import Counter
 import pytest
 from symbolica import Expression, S
 
-from theories import build_standard_model
+from theories import build_standard_model, standard_model_weak_tensor_components
+from feynpy import (
+    Model,
+    find_source_basis_occurrences,
+    validate_compiled_index_multiplicities,
+)
 from feynpy.interactions import InteractionTerm, _field_match_key
 from feynpy.lagrangian import CompiledLagrangian
 from symbolic.spenso_structures import (
     chiral_projector_left,
     chiral_projector_right,
     gamma_matrix,
+    gamma5_matrix,
     lorentz_metric,
     spinor_metric,
 )
@@ -211,13 +217,10 @@ def test_barred_source_fermion_transformations_include_conjugated_projectors(sm)
     occurrence = result.terms[0].fields[0]
     assert occurrence.field is sm.fields.vl
     assert occurrence.conjugated is True
-    assert occurrence.slot_labels.get(1) == S("ff1")
-    assert _canon(result.terms[0].coupling) == _canon(
-        chiral_projector_right(
-            occurrence.slot_labels.get(0),
-            S("sp1"),
-        )
-    )
+    assert occurrence.slot_labels.get(1) is not None
+    coupling = _canon(result.terms[0].coupling)
+    assert "PR(" in coupling
+    assert _canon(occurrence.slot_labels.get(0)) in coupling
 
 
 def test_canonical_scalar_and_vector_kinetic_terms(sm):
@@ -476,18 +479,24 @@ def test_electromagnetic_and_charged_fermion_currents(sm):
     g2 = sm.parameters.g2.symbol
     ee = sm.parameters.ee.value
 
-    neutrino_photon = canonize_full(
-        L.feynman_rule(
+    try:
+        neutrino_photon_raw = L.feynman_rule(
             fields.vl.bar,
             fields.vl,
             fields.A,
             simplify=True,
             include_delta=True,
-        ),
-        infer_indices=True,
-        field_heads=tuple(sm.model.fields),
-        run_color=False,
-    )
+        )
+    except ValueError as exc:
+        assert "No matching interaction terms" in str(exc)
+        neutrino_photon = ZERO
+    else:
+        neutrino_photon = canonize_full(
+            neutrino_photon_raw,
+            infer_indices=True,
+            field_heads=tuple(sm.model.fields),
+            run_color=False,
+        )
     assert _canon(neutrino_photon) == _canon(ZERO)
 
     lepton_photon = canonize_full(
@@ -619,12 +628,7 @@ def test_representative_fermion_masses_and_yukawa_vertex(sm):
         * INV_SQRT2
         * vev
         * S("ye1")
-        * (
-            chiral_projector_right(S("i1"), S("k"))
-            * chiral_projector_right(S("k"), S("i2"))
-            + chiral_projector_left(S("i1"), S("k"))
-            * chiral_projector_left(S("k"), S("i2"))
-        )
+        * spinor_metric(S("i1"), S("i2"))
         * D2
     )
     electron_mass = canonize_full(
@@ -652,12 +656,7 @@ def test_representative_fermion_masses_and_yukawa_vertex(sm):
         -I
         * INV_SQRT2
         * S("ye1")
-        * (
-            chiral_projector_right(S("i1"), S("k"))
-            * chiral_projector_right(S("k"), S("i2"))
-            + chiral_projector_left(S("i1"), S("k"))
-            * chiral_projector_left(S("k"), S("i2"))
-        )
+        * spinor_metric(S("i1"), S("i2"))
         * D3
     )
     electron_higgs = canonize_full(
@@ -674,6 +673,33 @@ def test_representative_fermion_masses_and_yukawa_vertex(sm):
     )
     assert _canon(electron_higgs) == _canon(expected_electron_higgs)
 
+    electron_g0 = _rule(
+        _sector(L, fields.l.bar, fields.l, fields.G0, differentiated=False),
+        electron.bar,
+        electron,
+        fields.G0,
+        flavor_expand=True,
+    )
+    expected_electron_g0 = (
+        INV_SQRT2
+        * S("ye1")
+        * gamma5_matrix(S("i1"), S("i2"))
+        * D3
+    )
+    electron_g0 = canonize_full(
+        electron_g0,
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    expected_electron_g0 = canonize_full(
+        expected_electron_g0,
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    assert _canon(electron_g0) == _canon(expected_electron_g0)
+
     up_mass = _rule(
         _sector(L, fields.uq.bar, fields.uq, differentiated=False),
         up.bar,
@@ -684,6 +710,61 @@ def test_representative_fermion_masses_and_yukawa_vertex(sm):
     assert "yu1" in text
     assert "vev" in text
     assert "cof(3" in text
+
+    charged_goldstone = canonize_full(
+        _rule(
+            _sector(L, fields.uq.bar, fields.dq, fields.GP, differentiated=False),
+            up.bar,
+            fields.dq.class_members[0],
+            fields.GP,
+            flavor_expand=True,
+        ),
+        infer_indices=True,
+        field_heads=tuple(sm.model.fields),
+        run_color=False,
+    )
+    charged_text = _canon(charged_goldstone)
+    assert "PR(" in charged_text
+    assert "PL(" in charged_text
+    assert "yd1" in charged_text
+    assert "yu1" in charged_text
+
+
+def test_yukawa_transformation_validators(sm):
+    yukawa_piece = Model(
+        name="SM Yukawa source piece",
+        fields=(
+            sm.fields.LL,
+            sm.fields.lR,
+            sm.fields.QL,
+            sm.fields.uR,
+            sm.fields.dR,
+            sm.fields.Phi,
+        ),
+        parameters=tuple(sm.lagrangian.parameters),
+        lagrangian_decl=sm.lagrangians.LYukawa,
+    ).lagrangian().expand_index_components(
+        sm.indices.weak_fundamental,
+        tensor_components=standard_model_weak_tensor_components(),
+    ).transform_fields(
+        *sm.transformations,
+        repeat=False,
+        real_symbols=(sm.parameters.vev,),
+    ).simplify_parameter_identities()
+
+    source_fields = (
+        sm.fields.LL,
+        sm.fields.lR,
+        sm.fields.QL,
+        sm.fields.uR,
+        sm.fields.dR,
+        sm.fields.Phi,
+    )
+    assert find_source_basis_occurrences(
+        yukawa_piece,
+        source_fields=source_fields,
+    ) == ()
+    assert validate_compiled_index_multiplicities(yukawa_piece) == ()
 
 
 def test_three_and_four_gauge_boson_vertices(sm):

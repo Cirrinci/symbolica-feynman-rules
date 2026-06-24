@@ -56,6 +56,15 @@ _PLAIN_HEAD_SLOT_KINDS: dict[str, dict[int, str]] = {
     # Exported gauge-variation heads used in the current YM pipeline.
     "G": {0: LORENTZ_KIND, 1: "adjoint"},
     "alpha": {0: "adjoint"},
+    # Compact spinor projectors produced by the transformation post-process.
+    "PL": {
+        0: SPINOR_KIND,
+        1: SPINOR_KIND,
+    },
+    "PR": {
+        0: SPINOR_KIND,
+        1: SPINOR_KIND,
+    },
     # Dirac tensors exported by Spenso.
     "spenso::gamma": {
         0: SPINOR_KIND,
