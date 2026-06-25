@@ -1,3 +1,5 @@
+import re
+
 from symbolica import Expression
 
 from theories import build_standard_model
@@ -22,7 +24,7 @@ def test_charged_goldstone_flavor_expansion_does_not_multiply_disjoint_sums():
     )
     text = rule.to_canonical_string()
 
-    assert "3*python" not in text
+    assert re.search(r"(?:^|[+-])3\*python::", text) is None
     assert "yd3" in text
     assert "yu3" in text
     assert text.count("yd3") == 1

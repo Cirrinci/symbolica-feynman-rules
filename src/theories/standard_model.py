@@ -180,28 +180,23 @@ def _diagonal_components(prefix: str) -> dict[tuple[int, int], object]:
     }
 
 
-def _ckm_components(cabibbo) -> dict[tuple[int, int], object]:
-    cosine = S("cos")(cabibbo)
-    sine = S("sin")(cabibbo)
+def _ckm_components() -> dict[tuple[int, int], object]:
+    """Return a general complex three-generation CKM matrix."""
+
     return {
-        (1, 1): cosine,
-        (1, 2): sine,
-        (1, 3): Expression.num(0),
-        (2, 1): -sine,
-        (2, 2): cosine,
-        (2, 3): Expression.num(0),
-        (3, 1): Expression.num(0),
-        (3, 2): Expression.num(0),
-        (3, 3): Expression.num(1),
+        (row, column): S(f"CKM{row}{column}")
+        for row in range(1, 4)
+        for column in range(1, 4)
     }
 
 
-def _transpose_components(
-    components: dict[tuple[int, int], object],
-) -> dict[tuple[int, int], object]:
+def _ckm_dagger_components() -> dict[tuple[int, int], object]:
+    """Return CKM dagger with explicit independent conjugate symbols."""
+
     return {
-        (column, row): value
-        for (row, column), value in components.items()
+        (column, row): S(f"CKMConj{row}{column}")
+        for row in range(1, 4)
+        for column in range(1, 4)
     }
 
 
@@ -714,8 +709,7 @@ def build_standard_model(
     sw = Parameter("sw", value=g1.symbol / gz)
     cw = Parameter("cw", value=g2.symbol / gz)
     ee = Parameter("ee", value=g1.symbol * g2.symbol / gz)
-    cabibbo = S("cabi")
-    ckm_components = _ckm_components(cabibbo)
+    ckm_components = _ckm_components()
     parameters = StandardModelParameters(
         g1=g1,
         g2=g2,
@@ -815,7 +809,7 @@ def build_standard_model(
             "CKMDag",
             indices=(generation, generation),
             complex_param=True,
-            components=_transpose_components(ckm_components),
+            components=_ckm_dagger_components(),
             unitary_partner="CKM",
         ),
     )

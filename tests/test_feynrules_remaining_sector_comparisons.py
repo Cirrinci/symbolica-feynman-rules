@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from symbolica import Expression, S
+from symbolica import Expression
 
 from feynpy.comparison import (
     compare_feynrules_bosonic_vertices,
@@ -100,7 +100,6 @@ def test_standard_model_yukawa_vertices_match_feynrules():
         include_ghosts=False,
         include_gauge_fixing=False,
     )
-    cabi = S("cabi")
     report = compare_feynrules_yukawa_vertices(
         sm.lagrangian,
         load_feynrules_json(
@@ -108,14 +107,10 @@ def test_standard_model_yukawa_vertices_match_feynrules():
         ),
         field_map=_physical_field_map(sm.fields),
         diagonal_yukawa_names={"yl": "ye"},
-        feynpy_substitutions={
-            S("cos")(cabi): Expression.num(1),
-            S("sin")(cabi): Expression.num(0),
-        },
         feynpy_name_aliases=_name_aliases(sm.fields),
     )
     _assert_report_matches(report)
-    assert report.matched == 10
+    assert report.matched == 42
 
 
 def test_standard_model_higgs_vertices_match_feynrules():

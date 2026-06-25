@@ -199,6 +199,27 @@ def parse_feynrules_gauge_rule(
     return expression.cancel().expand()
 
 
+def _replace_feynrules_ckm_components(rule: str) -> str:
+    """Map explicit FeynRules CKM calls to local component symbols."""
+
+    ckm_call = (
+        r"CKM\["
+        r"Index\[Generation,\s*(\d+)\],\s*"
+        r"Index\[Generation,\s*(\d+)\]"
+        r"\]"
+    )
+    text = re.sub(
+        rf"Conjugate\[{ckm_call}\]",
+        lambda match: f"CKMConj{match.group(1)}{match.group(2)}",
+        rule,
+    )
+    return re.sub(
+        ckm_call,
+        lambda match: f"CKM{match.group(1)}{match.group(2)}",
+        text,
+    )
+
+
 def parse_feynrules_matter_rule(
     rule: str,
     *,
@@ -212,7 +233,7 @@ def parse_feynrules_matter_rule(
     spinor-metric tensors before canonical reduction.
     """
 
-    text = rule
+    text = _replace_feynrules_ckm_components(rule)
     projector_counter = 0
 
     projector_pattern = re.compile(
@@ -311,7 +332,7 @@ def parse_feynrules_yukawa_rule(
 
     names = {"yd": "yd", "yu": "yu", "yl": "yl"}
     names.update(diagonal_yukawa_names or {})
-    text = rule
+    text = _replace_feynrules_ckm_components(rule)
 
     diagonal_call = (
         r"(yd|yu|yl)\["

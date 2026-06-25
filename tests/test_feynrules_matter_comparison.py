@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from symbolica import Expression, S
+from symbolica import Expression
 
 from feynpy.comparison import (
     compare_feynrules_matter_vertices,
@@ -57,8 +57,6 @@ def test_standard_model_matter_vertices_match_feynrules_json_exactly():
     gauge_norm = (
         parameters.g1.symbol**2 + parameters.g2.symbol**2
     ) ** half
-    cabi = S("cabi")
-
     report = compare_feynrules_matter_vertices(
         sm.lagrangian,
         references,
@@ -68,10 +66,6 @@ def test_standard_model_matter_vertices_match_feynrules_json_exactly():
             "cw": parameters.g2.symbol / gauge_norm,
             "sw": parameters.g1.symbol / gauge_norm,
             "gs": parameters.g3.symbol,
-        },
-        feynpy_substitutions={
-            S("cos")(cabi): Expression.num(1),
-            S("sin")(cabi): Expression.num(0),
         },
         feynpy_name_aliases={
             "W.bar": "Wbar",
@@ -99,3 +93,4 @@ def test_standard_model_matter_vertices_match_feynrules_json_exactly():
         for row in report.rows
         if not row.matches
     ]
+    assert report.matched == 51
