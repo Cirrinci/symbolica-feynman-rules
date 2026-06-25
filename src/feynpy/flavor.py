@@ -484,7 +484,20 @@ def expand_flavor_terms(
     selected = None if selected_indices is None else frozenset(selected_indices)
     expanded_terms: list[InteractionTerm] = []
 
+    additive_terms: list[InteractionTerm] = []
     for term in terms:
+        coupling_terms = (
+            tuple(term.coupling)
+            if isinstance(term.coupling, Expression)
+            and term.coupling.get_type() == AtomType.Add
+            else (term.coupling,)
+        )
+        additive_terms.extend(
+            replace(term, coupling=coupling)
+            for coupling in coupling_terms
+        )
+
+    for term in additive_terms:
         assignments = _collect_term_flavor_labels(
             term,
             parameters,

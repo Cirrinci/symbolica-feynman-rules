@@ -433,6 +433,11 @@ class CompiledLagrangian:
     def _vertex_field_tuples(self, *, flavor_expand: FlavorExpandOption = False):
         vertices = {}
         for term in self._expanded_terms(flavor_expand=flavor_expand):
+            # Constant vacuum-energy terms are not Feynman vertices. Keeping
+            # an empty field tuple here would make zero-argument
+            # ``feynman_rule()`` recursively call itself with no fields.
+            if not term.fields:
+                continue
             key = _term_vertex_key(term)
             if key not in vertices:
                 vertices[key] = _term_vertex_fields(term)
@@ -441,6 +446,8 @@ class CompiledLagrangian:
     def _vertex_signature_entries(self, *, sector=None, flavor_expand: FlavorExpandOption = False):
         grouped = {}
         for term in self._expanded_terms(flavor_expand=flavor_expand):
+            if not term.fields:
+                continue
             term_sector = _classify_term_sector(term)
             if sector is not None and term_sector != sector:
                 continue
@@ -920,7 +927,12 @@ class CompiledLagrangian:
             if select is None:
                 vertex_fields_list = self._vertex_field_tuples(flavor_expand=flavor_expand)
             else:
-                vertex_fields_list = tuple(tuple(vertex_fields) for vertex_fields in select)
+                vertex_fields_list = tuple(
+                    converted
+                    for vertex_fields in select
+                    for converted in (tuple(vertex_fields),)
+                    if converted
+                )
 
             if arity is not None:
                 vertex_fields_list = tuple(

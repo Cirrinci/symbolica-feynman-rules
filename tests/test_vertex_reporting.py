@@ -159,6 +159,21 @@ def test_zero_argument_feynman_rule_supports_arity_and_select_filters():
     )
 
 
+def test_zero_argument_feynman_rule_ignores_constant_vacuum_terms():
+    phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
+    lagrangian = CompiledLagrangian(terms=(
+        InteractionTerm(coupling=S("vacuum"), fields=()),
+        InteractionTerm(coupling=S("m"), fields=(phi.occurrence(), phi.occurrence())),
+    ))
+
+    rules = lagrangian.feynman_rule()
+
+    assert set(rules) == {("Phi", "Phi")}
+    assert tuple(signature.names for signature in lagrangian.vertex_signatures()) == (
+        ("Phi", "Phi"),
+    )
+
+
 def test_explicit_feynman_rule_rejects_zero_argument_only_filters():
     phi = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
     lagrangian = CompiledLagrangian(terms=(
