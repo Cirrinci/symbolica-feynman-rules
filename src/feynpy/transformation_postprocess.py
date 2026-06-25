@@ -332,24 +332,58 @@ def _replace_label_in_derivatives(
     return tuple(updated)
 
 
+def _coupling_text(expr) -> str:
+    if hasattr(expr, "to_canonical_string"):
+        return expr.to_canonical_string()
+    return str(expr)
+
+
+def _has_spinor_postprocess_features(text: str) -> bool:
+    return any(
+        token in text
+        for token in ("gamma5", "bis(4", "PL(", "PR(", "::gamma(")
+    )
+
+
+def _has_metric_postprocess_features(text: str) -> bool:
+    return "::g(" in text
+
+
 def _normalize_coupling(expr):
     result = expr.expand() if hasattr(expr, "expand") else expr
     previous = None
     for _ in range(12):
-        current = _key(result)
+        current = _coupling_text(result)
         if current == previous:
             break
         previous = current
-        result = _simplify_gamma5_square_chains(result)
-        if hasattr(result, "expand"):
-            result = result.expand()
-        if isinstance(result, Expression):
-            result = simplify_invariants(result, run_color=False)
+        has_spinor = _has_spinor_postprocess_features(current)
+        has_metric = _has_metric_postprocess_features(current)
+
+        if has_spinor and "gamma5" in current:
+            result = _simplify_gamma5_square_chains(result)
             if hasattr(result, "expand"):
                 result = result.expand()
+            current = _coupling_text(result)
+            has_spinor = _has_spinor_postprocess_features(current)
+            has_metric = _has_metric_postprocess_features(current)
+
+        if isinstance(result, Expression) and (has_metric or has_spinor):
+            result = simplify_invariants(
+                result,
+                run_gamma=has_spinor,
+                run_color=False,
+            )
+            if hasattr(result, "expand"):
+                result = result.expand()
+
+        if has_spinor and isinstance(result, Expression):
             result = _collapse_spinor_basis_sums(result)
             if hasattr(result, "expand"):
                 result = result.expand()
+
+        if not (has_metric or has_spinor):
+            break
     return result
 
 
@@ -752,8 +786,11 @@ def _canonicalize_monomial_term(
     parameters: Sequence[object],
 ) -> tuple[InteractionTerm, ...]:
     current = term
-    current = _contract_metric_identities(current)
-    coupling = _normalize_coupling(current.coupling)
+    if _has_metric_postprocess_features(_coupling_text(current.coupling)):
+        current = _contract_metric_identities(current)
+        coupling = current.coupling
+    else:
+        coupling = _normalize_coupling(current.coupling)
     if _is_zero(coupling):
         return ()
     current = replace(current, coupling=coupling)

@@ -23,6 +23,13 @@ NAME_MAP = {
     "lL.bar": "lLbar",
     "eR.bar": "eRbar",
     "Phi.bar": "Phibar",
+    # Current StandardModel builder naming.
+    "QL.bar": "qLbar",
+    "QL": "qL",
+    "LL.bar": "lLbar",
+    "LL": "lL",
+    "lR.bar": "eRbar",
+    "lR": "eR",
 }
 
 RULE_REPLACEMENTS = {
@@ -93,6 +100,12 @@ def normalize_rule(rule: str) -> str:
     value = rule
     for old, new in RULE_REPLACEMENTS.items():
         value = value.replace(old, new)
+
+    # Strip the current Python export namespaces so the lightweight factor
+    # checks can compare old/stored FeynRules text with fresh local output.
+    value = re.sub(r"python::\{\}::", "", value)
+    value = re.sub(r"spenso::\{[^}]*\}::", "", value)
+    value = value.replace("spenso::", "")
 
     # Normalize t(...) to T(...) while leaving words like "Ta" untouched.
     value = re.sub(r"(?<![A-Za-z0-9_])t\(", "T(", value)
@@ -287,15 +300,15 @@ def has_fraction(rule: str, numerator: int, denominator: int) -> bool:
 
 
 def has_weak_delta(rule: str) -> bool:
-    return has_any(rule, ["IndexDelta[Index[SU2D", "g(cof(2,"])
+    return has_any(rule, ["IndexDelta[Index[SU2D", "g(cof(2,", "g(cof(2, "])
 
 
 def has_color_delta(rule: str) -> bool:
-    return has_any(rule, ["IndexDelta[Index[Colour", "g(cof(3, c"])
+    return has_any(rule, ["IndexDelta[Index[Colour", "g(cof(3,c", "g(cof(3, c"])
 
 
 def has_generation_delta(rule: str) -> bool:
-    return has_any(rule, ["IndexDelta[Index[Generation", "g(cof(3, fl"])
+    return has_any(rule, ["IndexDelta[Index[Generation", "g(cof(3,fl", "g(cof(3, fl"])
 
 
 def has_spin_delta(rule: str) -> bool:
