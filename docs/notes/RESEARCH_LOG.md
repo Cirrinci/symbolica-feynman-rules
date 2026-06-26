@@ -14,7 +14,7 @@ Rule:
 
 ### Current status snapshot
 
-As of 2026-06-22:
+As of 2026-06-26:
 
 - the active source tree is modularized under `src/`
 - the core symbolic extraction engine now lives in `src/symbolic/vertex_engine.py`
@@ -29,11 +29,19 @@ As of 2026-06-22:
   - `src/feynpy/lowering.py`
   - `src/feynpy/metadata.py`
   - `src/feynpy/transformations.py`
+- transformation post-processing and validation now live in:
+  - `src/feynpy/transformation_postprocess.py`
+  - `src/feynpy/validation.py`
 - concrete theory definitions now live under:
   - `src/theories/standard_model.py`
+  - `src/theories/_standard_model_support.py`
+  - `src/theories/standard_model_feynrules.py`
+- external FeynRules export parsing and comparison now lives under:
+  - `src/feynrules/comparison.py`
 - the public package split is now explicit:
   - `feynpy` = reusable toolkit/engine
   - `theories` = concrete theory packages, analogous to FeynRules model files
+  - `feynrules` = external FeynRules export adapters and comparison helpers
 - declarative helper/building-block code lives in:
   - `src/lagrangian/operators.py`
   - `src/lagrangian/lowering.py`
@@ -44,9 +52,13 @@ As of 2026-06-22:
   - `examples/examples_electroweak_unbroken.py`
   - `examples/examples_standard_model.py`
 - dedicated regression coverage now lives in `tests/`
-- the walkthrough notebook is `notebooks/codebase_workflow_walkthrough.ipynb`
-- the final user-facing walkthrough notebook is
-  `notebooks/final_walkthrough_capabilities_and_usage.ipynb`
+- the Standard Model notebook is `notebooks/SM_feynpy.ipynb`
+- the canonical modern API notebooks remain:
+  - `notebooks/list_lagrangians.ipynb`
+  - `notebooks/field_strength_operators_walkthrough.ipynb`
+  - `notebooks/flavor_expansion_walkthrough.ipynb`
+  - `notebooks/index_handling.ipynb`
+  - `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
 - the main extraction path is now `model.lagrangian().feynman_rule(...)`
 - the recommended public model-building API is now:
   `Model(..., lagrangian_decl=...)`
@@ -72,6 +84,26 @@ As of 2026-06-22:
 - legacy split declaration slots are still supported for compatibility, but are
   now deprecated in favor of the unified Lagrangian entry point
 - broken phases now use the declarative field-transformation pipeline
+- the packaged Standard Model is built from gauge-basis declarations and then
+  transformed into the physical basis
+- the packaged Standard Model now covers the gauge, fermion, Higgs,
+  Goldstone, Yukawa, CKM, gauge-fixing, and ghost sectors needed by the
+  supplied `SM.fr` reference exports
+- the full supplied FeynRules `SM.fr` interaction-vertex export currently
+  matches the packaged Standard Model exactly:
+  - 163/163 vertices match in `tests/test_feynrules_full_sm_comparison.py`
+  - sector comparisons cover gauge, matter, Yukawa, Higgs, and ghost exports
+- the strongest accurate claim is:
+  FeynPy has a generic tree-level Feynman-rule engine for the supported
+  declaration scope, and the packaged Standard Model reproduces the supplied
+  FeynRules `SM.fr` interaction vertices exactly
+- the project is not yet a complete replacement for FeynRules as a system:
+  local multi-fermion support, broader model validation, package/API hardening,
+  and tensor-canonicalization stability still need work
+- current test status from the latest review:
+  - focused SM/FeynRules suite: 27 passing tests
+  - full suite: 425 passing tests and one known order-dependent
+    `weak_eps2` tensor-canonicalization failure that passes in isolation
 - the long-term goal remains a Python analogue of FeynRules using Symbolica for
   symbolic rewriting and Spenso for tensor/index structures
 - historical entries below use the source-tree names that were live at the
@@ -1973,3 +2005,129 @@ What this achieved:
   of the engine itself
 - the package layout now mirrors the intended FeynRules-style mental model more
   closely: toolkit on one side, theory definitions on the other
+
+### 2026-06-23 to 2026-06-24: Standard Model notebook, transformations, and physical-basis machinery
+
+What happened:
+
+- the Standard Model work moved from isolated experiments into the dedicated
+  notebook `notebooks/SM_feynpy.ipynb`
+- the field-transformation pipeline was extended enough to express the
+  FeynRules-style `Definitions` block for the broken Standard Model:
+  - neutral and charged gauge-boson rotations
+  - Higgs vacuum shift and Goldstone decomposition
+  - chiral projector replacements for left- and right-handed fermions
+  - CKM rotations through matrix-like replacement factors
+  - ghost rotations alongside the physical gauge-boson rotations
+- projector-chain handling was improved so compact SM Yukawa outputs reduce to
+  the expected chiral structures
+- the CKM treatment was generalized from a special case into an explicit
+  symbolic three-generation matrix with an independent dagger partner
+- the notebook gained a complete source-level SM construction instead of
+  depending on a black-box builder
+
+What this achieved:
+
+- the project gained a readable SM.fr-style declaration of the Standard Model
+  using the same public engine concepts as smaller examples
+- the transformation engine became capable of handling the main broken-phase
+  field definitions needed by the Standard Model
+- the physical-basis Yukawa, mass, Higgs, Goldstone, and charged-current
+  structures became testable against compact symbolic expectations
+- CKM is now part of the symbolic model data rather than an external
+  post-processing assumption
+
+### 2026-06-24 to 2026-06-25: SM.fr completion and exact vertex parity
+
+What happened:
+
+- the packaged builder `theories.build_standard_model()` was completed around
+  gauge-basis declarations plus one simultaneous transformation stage
+- the source sectors now cover:
+  - `LGauge`
+  - `LFermions`
+  - `LHiggs`
+  - `LYukawa`
+  - optional `LGaugeFixing`
+  - optional `LGhost`
+- the broken-phase field set now includes physical fermion classes, photon,
+  `Z`, charged `W`, gluon, Higgs, Goldstones, and ghosts
+- the builder moved to the FeynRules-native output basis for comparison:
+  - `gw`, `gs`, `yl`, `yu`, `yd`
+  - `ee`, `sw`, `cw`
+  - internal substitution of `g1,g2` into the `ee/sw/cw` basis after
+    compilation
+- ghost and Goldstone conventions were aligned with the supplied `SM.fr`
+  reference exports
+- FeynRules JSON reference exports were added and exercised for:
+  - gauge vertices
+  - matter vertices
+  - Yukawa vertices
+  - Higgs/Goldstone vertices
+  - ghost vertices
+  - the complete SM interaction set
+- the full comparison test
+  `tests/test_feynrules_full_sm_comparison.py` now checks all 163 supplied
+  interaction vertices in one integration run
+
+What this achieved:
+
+- the packaged Standard Model now reproduces the supplied FeynRules `SM.fr`
+  interaction-vertex export exactly for the covered reference:
+  - no FeynRules-only vertices
+  - no FeynPy-only vertices
+  - 163/163 exact symbolic matches
+- the smaller sector tests remain useful for debugging failures by physics
+  sector, while the full test gives one end-to-end parity statement
+- the project can now make a precise, defensible claim:
+  it matches the supplied tree-level `SM.fr` interaction-vertex output, not
+  that it reimplements all of FeynRules
+
+### 2026-06-25 to 2026-06-26: metadata trim, comparison isolation, and SM layout cleanup
+
+What happened:
+
+- the earlier attempt to mirror large parts of FeynRules metadata was trimmed
+  back
+- unused or overly broad metadata concepts were removed from the engine-facing
+  declarations, including PDG-style and propagator-style details that were not
+  needed to compute the target rules
+- the comparison layer was moved out of `feynpy` and into the separate
+  `feynrules` package:
+  - generic FeynRules JSON parsing and rule comparison now lives in
+    `src/feynrules/comparison.py`
+  - Standard-Model-specific FeynRules field maps, aliases, and sector routing
+    now live in `src/theories/standard_model_feynrules.py`
+- `src/feynpy/` no longer owns FeynRules comparison logic
+- the Standard Model implementation was reorganized so
+  `src/theories/standard_model.py` reads as a linear model recipe:
+  - indices
+  - parameters
+  - fields
+  - gauge groups
+  - source Lagrangian
+  - optional source sectors
+  - field definitions
+  - compilation into the physical basis
+- low-level electroweak support routines were moved to the private helper
+  module `src/theories/_standard_model_support.py`
+- the notebook imports and comparison tests were updated to use the new
+  package split
+
+What this achieved:
+
+- the engine is cleaner and more generic: it computes Feynman rules without
+  knowing about FeynRules exports or the Standard Model
+- the Standard Model remains a concrete theory package rather than engine
+  infrastructure
+- comparison against FeynRules is now an external validation layer, with
+  model-specific mapping isolated beside the model
+- `standard_model.py` is easier to audit because the visible file now follows
+  the physics declaration flow instead of interleaving it with helper
+  algorithms
+- the final review after this cleanup found:
+  - the SM/FeynRules focused suite passing
+  - full-suite failure limited to the known order-dependent `weak_eps2`
+    canonicalization test
+  - the codebase generic for the supported declaration scope, but not yet a
+    complete FeynRules replacement
