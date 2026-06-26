@@ -219,6 +219,25 @@ def _parameter_value_or_symbol(parameter: Parameter):
     return parameter.value if parameter.value is not None else parameter.symbol
 
 
+def _apply_parameter_substitutions(
+    lagrangian: CompiledLagrangian,
+    substitutions: tuple[tuple[object, object], ...],
+) -> CompiledLagrangian:
+    if not substitutions:
+        return lagrangian
+
+    terms = []
+    for term in lagrangian.terms:
+        coupling = term.coupling
+        for symbol, definition in substitutions:
+            coupling = coupling.replace(symbol, definition)
+        terms.append(replace(term, coupling=coupling.cancel().expand()))
+    return CompiledLagrangian(
+        terms=tuple(terms),
+        parameters=lagrangian.parameters,
+    )
+
+
 def _electroweak_generators_and_vacuum_images(
     parameters: StandardModelParameters,
 ):
@@ -292,8 +311,8 @@ def _electroweak_omega_coefficients(
 def _electroweak_xi_matrices(
     parameters: StandardModelParameters,
 ) -> tuple[dict[tuple[int, int], object], dict[tuple[int, int], object]]:
-    sw = _parameter_value_or_symbol(parameters.sw)
-    cw = _parameter_value_or_symbol(parameters.cw)
+    sw = parameters.sw.symbol
+    cw = parameters.cw.symbol
     xiA = _parameter_value_or_symbol(parameters.xiA)
     xiZ = _parameter_value_or_symbol(parameters.xiZ)
     xiW = _parameter_value_or_symbol(parameters.xiW)
@@ -618,8 +637,8 @@ def _standard_model_transformations(
     fields: StandardModelFields,
     parameters: StandardModelParameters,
 ) -> tuple[FieldTransformation, ...]:
-    sw = parameters.sw.value
-    cw = parameters.cw.value
+    sw = parameters.sw.symbol
+    cw = parameters.cw.symbol
     vev = parameters.vev.symbol
     ckm = rotation(parameters.CKM, parameters.CKMDag)
 
@@ -680,7 +699,7 @@ def build_standard_model(
     *,
     name: str = "Standard Model",
     include_ghosts: bool = True,
-    include_gauge_fixing: bool = True,
+    include_gauge_fixing: bool = False,
     xiA=1,
     xiZ=1,
     xiW=1,
@@ -698,17 +717,19 @@ def build_standard_model(
     )
 
     g1 = Parameter("g1")
-    g2 = Parameter("g2")
-    g3 = Parameter("g3")
+    g2 = Parameter("gw")
+    g3 = Parameter("gs")
     lam = Parameter("lam")
     vev = Parameter("vev")
-    gz = (g1.symbol**2 + g2.symbol**2) ** _HALF
-    mw_relation = g2.symbol * vev.symbol / 2
-    mz_relation = gz * vev.symbol / 2
-    mh_relation = (2 * lam.symbol * vev.symbol**2) ** _HALF
-    sw = Parameter("sw", value=g1.symbol / gz)
-    cw = Parameter("cw", value=g2.symbol / gz)
-    ee = Parameter("ee", value=g1.symbol * g2.symbol / gz)
+    sw = Parameter("sw")
+    cw = Parameter("cw")
+    ee = Parameter("ee")
+    MW = Parameter("MW", value=g2.symbol * vev.symbol / 2)
+    MZ = Parameter(
+        "MZ",
+        value=((g1.symbol**2 + g2.symbol**2) ** _HALF) * vev.symbol / 2,
+    )
+    MH = Parameter("MH", value=(2 * lam.symbol * vev.symbol**2) ** _HALF)
     ckm_components = _ckm_components()
     parameters = StandardModelParameters(
         g1=g1,
@@ -752,9 +773,9 @@ def build_standard_model(
                 (3,): _INV_SQRT2 * vev.symbol * S("yd3"),
             },
         ),
-        MW=Parameter("MW", value=mw_relation),
-        MZ=Parameter("MZ", value=mz_relation),
-        MH=Parameter("MH", value=mh_relation),
+        MW=MW,
+        MZ=MZ,
+        MH=MH,
         sw=sw,
         cw=cw,
         ee=ee,
@@ -763,7 +784,7 @@ def build_standard_model(
         xiW=Parameter("xiW", internal=False, value=xiW),
         xiG=Parameter("xiG", internal=False, value=xiG),
         Yu=Parameter(
-            "Yu",
+            "yu",
             indices=(generation, generation),
             complex_param=True,
             components=_diagonal_components("yu"),
@@ -775,7 +796,7 @@ def build_standard_model(
             components=_diagonal_components("yu"),
         ),
         Yd=Parameter(
-            "Yd",
+            "yd",
             indices=(generation, generation),
             complex_param=True,
             components=_diagonal_components("yd"),
@@ -787,7 +808,7 @@ def build_standard_model(
             components=_diagonal_components("yd"),
         ),
         Ye=Parameter(
-            "Ye",
+            "yl",
             indices=(generation, generation),
             complex_param=True,
             components=_diagonal_components("ye"),
@@ -826,15 +847,30 @@ def build_standard_model(
         spin=1,
         self_conjugate=True,
         indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+        mass=Expression.num(0),
     )
     ghB = _ghost("ghB", ghost_of=B)
     ghWi = _ghost("ghWi", indices=(WEAK_ADJ_INDEX,), ghost_of=Wi)
-    ghG = _ghost("ghG", indices=(COLOR_ADJ_INDEX,), ghost_of=G)
+    ghG = _ghost(
+        "ghG",
+        indices=(COLOR_ADJ_INDEX,),
+        ghost_of=G,
+        mass=Expression.num(0),
+        quantum_numbers={"GhostNumber": _ONE},
+    )
     xiA_value = _parameter_value_or_symbol(parameters.xiA)
     xiZ_value = _parameter_value_or_symbol(parameters.xiZ)
     xiW_value = _parameter_value_or_symbol(parameters.xiW)
-    z_ghost_mass = (xiZ_value * parameters.MZ.symbol**2) ** _HALF
-    w_ghost_mass = (xiW_value * parameters.MW.symbol**2) ** _HALF
+    z_ghost_mass = (
+        (xiZ_value * parameters.MZ.symbol**2) ** _HALF
+        if include_gauge_fixing
+        else parameters.MZ.symbol
+    )
+    w_ghost_mass = (
+        (xiW_value * parameters.MW.symbol**2) ** _HALF
+        if include_gauge_fixing
+        else parameters.MW.symbol
+    )
 
     W_field = Field(
         "W",
@@ -880,7 +916,7 @@ def build_standard_model(
         "GP",
         spin=0,
         self_conjugate=False,
-        conjugate_symbol=S("GM"),
+        conjugate_symbol=S("GPbar"),
         mass=w_ghost_mass,
         quantum_numbers={"Q": _ONE},
         goldstone_of=W_field,
@@ -905,7 +941,7 @@ def build_standard_model(
     )
     ghWm_field = _ghost(
         "ghWm",
-        ghost_of=W_field,
+        ghost_of="Wbar",
         mass=w_ghost_mass,
         quantum_numbers={"GhostNumber": _ONE, "Q": -_ONE},
     )
@@ -1176,13 +1212,17 @@ def build_standard_model(
         parameters.xiZ,
         parameters.xiW,
         parameters.xiG,
-        parameters.sw.value,
-        parameters.cw.value,
-        parameters.ee.value,
+        parameters.sw,
+        parameters.cw,
+        parameters.ee,
         _parameter_value_or_symbol(parameters.xiA),
         _parameter_value_or_symbol(parameters.xiZ),
         _parameter_value_or_symbol(parameters.xiW),
         _parameter_value_or_symbol(parameters.xiG),
+    )
+    coupling_substitutions = (
+        (parameters.g1.symbol, parameters.ee.symbol / parameters.cw.symbol),
+        (parameters.g2.symbol, parameters.ee.symbol / parameters.sw.symbol),
     )
 
     def compile_source_piece(
@@ -1211,6 +1251,10 @@ def build_standard_model(
             real_symbols=transform_real_symbols,
         )
         broken_piece = broken_piece.simplify_parameter_identities()
+        broken_piece = _apply_parameter_substitutions(
+            broken_piece,
+            coupling_substitutions,
+        )
         if sector is None:
             return broken_piece
         return CompiledLagrangian(

@@ -841,6 +841,7 @@ def _exact_difference(
     right: Expression,
     *,
     momentum_arity: int | None = None,
+    scalar_relations: Sequence[object] = (),
 ) -> Expression:
     """Return zero when tensor coefficients are exactly symbolically equal."""
 
@@ -851,7 +852,41 @@ def _exact_difference(
             arity=momentum_arity,
         )
     groups = _tensor_coefficient_groups(difference)
-    if all(sympy.simplify(coefficient) == 0 for _tensor, coefficient in groups.values()):
+    relations = tuple(
+        sympy.sympify(relation)
+        if isinstance(relation, str)
+        else relation
+        for relation in scalar_relations
+    )
+
+    def coefficient_is_zero(coefficient) -> bool:
+        if sympy.simplify(coefficient) == 0:
+            return True
+        if not relations:
+            return False
+        numerator = sympy.together(coefficient).as_numer_denom()[0]
+        symbols = sorted(
+            numerator.free_symbols.union(
+                *(relation.free_symbols for relation in relations)
+            ),
+            key=str,
+        )
+        if not symbols:
+            return False
+        try:
+            remainder = sympy.groebner(
+                relations,
+                *symbols,
+                domain=sympy.EX,
+            ).reduce(numerator)[1]
+        except Exception:
+            return False
+        return sympy.simplify(remainder) == 0
+
+    if all(
+        coefficient_is_zero(coefficient)
+        for _tensor, coefficient in groups.values()
+    ):
         return Expression.num(0)
     return difference.cancel().expand()
 
@@ -1143,6 +1178,7 @@ def compare_feynrules_bosonic_vertices(
     minimum_ghost_fields: int = 0,
     minimum_scalar_fields: int = 0,
     use_momentum_conservation: bool = False,
+    scalar_relations: Sequence[object] = (),
 ) -> VertexComparisonReport:
     """Compare scalar/vector/ghost tensor vertices with FeynRules."""
 
@@ -1231,6 +1267,7 @@ def compare_feynrules_bosonic_vertices(
                     if use_momentum_conservation
                     else None
                 ),
+                scalar_relations=scalar_relations,
             )
             status = (
                 "MATCH"
@@ -1385,6 +1422,126 @@ def compare_feynrules_yukawa_vertices(
     )
 
 
+def compare_feynrules_standard_model_vertices(
+    lagrangian,
+    references: Sequence[FeynRulesVertex],
+    *,
+    field_map: Mapping[str, object],
+    parameter_substitutions: Mapping[str, object] | None = None,
+    diagonal_yukawa_names: Mapping[str, str] | None = None,
+    feynpy_substitutions: Mapping[object, object] | None = None,
+    feynpy_name_aliases: Mapping[str, str] | None = None,
+) -> VertexComparisonReport:
+    """Compare the complete flavor-expanded SM interaction vertex set.
+
+    The official ``SM.fr`` output is partitioned by field content and routed
+    through the tensor adapter appropriate to each sector. The returned report
+    preserves the ordering of the supplied full-model reference file.
+    """
+
+    sectors: dict[str, list[FeynRulesVertex]] = {
+        "gauge": [],
+        "matter": [],
+        "yukawa": [],
+        "higgs": [],
+        "ghost": [],
+    }
+    for reference in references:
+        mapped_fields = tuple(field_map[name] for name in reference.fields)
+        ghost_count = sum(
+            _field_kind(field) == "ghost"
+            for field in mapped_fields
+        )
+        fermion_count = sum(
+            _field_spin(field) == 1 / 2
+            for field in mapped_fields
+        )
+        scalar_count = sum(
+            _field_spin(field) == 0
+            and _field_kind(field) != "ghost"
+            for field in mapped_fields
+        )
+        if ghost_count >= 2:
+            sectors["ghost"].append(reference)
+        elif fermion_count == 2:
+            sectors[
+                "yukawa" if scalar_count else "matter"
+            ].append(reference)
+        elif scalar_count:
+            sectors["higgs"].append(reference)
+        else:
+            sectors["gauge"].append(reference)
+
+    reports = (
+        compare_feynrules_gauge_vertices(
+            lagrangian,
+            sectors["gauge"],
+            field_map=field_map,
+            parameter_substitutions=parameter_substitutions,
+            feynpy_name_aliases=feynpy_name_aliases,
+        ),
+        compare_feynrules_matter_vertices(
+            lagrangian,
+            sectors["matter"],
+            field_map=field_map,
+            parameter_substitutions=parameter_substitutions,
+            feynpy_substitutions=feynpy_substitutions,
+            feynpy_name_aliases=feynpy_name_aliases,
+        ),
+        compare_feynrules_yukawa_vertices(
+            lagrangian,
+            sectors["yukawa"],
+            field_map=field_map,
+            diagonal_yukawa_names=diagonal_yukawa_names,
+            feynpy_substitutions=feynpy_substitutions,
+            feynpy_name_aliases=feynpy_name_aliases,
+        ),
+        compare_feynrules_bosonic_vertices(
+            lagrangian,
+            sectors["higgs"],
+            field_map=field_map,
+            parameter_substitutions=parameter_substitutions,
+            feynpy_substitutions=feynpy_substitutions,
+            feynpy_name_aliases=feynpy_name_aliases,
+            minimum_scalar_fields=1,
+            scalar_relations=("cw**2 + sw**2 - 1",),
+        ),
+        compare_feynrules_bosonic_vertices(
+            lagrangian,
+            sectors["ghost"],
+            field_map=field_map,
+            parameter_substitutions=parameter_substitutions,
+            feynpy_substitutions=feynpy_substitutions,
+            feynpy_name_aliases=feynpy_name_aliases,
+            minimum_ghost_fields=2,
+            use_momentum_conservation=True,
+            scalar_relations=("cw**2 + sw**2 - 1",),
+        ),
+    )
+    row_by_key = {
+        row.reference.key: row
+        for report in reports
+        for row in report.rows
+    }
+    return VertexComparisonReport(
+        rows=tuple(row_by_key[reference.key] for reference in references),
+        feynrules_only=tuple(
+            sorted({
+                signature
+                for report in reports
+                for signature in report.feynrules_only
+            })
+        ),
+        feynpy_only=tuple(
+            sorted({
+                signature
+                for report in reports
+                for signature in report.feynpy_only
+            })
+        ),
+    )
+
+
 __all__ = (
     "FeynRulesVertex",
     "VertexComparison",
@@ -1395,6 +1552,7 @@ __all__ = (
     "compare_feynrules_bosonic_vertices",
     "compare_feynrules_gauge_vertices",
     "compare_feynrules_matter_vertices",
+    "compare_feynrules_standard_model_vertices",
     "compare_feynrules_yukawa_vertices",
     "load_feynrules_json",
     "parse_feynrules_gauge_rule",

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from symbolica import Expression
-
 from feynpy.comparison import (
     compare_feynrules_matter_vertices,
     load_feynrules_json,
@@ -52,21 +50,10 @@ def test_standard_model_matter_vertices_match_feynrules_json_exactly():
     )
     references = load_feynrules_json(REFERENCE_PATH)
     fields = sm.fields
-    parameters = sm.parameters
-    half = Expression.num(1) / Expression.num(2)
-    gauge_norm = (
-        parameters.g1.symbol**2 + parameters.g2.symbol**2
-    ) ** half
     report = compare_feynrules_matter_vertices(
         sm.lagrangian,
         references,
         field_map=_matter_field_map(fields),
-        parameter_substitutions={
-            "ee": parameters.g1.symbol * parameters.g2.symbol / gauge_norm,
-            "cw": parameters.g2.symbol / gauge_norm,
-            "sw": parameters.g1.symbol / gauge_norm,
-            "gs": parameters.g3.symbol,
-        },
         feynpy_name_aliases={
             "W.bar": "Wbar",
             **{

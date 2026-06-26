@@ -342,11 +342,11 @@ def check_expected_factors(rule: str, expected: list[tuple[str, str]]) -> list[F
             ok = has_any(rule, ["g1"])
             detail = "contains g1"
         elif kind == "g2":
-            ok = has_any(rule, ["g2"])
-            detail = "contains g2"
+            ok = has_any(rule, ["g2", "gw"])
+            detail = "contains g2/gw"
         elif kind == "g3":
-            ok = has_any(rule, ["g3"])
-            detail = "contains g3"
+            ok = has_any(rule, ["g3", "gs"])
+            detail = "contains g3/gs"
         elif kind == "frac_1_6":
             ok = has_fraction(rule, 1, 6)
             detail = "contains 1/6"
@@ -384,8 +384,8 @@ def check_expected_factors(rule: str, expected: list[tuple[str, str]]) -> list[F
             ok = has_su3_generator(rule)
             detail = "contains SU3 generator"
         elif kind == "g1g2":
-            ok = has_any(rule, ["g1"]) and has_any(rule, ["g2"])
-            detail = "contains g1 and g2"
+            ok = has_any(rule, ["g1"]) and has_any(rule, ["g2", "gw"])
+            detail = "contains g1 and g2/gw"
         elif kind == "yd":
             ok = has_any(rule, ["yd(", "yd["])
             detail = "contains yd"

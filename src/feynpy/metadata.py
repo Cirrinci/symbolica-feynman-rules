@@ -668,7 +668,7 @@ def _occurrence_labels_from_call(
 
 @dataclass(frozen=True)
 class Field:
-    """Particle field declaration (mirrors M$ClassesDescription)."""
+    """Particle field declaration used by the symbolic rule engine."""
     name: str
     spin: object
     self_conjugate: bool

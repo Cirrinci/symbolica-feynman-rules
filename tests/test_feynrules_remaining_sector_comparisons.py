@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from symbolica import Expression
-
 from feynpy.comparison import (
     compare_feynrules_bosonic_vertices,
     compare_feynrules_yukawa_vertices,
@@ -63,19 +61,6 @@ def _name_aliases(fields):
     return aliases
 
 
-def _parameter_substitutions(parameters):
-    half = Expression.num(1) / Expression.num(2)
-    norm = (
-        parameters.g1.symbol**2 + parameters.g2.symbol**2
-    ) ** half
-    return {
-        "ee": parameters.g1.symbol * parameters.g2.symbol / norm,
-        "cw": parameters.g2.symbol / norm,
-        "sw": parameters.g1.symbol / norm,
-        "gs": parameters.g3.symbol,
-    }
-
-
 def _assert_report_matches(report):
     assert report.feynrules_only == ()
     assert report.feynpy_only == ()
@@ -124,9 +109,9 @@ def test_standard_model_higgs_vertices_match_feynrules():
             REFERENCE_DIR / "higgs_vertices_FeynRules.json"
         ),
         field_map=_physical_field_map(sm.fields),
-        parameter_substitutions=_parameter_substitutions(sm.parameters),
         feynpy_name_aliases=_name_aliases(sm.fields),
         minimum_scalar_fields=1,
+        scalar_relations=("cw**2 + sw**2 - 1",),
     )
     _assert_report_matches(report)
     assert report.matched == 38
@@ -143,10 +128,10 @@ def test_standard_model_ghost_vertices_match_feynrules():
             REFERENCE_DIR / "ghost_vertices_FeynRules.json"
         ),
         field_map=_physical_field_map(sm.fields),
-        parameter_substitutions=_parameter_substitutions(sm.parameters),
         feynpy_name_aliases=_name_aliases(sm.fields),
         minimum_ghost_fields=2,
         use_momentum_conservation=True,
+        scalar_relations=("cw**2 + sw**2 - 1",),
     )
     _assert_report_matches(report)
     assert report.matched == 24

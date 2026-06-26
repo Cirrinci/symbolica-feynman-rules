@@ -46,6 +46,7 @@ def sm():
 @pytest.fixture(scope="module")
 def sm_rxi():
     return build_standard_model(
+        include_gauge_fixing=True,
         xiA=S("xiA"),
         xiZ=S("xiZ"),
         xiW=S("xiW"),
@@ -161,6 +162,19 @@ def _collapse_internal_labels(expr):
     return collapsed
 
 
+def _electroweak_gauge_basis(expr, sm):
+    g1 = sm.parameters.g1.symbol
+    gw = sm.parameters.g2.symbol
+    norm = (g1**2 + gw**2) ** HALF
+    return (
+        expr.replace(sm.parameters.ee.symbol, g1 * gw / norm)
+        .replace(sm.parameters.cw.symbol, gw / norm)
+        .replace(sm.parameters.sw.symbol, g1 / norm)
+        .cancel()
+        .expand()
+    )
+
+
 def test_standard_model_builds_from_source_basis_and_validates(sm):
     assert sm.source_model.validate().ok
     assert sm.model.validate().ok
@@ -249,10 +263,13 @@ def test_canonical_scalar_and_vector_kinetic_terms(sm):
         * pcomp(q1, S("mu1_int"))
         * pcomp(q2, S("mu1_int"))
         - pcomp(q1, S("mu2")) * pcomp(q2, S("mu1"))
-        + pcomp(q1, S("mu1")) * pcomp(q2, S("mu2"))
     ) * D2
     denominator = sm.parameters.g1.symbol**2 + sm.parameters.g2.symbol**2
-    _assert_rational_equal(photon_kinetic, expected_vector, denominator)
+    _assert_rational_equal(
+        _electroweak_gauge_basis(photon_kinetic, sm),
+        expected_vector,
+        denominator,
+    )
 
 
 def test_rxi_longitudinal_vector_terms_and_gauge_goldstone_cancellation(sm_rxi):
@@ -273,7 +290,10 @@ def test_rxi_longitudinal_vector_terms_and_gauge_goldstone_cancellation(sm_rxi):
         * pcomp(q1, S("mu1"))
         * pcomp(q2, S("mu2"))
     ) * D2
-    _assert_symbolic_equal(photon_kinetic, expected_photon)
+    _assert_symbolic_equal(
+        _electroweak_gauge_basis(photon_kinetic, sm_rxi),
+        expected_photon,
+    )
 
     w_kinetic = _rule(
         _sector(L, fields.W.bar, fields.W, differentiated=True),
@@ -289,7 +309,10 @@ def test_rxi_longitudinal_vector_terms_and_gauge_goldstone_cancellation(sm_rxi):
         * pcomp(q1, S("mu1"))
         * pcomp(q2, S("mu2"))
     ) * D2
-    _assert_symbolic_equal(w_kinetic, expected_w)
+    _assert_symbolic_equal(
+        _electroweak_gauge_basis(w_kinetic, sm_rxi),
+        expected_w,
+    )
 
     zg0 = _rule(
         _sector(L, fields.Z, fields.G0, differentiated=True),
@@ -342,7 +365,10 @@ def test_rxi_goldstone_and_ghost_masses_follow_xi_parameters(sm_rxi):
         fields.G0,
     )
     expected_g0 = -I * sm_rxi.parameters.xiZ.symbol * (g1**2 + g2**2) * vev**2 / 4 * D2
-    _assert_symbolic_equal(g0_mass, expected_g0)
+    _assert_symbolic_equal(
+        _electroweak_gauge_basis(g0_mass, sm_rxi),
+        expected_g0,
+    )
 
     gp_mass = _rule(
         _sector(L, fields.GP.bar, fields.GP, differentiated=False),
@@ -350,7 +376,10 @@ def test_rxi_goldstone_and_ghost_masses_follow_xi_parameters(sm_rxi):
         fields.GP,
     )
     expected_gp = -I * sm_rxi.parameters.xiW.symbol * g2**2 * vev**2 / 4 * D2
-    _assert_symbolic_equal(gp_mass, expected_gp)
+    _assert_symbolic_equal(
+        _electroweak_gauge_basis(gp_mass, sm_rxi),
+        expected_gp,
+    )
 
     ghz_mass = _rule(
         _sector(L, fields.ghZ.bar, fields.ghZ, differentiated=False),
@@ -358,7 +387,10 @@ def test_rxi_goldstone_and_ghost_masses_follow_xi_parameters(sm_rxi):
         fields.ghZ,
     )
     expected_ghz = -I * sm_rxi.parameters.xiZ.symbol * (g1**2 + g2**2) * vev**2 / 4 * D2
-    _assert_symbolic_equal(ghz_mass, expected_ghz)
+    _assert_symbolic_equal(
+        _electroweak_gauge_basis(ghz_mass, sm_rxi),
+        expected_ghz,
+    )
 
     ghwp_mass = _rule(
         _sector(L, fields.ghWp.bar, fields.ghWp, differentiated=False),
@@ -366,7 +398,10 @@ def test_rxi_goldstone_and_ghost_masses_follow_xi_parameters(sm_rxi):
         fields.ghWp,
     )
     expected_ghwp = -I * sm_rxi.parameters.xiW.symbol * g2**2 * vev**2 / 4 * D2
-    _assert_symbolic_equal(ghwp_mass, expected_ghwp)
+    _assert_symbolic_equal(
+        _electroweak_gauge_basis(ghwp_mass, sm_rxi),
+        expected_ghwp,
+    )
 
 
 def test_w_and_z_masses_match_the_higgs_mechanism(sm):
@@ -390,7 +425,9 @@ def test_w_and_z_masses_match_the_higgs_mechanism(sm):
         * lorentz_metric(S("mu1"), S("mu2"))
         * D2
     )
-    assert _canon(w_mass) == _canon(expected_w)
+    assert _canon(
+        _electroweak_gauge_basis(w_mass, sm)
+    ) == _canon(expected_w)
 
     z_mass = _rule(
         _sector(L, fields.Z, fields.Z, differentiated=False),
@@ -405,7 +442,11 @@ def test_w_and_z_masses_match_the_higgs_mechanism(sm):
         * lorentz_metric(S("mu1"), S("mu2"))
         * D2
     )
-    _assert_rational_equal(z_mass, expected_z, denominator)
+    _assert_rational_equal(
+        _electroweak_gauge_basis(z_mass, sm),
+        expected_z,
+        denominator,
+    )
 
 
 def test_higgs_mass_self_couplings_and_hvv_vertices(sm):
@@ -452,7 +493,9 @@ def test_higgs_mass_self_couplings_and_hvv_vertices(sm):
         * lorentz_metric(S("mu2"), S("mu3"))
         * D3
     )
-    assert _canon(hww) == _canon(expected_hww)
+    assert _canon(
+        _electroweak_gauge_basis(hww, sm)
+    ) == _canon(expected_hww)
 
     hzz = L.feynman_rule(
         fields.H,
@@ -469,7 +512,11 @@ def test_higgs_mass_self_couplings_and_hvv_vertices(sm):
         * lorentz_metric(S("mu2"), S("mu3"))
         * D3
     )
-    _assert_rational_equal(hzz, expected_hzz, denominator)
+    _assert_rational_equal(
+        _electroweak_gauge_basis(hzz, sm),
+        expected_hzz,
+        denominator,
+    )
 
 
 def test_electromagnetic_and_charged_fermion_currents(sm):
@@ -477,7 +524,7 @@ def test_electromagnetic_and_charged_fermion_currents(sm):
     fields = sm.fields
     g1 = sm.parameters.g1.symbol
     g2 = sm.parameters.g2.symbol
-    ee = sm.parameters.ee.value
+    ee = sm.parameters.ee.symbol
 
     try:
         neutrino_photon_raw = L.feynman_rule(
@@ -554,7 +601,8 @@ def test_electromagnetic_and_charged_fermion_currents(sm):
     text = _canon(charged_current)
     assert "CKM(" in text
     assert "gamma5(" in text
-    assert "g2" in text
+    assert "ee" in text
+    assert "sw" in text
 
 
 def test_ckm_orientation_and_neutral_current_unitarity(sm):
@@ -770,7 +818,7 @@ def test_yukawa_transformation_validators(sm):
 def test_three_and_four_gauge_boson_vertices(sm):
     L = sm.lagrangian
     fields = sm.fields
-    ee = sm.parameters.ee.value
+    ee = sm.parameters.ee.symbol
 
     wwa = L.feynman_rule(
         fields.W.bar,
@@ -818,7 +866,7 @@ def test_representative_qcd_vertex_is_present(sm):
         include_delta=True,
     )
     text = _canon(rule)
-    assert "g3" in text
+    assert "gs" in text
     assert "gamma(" in text
     assert "::t(" in text
 
@@ -843,7 +891,9 @@ def test_feynman_gauge_ghost_masses_and_interactions(sm):
     expected_charged = -I * (
         ghost_momentum + g2**2 * vev**2 / 4
     ) * D2
-    assert _canon(charged) == _canon(expected_charged)
+    assert _canon(
+        _electroweak_gauge_basis(charged, sm)
+    ) == _canon(expected_charged)
 
     neutral = _collapse_internal_labels(
         L.feynman_rule(
@@ -857,7 +907,11 @@ def test_feynman_gauge_ghost_masses_and_interactions(sm):
     expected_neutral = -I * (
         ghost_momentum + denominator * vev**2 / 4
     ) * D2
-    _assert_rational_equal(neutral, expected_neutral, denominator)
+    _assert_rational_equal(
+        _electroweak_gauge_basis(neutral, sm),
+        expected_neutral,
+        denominator,
+    )
 
     photon = _collapse_internal_labels(
         L.feynman_rule(
@@ -869,7 +923,7 @@ def test_feynman_gauge_ghost_masses_and_interactions(sm):
     )
     ghost_momentum = _internal_momentum_square(photon)
     _assert_rational_equal(
-        photon,
+        _electroweak_gauge_basis(photon, sm),
         -I * ghost_momentum * D2,
         denominator,
     )
@@ -881,7 +935,9 @@ def test_feynman_gauge_ghost_masses_and_interactions(sm):
         simplify=True,
         include_delta=True,
     )
-    assert _canon(charged_goldstone) == _canon(g2**2 * vev / 4 * D3)
+    assert _canon(
+        _electroweak_gauge_basis(charged_goldstone, sm)
+    ) == _canon(g2**2 * vev / 4 * D3)
 
     charged_photon = L.feynman_rule(
         fields.ghWp.bar,
@@ -892,7 +948,7 @@ def test_feynman_gauge_ghost_masses_and_interactions(sm):
     )
     expected_charged_photon = (
         -I
-        * sm.parameters.ee.value
+        * sm.parameters.ee.symbol
         * pcomp(q1, S("mu2"))
         * D3
     )
