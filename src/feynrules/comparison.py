@@ -6,9 +6,9 @@ The comparison pipeline is deliberately split into two layers:
 * the format-independent layer aligns signatures, canonicalizes tensor
   indices, and proves equality by simplifying the symbolic difference.
 
-The adapters implemented here cover the compact gauge- and matter-sector JSON
-exports used by the Standard Model notebook. Additional sectors can extend
-the parser without changing the signature alignment or reporting machinery.
+The adapters implemented here cover the compact JSON vertex exports used by
+the validation suite. Additional sectors can extend the parser without changing
+the signature alignment or reporting machinery.
 """
 
 from __future__ import annotations
@@ -31,7 +31,6 @@ from symbolic.spenso_structures import (
     lorentz_metric,
     structure_constant,
 )
-from symbolic.tensor_canonicalization import canonize_structure_constant_products
 from symbolic.vertex_engine import pcomp
 
 
@@ -323,11 +322,9 @@ def parse_feynrules_yukawa_rule(
 ) -> Expression:
     """Parse the diagonal physical-basis Yukawa export.
 
-    ``diagonal_yukawa_names`` maps FeynRules heads to local component prefixes;
-    the Standard Model notebook uses ``yl -> ye``. The reference export uses
-    explicit complex conjugation, while the notebook declares diagonal real
-    component symbols, so ``real_diagonal_yukawas=True`` identifies each
-    conjugate component with the same local symbol.
+    ``diagonal_yukawa_names`` maps FeynRules heads to local component prefixes
+    when external and local names differ. When ``real_diagonal_yukawas=True``,
+    each conjugate component is identified with the same local symbol.
     """
 
     names = {"yd": "yd", "yu": "yu", "yl": "yl"}
@@ -687,6 +684,12 @@ def reduce_yukawa_bilinears(
     return total.cancel().expand()
 
 
+def _canonize_structure_constant_products(expression, **kwargs):
+    from symbolic.tensor_canonicalization import canonize_structure_constant_products
+
+    return canonize_structure_constant_products(expression, **kwargs)
+
+
 def canonicalize_gauge_rule(expression: Expression) -> Expression:
     """Canonicalize a parsed or generated gauge vertex for exact comparison."""
 
@@ -701,7 +704,7 @@ def canonicalize_gauge_rule(expression: Expression) -> Expression:
         head="spenso::coad",
         dimension=8,
     )
-    canonical = canonize_structure_constant_products(
+    canonical = _canonize_structure_constant_products(
         expression,
         lorentz_indices=lorentz_indices,
         adjoint_indices=adjoint_indices,
@@ -728,7 +731,7 @@ def canonicalize_matter_rule(expression: Expression) -> Expression:
         head="spenso::cof",
         dimension=3,
     )
-    canonical = canonize_structure_constant_products(
+    canonical = _canonize_structure_constant_products(
         expression,
         lorentz_indices=lorentz_indices,
         adjoint_indices=adjoint_indices,
@@ -746,7 +749,7 @@ def canonicalize_yukawa_rule(expression: Expression) -> Expression:
         head="spenso::cof",
         dimension=3,
     )
-    canonical = canonize_structure_constant_products(
+    canonical = _canonize_structure_constant_products(
         expression,
         color_fund_indices=color_indices,
     )
@@ -1422,126 +1425,6 @@ def compare_feynrules_yukawa_vertices(
     )
 
 
-def compare_feynrules_standard_model_vertices(
-    lagrangian,
-    references: Sequence[FeynRulesVertex],
-    *,
-    field_map: Mapping[str, object],
-    parameter_substitutions: Mapping[str, object] | None = None,
-    diagonal_yukawa_names: Mapping[str, str] | None = None,
-    feynpy_substitutions: Mapping[object, object] | None = None,
-    feynpy_name_aliases: Mapping[str, str] | None = None,
-) -> VertexComparisonReport:
-    """Compare the complete flavor-expanded SM interaction vertex set.
-
-    The official ``SM.fr`` output is partitioned by field content and routed
-    through the tensor adapter appropriate to each sector. The returned report
-    preserves the ordering of the supplied full-model reference file.
-    """
-
-    sectors: dict[str, list[FeynRulesVertex]] = {
-        "gauge": [],
-        "matter": [],
-        "yukawa": [],
-        "higgs": [],
-        "ghost": [],
-    }
-    for reference in references:
-        mapped_fields = tuple(field_map[name] for name in reference.fields)
-        ghost_count = sum(
-            _field_kind(field) == "ghost"
-            for field in mapped_fields
-        )
-        fermion_count = sum(
-            _field_spin(field) == 1 / 2
-            for field in mapped_fields
-        )
-        scalar_count = sum(
-            _field_spin(field) == 0
-            and _field_kind(field) != "ghost"
-            for field in mapped_fields
-        )
-        if ghost_count >= 2:
-            sectors["ghost"].append(reference)
-        elif fermion_count == 2:
-            sectors[
-                "yukawa" if scalar_count else "matter"
-            ].append(reference)
-        elif scalar_count:
-            sectors["higgs"].append(reference)
-        else:
-            sectors["gauge"].append(reference)
-
-    reports = (
-        compare_feynrules_gauge_vertices(
-            lagrangian,
-            sectors["gauge"],
-            field_map=field_map,
-            parameter_substitutions=parameter_substitutions,
-            feynpy_name_aliases=feynpy_name_aliases,
-        ),
-        compare_feynrules_matter_vertices(
-            lagrangian,
-            sectors["matter"],
-            field_map=field_map,
-            parameter_substitutions=parameter_substitutions,
-            feynpy_substitutions=feynpy_substitutions,
-            feynpy_name_aliases=feynpy_name_aliases,
-        ),
-        compare_feynrules_yukawa_vertices(
-            lagrangian,
-            sectors["yukawa"],
-            field_map=field_map,
-            diagonal_yukawa_names=diagonal_yukawa_names,
-            feynpy_substitutions=feynpy_substitutions,
-            feynpy_name_aliases=feynpy_name_aliases,
-        ),
-        compare_feynrules_bosonic_vertices(
-            lagrangian,
-            sectors["higgs"],
-            field_map=field_map,
-            parameter_substitutions=parameter_substitutions,
-            feynpy_substitutions=feynpy_substitutions,
-            feynpy_name_aliases=feynpy_name_aliases,
-            minimum_scalar_fields=1,
-            scalar_relations=("cw**2 + sw**2 - 1",),
-        ),
-        compare_feynrules_bosonic_vertices(
-            lagrangian,
-            sectors["ghost"],
-            field_map=field_map,
-            parameter_substitutions=parameter_substitutions,
-            feynpy_substitutions=feynpy_substitutions,
-            feynpy_name_aliases=feynpy_name_aliases,
-            minimum_ghost_fields=2,
-            use_momentum_conservation=True,
-            scalar_relations=("cw**2 + sw**2 - 1",),
-        ),
-    )
-    row_by_key = {
-        row.reference.key: row
-        for report in reports
-        for row in report.rows
-    }
-    return VertexComparisonReport(
-        rows=tuple(row_by_key[reference.key] for reference in references),
-        feynrules_only=tuple(
-            sorted({
-                signature
-                for report in reports
-                for signature in report.feynrules_only
-            })
-        ),
-        feynpy_only=tuple(
-            sorted({
-                signature
-                for report in reports
-                for signature in report.feynpy_only
-            })
-        ),
-    )
-
-
 __all__ = (
     "FeynRulesVertex",
     "VertexComparison",
@@ -1552,7 +1435,6 @@ __all__ = (
     "compare_feynrules_bosonic_vertices",
     "compare_feynrules_gauge_vertices",
     "compare_feynrules_matter_vertices",
-    "compare_feynrules_standard_model_vertices",
     "compare_feynrules_yukawa_vertices",
     "load_feynrules_json",
     "parse_feynrules_gauge_rule",

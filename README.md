@@ -12,6 +12,7 @@ The package boundary follows the FeynRules split:
 
 - `feynpy` is the reusable toolkit/engine
 - `theories` contains concrete theory definitions, analogous to model files
+- `feynrules` contains external FeynRules export parsers and comparison helpers
 
 ### Repository layout
 
@@ -24,6 +25,9 @@ Live source code is organized as split packages rather than flat top-level files
 - `src/theories/`
   - concrete theory definitions built on top of the engine
   - the gauge-basis-to-broken Standard Model builder in `standard_model.py`
+- `src/feynrules/`
+  - generic adapters for parsing and comparing FeynRules vertex exports
+  - model-specific routing belongs in `theories`, not in the engine package
 - `src/compiler/`
   - convention-fixed gauge / covariant compilation
   - public compiler entry points in `gauge.py`

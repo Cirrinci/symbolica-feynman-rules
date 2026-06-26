@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from feynpy.comparison import (
+from feynrules.comparison import (
     compare_feynrules_gauge_vertices,
     load_feynrules_json,
     parse_feynrules_gauge_rule,
 )
 from theories import build_standard_model
+from theories.standard_model_feynrules import (
+    standard_model_feynrules_field_map,
+    standard_model_feynrules_name_aliases,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -34,18 +38,11 @@ def test_standard_model_gauge_vertices_match_feynrules_json_exactly():
         include_gauge_fixing=False,
     )
     references = load_feynrules_json(REFERENCE_PATH)
-    fields = sm.fields
     report = compare_feynrules_gauge_vertices(
         sm.lagrangian,
         references,
-        field_map={
-            "A": fields.A,
-            "W": fields.W,
-            "Wbar": fields.W.bar,
-            "Z": fields.Z,
-            "G": fields.G,
-        },
-        feynpy_name_aliases={"W.bar": "Wbar"},
+        field_map=standard_model_feynrules_field_map(sm.fields),
+        feynpy_name_aliases=standard_model_feynrules_name_aliases(sm.fields),
     )
 
     assert report.feynrules_only == ()
