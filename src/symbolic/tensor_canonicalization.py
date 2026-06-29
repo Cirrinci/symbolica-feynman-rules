@@ -325,6 +325,10 @@ def canonize_tensor_expression(
     if standardize_dummy_names:
         canonical_expr, dummy_indices = _standardize_dummy_indices(canonical_expr, dummy_indices)
     canonical_expr = _replace_tensor_heads(canonical_expr, head_specs, reverse=True)
+    canonical_expr = _canonicalize_antisymmetric_tensor_arguments(
+        canonical_expr,
+        head_specs,
+    )
     return canonical_expr, external_indices, dummy_indices
 
 
@@ -753,6 +757,68 @@ def _perm_sign(current: Sequence[Expression], target: Sequence[Expression]) -> i
             sign *= -1
             current_slot -= 1
     return sign
+
+
+def _canonicalize_antisymmetric_tensor_arguments(
+    expr,
+    specs: Sequence[TensorHeadSpec],
+):
+    """Give antisymmetric tensor heads a process-independent slot order.
+
+    Symbolica's tensor canonicalizer uses the symbol interning order when it
+    chooses between equivalent external-index orientations.  That order
+    depends on which tests or models created a symbol first, so an expression
+    could canonize to either ``eps(i, j)`` or ``-eps(j, i)`` across runs.
+    Reordering the live tensor heads lexically after ``canonize_tensors`` keeps
+    the algebraic sign while making the returned representation deterministic.
+    """
+
+    antisymmetric_arities = {
+        spec.raw_name: spec.arity
+        for spec in specs
+        if spec.head_kwargs.get("is_antisymmetric") is True
+    }
+
+    def canonicalize(atom):
+        if not isinstance(atom, Expression):
+            return atom
+        atom_type = atom.get_type()
+        if atom_type == AtomType.Add:
+            total = Expression.num(0)
+            for term in atom:
+                total += canonicalize(term)
+            return total
+        if atom_type == AtomType.Mul:
+            total = Expression.num(1)
+            for factor in atom:
+                total *= canonicalize(factor)
+            return total
+        if atom_type == AtomType.Pow:
+            base, exponent = tuple(atom)
+            return canonicalize(base) ** canonicalize(exponent)
+        if atom_type != AtomType.Fn:
+            return atom
+
+        name = atom.get_name()
+        args = tuple(canonicalize(arg) for arg in atom)
+        arity = antisymmetric_arities.get(name)
+        if arity is None or len(args) != arity:
+            return _build_function_expression(name, args)
+
+        keys = tuple(arg.to_canonical_string() for arg in args)
+        if len(set(keys)) != len(keys):
+            return Expression.num(0)
+        ordered = tuple(
+            arg
+            for _key, arg in sorted(
+                zip(keys, args),
+                key=lambda item: item[0],
+            )
+        )
+        sign = _perm_sign(args, ordered)
+        return sign * _build_function_expression(name, ordered)
+
+    return canonicalize(expr)
 
 
 def _rebuild_function_like(template: Expression, args: Sequence[Expression]) -> Expression:

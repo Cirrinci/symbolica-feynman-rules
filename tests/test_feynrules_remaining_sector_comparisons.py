@@ -12,8 +12,9 @@ from theories.standard_model_feynrules import (
 )
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-REFERENCE_DIR = REPO_ROOT / "sandbox" / "wolframnotebook"
+REFERENCE_DIR = (
+    Path(__file__).resolve().parent / "fixtures" / "feynrules" / "sm"
+)
 
 
 def _assert_report_matches(report):

@@ -14,11 +14,11 @@ from theories.standard_model_feynrules import (
 )
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 REFERENCE_PATH = (
-    REPO_ROOT
-    / "sandbox"
-    / "wolframnotebook"
+    Path(__file__).resolve().parent
+    / "fixtures"
+    / "feynrules"
+    / "sm"
     / "gauge_vertices_FeynRules.json"
 )
 

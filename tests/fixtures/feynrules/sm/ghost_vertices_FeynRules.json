@@ -1,0 +1,362 @@
+[
+	{
+		"id":7,
+		"key":"A|ghWm|ghWmbar",
+		"fields":[
+			"ghWmbar",
+			"ghWm",
+			"A"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghWm, 2}",
+			"{A, 3}"
+		],
+		"rule":"(-I)*ee*FV[2, Index[Lorentz, Ext[3]]] - I*ee*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":15,
+		"key":"A|ghWp|ghWpbar",
+		"fields":[
+			"ghWpbar",
+			"ghWp",
+			"A"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghWp, 2}",
+			"{A, 3}"
+		],
+		"rule":"I*ee*FV[2, Index[Lorentz, Ext[3]]] + I*ee*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":5,
+		"key":"G0|ghWm|ghWmbar",
+		"fields":[
+			"ghWmbar",
+			"ghWm",
+			"G0"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghWm, 2}",
+			"{G0, 3}"
+		],
+		"rule":"-1\/4*(ee^2*vev)\/sw^2"
+	},
+	{
+		"id":13,
+		"key":"G0|ghWp|ghWpbar",
+		"fields":[
+			"ghWpbar",
+			"ghWp",
+			"G0"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghWp, 2}",
+			"{G0, 3}"
+		],
+		"rule":"(ee^2*vev)\/(4*sw^2)"
+	},
+	{
+		"id":24,
+		"key":"G|ghG|ghGbar",
+		"fields":[
+			"ghGbar",
+			"ghG",
+			"G"
+		],
+		"legs":[
+			"{ghGbar, 1}",
+			"{ghG, 2}",
+			"{G, 3}"
+		],
+		"rule":"gs*f[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[2, Index[Lorentz, Ext[3]]] + gs*f[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":1,
+		"key":"ghAbar|ghWm|W",
+		"fields":[
+			"ghAbar",
+			"ghWm",
+			"W"
+		],
+		"legs":[
+			"{ghAbar, 1}",
+			"{ghWm, 2}",
+			"{W, 3}"
+		],
+		"rule":"I*ee*FV[2, Index[Lorentz, Ext[3]]] + I*ee*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":2,
+		"key":"ghAbar|ghWp|Wbar",
+		"fields":[
+			"ghAbar",
+			"ghWp",
+			"Wbar"
+		],
+		"legs":[
+			"{ghAbar, 1}",
+			"{ghWp, 2}",
+			"{Wbar, 3}"
+		],
+		"rule":"(-I)*ee*FV[2, Index[Lorentz, Ext[3]]] - I*ee*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":3,
+		"key":"ghA|ghWmbar|GPbar",
+		"fields":[
+			"ghWmbar",
+			"ghA",
+			"GPbar"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghA, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"(ee^2*vev)\/(2*sw)"
+	},
+	{
+		"id":4,
+		"key":"ghA|ghWmbar|Wbar",
+		"fields":[
+			"ghWmbar",
+			"ghA",
+			"Wbar"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghA, 2}",
+			"{Wbar, 3}"
+		],
+		"rule":"I*ee*FV[2, Index[Lorentz, Ext[3]]] + I*ee*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":11,
+		"key":"ghA|ghWpbar|GP",
+		"fields":[
+			"ghWpbar",
+			"ghA",
+			"GP"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghA, 2}",
+			"{GP, 3}"
+		],
+		"rule":"-1\/2*(ee^2*vev)\/sw"
+	},
+	{
+		"id":12,
+		"key":"ghA|ghWpbar|W",
+		"fields":[
+			"ghWpbar",
+			"ghA",
+			"W"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghA, 2}",
+			"{W, 3}"
+		],
+		"rule":"(-I)*ee*FV[2, Index[Lorentz, Ext[3]]] - I*ee*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":9,
+		"key":"ghWmbar|ghZ|GPbar",
+		"fields":[
+			"ghWmbar",
+			"ghZ",
+			"GPbar"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghZ, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"-1\/4*(ee^2*vev)\/cw + (cw*ee^2*vev)\/(4*sw^2)"
+	},
+	{
+		"id":10,
+		"key":"ghWmbar|ghZ|Wbar",
+		"fields":[
+			"ghWmbar",
+			"ghZ",
+			"Wbar"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghZ, 2}",
+			"{Wbar, 3}"
+		],
+		"rule":"(I*cw*ee*FV[2, Index[Lorentz, Ext[3]]])\/sw + (I*cw*ee*FV[3, Index[Lorentz, Ext[3]]])\/sw"
+	},
+	{
+		"id":6,
+		"key":"ghWm|ghWmbar|H",
+		"fields":[
+			"ghWmbar",
+			"ghWm",
+			"H"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghWm, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-1\/4*I)*ee^2*vev)\/sw^2"
+	},
+	{
+		"id":8,
+		"key":"ghWm|ghWmbar|Z",
+		"fields":[
+			"ghWmbar",
+			"ghWm",
+			"Z"
+		],
+		"legs":[
+			"{ghWmbar, 1}",
+			"{ghWm, 2}",
+			"{Z, 3}"
+		],
+		"rule":"((-I)*cw*ee*FV[2, Index[Lorentz, Ext[3]]])\/sw - (I*cw*ee*FV[3, Index[Lorentz, Ext[3]]])\/sw"
+	},
+	{
+		"id":19,
+		"key":"ghWm|ghZbar|GP",
+		"fields":[
+			"ghZbar",
+			"ghWm",
+			"GP"
+		],
+		"legs":[
+			"{ghZbar, 1}",
+			"{ghWm, 2}",
+			"{GP, 3}"
+		],
+		"rule":"(ee^2*vev)\/(4*cw) + (cw*ee^2*vev)\/(4*sw^2)"
+	},
+	{
+		"id":20,
+		"key":"ghWm|ghZbar|W",
+		"fields":[
+			"ghZbar",
+			"ghWm",
+			"W"
+		],
+		"legs":[
+			"{ghZbar, 1}",
+			"{ghWm, 2}",
+			"{W, 3}"
+		],
+		"rule":"(I*cw*ee*FV[2, Index[Lorentz, Ext[3]]])\/sw + (I*cw*ee*FV[3, Index[Lorentz, Ext[3]]])\/sw"
+	},
+	{
+		"id":17,
+		"key":"ghWpbar|ghZ|GP",
+		"fields":[
+			"ghWpbar",
+			"ghZ",
+			"GP"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghZ, 2}",
+			"{GP, 3}"
+		],
+		"rule":"(ee^2*vev)\/(4*cw) - (cw*ee^2*vev)\/(4*sw^2)"
+	},
+	{
+		"id":18,
+		"key":"ghWpbar|ghZ|W",
+		"fields":[
+			"ghWpbar",
+			"ghZ",
+			"W"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghZ, 2}",
+			"{W, 3}"
+		],
+		"rule":"((-I)*cw*ee*FV[2, Index[Lorentz, Ext[3]]])\/sw - (I*cw*ee*FV[3, Index[Lorentz, Ext[3]]])\/sw"
+	},
+	{
+		"id":14,
+		"key":"ghWp|ghWpbar|H",
+		"fields":[
+			"ghWpbar",
+			"ghWp",
+			"H"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghWp, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-1\/4*I)*ee^2*vev)\/sw^2"
+	},
+	{
+		"id":16,
+		"key":"ghWp|ghWpbar|Z",
+		"fields":[
+			"ghWpbar",
+			"ghWp",
+			"Z"
+		],
+		"legs":[
+			"{ghWpbar, 1}",
+			"{ghWp, 2}",
+			"{Z, 3}"
+		],
+		"rule":"(I*cw*ee*FV[2, Index[Lorentz, Ext[3]]])\/sw + (I*cw*ee*FV[3, Index[Lorentz, Ext[3]]])\/sw"
+	},
+	{
+		"id":21,
+		"key":"ghWp|ghZbar|GPbar",
+		"fields":[
+			"ghZbar",
+			"ghWp",
+			"GPbar"
+		],
+		"legs":[
+			"{ghZbar, 1}",
+			"{ghWp, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"-1\/4*(ee^2*vev)\/cw - (cw*ee^2*vev)\/(4*sw^2)"
+	},
+	{
+		"id":22,
+		"key":"ghWp|ghZbar|Wbar",
+		"fields":[
+			"ghZbar",
+			"ghWp",
+			"Wbar"
+		],
+		"legs":[
+			"{ghZbar, 1}",
+			"{ghWp, 2}",
+			"{Wbar, 3}"
+		],
+		"rule":"((-I)*cw*ee*FV[2, Index[Lorentz, Ext[3]]])\/sw - (I*cw*ee*FV[3, Index[Lorentz, Ext[3]]])\/sw"
+	},
+	{
+		"id":23,
+		"key":"ghZ|ghZbar|H",
+		"fields":[
+			"ghZbar",
+			"ghZ",
+			"H"
+		],
+		"legs":[
+			"{ghZbar, 1}",
+			"{ghZ, 2}",
+			"{H, 3}"
+		],
+		"rule":"(-1\/2*I)*ee^2*vev - ((I\/4)*cw^2*ee^2*vev)\/sw^2 - ((I\/4)*ee^2*sw^2*vev)\/cw^2"
+	}
+]

@@ -145,6 +145,16 @@ def test_canonize_full_simplifies_eps2_pair_in_yukawa_form():
     assert _canon(canon) == _canon(expected)
 
 
+def test_weak_eps2_canonical_order_does_not_depend_on_symbol_creation_order():
+    j = S("creation_order_j")
+    i = S("creation_order_i")
+    expr = weak_eps2(i, j) - weak_eps2(j, i)
+
+    canon = canonize_full(expr, weak_fund_indices=(i, j))
+
+    assert _canon(canon) == _canon(2 * weak_eps2(i, j))
+
+
 def test_canonize_full_applies_jacobi_identity_in_f_basis():
     """The Jacobi combination of two structure constants must vanish.
 

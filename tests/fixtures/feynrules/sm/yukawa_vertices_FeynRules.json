@@ -1,0 +1,632 @@
+[
+	{
+		"id":1,
+		"key":"bbar|c|GPbar",
+		"fields":[
+			"bbar",
+			"c",
+			"GPbar"
+		],
+		"legs":[
+			"{bbar, 1}",
+			"{c, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 2], Index[Generation, 3]]]*Conjugate[yd[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 2], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 2], Index[Generation, 2]]"
+	},
+	{
+		"id":2,
+		"key":"bbar|GPbar|t",
+		"fields":[
+			"bbar",
+			"t",
+			"GPbar"
+		],
+		"legs":[
+			"{bbar, 1}",
+			"{t, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 3], Index[Generation, 3]]]*Conjugate[yd[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 3], Index[Generation, 3]]"
+	},
+	{
+		"id":3,
+		"key":"bbar|GPbar|u",
+		"fields":[
+			"bbar",
+			"u",
+			"GPbar"
+		],
+		"legs":[
+			"{bbar, 1}",
+			"{u, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 1], Index[Generation, 3]]]*Conjugate[yd[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 1], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 1], Index[Generation, 1]]"
+	},
+	{
+		"id":10,
+		"key":"b|bbar|G0",
+		"fields":[
+			"bbar",
+			"b",
+			"G0"
+		],
+		"legs":[
+			"{bbar, 1}",
+			"{b, 2}",
+			"{G0, 3}"
+		],
+		"rule":"-((Conjugate[yd[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2]) + (IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 3], Index[Generation, 3]])\/Sqrt[2]"
+	},
+	{
+		"id":13,
+		"key":"b|bbar|H",
+		"fields":[
+			"bbar",
+			"b",
+			"H"
+		],
+		"legs":[
+			"{bbar, 1}",
+			"{b, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yd[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 3], Index[Generation, 3]])\/Sqrt[2]"
+	},
+	{
+		"id":25,
+		"key":"b|cbar|GP",
+		"fields":[
+			"cbar",
+			"b",
+			"GP"
+		],
+		"legs":[
+			"{cbar, 1}",
+			"{b, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 2], Index[Generation, 3]]*Conjugate[yu[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 2], Index[Generation, 3]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 3], Index[Generation, 3]]"
+	},
+	{
+		"id":28,
+		"key":"b|GP|tbar",
+		"fields":[
+			"tbar",
+			"b",
+			"GP"
+		],
+		"legs":[
+			"{tbar, 1}",
+			"{b, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 3], Index[Generation, 3]]*Conjugate[yu[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 3], Index[Generation, 3]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 3], Index[Generation, 3]]"
+	},
+	{
+		"id":31,
+		"key":"b|GP|ubar",
+		"fields":[
+			"ubar",
+			"b",
+			"GP"
+		],
+		"legs":[
+			"{ubar, 1}",
+			"{b, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 1], Index[Generation, 3]]*Conjugate[yu[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 1], Index[Generation, 3]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 3], Index[Generation, 3]]"
+	},
+	{
+		"id":26,
+		"key":"cbar|d|GP",
+		"fields":[
+			"cbar",
+			"d",
+			"GP"
+		],
+		"legs":[
+			"{cbar, 1}",
+			"{d, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 2], Index[Generation, 1]]*Conjugate[yu[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 2], Index[Generation, 1]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 1], Index[Generation, 1]]"
+	},
+	{
+		"id":27,
+		"key":"cbar|GP|s",
+		"fields":[
+			"cbar",
+			"s",
+			"GP"
+		],
+		"legs":[
+			"{cbar, 1}",
+			"{s, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 2], Index[Generation, 2]]*Conjugate[yu[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 2], Index[Generation, 2]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 2], Index[Generation, 2]]"
+	},
+	{
+		"id":34,
+		"key":"c|cbar|G0",
+		"fields":[
+			"cbar",
+			"c",
+			"G0"
+		],
+		"legs":[
+			"{cbar, 1}",
+			"{c, 2}",
+			"{G0, 3}"
+		],
+		"rule":"(Conjugate[yu[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 2], Index[Generation, 2]])\/Sqrt[2]"
+	},
+	{
+		"id":37,
+		"key":"c|cbar|H",
+		"fields":[
+			"cbar",
+			"c",
+			"H"
+		],
+		"legs":[
+			"{cbar, 1}",
+			"{c, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yu[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 2], Index[Generation, 2]])\/Sqrt[2]"
+	},
+	{
+		"id":4,
+		"key":"c|dbar|GPbar",
+		"fields":[
+			"dbar",
+			"c",
+			"GPbar"
+		],
+		"legs":[
+			"{dbar, 1}",
+			"{c, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 2], Index[Generation, 1]]]*Conjugate[yd[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 2], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 2], Index[Generation, 2]]"
+	},
+	{
+		"id":7,
+		"key":"c|GPbar|sbar",
+		"fields":[
+			"sbar",
+			"c",
+			"GPbar"
+		],
+		"legs":[
+			"{sbar, 1}",
+			"{c, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 2], Index[Generation, 2]]]*Conjugate[yd[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 2], Index[Generation, 2]]"
+	},
+	{
+		"id":5,
+		"key":"dbar|GPbar|t",
+		"fields":[
+			"dbar",
+			"t",
+			"GPbar"
+		],
+		"legs":[
+			"{dbar, 1}",
+			"{t, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 3], Index[Generation, 1]]]*Conjugate[yd[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 3], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 3], Index[Generation, 3]]"
+	},
+	{
+		"id":6,
+		"key":"dbar|GPbar|u",
+		"fields":[
+			"dbar",
+			"u",
+			"GPbar"
+		],
+		"legs":[
+			"{dbar, 1}",
+			"{u, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 1], Index[Generation, 1]]]*Conjugate[yd[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 1], Index[Generation, 1]]"
+	},
+	{
+		"id":11,
+		"key":"d|dbar|G0",
+		"fields":[
+			"dbar",
+			"d",
+			"G0"
+		],
+		"legs":[
+			"{dbar, 1}",
+			"{d, 2}",
+			"{G0, 3}"
+		],
+		"rule":"-((Conjugate[yd[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2]) + (IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 1], Index[Generation, 1]])\/Sqrt[2]"
+	},
+	{
+		"id":14,
+		"key":"d|dbar|H",
+		"fields":[
+			"dbar",
+			"d",
+			"H"
+		],
+		"legs":[
+			"{dbar, 1}",
+			"{d, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yd[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 1], Index[Generation, 1]])\/Sqrt[2]"
+	},
+	{
+		"id":29,
+		"key":"d|GP|tbar",
+		"fields":[
+			"tbar",
+			"d",
+			"GP"
+		],
+		"legs":[
+			"{tbar, 1}",
+			"{d, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 3], Index[Generation, 1]]*Conjugate[yu[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 3], Index[Generation, 1]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 1], Index[Generation, 1]]"
+	},
+	{
+		"id":32,
+		"key":"d|GP|ubar",
+		"fields":[
+			"ubar",
+			"d",
+			"GP"
+		],
+		"legs":[
+			"{ubar, 1}",
+			"{d, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 1], Index[Generation, 1]]*Conjugate[yu[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 1], Index[Generation, 1]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 1], Index[Generation, 1]]"
+	},
+	{
+		"id":16,
+		"key":"ebar|GPbar|ve",
+		"fields":[
+			"ebar",
+			"ve",
+			"GPbar"
+		],
+		"legs":[
+			"{ebar, 1}",
+			"{ve, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[yl[Index[Generation, 1], Index[Generation, 1]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":19,
+		"key":"e|ebar|G0",
+		"fields":[
+			"ebar",
+			"e",
+			"G0"
+		],
+		"legs":[
+			"{ebar, 1}",
+			"{e, 2}",
+			"{G0, 3}"
+		],
+		"rule":"-((Conjugate[yl[Index[Generation, 1], Index[Generation, 1]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2]) + (ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 1], Index[Generation, 1]])\/Sqrt[2]"
+	},
+	{
+		"id":22,
+		"key":"e|ebar|H",
+		"fields":[
+			"ebar",
+			"e",
+			"H"
+		],
+		"legs":[
+			"{ebar, 1}",
+			"{e, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yl[Index[Generation, 1], Index[Generation, 1]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 1], Index[Generation, 1]])\/Sqrt[2]"
+	},
+	{
+		"id":40,
+		"key":"e|GP|vebar",
+		"fields":[
+			"vebar",
+			"e",
+			"GP"
+		],
+		"legs":[
+			"{vebar, 1}",
+			"{e, 2}",
+			"{GP, 3}"
+		],
+		"rule":"-(ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 1], Index[Generation, 1]])"
+	},
+	{
+		"id":20,
+		"key":"G0|mu|mubar",
+		"fields":[
+			"mubar",
+			"mu",
+			"G0"
+		],
+		"legs":[
+			"{mubar, 1}",
+			"{mu, 2}",
+			"{G0, 3}"
+		],
+		"rule":"-((Conjugate[yl[Index[Generation, 2], Index[Generation, 2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2]) + (ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 2], Index[Generation, 2]])\/Sqrt[2]"
+	},
+	{
+		"id":12,
+		"key":"G0|s|sbar",
+		"fields":[
+			"sbar",
+			"s",
+			"G0"
+		],
+		"legs":[
+			"{sbar, 1}",
+			"{s, 2}",
+			"{G0, 3}"
+		],
+		"rule":"-((Conjugate[yd[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2]) + (IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 2], Index[Generation, 2]])\/Sqrt[2]"
+	},
+	{
+		"id":21,
+		"key":"G0|ta|tabar",
+		"fields":[
+			"tabar",
+			"ta",
+			"G0"
+		],
+		"legs":[
+			"{tabar, 1}",
+			"{ta, 2}",
+			"{G0, 3}"
+		],
+		"rule":"-((Conjugate[yl[Index[Generation, 3], Index[Generation, 3]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2]) + (ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 3], Index[Generation, 3]])\/Sqrt[2]"
+	},
+	{
+		"id":35,
+		"key":"G0|t|tbar",
+		"fields":[
+			"tbar",
+			"t",
+			"G0"
+		],
+		"legs":[
+			"{tbar, 1}",
+			"{t, 2}",
+			"{G0, 3}"
+		],
+		"rule":"(Conjugate[yu[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 3], Index[Generation, 3]])\/Sqrt[2]"
+	},
+	{
+		"id":36,
+		"key":"G0|u|ubar",
+		"fields":[
+			"ubar",
+			"u",
+			"G0"
+		],
+		"legs":[
+			"{ubar, 1}",
+			"{u, 2}",
+			"{G0, 3}"
+		],
+		"rule":"(Conjugate[yu[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 1], Index[Generation, 1]])\/Sqrt[2]"
+	},
+	{
+		"id":17,
+		"key":"GPbar|mubar|vm",
+		"fields":[
+			"mubar",
+			"vm",
+			"GPbar"
+		],
+		"legs":[
+			"{mubar, 1}",
+			"{vm, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[yl[Index[Generation, 2], Index[Generation, 2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":8,
+		"key":"GPbar|sbar|t",
+		"fields":[
+			"sbar",
+			"t",
+			"GPbar"
+		],
+		"legs":[
+			"{sbar, 1}",
+			"{t, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 3], Index[Generation, 2]]]*Conjugate[yd[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 3], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 3], Index[Generation, 3]]"
+	},
+	{
+		"id":9,
+		"key":"GPbar|sbar|u",
+		"fields":[
+			"sbar",
+			"u",
+			"GPbar"
+		],
+		"legs":[
+			"{sbar, 1}",
+			"{u, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[CKM[Index[Generation, 1], Index[Generation, 2]]]*Conjugate[yd[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - Conjugate[CKM[Index[Generation, 1], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 1], Index[Generation, 1]]"
+	},
+	{
+		"id":18,
+		"key":"GPbar|tabar|vt",
+		"fields":[
+			"tabar",
+			"vt",
+			"GPbar"
+		],
+		"legs":[
+			"{tabar, 1}",
+			"{vt, 2}",
+			"{GPbar, 3}"
+		],
+		"rule":"Conjugate[yl[Index[Generation, 3], Index[Generation, 3]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":41,
+		"key":"GP|mu|vmbar",
+		"fields":[
+			"vmbar",
+			"mu",
+			"GP"
+		],
+		"legs":[
+			"{vmbar, 1}",
+			"{mu, 2}",
+			"{GP, 3}"
+		],
+		"rule":"-(ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 2], Index[Generation, 2]])"
+	},
+	{
+		"id":30,
+		"key":"GP|s|tbar",
+		"fields":[
+			"tbar",
+			"s",
+			"GP"
+		],
+		"legs":[
+			"{tbar, 1}",
+			"{s, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 3], Index[Generation, 2]]*Conjugate[yu[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 3], Index[Generation, 2]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 2], Index[Generation, 2]]"
+	},
+	{
+		"id":33,
+		"key":"GP|s|ubar",
+		"fields":[
+			"ubar",
+			"s",
+			"GP"
+		],
+		"legs":[
+			"{ubar, 1}",
+			"{s, 2}",
+			"{GP, 3}"
+		],
+		"rule":"CKM[Index[Generation, 1], Index[Generation, 2]]*Conjugate[yu[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]] - CKM[Index[Generation, 1], Index[Generation, 2]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 2], Index[Generation, 2]]"
+	},
+	{
+		"id":42,
+		"key":"GP|ta|vtbar",
+		"fields":[
+			"vtbar",
+			"ta",
+			"GP"
+		],
+		"legs":[
+			"{vtbar, 1}",
+			"{ta, 2}",
+			"{GP, 3}"
+		],
+		"rule":"-(ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 3], Index[Generation, 3]])"
+	},
+	{
+		"id":23,
+		"key":"H|mu|mubar",
+		"fields":[
+			"mubar",
+			"mu",
+			"H"
+		],
+		"legs":[
+			"{mubar, 1}",
+			"{mu, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yl[Index[Generation, 2], Index[Generation, 2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 2], Index[Generation, 2]])\/Sqrt[2]"
+	},
+	{
+		"id":15,
+		"key":"H|s|sbar",
+		"fields":[
+			"sbar",
+			"s",
+			"H"
+		],
+		"legs":[
+			"{sbar, 1}",
+			"{s, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yd[Index[Generation, 2], Index[Generation, 2]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, 2], Index[Generation, 2]])\/Sqrt[2]"
+	},
+	{
+		"id":24,
+		"key":"H|ta|tabar",
+		"fields":[
+			"tabar",
+			"ta",
+			"H"
+		],
+		"legs":[
+			"{tabar, 1}",
+			"{ta, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yl[Index[Generation, 3], Index[Generation, 3]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, 3], Index[Generation, 3]])\/Sqrt[2]"
+	},
+	{
+		"id":38,
+		"key":"H|t|tbar",
+		"fields":[
+			"tbar",
+			"t",
+			"H"
+		],
+		"legs":[
+			"{tbar, 1}",
+			"{t, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yu[Index[Generation, 3], Index[Generation, 3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 3], Index[Generation, 3]])\/Sqrt[2]"
+	},
+	{
+		"id":39,
+		"key":"H|u|ubar",
+		"fields":[
+			"ubar",
+			"u",
+			"H"
+		],
+		"legs":[
+			"{ubar, 1}",
+			"{u, 2}",
+			"{H, 3}"
+		],
+		"rule":"((-I)*Conjugate[yu[Index[Generation, 1], Index[Generation, 1]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]])\/Sqrt[2] - (I*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, 1], Index[Generation, 1]])\/Sqrt[2]"
+	}
+]

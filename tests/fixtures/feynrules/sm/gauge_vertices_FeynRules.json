@@ -1,0 +1,132 @@
+[
+	{
+		"id":4,
+		"key":"A|A|W|Wbar",
+		"fields":[
+			"A",
+			"A",
+			"W",
+			"Wbar"
+		],
+		"legs":[
+			"{A, 1}",
+			"{A, 2}",
+			"{W, 3}",
+			"{Wbar, 4}"
+		],
+		"rule":"I*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - (2*I)*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":3,
+		"key":"A|W|Wbar",
+		"fields":[
+			"A",
+			"W",
+			"Wbar"
+		],
+		"legs":[
+			"{A, 1}",
+			"{W, 2}",
+			"{Wbar, 3}"
+		],
+		"rule":"(-I)*ee*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] + I*ee*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] + I*ee*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - I*ee*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - I*ee*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*ee*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":7,
+		"key":"A|W|Wbar|Z",
+		"fields":[
+			"A",
+			"W",
+			"Wbar",
+			"Z"
+		],
+		"legs":[
+			"{A, 1}",
+			"{W, 2}",
+			"{Wbar, 3}",
+			"{Z, 4}"
+		],
+		"rule":"((-2*I)*cw*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])\/sw + (I*cw*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]])\/sw + (I*cw*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]])\/sw"
+	},
+	{
+		"id":1,
+		"key":"G|G|G",
+		"fields":[
+			"G",
+			"G",
+			"G"
+		],
+		"legs":[
+			"{G, 1}",
+			"{G, 2}",
+			"{G, 3}"
+		],
+		"rule":"gs*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - gs*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - gs*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + gs*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + gs*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - gs*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":2,
+		"key":"G|G|G|G",
+		"fields":[
+			"G",
+			"G",
+			"G",
+			"G"
+		],
+		"legs":[
+			"{G, 1}",
+			"{G, 2}",
+			"{G, 3}",
+			"{G, 4}"
+		],
+		"rule":"I*gs^2*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*f[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*gs^2*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*f[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*gs^2*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*f[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*gs^2*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*f[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*gs^2*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*f[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*gs^2*f[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*f[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":5,
+		"key":"W|Wbar|Z",
+		"fields":[
+			"W",
+			"Wbar",
+			"Z"
+		],
+		"legs":[
+			"{W, 1}",
+			"{Wbar, 2}",
+			"{Z, 3}"
+		],
+		"rule":"((-I)*cw*ee*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]])\/sw + (I*cw*ee*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]])\/sw + (I*cw*ee*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]])\/sw - (I*cw*ee*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]])\/sw - (I*cw*ee*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])\/sw + (I*cw*ee*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])\/sw"
+	},
+	{
+		"id":8,
+		"key":"W|Wbar|Z|Z",
+		"fields":[
+			"W",
+			"Wbar",
+			"Z",
+			"Z"
+		],
+		"legs":[
+			"{W, 1}",
+			"{Wbar, 2}",
+			"{Z, 3}",
+			"{Z, 4}"
+		],
+		"rule":"(I*cw^2*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])\/sw^2 + (I*cw^2*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]])\/sw^2 - ((2*I)*cw^2*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]])\/sw^2"
+	},
+	{
+		"id":6,
+		"key":"W|W|Wbar|Wbar",
+		"fields":[
+			"W",
+			"W",
+			"Wbar",
+			"Wbar"
+		],
+		"legs":[
+			"{W, 1}",
+			"{W, 2}",
+			"{Wbar, 3}",
+			"{Wbar, 4}"
+		],
+		"rule":"((-I)*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]])\/sw^2 - (I*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]])\/sw^2 + ((2*I)*ee^2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]])\/sw^2"
+	}
+]
