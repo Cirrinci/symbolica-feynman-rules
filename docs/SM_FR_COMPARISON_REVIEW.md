@@ -237,13 +237,19 @@ All seven JSON oracle files now live in tracked test fixtures. Comparison tests
 no longer read from the ignored `sandbox/` directory. Provenance regressions
 pin both the `SM.fr` source hash and the full vertex-export hash.
 
-### 2. `SM_feynpy.ipynb` is stale
+### 2. The Standard Model notebooks are current and executable — resolved
 
-The notebook's saved narrative reports 39 matter and 10 Yukawa matches, whereas
-the current references contain 51 and 42 respectively. Its saved cells claim
-8/8 gauge matches, but executing the notebook in the current workspace stops
-at the gauge assertion with 0/8 matches. The packaged model tests, not this
-notebook's saved output, are the current evidence for 163/163 agreement.
+The notebook roles are now explicit. `SM_feynpy.ipynb` is a literate,
+declaration-by-declaration FeynPy implementation of `SM.fr`: it defines the
+indices, parameters, fields, gauge groups, source Lagrangian, field
+transformations and compilation pipeline without calling the packaged builder.
+It prints all 163 nonzero FeynPy interaction rules followed by the 163 original
+FeynRules export strings. `SM_comparison.ipynb` uses the authoritative packaged
+`build_standard_model()` implementation and tracked fixtures for validation. It
+reports the current 8/51/42/38/24 sector counts, the complete 163/163 result,
+all eight exact-zero cancellation candidates, untouched and canonical
+side-by-side outputs, and reusable inspection helpers. Every code cell in both
+notebooks has freshly executed saved output and completes without errors.
 
 ### 3. Global signature coverage is tested — resolved
 
@@ -275,9 +281,10 @@ order, and the full suite passes in one process.
    remain an exact content partition of the full 163-entry export.
 3. **Resolved:** global nonzero-signature coverage evaluates every FeynPy
    candidate of arity 3–4 without reference-name filtering.
-4. Repair and re-execute `SM_feynpy.ipynb`; update its counts to 8/51/42/38/24
-   and make it call the packaged model or share the exact same compilation
-   helper used by the tests.
+4. **Resolved:** `SM_feynpy.ipynb` is the executable `SM.fr`-style model
+   implementation, while `SM_comparison.ipynb` uses the packaged model and
+   tracked fixtures to report 8/51/42/38/24 and 163/163. Both are saved with
+   fresh outputs.
 5. Add a separate two-point comparison for kinetic terms, masses,
    gauge–Goldstone mixing, ghost masses and gauge fixing. Do not use the
    hard-coded zero count as evidence.

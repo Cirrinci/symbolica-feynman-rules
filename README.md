@@ -60,6 +60,8 @@ with these notebooks, treat the notebook workflow as the source of truth.
 - `notebooks/flavor_expansion_walkthrough.ipynb`
 - `notebooks/index_handling.ipynb`
 - `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
+- `notebooks/SM_feynpy.ipynb` — literate `SM.fr`-style model implementation
+- `notebooks/SM_comparison.ipynb` — complete 163-vertex FeynRules comparison
 
 `notebooks/codebase_workflow_walkthrough.ipynb` is the next workflow notebook to
 bring into line with that modern API surface.
