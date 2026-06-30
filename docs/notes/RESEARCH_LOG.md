@@ -14,7 +14,7 @@ Rule:
 
 ### Current status snapshot
 
-As of 2026-06-26:
+As of 2026-06-30:
 
 - the active source tree is modularized under `src/`
 - the core symbolic extraction engine now lives in `src/symbolic/vertex_engine.py`
@@ -32,15 +32,18 @@ As of 2026-06-26:
 - transformation post-processing and validation now live in:
   - `src/feynpy/transformation_postprocess.py`
   - `src/feynpy/validation.py`
-- concrete theory definitions now live under:
-  - `src/theories/standard_model.py`
-  - `src/theories/_standard_model_support.py`
-  - `src/theories/standard_model_feynrules.py`
+- the complete Standard Model vertical slice now lives under `models/SM/`:
+  - `models/SM/SM.py`
+  - `models/SM/SM_support.py`
+  - `models/SM/feynrules_comparison.py`
+  - `models/SM/notebooks/`
+  - `models/SM/reference/feynrules/`
+  - `models/SM/tests/`
 - external FeynRules export parsing and comparison now lives under:
   - `src/feynrules/comparison.py`
 - the public package split is now explicit:
   - `feynpy` = reusable toolkit/engine
-  - `theories` = concrete theory packages, analogous to FeynRules model files
+  - `models` = concrete model bundles, analogous to FeynRules model directories
   - `feynrules` = external FeynRules export adapters and comparison helpers
 - declarative helper/building-block code lives in:
   - `src/lagrangian/operators.py`
@@ -50,9 +53,11 @@ As of 2026-06-26:
   - `examples/examples_flavor_expansion.py`
   - `examples/examples_su2.py`
   - `examples/examples_electroweak_unbroken.py`
-  - `examples/examples_standard_model.py`
+  - `models/SM/examples/example_standard_model.py`
 - dedicated regression coverage now lives in `tests/`
-- the Standard Model notebook is `notebooks/SM_feynpy.ipynb`
+- the Standard Model notebooks are:
+  - `models/SM/notebooks/SM_feynpy.ipynb`
+  - `models/SM/notebooks/SM_comparison.ipynb`
 - the canonical modern API notebooks remain:
   - `notebooks/list_lagrangians.ipynb`
   - `notebooks/field_strength_operators_walkthrough.ipynb`
@@ -2131,3 +2136,18 @@ What this achieved:
     canonicalization test
   - the codebase generic for the supported declaration scope, but not yet a
     complete FeynRules replacement
+
+### 2026-06-30: Standard Model vertical-slice relocation
+
+- all maintained Standard-Model-specific artifacts were consolidated under
+  `models/SM/`
+- the implementation modules are now `SM.py`, `SM_support.py`, and
+  `feynrules_comparison.py`
+- the two executable notebooks, seven tracked FeynRules reference exports,
+  focused tests, review, and example now live beside the model
+- the superseded lightweight text-comparison scripts, their stored text
+  outputs, and their six regression tests were removed; the maintained JSON
+  tensor comparator provides the stronger replacement
+- reusable FeynPy engine code remains under `src/feynpy/`, and the generic
+  FeynRules parser/comparator remains under `src/feynrules/`
+- the public model import is now `from models.SM import build_standard_model`

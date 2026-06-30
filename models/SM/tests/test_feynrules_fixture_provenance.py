@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 FIXTURE_DIR = (
-    Path(__file__).resolve().parent / "fixtures" / "feynrules" / "sm"
+    Path(__file__).resolve().parents[1] / "reference" / "feynrules"
 )
 SM_FR_SHA256 = "44690e769ecc4ed649033d2f9d58c5672203d8e820c56c90a378464204c99edc"
 SM_VERTEX_EXPORT_SHA256 = (

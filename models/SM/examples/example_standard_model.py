@@ -5,13 +5,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 SRC = REPO_ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+for path in (REPO_ROOT, SRC):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
-from theories import build_standard_model  # noqa: E402
-from symbolic.tensor_canonicalization import canonize_full  # noqa: E402
+from models.SM import build_standard_model  
+from symbolic.tensor_canonicalization import canonize_full  
 
 
 if __name__ == "__main__":

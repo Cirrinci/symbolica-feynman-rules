@@ -5,15 +5,15 @@ from feynrules.comparison import (
     compare_feynrules_yukawa_vertices,
     load_feynrules_json,
 )
-from theories import build_standard_model
-from theories.standard_model_feynrules import (
+from models.SM import build_standard_model
+from models.SM.feynrules_comparison import (
     standard_model_feynrules_field_map,
     standard_model_feynrules_name_aliases,
 )
 
 
 REFERENCE_DIR = (
-    Path(__file__).resolve().parent / "fixtures" / "feynrules" / "sm"
+    Path(__file__).resolve().parents[1] / "reference" / "feynrules"
 )
 
 

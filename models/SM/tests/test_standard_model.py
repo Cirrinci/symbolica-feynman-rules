@@ -5,7 +5,7 @@ from collections import Counter
 import pytest
 from symbolica import Expression, S
 
-from theories import build_standard_model, standard_model_weak_tensor_components
+from models.SM import build_standard_model, standard_model_weak_tensor_components
 from feynpy import (
     Model,
     find_source_basis_occurrences,

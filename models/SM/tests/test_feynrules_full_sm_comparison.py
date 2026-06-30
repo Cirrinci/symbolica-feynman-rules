@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from feynrules.comparison import load_feynrules_json
-from theories import build_standard_model
-from theories.standard_model_feynrules import (
+from models.SM import build_standard_model
+from models.SM.feynrules_comparison import (
     compare_feynrules_standard_model_vertices,
     standard_model_feynrules_field_map,
     standard_model_feynrules_name_aliases,
@@ -10,10 +10,9 @@ from theories.standard_model_feynrules import (
 
 
 REFERENCE_PATH = (
-    Path(__file__).resolve().parent
-    / "fixtures"
+    Path(__file__).resolve().parents[1]
+    / "reference"
     / "feynrules"
-    / "sm"
     / "sm_vertices_FeynRules.json"
 )
 

@@ -1,15 +1,14 @@
 from pathlib import Path
 
 from feynrules.comparison import load_feynrules_json
-from theories import build_standard_model
-from theories.standard_model_feynrules import standard_model_feynrules_name_aliases
+from models.SM import build_standard_model
+from models.SM.feynrules_comparison import standard_model_feynrules_name_aliases
 
 
 REFERENCE_PATH = (
-    Path(__file__).resolve().parent
-    / "fixtures"
+    Path(__file__).resolve().parents[1]
+    / "reference"
     / "feynrules"
-    / "sm"
     / "sm_vertices_FeynRules.json"
 )
 

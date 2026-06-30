@@ -50,7 +50,7 @@ from feynpy import (
     rotation,
 )
 
-from ._standard_model_support import (
+from .SM_support import (
     FOUR as _FOUR,
     HALF as _HALF,
     INV_SQRT2 as _INV_SQRT2,

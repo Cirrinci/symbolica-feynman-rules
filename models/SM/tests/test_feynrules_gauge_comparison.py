@@ -7,18 +7,17 @@ from feynrules.comparison import (
     load_feynrules_json,
     parse_feynrules_gauge_rule,
 )
-from theories import build_standard_model
-from theories.standard_model_feynrules import (
+from models.SM import build_standard_model
+from models.SM.feynrules_comparison import (
     standard_model_feynrules_field_map,
     standard_model_feynrules_name_aliases,
 )
 
 
 REFERENCE_PATH = (
-    Path(__file__).resolve().parent
-    / "fixtures"
+    Path(__file__).resolve().parents[1]
+    / "reference"
     / "feynrules"
-    / "sm"
     / "gauge_vertices_FeynRules.json"
 )
 

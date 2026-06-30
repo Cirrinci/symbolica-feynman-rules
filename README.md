@@ -11,7 +11,7 @@ model layer that maps FeynRules-style declarations into that engine.
 The package boundary follows the FeynRules split:
 
 - `feynpy` is the reusable toolkit/engine
-- `theories` contains concrete theory definitions, analogous to model files
+- `models` contains concrete model bundles, analogous to FeynRules model directories
 - `feynrules` contains external FeynRules export parsers and comparison helpers
 
 ### Repository layout
@@ -22,12 +22,12 @@ Live source code is organized as split packages rather than flat top-level files
   - public FeynPy engine API and implementation modules
   - metadata/declarations, compiled interaction objects, lowering, validation,
     and field transformations
-- `src/theories/`
-  - concrete theory definitions built on top of the engine
-  - the gauge-basis-to-broken Standard Model builder in `standard_model.py`
+- `models/SM/`
+  - the complete Standard Model vertical slice: implementation, notebooks,
+    reference data, tests, documentation, and example
 - `src/feynrules/`
   - generic adapters for parsing and comparing FeynRules vertex exports
-  - model-specific routing belongs in `theories`, not in the engine package
+  - model-specific routing lives beside each model, not in the engine package
 - `src/compiler/`
   - convention-fixed gauge / covariant compilation
   - public compiler entry points in `gauge.py`
@@ -41,13 +41,14 @@ Live source code is organized as split packages rather than flat top-level files
   - reusable operator builders such as bilinears, currents, and gauge-contact structures
 - `examples/`
   - runnable example/regression scripts
-  - includes flavor-expansion, SU(2), electroweak, and full Standard Model examples
+  - includes generic flavor-expansion, SU(2), and electroweak examples
 - `tests/`
   - the main regression suite
 - `docs/notes/RESEARCH_LOG.md`
   - tracked research log; other working notes stay local and out of git
 
-Walkthrough notebooks live under `notebooks/`.
+Generic walkthrough notebooks live under `notebooks/`; model-specific notebooks
+live beside their model.
 
 ### Canonical notebooks for the modern API
 
@@ -60,8 +61,8 @@ with these notebooks, treat the notebook workflow as the source of truth.
 - `notebooks/flavor_expansion_walkthrough.ipynb`
 - `notebooks/index_handling.ipynb`
 - `notebooks/operator_action_and_symbolica_walkthrough.ipynb`
-- `notebooks/SM_feynpy.ipynb` — literate `SM.fr`-style model implementation
-- `notebooks/SM_comparison.ipynb` — complete 163-vertex FeynRules comparison
+- `models/SM/notebooks/SM_feynpy.ipynb` — literate `SM.fr`-style implementation
+- `models/SM/notebooks/SM_comparison.ipynb` — complete 163-vertex comparison
 
 `notebooks/codebase_workflow_walkthrough.ipynb` is the next workflow notebook to
 bring into line with that modern API surface.
@@ -271,7 +272,7 @@ Run the main example/regression scripts from the repository root:
 - `./.venv/bin/python -m examples.examples_flavor_expansion`
 - `./.venv/bin/python examples/examples_su2.py`
 - `./.venv/bin/python examples/examples_electroweak_unbroken.py`
-- `./.venv/bin/python examples/examples_standard_model.py`
+- `./.venv/bin/python models/SM/examples/example_standard_model.py`
 - `./.venv/bin/python src/symbolic/spenso_gamma_checks.py`
 - `./.venv/bin/python -m pytest -q`
 

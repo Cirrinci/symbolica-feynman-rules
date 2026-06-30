@@ -2,7 +2,7 @@ import re
 
 from symbolica import Expression
 
-from theories import build_standard_model
+from models.SM import build_standard_model
 
 
 def test_charged_goldstone_flavor_expansion_does_not_multiply_disjoint_sums():

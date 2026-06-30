@@ -1,9 +1,9 @@
 import feynpy as feynpy_pkg
-import theories as theories_pkg
+import models.SM as sm_pkg
 from symbolica import S
 
 from feynpy import GaugeFixing, Model, PartialD
-from theories import build_standard_model
+from models.SM import build_standard_model
 from tests.support.builders import make_complex_scalar
 
 
@@ -28,7 +28,7 @@ def test_model_single_string_positional_argument_still_sets_name():
 
 def test_engine_and_concrete_model_packages_are_separate():
     assert not hasattr(feynpy_pkg, "build_standard_model")
-    assert hasattr(theories_pkg, "build_standard_model")
+    assert hasattr(sm_pkg, "build_standard_model")
 
 
 def test_model_accepts_positional_declared_term_with_name_and_metadata_keywords():
