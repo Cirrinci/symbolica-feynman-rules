@@ -30,7 +30,14 @@ from models.UnbrokenSM_BFM.comparison import (
 
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
-EXAMPLE_VERTEX = "lL|lLbar|Wi"
+EXAMPLE_VERTICES = (
+    ("G", "GQuantum", "G", "GQuantum"),
+    ("GQuantum", "GQuantum", "G", "G"),
+    ("GQuantum", "GQuantum", "GQuantum", "GQuantum"),
+    ("Wi", "WiQuantum", "Wi", "WiQuantum"),
+    ("WiQuantum", "WiQuantum", "Wi", "Wi"),
+    ("WiQuantum", "WiQuantum", "WiQuantum", "WiQuantum"),
+)
 
 
 def _plain(value) -> str:
@@ -43,7 +50,9 @@ def _plain(value) -> str:
 
 
 def _short_name(name: str) -> str:
-    return name.rsplit("::", 1)[-1]
+    short = name.rsplit("::", 1)[-1]
+    dummy = re.match(r"canon_dummy_\d+_(\d+)$", short)
+    return f"x{dummy.group(1)}" if dummy else short
 
 
 def _slot(expression: Expression) -> str:
@@ -132,6 +141,34 @@ def pretty_expression(expression: Expression, *, parent_precedence: int = 0) -> 
     return f"{clean_name}({', '.join(pretty_expression(arg) for arg in arguments)})"
 
 
+def _reference_rule_in_order(reference, requested_fields: tuple[str, ...]) -> str:
+    """Relabel FeynRules ``Ext``/``FV`` legs into a requested field order."""
+
+    old_positions: dict[str, list[int]] = {}
+    for old_position, name in enumerate(reference.fields, start=1):
+        old_positions.setdefault(name, []).append(old_position)
+
+    old_to_new: dict[int, int] = {}
+    for new_position, name in enumerate(requested_fields, start=1):
+        positions = old_positions.get(name)
+        if not positions:
+            raise ValueError(
+                f"Requested fields {requested_fields} do not match {reference.fields}"
+            )
+        old_to_new[positions.pop(0)] = new_position
+
+    text = re.sub(
+        r"Ext\[(\d+)\]",
+        lambda match: f"Ext[{old_to_new[int(match.group(1))]}]",
+        reference.rule,
+    )
+    return re.sub(
+        r"FV\[(\d+),",
+        lambda match: f"FV[{old_to_new[int(match.group(1))]},",
+        text,
+    )
+
+
 def main() -> None:
     theory = build_unbroken_sm_bfm()
 
@@ -149,35 +186,40 @@ def main() -> None:
     print("\nLSM = LGauge + LFermions + LHiggs + LYukawa + LGhost + LGaugeFixing")
     print(f"Compiled LSM terms: {len(theory.lagrangian.terms)}")
 
-    reference = next(
-        vertex
-        for vertex in load_feynrules_json(REFERENCE)
-        if vertex.key == EXAMPLE_VERTEX
-    )
+    references = load_feynrules_json(REFERENCE)
     mapping = field_map(theory.fields)
-    ordered_fields = tuple(mapping[name] for name in reference.fields)
+    example_matches = True
+    print("\n=== Selected gauge vertices ===")
+    for requested_names in EXAMPLE_VERTICES:
+        signature = tuple(sorted(requested_names))
+        reference = next(vertex for vertex in references if vertex.signature == signature)
+        ordered_fields = tuple(mapping[name] for name in requested_names)
+        reordered_reference_rule = _reference_rule_in_order(reference, requested_names)
 
-    feynpy_raw = theory.lagrangian.feynman_rule(
-        *ordered_fields,
-        simplify=True,
-        include_delta=False,
-    )
-    feynrules_parsed = parse_feynrules_rule(reference.rule)
-    feynpy_canonical = canonicalize_rule(feynpy_raw, ordered_fields)
-    feynrules_canonical = canonicalize_rule(feynrules_parsed, ordered_fields)
-    difference = (feynpy_canonical - feynrules_canonical).cancel().expand()
+        feynpy_raw = theory.lagrangian.feynman_rule(
+            *ordered_fields,
+            simplify=True,
+            include_delta=False,
+        )
+        feynpy_canonical = canonicalize_rule(feynpy_raw, ordered_fields)
+        feynrules_canonical = canonicalize_rule(
+            parse_feynrules_rule(reordered_reference_rule),
+            ordered_fields,
+        )
+        difference = (feynpy_canonical - feynrules_canonical).cancel().expand()
+        matches = difference.to_canonical_string() == "0"
+        example_matches = example_matches and matches
 
-    print(f"\n=== Example vertex: {EXAMPLE_VERTEX} ===")
-    print(f"External-leg order: {reference.fields}")
-    print("\nFeynPy rule (human-readable tensor notation):")
-    print(pretty_expression(feynpy_canonical))
-    print("\nFeynRules raw rule:")
-    print(reference.rule)
-    print("\nFeynRules after parsing ProjM and canonicalizing its current:")
-    print(pretty_expression(feynrules_canonical))
-    print("\nSymbolic difference:")
-    print(pretty_expression(difference))
-    print("MATCH" if difference.to_canonical_string() == "0" else "MISMATCH")
+        print(f"\n--- {' / '.join(requested_names)} ---")
+        print("FeynPy:")
+        print(pretty_expression(feynpy_canonical))
+        print("FeynRules (external legs relabelled to this order):")
+        print(reordered_reference_rule)
+        print(
+            "Comparison after tensor canonicalization: "
+            f"{'MATCH' if matches else 'MISMATCH'} "
+            f"(difference = {pretty_expression(difference)})"
+        )
 
     result = write_outputs()
     print("\n=== JSON export ===")
@@ -185,7 +227,7 @@ def main() -> None:
     print("models/UnbrokenSM_BFM/comparison_report.json")
     print(f"Complete comparison: {result.matched}/{result.total}")
 
-    if difference.to_canonical_string() != "0" or not result.all_match:
+    if not example_matches or not result.all_match:
         raise SystemExit(1)
 
 
