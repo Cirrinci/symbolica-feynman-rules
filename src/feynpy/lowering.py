@@ -663,7 +663,12 @@ def _declared_factor_explicit_label_refs(
         refs.append((lorentz_index, factor.left_index, "Metric"))
         refs.append((lorentz_index, factor.right_index, "Metric"))
     elif isinstance(factor, GeneratorFactor):
-        refs.append((COLOR_ADJ_INDEX, factor.adjoint_index, "T"))
+        adjoint_index = (
+            WEAK_ADJ_INDEX
+            if factor.index_kind in (WEAK_FUND_INDEX.kind, WEAK_ADJ_INDEX.kind)
+            else COLOR_ADJ_INDEX
+        )
+        refs.append((adjoint_index, factor.adjoint_index, "T"))
     elif isinstance(factor, StructureConstantFactor):
         refs.append((COLOR_ADJ_INDEX, factor.left_index, "StructureConstant"))
         refs.append((COLOR_ADJ_INDEX, factor.middle_index, "StructureConstant"))

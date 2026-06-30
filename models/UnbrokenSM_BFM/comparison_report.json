@@ -1,0 +1,9 @@
+{
+  "reference": "sandbox/wolframnotebook/LSM_full_FeynRules.json",
+  "total": 67,
+  "matched": 67,
+  "all_match": true,
+  "feynrules_only": [],
+  "feynpy_only": [],
+  "mismatches": []
+}
