@@ -23,7 +23,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from feynpy import (  # noqa: E402
-    CovD,
+    DC,
     Field,
     GaugeGroup,
     GaugeRepresentation,
@@ -106,14 +106,14 @@ fermion_model = Model(
     name="EW-fermion-demo",
     gauge_groups=(SU2L, U1Y),
     fields=(LDoublet, WField, BField),
-    lagrangian_decl=I * LDoublet.bar * Gamma(mu) * CovD(LDoublet, mu),
+    lagrangian_decl=I * LDoublet.bar * Gamma(mu) * DC(LDoublet, mu),
 )
 
 higgs_model = Model(
     name="EW-higgs-demo",
     gauge_groups=(SU2L, U1Y),
     fields=(HDoublet, WField, BField),
-    lagrangian_decl=CovD(HDoublet.bar, mu) * CovD(HDoublet, mu),
+    lagrangian_decl=DC(HDoublet.bar, mu) * DC(HDoublet, mu),
 )
 
 

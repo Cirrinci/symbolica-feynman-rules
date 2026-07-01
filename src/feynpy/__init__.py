@@ -18,8 +18,9 @@ live in the sibling ``theories`` package, which plays the role that model
 files play in FeynRules.
 
 Declarative ``lagrangian_decl`` factors live in ``declared.py``:
-``CovD``, ``PartialD``, ``Gamma``, ``Gamma5``, ``Metric``, ``T``,
-``StructureConstant``, ``FieldStrength``, ``GaugeFixing``, ``GhostLagrangian``.
+``DC``, ``PartialD``, ``Gamma``, ``Gamma5``, ``Metric``, ``T``,
+``StructureConstant``, ``FS``, ``GaugeFixing``, ``GhostLagrangian``.
+The descriptive aliases ``CovD`` and ``FieldStrength`` remain available.
 Replacement-expression matrix factors (``ProjM``, ``ProjP``, ``rotation(...)``)
 let ``FieldTransformation(source, expr)`` carry projectors and flavor rotations.
 """
@@ -66,7 +67,9 @@ from .metadata import (
 from .declared import (
     CovariantDerivativeFactor,
     CovD,
+    DC,
     DifferentiatedCovariantFactor,
+    FS,
     FieldStrength,
     FieldStrengthFactor,
     Gamma,

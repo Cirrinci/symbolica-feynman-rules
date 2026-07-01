@@ -23,9 +23,9 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from feynpy import (  # noqa: E402
-    CovD,
+    DC,
     Field,
-    FieldStrength,
+    FS,
     GaugeGroup,
     GaugeRepresentation,
     Gamma,
@@ -86,14 +86,14 @@ fermion_model = Model(
     name="SU2L-fermion-demo",
     gauge_groups=(SU2L,),
     fields=(LDoublet, WField),
-    lagrangian_decl=I * LDoublet.bar * Gamma(mu) * CovD(LDoublet, mu),
+    lagrangian_decl=I * LDoublet.bar * Gamma(mu) * DC(LDoublet, mu),
 )
 
 scalar_model = Model(
     name="SU2L-scalar-demo",
     gauge_groups=(SU2L,),
     fields=(HDoublet, WField),
-    lagrangian_decl=CovD(HDoublet.bar, mu) * CovD(HDoublet, mu),
+    lagrangian_decl=DC(HDoublet.bar, mu) * DC(HDoublet, mu),
 )
 
 ym_model = Model(
@@ -101,7 +101,7 @@ ym_model = Model(
     gauge_groups=(SU2L,),
     fields=(WField,),
     lagrangian_decl=-(Expression.num(1) / Expression.num(4))
-    * FieldStrength(SU2L, mu, nu, S("aW")) * FieldStrength(SU2L, mu, nu, S("aW")),
+    * FS(SU2L, mu, nu, S("aW")) * FS(SU2L, mu, nu, S("aW")),
 )
 
 

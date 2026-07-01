@@ -20,7 +20,7 @@ from symbolic.spenso_structures import (
     chiral_projector_right,
 )
 # ---------------------------------------------------------------------------
-# Declarative Lagrangian factors  (CovD / Gamma / FieldStrength DSL)
+# Declarative Lagrangian factors  (DC / Gamma / FS DSL)
 # ---------------------------------------------------------------------------
 
 
@@ -80,7 +80,7 @@ class CovariantDerivativeFactor(_DeclaredFactorMixin):
 
     def __str__(self):
         base = f"{self.field.name}.bar" if self.conjugated and not self.field.self_conjugate else self.field.name
-        return f"CovD({base}, {self.lorentz_index})"
+        return f"DC({base}, {self.lorentz_index})"
 
 
 @dataclass(frozen=True)
@@ -196,10 +196,10 @@ class FieldStrengthFactor(_DeclaredFactorMixin):
         group_name = getattr(self.gauge_group, "name", self.gauge_group)
         if self.adjoint_index is not None:
             return (
-                f"FieldStrength({group_name}, {self.left_index}, "
+                f"FS({group_name}, {self.left_index}, "
                 f"{self.right_index}, {self.adjoint_index})"
             )
-        return f"FieldStrength({group_name}, {self.left_index}, {self.right_index})"
+        return f"FS({group_name}, {self.left_index}, {self.right_index})"
 
 
 @dataclass(frozen=True)
@@ -459,13 +459,13 @@ class _DeclaredMonomial:
         return " * ".join(pieces)
 
 
-def CovD(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
-    """Declarative covariant derivative factor for ``DeclaredLagrangian``.
+def DC(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
+    """FeynRules-style covariant derivative for ``DeclaredLagrangian``.
 
     Accepts ``Field``, ``Field.bar``, or ``(Field, bool)`` and can be used in
-    expressions such as ``I * Psi.bar * Gamma(mu) * CovD(Psi, mu)``.
+    expressions such as ``I * Psi.bar * Gamma(mu) * DC(Psi, mu)``.
 
-    ``CovD(...)`` is metadata-dependent: it belongs in a ``Model(...)``
+    ``DC(...)`` is metadata-dependent: it belongs in a ``Model(...)``
     declaration compiled through ``model.lagrangian()``.
     """
     from .interactions import _parse_field_arg
@@ -478,12 +478,16 @@ def CovD(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor
     )
 
 
+# Backward-compatible descriptive spelling retained for existing model files.
+CovD = DC
+
+
 def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialDerivativeFactor:
     """Declarative partial derivative factor for local derivative monomials.
 
     Accepts ``Field``, ``Field.bar``, ``FieldOccurrence``, ``(Field, bool)``,
     another ``PartialD(...)`` factor to build higher derivatives, or
-    ``CovD(...)`` to differentiate an already-declared covariant factor.
+    ``DC(...)`` to differentiate an already-declared covariant factor.
     """
     from .interactions import FieldOccurrence
     from .interactions import _parse_field_arg
@@ -491,7 +495,7 @@ def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialD
     if isinstance(field, DifferentiatedCovariantFactor):
         if labels is not None or conjugated:
             raise TypeError(
-                "Nested PartialD(CovD(...)) already carries field labels and conjugation."
+                "Nested PartialD(DC(...)) already carries field labels and conjugation."
             )
         return DifferentiatedCovariantFactor(
             covariant_factor=field.covariant_factor,
@@ -500,7 +504,7 @@ def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialD
     if isinstance(field, CovariantDerivativeFactor):
         if labels is not None or conjugated:
             raise TypeError(
-                "Pass labels/conjugation either through CovD(...) or through PartialD(...), "
+                "Pass labels/conjugation either through DC(...) or through PartialD(...), "
                 "not both."
             )
         return DifferentiatedCovariantFactor(
@@ -641,17 +645,18 @@ def StructureConstant(left_index, middle_index, right_index) -> StructureConstan
     )
 
 
-def FieldStrength(gauge_group, left_index, right_index, adjoint_index=None) -> FieldStrengthFactor:
-    """Declarative field-strength placeholder for ``DeclaredLagrangian``.
+def FS(gauge_group, left_index, right_index, adjoint_index=None) -> FieldStrengthFactor:
+    """FeynRules-style field-strength placeholder for ``DeclaredLagrangian``.
 
-    ``FieldStrength(...)`` participates in metadata-dependent gauge-sector
+    ``FS(...)`` participates in metadata-dependent gauge-sector
     lowering and should be declared through a ``Model(...)`` compiled with
-    ``model.lagrangian()``.
+    ``model.lagrangian()``. Its first argument remains a FeynPy ``GaugeGroup``
+    rather than the gauge-boson symbol used by FeynRules.
 
     For non-abelian gauge groups the adjoint index is mandatory, e.g.
-    ``FieldStrength(SU3, mu, nu, a)``; the compiler expands it into
+    ``FS(SU3, mu, nu, a)``; the compiler expands it into
     ``d_mu A^a_nu - d_nu A^a_mu + g f^{abc} A^b_mu A^c_nu``. Abelian groups
-    must omit it (``FieldStrength(U1, mu, nu)``) and expand into
+    must omit it (``FS(U1, mu, nu)``) and expand into
     ``d_mu A_nu - d_nu A_mu``.
     """
     return FieldStrengthFactor(
@@ -660,6 +665,10 @@ def FieldStrength(gauge_group, left_index, right_index, adjoint_index=None) -> F
         right_index=right_index,
         adjoint_index=adjoint_index,
     )
+
+
+# Backward-compatible descriptive spelling retained for existing model files.
+FieldStrength = FS
 
 
 def GaugeFixing(gauge_group, *, xi=1, coefficient=1, label="") -> GaugeFixingDeclaration:

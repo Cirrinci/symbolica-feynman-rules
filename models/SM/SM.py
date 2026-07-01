@@ -25,10 +25,10 @@ from symbolic.vertex_engine import I
 from feynpy import (
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
-    CovD,
+    DC,
     DeclaredLagrangian,
     Field,
-    FieldStrength,
+    FS,
     FieldTransformation,
     Gamma,
     GaugeFixing,
@@ -621,24 +621,24 @@ def build_standard_model(
     # Source Lagrangian in the gauge basis
     LGauge = (
         -_ONE / _FOUR
-        * FieldStrength(gauge_groups.U1Y, mu, nu)
-        * FieldStrength(gauge_groups.U1Y, mu, nu)
+        * FS(gauge_groups.U1Y, mu, nu)
+        * FS(gauge_groups.U1Y, mu, nu)
         - _ONE / _FOUR
-        * FieldStrength(gauge_groups.SU2L, mu, nu, weak_adj)
-        * FieldStrength(gauge_groups.SU2L, mu, nu, weak_adj)
+        * FS(gauge_groups.SU2L, mu, nu, weak_adj)
+        * FS(gauge_groups.SU2L, mu, nu, weak_adj)
         - _ONE / _FOUR
-        * FieldStrength(gauge_groups.SU3C, mu, nu, colour_adj)
-        * FieldStrength(gauge_groups.SU3C, mu, nu, colour_adj)
+        * FS(gauge_groups.SU3C, mu, nu, colour_adj)
+        * FS(gauge_groups.SU3C, mu, nu, colour_adj)
     )
     LFermions = (
-        I * fields.QL.bar * Gamma(mu) * CovD(fields.QL, mu)
-        + I * fields.LL.bar * Gamma(mu) * CovD(fields.LL, mu)
-        + I * fields.uR.bar * Gamma(mu) * CovD(fields.uR, mu)
-        + I * fields.dR.bar * Gamma(mu) * CovD(fields.dR, mu)
-        + I * fields.lR.bar * Gamma(mu) * CovD(fields.lR, mu)
+        I * fields.QL.bar * Gamma(mu) * DC(fields.QL, mu)
+        + I * fields.LL.bar * Gamma(mu) * DC(fields.LL, mu)
+        + I * fields.uR.bar * Gamma(mu) * DC(fields.uR, mu)
+        + I * fields.dR.bar * Gamma(mu) * DC(fields.dR, mu)
+        + I * fields.lR.bar * Gamma(mu) * DC(fields.lR, mu)
     )
     LHiggs = (
-        CovD(fields.Phi.bar, mu) * CovD(fields.Phi, mu)
+        DC(fields.Phi.bar, mu) * DC(fields.Phi, mu)
         + parameters.lam
         * parameters.vev**2
         * fields.Phi.bar

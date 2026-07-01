@@ -45,8 +45,10 @@ print(vertex)
 ```
 
 For gauge theories, the declaration language also provides `GaugeGroup`,
-`CovD`, `FieldStrength`, `Gamma`, `PartialD`, `GaugeFixing` and
-`GhostLagrangian`.
+FeynRules-style `DC` and `FS`, `Gamma`, `PartialD`, `GaugeFixing` and
+`GhostLagrangian`. The older descriptive names `CovD` and `FieldStrength`
+remain available as compatibility aliases. FeynRules' `del` is spelled
+`PartialD` because `del` is a Python keyword.
 
 ## Standard Model
 

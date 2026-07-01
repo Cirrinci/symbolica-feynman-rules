@@ -21,10 +21,10 @@ from feynpy import (
     LORENTZ_INDEX,
     SPINOR_INDEX,
     CompiledLagrangian,
-    CovD,
+    DC,
     DeclaredLagrangian,
     Field,
-    FieldStrength,
+    FS,
     FieldTransformation,
     Gamma,
     GaugeGroup,
@@ -470,25 +470,25 @@ def build_unbroken_sm_bfm(*, name: str = "UnbrokenSM_BFM") -> UnbrokenSMBFM:
     f1, f2 = S("f1"), S("f2")
 
     LGauge = (
-        -ONE / FOUR * FieldStrength(u1, mu, nu) * FieldStrength(u1, mu, nu)
+        -ONE / FOUR * FS(u1, mu, nu) * FS(u1, mu, nu)
         - ONE
         / FOUR
-        * FieldStrength(su2, mu, nu, aw)
-        * FieldStrength(su2, mu, nu, aw)
+        * FS(su2, mu, nu, aw)
+        * FS(su2, mu, nu, aw)
         - ONE
         / FOUR
-        * FieldStrength(su3, mu, nu, ac)
-        * FieldStrength(su3, mu, nu, ac)
+        * FS(su3, mu, nu, ac)
+        * FS(su3, mu, nu, ac)
     )
     LFermions = (
-        I * QL.bar * Gamma(mu) * CovD(QL, mu)
-        + I * LL.bar * Gamma(mu) * CovD(LL, mu)
-        + I * UR.bar * Gamma(mu) * CovD(UR, mu)
-        + I * DR.bar * Gamma(mu) * CovD(DR, mu)
-        + I * LR.bar * Gamma(mu) * CovD(LR, mu)
+        I * QL.bar * Gamma(mu) * DC(QL, mu)
+        + I * LL.bar * Gamma(mu) * DC(LL, mu)
+        + I * UR.bar * Gamma(mu) * DC(UR, mu)
+        + I * DR.bar * Gamma(mu) * DC(DR, mu)
+        + I * LR.bar * Gamma(mu) * DC(LR, mu)
     )
     LHiggs = (
-        CovD(Phi.bar, mu) * CovD(Phi, mu)
+        DC(Phi.bar, mu) * DC(Phi, mu)
         - parameters.muH**2 * Phi.bar * Phi
         - parameters.lam * Phi.bar * Phi * Phi.bar * Phi
     )
@@ -582,8 +582,8 @@ def build_unbroken_sm_bfm(*, name: str = "UnbrokenSM_BFM") -> UnbrokenSMBFM:
     # derivative contains background + quantum gauge fields.
     LGhostDirect = DeclaredLagrangian.from_item(
         -ghB.bar * PartialD(PartialD(ghB, mu), mu)
-        - ghWt.bar * PartialD(CovD(ghWt, mu), mu)
-        - ghGt.bar * PartialD(CovD(ghGt, mu), mu)
+        - ghWt.bar * PartialD(DC(ghWt, mu), mu)
+        - ghGt.bar * PartialD(DC(ghGt, mu), mu)
     )
     ghost_transformations = (
         FieldTransformation(Bt, B + Bq),
