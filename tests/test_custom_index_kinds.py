@@ -212,3 +212,31 @@ def test_custom_kinds_yukawa_feynman_rule_matches_default():
     )
 
     assert _canon(custom_rule) == _canon(default_rule)
+
+
+def test_same_index_kind_and_representation_can_share_a_label():
+    left_index = IndexType("Left", Representation.cof(2), "shared", prefix="i")
+    right_index = IndexType("Right", Representation.cof(2), "shared", prefix="i")
+    left = Field("Left", spin=0, self_conjugate=True, indices=(left_index,))
+    right = Field("Right", spin=0, self_conjugate=True, indices=(right_index,))
+    label = S("shared_label")
+
+    model = Model(left(label) * right(label))
+
+    assert model.lagrangian().terms
+    assert model.feynman_rule(left, right)
+
+
+def test_same_index_kind_with_incompatible_representations_is_rejected():
+    doublet_index = IndexType(
+        "Doublet", Representation.cof(2), "shared", dimension=2, prefix="i"
+    )
+    triplet_index = IndexType(
+        "Triplet", Representation.cof(3), "shared", dimension=3, prefix="i"
+    )
+    doublet = Field("Doublet", spin=0, self_conjugate=True, indices=(doublet_index,))
+    triplet = Field("Triplet", spin=0, self_conjugate=True, indices=(triplet_index,))
+    label = S("shared_label")
+
+    with pytest.raises(ValueError, match="incompatible index types"):
+        Model(doublet(label) * triplet(label))

@@ -108,7 +108,16 @@ def is_lorentz_index(index: IndexType) -> bool:
 
 def indices_compatible_for_labels(left: IndexType, right: IndexType) -> bool:
     """Whether two declared indices may share one symbolic label in a monomial."""
-    if left == right or left.kind == right.kind:
+    if left == right:
+        return True
+
+    same_representation = (
+        representation_family(left.representation)
+        == representation_family(right.representation)
+    )
+    if not same_representation:
+        return False
+    if left.kind == right.kind:
         return True
     if is_spinor_index(left) and is_spinor_index(right):
         return True
