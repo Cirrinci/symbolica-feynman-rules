@@ -1,0 +1,146 @@
+% ============================================================
+%  chapter_internals.tex — How the toolkit works internally
+% ============================================================
+
+% ==============================================================
+\chapter{Implementation: From \texttt{Model} to Feynman Rule}
+\label{ch:internals}
+% ==============================================================
+
+The previous chapter described \textit{how to use} the toolkit. This chapter describes \textit{how it works}: what happens, step by step, between writing \py{Model(...)} and getting back a Symbolica expression for a vertex. The guiding principle is that the whole derivation is a direct, mechanical implementation of the algorithm of Section~\ref{sec:feynrules-algorithm}: attach creation operators, contract them to the left using the (anti)commutation relations, strip external factors. Everything in this chapter is the bookkeeping needed to do that contraction correctly when fields carry many kinds of indices (Lorentz, Dirac, colour, flavour) and the Lagrangian is written in a compact, index-free-looking notation.
+
+At the top level the pipeline has five stages:
+\begin{enumerate}
+    \item \textbf{Declaration} — the user writes \py{Model(...)}: fields, gauge groups and a symbolic Lagrangian built from \py{CovD}, \py{PartialD}, \py{FieldStrength}, \py{Gamma}, etc. This is purely declarative; no physics has been expanded yet.
+    \item \textbf{Lowering / compilation} — \py{model.lagrangian()} expands every declarative factor (covariant derivatives, field strengths, gauge fixing, ghosts) into elementary monomials of bare fields, and packages each monomial as an \py{InteractionTerm}: a coupling, a tuple of field occurrences, and the derivatives acting on them. The result is a \py{CompiledLagrangian}.
+    \item \textbf{Flavor expansion (optional)} — generation/flavour indices are resolved into concrete per-member terms, dropping any vanishing components.
+    \item \textbf{Contraction} — for a chosen set of external fields, \py{feynman_rule(...)} builds one \py{ExternalLeg} per field, normalizes everything to flat data via \py{InteractionTerm.to\_vertex\_kwargs(...)}, and calls \py{contract\_to\_full\_expression}: the actual Wick-contraction engine, i.e. the code-level realization of the three-step algorithm above.
+    \item \textbf{Post-processing} — the raw contraction is multiplied by the universal overall $i$, optionally decorated with the momentum-conservation $\delta$, and simplified: metrics/deltas contracted, gamma chains reduced, colour factors simplified, using Spenso/idenso.
+\end{enumerate}
+
+Sections~\ref{sec:internals-symbolica-spenso}--\ref{sec:internals-postprocessing} go through these stages in more detail.
+
+% --------------------------------------------------------------
+\section{Symbolica and Spenso}
+\label{sec:internals-symbolica-spenso}
+% --------------------------------------------------------------
+
+The whole toolkit is built on top of two libraries, and it is worth being precise about what each one is responsible for.
+
+\paragraph{Symbolica.} \textsc{Symbolica}~\cite{symbolica}\todo{add bib entry} is a general-purpose computer-algebra system (a Rust engine with Python bindings) for manipulating large symbolic expressions: expression trees, polynomial and rational arithmetic, pattern matching with wildcards and term rewriting, differentiation, series expansion. Everything we build --- couplings, momenta, gamma matrices, structure constants --- is ultimately a Symbolica \py{Expression}. It plays the same role that a computer-algebra backend (e.g.\ FORM or Mathematica) plays in \textsc{FeynRules}, but embedded natively in Python rather than driven as an external process.
+
+\paragraph{Spenso.} Symbolica alone has no notion of a tensor index: a symbol \py{G(mu,a)} is just a function of two opaque arguments, and nothing tells Symbolica that \py{mu} lives in a 4-dimensional Minkowski space or that repeating \py{a} means ``sum over the adjoint representation''. \textsc{Spenso}~\cite{spenso}\todo{add bib entry} is a companion tensor-network library that adds exactly this: a \py{Representation} (e.g.\ \py{mink(4)}, \py{bis(4)}, \py{cof(3)}, \py{coad(8)}) can be attached to an index to create a typed \py{Slot}, tensors built from typed slots know how to contract with one another, and a small companion module, \textbf{idenso}, supplies physics-aware simplification passes for the resulting tensor networks: \py{simplify_metrics} (contract Kronecker deltas / metrics), \py{simplify_gamma} (Clifford algebra on chains of $\gamma$ matrices), and \py{simplify_color} (Fierz-type $SU(N)$ colour identities). In short: \textbf{Symbolica manipulates expressions; Spenso tells Symbolica what the indices inside those expressions mean.}
+
+The toolkit's \py{IndexType} (Section~\ref{sec:feynpy-indices}) is precisely the bridge between the two: it pairs a Spenso \py{Representation} with a string \emph{kind} used everywhere internally to decide which indices are allowed to contract with which.
+
+% --------------------------------------------------------------
+\section{Indices as Typed Slots}
+\label{sec:internals-indices}
+% --------------------------------------------------------------
+
+Every index that appears anywhere in the pipeline --- on a field, on a derivative, on a coupling --- is tagged with an \py{IndexType(name, representation, kind, prefix)}. The \emph{representation} is the Spenso object that fixes the dimension and transformation law (fundamental, adjoint, Minkowski, bispinor, \dots); the \emph{kind} is a plain string (\py{"lorentz"}, \py{"spinor"}, \py{"color\_fund"}, \dots) used as a fast key throughout the compiler to match indices without repeatedly inspecting the representation. A given field, e.g.\ a quark, simply carries a tuple of \py{IndexType} objects, one per slot it owns.
+
+An index becomes a concrete \emph{label} (a Symbolica symbol such as \py{mu} or an automatically generated dummy \py{mu\_1}) only once a specific occurrence of a field is placed inside a term. This label bookkeeping is centralized in one small object:
+
+\begin{minted}{python}
+@dataclass(frozen=True)
+class FieldOccurrence:
+    field: Field
+    conjugated: bool = False
+    labels: Mapping = field(default_factory=dict)   # slot -> label
+\end{minted}
+
+Given a full \py{InteractionTerm} (a tuple of \py{FieldOccurrence}, plus any derivatives), the property \py{index\_bindings} groups \emph{every} slot and derivative index in the term by \py{(IndexType, label)}. This single grouping is what tells the rest of the pipeline whether an index is:
+\begin{itemize}
+    \item \textbf{internal / contracted} — the same label occurs on exactly two slots (e.g.\ a repeated colour index summed inside the term), or
+    \item \textbf{open / external} — the label occurs once, and must therefore be identified with an index carried by one of the external legs when a vertex is later extracted.
+\end{itemize}
+This is exactly the distinction that later drives the index-remapping step inside \py{contract\_to\_full\_expression} (Section~\ref{sec:internals-contraction}).
+
+% --------------------------------------------------------------
+\section{From a Declared Model to \texttt{InteractionTerm}s}
+\label{sec:internals-lowering}
+% --------------------------------------------------------------
+
+Writing \py{Model(I * Quark.bar * Gamma(mu) * CovD(Quark, mu), gauge_groups=(SU3C,))} does not yet produce anything expandable: it only builds a lightweight declarative tree of \emph{factors} (\py{\_FieldFactor}, \py{CovariantDerivativeFactor}, \py{FieldStrengthFactor}, \dots) which record \emph{what the user wrote}, not yet its expansion. All physics-dependent expansion happens once, when \py{model.lagrangian()} is called, in two cooperating layers:
+
+\begin{itemize}
+    \item \texttt{feynpy.lowering} — pure rewriting rules that do not need to know about a specific gauge group: turning a Dirac kinetic monomial into elementary field/derivative factors, expanding a \py{FieldStrengthFactor} into its $\partial A - \partial A + g f A A$ pieces, etc.
+    \item \texttt{compiler.gauge} (and its helpers \texttt{covariant\_core}, \texttt{matter\_actions}, \texttt{spectators}) — the layer that actually knows the frozen conventions of the toolkit: $D_\mu = \partial_\mu - ig A_\mu$, the sign of the non-abelian field strength, how a gauge-fixing or Faddeev--Popov ghost declaration expands once a \py{GaugeGroup} is supplied.
+\end{itemize}
+
+Concretely, \py{CovD(Quark, mu)} is rewritten as \py{PartialD(Quark, mu) - I*g*t(a, i, j)*Gluon(mu,a)*Quark(j)} (schematically), each non-abelian \py{FieldStrength} expands into 2-, 3- and 4-point pieces, and every resulting elementary monomial is packaged into one \py{InteractionTerm}:
+
+\begin{minted}{python}
+@dataclass(frozen=True)
+class InteractionTerm:
+    coupling: object                       # Symbolica Expression
+    fields: tuple[FieldOccurrence, ...]     # bare field factors, in order
+    derivatives: tuple[DerivativeAction, ...] = ()
+    dirac_bilinears: tuple[DiracBilinear, ...] = ()
+    label: str = ""
+    sector: str = ""
+\end{minted}
+
+A \py{CompiledLagrangian} is nothing more than a tuple of such \py{InteractionTerm}s. Note what has \emph{not} happened yet: no creation operators, no permutations, no external momenta --- \py{InteractionTerm} is a purely static, index-labelled description of one monomial of the Lagrangian, i.e. the right-hand side of Eq.~\ref{eq:general-term}. It is the direct code counterpart of $g_{\alpha_1\cdots\alpha_n}\,\partial\cdots\partial\,\phi^{\alpha_1}\cdots\phi^{\alpha_n}$.
+
+\begin{tcolorbox}[notebox, title=Note]
+Every \py{InteractionTerm} also records the field \emph{statistics} (boson/fermion, derived from its field content) and, when relevant, which pairs of fermionic slots form a closed Dirac bilinear (\py{\bar\psi \cdots \psi}). This structural information --- rather than re-deriving it from index labels at contraction time --- is what lets the engine assign the correct fermionic sign (Section~\ref{sec:internals-contraction}).
+\end{tcolorbox}
+
+\subsection*{Flavor expansion}
+If a field carries a flavour index (Section~\ref{sec:feynpy-flavor}), \py{InteractionTerm}s stay generation-generic by default: a single term such as $\lambda_{ij}\,\bar\ell_i \ell_j \, \phi$ implicitly sums over $i,j$. \py{flavor\_expand=True} (module \texttt{feynpy.flavor}) instead enumerates every member combination, substitutes the corresponding \py{Parameter} component (e.g.\ $\lambda_{e\mu}$), and \emph{drops} the term entirely if that component was declared to be zero. This produces one fully explicit \py{InteractionTerm} per generation combination, still in the same data structure described above.
+
+% --------------------------------------------------------------
+\section{The Contraction Engine: \texttt{contract\_to\_full\_expression}}
+\label{sec:internals-contraction}
+% --------------------------------------------------------------
+
+This function, in \texttt{symbolic.vertex\_engine}, is the only place where the actual physics of Section~\ref{sec:feynrules-algorithm} happens; everything else in the toolkit exists to feed it the right, uniformly-shaped input. Before it is called, \py{InteractionTerm.to\_vertex\_kwargs(external\_legs)} strips away all the model-layer vocabulary (\py{Field}, \py{IndexType}, \dots) and reduces the term plus the requested external legs to plain parallel Python sequences: \py{alphas}/\py{betas} (species of each internal field slot / external leg), \py{ps} (external momenta), \py{field\_roles}/\py{leg\_roles} (is this slot a $\psi$, a $\bar\psi$, a boson\dots), index labels and index \emph{kinds} per slot, and the coupling itself.
+
+Given these flat inputs, \py{contract\_to\_full\_expression} implements the three-step algorithm literally:
+
+\begin{enumerate}
+    \item \textbf{Sum over all pairings.} It loops over every permutation of the $n$ internal field slots against the $n$ external legs (\py{itertools.permutations}) --- this is precisely ``attach one creation operator per field and contract to the left'': each permutation is one way of assigning an external leg to an internal field slot, and the sum over all of them is the full Wick contraction.
+    \item \textbf{Reject incompatible pairings, keep the sign.} A permutation contributes only if each internal slot is paired with a leg of the same species and compatible role (\py{factor\_leg\_compatible}); for fermions, the term is weighted by the sign of the permutation restricted to the fermionic slots (or, when the term carries a structural \py{closed\_dirac\_bilinears} pattern, by the sign fixed by that $\bar\psi\cdots\psi$ pairing instead of the raw permutation parity) --- the anticommutator sign of the canonical-quantization algorithm.
+    \item \textbf{Remap indices and strip factors.} For each surviving permutation, every \emph{open} index label on the coupling/derivatives (Section~\ref{sec:internals-indices}) is substituted by the label carried by the leg it was paired with (\py{.replace(...)}), and each derivative contributes a momentum factor $-ip_\mu$ (Fourier convention) for the momentum of the leg it now acts on. All the contributions are summed into one Symbolica expression.
+\end{enumerate}
+
+\begin{minted}{python}
+def contract_to_full_expression(
+    *, alphas, betas, ps, x,
+    derivative_indices=(), derivative_targets=None,
+    statistics="boson", field_roles=None, leg_roles=None,
+    field_index_labels=None, leg_index_labels=None,
+    coupling=None, closed_dirac_bilinears=None,
+):
+    ...
+    for perm in permutations(range(n)):
+        term = coupling_with_open_indices_remapped_along(perm)
+        if not all(compatible(i, perm[i]) for i in range(n)):
+            continue
+        if statistics == "fermion":
+            term *= fermion_sign(perm, ...)
+        term *= momentum_factors_from(derivatives, perm)
+        total += term
+    return total
+\end{minted}
+
+The result, \py{total}, is the vacuum matrix element of Section~\ref{sec:feynrules-algorithm} \emph{before} dropping the external wavefunctions/exponential and before multiplying by the overall $i$: those two remaining bookkeeping steps, together with the optional momentum-conservation $\delta$, are applied by the thin wrapper \py{vertex\_factor(...)}, which is what \py{feynman\_rule(...)} actually calls.
+
+\begin{tcolorbox}[infobox, title={Why this generalizes so well}]
+Nothing in \py{contract\_to\_full\_expression} is specific to Lorentz or colour indices: an index is just a \py{(kind, label)} pair, and ``open'' vs.\ ``internal'' is determined purely by how many times a label occurs (Section~\ref{sec:internals-indices}). This is why the same engine derives QED, QCD, electroweak and ghost vertices without a single index-kind-specific branch.
+\end{tcolorbox}
+
+% --------------------------------------------------------------
+\section{Post-processing and Canonicalization}
+\label{sec:internals-postprocessing}
+% --------------------------------------------------------------
+
+The raw output of \py{contract\_to\_full\_expression} is correct but redundant: it is a sum over $n!$ permutation terms, most of which vanish or duplicate each other once tensor identities are used, and it still contains internal Spenso tensor heads with arbitrary dummy-index names. Two further passes clean this up.
+
+\texttt{symbolic.vertex\_postprocessing} applies the model-aware simplifications: contracting species Kronecker deltas (\py{simplify\_deltas}), collapsing repeated bispinor indices via the Spenso metric (\py{simplify\_spinor\_indices}), and, if requested, running full Dirac-algebra simplification on closed gamma chains (\py{simplify\_gamma=True} in \py{feynman\_rule(...)}).
+
+\texttt{symbolic.tensor\_canonicalization} then puts the surviving expression into a canonical form. Symbolica's own \py{canonize\_tensors} only understands plain symbols with an \py{is\_symmetric}/\py{is\_antisymmetric} flag, not Spenso tensor heads, so the module temporarily \emph{swaps} every Spenso tensor (metric, generator, structure constant, \dots) for a plain symbol carrying the right symmetry, canonicalizes, and swaps back --- giving canonical, deterministic dummy-index names without losing the typed Spenso representation used everywhere else. On top of this generic pass, \py{canonize\_full} adds a few physics-specific reductions used repeatedly when checking identities (Section~\ref{sec:feynpy-gauge-variation}, \ref{sec:feynpy-brst}): commuting flat partial derivatives, reducing repeated structure constants via the Jacobi identity, and recognizing antisymmetric-in-Lorentz-indices terms that must vanish.
+
+The Symbolica expression returned by \py{feynman\_rule(...)} is the result of all of the above: lowering $\to$ contraction $\to$ vertex factor $\to$ simplification, with every intermediate object (\py{InteractionTerm}, \py{ExternalLeg}, the flat contraction inputs) fully inspectable, which is what makes the toolkit usable both as a Feynman-rule calculator and as a general symbolic Lagrangian-manipulation environment (Section~\ref{sec:feynpy-apply-operator} onward).

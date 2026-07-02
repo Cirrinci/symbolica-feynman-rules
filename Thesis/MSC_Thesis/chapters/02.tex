@@ -1,4 +1,5 @@
 \chapter{Theoretical Background}
+\label{ch:theory}
 \section{The beauty of Symmetry}
 
 Over the centuries, physics has developed increasingly with the aim of understanding and describing the universe and its nature. One might think that mathematical complexity has increased steadily in order to describe the universe, and in a sense this is true, but how far have we gone? Is there a limit to the complexity we can achieve? Is there a risk, however remote, that physicists might lose control of this mathematical machine, which is becoming ever more complex and detached from any conceivable reality and, ultimately, from the physical world? 
@@ -320,6 +321,7 @@ throughout when working with $SU(N)$ gauge theories.
 
 
 \section{From the Lagrangian to Feynman Rules}
+\label{sec:feynrules-algorithm}
 
 In this section we want to explain but algorithm has been used to calculate Feynamn Rules given a lagrangian. If the reader lacks of kwoledge in QFT he is very welcomed to read a good textbook on the topic. To fully understand the algorithm the reader should be familiar with canonical quantization, the interaction picture, or Wick's theorem, we
 assume this material here and use it only to fix notation.
@@ -357,7 +359,7 @@ fermionic fields.
 \subsection{The FeynRules Algorithm}
 
 In order to understand the algorithm let's start by considering a general single term of a Lagrangian
-\begin{equation}
+\begin{equation}\label{eq:general-term}
     \mathcal L \supset g_{\alpha_1 \cdots \alpha_n}\,
     \partial \cdots \partial\, \phi^{\alpha_1} \cdots \phi^{\alpha_n},
 \end{equation}
