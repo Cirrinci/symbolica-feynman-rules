@@ -1,0 +1,1057 @@
+[
+	{
+		"id":18,
+		"key":"B|B|Phi|Phibar",
+		"fields":[
+			"B",
+			"B",
+			"Phi",
+			"Phibar"
+		],
+		"legs":[
+			"{B, 1}",
+			"{B, 2}",
+			"{Phi, 3}",
+			"{Phibar, 4}"
+		],
+		"rule":"(I\/2)*g1^2*IndexDelta[Index[SU2D, Ext[3]], Index[SU2D, Ext[4]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]"
+	},
+	{
+		"id":19,
+		"key":"B|BQuantum|Phi|Phibar",
+		"fields":[
+			"B",
+			"BQuantum",
+			"Phi",
+			"Phibar"
+		],
+		"legs":[
+			"{B, 1}",
+			"{BQuantum, 2}",
+			"{Phi, 3}",
+			"{Phibar, 4}"
+		],
+		"rule":"(I\/2)*g1^2*IndexDelta[Index[SU2D, Ext[3]], Index[SU2D, Ext[4]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]"
+	},
+	{
+		"id":64,
+		"key":"B|dR|dRbar",
+		"fields":[
+			"dRbar",
+			"dR",
+			"B"
+		],
+		"legs":[
+			"{dRbar, 1}",
+			"{dR, 2}",
+			"{B, 3}"
+		],
+		"rule":"(-1\/3*I)*g1*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":58,
+		"key":"B|eR|eRbar",
+		"fields":[
+			"eRbar",
+			"eR",
+			"B"
+		],
+		"legs":[
+			"{eRbar, 1}",
+			"{eR, 2}",
+			"{B, 3}"
+		],
+		"rule":"(-I)*g1*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":48,
+		"key":"B|lL|lLbar",
+		"fields":[
+			"lLbar",
+			"lL",
+			"B"
+		],
+		"legs":[
+			"{lLbar, 1}",
+			"{lL, 2}",
+			"{B, 3}"
+		],
+		"rule":"(-1\/2*I)*g1*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":16,
+		"key":"B|Phi|Phibar",
+		"fields":[
+			"B",
+			"Phi",
+			"Phibar"
+		],
+		"legs":[
+			"{B, 1}",
+			"{Phi, 2}",
+			"{Phibar, 3}"
+		],
+		"rule":"(I\/2)*g1*FV[2, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]] - (I\/2)*g1*FV[3, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]"
+	},
+	{
+		"id":26,
+		"key":"B|Phi|Phibar|Wi",
+		"fields":[
+			"B",
+			"Phi",
+			"Phibar",
+			"Wi"
+		],
+		"legs":[
+			"{B, 1}",
+			"{Phi, 2}",
+			"{Phibar, 3}",
+			"{Wi, 4}"
+		],
+		"rule":"I*g1*g2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[3]], Index[SU2D, Ext[2]]]"
+	},
+	{
+		"id":34,
+		"key":"B|Phi|Phibar|WiQuantum",
+		"fields":[
+			"B",
+			"Phi",
+			"Phibar",
+			"WiQuantum"
+		],
+		"legs":[
+			"{B, 1}",
+			"{Phi, 2}",
+			"{Phibar, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g1*g2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[3]], Index[SU2D, Ext[2]]]"
+	},
+	{
+		"id":52,
+		"key":"B|qL|qLbar",
+		"fields":[
+			"qLbar",
+			"qL",
+			"B"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{qL, 2}",
+			"{B, 3}"
+		],
+		"rule":"(I\/6)*g1*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":20,
+		"key":"BQuantum|BQuantum|Phi|Phibar",
+		"fields":[
+			"BQuantum",
+			"BQuantum",
+			"Phi",
+			"Phibar"
+		],
+		"legs":[
+			"{BQuantum, 1}",
+			"{BQuantum, 2}",
+			"{Phi, 3}",
+			"{Phibar, 4}"
+		],
+		"rule":"(I\/2)*g1^2*IndexDelta[Index[SU2D, Ext[3]], Index[SU2D, Ext[4]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]"
+	},
+	{
+		"id":65,
+		"key":"BQuantum|dR|dRbar",
+		"fields":[
+			"dRbar",
+			"dR",
+			"BQuantum"
+		],
+		"legs":[
+			"{dRbar, 1}",
+			"{dR, 2}",
+			"{BQuantum, 3}"
+		],
+		"rule":"(-1\/3*I)*g1*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":59,
+		"key":"BQuantum|eR|eRbar",
+		"fields":[
+			"eRbar",
+			"eR",
+			"BQuantum"
+		],
+		"legs":[
+			"{eRbar, 1}",
+			"{eR, 2}",
+			"{BQuantum, 3}"
+		],
+		"rule":"(-I)*g1*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":49,
+		"key":"BQuantum|lL|lLbar",
+		"fields":[
+			"lLbar",
+			"lL",
+			"BQuantum"
+		],
+		"legs":[
+			"{lLbar, 1}",
+			"{lL, 2}",
+			"{BQuantum, 3}"
+		],
+		"rule":"(-1\/2*I)*g1*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":17,
+		"key":"BQuantum|Phi|Phibar",
+		"fields":[
+			"BQuantum",
+			"Phi",
+			"Phibar"
+		],
+		"legs":[
+			"{BQuantum, 1}",
+			"{Phi, 2}",
+			"{Phibar, 3}"
+		],
+		"rule":"(I\/2)*g1*FV[2, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]] - (I\/2)*g1*FV[3, Index[Lorentz, Ext[1]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]"
+	},
+	{
+		"id":27,
+		"key":"BQuantum|Phi|Phibar|Wi",
+		"fields":[
+			"BQuantum",
+			"Phi",
+			"Phibar",
+			"Wi"
+		],
+		"legs":[
+			"{BQuantum, 1}",
+			"{Phi, 2}",
+			"{Phibar, 3}",
+			"{Wi, 4}"
+		],
+		"rule":"I*g1*g2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[3]], Index[SU2D, Ext[2]]]"
+	},
+	{
+		"id":35,
+		"key":"BQuantum|Phi|Phibar|WiQuantum",
+		"fields":[
+			"BQuantum",
+			"Phi",
+			"Phibar",
+			"WiQuantum"
+		],
+		"legs":[
+			"{BQuantum, 1}",
+			"{Phi, 2}",
+			"{Phibar, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g1*g2*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[3]], Index[SU2D, Ext[2]]]"
+	},
+	{
+		"id":53,
+		"key":"BQuantum|qL|qLbar",
+		"fields":[
+			"qLbar",
+			"qL",
+			"BQuantum"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{qL, 2}",
+			"{BQuantum, 3}"
+		],
+		"rule":"(I\/6)*g1*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":61,
+		"key":"BQuantum|uR|uRbar",
+		"fields":[
+			"uRbar",
+			"uR",
+			"BQuantum"
+		],
+		"legs":[
+			"{uRbar, 1}",
+			"{uR, 2}",
+			"{BQuantum, 3}"
+		],
+		"rule":"((2*I)\/3)*g1*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":60,
+		"key":"B|uR|uRbar",
+		"fields":[
+			"uRbar",
+			"uR",
+			"B"
+		],
+		"legs":[
+			"{uRbar, 1}",
+			"{uR, 2}",
+			"{B, 3}"
+		],
+		"rule":"((2*I)\/3)*g1*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":24,
+		"key":"dRbar|Phibar|qL",
+		"fields":[
+			"dRbar",
+			"qL",
+			"Phibar"
+		],
+		"legs":[
+			"{dRbar, 1}",
+			"{qL, 2}",
+			"{Phibar, 3}"
+		],
+		"rule":"(-I)*Conjugate[yd[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":66,
+		"key":"dR|dRbar|G",
+		"fields":[
+			"dRbar",
+			"dR",
+			"G"
+		],
+		"legs":[
+			"{dRbar, 1}",
+			"{dR, 2}",
+			"{G, 3}"
+		],
+		"rule":"I*g3*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":67,
+		"key":"dR|dRbar|GQuantum",
+		"fields":[
+			"dRbar",
+			"dR",
+			"GQuantum"
+		],
+		"legs":[
+			"{dRbar, 1}",
+			"{dR, 2}",
+			"{GQuantum, 3}"
+		],
+		"rule":"I*g3*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":45,
+		"key":"dR|Phi|qLbar",
+		"fields":[
+			"qLbar",
+			"dR",
+			"Phi"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{dR, 2}",
+			"{Phi, 3}"
+		],
+		"rule":"(-I)*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yd[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]"
+	},
+	{
+		"id":22,
+		"key":"eRbar|lL|Phibar",
+		"fields":[
+			"eRbar",
+			"lL",
+			"Phibar"
+		],
+		"legs":[
+			"{eRbar, 1}",
+			"{lL, 2}",
+			"{Phibar, 3}"
+		],
+		"rule":"(-I)*Conjugate[yl[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":46,
+		"key":"eR|lLbar|Phi",
+		"fields":[
+			"lLbar",
+			"eR",
+			"Phi"
+		],
+		"legs":[
+			"{lLbar, 1}",
+			"{eR, 2}",
+			"{Phi, 3}"
+		],
+		"rule":"(-I)*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yl[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]"
+	},
+	{
+		"id":6,
+		"key":"G|G|G",
+		"fields":[
+			"G",
+			"G",
+			"G"
+		],
+		"legs":[
+			"{G, 1}",
+			"{G, 2}",
+			"{G, 3}"
+		],
+		"rule":"g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":8,
+		"key":"G|G|G|G",
+		"fields":[
+			"G",
+			"G",
+			"G",
+			"G"
+		],
+		"legs":[
+			"{G, 1}",
+			"{G, 2}",
+			"{G, 3}",
+			"{G, 4}"
+		],
+		"rule":"I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":11,
+		"key":"G|G|G|GQuantum",
+		"fields":[
+			"G",
+			"G",
+			"G",
+			"GQuantum"
+		],
+		"legs":[
+			"{G, 1}",
+			"{G, 2}",
+			"{G, 3}",
+			"{GQuantum, 4}"
+		],
+		"rule":"I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":5,
+		"key":"G|G|ghG|ghGbar",
+		"fields":[
+			"ghGbar",
+			"ghG",
+			"G",
+			"G"
+		],
+		"legs":[
+			"{ghGbar, 1}",
+			"{ghG, 2}",
+			"{G, 3}",
+			"{G, 4}"
+		],
+		"rule":"I*g3^2*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[4]], Index[Gluon, Ext[1]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] + I*g3^2*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[4]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":7,
+		"key":"G|G|GQuantum",
+		"fields":[
+			"G",
+			"G",
+			"GQuantum"
+		],
+		"legs":[
+			"{G, 1}",
+			"{G, 2}",
+			"{GQuantum, 3}"
+		],
+		"rule":"g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":12,
+		"key":"G|G|GQuantum|GQuantum",
+		"fields":[
+			"G",
+			"G",
+			"GQuantum",
+			"GQuantum"
+		],
+		"legs":[
+			"{G, 1}",
+			"{G, 2}",
+			"{GQuantum, 3}",
+			"{GQuantum, 4}"
+		],
+		"rule":"(-I)*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":3,
+		"key":"G|ghG|ghGbar",
+		"fields":[
+			"ghGbar",
+			"ghG",
+			"G"
+		],
+		"legs":[
+			"{ghGbar, 1}",
+			"{ghG, 2}",
+			"{G, 3}"
+		],
+		"rule":"2*g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[2, Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":9,
+		"key":"G|ghG|ghGbar|GQuantum",
+		"fields":[
+			"ghGbar",
+			"ghG",
+			"G",
+			"GQuantum"
+		],
+		"legs":[
+			"{ghGbar, 1}",
+			"{ghG, 2}",
+			"{G, 3}",
+			"{GQuantum, 4}"
+		],
+		"rule":"I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] + I*g3^2*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[4]], Index[Gluon, Ext[1]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":10,
+		"key":"G|GQuantum|GQuantum",
+		"fields":[
+			"G",
+			"GQuantum",
+			"GQuantum"
+		],
+		"legs":[
+			"{G, 1}",
+			"{GQuantum, 2}",
+			"{GQuantum, 3}"
+		],
+		"rule":"-(g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]) + g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] + g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] + g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[1]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":14,
+		"key":"G|GQuantum|GQuantum|GQuantum",
+		"fields":[
+			"G",
+			"GQuantum",
+			"GQuantum",
+			"GQuantum"
+		],
+		"legs":[
+			"{G, 1}",
+			"{GQuantum, 2}",
+			"{GQuantum, 3}",
+			"{GQuantum, 4}"
+		],
+		"rule":"I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":4,
+		"key":"ghG|ghGbar|GQuantum",
+		"fields":[
+			"ghGbar",
+			"ghG",
+			"GQuantum"
+		],
+		"legs":[
+			"{ghGbar, 1}",
+			"{ghG, 2}",
+			"{GQuantum, 3}"
+		],
+		"rule":"g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[2, Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[1]], Index[Gluon, Ext[2]]]*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":1,
+		"key":"ghWi|ghWibar|Wi",
+		"fields":[
+			"ghWibar",
+			"ghWi",
+			"Wi"
+		],
+		"legs":[
+			"{ghWibar, 1}",
+			"{ghWi, 2}",
+			"{Wi, 3}"
+		],
+		"rule":"2*g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[2, Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":2,
+		"key":"ghWi|ghWibar|WiQuantum",
+		"fields":[
+			"ghWibar",
+			"ghWi",
+			"WiQuantum"
+		],
+		"legs":[
+			"{ghWibar, 1}",
+			"{ghWi, 2}",
+			"{WiQuantum, 3}"
+		],
+		"rule":"g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[2, Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[3, Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":29,
+		"key":"ghWi|ghWibar|Wi|Wi",
+		"fields":[
+			"ghWibar",
+			"ghWi",
+			"Wi",
+			"Wi"
+		],
+		"legs":[
+			"{ghWibar, 1}",
+			"{ghWi, 2}",
+			"{Wi, 3}",
+			"{Wi, 4}"
+		],
+		"rule":"I*g2^2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[4]], Index[SU2W, Ext[1]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] + I*g2^2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[4]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":38,
+		"key":"ghWi|ghWibar|Wi|WiQuantum",
+		"fields":[
+			"ghWibar",
+			"ghWi",
+			"Wi",
+			"WiQuantum"
+		],
+		"legs":[
+			"{ghWibar, 1}",
+			"{ghWi, 2}",
+			"{Wi, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] + I*g2^2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[4]], Index[SU2W, Ext[1]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":54,
+		"key":"G|qL|qLbar",
+		"fields":[
+			"qLbar",
+			"qL",
+			"G"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{qL, 2}",
+			"{G, 3}"
+		],
+		"rule":"I*g3*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":13,
+		"key":"GQuantum|GQuantum|GQuantum",
+		"fields":[
+			"GQuantum",
+			"GQuantum",
+			"GQuantum"
+		],
+		"legs":[
+			"{GQuantum, 1}",
+			"{GQuantum, 2}",
+			"{GQuantum, 3}"
+		],
+		"rule":"g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g3*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":15,
+		"key":"GQuantum|GQuantum|GQuantum|GQuantum",
+		"fields":[
+			"GQuantum",
+			"GQuantum",
+			"GQuantum",
+			"GQuantum"
+		],
+		"legs":[
+			"{GQuantum, 1}",
+			"{GQuantum, 2}",
+			"{GQuantum, 3}",
+			"{GQuantum, 4}"
+		],
+		"rule":"I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[2]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[3]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g3^2*fsu3[Index[Gluon, Ext[1]], Index[Gluon, Ext[3]], Index[Gluon, Gluon$1]]*fsu3[Index[Gluon, Ext[2]], Index[Gluon, Ext[4]], Index[Gluon, Gluon$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":55,
+		"key":"GQuantum|qL|qLbar",
+		"fields":[
+			"qLbar",
+			"qL",
+			"GQuantum"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{qL, 2}",
+			"{GQuantum, 3}"
+		],
+		"rule":"I*g3*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":63,
+		"key":"GQuantum|uR|uRbar",
+		"fields":[
+			"uRbar",
+			"uR",
+			"GQuantum"
+		],
+		"legs":[
+			"{uRbar, 1}",
+			"{uR, 2}",
+			"{GQuantum, 3}"
+		],
+		"rule":"I*g3*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":62,
+		"key":"G|uR|uRbar",
+		"fields":[
+			"uRbar",
+			"uR",
+			"G"
+		],
+		"legs":[
+			"{uRbar, 1}",
+			"{uR, 2}",
+			"{G, 3}"
+		],
+		"rule":"I*g3*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*T[Index[Gluon, Ext[3]], Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjP][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":50,
+		"key":"lL|lLbar|Wi",
+		"fields":[
+			"lLbar",
+			"lL",
+			"Wi"
+		],
+		"legs":[
+			"{lLbar, 1}",
+			"{lL, 2}",
+			"{Wi, 3}"
+		],
+		"rule":"I*g2*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":51,
+		"key":"lL|lLbar|WiQuantum",
+		"fields":[
+			"lLbar",
+			"lL",
+			"WiQuantum"
+		],
+		"legs":[
+			"{lLbar, 1}",
+			"{lL, 2}",
+			"{WiQuantum, 3}"
+		],
+		"rule":"I*g2*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":47,
+		"key":"Phibar|qLbar|uR",
+		"fields":[
+			"qLbar",
+			"uR",
+			"Phibar"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{uR, 2}",
+			"{Phibar, 3}"
+		],
+		"rule":"(-I)*Eps[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjP[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]*yu[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]"
+	},
+	{
+		"id":25,
+		"key":"Phi|Phibar|Wi",
+		"fields":[
+			"Phi",
+			"Phibar",
+			"Wi"
+		],
+		"legs":[
+			"{Phi, 1}",
+			"{Phibar, 2}",
+			"{Wi, 3}"
+		],
+		"rule":"I*g2*FV[1, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]] - I*g2*FV[2, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]]"
+	},
+	{
+		"id":33,
+		"key":"Phi|Phibar|WiQuantum",
+		"fields":[
+			"Phi",
+			"Phibar",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Phi, 1}",
+			"{Phibar, 2}",
+			"{WiQuantum, 3}"
+		],
+		"rule":"I*g2*FV[1, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]] - I*g2*FV[2, Index[Lorentz, Ext[3]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, Ext[1]]]"
+	},
+	{
+		"id":37,
+		"key":"Phi|Phibar|WiQuantum|WiQuantum",
+		"fields":[
+			"Phi",
+			"Phibar",
+			"WiQuantum",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Phi, 1}",
+			"{Phibar, 2}",
+			"{WiQuantum, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, SU2D$1]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, SU2D$1], Index[SU2D, Ext[1]]] + I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, SU2D$1], Index[SU2D, Ext[1]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[2]], Index[SU2D, SU2D$1]]"
+	},
+	{
+		"id":28,
+		"key":"Phi|Phibar|Wi|Wi",
+		"fields":[
+			"Phi",
+			"Phibar",
+			"Wi",
+			"Wi"
+		],
+		"legs":[
+			"{Phi, 1}",
+			"{Phibar, 2}",
+			"{Wi, 3}",
+			"{Wi, 4}"
+		],
+		"rule":"I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, SU2D$1]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, SU2D$1], Index[SU2D, Ext[1]]] + I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, SU2D$1], Index[SU2D, Ext[1]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[2]], Index[SU2D, SU2D$1]]"
+	},
+	{
+		"id":36,
+		"key":"Phi|Phibar|Wi|WiQuantum",
+		"fields":[
+			"Phi",
+			"Phibar",
+			"Wi",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Phi, 1}",
+			"{Phibar, 2}",
+			"{Wi, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[2]], Index[SU2D, SU2D$1]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, SU2D$1], Index[SU2D, Ext[1]]] + I*g2^2*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, SU2D$1], Index[SU2D, Ext[1]]]*Ta[Index[SU2W, Ext[4]], Index[SU2D, Ext[2]], Index[SU2D, SU2D$1]]"
+	},
+	{
+		"id":21,
+		"key":"Phi|Phi|Phibar|Phibar",
+		"fields":[
+			"Phi",
+			"Phi",
+			"Phibar",
+			"Phibar"
+		],
+		"legs":[
+			"{Phi, 1}",
+			"{Phi, 2}",
+			"{Phibar, 3}",
+			"{Phibar, 4}"
+		],
+		"rule":"(-2*I)*lam*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[4]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]] - (2*I)*lam*IndexDelta[Index[SU2D, Ext[1]], Index[SU2D, Ext[3]]]*IndexDelta[Index[SU2D, Ext[2]], Index[SU2D, Ext[4]]]"
+	},
+	{
+		"id":23,
+		"key":"Phi|qL|uRbar",
+		"fields":[
+			"uRbar",
+			"qL",
+			"Phi"
+		],
+		"legs":[
+			"{uRbar, 1}",
+			"{qL, 2}",
+			"{Phi, 3}"
+		],
+		"rule":"(-I)*Conjugate[yu[Index[Generation, Ext[2]], Index[Generation, Ext[1]]]]*Eps[Index[SU2D, Ext[2]], Index[SU2D, Ext[3]]]*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":56,
+		"key":"qL|qLbar|Wi",
+		"fields":[
+			"qLbar",
+			"qL",
+			"Wi"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{qL, 2}",
+			"{Wi, 3}"
+		],
+		"rule":"I*g2*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":57,
+		"key":"qL|qLbar|WiQuantum",
+		"fields":[
+			"qLbar",
+			"qL",
+			"WiQuantum"
+		],
+		"legs":[
+			"{qLbar, 1}",
+			"{qL, 2}",
+			"{WiQuantum, 3}"
+		],
+		"rule":"I*g2*IndexDelta[Index[Colour, Ext[1]], Index[Colour, Ext[2]]]*IndexDelta[Index[Generation, Ext[1]], Index[Generation, Ext[2]]]*Ta[Index[SU2W, Ext[3]], Index[SU2D, Ext[1]], Index[SU2D, Ext[2]]]*TensDot[Ga[Index[Lorentz, Ext[3]]], ProjM][Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
+	},
+	{
+		"id":42,
+		"key":"WiQuantum|WiQuantum|WiQuantum",
+		"fields":[
+			"WiQuantum",
+			"WiQuantum",
+			"WiQuantum"
+		],
+		"legs":[
+			"{WiQuantum, 1}",
+			"{WiQuantum, 2}",
+			"{WiQuantum, 3}"
+		],
+		"rule":"g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":44,
+		"key":"WiQuantum|WiQuantum|WiQuantum|WiQuantum",
+		"fields":[
+			"WiQuantum",
+			"WiQuantum",
+			"WiQuantum",
+			"WiQuantum"
+		],
+		"legs":[
+			"{WiQuantum, 1}",
+			"{WiQuantum, 2}",
+			"{WiQuantum, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":39,
+		"key":"Wi|WiQuantum|WiQuantum",
+		"fields":[
+			"Wi",
+			"WiQuantum",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Wi, 1}",
+			"{WiQuantum, 2}",
+			"{WiQuantum, 3}"
+		],
+		"rule":"-(g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]) + g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] + g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] + g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] - g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[1]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":43,
+		"key":"Wi|WiQuantum|WiQuantum|WiQuantum",
+		"fields":[
+			"Wi",
+			"WiQuantum",
+			"WiQuantum",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Wi, 1}",
+			"{WiQuantum, 2}",
+			"{WiQuantum, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":30,
+		"key":"Wi|Wi|Wi",
+		"fields":[
+			"Wi",
+			"Wi",
+			"Wi"
+		],
+		"legs":[
+			"{Wi, 1}",
+			"{Wi, 2}",
+			"{Wi, 3}"
+		],
+		"rule":"g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, Ext[3]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":31,
+		"key":"Wi|Wi|WiQuantum",
+		"fields":[
+			"Wi",
+			"Wi",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Wi, 1}",
+			"{Wi, 2}",
+			"{WiQuantum, 3}"
+		],
+		"rule":"g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[1, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[2, Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]] - g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[1, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[3, Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]] + g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[2, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] - g2*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[1]], Index[SU2W, Ext[2]]]*FV[3, Index[Lorentz, Ext[1]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]]"
+	},
+	{
+		"id":41,
+		"key":"Wi|Wi|WiQuantum|WiQuantum",
+		"fields":[
+			"Wi",
+			"Wi",
+			"WiQuantum",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Wi, 1}",
+			"{Wi, 2}",
+			"{WiQuantum, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"(-I)*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":32,
+		"key":"Wi|Wi|Wi|Wi",
+		"fields":[
+			"Wi",
+			"Wi",
+			"Wi",
+			"Wi"
+		],
+		"legs":[
+			"{Wi, 1}",
+			"{Wi, 2}",
+			"{Wi, 3}",
+			"{Wi, 4}"
+		],
+		"rule":"I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	},
+	{
+		"id":40,
+		"key":"Wi|Wi|Wi|WiQuantum",
+		"fields":[
+			"Wi",
+			"Wi",
+			"Wi",
+			"WiQuantum"
+		],
+		"legs":[
+			"{Wi, 1}",
+			"{Wi, 2}",
+			"{Wi, 3}",
+			"{WiQuantum, 4}"
+		],
+		"rule":"I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[4]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[3]]] + I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[2]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[3]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[3]]]*ME[Index[Lorentz, Ext[2]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]] - I*g2^2*fsu2[Index[SU2W, Ext[1]], Index[SU2W, Ext[3]], Index[SU2W, SU2W$1]]*fsu2[Index[SU2W, Ext[2]], Index[SU2W, Ext[4]], Index[SU2W, SU2W$1]]*ME[Index[Lorentz, Ext[1]], Index[Lorentz, Ext[2]]]*ME[Index[Lorentz, Ext[3]], Index[Lorentz, Ext[4]]]"
+	}
+]

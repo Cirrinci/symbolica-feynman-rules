@@ -1,5 +1,5 @@
 {
-  "reference": "sandbox/wolframnotebook/LSM_full_FeynRules.json",
+  "reference": "models/UnbrokenSM_BFM/reference/feynrules/LSM_full_FeynRules.json",
   "total": 67,
   "matched": 67,
   "all_match": true,

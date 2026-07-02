@@ -1,4 +1,4 @@
-"""FeynPy implementation of ``papers/UnbrokenSM_BFM.fr.txt``.
+"""FeynPy implementation of the bundled FeynRules ``UnbrokenSM_BFM.fr``.
 
 The gauge, fermion, Higgs and Yukawa sectors are declared in the unsplit
 gauge basis.  One simultaneous field transformation implements the

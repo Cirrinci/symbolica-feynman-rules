@@ -40,7 +40,8 @@ from symbolic.tensor_canonicalization import canonize_full
 from symbolic.vertex_engine import pcomp
 
 
-REFERENCE = ROOT / "sandbox/wolframnotebook/LSM_full_FeynRules.json"
+REFERENCE_DIR = Path(__file__).with_name("reference") / "feynrules"
+REFERENCE = REFERENCE_DIR / "LSM_full_FeynRules.json"
 FEYNPY_OUTPUT = Path(__file__).with_name("feynpy_vertices.json")
 COMPARISON_OUTPUT = Path(__file__).with_name("comparison_report.json")
 
