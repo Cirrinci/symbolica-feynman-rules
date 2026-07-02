@@ -17,6 +17,7 @@ from .metadata import (
     IndexType,
     Statistics,
     _copy_index_labels,
+    _freeze_mapping,
     _normalize_index_labels,
     is_lorentz_index,
     lorentz_index_for,
@@ -247,16 +248,17 @@ class FieldOccurrence:
 
     field: Field
     conjugated: bool = False
-    labels: dict = field(default_factory=dict)
+    labels: Mapping = field(default_factory=dict)
     slot_labels: SlotLabels = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         normalized = _normalize_index_labels(self.field, self.labels)
-        object.__setattr__(self, "labels", normalized)
+        frozen_labels = _freeze_mapping(normalized)
+        object.__setattr__(self, "labels", frozen_labels)
         object.__setattr__(
             self,
             "slot_labels",
-            SlotLabels.from_legacy(self.field, normalized),
+            SlotLabels.from_legacy(self.field, frozen_labels),
         )
 
     @property
@@ -347,16 +349,17 @@ class ExternalLeg:
     conjugated: bool = False
     species: object = None
     spin: object = None
-    labels: dict = field(default_factory=dict)
+    labels: Mapping = field(default_factory=dict)
     slot_labels: SlotLabels = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         normalized = _normalize_index_labels(self.field, self.labels)
-        object.__setattr__(self, "labels", normalized)
+        frozen_labels = _freeze_mapping(normalized)
+        object.__setattr__(self, "labels", frozen_labels)
         object.__setattr__(
             self,
             "slot_labels",
-            SlotLabels.from_legacy(self.field, normalized),
+            SlotLabels.from_legacy(self.field, frozen_labels),
         )
 
     @property

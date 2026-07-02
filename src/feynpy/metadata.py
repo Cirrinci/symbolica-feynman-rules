@@ -6,6 +6,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
 from fractions import Fraction
+from types import MappingProxyType
 from typing import Callable, Literal, Mapping, Optional, Sequence
 
 _REP_ANSI = re.compile(r"\x1b\[[0-9;]*m")
@@ -36,6 +37,13 @@ from symbolic.spenso_structures import (
 )
 
 Statistics = Literal["boson", "fermion"]
+
+
+def _freeze_mapping(values: Optional[Mapping]) -> Mapping:
+    """Return an immutable snapshot of one public metadata mapping."""
+    return MappingProxyType(dict(values or {}))
+
+
 # ---------------------------------------------------------------------------
 # FieldRole  (typed replacement for raw strings like "psi", "scalar")
 # ---------------------------------------------------------------------------
@@ -494,8 +502,7 @@ class Parameter:
                     f"got {len(key)} for key {raw_key!r}."
                 )
             normalized_components[tuple(key)] = component_value
-        if normalized_components:
-            object.__setattr__(self, "components", normalized_components)
+        object.__setattr__(self, "components", _freeze_mapping(normalized_components))
 
     @property
     def is_real(self) -> bool:
@@ -694,6 +701,11 @@ class Field:
     class_members: tuple = ()
 
     def __post_init__(self):
+        object.__setattr__(
+            self,
+            "quantum_numbers",
+            _freeze_mapping(self.quantum_numbers),
+        )
         if self.ghost_of is not None:
             if self.kind is None:
                 object.__setattr__(self, "kind", "ghost")
