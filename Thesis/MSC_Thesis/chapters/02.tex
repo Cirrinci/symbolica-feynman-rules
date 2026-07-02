@@ -1,0 +1,446 @@
+\chapter{Theoretical Background}
+\section{The beauty of Symmetry}
+
+Over the centuries, physics has developed increasingly with the aim of understanding and describing the universe and its nature. One might think that mathematical complexity has increased steadily in order to describe the universe, and in a sense this is true, but how far have we gone? Is there a limit to the complexity we can achieve? Is there a risk, however remote, that physicists might lose control of this mathematical machine, which is becoming ever more complex and detached from any conceivable reality and, ultimately, from the physical world? 
+
+\noindent To answer this question, I would like to address the topic in physics that has most captured the author’s attention: \textit{the role of symmetry.}
+
+
+\subsubsection{Simplicity Behind Complexity}
+\begin{center}
+    ‘The bigger the puzzle, the harder it is to solve.’    
+\end{center}
+
+There is certainly some truth in this statement. To put it into context, let’s consider an example. If I wanted to describe a room, I would have to refer to every object inside it, and then specify its position and orientation. In short, I could spend hours describing a room in minute detail. If I then wanted to describe the entire flat, then move on to the building, and then go on to describe a city, the task would become increasingly complex. At this point, the more attentive readers will already have guessed where I’m heading.
+
+Describing the universe seems an impossible task, unless we find a way to simply represent something far greater than anything simple. This is where physicists’ interest in symmetries stems from. 
+
+Let’s return to a concrete example: a beehive. I could make the task of describing it very long and tedious, scrutinising every single detail that makes it up. Or I could note a pattern that extends throughout the entire beehive. All I need to do is describe a single hexagon and then observe that, by symmetry, the rest of the beehive follows the same structure. 
+
+But what exactly is symmetry? We can define it in various ways; let’s look at two of them. From an intuitive point of view, symmetry is a pattern that exhibits a certain regularity in space and time. From a physical point of view, we can define it as a property that remains unchanged following a transformation.
+
+Thus begins the ‘hunt for symmetries’ by physicists. I would like to mention some of the most common ones in physics. If we think of a wheel, it possesses rotational symmetry about an axis, the one passing through its hub. Another fundamental symmetry is temporal symmetry: if we shift a system forwards or backwards in time, the laws of physics must remain the same.  Without this symmetry, physics would be unable to make predictions and therefore formulate universal laws. 
+
+Nature possesses many other symmetries. There is, for example, reflection symmetry: like in a mirror, it allows us to recognise when a configuration remains equivalent to its reflected image. 
+
+In the next section, we will delve into the mathematics that allows us to describe this fundamental concept, which underpins the evolution of physics and, with it, our understanding of the universe.
+
+\begin{comment}{
+"The bigger the puzzle, the harder to solve."
+ Asserzione che sicuramente ha del vero. Per contestualizzarla, consideriamo un esempio. Se volessi descrivere una stanza dovrei far riferimento ad ogni oggetto al suo interno, per poi specificarne la posizione e l'orientamento. Insomma potrei passare ore a descrivere minuziosamente una stanza. Se poi volessi descrivere l intero appartamento, per poi passare alla palazzina, per poi passare alla descrizione di una città, il compito diventerebbe sempre più complesso. A questo punto, i lettori più attenti avranno già intuito dove voglio arrivare.
+
+Descrivere l'universo sembra un impresa irrangiungibile, a meno che non troviamo un escamotage per rappresentare con semplicità qualcosa di assai più grande che di semplice non ha nulla. Da qui nasce l'interesse dei fisici per le simmetrie. 
+
+Torniamo ad un esempio concreto, ovvero un alveare. Potrei rendere il compito di descriverlo molto lungo e tedioso, guardando miniziosamente ad ogni dettaglio che lo compone. Oppure potrei notare un pattern che si estende per tutto l'alveare. Mi basta descrivere un singolo esagono e poi osservare che, per simmetria, il resto dell’alveare segue la stessa struttura. 
+
+ma cosa è esattamente una simmetria? possiamo definirla in vari modi, vediamone due. Dal punto di vista intuitivo, una simmetria è un pattern che presenta una certa riccorenza nello spazio e nel tempo. Dal punto di vista fisico, possiamo definirla come una proprietà che rimane invariata in seguito a una trasformazione.
+
+Inizia cosi la "caccia alle simmetrie" da parte dei fisici. Vorrei citarne alcune tra le più ricorrenti in fisica. Se pensiamo ad una ruota, essa possiede una simmetria di rotazione attorno ad un asse, quello che passa attraverso il suo perno. Un altra simmetria fondamentale è quella temporale, se trasliamo un sistema avanti o indietro nel tempo, le leggi fisiche devono rimanere le stesse.  Senza questa simmetria, la fisica non sarebbe in grado di fare predizioni e quindi formulare leggi universali. 
+
+La natura possiede molte altre simmetrie. C’è, per esempio, la simmetria di riflessione: come in uno specchio, essa permette di riconoscere quando una configurazione rimane equivalente alla propria immagine riflessa. 
+
+Nella prossima sezione ci addentreremo nella matematica che permette di descrivere questo concetto fondamentale, che tesse l'evoluzione della fisica e, con essa, della nostra comprensione dell’universo.}
+\end{comment}
+
+\section{Group Theory}
+
+from here heavy on math, group theory and lie algebra. 
+
+Goal: define lie algebra, representation (fund, adjoint) , -->indices
+
+
+Symmetries are ubiquitos in physics. Since physics aims to describe nature through matematics symmetries too are described mathematically through the concept of groups. They can be discrete such as lattice symmetries in condensed matter, or more fascinating and interesting for our case they can be continuos. for the latter case they are known as Lie groups. Lie groups play an important role in quantum field theory where they serve as globabl spacetime and flavour symmetries but more oin this later. FUrthermore they appear as local gauge symmetries in Yang-Mills theory. 
+
+\subsection{Lie Groups and Lie algebras}
+ we start by defining Lie groups, Lie algebras and their relationship.
+
+ \begin{definition}[Lie group]
+A Lie group $G$ is a group that is also a smooth manifold, such that
+the group multiplication $G \times G \to G$ is a smooth map.
+\end{definition}
+Lie groups are curved manifolds which makes them hard to study, therefore we look at the tangent space at the identity which, equipped with a natural product is called Lie algebra.
+\begin{definition}[Lie algebra]
+The Lie algebra $\mathfrak{g}$ associated to a Lie group $G$ is the
+tangent space at the identity element $1 \in G$:
+\begin{equation}
+    \mathfrak{g} := T_1 G.
+\end{equation}
+\end{definition}
+
+
+Elements of $\mathfrak g$ should be thought of as
+infinitesimal group elements, in a more physical wording they are generators of infinitesimal
+transformations.
+
+Having passed from the Lie group $G$ to its Lie algebra
+$\mathfrak{g} = T_1 G$, we now ask whether this can be reversed: is
+there a map that takes us back from $\mathfrak{g}$ to $G$, at least in
+a neighbourhood of the identity? Such a map indeed exists and is
+called the exponential map.
+
+\begin{definition}[Exponential map]
+The exponential map is the smooth map from a neighbourhood of
+$0 \in \mathfrak g$ to a neighbourhood of $1 \in G$ satisfying
+\begin{equation}
+    \exp(0) = 1, \qquad d\exp(0) = \mathrm{id}, \qquad \exp(na) = \exp(a)^n.
+\end{equation}
+\end{definition}
+
+It can be constructed explicitly as the limit
+\begin{equation}
+    \exp(a) = \lim_{n\to\infty}\left(1+\frac{a}{n}\right)^n.
+\end{equation}
+
+\begin{definition}[Lie bracket]
+The Lie bracket $\llbracket \cdot,\cdot \rrbracket$ is (twice) the
+leading deviation of $m$ from linearity, $m_2(a,b) =
+\tfrac12 \llbracket a,b \rrbracket$. It can equivalently be recovered
+from a group commutator of exponentials,
+\begin{equation}
+    \llbracket a,b \rrbracket
+    = \lim_{\epsilon \to 0} \frac{1}{\epsilon^2}
+      \exp^{-1}\!\Big(\exp(\epsilon a)\exp(\epsilon b)\exp(-\epsilon a)\exp(-\epsilon b)\Big).
+\end{equation}
+\end{definition}
+
+The bracket therefore directly measures the failure of $G$ to be
+commutative; an abelian group has vanishing bracket.
+
+The Lie bracket satisfies three key properties, each of which will be
+used repeatedly in what follows. It is bilinear, and it is
+antisymmetric,
+\begin{equation}
+    \llbracket a,b \rrbracket = -\llbracket b,a \rrbracket,
+\end{equation}
+and it satisfies the Jacobi identity,
+\begin{equation}
+    \big\llbracket \llbracket a,b\rrbracket, c\big\rrbracket
+    + \big\llbracket \llbracket b,c\rrbracket, a\big\rrbracket
+    + \big\llbracket \llbracket c,a\rrbracket, b\big\rrbracket = 0.
+\end{equation}
+The Jacobi identity is the algebraic shadow of associativity of the
+group multiplication; it is not an extra assumption but a consequence
+of $G$ being a group.
+
+\begin{definition}[Lie algebra]
+A vector space $\mathfrak g$ equipped with a bracket satisfying
+bilinearity, antisymmetry and the Jacobi identity is called a Lie
+algebra. Conversely, the exponential map associates to every such
+$\mathfrak g$ a (simply connected) Lie group $G$.
+\end{definition}
+
+From here on we work directly with the algebraic data
+$(\mathfrak g, \llbracket \cdot,\cdot\rrbracket)$ rather than with the
+group manifold itself.
+
+% --- 4. Basis, generators, structure constants ---------------------
+\subsection{Basis, generators, structure constants}
+
+Now we introduce a key concept that will allow us to understand how
+indices actually work. If we decompose everything with a chosen basis $\{T_a\}$ of $\mathfrak g$, we get some useful notation, in particular for the lie bracket. The elements $\{T_a\}$ are called generators of of $\mathfrak g$. In physics the basis is typically chosen to be imaginary
+\begin{equation}
+    a = i\, a^c T_c \in \mathfrak{g},
+\end{equation}
+This convention makes $T_a$ hermitian which is nice because it guarantees real eigenvalues. The downside is that we get many factors of $i$. For instance, a group element is parametrised as
+\begin{equation}
+    h = \exp\!\big(i\, a^c T_c\big) \in G.
+\end{equation}
+
+\begin{definition}[Structure constants]
+Expanding the Lie bracket of two generators in the chosen basis
+defines the structure constants $f_{ab}{}^{c}$ of the algebra,
+\begin{equation}
+    \llbracket T_a, T_b \rrbracket = i f_{ab}{}^{c} \, T_c.
+\end{equation}
+\end{definition}
+
+For a real Lie algebra $f_{ab}{}^{c}$ must be real numbers, and
+antisymmetry of the bracket implies
+\begin{equation}
+    f_{ab}{}^{c} = -f_{ba}{}^{c}.
+\end{equation}
+This index $a$, labelling a generator $T_a$, is what we will call an
+index or, once specialised to $SU(N)$ gauge theory, a colour index.
+Once we pass to representations, these same structure constants will
+reappear as the commutation relations of the representation matrices
+$T_a^R$.
+
+% --- 5. Representations: why fields carry indices -------------------
+\subsection{Representation}
+
+In Yang--Mills theory fields have particular transformation
+properties under gauge transformations. Mathematically these
+transformation rules are described by representations.
+
+\begin{definition}[Representation of a Lie group]
+A representation $R$ of $G$ is a map from the group to automorphisms
+of some vector space $V$,
+\begin{equation}
+    R : G \to \mathrm{Aut}(V).
+\end{equation}
+\end{definition}
+
+\begin{definition}[Representation of a Lie algebra]
+A representation $R$ of $\mathfrak g$ is a linear map from the
+algebra to endomorphisms of some vector space $V$,
+\begin{equation}
+    R : \mathfrak{g} \to \mathrm{End}(V),
+\end{equation}
+such that the Lie bracket is reproduced as an operator commutator,
+\begin{equation}
+    R\big(\llbracket a,b \rrbracket\big) = [R(a), R(b)].
+\end{equation}
+\end{definition}
+
+Writing $T_a^R := R(T_a)$ for the representation matrices of the
+generators, the representation property of $R$ takes the explicit form
+\begin{equation}
+[T_a^R, T_b^R] = i f_{ab}{}^{c}, T_c^R .
+\end{equation}
+A field $\phi$ transforming in the representation $R$ carries an
+index $i = 1, \dots, \dim R$ labelling a basis of the representation
+space $V$, and an infinitesimal gauge transformation acts on it as
+\begin{equation}
+\delta \phi^i = i a^c (T_c^R)^i{}_j \phi^j .
+\end{equation}
+This is the sense in which internal indices in quantum field theory,
+such as colour or weak-isospin indices, are representation indices of
+the underlying symmetry algebra.
+
+Now we want to study a special representation: the adjoint representation. Its feature is that the Lie algebra acts on itself.
+
+\begin{definition}[Adjoint representation]
+A distinguished representation of any Lie algebra $\mathfrak g$ is the adjoint representation on the Lie algebra itself:
+\begin{equation}
+\operatorname{ad}: \mathfrak g \to \operatorname{End}(\mathfrak g),
+\qquad
+\operatorname{ad}(a)b \coloneqq [a,b].
+\end{equation}
+\end{definition}
+
+In other words, an element of the algebra acts on another element by taking the commutator. If ${T_a}$ is a basis of the Lie algebra, then
+\begin{equation}
+T^{ad}_aT_b=\operatorname{ad}(T_a)T_b = \llbracket T_a,T_b\rrbracket = i f_{ab}{}^cT_c.
+\end{equation}
+Therefore, the adjoint representation $T^{ad}_a$ is a matrix whose elements are the structure constants
+
+\begin{equation}
+(T^{ad}_a)_b{}^c = i f_{ab}{}^{c},
+\end{equation}
+
+
+Thus, an adjoint index is an index labelling a basis element of the Lie algebra. For example, the gauge field can be written as
+\begin{equation}
+A_\mu = A_\mu^a T_a .
+\end{equation}
+Here $\mu$ is a Lorentz index, while $a$ is an adjoint index. The index $a$ labels which generator of the gauge algebra the field component is associated with.
+
+
+\subsection{Invariants}
+
+Lie algebras possess an invariant object which lets us raise and
+lower algebra indices, in the same way that a metric lets us raise
+and lower spacetime indices.
+
+\begin{definition}[Killing form]
+A simple Lie algebra $\mathfrak g$ has a unique invariant symmetric
+bilinear form $K : \mathfrak g \times \mathfrak g \to K$, the Killing
+form, satisfying
+\begin{equation}\label{killing_prop}
+    K(a,b) = K(b,a), \qquad
+    K\big(\llbracket c,a\rrbracket, b\big) + K\big(a, \llbracket c,b\rrbracket\big) = 0
+\end{equation}
+for all $a,b,c \in \mathfrak g$.
+\end{definition}
+A form with this property can be constructed easily using some representation $R$
+\begin{equation}
+    Tr R(a)R(b) =B^R K(a,b)
+\end{equation}
+The property in equation \ref{killing_prop} follow from cyclicity of the trace. Due to uniqueness of
+$K$ in a simple Lie algebra, all these forms must be equivalent up to a factor of proportionality $B^R$ which depends on the particular representation R.
+In the basis of generators, the Killing form has components
+\begin{equation}
+    K(T_a, T_b) = k_{ab}.
+\end{equation}
+For a real, compact, simple Lie algebra $k_{ab}$ is positive-definite
+and non-degenerate, and can therefore be used to raise and lower the
+algebra index $a$. In particular we may lower an index on the
+structure constants,
+\begin{equation}
+    f_{abc} := f_{ab}{}^{d}\, k_{dc},
+\end{equation}
+which are then totally antisymmetric in all three indices,
+\begin{equation}
+    f_{abc} = -f_{bac} = -f_{acb}.
+\end{equation}
+A common simplifying choice of basis sets $k_{ab} = \delta_{ab}$, so
+that upper and lower algebra indices coincide numerically.
+
+\subsection{The Unitary Algebra \texorpdfstring{$\mathfrak{su}(N)$}{su(N)}}
+
+We specialise the index calculus developed above to the case of
+$\mathfrak{su}(N)$, the gauge algebra of quantum chromodynamics for
+$N = 3$.
+
+\begin{definition}[Defining representation]
+$\mathfrak{su}(N)$ acts naturally on $\mathbb{C}^N$ by matrix
+multiplication,
+\begin{equation}
+    \mathrm{def}(A)\, v = Av, \qquad v \in \mathbb{C}^N, \qquad D^{\mathrm{def}} = N.
+\end{equation}
+\end{definition}
+
+This is the representation carried by matter fields such as quarks;
+the corresponding index, written $i = 1,\dots,N$, is the colour
+index. It is a different kind of index from the adjoint index $a$
+carried by the gauge field, and the two are related by the
+generators $T_a^{\mathrm{def}}$, which carry one of each,
+$(T_a^{\mathrm{def}})^i{}_j$.
+
+Together with the identity matrix, the generators
+$T_a^{\mathrm{def}}$ form a complete basis of $N \times N$ matrices.
+This completeness is expressed by the relation
+\begin{equation}
+    k^{ab} (T_a^{\mathrm{def}})^i{}_j (T_b^{\mathrm{def}})^k{}_l
+    = B^{\mathrm{def}} \left(\delta^i_l \delta^k_j - \frac{1}{N}\delta^i_j \delta^k_l \right),
+\end{equation}
+and it is this identity that allows a sum over the adjoint index $a$
+to be traded for an expression written purely in terms of Kronecker
+deltas on the colour indices $i,j,k,l$ — a manipulation used
+throughout when working with $SU(N)$ gauge theories.
+
+
+
+
+
+
+
+
+
+
+
+\section{From the Lagrangian to Feynman Rules}
+
+In this section we want to explain but algorithm has been used to calculate Feynamn Rules given a lagrangian. If the reader lacks of kwoledge in QFT he is very welcomed to read a good textbook on the topic. To fully understand the algorithm the reader should be familiar with canonical quantization, the interaction picture, or Wick's theorem, we
+assume this material here and use it only to fix notation.
+
+In the previous section, we learnt about the role of field indices and Lagrangians. We can therefore move on to the central question: given a Lorentz-invariant and gauge-invariant Lagrangian, how do we obtain the associated Feynman rules? We wish to find an implementation that solves this in a systematic and mechanical way, so that it is suitable for implementation in Python or any programming language. 
+This implementation has already been provided by \textsc{FeynRules}~\cite{Christensen:2008py}, and the algorithm
+described below reproduces, with some additional details, the
+derivation given in Section~9 of that article.
+
+
+\subsection{Mode Expansion and Canonical (Anti)Commutators}
+
+Let's start by considering a free field $\phi^\alpha$, where the index $\alpha$ collects
+all indices and quantum numbers carried by the field (Lorentz, Dirac,
+and internal). In the interaction picture, we can $\phi^\alpha$ expand
+the field in creation and annihilation operators,
+\begin{equation}
+    \phi^\alpha(x) = \int \! d\Pi(p) \,
+    \Big( u^\alpha(p)\, a_\phi(p)\, e^{-ipx}
+        + v^\alpha(p)\, a_{\bar\phi}^\dagger(p)\, e^{+ipx} \Big),
+\end{equation}
+where $u^\alpha(p)$, $v^\alpha(p)$ are the wavefunctions associated to
+$\phi^\alpha$, $a_\phi(p)$ annihilates $\phi$, and
+$a_{\bar\phi}^\dagger(p)$ creates a conjugated field
+$\bar\phi$. Canonical quantization fixes the (anti)commutation
+relations between fields and creation operators; schematically,
+\begin{equation}\label{comm_rule}
+    \big[\phi^\alpha(x),\, a_{\bar\phi}^{\dagger\,\beta}(p)\big]_{\pm}
+    = \delta_{\alpha\beta} u^\alpha(p)\, e^{-ipx},
+\end{equation}
+with a commutator for bosonic fields and  anticommutator for
+fermionic fields.
+
+
+\subsection{The FeynRules Algorithm}
+
+In order to understand the algorithm let's start by considering a general single term of a Lagrangian
+\begin{equation}
+    \mathcal L \supset g_{\alpha_1 \cdots \alpha_n}\,
+    \partial \cdots \partial\, \phi^{\alpha_1} \cdots \phi^{\alpha_n},
+\end{equation}
+where $\alpha_i$ represents all the indices and quantum numbers of the field $\phi^{\alpha_i}$. $g_{\alpha_1\cdots\alpha_n}$ is a coupling constant (possibly
+carrying its own indices), and $\partial \cdots \partial$ denotes some
+number of derivatives acting on one or more of the fields. The
+corresponding Feynman rule is obtained in three steps.
+
+\begin{enumerate}
+\item \textbf{Attach creation operators.} Multiply the term on the
+right by one creation operator for each field, with all momenta taken
+ingoing, and in the reverse order to that in which the (fermionic and
+ghost) fields appear in the Lagrangian term. Sandwich the result
+between vacuum states,
+\begin{equation}
+    g_{\alpha_1\cdots\alpha_n}\, \partial\cdots\partial\,
+    \big\langle 0 \big|\,
+    \phi^{\alpha_1}(x) \cdots \phi^{\alpha_n}(x)\,
+    a^\dagger_{\bar\phi_n}(p_n) \cdots a^\dagger_{\bar\phi_1}(p_1)
+    \,\big| 0 \big\rangle.
+\end{equation}
+
+
+\item \textbf{Contract creation operators to the left.} Now every creation operator is moved to the left, using the (anti)commutation rules of the fields given by equation \ref{comm_rule}. Note that moving $a^\dagger$ to the left of a boson produces a commutator term; moving it past a fermion produces an anticommutator term and a sign from reordering the
+remaining operators. Concretely, each step replaces a pair
+$\big(\phi^{\alpha_i}(x), a^\dagger_{\bar\phi_j}(p)\big)$ by the
+contraction
+\begin{equation}
+    \delta_{\alpha_i\beta_j}\, u^{\alpha_i}(p)\, e^{-ipx},
+\end{equation}
+
+Once a creation operator reaches the leftmost position, it annihilates the vacuum $\langle 0|$ and is removed.
+
+\item \textbf{Strip the overall factors.} After every creation
+operator has been contracted away, the surviving vacuum overlap is
+$\langle 0 | 0 \rangle = 1$. The remaining derivatives act on the
+exponentials $e^{-ip_i x}$, pulling down the corresponding momenta.
+Dropping the overall exponential $\exp\!\big(-i(p_1 + \cdots +
+p_n)x\big)$ and the external wavefunctions
+$u^{\alpha_i}(p_i)$, and multiplying the result by $i$, yields the
+Feynman rule associated to the vertex.
+\end{enumerate}
+
+This procedure is nothing other than an automated application of
+Wick's theorem to a single interaction term.
+
+\subsection{Example: the QED Vertex}
+
+Now we want to see how this algorithm applies to a Lagrangian. AS in ~\cite{Christensen:2008py} we illustrate the algorithm on the photon-lepton interaction term of
+the QED Lagrangian,
+\begin{equation}
+    \mathcal L_{\bar\psi\psi A}
+    = -e\, \bar\psi \gamma^\mu \psi\, A_\mu
+    = -e\, \bar\psi_{s,f}\, \gamma^\mu_{ss'}\, \psi_{s',f}\, A_\mu,
+\end{equation}
+where $e$ is the electromagnetic coupling, $\psi_f$ the lepton field
+of flavour $f \in \{e,\mu,\tau\}$, and $A_\mu$ the photon field.
+Multiplying by the creation operators $a^\dagger_{\bar\psi}$,
+$a^\dagger_\psi$, $a^\dagger_A$ and sandwiching between vacuum states gives
+\begin{equation}
+    -e\, \big\langle 0 \big|\,
+    \bar\psi \gamma^\mu \psi\, A_\mu\,
+    a^\dagger_{\bar\psi}\, a^\dagger_\psi\, a^\dagger_A
+    \,\big| 0 \big\rangle.
+\end{equation}
+Moving each creation operator to the left using the canonical
+(anti)commutators,
+\begin{align}
+    \big\{ \psi_{s,f}(x), a^\dagger_{\bar\psi_{s',f'}}(p) \big\}
+        &= \delta_{ss'}\delta_{ff'}\, u_{s,f}\, e^{-ipx}, \\
+    \big\{ \bar\psi_{s,f}(x), a^\dagger_{\psi_{s',f'}}(p) \big\}
+        &= \delta_{ss'}\delta_{ff'}\, \bar u_{s,f}\, e^{-ipx}, \\
+    \big[ A_\mu(x), a^\dagger_{A_\nu}(p) \big]
+        &= \delta_\mu^\nu\, \epsilon_\mu\, e^{-ipx},
+\end{align}
+and annihilating the vacuum, yields
+\begin{equation}
+    -e\, \delta_{ff'}\, \gamma^\mu_{ss'}\,
+    \bar u_{sf}(p_1)\, u_{s'f'}(p_2)\, \epsilon_\mu(p_3)\,
+    e^{-i(p_1+p_2+p_3)x}.
+\end{equation}
+Dropping the wavefunctions and the overall exponential, and
+multiplying by $i$, gives the familiar QED vertex,
+\begin{equation}
+    -ie\, \delta_{ff'}\, \gamma^\mu_{ss'}.
+\end{equation}

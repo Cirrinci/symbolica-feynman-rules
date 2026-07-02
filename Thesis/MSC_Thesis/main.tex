@@ -1,0 +1,124 @@
+\documentclass[11pt,a4paper]{report}
+
+% =========================
+% Packages
+% =========================
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}      
+\usepackage{physics}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\setlength{\marginparwidth}{2cm}
+\usepackage{comment}
+\usepackage{stmaryrd}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+
+%TO DO
+\usepackage[colorinlistoftodos]{todonotes}
+
+\newcommand{\decide}[1]{%
+  \todo[color=yellow!40]{DECIDE: #1}}
+
+\newcommand{\supervisor}[1]{%
+  \todo[color=blue!25]{Achilleas: #1}}
+
+\newcommand{\cleanup}[1]{%
+  \todo[color=green!25]{CLEAN UP: #1}}
+
+
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% =========================
+% Code style
+% =========================
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  showstringspaces=false,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape,
+  captionpos=b
+}
+
+\usepackage{minted}
+\definecolor{bg}{RGB}{245,247,250}
+\setminted{
+linenos,
+breaklines,
+bgcolor=bg,
+fontsize=\small,
+frame=lines,
+numbersep=6pt,
+gobble=0,
+baselinestretch=1.0,
+style=default
+}
+
+
+
+% --- Encoding & fonts ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}   % if not already set by your class
+ 
+% --- Code highlighting (needs --shell-escape at compile time) ---
+ 
+% --- Callout / info boxes ---
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+ 
+% --- Better tables ---
+\usepackage{booktabs}
+\usepackage{array}
+ 
+% --- Compact lists ---
+\usepackage{enumitem}
+ 
+ 
+\title{Automatic Derivation of Feynman Rules from Symbolic Model Declarations}
+\author{Remo}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+\tableofcontents
+
+% =========================
+% Chapters
+% =========================
+\input{chapters/01_introduction}
+\input{chapters/02}
+\input{chapters/03}
+\input{chapters/feynpy}
+
+
+% =========================
+% Bibliography
+% =========================
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+% =========================
+% Appendices
+% =========================
+\appendix
+\input{appendices/appendix_examples}
+
+
+\end{document}
+
