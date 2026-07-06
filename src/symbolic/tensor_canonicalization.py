@@ -1230,7 +1230,7 @@ def canonize_full(
     run_commuting_partial_derivatives: bool = True,
     run_jacobi_reduction: bool = True,
     run_yang_mills_antisymmetric_zero_drop: bool = True,
-    infer_indices: bool = False,
+    infer_indices: bool = True,
     field_heads: Iterable[Field] = (),
 ):
     """One-call simplification + canonicalisation.
