@@ -20,11 +20,17 @@ From the repository root:
 ```bash
 bash setup_env.sh
 source .venv/bin/activate
-export PYTHONPATH="$PWD/src:$PWD"
 ```
 
-This creates `.venv`, installs the dependencies in `requirements.txt`, and
-makes the local engine and model packages importable in the active shell.
+This creates `.venv` and installs the engine, model packages and test
+dependencies in editable mode. No manual `PYTHONPATH` configuration is
+required. The equivalent manual installation is:
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[test]"
+```
 
 ## Minimal example
 

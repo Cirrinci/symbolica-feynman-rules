@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "feynpy"
+version = "0.1.0"
+description = "Declarative tree-level Feynman-rule generation with Symbolica"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "symbolica==1.4.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8,<9",
+]
+
+[tool.setuptools]
+include-package-data = false
+packages = [
+    "feynpy",
+    "compiler",
+    "lagrangian",
+    "symbolic",
+    "feynrules",
+    "models",
+    "models.SM",
+    "models.UnbrokenSM_BFM",
+]
+
+[tool.setuptools.package-dir]
+feynpy = "src/feynpy"
+compiler = "src/compiler"
+lagrangian = "src/lagrangian"
+symbolic = "src/symbolic"
+feynrules = "src/feynrules"
+models = "models"
+"models.SM" = "models/SM"
+"models.UnbrokenSM_BFM" = "models/UnbrokenSM_BFM"
+
+[tool.setuptools.package-data]
+"models.SM" = [
+    "reference/feynrules/*.json",
+]
+"models.UnbrokenSM_BFM" = [
+    "comparison_report.json",
+    "feynpy_vertices.json",
+    "reference/feynrules/*.json",
+    "reference/feynrules/*.md",
+    "reference/feynrules/*.fr",
+    "reference/feynrules/*.nb",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+    "models/SM/tests",
+    "models/UnbrokenSM_BFM/tests",
+]
