@@ -1226,7 +1226,7 @@ def canonize_full(
     weak_adj_indices: Iterable[object] = (),
     extra_index_groups: Iterable[tuple[object, object]] = (),
     run_gamma: bool = True,
-    run_color: bool = True,
+    run_color: bool = False,
     run_commuting_partial_derivatives: bool = True,
     run_jacobi_reduction: bool = True,
     run_yang_mills_antisymmetric_zero_drop: bool = True,
