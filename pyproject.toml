@@ -9,6 +9,7 @@ description = "Declarative tree-level Feynman-rule generation with Symbolica"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "sympy>=1.12,<2",
     "symbolica==1.4.0",
 ]
 
