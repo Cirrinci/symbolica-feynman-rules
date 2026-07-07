@@ -18,13 +18,12 @@ elsewhere in the pipeline.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from itertools import combinations
 from typing import Iterable, Optional, Sequence
 
 from symbolica import AtomType, Expression, S
-
-from feynpy.metadata import Field
 
 from .spenso_structures import (
     COLOR_ADJ,
@@ -42,6 +41,7 @@ from .spenso_structures import (
 
 pcomp = S("pcomp")
 _PARTIAL_DERIVATIVE_NAME = S("PartialD").get_name()
+_REPRESENTATION_ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 _DUMMY_GROUP_STEMS = {
     0: "mu_mid",
@@ -85,6 +85,15 @@ _PLAIN_HEAD_INDEX_KINDS = (
     WEAK_FUND_KIND,
     WEAK_ADJ_KIND,
 )
+
+_SPENSO_SLOT_KIND_BY_SIGNATURE = {
+    ("spenso::mink", "4"): LORENTZ_KIND,
+    ("spenso::coad", "8"): COLOR_ADJ_KIND,
+    ("spenso::cof", "3"): COLOR_FUND_KIND,
+    ("spenso::bis", "4"): SPINOR_KIND,
+    ("spenso::cof", "2"): WEAK_FUND_KIND,
+    ("spenso::coad", "3"): WEAK_ADJ_KIND,
+}
 
 _ADJOINT_ALIAS_KIND = "adjoint"
 
@@ -181,6 +190,10 @@ SPENSO_TENSOR_HEAD_SPECS = (
     ),
 )
 
+_TYPED_TENSOR_HEAD_NAMES = frozenset(
+    spec.raw_name for spec in SPENSO_TENSOR_HEAD_SPECS
+)
+
 
 def _wildcards(arity: int):
     return tuple(S(*(f"canon_arg_{arity}_{slot}_" for slot in range(arity))))
@@ -232,17 +245,55 @@ def _merge_plain_head_slot_kind_maps(
     return merged
 
 
-def _field_plain_head_slot_kinds(field_heads: Iterable[Field]) -> dict[str, dict[int, str]]:
+def _validate_field_head(field: object) -> None:
+    """Validate the structural field metadata used by this symbolic layer.
+
+    Importing ``feynpy.metadata.Field`` here would create a dependency cycle:
+    the metadata layer itself depends on the symbolic tensor definitions.  The
+    canonicalizer only needs this small, stable interface, so validate that
+    interface directly instead of depending on the concrete class.
+    """
+
+    required = ("indices", "self_conjugate", "species_for", "statistics")
+    missing = tuple(name for name in required if not hasattr(field, name))
+    if missing:
+        details = ", ".join(missing)
+        raise TypeError(
+            "field_heads must contain Field-compatible metadata objects; "
+            f"missing attribute(s): {details}."
+        )
+
+
+def _canonical_plain_index_kind(index: object) -> Optional[str]:
+    """Map field metadata onto one canonicalization group when possible."""
+
+    kind = getattr(index, "kind", None)
+    if kind in _PLAIN_HEAD_INDEX_KINDS:
+        return kind
+
+    # Custom names for Lorentz and spinor indices are supported throughout the
+    # model API.  Their Spenso representation families are unambiguous, unlike
+    # generic fundamental/adjoint representations, so they can be normalized
+    # safely here as well.
+    representation = _REPRESENTATION_ANSI.sub(
+        "", str(getattr(index, "representation", ""))
+    )
+    if representation.startswith("mink("):
+        return LORENTZ_KIND
+    if representation.startswith("bis("):
+        return SPINOR_KIND
+    return kind
+
+
+def _field_plain_head_slot_kinds(field_heads: Iterable[object]) -> dict[str, dict[int, str]]:
     mapping: dict[str, dict[int, str]] = {}
     for field in field_heads:
-        if not isinstance(field, Field):
-            raise TypeError(
-                "field_heads must contain Field instances."
-            )
-        slot_kinds = {
-            slot: index.kind
-            for slot, index in enumerate(field.indices)
-        }
+        _validate_field_head(field)
+        slot_kinds = {}
+        for slot, index in enumerate(field.indices):
+            kind = _canonical_plain_index_kind(index)
+            if kind is not None:
+                slot_kinds[slot] = kind
         head_names = {_symbol_name_text(field.species_for(False))}
         if not field.self_conjugate:
             head_names.add(_symbol_name_text(field.species_for(True)))
@@ -254,20 +305,17 @@ def _field_plain_head_slot_kinds(field_heads: Iterable[Field]) -> dict[str, dict
     return mapping
 
 
-def _plain_head_slot_kinds(*, field_heads: Iterable[Field] = ()) -> dict[str, dict[int, str]]:
+def _plain_head_slot_kinds(*, field_heads: Iterable[object] = ()) -> dict[str, dict[int, str]]:
     return _merge_plain_head_slot_kind_maps(
         _PLAIN_HEAD_SLOT_KINDS,
         _field_plain_head_slot_kinds(field_heads),
     )
 
 
-def _field_plain_odd_head_names(field_heads: Iterable[Field]) -> set[str]:
+def _field_plain_odd_head_names(field_heads: Iterable[object]) -> set[str]:
     names: set[str] = set()
     for field in field_heads:
-        if not isinstance(field, Field):
-            raise TypeError(
-                "field_heads must contain Field instances."
-            )
+        _validate_field_head(field)
         if field.statistics != "fermion":
             continue
         names.add(_symbol_name_text(field.species_for(False)))
@@ -430,7 +478,7 @@ def contract_spenso_lorentz_metrics(expr, *, max_passes: int = 8):
 def _contract_plain_metric_heads(
     expr,
     *,
-    field_heads: Iterable[Field] = (),
+    field_heads: Iterable[object] = (),
     max_passes: int = 8,
 ):
     """Contract Lorentz/adjoint metrics against plain exported field heads.
@@ -596,7 +644,7 @@ def _plain_odd_factor_key(atom: Expression, odd_head_names: set[str]) -> Optiona
 def _drop_plain_odd_squares(
     expr,
     *,
-    field_heads: Iterable[Field] = (),
+    field_heads: Iterable[object] = (),
 ):
     """Drop monomials containing repeated identical plain odd factors.
 
@@ -1019,12 +1067,98 @@ def _append_symbol_group(
         target.setdefault(symbol.to_canonical_string(), symbol)
 
 
+def _typed_spenso_slot_kind_and_label(
+    atom: Expression,
+) -> Optional[tuple[str, Expression]]:
+    """Return the canonical kind and label encoded by one Spenso slot.
+
+    Spenso tensor arguments carry their representation explicitly, for example
+    ``coad(8, a)`` for an SU(3) adjoint slot and ``coad(3, aw)`` for an SU(2)
+    adjoint slot.  Reading that metadata is both more general and safer than
+    assigning a kind from the outer tensor head (``f``, ``t``, ``g``, ...).
+    Wrapper functions such as a lowered/dual index are traversed recursively.
+    """
+
+    if not isinstance(atom, Expression) or atom.get_type() != AtomType.Fn:
+        return None
+
+    name = atom.get_name()
+    args = tuple(atom)
+    if len(args) >= 2:
+        dimension = args[0].to_canonical_string()
+        kind = _SPENSO_SLOT_KIND_BY_SIGNATURE.get((name, dimension))
+        if kind is not None:
+            return kind, args[-1]
+
+    for child in args:
+        typed = _typed_spenso_slot_kind_and_label(child)
+        if typed is not None:
+            return typed
+    return None
+
+
+def _inferred_groups_without_explicit_labels(
+    inferred: dict[str, tuple[Expression, ...]],
+    *,
+    explicit_groups: Sequence[Sequence[object]],
+    extra_index_groups: Sequence[tuple[object, object]],
+) -> dict[str, tuple[Expression, ...]]:
+    """Make explicit index declarations authoritative over inference."""
+
+    explicit_names = {
+        item.to_canonical_string()
+        for group in explicit_groups
+        for item in group
+        if hasattr(item, "to_canonical_string")
+    }
+    explicit_names.update(
+        item.to_canonical_string()
+        for item, _ in extra_index_groups
+        if hasattr(item, "to_canonical_string")
+    )
+
+    filtered = {
+        kind: tuple(
+            item
+            for item in items
+            if item.to_canonical_string() not in explicit_names
+        )
+        for kind, items in inferred.items()
+    }
+
+    assignments: dict[str, set[str]] = {}
+    for kind, items in filtered.items():
+        for item in items:
+            key = item.to_canonical_string()
+            assignments.setdefault(key, set()).add(kind)
+
+    # The exported mixed-gauge pipeline may reuse one bare Symbolica label in
+    # slots with different typed representations. ``canonize_tensors`` accepts
+    # only one group marker per bare label, so choosing either representation
+    # would be incorrect. Conservatively leave such labels uninferred; their
+    # typed slots remain intact, and a caller can assign a group explicitly if
+    # the label is known to be local to one representation in their expression.
+    ambiguous_names = {
+        key for key, kinds in assignments.items() if len(kinds) > 1
+    }
+    if not ambiguous_names:
+        return filtered
+    return {
+        kind: tuple(
+            item
+            for item in items
+            if item.to_canonical_string() not in ambiguous_names
+        )
+        for kind, items in filtered.items()
+    }
+
+
 def _infer_index_groups_from_expression(
     expr,
     *,
-    field_heads: Iterable[Field] = (),
+    field_heads: Iterable[object] = (),
 ):
-    """Infer index pools from exported field heads and YM support tensors."""
+    """Infer index pools from typed tensors and exported field metadata."""
 
     groups = {
         LORENTZ_KIND: {},
@@ -1034,11 +1168,12 @@ def _infer_index_groups_from_expression(
         WEAK_FUND_KIND: {},
         WEAK_ADJ_KIND: {},
     }
+    ambiguous_adjoint: dict[str, Expression] = {}
     plain_head_slot_kinds = _plain_head_slot_kinds(field_heads=field_heads)
 
     def append(kind: str, atom: Expression):
         if kind == _ADJOINT_ALIAS_KIND:
-            _append_symbol_group(groups[COLOR_ADJ_KIND], atom)
+            _append_symbol_group(ambiguous_adjoint, atom)
             return
         target = groups.get(kind)
         if target is None:
@@ -1055,10 +1190,12 @@ def _infer_index_groups_from_expression(
             bare_name = name.rsplit("::", 1)[-1]
             if bare_name == "PartialD" and len(args) == 2:
                 append(LORENTZ_KIND, args[1])
-            elif name == "spenso::f" and len(args) == 3:
-                append(COLOR_ADJ_KIND, args[0])
-                append(COLOR_ADJ_KIND, args[1])
-                append(COLOR_ADJ_KIND, args[2])
+            elif name in _TYPED_TENSOR_HEAD_NAMES:
+                for arg in args:
+                    typed = _typed_spenso_slot_kind_and_label(arg)
+                    if typed is not None:
+                        kind, label = typed
+                        append(kind, label)
 
             slot_kinds = plain_head_slot_kinds.get(name)
             if slot_kinds is None:
@@ -1073,6 +1210,18 @@ def _infer_index_groups_from_expression(
                 walk(child)
 
     walk(expr)
+
+    # Plain ``G``/``alpha`` heads historically use an ``adjoint`` alias
+    # because their function arguments carry no representation metadata. Match
+    # those labels to concrete typed slots when the surrounding expression
+    # provides them. If it does not, retain the historical SU(3) fallback.
+    for key, item in ambiguous_adjoint.items():
+        if (
+            key not in groups[COLOR_ADJ_KIND]
+            and key not in groups[WEAK_ADJ_KIND]
+        ):
+            groups[COLOR_ADJ_KIND].setdefault(key, item)
+
     return {
         kind: tuple(group[key] for key in sorted(group))
         for kind, group in groups.items()
@@ -1231,7 +1380,7 @@ def canonize_full(
     run_jacobi_reduction: bool = True,
     run_yang_mills_antisymmetric_zero_drop: bool = True,
     infer_indices: bool = True,
-    field_heads: Iterable[Field] = (),
+    field_heads: Iterable[object] = (),
 ):
     """One-call simplification + canonicalisation.
 
@@ -1243,15 +1392,16 @@ def canonize_full(
     Returns just the canonical expression (the dummy bookkeeping returned by
     :func:`canonize_spenso_tensors` is dropped here for ergonomic reasons).
 
-    Set ``run_color=False`` when the expression should stay in the
-    structure-constant basis so the local Jacobi reducer can act on explicit
-    ``f f`` products instead of letting ``simplify_color`` expand them into
-    generators first.
+    By default ``run_color=False`` keeps expressions in the structure-constant
+    basis so the local Jacobi reducer can act on explicit ``f f`` products
+    instead of letting ``simplify_color`` expand them into generators first.
 
-    Set ``infer_indices=True`` to infer index pools directly from known
-    YM-export heads and any concrete ``Field`` objects passed through
-    ``field_heads``.  This lets callers canonicalize exported matter / ghost
-    expressions without spelling out every dummy label explicitly.
+    By default ``infer_indices=True`` reads representation metadata from typed
+    Spenso tensor slots and from concrete ``Field`` objects supplied through
+    ``field_heads``. Explicit index arguments always take precedence. This
+    lets callers canonicalize exported matter / ghost expressions without
+    spelling out every dummy label explicitly. Disable inference when working
+    with an unsupported or intentionally nonstandard index convention.
     """
     lorentz_indices = tuple(lorentz_indices)
     adjoint_indices = tuple(adjoint_indices)
@@ -1270,6 +1420,18 @@ def canonize_full(
         inferred = _infer_index_groups_from_expression(
             expr,
             field_heads=field_heads,
+        )
+        inferred = _inferred_groups_without_explicit_labels(
+            inferred,
+            explicit_groups=(
+                lorentz_indices,
+                adjoint_indices,
+                color_fund_indices,
+                spinor_indices,
+                weak_fund_indices,
+                weak_adj_indices,
+            ),
+            extra_index_groups=extra_index_groups,
         )
         lorentz_indices = _merge_index_groups(lorentz_indices, inferred[LORENTZ_KIND])
         adjoint_indices = _merge_index_groups(adjoint_indices, inferred[COLOR_ADJ_KIND])

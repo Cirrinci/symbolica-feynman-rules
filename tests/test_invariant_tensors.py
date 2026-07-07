@@ -158,9 +158,9 @@ def test_weak_eps2_canonical_order_does_not_depend_on_symbol_creation_order():
 def test_canonize_full_applies_jacobi_identity_in_f_basis():
     """The Jacobi combination of two structure constants must vanish.
 
-    ``run_color=False`` is intentional: the project-level Jacobi pass works in
-    the ``f`` basis, whereas ``simplify_color`` may expand the same color
-    algebra into generator chains.
+    The default ``run_color=False`` is intentional: the project-level Jacobi
+    pass works in the ``f`` basis, whereas ``simplify_color`` may expand the
+    same color algebra into generator chains.
     """
 
     a, b, c, d, e = S("a"), S("b"), S("c"), S("d"), S("e")
@@ -174,7 +174,6 @@ def test_canonize_full_applies_jacobi_identity_in_f_basis():
         expr,
         adjoint_indices=(a, b, c, d, e),
         run_gamma=False,
-        run_color=False,
     )
     assert _canon(canon) == _canon(Expression.num(0))
 

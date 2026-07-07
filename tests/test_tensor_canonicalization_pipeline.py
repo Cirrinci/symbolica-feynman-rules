@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+
 from symbolica import Expression, S
 
 from feynpy import COLOR_ADJ_INDEX, Field, GhostField, LORENTZ_INDEX
-from symbolic.spenso_structures import COLOR_ADJ, LORENTZ, structure_constant
+from symbolic.spenso_structures import (
+    COLOR_ADJ,
+    LORENTZ,
+    gauge_generator,
+    structure_constant,
+    weak_gauge_generator,
+    weak_structure_constant,
+)
 from symbolic.tensor_canonicalization import (
     _canonicalize_commuting_partial_derivatives,
     _contract_plain_metric_heads,
+    _infer_index_groups_from_expression,
     _jacobi_reduce_structure_constant_products,
     canonize_full,
 )
@@ -14,6 +25,78 @@ from symbolic.tensor_canonicalization import (
 
 def _canon(expr):
     return expr.expand().to_canonical_string()
+
+
+def test_tensor_canonicalization_imports_without_preloading_feynpy(tmp_path):
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from symbolic.tensor_canonicalization import canonize_full; "
+            "assert callable(canonize_full)",
+        ],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_typed_spenso_slots_infer_color_and_weak_groups_separately():
+    a, b, c = S("a"), S("b"), S("c")
+    i, j = S("i"), S("j")
+    aw, bw, cw = S("aw"), S("bw"), S("cw")
+    iw, jw = S("iw"), S("jw")
+    expr = (
+        structure_constant(a, b, c)
+        * gauge_generator(a, i, j)
+        * weak_structure_constant(aw, bw, cw)
+        * weak_gauge_generator(aw, iw, jw)
+    )
+
+    inferred = _infer_index_groups_from_expression(expr)
+    labels = {
+        kind: {item.to_canonical_string() for item in items}
+        for kind, items in inferred.items()
+    }
+
+    assert labels["color_adj"] == {
+        item.to_canonical_string() for item in (a, b, c)
+    }
+    assert labels["color_fund"] == {
+        item.to_canonical_string() for item in (i, j)
+    }
+    assert labels["weak_adj"] == {
+        item.to_canonical_string() for item in (aw, bw, cw)
+    }
+    assert labels["weak_fund"] == {
+        item.to_canonical_string() for item in (iw, jw)
+    }
+
+
+def test_default_inference_matches_explicit_mixed_adjoint_groups():
+    a, b, c, d, middle = (S(name) for name in ("a", "b", "c", "d", "middle"))
+    aw, bw, cw, dw, weak_middle = (
+        S(name) for name in ("aw", "bw", "cw", "dw", "weak_middle")
+    )
+    expr = (
+        structure_constant(a, b, middle)
+        * structure_constant(c, d, middle)
+        * weak_structure_constant(aw, bw, weak_middle)
+        * weak_structure_constant(cw, dw, weak_middle)
+    )
+
+    inferred = canonize_full(expr, run_gamma=False)
+    explicit = canonize_full(
+        expr,
+        adjoint_indices=(a, b, c, d, middle),
+        weak_adj_indices=(aw, bw, cw, dw, weak_middle),
+        run_gamma=False,
+        infer_indices=False,
+    )
+
+    assert _canon(inferred) == _canon(explicit)
 
 
 def test_plain_metric_contracts_into_g_lorentz_slot():
