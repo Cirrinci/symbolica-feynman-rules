@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 import sys
 
+import pytest
 from symbolica import Expression, S
 
 from feynpy import COLOR_ADJ_INDEX, Field, GhostField, LORENTZ_INDEX
@@ -40,6 +41,11 @@ def test_tensor_canonicalization_imports_without_preloading_feynpy(tmp_path):
         capture_output=True,
         check=False,
     )
+    if (
+        completed.returncode == -6
+        and "restricted Symbolica instance" in completed.stdout
+    ):
+        pytest.skip("Symbolica restricted mode permits only one live process.")
     assert completed.returncode == 0, completed.stderr
 
 
