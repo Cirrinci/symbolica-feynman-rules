@@ -46,7 +46,6 @@ COLOR_ADJ = Representation.coad(8)
 WEAK_FUND = Representation.cof(2)
 WEAK_ADJ = Representation.coad(3)
 
-_HEP_LIBRARY = TensorLibrary.hep_lib()
 _ONE = Expression.num(1)
 _TWO = Expression.num(2)
 _GAMMA_LOWERED_COUNTER = count()
@@ -384,7 +383,7 @@ def _build_extended_hep_library():
     return library
 
 
-_EXTENDED_HEP_LIBRARY = _build_extended_hep_library()
+_EXTENDED_HEP_LIBRARY = None
 
 
 def extended_hep_library():
@@ -394,17 +393,22 @@ def extended_hep_library():
     additional numeric components for ``weak_eps2`` and ``color_eps3`` so
     these custom invariants can participate in ``TensorNetwork`` execution.
     """
+    global _EXTENDED_HEP_LIBRARY
+    if _EXTENDED_HEP_LIBRARY is None:
+        _EXTENDED_HEP_LIBRARY = _build_extended_hep_library()
     return _EXTENDED_HEP_LIBRARY
 
 
 def hep_tensor_scalar(expr):
     """Evaluate a tensor network down to a scalar using the HEP tensor library."""
-    network = TensorNetwork(expr, library=_EXTENDED_HEP_LIBRARY)
-    network.execute(library=_EXTENDED_HEP_LIBRARY)
+    library = extended_hep_library()
+    network = TensorNetwork(expr, library=library)
+    network.execute(library=library)
     return network.result_scalar()
 
 
 def hep_tensor_result(expr):
-    network = TensorNetwork(expr, library=_EXTENDED_HEP_LIBRARY)
-    network.execute(library=_EXTENDED_HEP_LIBRARY)
-    return network.result_tensor(library=_EXTENDED_HEP_LIBRARY)
+    library = extended_hep_library()
+    network = TensorNetwork(expr, library=library)
+    network.execute(library=library)
+    return network.result_tensor(library=library)
