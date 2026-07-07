@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import subprocess
-import sys
-
 from symbolica import Expression, S
 
 from feynpy import COLOR_ADJ_INDEX, Field, GhostField, LORENTZ_INDEX
@@ -25,22 +22,6 @@ from symbolic.tensor_canonicalization import (
 
 def _canon(expr):
     return expr.expand().to_canonical_string()
-
-
-def test_tensor_canonicalization_imports_without_preloading_feynpy(tmp_path):
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            "from symbolic.tensor_canonicalization import canonize_full; "
-            "assert callable(canonize_full)",
-        ],
-        cwd=tmp_path,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    assert completed.returncode == 0, completed.stderr
 
 
 def test_typed_spenso_slots_infer_color_and_weak_groups_separately():

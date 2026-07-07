@@ -35,7 +35,9 @@ jobs:
         run: |
           python - <<'PY'
           from importlib.resources import files
+          from symbolic.tensor_canonicalization import canonize_full
 
+          assert callable(canonize_full)
           import compiler
           import feynpy
           import feynrules
