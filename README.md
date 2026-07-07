@@ -127,6 +127,9 @@ tests/            generic regression suite
 Model-specific code and evidence stay together under `models/<model>/`; generic
 engine functionality stays under `src/`.
 
+For Mermaid architecture diagrams suitable for thesis figures, see
+[`viz/mermaid/README.md`](viz/mermaid/README.md).
+
 ## Current scope
 
 FeynPy is not yet a complete replacement for FeynRules. Current limitations

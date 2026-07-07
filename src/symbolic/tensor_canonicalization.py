@@ -25,23 +25,16 @@ from typing import Iterable, Optional, Sequence
 
 from symbolica import AtomType, Expression, S
 
-from .spenso_structures import (
-    COLOR_ADJ,
-    COLOR_ADJ_KIND,
-    COLOR_FUND_KIND,
-    LORENTZ,
-    LORENTZ_KIND,
-    SPINOR_KIND,
-    WEAK_ADJ,
-    WEAK_ADJ_KIND,
-    WEAK_FUND_KIND,
-    lorentz_metric,
-    simplify_invariants,
-)
-
 pcomp = S("pcomp")
 _PARTIAL_DERIVATIVE_NAME = S("PartialD").get_name()
 _REPRESENTATION_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+LORENTZ_KIND = "lorentz"
+COLOR_FUND_KIND = "color_fund"
+COLOR_ADJ_KIND = "color_adj"
+SPINOR_KIND = "spinor"
+WEAK_FUND_KIND = "weak_fund"
+WEAK_ADJ_KIND = "weak_adj"
 
 _DUMMY_GROUP_STEMS = {
     0: "mu_mid",
@@ -442,6 +435,7 @@ def contract_spenso_lorentz_metrics(expr, *, max_passes: int = 8):
     wildcard_b = S("canon_lorentz_b_")
     wildcard_c = S("canon_lorentz_c_")
     wildcard_p = S("canon_momentum_")
+    from .spenso_structures import lorentz_metric
 
     rewrites = (
         (lorentz_metric(wildcard_a, wildcard_b) * pcomp(wildcard_p, wildcard_b), pcomp(wildcard_p, wildcard_a)),
@@ -497,6 +491,7 @@ def _contract_plain_metric_heads(
     wildcard_x = S("canon_plain_metric_x_")
     wildcard_y = S("canon_plain_metric_y_")
     partial = S("PartialD")
+    from .spenso_structures import COLOR_ADJ, LORENTZ, WEAK_ADJ
     metrics_by_kind = {
         LORENTZ_KIND: LORENTZ.g(wildcard_a, wildcard_b).to_expression(),
         COLOR_ADJ_KIND: COLOR_ADJ.g(wildcard_a, wildcard_b).to_expression(),
@@ -1411,6 +1406,8 @@ def canonize_full(
     weak_adj_indices = tuple(weak_adj_indices)
     extra_index_groups = tuple(extra_index_groups)
     field_heads = tuple(field_heads)
+
+    from .spenso_structures import simplify_invariants
 
     expr = simplify_invariants(expr, run_gamma=run_gamma, run_color=run_color)
     expr = contract_spenso_lorentz_metrics(expr)
