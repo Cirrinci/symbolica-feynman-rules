@@ -50,7 +50,7 @@ Figure~\ref{fig:pipeline-overview} shows the stages that lead from a declared \p
 \node[decl]                      (model)     {\texttt{Model(...)}: declared fields, gauge groups, source Lagrangian};
 \node[decl,  below=of model]     (declared)  {\texttt{DeclaredLagrangian.source\_terms} (still purely syntactic)};
 \node[comp,  below=of declared]  (analyze)   {\texttt{\_analyze\_declared\_source\_term} $\to$ \texttt{AnalyzedSourceTerm} (routing)};
-\node[comp,  below=of analyze]   (compile)   {\texttt{compiler.gauge}: expand \texttt{CovD}, \texttt{FieldStrength}, gauge fixing, ghosts; re-lower};
+\node[comp,  below=of analyze]   (compile)   {\texttt{compiler.gauge}: expand \texttt{DC}, \texttt{FS}, gauge fixing, ghosts; re-lower};
 \node[comp,  below=of compile]   (terms)     {tuple of \texttt{InteractionTerm} $\to$ \texttt{CompiledLagrangian}};
 \node[eng,   below=of terms]     (legs)      {\texttt{feynman\_rule(...)}: build \texttt{ExternalLeg}s, \texttt{to\_vertex\_kwargs(...)}};
 \node[eng,   below=of legs]      (contract)  {\texttt{contract\_to\_full\_expression}: sum over Wick contractions};
@@ -98,9 +98,9 @@ Everything begins with declarative \emph{metadata} in \texttt{feynpy.metadata}: 
 
 \subsection{The declarative DSL as wrapper objects}
 
-The Lagrangian is written with the small DSL of \texttt{feynpy.declared}: \py{CovD}/\py{DC}, \py{FieldStrength}/\py{FS}, \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}. Crucially, these are \emph{wrapper objects}, not Symbolica expressions. When the user writes
+The Lagrangian is written with the small DSL of \texttt{feynpy.declared}: \py{DC} (covariant derivative), \py{FS} (field strength), \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}.\footnote{The longer aliases \py{CovD} and \py{FieldStrength} still exist for readability but name the same objects as \py{DC} and \py{FS}; we use the short forms throughout.} Crucially, these are \emph{wrapper objects}, not Symbolica expressions. When the user writes
 \begin{minted}{python}
-I * Quark.bar * Gamma(mu) * CovD(Quark, mu)
+I * Quark.bar * Gamma(mu) * DC(Quark, mu)
 \end{minted}
 Python's operator overloading assembles a \py{_DeclaredMonomial}: a coefficient (\py{I}) times an ordered tuple of factors --- \py{_FieldFactor(Quark, conjugated=True)}, \py{GammaFactor(mu)}, \py{CovariantDerivativeFactor(Quark, mu)}. Nothing is evaluated yet. The declaration is kept in \emph{source form} precisely so it can be inspected, transformed and lowered later; this is the FeynRules idea of a model file, expressed directly in Python objects.
 
@@ -131,8 +131,8 @@ The single entry point is \py{_analyze_declared_source_term(...)}, which returns
 \midrule
 \texttt{interaction} & already a local \py{InteractionTerm}; no compilation & \py{lam * phi**4} \\
 \texttt{covariant\_core} & canonical kinetic $\bar\psi\, i\gamma^\mu D_\mu \psi$ or $(D_\mu\Phi)^\dagger(D^\mu\Phi)$ & quark kinetic term \\
-\texttt{field\_strength\_monomial} & a product of \py{FieldStrength(...)} factors & $-\tfrac14 F^a F^a$ \\
-\texttt{generic\_covariant\_monomial} & any other monomial containing \py{CovD} & current$\,\times\,$current \\
+\texttt{field\_strength\_monomial} & a product of \py{FS(...)} factors & $-\tfrac14 F^a F^a$ \\
+\texttt{generic\_covariant\_monomial} & any other monomial containing \py{DC} & current$\,\times\,$current \\
 \texttt{gauge\_fixing} & a gauge-fixing declaration & \py{GaugeFixing(SU3, xi)} \\
 \texttt{ghost} & a ghost declaration & \py{GhostLagrangian(SU3)} \\
 \bottomrule
@@ -147,7 +147,7 @@ Classification is priority-ordered: the analyser tries ``already local'' first, 
 
 This is where ``expanding the indices'' actually happens, and it received a disproportionate share of the design effort because it is where silent errors are most dangerous.
 
-\paragraph{Monomial-wide label validation.} In the compact notation the user writes plain labels such as \py{mu}, \py{a}, \py{c}, \py{f}. On paper these are unambiguous because a human reads the whole term at once; the code must reproduce that global reading. Before anything else, the analyser builds one registry mapping every label \emph{name} used anywhere in a monomial --- on field slots, on declared factors like \py{PartialD}, \py{Gamma}, \py{T}, $f^{abc}$, \py{FieldStrength}, and even on raw Spenso tensors in the coefficient --- to exactly one \py{IndexType}. If a name is used for two incompatible index kinds (say a colour label reused as a generation label), the term is rejected with an explicit error. This closes a real hole: earlier the labels were validated only slot-locally, so an inconsistent term like \py{q.bar(f, c) * q(c, f) * Phi} could compile into a wrong contraction.
+\paragraph{Monomial-wide label validation.} In the compact notation the user writes plain labels such as \py{mu}, \py{a}, \py{c}, \py{f}. On paper these are unambiguous because a human reads the whole term at once; the code must reproduce that global reading. Before anything else, the analyser builds one registry mapping every label \emph{name} used anywhere in a monomial --- on field slots, on declared factors like \py{PartialD}, \py{Gamma}, \py{T}, $f^{abc}$, \py{FS}, and even on raw Spenso tensors in the coefficient --- to exactly one \py{IndexType}. If a name is used for two incompatible index kinds (say a colour label reused as a generation label), the term is rejected with an explicit error. This closes a real hole: earlier the labels were validated only slot-locally, so an inconsistent term like \py{q.bar(f, c) * q(c, f) * Phi} could compile into a wrong contraction.
 
 \paragraph{Slot binding and inference.} Once labels are typed, local monomials pass through a small state machine that, in a fixed order: (1)~seeds any explicit labels the user wrote; (2)~applies chain factors (\py{Gamma}, \py{T}) between adjacent fields, connecting spinor and colour endpoints; (3)~binds remaining typed labels to open field slots \emph{by kind}, requiring a one-to-one match and raising an ambiguity error otherwise; (4)~shares fresh labels across natural pairs (an adjacent $\bar\psi/\psi$, a unique open bar/field pair); and (5)~invents fresh dummy labels, using the index-type prefix, for whatever remains. The result is that a physicist can write very little and still obtain a fully and unambiguously indexed term --- or a clear error when what they wrote cannot be resolved uniquely.
 
@@ -205,12 +205,77 @@ The compiler (\texttt{compiler.gauge} and its helpers) is where the physics of g
 The single most important decision in the compiler is that it \emph{does not build vertices from gauge operators directly}. Instead, each structured operator is expanded into ordinary local monomials --- partial-derivative pieces, gauge-current pieces, and explicit generator or structure-constant factors --- and those monomials are sent back through the same local lowering used for hand-written interactions (Section~\ref{sec:internals-lowering}). The payoff is large: there is no separate compiler for $F^2$, $F^3$ or $F^4$, and none for each covariant power; the combinatorics come for free from distribution plus one well-tested lowering path. The cost is that raw compiled output is more expanded than a textbook form --- a non-abelian $F^2$ becomes nine local monomials rather than one --- which is later collapsed by canonicalisation (Section~\ref{sec:internals-postprocessing}).
 
 \subsection{Covariant derivatives}
+\label{sec:internals-covd}
 
-A covariant derivative is, structurally, ``a partial derivative plus one gauge current per group acting on the field''. The routine \py{expand_cov_der} implements exactly this: it resolves the set of gauge groups the field transforms under --- and if the user named no group, it \emph{sums over all of them} --- and for each emits a gauge piece plus one partial-derivative piece. The abelian and non-abelian cases differ only in what the gauge piece carries. In the abelian case the coupling is $g\,Q$, with $Q$ the field's charge read from its quantum numbers, and there is no generator or adjoint index. In the non-abelian case the coupling is $g$, a generator $t^a_{ij}$ is inserted to rotate the field's representation index, and the gauge boson carries the adjoint label $a$; if the field carries several slots of the representation index, the representation's \py{slot_policy} decides whether this is an error (the strict default) or a sum over all matching slots. For the canonical fermion kinetic term of Eq.~\eqref{eq:qcd-current} the covariant-core handler builds the free part $i\bar\psi\gamma^\mu\partial_\mu\psi$ and one fermion-current interaction per gauge piece --- for QCD the $\bar q\,\gamma^\mu t^a q\,G^a_\mu$ vertex with coupling $-ig_s$. For a complex scalar $(D_\mu\Phi)^\dagger(D^\mu\Phi)$ the same machinery produces both the single-boson current and the two-boson contact (``seagull'') term, including mixed contact terms when a scalar transforms under two groups at once.
+Structurally, a covariant derivative is ``a partial derivative plus one gauge current for every group acting on the field''. With the convention of Eq.~\eqref{eq:conventions}, the general form the compiler implements is
+\begin{equation}
+    D_\mu \phi \;=\; \partial_\mu \phi \;-\; i \sum_{G}\, g_G\, A^{(G)}_\mu\,\rho_G(\phi),
+    \label{eq:covd-general}
+\end{equation}
+where the sum runs over every declared gauge group $G$ under which $\phi$ transforms, $g_G$ is that group's coupling, $A^{(G)}_\mu$ its gauge boson, and $\rho_G(\phi)$ the action of the group on the representation index that $\phi$ carries. The two cases differ only in what $\rho_G$ is:
+\begin{itemize}
+    \item \textbf{abelian} --- $\rho_G(\phi) = Q_G\,\phi$, with $Q_G$ the field's charge read from its quantum numbers, so the piece is $-\,i\,g_G\,Q_G\,A^{(G)}_\mu\,\phi$ (no generator, no adjoint index);
+    \item \textbf{non-abelian} --- $\rho_G(\phi)$ acts with a generator in the field's representation, so the piece is $-\,i\,g_G\,A^{a}_{G,\mu}\,(t^a_G)_{ij}\,\phi_j$, and the gauge boson carries the adjoint label $a$.
+\end{itemize}
+
+The routine \py{expand_cov_der} realises Eq.~\eqref{eq:covd-general} literally: it resolves the set of gauge groups the field transforms under --- and if the user named none, it \emph{sums over all of them} --- and emits one gauge piece per group plus a single partial-derivative piece. A conjugated occurrence $(D_\mu\phi)^\dagger$ flips the sign of every gauge piece (the coupling picks up $+i$ instead of $-i$).
+
+\paragraph{Several slots of the same representation.} If the field carries more than one index in the acting representation, the generator must hit each slot in turn, and Eq.~\eqref{eq:covd-general} expands into a sum over slots. For a field $\phi_{i_1 i_2}$ with two fundamental colour indices,
+\begin{equation}
+    D_\mu \phi_{i_1 i_2}
+    = \partial_\mu \phi_{i_1 i_2}
+    - i g\, A^a_\mu\Big[(t^a)_{i_1 j}\,\phi_{j\, i_2} + (t^a)_{i_2 j}\,\phi_{i_1 j}\Big].
+    \label{eq:covd-multislot}
+\end{equation}
+Whether this multi-slot expansion is performed at all is controlled by the representation's \py{slot_policy}: the strict default \emph{rejects} an ambiguous repeated-index field, and \py{slot_policy='sum'} opts in to the sum of Eq.~\eqref{eq:covd-multislot} (with one generator insertion per active slot).
+
+\paragraph{Several gauge groups at once.} The prototypical case is a field transforming under three groups simultaneously. For the left-handed quark doublet $Q_L$ of the Standard Model, charged under $\mathrm{SU}(3)_c\times\mathrm{SU}(2)_L\times\mathrm{U}(1)_Y$, Eq.~\eqref{eq:covd-general} reads
+\begin{equation}
+    D_\mu Q_L
+    = \partial_\mu Q_L
+    \;-\; i g_s\, G^a_\mu\, t^a_{(3)}\,Q_L
+    \;-\; i g\, W^I_\mu\, t^I_{(2)}\,Q_L
+    \;-\; i g'\, Y_{Q}\, B_\mu\, Q_L ,
+    \label{eq:covd-multigroup}
+\end{equation}
+with $t^a_{(3)}$ the colour-fundamental generators, $t^I_{(2)}$ the weak-isospin generators and $Y_Q$ the hypercharge. Writing \py{DC(Q_L, mu)} with no group named produces exactly these four pieces --- the plain $\partial_\mu Q_L$ plus one gauge current per group; naming a single group, \py{DC(Q_L, mu, gauge_group=SU3C)}, keeps only that group's current together with the derivative.
+
+For the canonical fermion kinetic term of Eq.~\eqref{eq:qcd-current} the covariant-core handler builds the free part $i\bar\psi\gamma^\mu\partial_\mu\psi$ and one fermion-current interaction per gauge piece --- for QCD the $\bar q\,\gamma^\mu t^a q\,G^a_\mu$ vertex with coupling $-ig_s$. For a complex scalar $(D_\mu\Phi)^\dagger(D^\mu\Phi)$ the same machinery produces both the single-boson current and the two-boson contact (``seagull'') term, and, when the scalar transforms under two groups at once, the mixed cross-group contact terms $\propto g_r g_s\,A^{(r)}_\mu A^{(s)\mu}$ as well.
 
 \subsection{Field strengths}
+\label{sec:internals-fs}
 
-A \py{FieldStrength} factor is expanded by \py{expand_field_strength_factor} into its additive pieces: two derivative terms for an abelian group, and additionally the $g f^{abc} A^b A^c$ term for a non-abelian one. A monomial with several field strengths is expanded by taking the \emph{full Cartesian product} of the pieces, so $-\tfrac14 F^a F^a$ for $\mathrm{SU}(3)$ distributes into $3\times 3 = 9$ local monomials spread across the two-, three- and four-gluon sectors. Each is then lowered locally. Higher operators --- $f\,F^3$, $F^4$, mixed-group products such as $F_{\mathrm{SU}(3)}^2\,F_{\mathrm{SU}(2)}^2$ --- need no new code; they are just larger Cartesian products. A scalarity check enforces that every adjoint label appears an even number of times, i.e.\ that the operator is a genuine gauge singlet.
+The gauge-invariant kinetic term is built from the field strength, which with the same convention is
+\begin{equation}
+    F^a_{\mu\nu} = \partial_\mu A^a_\nu - \partial_\nu A^a_\mu + g\, f^{abc}\, A^b_\mu A^c_\nu ,
+    \label{eq:fs-general}
+\end{equation}
+degenerating for an abelian group to $F_{\mu\nu} = \partial_\mu A_\nu - \partial_\nu A_\mu$ (no adjoint index, no cubic term). This is written in the DSL as \py{FS(SU3, mu, nu, a)} in the non-abelian case --- the trailing $a$ is the adjoint index --- and as \py{FS(U1, mu, nu)} in the abelian case, which must omit it.
+
+A single \py{FS} factor is expanded into its additive pieces: for a non-abelian group the three pieces of Eq.~\eqref{eq:fs-general},
+\begin{equation}
+    P_1 = \partial_\mu A^a_\nu, \qquad
+    P_2 = -\,\partial_\nu A^a_\mu, \qquad
+    P_3 = g\, f^{abc}\, A^b_\mu A^c_\nu ,
+    \label{eq:fs-pieces}
+\end{equation}
+and only $P_1, P_2$ for an abelian group. A monomial containing several \py{FS} factors is then expanded by distributing the \emph{full Cartesian product} of these pieces. Take pure Yang--Mills for $\mathrm{SU}(3)$,
+\begin{equation}
+    \mathcal{L}_{\mathrm{YM}} = -\tfrac14\, F^a_{\mu\nu} F^{a\,\mu\nu},
+\end{equation}
+where each of the two field strengths contributes the three pieces of Eq.~\eqref{eq:fs-pieces}. The product distributes into the full $3\times 3 = 9$ local monomials, which fall into three physical sectors:
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Piece combination} & \textbf{Count} & \textbf{Sector} \\
+\midrule
+$(P_1,P_2)\times(P_1,P_2)$ & $2\times 2 = 4$ & two-gluon (kinetic) \\
+$(P_1,P_2)\times P_3$ and $P_3\times(P_1,P_2)$ & $2 + 2 = 4$ & three-gluon vertex \\
+$P_3\times P_3$ & $1$ & four-gluon vertex \\
+\bottomrule
+\end{tabular}
+\end{center}
+Each of the nine monomials is then lowered locally through the same path as a hand-written interaction. Because the mechanism is just distribution, higher operators need no new code: $f\,F^3$ yields $3^3 = 27$ monomials, $F^4$ yields $3^4 = 81$, and mixed-group products such as $F_{\mathrm{SU}(3)}^2\,F_{\mathrm{SU}(2)}^2$ are simply larger Cartesian products over the pieces of each factor. A scalarity check enforces that every adjoint label appears an even number of times, i.e.\ that the operator is a genuine gauge singlet.
 
 \subsection{Gauge fixing and ghosts}
 
@@ -318,7 +383,7 @@ Building the pipeline was less about any single algorithm than about a handful o
 
 \paragraph{Conventions.} Signs and normalisations for $D_\mu$, $F^a_{\mu\nu}$, the Fourier factor $\partial_\mu\to -ip_\mu$, the universal $+i$, gauge fixing and ghosts were a persistent source of spurious ``bugs'' until they were frozen in one reference (Eq.~\eqref{eq:conventions}) and enforced by tests. Separating the structural compiler from the convention-fixed physical compiler removed a whole family of sign confusions.
 
-\paragraph{Making expansion generic.} Replacing the special-case $F^2$ recogniser with a generic \py{FieldStrength} expansion --- and, symmetrically, the expand-then-lower covariant path --- unlocked $F^3$, $F^4$ and mixed-group operators for free. But it also multiplied the number of raw local monomials and exposed a performance cliff in the contraction engine, because the old compatibility check compared only broad field \emph{roles} and therefore iterated over impossible cross-species pairings. The species-aware match-key pruning of Section~\ref{sec:internals-contraction} was the direct response, restoring interactive performance on large mixed vertices without changing a single resulting formula.
+\paragraph{Making expansion generic.} Replacing the special-case $F^2$ recogniser with a generic \py{FS} expansion --- and, symmetrically, the expand-then-lower covariant path --- unlocked $F^3$, $F^4$ and mixed-group operators for free. But it also multiplied the number of raw local monomials and exposed a performance cliff in the contraction engine, because the old compatibility check compared only broad field \emph{roles} and therefore iterated over impossible cross-species pairings. The species-aware match-key pruning of Section~\ref{sec:internals-contraction} was the direct response, restoring interactive performance on large mixed vertices without changing a single resulting formula.
 
 \paragraph{Keeping the layers honest.} Finally, much of the effort went into \emph{not} letting the layers leak: declarative syntax must never reach the contraction engine, the engine must never learn what a covariant derivative is, and comparison against external references must live outside the engine entirely. This discipline --- one job per layer, one intermediate representation at the waist --- is what ultimately made it possible to validate the packaged Standard Model against the reference export at the level of every tree-level interaction vertex.
 
