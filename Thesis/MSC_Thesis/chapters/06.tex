@@ -115,15 +115,17 @@ In the chapter \ref{ch:feynpy} we have see all the building blocks of FEYNPY tha
 \end{itemize}
     
 The deliberate point is that metadata is inert: a faithful, machine-readable copy of what a physicist would write on paper, with all behaviour deferred downstream.
-\cleanup{till here}
+
 \subsection{The declarative DSL as wrapper objects}
 
-Now that we have defined the building blocks of the theory, we can write the Lagrangian itself. This is done with a small domain-specific language (DSL) defined in \texttt{feynpy.declared}:\footnote{A domain-specific language is a small language designed for a particular task. Here it is a restricted set of Python objects and functions that lets the user write Lagrangian terms in a notation close to standard physics notation.} \py{DC} (covariant derivative), \py{FS} (field strength), \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}. The important point is that these constructors do not immediately build a Symbolica tensor expression. They build small immutable wrapper objects that will later be analysed and lowered into compiled interaction terms. When the user writes the first term of equation \ref{eq:qcd-full}
+Now that we have defined the building blocks of the theory, we can put them together into the Lagrangian itself. This is done with a small domain-specific language (DSL) defined in \texttt{feynpy.declared}:\footnote{A domain-specific language is a small language designed for a particular task. Here it is a restricted set of Python objects and functions that lets the user write Lagrangian terms in a notation close to standard physics notation.} \py{DC} (covariant derivative), \py{FS} (field strength), \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}. I want to emphasize that these constructors do not immediately build a Symbolica tensor expression. They build small immutable wrapper objects that will later be analysed and lowered into compiled interaction terms. 
+
+To understand how the code reads the Lagrangian let' consider as an example the equation \ref{eq:qcd-full}. When the user writes the equation \ref{eq:qcd-full} the first term looks like this
 \begin{minted}{python}
 I * Quark.bar * Gamma(mu) * DC(Quark, mu)
 \end{minted}
 
-Obviously the Lagrangian in equation \ref{eq:qcd-full} is composed of many terms, and so the first thing the code needs to do is to distinguish each monomial and separate its scalar coefficient from its field and tensor factors. More precisely the code assembles a \py{_DeclaredMonomial}. Its content is simply a scalar coefficient (\py{I}) and an ordered tuple that stores every factor --- here \py{_FieldFactor(Quark, conjugated=True)}, \py{GammaFactor(mu)}, \py{CovariantDerivativeFactor(Quark, mu)}. At this stage nothing is contracted, expanded or simplified. The order of the factors is preserved exactly because later passes need the original source structure. Later a process of analysis will determine what needs to be expanded.
+Obviously the Lagrangian in equation \ref{eq:qcd-full} is composed of many terms, and so the first thing the code needs to do is to distinguish each monomial and separate its scalar coefficient from its field and tensor factors. More precisely the code assembles a \py{_DeclaredMonomial} which distinguishes between the coefficient and an ordered tuple composed of all the other factors. In our case its content is simply a scalar coefficient (\py{I}) and an ordered tuple that stores every factor --- here \py{_FieldFactor(Quark, conjugated=True)}, \py{GammaFactor(mu)}, \py{CovariantDerivativeFactor(Quark, mu)}. At this stage nothing is contracted, expanded or simplified. The order of the factors is preserved exactly because later passes need the original source structure. Later a process of analysis will determine what needs to be expanded.
 
 A useful subtlety is that a few helpers are \emph{dual}. \py{Gamma(mu)} and \py{T(a)} are declarative placeholders: they say ``insert the gamma matrix'' or ``insert the generator'' and let the lowering pass infer the endpoints from the neighbouring fields. By contrast, \py{Gamma(i, j, mu)} and \py{T(a, i, j)} bypass that shorthand and return the fully explicit Spenso tensors \py{gamma(i, j, mu)} and \py{t(a, i, j)} immediately. This gives the user both a compact notation without specifying every index explicitly when the structure is obvious, and a fully explicit notation when it is not.
 
@@ -131,12 +133,13 @@ A useful subtlety is that a few helpers are \emph{dual}. \py{Gamma(mu)} and \py{
 
 Once individual source terms have been written, the full source Lagrangian is stored in the container \py{DeclaredLagrangian}. This is a very simple object: essentially it is just an ordered tuple \py{source_terms}. In the most common case these source terms are \py{_DeclaredMonomial}s, but they can also be special declarations such as \py{GaugeFixing(...)} or \py{GhostLagrangian(...)}. So \py{DeclaredLagrangian} is nothing but the source-level Lagrangian, still written in the declarative language.
 
-\py{Model} (in \texttt{feynpy.core}) is the larger object that owns this declared Lagrangian together with the rest of the model data: \py{fields}, \py{parameters} and \py{gauge_groups}. Its constructor accepts the Lagrangian either directly or through \py{lagrangian_decl=}. What the code calls \emph{normalization} is simply the step in which whatever admissible source object the user passed --- one term, several summed terms, or an already built \py{DeclaredLagrangian} --- is converted into a \py{DeclaredLagrangian}. After that, \py{Model} fills in missing metadata by scanning the source terms and checks that every term is of a supported kind.
+Everything is putted together in the \py{Model} (in \texttt{feynpy.core}), this is the larger object that owns this declared Lagrangian together with the rest of the model data: \py{fields}, \py{parameters} and \py{gauge_groups}. Now the input is converted into a \py{DeclaredLagrangian}. 
 
 Actual compilation happens only when \py{model.lagrangian()} is called. At that point the declared source terms are turned into a \py{CompiledLagrangian}. This is where terms containing \py{DC(...)} or \py{FS(...)} are expanded using the metadata stored in the model, while terms that are already local are lowered directly. The result is no longer source syntax: it is a tuple of compiled \py{InteractionTerm}s. This compilation is lazy and cached, so it is only done the first time it is needed.
 
 To summarize: \py{DeclaredLagrangian} is the source-level Lagrangian, \py{CompiledLagrangian} is the compiled one, and \py{Model} is the full object that stores the declared Lagrangian together with the extra information needed to validate and compile it.
 
+\cleanup{till here}
 % --------------------------------------------------------------
 \section{Analysis and lowering: reading the Lagrangian and resolving indices}
 \label{sec:internals-lowering}
