@@ -129,11 +129,10 @@ A useful subtlety is that a few helpers are \emph{dual}. \py{Gamma(mu)} and \py{
 
 \subsection{\texttt{Model} and the two Lagrangian containers}
 
-\py{Model} (in \texttt{feynpy.core}) sits one level above the objects of the previous subsection. There the basic unit was a single product term, represented by a \py{_DeclaredMonomial}. A full source Lagrangian is then just an ordered collection of such source terms, stored in the container \py{DeclaredLagrangian}. In other words, the hierarchy is:
-\[
-\text{factors} \;\longrightarrow\; \py{_DeclaredMonomial} \;\longrightarrow\; \py{DeclaredLagrangian} \;\longrightarrow\; \py{Model}.
-\]
-Strictly speaking, the entries of \py{DeclaredLagrangian.source\_terms} need not all be \py{_DeclaredMonomial}s: special declarations such as \py{GaugeFixing(...)} and \py{GhostLagrangian(...)} are stored there as source terms as well. But its role is always the same: it is the source-level container for the declared Lagrangian, and nothing more.
+Now a full Lagrangian can be composed as an ordered collection of such source terms (\py{_DeclaredMonomial}), stored in the container \py{DeclaredLagrangian}
+
+\py{Model} (in \texttt{feynpy.core}) sits one level above the objects of the previous subsection. 
+
 
 \py{Model} is the larger object that combines that declared Lagrangian with the rest of the model data: optional \py{fields}, \py{parameters} and \py{gauge_groups}. Its constructor accepts the declared Lagrangian either as the first positional argument or via \py{lagrangian_decl=}. The first step is normalization: whatever admissible source object the user passes is coerced into a \py{DeclaredLagrangian}. That container is deliberately minimal because its only payload is the ordered tuple \py{source_terms}; its job is to preserve the source-level declaration, not to compile it.
 
