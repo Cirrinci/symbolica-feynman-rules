@@ -6,12 +6,14 @@
 \chapter{Implementation: From \texttt{Model} to Feynman Rule}
 \label{ch:internals}
 % ==============================================================
+\cleanup{from here started}
+Chapter~\ref{ch:feynpy} served as a user guide, whilst Chapter~\ref{ch:cas} outlined the libraries on which FEYNPY is based. Now that we know how to use the toolkit and understand its language which, although it is Python, may not be familiar to everyone, we can move on to understanding how it works internally. How do we get from the declarative Python objects that the user writes to the Symbolica expression that emerges as a Feynman rule? 
 
-Chapter~\ref{ch:feynpy} described \emph{how to use} the toolkit and Chapter~\ref{ch:cas} the libraries it stands on. This chapter opens the box: it follows one Lagrangian all the way from the declarative Python object the user writes down to the Symbolica expression that comes out as a Feynman rule, and explains what each intermediate layer is responsible for.
+We physicists, in understanding the origin and physical meaning of a theory, make use of many conventions and simplifications (which, moreover, differ from physicist to physicist), and the code must recognise these conventions. When considering the Standard Model, for example, nobody would want to write every index, every generator and every tensor component explicitly. This would be a pointless and tedious task, and if not done with care and focus, it could even lead to unintentional errors. The toolkit is therefore intended to take a compact input and expand it according to the conventions and declarations encoded in the model.
 
-Nothing in this pipeline introduces a new physical ingredient. The physics is fixed already --- by the conventions of Section~\ref{sec:feynpy-gauge} and by the canonical-quantisation algorithm of Section~\ref{sec:feynrules-algorithm}. What the implementation adds is \emph{bookkeeping}: it must track, mechanically and without error, which index on which field slot is which, across covariant-derivative expansions, permutation sums, and tensor simplifications, for fields carrying any combination of Lorentz, Dirac, colour, weak-isospin and flavour indices. The guiding design principle is that this bookkeeping is done by a chain of small, inspectable rewrites: \textbf{a declared Lagrangian is progressively rewritten into simpler and simpler representations until it reaches a form that a generic symbolic contraction engine can consume.} Each stage has one job, one well-defined input and one well-defined output; nothing in the symbolic engine knows what a covariant derivative is, and nothing in the declaration layer knows how a Wick contraction is performed.
+Internally, the code will have to carry out a great deal of bookkeeping. In other words, it must be capable of expanding terms such as the covariant derivative according to the correct rules dictated by the symmetry groups that each Model possesses. It must be able to keep track of the order of the fields and their different indices. To do this a sequence of small rewriting steps, each of which makes the expression slightly more explicit is applied. One can visualise the structure as an hourglass: the user-facing interface allows several compact ways of declaring a Lagrangian, but these different inputs are progressively rewritten until they meet at the central object, the InteractionTerm. From this point on, the code can perform Wick contractions, canonicalisation and simplification of the resulting expression.
 
-It is useful to keep one concrete example in mind throughout. The quark kinetic term of QCD,
+We want to proceed having an example in mind. Let's consider the quark kinetic term of QCD,
 \begin{equation}
     i\,\bar q\,\gamma^\mu D_\mu q \;\supset\; g_s\,\bar q_{i}\,\gamma^\mu\,t^a_{ij}\,q_{j}\,G^a_\mu ,
     \label{eq:qcd-current}
@@ -32,7 +34,8 @@ is a good stress test because it exercises every branch of the compiler at once:
 \label{sec:internals-overview}
 % --------------------------------------------------------------
 
-Figure~\ref{fig:pipeline-overview} shows the stages that lead from a declared \py{Model} to a Feynman-rule \py{Expression}. Four layers carry the work, and the source tree mirrors them exactly (Table~\ref{tab:internals-layers}).
+Let's start to look at the internal having a general overview which is illustrated in 
+Figure~\ref{fig:pipeline-overview}. This shows the stages that lead from a declared \py{Model} to a Feynman-rule \py{Expression}. We can summerize it in four layers, see (Table~\ref{tab:internals-layers}).
 
 \begin{figure}[htbp]
 \centering
@@ -69,23 +72,31 @@ Figure~\ref{fig:pipeline-overview} shows the stages that lead from a declared \p
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{@{}p{2.3cm}p{3.1cm}p{4.4cm}p{2.6cm}@{}}
+\begin{tabular}{@{}p{2.6cm}p{3.6cm}p{6.8cm}@{}}
 \toprule
-\textbf{Layer} & \textbf{Package} & \textbf{Responsibility} & \textbf{Must \emph{not} know} \\
+\textbf{Layer} & \textbf{Package(s)} & \textbf{Responsibility} \\
 \midrule
-Declaration & \texttt{feynpy} (\texttt{metadata}, \texttt{declared}, \texttt{core}) & represent the physics the user wrote & contraction, canonicalisation \\
-Lowering / analysis & \texttt{feynpy.lowering}, \texttt{lagrangian} & classify terms, validate indices, build local monomials & vertex extraction \\
-Compilation & \texttt{compiler} & expand gauge structure into local monomials & output policy \\
-Symbolic backend & \texttt{symbolic} & contract, simplify, canonicalise & declarative syntax \\
+Declaration &
+\texttt{feynpy} (\texttt{metadata}, \texttt{declared}, \texttt{core}) &
+Represents the physics as the user wrote it: declared fields, gauge groups, and source Lagrangian terms, still in a mostly syntactic form. \\
+Lowering \& compilation &
+\texttt{feynpy.lowering}, \texttt{lagrangian}, \texttt{compiler} &
+Classifies and validates each source term, expands gauge structures such as covariant derivatives, field strengths, gauge-fixing terms and ghosts into local monomials, and collects the result into \texttt{InteractionTerm}s. \\
+Contraction engine &
+\texttt{symbolic.vertex\_engine} &
+Builds external legs and vertex arguments, then sums over Wick contractions to assemble the full expression. \\
+Post-processing &
+\texttt{symbolic.vertex\_postprocessing}, \texttt{symbolic.tensor\_canonicalization} &
+Applies the overall factor of $i$, optionally extracts the momentum-conserving $\delta$, strips external-leg factors, and simplifies and canonicalises the resulting tensor expression. \\
 \bottomrule
 \end{tabular}
-\caption{The four layers and what each may and may not depend on. The source tree is organised along exactly these boundaries.}
+\caption{The four layers of the pipeline, coloured as in Figure~\ref{fig:pipeline-overview}: declaration (blue), lowering/compilation (orange), contraction (green), and post-processing (purple).}
 \label{tab:internals-layers}
 \end{table}
 
 The remaining sections walk the layers from the outside in: declaration (Section~\ref{sec:internals-declaration}), analysis and index resolution (Section~\ref{sec:internals-lowering}), gauge compilation (Section~\ref{sec:internals-compiler}), the \py{InteractionTerm} intermediate representation that ties everything together (Section~\ref{sec:internals-ir}), the Wick-contraction engine (Section~\ref{sec:internals-contraction}), and canonicalisation (Section~\ref{sec:internals-postprocessing}). Section~\ref{sec:internals-difficulty} then collects the hardest problems encountered while building the pipeline --- the places where the design had to be most deliberate.
 
-\footnote{Each TikZ figure in this chapter has a plain-text counterpart kept as a Mermaid source diagram under \texttt{viz/mermaid/}, so the same diagrams render live wherever the repository Markdown is viewed. Mermaid is not understood natively by \LaTeX{}, so the thesis figures are the same graphs redrawn in TikZ.}
+\footnote{Each TikZ figure in this chapter has a plain-text counterpart kept as a Mermaid source diagram under \texttt{viz/mermaid/}}
 
 % --------------------------------------------------------------
 \section{The outer layer: declaring a model}
@@ -94,23 +105,36 @@ The remaining sections walk the layers from the outside in: declaration (Section
 
 \subsection{Inert metadata}
 
-Everything begins with declarative \emph{metadata} in \texttt{feynpy.metadata}: frozen dataclasses that hold physics data and carry no algorithmic logic. \py{IndexType} pairs a Spenso representation with a ``kind'' string and a label prefix (Section~\ref{sec:cas-indextype}); \py{Field} stores a name, spin, self-conjugacy, its tuple of \py{indices}, its Symbolica symbol and conjugate symbol, quantum numbers, and optional flavour-class data, inferring its \py{kind} (scalar/fermion/vector) and \py{statistics} from the spin; \py{Parameter} behaves algebraically like its symbol and may carry indices and explicit components; \py{GaugeRepresentation} and \py{GaugeGroup} record the symmetry data --- whether a group is abelian, its coupling, gauge boson, ghost field, structure-constant builder and matter representations. The deliberate point is that metadata is inert: a faithful, machine-readable copy of what a physicist would write on paper, with all behaviour deferred downstream.
-
+In the chapter \ref{ch:feynpy} we have see all the building blocks of FEYNPY tha will enable us to define the Model. This building blocks are the declarative \emph{metadata} stored in \texttt{feynpy.metadata}, these are frozen dataclasses that hold physics data and carry no algorithmic logic. Let's summerize them here:
+\begin{itemize}
+    \item \py{IndexType} pairs a Spenso representation with a ``kind'' string and a label prefix (more in Section~\ref{sec:cas-indextype}); 
+    \item \py{Field} stores a name, spin, self-conjugacy, its tuple of \py{indices}, its Symbolica symbol and conjugate symbol, quantum numbers, and optional flavour-class data, inferring its \py{kind} (scalar/fermion/vector) and \py{statistics} from the spin; 
+    \item \py{Parameter} behaves algebraically like its symbol and may carry indices and explicit components; 
+    \item \py{GaugeRepresentation} and 
+    \item \py{GaugeGroup} record the symmetry data, whether a group is abelian, its coupling, gauge boson, ghost field, structure-constant builder and matter representations
+\end{itemize}
+    
+The deliberate point is that metadata is inert: a faithful, machine-readable copy of what a physicist would write on paper, with all behaviour deferred downstream.
+\cleanup{till here}
 \subsection{The declarative DSL as wrapper objects}
 
-The Lagrangian is written with the small DSL of \texttt{feynpy.declared}: \py{DC} (covariant derivative), \py{FS} (field strength), \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}.\footnote{The longer aliases \py{CovD} and \py{FieldStrength} still exist for readability but name the same objects as \py{DC} and \py{FS}; we use the short forms throughout.} Crucially, these are \emph{wrapper objects}, not Symbolica expressions. When the user writes
+Now that we have defined the building blocks of the theory, we can write the Lagrangian itself. This is done with a small domain-specific language (DSL) defined in \texttt{feynpy.declared}:\footnote{A domain-specific language is a small language designed for a particular task. Here it is a restricted set of Python objects and functions that lets the user write Lagrangian terms in a notation close to standard physics notation.} \py{DC} (covariant derivative), \py{FS} (field strength), \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}. The important point is that these constructors do \emph{not} immediately build a Symbolica tensor expression. They build small immutable wrapper objects that remember what the user wrote: ``this is a field factor'', ``this is a gamma matrix carrying the label $\mu$'', ``this is a covariant derivative acting on \py{Quark}'', and so on. When the user writes
 \begin{minted}{python}
 I * Quark.bar * Gamma(mu) * DC(Quark, mu)
 \end{minted}
-Python's operator overloading assembles a \py{_DeclaredMonomial}: a coefficient (\py{I}) times an ordered tuple of factors --- \py{_FieldFactor(Quark, conjugated=True)}, \py{GammaFactor(mu)}, \py{CovariantDerivativeFactor(Quark, mu)}. Nothing is evaluated yet. The declaration is kept in \emph{source form} precisely so it can be inspected, transformed and lowered later; this is the FeynRules idea of a model file, expressed directly in Python objects.
+Python's operator overloading assembles a \py{_DeclaredMonomial}. Its content is simply a scalar coefficient (\py{I}) and an ordered tuple of factors --- here \py{_FieldFactor(Quark, conjugated=True)}, \py{GammaFactor(mu)}, \py{CovariantDerivativeFactor(Quark, mu)}. At this stage nothing is contracted, expanded or simplified. The order of the factors is preserved exactly because later passes need the original source structure: they must decide whether a term is already a local interaction, whether it is a canonical kinetic core such as $\bar\psi\, i\gamma^\mu D_\mu \psi$, whether a field strength has to be expanded, and how index chains should be attached to neighbouring fields. In that sense the declarative DSL is closer to a small abstract syntax tree than to a computer-algebra expression. It plays the same role as a FeynRules model file, but expressed directly in Python objects.
 
-A useful subtlety is that a few helpers are \emph{dual}. \py{Gamma(mu)} is an opaque placeholder meaning ``build the spinor chain from the neighbouring fields'', whereas \py{Gamma(i, j, mu)} is the fully explicit Spenso tensor \py{gamma(i, j, mu)}; likewise \py{T(a)} versus \py{T(a, i, j)}. This lets the user stay compact when the structure is obvious and become explicit when it is not.
+A useful subtlety is that a few helpers are \emph{dual}. \py{Gamma(mu)} and \py{T(a)} are declarative placeholders: they say ``insert the gamma matrix'' or ``insert the generator'' and let the lowering pass infer the endpoints from the neighbouring fields. By contrast, \py{Gamma(i, j, mu)} and \py{T(a, i, j)} bypass that shorthand and return the fully explicit Spenso tensors \py{gamma(i, j, mu)} and \py{t(a, i, j)} immediately. This gives the user both a compact FeynRules-style notation when the structure is obvious and a fully explicit notation when it is not.
 
 \subsection{\texttt{Model} and the two Lagrangian containers}
 
-\py{Model} (in \texttt{feynpy.core}) is the orchestrator. Its constructor accepts the declared Lagrangian (as a positional shorthand or via \py{lagrangian_decl=}) plus optional \py{fields}, \py{parameters} and \py{gauge_groups}, and does three things: it coerces the declaration into a \py{DeclaredLagrangian}, whose only payload is an ordered tuple of \py{source_terms}; it \emph{infers missing metadata} by scanning those terms, so simple models need little boilerplate; and it \emph{validates} every source term by running the analysis pass of Section~\ref{sec:internals-lowering}, so an unsupported construction fails at declaration time rather than silently producing a wrong vertex.
+\py{Model} (in \texttt{feynpy.core}) is the object that marks the transition from source syntax to compiled physics data. Its constructor accepts the declared Lagrangian, either as the first positional argument or via \py{lagrangian_decl=}, together with optional \py{fields}, \py{parameters} and \py{gauge_groups}. The first step is normalization: whatever admissible source object the user passes is coerced into a \py{DeclaredLagrangian}. That container is deliberately minimal --- its only payload is an ordered tuple \py{source_terms} --- because its job is only to preserve the source-level declaration, not to compile it.
 
-Compilation is lazy and cached: the first call to \py{model.lagrangian()} invokes the compiler and stores the resulting \py{CompiledLagrangian}. The two containers are intentionally distinct types with different algebra --- declarative terms add to declarative terms, compiled terms to compiled terms, and mixing the two raises an error that points the user back through \py{model.lagrangian()}. That strictness keeps the ``source'' and ``compiled'' worlds from leaking into each other.
+The second step is metadata completion. \py{Model} scans the source terms and collects the fields and gauge groups that appear in them: ordinary field factors, \py{DC(...)} and \py{PartialD(...)} factors, field strengths, kinetic declarations, gauge-fixing declarations and ghost declarations all contribute information. From the discovered gauge groups it also adds the associated gauge boson and ghost fields, and from each field it also includes any declared flavour-class members. This is why simple models often need very little explicit boilerplate.
+
+The third step is early validation. For every source term, \py{Model} calls the analyser of Section~\ref{sec:internals-lowering}, namely \py{_analyze_declared_source_term(...)}, and checks that the term can be classified and routed through the compiler. If a monomial is not a supported local interaction, covariant core, field-strength term, gauge-fixing term, ghost term or generic covariant monomial, model construction fails immediately. In other words, unsupported syntax is rejected when the model is declared, not only later when one asks for a Feynman rule.
+
+Actual compilation is lazy and cached. The first call to \py{model.lagrangian()} invokes \texttt{compiler.gauge}, builds a \py{CompiledLagrangian}, and stores it for reuse. The distinction between the two Lagrangian containers is strict by design. \py{DeclaredLagrangian} stores source-level objects; \py{CompiledLagrangian} stores lowered \py{InteractionTerm} objects and is the entry point for later stages such as flavour expansion, Symbolica export and vertex extraction. Their algebra is intentionally separated: declarative objects add only to declarative objects, compiled objects only to compiled objects, and mixing the two raises an explicit error that sends the user back through \py{model.lagrangian()}. This keeps the boundary between the ``source'' and ``compiled'' representations precise.
 
 % --------------------------------------------------------------
 \section{Analysis and lowering: reading the Lagrangian and resolving indices}
