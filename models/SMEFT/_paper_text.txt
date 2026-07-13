@@ -1,0 +1,5420 @@
+
+===PAGE 1===
+Matchmakereft: automated tree-level and one-loop matching
+Adri´an Carmona a,b, Achilleas Lazopoulos b, Pablo Olgoso a and Jos´e
+Santiago a
+a CAFPE and Departamento de F´ısica Te´orica y del Cosmos, Universidad de Granada,
+Campus de Fuentenueva, E–18071 Granada, Spain
+b Institute for Theoretical Physics, ETZ Z¨urich, 8093 Z¨urich, Switzerland
+Abstract
+We introduce matchmakereft, a fully automated tool to compute the tree-
+level and one-loop matching of arbitrary models onto arbitrary eﬀective theories.
+Matchmakereft performs an oﬀ-shell matching, using diagrammatic methods and
+the BFM when gauge theories are involved. The large redundancy inherent to the
+oﬀ-shell matching together with explicit gauge invariance oﬀers a signiﬁcant number
+of non-trivial checks of the results provided. These results are given in the physical
+basis but several intermediate results, including the matching in the Green basis
+before and after canonical normalization, are given for ﬂexibility and the possibility
+of further cross-checks. As a non-trivial example we provide the complete matching
+in the Warsaw basis up to one loop of an extension of the Standard Model with
+a charge −1 vector-like lepton singlet. Matchmakereft has been built with gener-
+ality, ﬂexibility and eﬃciency in mind. These ingredients allow matchmakereft to
+have many applications beyond the matching between models and eﬀective theo-
+ries. Some of these applications include the one-loop renormalization of arbitrary
+theories (including the calculation of the one-loop renormalization group equations
+for arbitrary theories); the translation between diﬀerent Green bases for a ﬁxed
+eﬀective theory or the check of (oﬀ-shell) linear independence of the operators in an
+eﬀective theory. All these applications are performed in a fully automated way by
+matchmakereft.
+arXiv:2112.10787v1  [hep-ph]  20 Dec 2021
+
+===PAGE 2===
+Contents
+1
+Introduction
+3
+2
+Matchmakereft in a nutshell
+5
+2.1
+Model classiﬁcation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5
+2.2
+Amplitude calculation
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5
+2.3
+About γ5 and evanescent operators . . . . . . . . . . . . . . . . . . . . . .
+7
+2.4
+Wilson coeﬃcient matching
+. . . . . . . . . . . . . . . . . . . . . . . . . .
+8
+3
+Model creation
+8
+3.1
+Required ﬁles . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+9
+3.2
+Gauge structure . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+10
+3.2.1
+Background ﬁeld method . . . . . . . . . . . . . . . . . . . . . . . .
+13
+3.3
+Deﬁning the EFT model . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+14
+3.4
+Protected words
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+15
+4
+Matchmakereft usage
+16
+4.1
+Matchmakereft commmand line interface . . . . . . . . . . . . . . . . . . .
+16
+4.2
+Matchmakereft as a Python module . . . . . . . . . . . . . . . . . . . . . .
+19
+5
+Troubleshooting in matchmakereft
+19
+6
+Physics applications
+20
+6.1
+Cross-checks . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+20
+6.2
+Complete one-loop matching of a new charged vector-like lepton singlet . .
+21
+6.2.1
+SM couplings . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+22
+6.2.2
+Bosonic operators . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+23
+6.2.3
+Bi-fermion operators . . . . . . . . . . . . . . . . . . . . . . . . . .
+24
+6.2.4
+Four-fermion operators . . . . . . . . . . . . . . . . . . . . . . . . .
+25
+6.3
+Basis translation
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+27
+6.4
+Oﬀ-shell operator independence . . . . . . . . . . . . . . . . . . . . . . . .
+28
+7
+Conclusions and outlook
+28
+A Matchmakereft installation
+30
+A.1 Prerequisites . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+30
+2
+
+===PAGE 3===
+A.2 Installing matchmakereft
+. . . . . . . . . . . . . . . . . . . . . . . . . . .
+31
+A.2.1
+PyPI . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+31
+A.2.2
+Anaconda . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+32
+A.3 Updating the system path . . . . . . . . . . . . . . . . . . . . . . . . . . .
+32
+B Dealing with γ5
+32
+C A minimal complete example
+35
+D SMEFT Green basis
+44
+1
+Introduction
+Eﬀective ﬁeld theories (EFTs) are the most appropriate tool to perform calculations in
+multi-scale problems when using mass-independent renormalization schemes. The process
+of matching and running turns an often complicated, and sometimes not even perturba-
+tively convergent, multi-scale problem into a succession of simpler single-scale calcula-
+tions with the possibility of resummation of large logarithms for a better perturbative
+convergence [1]. The absence of direct experimental indications of new physics beyond
+the Standard Model (SM) seems to imply a hierarchy between the scale of new physics
+and the energies at which experiment is performed. In these circumstances, EFTs are
+not only applicable, but they become a powerful tool that allows us to very eﬃciently
+solve the problem of comparing experimental data with theoretical predictions. This is
+a highly non-trivial problem that involves complicated, usually loop-level, calculations
+of many experimental observables. Calculations that have to be repeated for each new
+physics model and for each observable. The way EFTs simplify this process is by split-
+ting in two, mostly independent, steps. The ﬁrst one, the bottom-up approach to EFTs,
+provides a model-independent parametrization of experimental observables that can be
+systematically improved but has to be computed only once (for the given precision) for
+each experimental observable. This eﬃcient parametrization can be provided in the form
+of global ﬁts to experimental data and a very important eﬀort from the community has
+been devoted to this task in the last few years (see [2–13] and references there in for some
+recent global ﬁts). The second step, the top-down approach to EFTs, sacriﬁces model-
+independence in favour of model-discrimination. It consists of the process of matching, in
+which the Wilson coeﬃcients (WCs) of the EFT are computed in terms of the parameters
+of the ultraviolet (UV) model. This process of matching has to be repeated for each UV
+model but it can be automated.
+When dealing with searches for new physics beyond the SM, the relevant EFT seems
+to be the SMEFT (see [14] for a recent review). The SMEFT WCs can be run down to the
+3
+
+===PAGE 4===
+electroweak scale thanks to the renormalization group equations (RGEs) computed in [15–
+18] at dimension 6 ignoring baryon and lepton number violating operators (see [19,20] for
+calculations of a subset at dimension 6, [21,22] for the inclusion of lepton-number violating
+operators, [18] for baryon-number violating ones, [23] for dimension-7 operators and [24]
+for recent eﬀorts towards the calculation of the dimension 8 RGEs). The SMEFT has been
+matched to the low-energy EFT (LEFT), the relevant EFT below the electroweak scale,
+both at tree level [25] and at one-loop [26] and then run again using the LEFT RGEs [27]
+to the relevant experimental energy scale to compute the corresponding experimental
+observables. This process of running in the SMEFT, matching to the LEFT and running in
+the LEFT has been implemented in automated tools like DsixTools [28,29] or Wilson [30].
+This leaves the calculation of the matching of arbitrary UV models onto the SMEFT as
+the only missing step towards a fully automated calculation of the phenomenological
+implications of new physics models.
+We present in this article matchmakereft, https://ftae.ugr.es/matchmakereft/, a
+fully automated tool to perform tree-level and one-loop matching of arbitrary UV models
+onto arbitrary EFTs. The tree-level matching of the most general extension of the SM
+onto the SMEFT at dimension 6 has been recently computed in [31], building on previous
+partial results [32–35]. Going up to the one-loop order in the matching is far more complex
+and some degree of automation is needed. Functional methods, pioneered in [36] extending
+ideas from the 80s [37, 38], have seen an impressive progress in the recent years [39–50]
+and they have resulted in computer tools that help with some of the most computational-
+intensive steps of the calculation [51,52] or that are automated but apply only to speciﬁc
+sets of models [53]. However, to the best of our knowledge, there is currently no code that
+can provide the complete one-loop matching of arbitrary models onto arbitrary EFTs in
+a fully automated way. 1 Matchmakereft comes to ﬁll this gap.
+Matchmakereft uses a diagrammatic approach to tree-level and one-loop matching,
+performed in the background ﬁeld method (BFM) when gauge theories are involved. The
+matching is, as of version 1.0.0, done oﬀ-shell which, together with gauge invariance,
+provides a signiﬁcant redundancy that results in a number of non-trivial cross-checks of
+the calculation. It has been designed with eﬃciency, generality and ﬂexibility in mind,
+what allows a number of applications beyond the direct matching of UV models to EFTs.
+Current applications include the renormalization of arbitrary (eﬀective) theories, the cal-
+culation of the RGEs of arbitrary (eﬀective) theories, EFT basis translation and checks
+of (oﬀ-shell) linear independence of operators. All these calculations are done in a fully
+automated way.
+The rest of the article is organised as follows. We describe the way matchmakereft per-
+forms the tree-level and one-loop calculation in Section 2. Model creation in matchmakereft
+is explained in detail in Section 3. The diﬀerent commands available in matchmakereft
+are deﬁned in Section 4 and common pitfalls when using matchmakereft are described
+1See [54] for alternative partial eﬀorts using a diagrammatic approach.
+4
+
+===PAGE 5===
+in Section 5. Some physical applications are given in Section 6 and we conclude and
+provide some outlook in Section 7. In the appendices we provide some more technical in-
+formation, including comprehensive installation instructions in Appendix A, details about
+the handling of γ5 in Appendix B, a minimal but complete example of the capabilities of
+matchmakereft in Appendix C, as well as the complete Green basis for the baryon-number
+preserving SMEFT, including our deﬁnition of evanescent operators, in matchmakereft
+in Appendix D.
+2
+Matchmakereft in a nutshell
+2.1
+Model classiﬁcation
+Models in matchmakereft are classiﬁed according to two criteria. Depending on their
+spectrum they can be light models, if only light (but not necessarily massless) particles
+are present in the spectrum; or heavy models, when there is at least one heavy particle
+in the spectrum. Depending on their role in the process of matching we have UV models,
+which can be light or heavy, that are to be matched onto EFTs, which are necessarily
+light models. Models in matchmakereft are created using FeynRules [55], as described
+in detail in Section 3.
+Matchmakereft performs an oﬀ-shell matching, in the BFM when gauge theories are
+involved, of a UV model onto an EFT. This is done by computing, in dimensional reg-
+ularization in D = 4 −2ϵ space-time dimensions, the hard-region contribution to the
+one-light-particle-irreducible relevant amplitudes at tree and one-loop level in the UV
+theory and equating it to the tree level contribution in the EFT for arbitrary kinematic
+conﬁgurations of the external particles (see [56, 57] for two recent excellent reviews of
+the matching process). The amplitudes, with only physical external light particles, that
+have to be computed are ﬁxed in an automated way by matchmakereft but the user has
+ﬂexibility on changing this list as described in Section 4. All the relevant diagrams in the
+UV model and the EFT are then automatically computed by QGRAF [58] and the corre-
+sponding amplitudes are dressed by matchmakereft using the Feynman rules computed
+during the creation of the model.
+2.2
+Amplitude calculation
+Matchmakereft runs in two diﬀerent modes, depending on whether the UV model is light
+or heavy, called RGEmaker and Matching modes, respectively. In RGEmaker mode, which
+is used to compute the RGEs of an arbitrary theory, the UV model contains no heavy
+particles and matchmakereft computes the UV-divergent contribution proportional to 1/ϵ
+of the corresponding one-particle-irreducible amplitudes. In Matching mode, there are
+heavy particles in the spectrum and both the ﬁnite and 1/ϵ (both UV and IR) hard-region
+5
+
+===PAGE 6===
+contributions to the corresponding one-light-particle-irreducible amplitudes are computed.
+In this case diagrams including only light particles are not included in the calculation, as
+they cancel in the matching.
+The calculation of the hard region contribution to the amplitudes is performed with
+FORM [59] and proceeds as follows:
+• Hard region expansion.
+This corresponds to the following expansion of the
+integrand of the amplitude
+k2 ∼M 2 ≫p2 ∼m2,
+(2.1)
+where k represents the loop momentum, M a heavy mass, p any of the external
+momenta and m a light mass. This is done by iterating the following identities
+1
+(k + p)2 −M 2 =
+1
+k2 −M 2
+
+1 −
+p2 + 2k · p
+(k + p)2 −M 2
+
+,
+1
+(k + p)2 −m2 = 1
+k2
+
+1 −p2 + 2k · p −m2
+(k + p)2 −m2
+
+.
+(2.2)
+These identities are imposed iteratively until the power of infrared (IR) scales (exter-
+nal momenta or light masses) is the correct one to match the maximum dimension of
+the operators appearing in the EFT as automatically computed in matchmakereft.
+• Tensor reduction. Tensor reduction is performed by means of the following iden-
+tities
+kµ1kµ2 = gµ1µ2 k2
+D ,
+(2.3)
+kµ1kµ2kµ3kµ4 = gµ1µ2µ3µ4
+k4
+D2 + 2D,
+(2.4)
+kµ1 . . . kµ6 = gµ1...µ6
+k6
+D3 + 6D2 + 8D,
+(2.5)
+kµ1 . . . kµ8 = gµ1...µ8
+k8
+D4 + 12D3 + 44D2 + 48D, . . .
+(2.6)
+where gµ1...µn is the totally symmetric combination of metric tensors.
+• Dirac algebra. Once the integrals have been reduced to scalar integrals we proceed
+to perform the corresponding Dirac algebra, in D dimensions in Matching mode (in
+4 dimensions in RGEmaker mode). Version 1.0.0 of matchmakereft uses an anti-
+commuting γ5 prescription as discussed in Section 2.3. In the case of fermion number
+violating particles and/or interactions, we follow the rules proposed in Ref. [60,61].
+6
+
+===PAGE 7===
+• Partial fractioning. The following identity is used to separate propagators with
+diﬀerent masses
+1
+(k2 −m2
+1)(k2 −m2
+2) =
+1
+m2
+1 −m2
+2
+
+1
+k2 −m2
+1
+−
+1
+k2 −m2
+2
+
+,
+(2.7)
+where masses can be light or heavy and one of them can be vanishing.
+• Integration by parts. After partial fractioning scaleless integrals are set to zero,
+except in RGEmaker mode, in which case we keep the UV poles using,
+Z
+dDk
+(2π)D
+1
+k4 =
+i
+(4π)2
+1
+ϵ + . . . ,
+(2.8)
+before eliminating the remaining scaleless integrals. In Matching mode the following
+identity is used to reduce the massive integrals to tadpoles
+1
+(k2 −m2)n+1 = D −2n
+2nm2
+1
+(k2 −m2)n.
+(2.9)
+At this point we are left with a tadpole integral
+a0(m) =
+Z
+dDk
+(2π)D
+1
+k2 −m2 = i m2
+16π2
+1
+¯ϵ + 1 −log
+m2
+µ2
+
++ O(ϵ),
+(2.10)
+where
+1
+¯ϵ ≡1
+ϵ + γE −log(4π),
+(2.11)
+with γE ≈0.5772 the Euler-Mascheroni constant. In matchmakereft 1/¯ϵ is denoted
+by invepsilonbar.
+2.3
+About γ5 and evanescent operators
+In order to ensure maximum generality matchmakereft assumes no four-dimensional prop-
+erties when running in Matching mode. In particular no Fierz relations or reduction of
+products of three or more gamma matrices is perform during the matching procedure.
+This means that all evanescent structures, which are equivalent to operators in the Green
+basis only in D = 4 have to be explicitly deﬁned as part of the Green basis. As an ex-
+ample, we provide in Appendix D the complete Green basis for the SMEFT at dimension
+6 as needed for the matching with matchmakereft of general theories with renormaliz-
+able couplings. 2 This extends the Green basis of [62] with the general set of evanescent
+structures including fermionic operators.
+2Non-renormalizable theories can be matched also with matchmakereft but an extension of the basis
+with a larger number of gamma matrices in four-fermion operators would be needed. Similarly, if bosonic
+evanescent operators appear in the process of matching a speciﬁc UV model they would have to be
+included in the EFT basis.
+7
+
+===PAGE 8===
+Regarding γ5 it is well known that its implementation in dimensional regularization
+schemes is problematic (see [63] and references there in for an account of the current
+status). The current version of matchmakereft (1.0.0) implements an anticommuting
+γ5 together with an implementation of the hermiticity properties of the WCs that is
+enough for the case of the SMEFT (and extensions with multiple scalar doublets) as we
+discuss more carefully in Appendix B.
+2.4
+Wilson coeﬃcient matching
+Once the amplitudes have been computed, the output is written in two ﬁles for each
+amplitude, one including the gauge structure and the other including the kinematic and
+ﬂavour structures. Matchmakereft then uses Mathematica match the amplitudes for all
+kinematic conﬁgurations between the UV model and the EFT both at tree level and one
+loop. Once the oﬀ-shell matching has been performed, that is the Wilson coeﬃcients of the
+Green basis have been computed in terms of the couplings and masses of the UV model,
+matchmakereft automatically performs a canonical normalization of the results and then
+reduces the matching to a physical basis as deﬁned by the user (see Section 4 for details).
+Results at all three levels (Green basis with non-canonical kinetic terms, canonically
+normalised Green basis and Physical basis) are reported by matchmakereft together
+with the corresponding renormalisation of the gauge couplings as ﬁxed by gauge boson
+renormalisation in the BFM. If RGEmaker mode has been invoked then matchmakereft
+can also automatically compute the beta functions for all the WCs of the EFT used.
+The oﬀ-shell matching used introduces a large degree of kinematic redundancy. In
+gauge theories the BFM also introduces a large degree of explicit gauge redundancy. These
+redundancies provide a very powerful mechanism to cross-check the results obtained in
+matchmakereft and when any of them is not fulﬁlled matchmakereft will issue a warning
+and provide some extra information that can be useful to debug the problem.
+3
+Model creation
+Model creation is fully automated in matchmakereft but it relies on the explicit input
+from the user. Thus, it is the step that should be performed with the greatest care, as it is
+the most likely culprit in case of problems with the matching calculation. Model creation
+is greatly simpliﬁed by the use of FeynRules but a few important points should be taken
+into account.
+8
+
+===PAGE 9===
+3.1
+Required ﬁles
+Matchmakereft expects a number of ﬁles with all the relevant information to create the
+model. The detailed structure of each of these ﬁles will be deﬁned below but we list them
+here ﬁrst: 3
+• Model ﬁles (compulsory): one or more ﬁles modfile1.fr, ..., modfilen.fr that
+deﬁne the model in FeynRules format. One of the ﬁles, the last one of the list during
+the creation of the model (see below) is special, as it will deﬁne the name of the
+matchmakereft model, which is modelfilen_MM, and the name that extra ﬁles with
+additional information need to have. Matchmakereft expects the Lagrangian
+of the to be deﬁned as Ltot. If a diﬀerent name is used the model will not be
+created.
+• Gauge information ﬁle (compulsory only if gauge groups are present): a ﬁle called
+modfilen.gauge that has the deﬁnition of all the gauge functions, including struc-
+ture constants, group generators in diﬀerent representations and Clebsch-Gordan
+coeﬃcients, appearing in the model (see below for more information). The user can
+choose any gauge basis of interest but they are responsible for the consistency of
+the chosen basis.
+• Symmetry ﬁle (optional): a ﬁle called modfilen.symm that indicates possible sym-
+metries in the parameters of the model. This is particularly important in the case
+of the EFT model and it is compulsory in this case if symmetries are present.
+The content of the ﬁle should be a Mathematica list in which the symmetries
+are given in the form of replacement rules. As an example we show the case of
+the symmmetries of the Wilson coeﬃcient of the Weinberg operator (denoted by
+alphaWeinberg[i,j]=alphaWeinberg[j,i]) and the four-lepton operator Oℓℓ=
+¯ℓiγµℓj¯ℓkγµℓl (denoted by alphaOll[i,j,k,l]=alphaOll[k,l,i,j]):
+1 listareplacesymmetry =
+2
+{
+3
+alphaWeinberg[i_ , j_] -> alphaWeinberg[j, i],
+4
+alphaWeinbergbar [i_ , j_] -> alphaWeinbergbar [j, i],
+5
+alphaOll[i_ , j_ , k_ , l_] -> alphaOll[k, l, i, j]
+6
+}
+where the underscore denoting dummy indices on the left hand side of the rules is
+compulsory and the bar at the end of a name denotes complex conjugation.
+• Redundancy ﬁle (compulsory): a ﬁle called modfilen.red that provides the redun-
+dancies that express the Wilson coeﬃcient of a physical basis in terms of the ones
+3The installation of matchmakereft comes with a number of sample models that can be obtained with
+the command copy models (see below). We encourage the user to check these examples for details on
+how to implement new models.
+9
+
+===PAGE 10===
+in the Green basis. It is compulsory but it can be empty if no redundancies are
+needed (for example if the model is a UV model, if the physical and Green bases
+coincide or if we just want the results in the Green basis).
+• Hermiticity properties ﬁle: complex conjugation is a very important process in
+matchmakereft, providing extra cross-checks of the correctness of the calculation.
+For that reason it is important to provide the information of which WCs have spe-
+cial (anti)hermiticity properties. A ﬁle called modfilen.herm can be provided by
+the user deﬁning a Mathematica list called listahermiticity deﬁning those WCs
+whose hermitian conjugate can be deﬁned in terms of the original coeﬃcient. As an
+example, for the case of the hermitian operator (O(1)
+Hq)ij = H†i
+↔
+DµH¯ℓiγµℓj, its Wilson
+coeﬃcient, denoted alphaOHq1[i,j] satisﬁes alphaOHq1bar[i,j]=alphaOHq1[j,i].
+This is provided in the form of the hermiticity ﬁle as follows
+1 listahermiticity = {
+2
+alphaOHq1bar[i_ ,j_]->alphaOHq1[j,i]
+3
+}
+3.2
+Gauge structure
+Matchmakereft is especially eﬃcient when the matching is performed in the unbroken
+phase of gauge theories as it keeps gauge indices as dummy indices during the calcula-
+tion of the amplitudes, replacing them with their explicit values only at the end of the
+calculation. When creating a model, all gauge functions, including structure constants,
+generators in diﬀerent representations and Clebsh-Gordan coeﬃcients need to have a spe-
+ciﬁc name that does not correspond to any function already present in Mathematica or
+FeynRules. Structure constants and generators do not have to be deﬁned as FeynRules
+parameters but Clebsch-Gordan coeﬃcients do.
+The numerical values of these gauge
+functions are provided in a ﬁle wigh a modfilen.gauge extension with the deﬁnition of
+a mathematica list called replacegaugedata that consist of a list of substitutions in the
+form of Mathematica sparse arrays. As a simple example, the SU(2)L weak gauge group
+can be deﬁned as follows in one of the .fr ﬁles:
+1 M$GaugeGroups = {
+2
+SU2L == {
+3
+Abelian
+-> False ,
+4
+CouplingConstant
+-> g2 ,
+5
+GaugeBoson
+-> Wi ,
+6
+StructureConstant
+-> fsu2 ,
+7
+Representations
+-> {{Ta ,SU2D }}
+8
+}
+9 },
+where we have deﬁned the structure constant symbol and one representation with gener-
+ator symbol Ta and index deﬁnition SU2D. Note that the adjoint representation does not
+10
+
+===PAGE 11===
+need to be explicitly deﬁned as it is deﬁned by the structure constants and the deﬁnition
+of the corresponding gauge bosons which, in this case reads (again, provided in one of the
+.fr ﬁles),
+1 M$ClassesDescription = {
+2
+V[2] == {
+3
+ClassName
+-> Wi ,
+4
+SelfConjugate
+-> True ,
+5
+Indices
+-> {Index[SU2W]},
+6
+Mass
+-> 0,
+7
+FullName
+-> "light"
+8
+}
+9 };
+A few things are worth emphasizing from the above example. First, the mass is set to
+zero because we are in the unbroken phase of the SM. Second, we deﬁne physical ﬁelds
+in entire gauge multiplets, rather than components. 4 Finally, we assign the FullName
+variable to “light” (FullName->"light"). This is compulsory in matchmakereft. Every
+particle has to be deﬁned with FullName equal to either "light" or "heavy" to deﬁne
+the corresponding particle as light (and therefore to be kept in the EFT model) or heavy
+(to be integrated out in the UV model).
+The corresponding indices (not only gauge, also ﬂavour indices if present) have to be
+deﬁned with a ﬁnite range within the .fr ﬁles. As an example the ones corresponding
+the the adjoint (SU2W) and fundamental (SU2D) representations of SU(2)L, together with
+ﬂavor indices for fermion generations (Generation), can be deﬁned as follows
+1 IndexRange[Index[SU2W ]] = Range [3];
+2 IndexRange[Index[SU2D ]] = Range [2];
+3 IndexRange[Index[Generation ]] = Range [3];
+4 IndexStyle[SU2W ,n];
+5 IndexStyle[SU2D ,l];
+6 IndexStyle[Generation , fl];
+Only massless particles can have ﬂavor indices in the current version of matchmakereft
+(1.0.0).
+In order to show how new particles with non-trivial quantum numbers and Clebsch-
+Gordan coeﬃcients are deﬁned we show here the case of a heavy scalar triplet under
+SU(2)L and the SM Higgs
+1 M$ClassesDescription = {
+2
+S[105] == {
+3
+ClassName
+-> tphi ,
+4
+SelfConjugate
+-> True ,
+5
+Indices
+-> {Index[SU2W]},
+6
+Mass
+-> Mtphi ,
+4It is actually possible to deﬁne also the ﬁeld components separately as the physical ﬁelds. In fact, this
+can be advantageous when creating complicated models that take very long to generate in FeynRules.
+11
+
+===PAGE 12===
+7
+FullName
+-> "heavy",
+8
+QuantumNumbers
+-> {Y -> 0}
+9
+},
+10
+11
+S[11] == {
+12
+ClassName
+-> Phi ,
+13
+Indices
+-> {Index[SU2D]},
+14
+SelfConjugate
+-> False ,
+15
+Mass
+-> muH ,
+16
+FullName
+-> "light",
+17
+QuantumNumbers
+-> {Y -> 1/2}
+18
+}
+19
+20 };
+where the new particle is deﬁned as heavy and has a non-zero mass while the SM Higgs bo-
+son is deﬁned as light (but also has a non-vanishing mass). We also see that U(1) quantum
+numbers have to be deﬁned explicitly as is standard in FeynRules. A trilinear coupling
+between the heavy scalar and two Higgs bosons, which has a non-trivial gauge structure
+following the corresponding Clebsch-Gordan coeﬃcients, has to be deﬁned explicitly like
+in the following example
+1 M$Parameters = {
+2
+3
+C223 == {
+4
+ParameterType
+-> Internal ,
+5
+Indices
+-> {Index[SU2D],Index[SU2D],Index[SU2W]},
+6
+ComplexParameter
+-> True
+7
+},
+8
+9 ...
+10 }
+and in the corresponding Lagrangian
+1 Ltot := Block [{ii ,jj ,nn},
+2
+2 C223[ii ,jj ,nn] kappatphi
+tphi[nn] Phibar[ii] Phi[jj] + ...]
+As mentioned above the explicit values of the gauge functions are given in a ﬁle called
+modfilen.gauge (assuming the last FeynRules model ﬁle is called modfilen.fr) which,
+in the example we are showing would contain the following information
+1 replacegaugedata = {
+2
+fsu2 -> SparseArray[Automatic , {3, 3, 3}, 0,
+3
+{1, {{0, 2, 4, 6}, {{2, 3}, {3, 2},
+4
+{1, 3}, {3, 1}, {1, 2}, {2, 1}}},
+5
+{1, -1, -1, 1, 1,
+-1}}],
+6
+Ta -> SparseArray[Automatic , {3, 2, 2}, 0,
+7
+{1, {{0, 2, 4, 6}, {{1, 2}, {2, 1},
+8
+{1, 2}, {2, 1}, {1, 1}, {2, 2}}},
+12
+
+===PAGE 13===
+9
+{1/2, 1/2, -I/2, I/2, 1/2,
+-1/2}}] ,
+10
+C223 -> SparseArray[Automatic , {2, 2, 3}, 0,
+11
+{1, {{0, 3, 6}, {{1, 3}, {2, 1}, {2, 2},
+12
+{1, 1}, {1, 2}, {2, 3}}},
+13
+{1/2, 1/2, -I/2, 1/2, I/2,
+-1/2}}]}
+where we have implemented the usual deﬁnitions, fsu2[i, j, k] = ϵijk, Ta[a, i, j] = σa
+ij/2 =
+C223[i, j, a].
+3.2.1
+Background ﬁeld method
+Matchmakereft assumes that the BFM is used when gauge theories are involved. Follow-
+ing the SU(2)L example, the associated quantum and ghost ﬁelds have to be deﬁned on
+top of the deﬁnition of Wi given above
+1
+V[102] == {
+2
+ClassName
+-> WiQuantum ,
+3
+SelfConjugate
+-> True ,
+4
+Indices
+-> {Index[SU2W]},
+5
+Mass
+-> 0,
+6
+FullName
+-> "light"
+7 },
+8
+U[1] == {
+9
+ClassName
+-> ghWi ,
+10
+SelfConjugate
+-> False ,
+11
+Indices
+-> {Index[SU2W]},
+12
+Ghost
+-> Wi ,
+13
+QuantumNumbers
+-> {GhostNumber
+-> 1},
+14
+Mass
+-> 0,
+15
+FullName
+-> "light"
+16
+},
+17 ...
+and the Lagrangian involving the SU(2)L part is given by
+1 gotoBFM ={Wi[a__]->Wi[a]+ WiQuantum[a]};
+2
+3 Ltot :=
+4 Block [{lag ,mu ,nu ,ii ,aa},
+5 lag = -1/4 FS[Wi ,mu ,nu ,ii] FS[Wi ,mu ,nu ,ii]
+6
+-ghWibar[aa].DC[(DC[ghWi[aa],mu]/. gotoBFM),mu]
+7
+-DC[WiQuantum[mu ,a],mu] DC[WiQuantum[nu ,a],nu ]/2;
+8 lag/. gotoBFM
+9 ]
+Note the compulsory use of Ltot for the name of the total Lagrangian of the model.
+13
+
+===PAGE 14===
+3.3
+Deﬁning the EFT model
+As we have mentioned above, the EFT model has to be a light model (no heavy particles)
+and has to include all the relevant operators in a Green basis. The WCs in the EFT
+need to have a special format. They have to be named alphaXXX, where XXX stands
+for an arbitrary number of alpha-numeric characters (see Section 3.4). The amplitudes
+that matchmakereft computes are deﬁned by the operators in the EFT. In that sense,
+one does not need to include all the operators of a Green basis but at least all the
+operators in a certain class (same ﬁelds), including redundant and evanescent operators. 5
+Matchmakereft will then generate only the relevant amplitudes to match these operators.
+Unless the user is absolutely sure that they do not need them, renormalizable operators,
+including kinetic and mass terms, have to be included in the EFT model.
+When performing the matching, matchmakereft will check that all oﬀ-shell kinematic
+conﬁgurations and all gauge directions are correctly matched. If these checks are not
+satisﬁed, matchmakereft will issue a warning, and store the relevant information. This
+usually happens because the user made a mistake when deﬁning the models, either be-
+cause the model is not correctly deﬁned or because there are missing operators in the
+Green basis. See Section 5 for common problems and possible solutions when running
+matchmakereft. When doing the external momentum expansion all operators of dimen-
+sion equal or smaller to the highest dimension of the operators appearing in the EFT will
+be generated. Thus, one has to include all operators of smaller dimensions within the
+same class. Failing to do so will make the matching fail but the user can check that all
+problems appear in sectors that are of no interest for them. Also sometimes some ampli-
+tudes are not correctly matched due to the use of an anticommuting γ5. Our proposed
+solution should be enough to ensure the correct results in the SMEFT and similar EFTs
+but a warning will still be issued and the relevant information stored so that the user can
+check if the solution is correct or not.
+If the user is interested in the matching result in a physical basis, they have to provide
+the corresponding redundancies to reduce the WCs of the Green basis into the ones of
+the physical basis. This is done in the ﬁle denoted modfilen.red. As an example, let’s
+consider the following redundant operators in the SMEFT at dimension 6
+OHD = (H†DµH)†(H†DµH),
+(3.1)
+RBDH = (H† ↔
+DµH)∂νBµν →g1OHD + . . . ,
+(3.2)
+R2B = −1
+2(∂µBµν)(∂ρBρν) →−g2
+1
+2 OHD + . . . ,
+(3.3)
+where the →indicates an on-shell equivalence. These redudancies imply the following
+5See section 2.3 for a discussion about evanescent operators.
+14
+
+===PAGE 15===
+on-shell condition for the corresponding Wilson coeﬃcients (with obvious notation)
+alphaOHD →alphaOHD + 2g1alphaRBDH −g2
+1
+2 alphaR2B,
+(3.4)
+which we implement in the ﬁle modfilen.red as follows
+1 finalruleordered ={
+2
+alphaOHD
+->alphaOHD + 2* alphaRBDH*g1 - (alphaR2B*g1^2)/2,
+3
+...
+4
+}
+3.4
+Protected words
+There is quite a bit of ﬂexibility in the process of model deﬁnition in matchmakereft but
+there are a few words that are protected and should be used only for their speciﬁc purpose.
+In general, all variables in matchmakereft should be made of alphanumeric characters,
+without including any special characters. The list of protected variables are the following
+• alpha. All WCs should be deﬁned as alphaXXX where XXX is an arbitrary string of
+alphanumeric characters. Similarly no other variable in the model should contain
+the substring alpha. An exception to this rule is that when computing the RGEs
+of an EFT the Wilson coeﬃcients in the UV model can be kept with their original
+alphaXXX name as they will be changed into WCXXX automatically by matchmakereft.
+• Ltot. Ltot should be used to deﬁne the complete Lagrangian of the model (and it
+should not be used for anything else).
+• Quantum. Gauge bosons are split into a classical background and a quantum excita-
+tion. If the classical gauge boson is deﬁned by ClassName->Vname then the quantum
+excitation has to be deﬁned by ClassName->VnameQuantum.
+• invepsilonbar is used for the dimensional regularization variable 1/¯ϵ so it should
+not be use explicitly in the deﬁnition of a model. Similarly epsilonbar is used of
+¯ϵ.
+• Eps[] denotes the FeynRules Levi-civita tensor. When used with four indices it
+is interpreted by matchmakereft as the Minkowskian (with + −−−metric sig-
+nature) totally antisymmetric tensor and should therefore not be used for the Eu-
+clidean one (with a number of indices diﬀerent from four it can be used as the
+Euclidean one). In case one needs to use the totally antisymmetric rank-4 tensor
+both with Minkowskian and Euclidean signatures, the latter should be explicitly
+deﬁned as a gauge function and its numerical value deﬁned in the corresponding
+modfilen.gauge ﬁle.
+15
+
+===PAGE 16===
+• onelooporder is a dummy variable to identify the one-loop order contribution.
+• sSS is a dummy variable to identify the order in external momenta of a speciﬁc
+contribution.
+• iCPV= ϵ0123 is used to ﬁx the sign convention for the Levi-Civita symbol.
+4
+Matchmakereft usage
+An updated version of this manual can be found, once matchmakereft is installed, in the
+directory matchmakereft-location/matchmaker/docs/ where matchmakereft-location
+is the directory listed under Location when the command pip show matchmakereft is
+used or the analogous location in Anaconda (see Appendix A).
+Matchmakereft can be run in two diﬀerent ways. The same commands are available
+in all diﬀerent running modes although the syntax is slightly diﬀerent on each of them.
+4.1
+Matchmakereft commmand line interface
+The most straight-forward way to run matchmakereft is via the command line interface
+(CLI). This is obtained by just typing on the terminal (after matchmakereft has been
+installed, see Appendix A for details)
+> matchmakereft
+The user has then access to the CLI which looks as follows
+Welcome to matchmakereft
+Please
+refer to arXiv :2112. xxxxx
+when
+using
+this code
+matchmakereft >
+Inside the CLI tab-completion is available and all ﬁle paths can be absolute or relative.
+The command help gives information on all available commands. The core commands in
+matchmakereft CLI are:
+matchmakereft > test_installation
+This command runs a number of minimal tests to check that matchmakereft has been
+correctly installed. The process is verbose and provides information on what is being
+computed. It takes about 6 minutes to complete in a core-i7@3.00 GHz laptop.
+matchmakereft > copy_models
+Location
+This command copies a number of sample models, including the complete baryon-number
+conserving SMEFT at dimension 6, in the directory Location (which can be . for the
+current directory).
+16
+
+===PAGE 17===
+matchmakereft > create_model
+modfile1.fr ...
+modfilen.fr
+This command creates a matchmakereft model called modfilen_MM from the FeynRules
+model deﬁned in one or more ﬁles with names modfile1.fr ... modfilen.fr as de-
+scribed in detail in Section 3. The matchmakereft model is created in the same directory
+modfilen.fr is present. Both relative and absolute paths can be given as input.
+matchmakereft > match_model_to_eft
+UVModelName
+EFTModelName
+This command performs the complete tree-level and one-loop matching of matchmakereft
+UV model with name UVModelName onto a matchmakereft EFT model with name EFTModelName.
+The result of the matching is written in a ﬁle called MatchingResult.dat under ﬁle
+UVModelName. Any possible problems with the matching are reported and stored in a ﬁle
+called MatchingProblems.dat under the same directory. Matchmakereft automatically
+checks if the matching is run in RGEmaker or Matching mode.
+The result of the matching stored in MatchingResult.dat is a mathematica list called
+MatchingResult with four entries and the following structure
+1 MatchingResult ={
+2 {
+3 {{ GreenTree , GreenTreeProblems },{GreenLoop , GreenLoopProblems }},
+4 {{ NormGreenTree , NormGreenTreeProblems },{ NormGreenLoop ,
+NormGreenLoopProblems }},
+5 {PhysTreeLoop},
+6 { GaugeCouplingMatching }
+7 }
+where GreenTree and GreenLoop stands for the tree level and one-loop matching in
+the Green basis, respectively and GreenTreeProblems,GreenLoopProblems are ﬁlled if
+problems were found in the process of impossing hermiticity as discussed in Section 2.3.
+The second level, with the Norm preﬁx stand for the matching in the Green basis (again
+separately for tree level and one-loop) after canonical normalization. The third level,
+denoted PhysTreeLoop stands for the matching in the physical basis in which the tree
+level and one-loop contributions have been merged into a single expression (with the
+dummy variable onelooporder denoting the one-loop contribution). If no physical basis
+is deﬁned by providing an empty modfilen.red ﬁle then the Green basis is used as a
+physical basis. Finally, the fourth level, denoted GaugeCouplingMatching provides the
+redeﬁnition of the gauge couplings after matching as ﬁxed by the corresponding gauge
+boson canonical normalization in the background gauge.
+matchmakereft > match_model_to_eft_onlytree
+UVModelName
+EFTModelName
+Identical to match_model_to_eft but only the tree level matching is computed. With
+this feature, matchmakereft can be used as an automated basis translator, as one can
+simply use the corresponding EFT in a diﬀerent basis as UV model and the matching
+will provide the complete translation between the two bases (see Section 6 for an explicit
+example).
+17
+
+===PAGE 18===
+matchmakereft > compute_rge_model_to_eft
+UVModelName
+EFTModelName
+This command runs match_model_to_eft UVModelName EFTModelName in RGEmaker mode
+(the UV model has to be a light model) and then computes the beta functions for the
+WCs of the EFT given the UV model. They are stored in a ﬁle called RGEResult.dat
+under directory UVModelName. We deﬁne the beta function of a WC C as
+β(C) = µdC
+dµ .
+(4.1)
+matchmakereft > clean_model
+ModelName
+Matchmakereft is designed for the maximal eﬃciency so that if a speciﬁc process has
+been already computed it is not computed again. If for any reason the user wants to
+recreate the calculation of all the amplitudes this command should be invoked to clean
+the previous calculations.
+matchmakereft > check_linear_dependence
+EFTModelName
+Given a set of operators, deﬁned as an EFT model in directory EFTModelName, this
+command checks if they are oﬀ-shell linearly independent or not. This command is useful
+when ﬁnding a Green basis as sometimes the oﬀ-shell relations between diﬀerent operators
+are diﬃcult to obtain analytically. If the set is not linearly independent matchmakereft
+will provide the relations between the diﬀerent WCs (see Section 6 for an explicit example).
+matchmakereft > exit
+This command exits the CLI.
+For the sake of ﬂexibility the following commands are also available to perform inde-
+pendently some of the steps of the calculations:
+matchmakereft > match_model_to_eft_amplitudes
+UVModelName
+EFTModelName
+This command is used to compute all the relevant amplitudes in the UV model and the
+EFT but no calculation of the WCs is attempted.
+matchmakereft > match_model_to_eft_amplitudes_onlytree
+UVModelName
+EFTModelName
+This command is identical to match_model_to_eft_amplitudes but performs only the
+tree level calculation.
+matchmakereft > compute_wilson_coefficients
+UVModelName
+EFTModelName
+This command should be run after the call to match_model_to_eft_amplitudes or
+match_model_to_eft_amplitudes_onlytree and it computes the WCs to complete the
+matching.
+18
+
+===PAGE 19===
+4.2
+Matchmakereft as a Python module
+The python CLI described in the previous section provides an interactive experience to
+user.
+However, matchmakereft can be also run by importing matchmakereft into a
+python script, a iPython shell or a Jupyter notebook as a module and then running the
+same commands as in the CLI adding the parameters of the corresponding function as a
+string. As an example, the commands to create a model stored in model UVmodel.fr and
+to match it to the EFT stored in directory EFT_MM (which we assume has been already
+created) are given e.g. by
+1 from
+matchmakereft.libs.mm_offline
+import *
+2 create_model (" UVmodel.fr")
+3 match_model_to_eft (" UVmodel_MM
+EFT_MM ")
+All other commands in the CLI are also available to use as functions in a script that
+imports matchmakereft.
+5
+Troubleshooting in matchmakereft
+Matchmakereft provides a signiﬁcant number of cross-checks that usually catch problems
+with the installation or with the deﬁnition of the models. When a problem is encountered,
+matchmakereft tries to provide a useful warning message that can be used to ﬁgure out
+the origin of the problem. If the user encounters a problem that cannot be solved from the
+information provided by matchmakereft we encourage them to check the troubleshoot-
+ing section in the latest matchmakereft manual and the Gitlab matchmakereft issue
+tracker (https://gitlab.com/m4103/matchmaker-eft/-/issues) to see if the problem
+has been encountered by other users and a solution is available. If no solution can be
+found, the issue tracker should be use to pose questions to the matchmakereft developers
+or to ﬁle possible bugs.
+Most of the times an unsuccessful matching is due to a badly deﬁned model. Some
+common pitfalls are:
+• The complete Lagrangian of the model has to be named Ltot. Using a diﬀerent
+name results in matchmakereft not creating the model properly.
+• Operators badly deﬁned in FeynRules (a common example is indices not properly
+contracted). This results in wrong Feynman rules that lead to incorrect matching.
+• Model generation takes too long. This can happen with complicated models, in
+particular with eﬀective operators of high mass dimension.
+As an example, the
+generation of the SMEFT model can easily take more than 30 minutes in a core-
+i7@3.00 GHz laptop. In this case it is useful to compute the Feynman rules directly
+with FeynRules to check that the model does not have any obvious problems. Also
+19
+
+===PAGE 20===
+sometimes expanding in the gauge components can signiﬁcantly speed up model
+creation (at the expense of a reduced gauge degeneracy and therefore a smaller set
+of cross-checks).
+• QGRAF not running correctly. This could happen when vertices with a larger number
+of particles than the limit set in QGRAF are present.
+The solution is to modify
+correspondingly the limit in the QGRAF source and compile it again.
+• FORM not running correctly. This is normally due to variables not being correctly
+deﬁned (again due to an incorrect implementation of the model). Running directly
+with FORM the oﬀending ﬁle can give hints on what is happening.
+• FORM taking too long to run. Amplitudes with many external legs usually involve a
+very large number of diagrams that can take a long time to compute. The simplest
+solution is to not include the corresponding operators in the EFT model if the
+user is not interested in their matching (in the SMEFT case at dimension 6 the
+operator OH = (H†H)3 is usually the one that takes the longest to be matched).
+Other options could imply splitting the diagrams into smaller sets and combining the
+result after the calculation (this is how the beta function of the (H†H)4 operator was
+computed in [24]) but this process is not straight-forward. We expect to automate
+this procedure in future versions of matchmakereft.
+• All amplitudes are computed but the matching is unsuccessful. This can be due to
+a number of reasons, the most common ones being: the WCs of the EFT model or
+the couplings in the UV model have some symmetry properties that have not been
+implemented in the corresponding modfilen.symm ﬁle; the hermiticity properties of
+the couplings in the EFT or UV models have not been properly deﬁned, either in
+the deﬁnition of the model itself or in the corresponding modfilen.herm ﬁle; there
+are some missing operators in the Green basis of the EFT model.
+6
+Physics applications
+A preliminary version of matchmakereft has been already used in a number of physical
+applications [24,64,65] but we list here some of the new applications that matchmakereft
+has.
+6.1
+Cross-checks
+As we have emphasized, the large redundancy inherent in the oﬀ-shell matching in the
+BFM gives us conﬁdence on the correctness of the results computed with matchmakereft.
+Nevertheless we have tested matchmakereft against some of the few available complete
+20
+
+===PAGE 21===
+one-loop matching results in the literature. We have found complete agreement except
+when explicitly described. The list of models we have compared to include:
+• RGEmaker mode:
+– Complete RGEs for the ALP-SMEFT up to mass dimension-5 as computed
+in [64]. Exact agreement was found up to a typo in the original reference.
+– RGEs for the purely bosonic and two-fermion operators in the Warsaw basis [66]
+as computed in [15–17] and implemented in DSixTools [28, 29].
+Complete
+agreement was found.
+• Matching mode:
+– Scalar singlet. The complete matching up to one-loop order of an extension
+of the SM with a scalar singlet was recently completed in [67], after several
+partial attempts [36,68]. We have found complete agreement with the results
+in [67].
+– Type-I see-saw model, as computed in [69]. Complete agreement was found.
+– Scalar leptoquarks, as computed in [62]. We have found some minor diﬀerences
+that we are discussing with the authors.
+– Charged scalar electroweak singlet, as computed in [70]. We agree with the
+result except for a sign in Eqs. (4.14), the terms with Pauli matrices in (4.15),
+(B.4) and (B.5) (the latter is the culprit of the opposite sign in terms with
+Pauli matrices) and a factor of 2 in Eq. (4.17) and of 4 in (B.7). We have
+contacted the authors about these diﬀerences.
+6.2
+Complete one-loop matching of a new charged vector-like
+lepton singlet
+In this section we provide the complete tree-level and one-loop matching of an extension
+of the SM with a new hypercharge −1, electroweak singlet vector-like lepton E. The
+Lagrangian is given by
+L = LSM + ¯E(i /D −ME)E −
+˜λi¯ℓiφER + h.c.
+
+,
+(6.1)
+where ℓi and φ stand for the SM lepton doublets and the Higgs boson, respectively and i
+is a SM ﬂavor index. See [71] for direct experimental limits on such an extension of the
+SM.
+This model is included in the distribution of matchmakereft and can be obtained via
+the copy_models command. Once the model is downloaded, and inside the corresponding
+21
+
+===PAGE 22===
+directory, the following commands will generate the complete one-loop matching, includ-
+ing the complete matching in the Greeen basis. We use the CLI as an example and replace
+the output given by matchmakereft with ... ,
+matchmakereft > create_model
+UnbrokenSM_BFM .fr
+VLL_Singlet_Y_m1_BFM .fr
+...
+matchmakereft > match_model_to_eft
+VLL_Singlet_Y_m1_BFM_MM
+SMEFT_Green_Bpreserving_MM
+...
+The non vanishing WCs in the Warsaw basis, including one-loop accuracy are given in
+the next sections. In order to reduce clutter we only write explicitly ﬂavor indices when
+necessary. Also we use the following notation
+⌊˜λ˜λ∗⌋≡˜λi˜λ∗
+i ,
+⌊˜λM˜λ∗⌋≡˜λiMij˜λ∗
+j,
+(6.2)
+with Mij and arbitrary matrix with ﬂavor indices. We also deﬁne
+LE ≡log(µ2/M 2
+E)
+(6.3)
+.
+The tree level result agrees with the calculation in [33] (when taking into account the
+diﬀerent notation in the Yukawa coupling).
+6.2.1
+SM couplings
+The SM couplings receive the following (one-loop) corrections:
+µ2
+H =µ(0) 2
+H
++ ⌊˜λ∗˜λ⌋
+16π2
+"
+2M 2
+E −1
+2µ(0) 2
+H
+−1
+3
+µ(0) 4
+H
+M 2
+E
+−(µ(0) 2
+H
+−2M 2
+E)LE
+#
+,
+(6.4)
+λ =λ(0) +
+1
+16π2
+"
+⌊˜λ∗˜λ⌋(5g(0) 2
+2
+µ(0) 2
+H
+−6λ(0)(4µ(0) 2
+H
++ 3M 2
+E) + 18µ(0) 2
+H
+⌊˜λ∗˜λ⌋)
+18M 2
+E
++(2M 2
+E −µ(0) 2
+H
+)⌊˜λ∗Y (0)
+e
+Y (0) †
+e
+˜λ⌋
+M 2
+E
+#
+(6.5)
+−
+1
+16π2
+"
+⌊˜λ∗˜λ⌋[−g(0) 2
+2
+µ(0) 2
+H
++ 6λ(0)M 2
+E −3M 2
+E⌊˜λ∗˜λ⌋]
+3M 2
+E
++2(−M 2
+E + µ(0) 2
+H
+)⌊˜λ∗Y (0)
+e
+Y (0) †
+e
+˜λ⌋
+M 2
+E
+#
+LE,
+(6.6)
+Yu =Y (0)
+u
+−
+1
+16π2
+" 
+1
+4 + µ(0) 2
+H
+3M 2
+E
+!
+Y (0)
+u ⌊˜λ∗˜λ⌋+ 1
+2Y (0)
+u ⌊˜λ∗˜λ⌋LE
+#
+,
+(6.7)
+22
+
+===PAGE 23===
+Yd =Y (0)
+d
+−
+1
+16π2
+" 
+1
+4 + µ(0) 2
+H
+3M 2
+E
+!
+Y (0)
+d ⌊˜λ∗˜λ⌋+ 1
+2Y (0)
+d ⌊˜λ∗˜λ⌋LE
+#
+,
+(6.8)
+(Ye)ij =(Y (0)
+e
+)ij −
+1
+16π2
+" 
+1
+4 + µ(0) 2
+H
+3M 2
+E
+!
+(Y (0)
+e
+)ij⌊˜λ∗˜λ⌋+
+ 
+3
+8 + 3µ(0) 2
+H
+4M 2
+E
+!
+˜λi˜λ∗
+k(Y (0)
+e
+)kj
+#
+−
+1
+16π2
+"
+1
+2(Y (0)
+e
+)ij⌊˜λ∗˜λ⌋+
+ 
+1
+4 + µ(0) 2
+H
+2M 2
+E
+!
+˜λi˜λ∗
+k(Y (0)
+e
+)kj
+#
+LE,
+(6.9)
+where the (0) superscript denotes the original parameters in the SM Lagrangian. All other
+SM couplings receive no corrections. In the following we express our results in terms of
+the physical SM couplings, the ones on the left hand side of Eqs. (6.4-6.9).
+6.2.2
+Bosonic operators
+Turning now to dimension 6 bosonic operators, we obtain the following non-vanishing
+WCs.
+αHW =
+1
+16π2
+g2
+2⌊˜λ˜λ∗⌋
+24M 2
+E
+,
+(6.10)
+αHB =
+1
+16π2
+g2
+1⌊˜λ˜λ∗⌋
+8M 2
+E
+,
+(6.11)
+αHWB = −
+1
+16π2
+g1g2⌊˜λ˜λ∗⌋
+6M 2
+E
+,
+(6.12)
+αH□=
+1
+16π2
+1
+M 2
+E
+"
+−g4
+1
+30 +
+ 
+13g2
+1
+72 −5g2
+2
+24 −⌊˜λ˜λ∗⌋
+3
+!
+⌊˜λ˜λ∗⌋+ 3
+2⌊˜λ∗YeY †
+e ˜λ⌋
+#
++
+1
+16π2
+1
+M 2
+E
+g2
+1
+12 −g2
+2
+4
+
+⌊˜λ˜λ∗⌋+ ⌊˜λ∗YeY †
+e ˜λ⌋
+
+LE,
+(6.13)
+αHD =
+1
+16π2
+1
+M 2
+E
+"
+−2g4
+1
+15 +
+ 
+13g2
+1
+18 −⌊˜λ˜λ∗⌋
+2
+!
+⌊˜λ˜λ∗⌋+ 1
+2⌊˜λ∗YeY †
+e ˜λ⌋
+#
++
+1
+16π2
+1
+M 2
+E
+g2
+1
+3 ⌊˜λ˜λ∗⌋+ ⌊˜λ∗YeY †
+e ˜λ⌋
+
+LE,
+(6.14)
+αH =
+1
+16π2
+1
+M 2
+E
+4λ2
+3
+−5λg2
+2
+9
+−2λ⌊˜λ˜λ∗⌋+ ⌊˜λ˜λ∗⌋⌊˜λ˜λ∗⌋
+3
++ 2⌊˜λ∗YeY †
+e ˜λ⌋
+
+⌊˜λ˜λ∗⌋
++ 2λ⌊˜λ∗YeY †
+e ˜λ⌋−2⌊˜λ∗YeY †
+e YeY †
+e ˜λ⌋
+
++
+1
+16π2
+1
+M 2
+E
+
+−2λg2
+2
+3
+⌊˜λ˜λ∗⌋+ 4λ⌊˜λ∗YeY †
+e ˜λ⌋−2⌊˜λ∗YeY †
+e YeY †
+e ˜λ⌋
+
+LE.
+(6.15)
+23
+
+===PAGE 24===
+All other bosonic operators do not receive any corrections up to one loop.
+6.2.3
+Bi-fermion operators
+Regarding operators in the Warsaw basis with two fermion ﬁelds, the non-vanishing con-
+tributions in our model are the following.
+(αeW)ij = −
+1
+16π2
+g2
+24M 2
+E
+˜λi˜λ∗
+k(Ye)kj,
+(6.16)
+(αeB)ij = −
+1
+16π2
+g1
+12M 2
+E
+˜λi˜λ∗
+k(Ye)kj,
+(6.17)
+(α(1)
+Hq)ij = g2
+1
+16π2
+1
+M 2
+E
+
+−g2
+1
+45 + 13
+216⌊˜λ˜λ∗⌋+ 1
+36⌊˜λ˜λ∗⌋LE
+
+δij,
+(6.18)
+(α(3)
+Hq)ij = g2
+2
+16π2
+1
+M 2
+E
+
+−5
+72⌊˜λ˜λ∗⌋−1
+12⌊˜λ˜λ∗⌋LE
+
+δij,
+(6.19)
+(αHu)ij = g2
+1
+16π2
+1
+M 2
+E
+
+−4g2
+1
+45 + 13
+54⌊˜λ˜λ∗⌋+ 1
+9⌊˜λ˜λ∗⌋LE
+
+δij,
+(6.20)
+(αHd)ij = g2
+1
+16π2
+1
+M 2
+E
+2g2
+1
+45 −13
+108⌊˜λ˜λ∗⌋−1
+18⌊˜λ˜λ∗⌋LE
+
+δij,
+(6.21)
+(α(1)
+Hℓ)ij = −
+˜λi˜λ∗
+j
+4M 2
+E
++
+1
+16π2
+1
+M 2
+E
+" 
+g4
+1
+15 −13g2
+1⌊˜λ˜λ∗⌋
+72
+!
+δij +
+31g2
+1
+288 −33g2
+2
+32 + 13
+16⌊˜λ˜λ∗⌋
+
+˜λi˜λ∗
+j
+−1
+2
+˜λi˜λ∗
+k(Ye)kl(Y †
+e )lj −1
+2(Ye)ik(Y †
+e )kl˜λl˜λ∗
+j
+#
++
+1
+16π2
+1
+M 2
+E
+"
+−g2
+1⌊˜λ˜λ∗⌋
+12
+δij +
+ 
+25g2
+1
+48 −9g2
+2
+16 + 3⌊˜λ˜λ∗⌋
+8
+!
+˜λi˜λ∗
+j
+−1
+2
+˜λi˜λ∗
+k(Ye)kl(Y †
+e )lj −1
+2(Ye)ik(Y †
+e )kl˜λl˜λ∗
+j
+#
+LE,
+(6.22)
+(α(3)
+Hℓ)ij = −
+˜λi˜λ∗
+j
+4M 2
+E
++
+1
+16π2
+1
+M 2
+E
+"
+−5g2
+2⌊˜λ˜λ∗⌋
+72
+δij +
+9g2
+1
+32 + 77g2
+2
+288 + 5
+16⌊˜λ˜λ∗⌋
+
+˜λi˜λ∗
+j
+#
++
+1
+16π2
+1
+M 2
+E
+"
+−g2
+2⌊˜λ˜λ∗⌋
+12
+δij +
+ 
+9g2
+1
+16 + 7g2
+2
+48 + 3⌊˜λ˜λ∗⌋
+8
+!
+˜λi˜λ∗
+j
+#
+LE, (6.23)
+(αHe)ij =
+1
+16π2
+1
+M 2
+E
+"
+g2
+1
+ 
+2g2
+1
+15 −13⌊˜λ˜λ∗⌋
+36
+!
+δij + 1
+24(Y †
+e )ik˜λk˜λ∗
+l (Ye)lj
++
+
+−g2
+1
+6 ⌊˜λ˜λ∗⌋δij + 1
+4(Y †
+e )ik˜λk˜λ∗
+l (Ye)lj
+
+LE
+
+,
+(6.24)
+24
+
+===PAGE 25===
+(αuH)ij =
+1
+16π2
+1
+M 2
+E
+2
+3λ −5g2
+2
+36 −1
+2⌊˜λ˜λ∗⌋
+
+⌊˜λ˜λ∗⌋+ 1
+2⌊˜λ∗YeY †
+e ˜λ⌋
++
+
+−g2
+2
+6 ⌊˜λ˜λ∗⌋+ ⌊˜λ∗YeY †
+e ˜λ⌋
+
+LE
+
+(Yu)ij,
+(6.25)
+(αdH)ij =
+1
+16π2
+1
+M 2
+E
+2
+3λ −5g2
+2
+36 −1
+2⌊˜λ˜λ∗⌋
+
+⌊˜λ˜λ∗⌋+ 1
+2⌊˜λ∗YeY †
+e ˜λ⌋
++
+
+−g2
+2
+6 ⌊˜λ˜λ∗⌋+ ⌊˜λ∗YeY †
+e ˜λ⌋
+
+LE
+
+(Yd)ij,
+(6.26)
+(αeH)ij =
+˜λi˜λ∗
+k(Ye)kj
+2M 2
+E
++
+1
+16π2
+1
+M 2
+E
+2
+3λ −5g2
+2
+36 −1
+2⌊˜λ˜λ∗⌋
+
+⌊˜λ˜λ∗⌋(Ye)ij + 1
+2⌊˜λ∗YeY †
+e ˜λ⌋(Ye)ij
++
+
+5λ −14
+16⌊˜λ˜λ∗⌋
+
+˜λi˜λ∗
+k(Ye)kj + 37
+24(Ye)ik(Y †
+e )kl˜λl˜λ∗
+m(Ye)mj −1
+4
+˜λi˜λ∗
+k(Ye)kl(Y †
+e )lm(Ye)mj
+
++
+1
+16π2
+1
+M 2
+E
+
+−g2
+2
+6 ⌊˜λ˜λ∗⌋(Ye)ij + ⌊˜λ∗YeY †
+e ˜λ⌋(Ye)ij +
+
+4λ −3
+4⌊˜λ˜λ∗⌋
+
+˜λi˜λ∗
+k(Ye)kj
++ 3
+4(Ye)ik(Y †
+e )kl˜λl˜λ∗
+m(Ye)mj
+
+LE.
+(6.27)
+6.2.4
+Four-fermion operators
+Finally, the following four-fermion operators receive non-vanishing WCs.
+(α(1)
+qq )ijkl = −
+1
+16π2
+g4
+1
+270M 2
+E
+δijδkl,
+(6.28)
+(αuu)ijkl = −
+1
+16π2
+8g4
+1
+135M 2
+E
+δijδkl,
+(6.29)
+(αdd)ijkl = −
+1
+16π2
+2g4
+1
+135M 2
+E
+δijδkl,
+(6.30)
+(α(1)
+ud )ijkl = −
+1
+16π2
+8g4
+1
+135M 2
+E
+δijδkl,
+(6.31)
+(α(1)
+qu )ijkl = −
+1
+16π2
+1
+M 2
+E
+4g4
+1
+135δijδkl + 1
+18⌊˜λ˜λ∗⌋(Yu)il(Y †
+u )kj
+
+,
+(6.32)
+(α(8)
+qu )ijkl = −
+1
+16π2
+1
+3M 2
+E
+⌊˜λ˜λ∗⌋(Yu)il(Y †
+u )kj,
+(6.33)
+(α(1)
+qd )ijkl =
+1
+16π2
+1
+M 2
+E
+2g4
+1
+135δijδkl −1
+18⌊˜λ˜λ∗⌋(Yd)il(Y †
+d )kj
+
+,
+(6.34)
+(α(8)
+qd )ijkl = −
+1
+16π2
+1
+3M 2
+E
+⌊˜λ˜λ∗⌋(Yd)il(Y †
+d )kj,
+(6.35)
+25
+
+===PAGE 26===
+(α(1)
+quqd)ijkl =
+1
+16π2
+1
+3M 2
+E
+⌊˜λ˜λ∗⌋(Yu)ij(Yd)kl,
+(6.36)
+(αℓℓ)ijkl =
+1
+16π2
+1
+M 2
+E
+
+−g4
+1
+30δijδkl + 25g2
+1 + 11g2
+2
+288
+(δij˜λk˜λ∗
+l + ˜λi˜λ∗
+jδkl)
+−11g2
+2
+144 (δil˜λk˜λ∗
+j + δjk˜λi˜λ∗
+l ) −1
+8
+˜λi˜λ∗
+j˜λk˜λ∗
+l + 3
+16(˜λi˜λ∗
+l (Ye)km(Y †
+e )mj + ˜λk˜λ∗
+j(Ye)im(Y †
+e )ml)
+
++
+1
+16π2
+1
+M 2
+E
+g2
+1 + g2
+2
+48
+(δij˜λk˜λ∗
+l + ˜λi˜λ∗
+jδkl) −g2
+2
+24(δil˜λk˜λ∗
+j + δjk˜λi˜λ∗
+l )
++ 1
+8(˜λi˜λ∗
+l (Ye)km(Y †
+e )mj + ˜λk˜λ∗
+j(Ye)im(Y †
+e )ml)
+
+LE,
+(6.37)
+(αee)ijkl = −
+1
+16π2
+2g4
+1
+15M 2
+E
+δijδkl,
+(6.38)
+(αℓe)ijkl =
+1
+16π2
+1
+M 2
+E
+
+−2g4
+1
+15 δijδkl + 25g2
+1
+72
+˜λi˜λ∗
+jδkl −1
+6(Ye)il(Y †
+e )kj −3
+8
+˜λi˜λ∗
+j(Y †
+e )km(Ye)ml
+
++
+1
+16π2
+1
+M 2
+E
+
++g2
+1
+12
+˜λi˜λ∗
+jδkl −1
+4
+˜λi˜λ∗
+j(Y †
+e )km(Ye)ml
+
+LE,
+(6.39)
+(α(1)
+ℓq )ijkl =
+1
+16π2
+1
+M 2
+E
+g4
+1
+45δijδkl + 25g2
+1
+432
+˜λi˜λ∗
+jδkl + 3
+16
+˜λi˜λ∗
+j
+
+(Yd)km(Y †
+d )ml −(Yu)km(Y †
+u )ml
+
++
+1
+16π2
+1
+M 2
+E
+
+−g2
+1
+72
+˜λi˜λ∗
+jδkl + 1
+8
+˜λi˜λ∗
+j
+
+(Yd)km(Y †
+d )ml −(Yu)km(Y †
+u )ml
+
+LE, (6.40)
+(α(3)
+ℓq )ijkl =
+1
+16π2
+1
+M 2
+E
+
+−11g2
+2
+144
+˜λi˜λ∗
+jδkl + 3
+16
+˜λi˜λ∗
+j
+
+(Yd)km(Y †
+d )ml + (Yu)km(Y †
+u )ml
+
++
+1
+16π2
+1
+M 2
+E
+
+−g2
+2
+24
+˜λi˜λ∗
+jδkl + 1
+8
+˜λi˜λ∗
+j
+
+(Yd)km(Y †
+d )ml + (Yu)km(Y †
+u )ml
+
+LE, (6.41)
+(αeu)ijkl =
+1
+16π2
+8g4
+1
+45M 2
+E
+δijδkl,
+(6.42)
+(αed)ijkl = −
+1
+16π2
+4g4
+1
+45M 2
+E
+δijδkl,
+(6.43)
+(αqe)ijkl =
+1
+16π2
+2g4
+1
+45M 2
+E
+δijδkl,
+(6.44)
+(αℓu)ijkl =
+1
+16π2
+1
+M 2
+E
+4g4
+1
+45 δijδkl −25g2
+1
+108
+˜λi˜λ∗
+jδkl + 3
+8
+˜λi˜λ∗
+j(Y †
+u )km(Yu)ml
+
++
+1
+16π2
+1
+M 2
+E
+
+−g2
+1
+18
+˜λi˜λ∗
+jδkl + 1
+4
+˜λi˜λ∗
+j(Y †
+u )km(Yu)ml
+
+LE,
+(6.45)
+(αℓd)ijkl =
+1
+16π2
+1
+M 2
+E
+
+−2g4
+1
+45 δijδkl + 25g2
+1
+216
+˜λi˜λ∗
+jδkl −3
+8
+˜λi˜λ∗
+j(Y †
+d )km(Yd)ml
+
+26
+
+===PAGE 27===
++
+1
+16π2
+1
+M 2
+E
+g2
+1
+36
+˜λi˜λ∗
+jδkl −1
+4
+˜λi˜λ∗
+j(Y †
+d )km(Yd)ml
+
+LE,
+(6.46)
+(αℓedq)ijkl =
+1
+16π2
+1
+3M 2
+E
+⌊˜λ˜λ∗⌋(Ye)ij(Y †
+d )kl,
+(6.47)
+(α(1)
+ℓequ)ijkl = −
+1
+16π2
+1
+3M 2
+E
+⌊˜λ˜λ∗⌋(Ye)ij(Yu)kl.
+(6.48)
+6.3
+Basis translation
+Given a speciﬁc EFT, deﬁned by its ﬁeld content and symmetries, there are diﬀerent
+options to choose a basis of operators (either Green or physical).
+Diﬀerent bases are
+useful for diﬀerent purposes and it is very useful to have a systematic way to translate the
+results from one basis to another. The Rosetta code [72] can be used to translate between
+popular physical bases for the dimension 6 SMEFT. However a more general approach,
+applicable to diﬀerent EFTs and any two bases (not necessarily physical) would be very
+welcome. Matchmakereft can do this in a straight-forward way by performing the tree-
+level matching of the new basis (as a UV model) onto the old one (as an EFT).
+As a trivial example we consider the following two operators that appear in the one-
+loop integration of a scalar singlet as shown in [68]
+OR =(H†H)(DµH†DµH)
+→2λOH + 1
+2OH□+ 1
+2
+
+(Yu)ij(OuH)ij + (Yd)ij(OdH)ij + (Ye)ij(OeH)ij + h.c.
+
+, (6.49)
+OT =1
+2(H† ↔
+DµH)2 →−2OHD −1
+2OH□,
+(6.50)
+where in the second equality we have written these operators in terms of the corresponding
+ones in the Warsaw basis (see Appendix D for the deﬁnition of the operators).
+When using matchmakereft to match at tree level a UV model consisting of the SM
+plus the two operators in the new basis, OR and OT, onto the SMEFT in the basis
+described in Appendix D we obtain the following tree-level matching in the physical basis
+(we use β for the WCs of the operators in the new basis)
+αH =2λβR,
+αHD = −2βT,
+αH□=1
+2(βR −βT),
+(6.51)
+αuH =1
+2βR(Yu)ij,
+αdH =1
+2βR(Yd)ij,
+αeH =1
+2βR(Ye)ij,
+(6.52)
+which exactly reproduce the above equations. This is of course just a minimal example
+to show the application of matchmakereft to basis translation but complete bases (both
+Green and physical) can be translated in an automated way using this procedure.
+27
+
+===PAGE 28===
+6.4
+Oﬀ-shell operator independence
+Constructing a Green basis, that can match arbitrary oﬀ-shell amplitudes, is in princi-
+ple straight-forward. One has to simply write all possible operators and then eliminate
+those that are related to others by integration by parts (momentum conservation at the
+amplitude level) or gauge (Fierz) identities. However, this procedure is sometimes quite
+cumbersome in practice, in particular when there are many (space-time) indices involved.
+Matchmakereft can be used in this case to check if the operators deﬁned in the EFT are
+linearly independent for arbitrary oﬀ-shell kinematics or not. This is done by checking the
+rank of the system of equations obtained by matching the EFT to all vanishing amplitudes.
+If several operators are linearly dependent, the rank will be smaller than the number of op-
+erators and matchmakereft will solve the system of equations to provide the relationship
+of the list of the dependent operators in terms of a particular set of independent ones. This
+is achieved by deﬁning an EFT with all the relevant operators (including possibly linearly
+dependent ones) and running the command check_linear_dependece EFTModel (see
+Section 4 for details). As a word of caution it should be emphasized that matchmakereft
+makes no assumption about the space-time dimension.
+Thus, operators that are lin-
+early dependent in D = 4 but not in arbitrary D are listed as linearly independent in
+matchmakereft.
+7
+Conclusions and outlook
+EFTs have become a standard tool in quantum ﬁeld theory to address multi-scale prob-
+lems. Using a mass-independent renormalization scheme, the process of computing ob-
+servables in models with disparate scales consists of integrating out particles at the highest
+mass threshold, running the WCs by means of the RGEs down to the next threshold, in-
+tegrating out the particles at that threshold and so on until we reach the energies at
+which experimental measurements are performed. We then compute the corresponding
+experimental observable using the EFT relevant at that scale.
+The current situation in particle physics seems to indicate that indeed, physics beyond
+the SM, if present, is likely to be at a scale much larger than the energies at which we
+are performing our experiments. In searches beyond the SM, the relevant EFT seems to
+be the SMEFT at energies above the electroweak scale and the LEFT below that scale.
+The process of running in the SMEFT, matching to the LEFT and running in the LEFT
+down to experimental energies has been recently completed, up to mass dimension 6 and
+one-loop order, and it is now available in computer tools. The matching of arbitrary
+models to the (dimension 6) SMEFT has been also recently solved at tree level. Thus,
+the only missing piece to perform a complete one-loop analysis of the implications of
+experimental data on new physics models is the one-loop matching of arbitrary models
+onto the SMEFT.
+28
+
+===PAGE 29===
+In this article we have introduced matchmakereft, a computer tool that performs tree-
+level and one-loop matching of arbitrary models onto arbitrary EFTs. Matchmakereft is
+robust, eﬃcient, ﬂexible and fully automated and can be trivially used to perform the step
+to one-loop matching of new physics models onto the SMEFT to complete the program
+outlined above. Due to its ﬂexibility matchmakereft has many more applications than
+just the matching of new physics models onto the SMEFT. First it can match any model
+onto any EFT. Thus, it can be used to match new physics models to operators of dimension
+higher than 6 in the SMEFT (see [73] for the deﬁnition of the bosonic sector of a complete
+Green basis for the SMEFT at dimension 8), or to other EFTs beyond the SMEFT that
+can be also phenomenologically interesting, including for instance new light (or heavy
+particles) like an axion-like particle or a right-handed neutrino [74].
+Matchmakereft
+is also able to match divergences in EFTs to compute the RGEs of arbitrary theories.
+Again this includes other EFTs beyond the dimension-6 SMEFT (or LEFT) but also
+renormalizable (or not) arbitrary theories. Other applications of matchmakereft include
+an automated basis translation between two (Green or physical) bases of an EFT or the
+reduction of an oﬀ-shell linearly dependent set of operators to a minimal Green basis. All
+these applications are performed in an automated way, with minimal interaction from the
+user, that only needs to provide the information of the UV and the EFT models.
+Version 1.0.0 of matchmakereft performs an oﬀ-shell matching in the background-
+ﬁeld gauge, thus providing a signiﬁcant (kinematic and gauge) redundancy that is used to
+perform numerous cross-checks of the computed WCs. There are nevertheless some limi-
+tations in version 1.0.0 that we plan to overcome in future versions of matchmakereft.
+Among these some of the most signiﬁcant are the following:
+• Flavor indices are currently not supported for massive particles. There is an experi-
+mental version of this in matchmakereft and we expect to implement it in the near
+future.
+• Amplitudes with many external particles (as required to match operators with many
+ﬁelds) can have a very large number of Feynman diagrams at one loop. When the
+number is very large the calculation can become very slow. We plan to introduce
+new procedures to deal with this issue, including the splitting of groups of Feyn-
+man diagrams that contribute to a single amplitude and the parallelization of the
+calculation to allow an eﬃcient computation in multi-core or multi-node computer
+systems.
+Matchmakereft has already been used in several physical applications and we have
+performed an extensive number of non-trivial cross-checks to ensure the robustness of
+the calculations produced by matchmakereft. Its ﬂexibility and eﬃciency will allow the
+particle physics community to analyze in a fully systematic and automated way the one-
+loop phenomenology or arbitrary new physics models.
+29
+
+===PAGE 30===
+Acknowledgments
+This has been a long project that has beneﬁted from discussions with many people. We
+would like to thank F. del ´Aguila, J. de Blas, C. Bobeth, M. Ciuchini, A. Freytas, J.
+Fuentes-Mart´ın, G. Guedes, M. Gorbahn, U. Haisch, Z. Kunstz, M. Neubert, U. Nierste,
+M. P´erez-Victoria, A. Pich, E. Salvioni, A. Signer and M. Trott for useful discussions.
+We are especially grateful to C. Anastasiou for collaboration in the initial stages of the
+project, to M. Chala, for continuos discussions, suggestions and requests that allowed us
+to “milk matchmakereft for all its worth”, to T. Hahn, for patiently explaining many
+FORM tricks, and to G.P. Passarino, for daring us to “ﬁnish matchmakereft already!”.
+We would like to thank Nicolasa Navarrete for the design of the logo and her creative
+support. This work has been partially supported by the Ministry of Science and Innovation
+and SRA (10.13039/501100011033) under grant PID2019-106087GB-C22, by the Junta
+de Andaluc´ıa grants FQM 101, A-FQM-211-UGR18 and P18-FR-4314 (FEDER). AC
+acknowledges funding from the European Union’s Horizon 2020 research and innovation
+programme under the Marie Sklodowska-Curie grant agreement No 754446 and UGR
+Research and Knowledge Transfer Found - Athenea3i. PO is funded by an FPU grant
+from the Spanish government.
+A
+Matchmakereft installation
+A.1
+Prerequisites
+In order to be able to run matchmakereft, some prerequisites need to be met. First of
+all, the following programs need to be installed:
+• Mathematica, version 10 or higher.
+• FORM : Installation can be checked by typing form -v in a terminal. Binaries or
+the source code can be downloaded from http://www.nikhef.nl/~form/
+• QGRAF : Installation can be checked by typing qgraf in a terminal. Binaries or the
+source code can be downloaded from http://cfif.ist.utl.pt/~paulo/qgraf.
+html. Please note that versions of QGRAF earlier than 3.5 had a maximun multiplic-
+ity of vertices equal to 6 particles. If vertices with more than 6 particles are needed
+(this can happen if dimension-8 operators are considered for instance) the source
+code has to be modiﬁed accordingly and compiled again. The maximum multiplicity
+of QGRAF v3.5 is 8.
+The binaries of both FORM and QGRAF need to be located in some path that is included in
+the binary path of the system, in such a way that they can be executed from any possible
+location. It is also necessary to have installed
+30
+
+===PAGE 31===
+• Python (3.5 or higher) : Installation can be checked by typing python --version
+in a terminal. In some systems python3 might have to be explicitly invoked.
+• FeynRules the mathematica package, is needed for the creation of matchmakereft
+models. It can be downloaded from https://feynrules.irmp.ucl.ac.be/.
+Matchmakereft is available both in the Python Package Index (PyPI) https://pypi.
+org/project/matchmakereft/ as well as in the Anaconda Python distribution https:
+//anaconda.org/matchmakers/matchmakereft. Moreover,
+• pip.
+In order to access packages from PyPI, pip needs to be installed on the
+system. It is available in most Linux distributions and can be easily installed on
+MacOS and Windows. Installation can be checked by typing pip -V in a terminal.
+In some systems pip3 has to be explicitly invoked.
+General information about
+installing packages fcan be found on https://packaging.python.org/en/latest/
+tutorials/installing-packages/.
+• conda. Instructions about Anaconda installation on diﬀerent OS can be found on
+https://docs.anaconda.com/anaconda/install/index.html. Explicit informa-
+tion about installing conda packages can be found on https://docs.anaconda.
+com/anacondaorg/user-guide/howto/.
+A.2
+Installing matchmakereft
+A.2.1
+PyPI
+Once pip is installed in the system, matchmakereft can be installed by just typing in a
+terminal (we denote the terminal prompt as >)
+> python3 -m pip
+install
+matchmakereft
+--user
+or by typing
+> pip
+install
+matchmakereft
+--user
+Alternatively, if the installation has been downloaded from the project web page, it can
+be installed via
+> python3 -m pip
+install
+matchmakereft -x.x.x.tar.gz
+--user
+where the x.x.x correspond to the version being installed.
+We can get information about matchmakereft by writing
+> pip3 show
+matchmakereft
+Name: matchmakereft
+Version: 1.0.0
+Summary: One loop
+matching
+31
+
+===PAGE 32===
+Home -page: https :// ftae.ugr.es/matchmakereft/
+Author: Adrian
+Carmona , Achilleas
+Lazopoulos , Pablo Olgoso , Jose
+Santiago
+Author -email: adrian@ugr.es , lazopoulos@itp .phys.ethz.ch , pablolgoso@ugr
+.es , jsantiago@ugr.es
+License: Creative
+Commons
+Attribution -Noncommercial -Share
+Alike
+license
+Location: /home/user /. local/lib/python3 .9/site -packages
+Requires: requests , yolk3k , setuptools
+Required -by:
+If matchmakereft is already installed in the system, it is possible to check for possible
+updates by writing
+> pip
+install
+--upgrade
+matchmakereft
+--user
+whereas one can remove it by typing
+> pip
+uninstall
+matchmakereft
+A.2.2
+Anaconda
+For users employing Anaconda python distribution, matchmakereft can be installed by
+just typing
+conda
+install -c matchmakers
+matchmakereft
+A.3
+Updating the system path
+Once matchmakereft is installed, we have to ensure that the corresponding executable is
+included in the user path. This can be easily achieved by copying the following two lines
+in the ~/.bashrc ﬁle (or the equivalent one if a diﬀerent shell is used)
+1 export
+PY_USER_BIN=$(python -c ’import
+site; print(site.USER_BASE + "/
+bin") ’)
+2 export
+PATH=$PY_USER_BIN:$PATH
+If the user prefers to install without the --user option (s)he should ensure that the
+directory where the executables are installed is included in the path.
+B
+Dealing with γ5
+When computing the matching equations with matchmakereft, we might encounter loop
+integrals that involve fermionic traces with chiral projectors, PL,R. Among such traces,
+those that contain an odd number of γ5 and six or more γ-matrices are known to be
+ambiguous, due to the impossibility of ﬁnding a regulator that is Lorenz invariant and
+32
+
+===PAGE 33===
+preserves the chiral structure of the theory.
+In matchmakereft we regulate integrals
+within Dimensional Regularization, so we have to face the question of how to compute
+these traces consistently.
+Limiting ourselves, at ﬁrst, to matching renormalizable UV models to the SMEFT,
+the cases we have to deal with, in practice, are few. In order to have a trace in the ﬁrst
+place, there can be no external fermions in the related diagram. Moreover, the ambiguity
+is proportional to the fully antisymmetric ϵµνρσ tensor, and can therefore contribute to
+the Wilson Coeﬃcient of one of the few CP violating bosonic operators of the SMEFT,
+with two or three ﬁeld strength tensors. We therefore need two or three external gauge
+bosons. In order to have a trace with at least 6 γ-matrices we, therefore need four or three
+internal fermionic propagators respectively. In summary, we only need to worry about
+boxes contributing to H†HXµν ˜Xµν type operators or triangles contributing to Xµ
+ν Xν
+ρ ˜Xµ
+ρ .
+Triangle diagrams contributing to Xµ
+ν Xν
+ρ ˜Xµ
+ρ , with fermions in the internal lines, however,
+are non-ambiguous because there are no γ5’s involved in the vertices: all heavy fermions
+have to be vector-like6.
+Next, let’s look at the box diagrams contributing to H†HXµν ˜Xµν. There are four inter-
+nal fermionic propagators, of which one or more can correspond to heavy particles in the
+UV model. As mentioned, the corresponding traces have ambiguous and non-ambiguous
+parts. The unambiguous part can be computed in any γ5-scheme. The ambiguous part
+is proportional to D −4 and is only of interest if it multiplies one of the singularities of
+the integral. Moreover, since the UV theory is renormalizable, the maximum number of
+γ-matrices is 6, which means that terms in the numerator of such integrals with mass in-
+sertions have a lower number of γ’s and are therefore unambiguous. There are two types
+of singularities: UV singularities corresponding to the UV structure of the full theory,
+and IR singularities that appear after the hard region expansion is performed. The latter
+correspond to the UV singularities of the SMEFT.
+The generic structure of the potentially ambiguous part of such box integrals is, up to
+couplings and group theory factors:
+Iµν ∼
+Z
+k
+Tµ1...µ4µν
+4
+Y
+i=1
+(k + qi)µi
+(k + qi)2 −m2
+i
+,
+(B.1)
+where
+R
+k ≡
+R
+dDk
+(2π)D , and Tµ1...µ4µν denotes a trace with an odd number of γ5 insertions and
+six γ’s, e.g.
+Tr[γµ1γ5γµ2γµγµ3γ5γνγµ4γ5].
+(B.2)
+6Triangle diagrams with only light particles are ambiguous, but they do not concern us during match-
+ing. The corresponding ambiguities are ﬁxed by the anomaly cancellation mechanism that we assume
+any EFT has built in.
+33
+
+===PAGE 34===
+Performing the hard region expansion and the tensor reduction we get
+Iµν ∼
+Z
+k
+Tµ1...µ4µν
+1
+Q4
+i=1(k2 −m2
+i )
+ 
+k4 gµ1µ2µ3µ4
+D(D + 2)(1 +
+X
+i
+q2
+i
+k2 −m2
+i
+) + k6
+gµ1µ2µ3µ4ρσ
+D(D + 2)(D + 4)
+X
+i≤j
+4qρ
+i qσ
+j
+(k2 −m2
+i )(k2 −m2
+j)
+−2k4 X
+i,m
+qµi
+i qρ
+m
+g{ˆµi}ρ
+D(D + 2)
+1
+k2 −m2
+m
++
+X
+i<j
+k2g{ˆµi,ˆµj}
+D
+qµiqµj
+!
+∼
+Z
+k
+Tµ1...µ4µν
+gµ1µ2µ3µ4
+D(D + 2)
+k4
+Q4
+i=1(k2 −m2
+i )
++
+Z
+k
+Tµ1...µ4µν
+k2
+Q4
+i=1(k2 −m2
+i )
+1
+D(D + 2)
+ 
+gµ1µ2µ3µ4 X
+i
+q2
+i
+
+1 +
+m2
+i
+k2 −m2
+i
+
++ gµ1µ2µ3µ4ρσ
+(D + 4)
+X
+i≤j
+4qρ
+i qσ
+j
+Y
+l=i,j
+
+1 +
+m2
+l
+(k2 −m2
+l )
+
+−2
+X
+i,m
+qµi
+i qρ
+mg{ˆµi}ρ(1 +
+m2
+m
+k2 −m2
+m
+) +
+X
+i<j
+(D + 2)g{ˆµi,ˆµj}qµiqµj
+!
+,
+(B.3)
+where {ˆµi} = µjµkµr with j, k, r̸ = i, and {ˆµiˆµj} = µkµr with k, r̸ = i, j.
+The ﬁrst term, of O(p0), is UV singular. It does not lead to ambiguities, though,
+since gµ1µ2µ3µ4 makes the γ5-dependent part of the trace vanish. The rest of the terms,
+of order O(p2), are UV ﬁnite, but can be IR singular, depending on the number of heavy
+propagators: for two, three or four heavy propagators, there is no singularity. For one
+heavy and three light propagators, however, we do have an IR singularity.
+We, therefore, conclude that ambiguous contributions from γ5-odd traces in box in-
+tegrals are present only in diagrams with one heavy and three light propagators. They
+appear as a product of the ambiguous (D −4) coeﬃcient of the trace multiplying a 1/ϵ
+pole of IR type resulting from the hard region expansion. We would like to remain within
+the naive anti-commuting γ5 scheme when computing traces in matchmakereft. To this
+end, we wish to ﬁx the ambiguous contributions of the γ5-odd traces in box integrals with
+one heavy massive fermion, a posteriori. We note that the Wilson coeﬃcient we are trying
+to match must be real: all operators of the type H†HXµν ˜Xµν are hermitian. Therefore
+any contribution from γ5-odd traces, being imaginary, must be multiplied by a purely
+imaginary product of couplings of the full theory. But, in the case that ambiguities are
+present, i.e. when the UV theory has Yukawa terms with the Higgs boson, one heavy
+and one light fermion, leading to box diagrams with a single fermionic propagators, the
+corresponding Yukawa couplings are complex conjugates of each other, by virtue of the
+hermiticity of the UV Lagrangian. As a result, the product of all couplings is real and,
+therefore, the γ5-odd contributions are purely imaginary. They can be set to zero by
+hand, at the end of the computation. Note that this does not imply that the ambiguous
+34
+
+===PAGE 35===
+contributions are zero: it is the sum of ambiguous and non-ambiguous traces that are set
+to zero.
+Note that this procedure also works if the eﬀective theory is not the SMEFT. In such
+cases, more than one scalar ﬁelds might be present, allowing for non-hermitian operators
+of the type φ†
+1φ2Xµν ˜Xµν. The constraint that the corresponding wilson coeﬃcient is real
+does not apply any more. It is, however still true that the wilson coeﬃcient of this operator
+should equal the complex conjugate of the wilson coeﬃcient of the hermitian conjugate
+operator φ†
+2φ1Xµν ˜Xµν. This is, again, enough to remove the ambiguities.
+C
+A minimal complete example
+In this section we demonstrate many of the features of matchmakereft with a concrete
+example involving two scalar ﬁelds, a light, but not massless, ﬁeld φ and a heavy ﬁeld Φ.
+Our model is described by the Lagrangian:
+L = 1
+2(∂µφ)2 −1
+2m2
+Lφ2 + 1
+2(∂µΦ)2 −1
+2M 2
+HΦ2 −λ0
+4! φ4 −λ2
+4 φ2Φ2 −κ
+2φ2Φ,
+(C.1)
+which we want to match to the EFT Lagrangian without the heavy scalar,
+LEFT = α4k
+2 (∂µφ)2 −α2
+2 φ2 −α4
+4! φ4 −α6
+6! φ6 −˜α6
+4! φ3∂2φ −ˆα6
+2
+ ∂2φ
+2 .
+(C.2)
+We will use this Lagrangian during oﬀ-shell matching. Subsequently, the kinetic term can
+be canonically normalized, and the redundant operators can be eliminated. Two of the
+three operators of dimension 6 are redundant. We choose φ6 as the independent operator.
+Using equations of motion we can readily ﬁnd that:
+φ3∂2φ →−α2φ4 −1
+3!α4φ6,
+(C.3)
+ ∂2φ
+2 →α2
+2φ2 + α2α4
+3
+φ4 + α4
+36φ6.
+(C.4)
+Eliminating these operators from the Lagrangian would induce the shifts
+α2
+→
+α2 + α2
+2ˆα6
+(C.5)
+α4
+→
+α4 −˜α6α2 + 4α2α4ˆα6
+(C.6)
+α6
+→
+α6 −5˜α6α4 + 10ˆα6α2
+4
+(C.7)
+The coupling κ of this model is a dimensionful coupling, and is expected to be parametri-
+cally of the order of the heavy mass scale MH. Thus,
+κ
+MH is of O(1) and is kept throughout
+the matching procedure consistently.
+The Feynrules ﬁle for the UV model, saved at two scalars.fr, is shown below.
+35
+
+===PAGE 36===
+1 (* --- Contents of Feynrules
+file
+two_scalars.fr --- *)
+2 M$ModelName = "two_scalars";
+3 (* ****
+Particle
+classes
+**** *)
+4 M$ClassesDescription = {
+5 S[1] == {ClassName
+-> phiH , SelfConjugate
+-> True , Mass -> MH ,
+6
+FullName
+-> "heavy"},
+7 S[2] == {ClassName
+-> phi , SelfConjugate
+-> True , Mass -> mL ,
+8
+FullName
+-> "light"}
+9 };
+10 (* *****
+Parameters
+***** *)
+11 M$Parameters = {
+12 MH == { ParameterType
+-> Internal , ComplexParameter
+-> False},
+13 mL == { ParameterType
+-> Internal , ComplexParameter
+-> False},
+14 V == { ParameterType
+-> Internal , ComplexParameter
+-> False},
+15 lambda0 == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+16 kappa == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+17 lambda2 == {ParameterType
+-> Internal , ComplexParameter
+-> False}
+18 };
+19 (* *****
+Lagrangian
+***** *)
+20 Ltot := Block [{mu},
+21
++ 1/2 * del[phi ,mu] *
+del[phi ,mu]
++ 1/2 *del[phiH ,mu] * del[phiH ,mu]
+22
+- 1/2 * MH^2 * phiH ^2 - 1/2 * mL^2 * phi^2
+23
+- lambda0 / 24 * phi^4 - kappa / 2
+* phi^2 * phiH
+24
+- lambda2 / 4 * phi^2 * phiH ^2
+25
+];
+Note that we use the keyword FullName to characterize each ﬁeld as "heavy" or
+"light". This is mandatory: matchmaker uses this keyword to distinguish between ﬁelds
+that are integrated out and those that are light and are also present in the EFT. Also
+note that all the parameters that are used in the Lagrangian, masses as well as couplings,
+must be declared. In this example all parameters are real.
+The Feynrules ﬁle for the EFT model, saved at one scalar.fr, is:
+1 (* --- Contents of Feynrules
+file for the EFT model
+one_scalar.fr ---
+*)
+2 M$ModelName = "one_scalar";
+3 (* ****
+Particle
+classes
+**** *)
+4 M$ClassesDescription = {
+5 S[2] == {ClassName
+-> phi , SelfConjugate
+-> True , Mass -> 0,
+6
+FullName
+-> "light"}
+7 };
+8 (* *****
+Parameters
+***** *)
+9 M$Parameters = {
+10 alpha4kin == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+11 alpha2mass == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+12 alpha4 == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+13 alpha6 == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+14 alpha6Rtilde == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+15 alpha6Rhat == {ParameterType
+-> Internal , ComplexParameter
+-> False}
+36
+
+===PAGE 37===
+16 };
+17 (* *****
+Lagrangian
+***** *)
+18 Ltot := Block [{mu ,mu2},
+19
+1/2 * alpha4kin * del[phi ,mu] * del[phi ,mu]
+20
+- 1/2 * alpha2mass * phi^2
+21
+- alpha4 /24 * phi^4
+22
+- alpha6 * phi ^6/720
+23
+- alpha6Rtilde /24 * phi^3 * del[del[phi ,mu],mu]
+24
+- alpha6Rhat /2 * del[del[phi ,mu],mu]
+*
+del[del[phi ,mu2],mu2]
+25
+];
+Note that we have included WCs (denoted by alpha) also for the kinetic and mass
+terms (squared), as well as for all operators that are redundant solely due to the equations
+of motion.
+In order for matchmakereft to perform the reduction to the physical basis, we need
+to provide a set of relations that express the redundant WCs in terms of the irreducible
+ones, see Eq. (C.7). This is done at one scalar.red:
+1 (* --- Contents of one_scalar.red --- *)
+2 finalruleordered = {
+3
+alpha6
+-> - alpha6Rtilde * alpha4 *5 + alpha6Rhat * alpha4 ^2 * 10 +
+alpha6 ,
+4
+alpha4
+-> alpha4 - alpha6Rtilde * alpha2mass + 4 * alpha6Rhat *
+alpha2mass * alpha4 ,
+5
+alpha4kin
+-> alpha4kin ,
+6
+alpha2mass
+-> alpha2mass +
+alpha6Rhat * alpha2mass ^2
+7
+}
+Note that only the WCs corresponding to physical operators, among those appearing
+in the EFT Lagrangian and deﬁned in the ﬁle one_scalar.fr, must be present on the
+left hand side of the replacement rules in this ﬁle. The WCs corresponding to redundant
+operators appear only on the right hand side. When these rules are used, both redundant
+and non-redundant WCs have been matched and are known as functions of the parameters
+of the UV theory. The rules are therefore instructions on how to update the non-redundant
+WCs, to include the eﬀect of the redundant ones.
+With these ﬁles prepared we are ready to proceed with matching. In the matching
+directory, where two scalars.fr,one scalar.fr,one scalar.red are present, we can
+run matchmakereft:
+>matchmakereft
+upon which we enter the python interface
+Welcome to matchmakereft
+Please
+refer to arXiv :2112. xxxxx
+when
+using
+this code
+matchmakereft >
+37
+
+===PAGE 38===
+We ﬁrst need to create the matchmaker models, i.e. the directories with all the necessary
+information for the UV and the EFT models. We do this by
+matchmakereft > create_model
+two_scalars.fr
+which has the response
+Creating
+model
+two_scalars_MM. This
+might
+take some time
+depending on
+the
+complexity of the model
+Model
+two_scalars_MM
+created
+It took 7 seconds to create it.
+We can now observe that the directory two scalars MM is created.
+We proceed with
+creating the EFT model
+matchmakereft > create_model
+one_scalar.fr
+Creating
+model
+one_scalar_MM. This
+might
+take some time
+depending on the
+complexity of the model
+Model
+one_scalar_MM
+created
+It took 7 seconds to create it.
+The one scalar MM directory is now created as well, and we are ready for the matching
+calculation. This is performed by the match model to eft command:
+matchmakereft > match_model_to_eft
+two_scalars_MM
+one_scalar_MM
+Upon completion, the results of the matching are stored in the UV model directory,
+two scalars MM in our case. The ﬁle two scalars MM/MatchingProblems.dat contains
+troubleshooting information in case the matching procedure failed. In our case it is an
+empty list, indicating no problems:
+1 problist = {}
+The result of the matching procedure is in two scalars MM/MatchingResults.dat,
+a Mathematica ﬁle with a list of lists of replacement rules. The oﬀ-shell matching gives
+the following results for the WCs of the Green basis. At tree level the non-vanishing
+contributions are,
+α(0)
+2
+=
+m2
+L,
+(C.8)
+α(0)
+4
+=
+λ0 −4κ2m2
+L
+M 4
+H
+−3κ2
+M 2
+H
+,
+(C.9)
+α(0)
+6
+=
+1
+M 2
+H
+60κ4
+M 4
+H
+−20λ0κ2
+M 2
+H
++ 45λ2κ2
+M 2
+H
+
+,
+(C.10)
+˜α(0)
+6
+=
+4κ2
+M 4
+H
+.
+(C.11)
+At one loop we get (we deﬁne LM ≡log( µ2
+M2
+H ))
+α(1)
+2
+= −
+1
+16π2 (1 + LM)
+κ2m4
+L
+M 4
+H
++ κ2m2
+L
+M 2
+H
++ 1
+2λ2M 2
+H + κ2
+
+,
+(C.12)
+38
+
+===PAGE 39===
+α(1)
+4k = 1 +
+1
+16π2
+5κ2m2
+L
+2M 4
+H
++
+κ2
+2M 2
+H
+
++
+1
+16π2
+κ2m2
+L
+M 4
+H
+LM,
+(C.13)
+α(1)
+4
+=
+1
+16π2
+48κ4m2
+L
+M 6
+H
++ 24λ2κ2m2
+L
+M 4
+H
+−12λ0κ2m2
+L
+M 4
+H
++ 18κ4
+M 4
+H
++ 18λ2κ2
+M 2
+H
+−6λ0κ2
+M 2
+H
+
+(C.14)
++
+1
+16π2
+36κ4m2
+L
+M 6
+H
++ 18λ2κ2m2
+L
+M 4
+H
+−12λ0κ2m2
+L
+M 4
+H
++ 12κ4
+M 4
+H
++ 12λ2κ2
+M 2
+H
+−6λ0κ2
+M 2
+H
+−3λ2
+2
+2
+
+LM,
+(C.15)
+α(1)
+6
+=
+1
+16π2M 2
+H
+
+−1290κ6
+M 6
+H
++ 720λ0κ4
+M 4
+H
+−1665λ2κ4
+M 4
+H
++ 360λ0λ2κ2
+M 2
+H
+−90λ2
+0κ2
+M 2
+H
+−495λ2
+2κ2
+M 2
+H
++ 15λ3
+2
+2
+
+(C.16)
++
+1
+16π2M 2
+H
+
+−810κ6
+M 6
+H
++ 540λ0κ4
+M 4
+H
+−945λ2κ4
+M 4
+H
++ 270λ0λ2κ2
+M 2
+H
+−90λ2
+0κ2
+M 2
+H
+−270λ2
+2κ2
+M 2
+H
+
+LM,
+(C.17)
+˜α(1)
+6
+=
+1
+16π2M 2
+H
+
+−107κ4
+3M 4
+H
++ 9λ0κ2
+M 2
+H
+−77λ2κ2
+3M 2
+H
++ λ2
+2
+3
+
++
+1
+16π2M 2
+H
+
+−14κ4
+M 4
+H
++ 2λ0κ2
+M 2
+H
+−16λ2κ2
+M 2
+H
+
+LM,
+(C.18)
+ˆα(1)
+6
+= −
+κ2
+96π2M 4
+H
+.
+(C.19)
+As can be seen in the equations above, the kinetic operator receives a correction and
+therefore φ is no longer canonically normalized. A ﬁeld redeﬁnition is needed to obtain a
+canonically normalized theory on which we can apply the corresponding redundancies to
+go to the physical basis. Matchmakereft does these two processes (canonical normaliza-
+tion and going to the physical basis) automatically. The resulting WCs in the physical
+basis read, up to one loop order
+α2 = m2
+L −
+1
+16π2
+11κ2m4
+L
+3M 4
+H
++ 3κ2m2
+L
+2M 2
+H
++ 1
+2λ2M 2
+H + κ2
+
+−
+1
+16π2
+2κ2m4
+L
+M 4
+H
++ κ2m2
+L
+M 2
+H
++ 1
+2λ2M 2
+H + κ2
+
+LM,
+(C.20)
+α4 = λ0 −4κ2m2
+L
+M 4
+H
+−3κ2
+M 2
+H
+(C.21)
++
+1
+16π2
+332κ4m2
+L
+3M 6
+H
+−80λ0κ2m2
+L
+3M 4
+H
++ 149λ2κ2m2
+L
+3M 4
+H
+−λ2
+2m2
+L
+3M 2
+H
++ 25κ4
+M 4
+H
+−7λ0κ2
+M 2
+H
++ 20λ2κ2
+M 2
+H
+
++
+1
+16π2
+60κ4m2
+L
+M 6
+H
+−16λ0κ2m2
+L
+M 4
+H
++ 34λ2κ2m2
+L
+M 4
+H
++ 16κ4
+M 4
+H
+−6λ0κ2
+M 2
+H
++ 14λ2κ2
+M 2
+H
+−3λ2
+2
+2
+
+LM,
+α6 =
+1
+M 2
+H
+60κ4
+M 4
+H
+−20λ0κ2
+M 2
+H
++ 45λ2κ2
+M 2
+H
+
+39
+
+===PAGE 40===
++
+1
+16π2M 2
+H
+
+−1560κ6m2
+L
+M 8
+H
++ 440λ0κ4m2
+L
+M 6
+H
+−1635λ2κ4m2
+L
+2M 6
+H
+−2320κ6
+M 6
+H
++ 3610λ0κ4
+3M 4
+H
+−4955λ2κ4
+2M 4
+H
+−410λ2
+0κ2
+3M 2
+H
+−490λ2
+2κ2
+M 2
+H
++ 1465λ0λ2κ2
+3M 2
+H
++ 15λ3
+2
+2
+−5λ0λ2
+2
+3
+
++
+1
+16π2M 2
+H
+
+−960κ6m2
+L
+M 8
+H
++ 320λ0κ4m2
+L
+M 6
+H
+−495λ2κ4m2
+L
+M 6
+H
+−1260κ6
+M 6
+H
++ 760λ0κ4
+M 4
+H
+−1425λ2κ4
+M 4
+H
+−100λ2
+0κ2
+M 2
+H
+−240λ2
+2κ2
+M 2
+H
++ 350λ0λ2κ2
+M 2
+H
+
+LM.
+(C.22)
+Next, we would like to compute the RGE equations for both models. For each model
+we need a new pair of Feynrule ﬁles as a starting point. We start for the RGEs for the
+UV model. The corresponding UV model, located in the ﬁle rge two scalars uv.fr is
+the same as two scalars.fr with the very crucial diﬀerence that the heavy ﬁeld H is also
+declared as ”light” here.
+1 S[1] == {ClassName -> H, SelfConjugate ->True , Mass ->MH ,
+2
+FullName ->"light"}
+The target model is now at rge two scalars eft.fr. It consists of an EFT Lagrangian
+with the ﬁeld H considered as a light ﬁeld:
+1
+(* ---
+Contents of rge_two_scalars_eft .fr
+--- *)
+2 M$ModelName = " rge_two_scalars_eft ";
+3 (* ****
+Particle
+classes
+**** *)
+4 M$ClassesDescription = {
+5 S[1] == {ClassName
+->
+phiH , SelfConjugate
+-> True , Mass -> 0,
+6
+FullName
+-> "light"},
+7 S[2] == {ClassName
+-> phi ,SelfConjugate
+-> True ,Mass -> 0,
+8
+FullName
+-> "light"}
+9 };
+10 (* *****
+Parameters
+***** *)
+11 M$Parameters = {
+12 alpha4kinphi == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+13 alpha4kinH == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+14 alpha2MH == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+15 alpha2ML == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+16 alpha4 == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+17 alphaV == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+18 alpha1 == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+19 alpha4H == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+20 alpha2 == {ParameterType
+-> Internal , ComplexParameter
+-> False},
+21 alpha3 == {ParameterType
+-> Internal , ComplexParameter
+-> False}
+22 };
+23 (* *****
+Lagrangian
+***** *)
+24 Ltot := Block [{mu},
+25
+alphaV *
+phiH
+26
++1/2 * alpha4kinphi* del[phi ,mu] *
+del[phi ,mu]
+40
+
+===PAGE 41===
+27
++ 1/2 * alpha4kinH * del[phiH ,mu] * del[phiH ,mu]
+28
+- 1/2 * alpha2MH * phiH ^2
+29
+-1/2 * alpha2ML * phi^2
+30
+- alpha4 / 24 * phi^4
+31
+-
+alpha1 / 2
+* phi^2 * phiH
+32
+- alpha2 / 4 * phi^2 * phiH ^2
+33
+-alpha3 * phiH ^3
+34
+-alpha4H * phiH ^4
+35 ];
+Note the presence of the new interaction terms Φ3, Φ4: all possible operators of dimension
+up to 4, compatible with the symmetries should appear here. Also note that we now have
+a WC also for the kinetic term of the Φ ﬁeld.
+We don’t need a rge two scalars eft.red ﬁle at all, since all operators of dimension
+four present are physical. We can now create the two models with
+matchmakereft > create_model
+rge_two_scalars_uv .fr
+and
+matchmakereft > create_model
+rge_two_scalars_eft .fr
+and then we can proceed with the RGE computation via
+matchmakereft > compute_rge_model_to_eft
+rge_two_scalars_uv_MM
+rge_two_scalars_eft_MM
+We then get, as before, an empty MatchingProblems.dat ﬁle, as well as a MatchingResults.dat
+ﬁle in the rge two scalars uv MM directory. Moreover, there is another ﬁle produced,
+RGEResult.dat which contains the explicit form of the beta functions for our UV model.
+1 RGEResult = {
+2 \[ Beta ][ alphaV] ->
+-1/32*( kappa*mL^2)/Pi^2
+3 \[ Beta ][ alpha4kinphi] -> 0,
+4 \[ Beta ][ alpha4kinH] -> 0,
+5 \[ Beta ][ alpha2MH] -> kappa ^2/(16* Pi^2)+( lambda2*mL^2) /(16* Pi^2),
+6 \[ Beta ][ alpha2ML] -> kappa ^2/(8* Pi^2)+( lambda2*MH^2) /(16* Pi^2) +
+7
+(lambda0*mL^2) /(16* Pi^2),
+8 \[ Beta ][ alpha4] -> (3* lambda0 ^2) /(16* Pi^2) +
+9
+(3* lambda2 ^2) /(16* Pi^2),
+10 \[ Beta ][ alpha1] ->(lambda0*kappa)/(16* Pi^2) + (kappa*lambda2)/(4* Pi^2),
+11 \[ Beta ][ alpha2] -> (lambda0*lambda2)/(16* Pi^2) + lambda2 ^2/(4* Pi^2),
+12 \[ Beta ][ alpha3] -> (kappa*lambda2)/(32* Pi^2),
+13 \[ Beta ][ alpha4H] -> lambda2 ^2/(128* Pi^2)}
+Let us now touch upon the topic of tadpole contributions, which will also explain
+the reason for the αV Φ operator deﬁned in line 25 of rge two scalars eft.fr. In our
+model there are tadpole contributions to many 1LPI diagrams, due to the operator κφ2Φ.
+They would vanish, up to one loop, if the mass of the light ﬁeld was set to zero, but
+are non-vanishing otherwise. The resulting ﬁnite contributions are taken into account
+41
+
+===PAGE 42===
+by our matching procedure. However, the corresponding poles, which contribute to the
+beta functions of mL and κ are disregarded, during the RGE computation. However,
+there is an easy way to account for them. By adding the αV Φ term in the Lagrangian
+of rge two scalars eft.fr, we induce the computation of the one-point function beta-
+function: as we see from line 2 of RGEResult.dat, we have
+β(αV ) = −
+1
+32π2κm2
+L.
+(C.23)
+If, instead of working with tadpole contributions, we would have shifted the ﬁeld Φ →
+Φ + V we would have induced an explicit linear term V M 2
+HΦ and, due to the operators
+φ2Φ and φ2Φ2, we would modify the mass term for the light scalar, mL and the κ coupling:
+˜m2
+L = m2
+L −κV + 1
+2κV 2
+,
+˜κ = κ −λ2V.
+(C.24)
+By setting the tree-level contribution of V such that it cancels loop corrections order by
+order, we could eliminate tadpoles from the theory completely. Instead, here, we include
+their ﬁnite part in the calculation, and we absorb the pole in the renormalization of m2
+L
+and κ. We should therefore modify the beta functions we read from RGEResult.dat, to
+account for the tadpole pole, by
+δβ(M 2
+L)
+=
+κβ(V ) =
+κ
+M 2
+H
+β(αV ) = −κ2
+16π2
+m2
+L
+M 2
+H
+,
+(C.25)
+δβ(κ)
+=
+λ2β(V ) = λ2
+M 2
+H
+β(αV ) = −κλ2
+16π2
+m2
+L
+M 2
+H
+.
+(C.26)
+Reading the results of RGEResult.dat and adding these contributions we get
+β(m2
+L) = λ2M 2
+H
+16π2 + κ2
+8π2 + λ0m2
+L
+16π2 −
+κ2
+16π2
+m2
+L
+M 2
+H
+,
+(C.27)
+β(m2
+H) =
+κ2
+16π2 + λ2m2
+L
+16π2 ,
+(C.28)
+β(λ0) = 3λ2
+0
+16π2 + 3λ2
+2
+16π2,
+(C.29)
+β(κ) = λ0κ
+16π2 + λ2κ
+4π2 −κλ2
+16π2
+m2
+L
+M 2
+H
+,
+(C.30)
+β(λ2) = λ2
+2
+4π2 + λ0λ2
+16π2.
+(C.31)
+We can perform the same procedure, but now with the EFT model. We create the
+rge one scalar uv.fr
+42
+
+===PAGE 43===
+1 M$ModelName = " rge_one_scalar_uv ";
+2 (* ****
+Particle
+classes
+**** *)
+3 M$ClassesDescription = {
+4 S[2] == {ClassName
+-> phi ,SelfConjugate
+-> True ,Mass -> mL ,
+5
+FullName
+-> "light"}
+6 };
+7 (* *****
+Parameters
+***** *)
+8 M$Parameters = {
+9 mL == { ParameterType
+-> Internal , ComplexParameter
+-> False},
+10 a4 == { ParameterType
+-> Internal , ComplexParameter
+-> False},
+11 a6 == { ParameterType
+-> Internal , ComplexParameter
+-> False}
+12 };
+13 (* *****
+Lagrangian
+***** *)
+14 Ltot := Block [{mu ,mu2},
+15
+1/2
+* del[phi ,mu] * del[phi ,mu] - 1/2 * mL^2 * phi^2
+16
+-a4/24 phi^4 - a6 * phi ^6/720
+17
+];
+18
+which contains the physical operators of the EFT model. Note that we have changed the
+names of the couplings to something other than alphaXXX7. We also create rge one scalar eft.fr
+and rge one scalar eft.red that are identical with one scalar.fr and one scalar.red
+deﬁned above. Once again, we can create the two models and run compute rge model to eft.
+The result is
+β(α2) = α2α4
+16π2 ,
+(C.32)
+β(α4) = 3α2
+4
+16π2 + α2α6
+16π2 ,
+(C.33)
+β(α6) = 15α4α6
+16π2 .
+(C.34)
+We can now check whether the matching conditions and the RGE equations are consis-
+tent with each other: if we match at µ = MH and we evolve all couplings using the RGEs
+of the UV and the EFT model, to a lower scale Q, we should ﬁnd the same expressions
+as when we match directly at µ = Q. Let’s see how this works in the case of the mass
+coeﬃcient, α2. The matching condition for α2, at scale µ = MH, gives, see Eq. (C.20),
+α2(MH) = m2
+L(MH) −
+1
+16π2
+11κ2m4
+L
+3M 4
+H
++ 3κ2m2
+L
+2M 2
+H
++ 1
+2λ2M 2
+H + κ2
+
+.
+(C.35)
+We can use Eq. (C.32) to evolve α2 from MH to a lower scale Q. In the leading-log
+approximation it reads,
+α2(Q) = α2(MH) + 1
+2LQβ(α2) = α2(MH) + 1
+2LQ
+α2α4
+16π2 ,
+(C.36)
+7If alphaXXX names are used then matchmakereft automatically changes them to WCXXX.
+43
+
+===PAGE 44===
+where LQ ≡log( Q2
+M2
+H ). Replacing the tree-level matched values of α2 and α4 we get
+α2(Q)
+=
+m2
+L(MH) −
+1
+16π2
+11κ2m4
+L
+3M 4
+H
++ 3κ2m2
+L
+2M 2
+H
++ 1
+2λ2M 2
+H + κ2
+
+(C.37)
+−LQ
+16π2
+2κ2m4
+L
+M 4
+H
++ 3κ2m2
+L
+2M 2
+H
+−λ0m2
+L
+2
+
+.
+(C.38)
+If the matching condition for α2 had no tree-level contribution, this would be the full
+expression for α2(Q). In our case, however, there is a tree-level contribution, m2
+L(MH).
+We need to use the RGE equation of the UV model, for mL, Eq. (C.27) to evolve it to
+the scale Q. We then get
+α2(Q)
+=
+m2
+L(Q) −
+1
+16π2
+11κ2m4
+L
+3M 4
+H
++ 3κ2m2
+L
+2M 2
+H
++ 1
+2λ2M 2
+H + κ2
+
+(C.39)
+−LQ
+16π2
+2κ2m4
+L
+M 4
+H
++ 3κ2m2
+L
+2M 2
+H
++ λ2M 2
+H
+2
++ 2κ2
+
+.
+(C.40)
+Had we match directly at the scale µ = Q using Eq. (C.20), we would have found exactly
+the same result.
+Similarly for α4, matching at µ = MH and evolving to µ = Q, with the help of the
+RGEs for both the UV and the EFT couplings, gives
+α4(Q)
+=
+λ0 −4κ2m2
+L
+M 4
+H
+−3κ2
+M 2
+H
++
+1
+16π2
+332κ4m2
+L
+3M 6
+H
++ 149λ2κ2m2
+L
+3M 4
+H
+−80λ0κ2m2
+L
+3M 4
+H
+−λ2
+2m2
+L
+3M 2
+H
++ 25κ4
+M 4
+H
++ 20λ2κ2
+M 2
+H
+−7λ0κ2
+M 2
+H
+
++
+1
+16π2LQ
+60κ4m2
+L
+M 6
+H
++ 34λ2κ2m2
+L
+M 4
+H
+−16λ0κ2m2
+L
+M 4
+H
++ 16κ4
+M 4
+H
++ 14λ2κ2
+M 2
+H
+−6λ0κ2
+M 2
+H
+−3λ2
+2
+2
+
+,
+(C.41)
+in agreement with what we would get by matching directly at µ = Q, see Eq. (C.22).
+D
+SMEFT Green basis
+Here we present a Green basis of the dimension 6 SMEFT including two and four-fermion
+evanescent operators. As far as possible, we will follow the notation and the conventions
+used in the model ﬁle included with matchmakereft. We present ﬁrst the renormalizable
+SM Lagrangian, which reads
+LSM
+=
+−1
+4GA
+µνGA µν −1
+4W I
+µνW I µν −1
+4BµνBµν + (DµH)†DµH −m2H†H −λ(H†H)2
++
+i[¯ℓ  Dℓ+ ¯e  De + ¯q  Dq + ¯u  Du + ¯d  Dd] −[¯ℓYeeH + ¯qYuu ˜H + ¯qYddH + h.c.] . (D.1)
+44
+
+===PAGE 45===
+Hereinafter, we omit ﬂavor and gauge indices whenever possible.
+Otherwise, we use
+i, j, k, l, . . . as ﬂavor indices and A, B, C, . . . and I, J, K, . . . for the adjoint representation
+of SU(3) and SU(2), respectively. We will use on the other hand a, b, c, . . . and r, s, t, . . .
+for the fundamental representation of the color and the electroweak group, respectively.
+In the model ﬁle coming along with matchmakereft we use a slightly diﬀerent notation
+for the couplings in the renormalizable Lagrangian. For instance,
+Yu →alphaOlambdau, λ →alphaOlambda, m2 →alphaOmuH2, . . . .
+(D.2)
+We refer the reader to the model ﬁle SMEFT Green Bpreserving.fr for more details.
+The doublet ˜H is deﬁned by ˜H = iσ2H∗as usual and we assume the following deﬁnition
+for the covariant derivative
+Dµq = (∂µ −ig3T AGA
+µ −ig2
+σI
+2 W I
+µ −ig1Y Bµ)q,
+(D.3)
+where T A = λA/2 with λA and σI the Gell-Mann and Pauli matrices, respectively. Cor-
+respondingly, the ﬁeld strength tensors are
+GA
+µν
+=
+∂µGA
+ν −∂νGA
+µ + g3f ABCGB
+µ GC
+ν ,
+(D.4)
+W I
+µν
+=
+∂µW I
+ν −∂νW I
+µ + g2ϵIJKW J
+µ W K
+ν ,
+(D.5)
+Bµν
+=
+∂µBν −∂νBµ,
+(D.6)
+and their covariant derivatives
+(DρGµν)A
+=
+∂ρGA
+µν + g3f ABCGB
+ρ GC
+µν,
+(D.7)
+(DρWµν)I
+=
+∂ρW I
+µν + g2ϵIJKW J
+ρ W K
+µν,
+(D.8)
+(DρBµν)
+=
+∂ρBµν,
+(D.9)
+with f ABC and ϵIJK the SU(3) and SU(2) structure constants, respectively.
+The B-number preserving dimension 6 Green basis is presented in Tables 1-9. We
+follow the convention of denoting operators in the Warsaw basis [66] by O, whereas re-
+dundant and evanescent operators are denoted by R and E, respectively.
+We should
+stress that in our case, redundant and evanescent operators do not vanish when using
+equations of motion or going to D = 4 dimensions, being reduced to the operators in
+the physical basis in this case. We follow the notation of [62] regarding redundant op-
+erators and include evanescent operators with two and four fermions as well as possibly
+featuring charge conjugation. We use the shorthand notation γµ1...µn ≡γµ1 . . . γµn with
+no (anti)symmetrization. In the case of four fermion operators with charge conjugation
+we do not include for the moment structures with three gammas, which we plan to include
+in the near future.
+45
+
+===PAGE 46===
+We denote by iCPV = ϵ0123 ∈{1, −1} with ϵαβµν the Levi-Civita tensor, in such a way
+that for D = 4 e.g.
+σµνϵµνρσ = 2iCPV iσρσγ5,
+(D.10)
+with σµν = i
+2[γµ, γν] and
+γ5 = iγ0γ1γ2γ3 = iCPV i
+4!ϵµναβγµγνγαγβ.
+(D.11)
+At any rate, dual tensors are deﬁned by
+˜Xµν = 1
+2ϵµναβXµν,
+with
+X = G, W, B.
+(D.12)
+We follow [26] for our deﬁnitions of evanescent operators, with the diﬀerence that we
+do not deﬁne them to be zero. Considering at most three gamma matrices, they read
+E(2)
+LR = PLγµνPL ⊗PRγµνPR = 4(1 + aevϵ)PL ⊗PR, ,
+(D.13)
+E(2)
+RL = PRγµνPR ⊗PLγµνPL = 4(1 + a′
+evϵ)PR ⊗PL,
+(D.14)
+E(3)
+LL = PRγµνλPL ⊗PRγµνλPL = 4(4 −bevϵ)PRγµPL ⊗PRγµPL,
+(D.15)
+E(3)
+RR = PLγµνλPR ⊗PLγµνλPR = 4(4 −b′
+evϵ)PLγµPR ⊗PLγµPR,
+(D.16)
+E(3)
+LR = PRγµνλPL ⊗PLγµνλPR = 4(1 + cevϵ)PRγµPL ⊗PLγµPR,
+(D.17)
+E(3)
+RL = PLγµνλPR ⊗PRγµνλPL = 4(1 + c′
+evϵ)PLγµPR ⊗PRγµPL,
+(D.18)
+while
+PLγµνPL ⊗PLγµνPL = (4 −2ϵ)PL ⊗PL −PLσµνPL ⊗PLσµνPL,
+(D.19)
+PRγµνPR ⊗PRγµνPR = (4 −2ϵ)PR ⊗PR −PRσµνPR ⊗PRσµνPR,
+(D.20)
+assuming the following basis of the space of Lorentz singlets and pseudo-singlets in D = 4
+n
+Γi
+1 ⊗Γi
+2 | i = 1, . . . , 10
+o
+=
+n
+PL ⊗PL, PR ⊗PR, PL ⊗PR, PR ⊗PL, PRγµPL ⊗PRγµPL,
+PLγµPR ⊗PLγµPR, PRγµPL ⊗PLγµPR, PLγµPR ⊗PRγµPL,
+PLσµνPL ⊗PLσµνPL, PRσµνPR ⊗PRσµνPR
+o
+.
+(D.21)
+In order to be consistent with ﬂavor, we further assume that aev = a′
+ev, cev = c′
+ev. There-
+fore, at the end of the day the one-loop matching will be dependant on four free parame-
+ters: iCPV, aEV, bEV and cEV. However, physical observables computed with the obtained
+dimension-6 EFT can not depend on such parameters.
+One ﬁnal important remark should be made. In the model ﬁle .fr of the SMEFT used
+by matchmakereft to do the matching, the operator of the Warsaw basis O(3)
+ℓequ is replaced
+46
+
+===PAGE 47===
+by E[2]
+ℓequ since matchmakereft and FORM use always γµν instead of its antisymmetric
+version σµν. After doing the matching, such operator is reduced onto the one present in
+the Warsaw basis by the relation (we use α, β and γ for the WCs of physical, redundant
+and evanescent operators, respectively)
+
+α(3)
+ℓequ
+
+ijkl =
+
+γ[2]
+ℓequ
+
+ijkl −
+
+1 −ϵ
+4
+ 
+γ[2]
+ℓequ
+
+ilkj −1
+8 (γℓuqe)ilkj
+−1
+8
+ γc
+ueℓq
+
+ljik −
+
+1 −ϵ
+4
+ 
+γc [2]
+ueℓq
+
+ljik .
+(D.22)
+X3
+X2H2
+H2D4
+O3G
+f ABCGAν
+µ GBρ
+ν GCµ
+ρ
+OHG
+GA
+µνGAµν(H†H)
+RDH
+(DµDµH)†(DνDνH)
+Of
+3G
+f ABC eGAν
+µ GBρ
+ν GCµ
+ρ
+OH eG
+eGA
+µνGAµν(H†H)
+H4D2
+O3W
+ϵIJKW Iν
+µ W Jρ
+ν W Kµ
+ρ
+OHW
+W I
+µνW Iµν(H†H)
+OH□
+(H†H)□(H†H)
+Og
+3W
+ϵIJKf
+W Iν
+µ W Jρ
+ν W Kµ
+ρ
+OHf
+W
+f
+W I
+µνW Iµν(H†H)
+OHD
+(H†DµH)†(H†DµH)
+X2D2
+OHB
+BµνBµν(H†H)
+R′
+HD
+(H†H)(DµH)†(DµH)
+R2G
+−1
+2(DµGAµν)(DρGA
+ρν)
+OH e
+B
+eBµνBµν(H†H)
+R′′
+HD
+(H†H)Dµ(H†i←→
+D µH)
+R2W
+−1
+2(DµW Iµν)(DρW I
+ρν)
+OHWB
+W I
+µνBµν(H†σIH)
+H6
+R2B
+−1
+2(∂µBµν)(∂ρBρν)
+OHf
+WB
+f
+W I
+µνBµν(H†σIH)
+OH
+(H†H)3
+H2XD2
+RWDH
+DνW Iµν(H†i←→
+D I
+µH)
+RBDH
+∂νBµν(H†i←→
+D µH)
+Table 1:
+Physical and redundant bosonic operators.
+47
+
+===PAGE 48===
+ψ2D3
+ψ2XD
+ψ2DH2
+RqD
+i
+2q
+
+DµDµ, /D
+	
+q
+RGq
+(qT Aγµq)DνGA
+µν
+O(1)
+Hq
+(qγµq)(H†i←→
+D µH)
+RuD
+i
+2u
+
+DµDµ, /D
+	
+u
+R′
+Gq
+1
+2(qT Aγµi←→
+D νq)GA
+µν
+R′(1)
+Hq
+(q i
+←→/D q)(H†H)
+RdD
+i
+2d
+
+DµDµ, /D
+	
+d
+R′
+eGq
+1
+2(qT Aγµi←→
+D νq) eGA
+µν
+R′′(1)
+Hq
+(qγµq)∂µ(H†H)
+RℓD
+i
+2ℓ
+
+DµDµ, /D
+	
+ℓ
+RWq
+(qσIγµq)DνW I
+µν
+O(3)
+Hq
+(qσIγµq)(H†i←→
+D I
+µH)
+ReD
+i
+2e
+
+DµDµ, /D
+	
+e
+R′
+Wq
+1
+2(qσIγµi←→
+D νq)W I
+µν
+R′(3)
+Hq
+(q i
+←→/D Iq)(H†σIH)
+ψ2HD2 + h.c.
+R′
+f
+Wq
+1
+2(qσIγµi←→
+D νq)f
+W I
+µν
+R′′(3)
+Hq
+(qσIγµq)Dµ(H†σIH)
+RuHD1
+(qu)DµDµ eH
+RBq
+(qγµq)∂νBµν
+OHu
+(uγµu)(H†i←→
+D µH)
+RuHD2
+(q iσµνDµu)Dν eH
+R′
+Bq
+1
+2(qγµi←→
+D νq)Bµν
+R′
+Hu
+(u i
+←→/D u)(H†H)
+RuHD3
+(qDµDµu) eH
+R′
+e
+Bq
+1
+2(qγµi←→
+D νq) eBµν
+R′′
+Hu
+(uγµu)∂µ(H†H)
+RuHD4
+(qDµu)Dµ eH
+RGu
+(uT Aγµu)DνGA
+µν
+OHd
+(dγµd)(H†i←→
+D µH)
+RdHD1
+(qd)DµDµH
+R′
+Gu
+1
+2(uT Aγµi←→
+D νu)GA
+µν
+R′
+Hd
+(d i
+←→/D d)(H†H)
+RdHD2
+(q iσµνDµd)DνH
+R′
+eGu
+1
+2(uT Aγµi←→
+D νu) eGA
+µν
+R′′
+Hd
+(dγµd)∂µ(H†H)
+RdHD3
+(qDµDµd)H
+RBu
+(uγµu)∂νBµν
+OHud
+(uγµd)( eH†iDµH)
+RdHD4
+(qDµd)DµH
+R′
+Bu
+1
+2(uγµi←→
+D νu)Bµν
+O(1)
+Hℓ
+(ℓγµℓ)(H†i←→
+D µH)
+ReHD1
+(ℓe)DµDµH
+R′
+e
+Bu
+1
+2(uγµi←→
+D νu) eBµν
+R′(1)
+Hℓ
+(ℓi
+←→/D ℓ)(H†H)
+ReHD2
+(ℓiσµνDµe)DνH
+RGd
+(dT Aγµd)DνGA
+µν
+R′′(1)
+Hℓ
+(ℓγµℓ)∂µ(H†H)
+ReHD3
+(ℓDµDµe)H
+R′
+Gd
+1
+2(dT Aγµi←→
+D νd)GA
+µν
+O(3)
+Hℓ
+(ℓσIγµℓ)(H†i←→
+D I
+µH)
+ReHD4
+(ℓDµe)DµH
+R′
+eGd
+1
+2(dT Aγµi←→
+D νd) eGA
+µν
+R′(3)
+Hℓ
+(ℓi
+←→/D Iℓ)(H†σIH)
+ψ2XH + h.c.
+RBd
+(dγµd)∂νBµν
+R′′(3)
+Hℓ
+(ℓσIγµℓ)Dµ(H†σIH)
+OuG
+(qT Aσµνu) eHGA
+µν
+R′
+Bd
+1
+2(dγµi←→
+D νd)Bµν
+OHe
+(eγµe)(H†i←→
+D µH)
+OuW
+(qσµνu)σI eHW I
+µν
+R′
+e
+Bd
+1
+2(dγµi←→
+D νd) eBµν
+R′
+He
+(e i
+←→/D e)(H†H)
+OuB
+(qσµνu) eHBµν
+RWℓ
+(ℓσIγµℓ)DνW I
+µν
+R′′
+He
+(eγµe)∂µ(H†H)
+OdG
+(qT Aσµνd)HGA
+µν
+R′
+Wℓ
+1
+2(ℓσIγµi←→
+D νℓ)W I
+µν
+ψ2H3 + h.c.
+OdW
+(qσµνd)σIHW I
+µν
+R′
+f
+Wℓ
+1
+2(ℓσIγµi←→
+D νℓ)f
+W I
+µν
+OuH
+(H†H)q eHu
+OdB
+(qσµνd)HBµν
+RBℓ
+(ℓγµℓ)∂νBµν
+OdH
+(H†H)qHd
+OeW
+(ℓσµνe)σIHW I
+µν
+R′
+Bℓ
+1
+2(ℓγµi←→
+D νℓ)Bµν
+OeH
+(H†H)ℓHe
+OeB
+(ℓσµνe)HBµν
+R′
+e
+Bℓ
+1
+2(ℓγµi←→
+D νℓ) eBµν
+RBe
+(eγµe)∂νBµν
+R′
+Be
+1
+2(eγµi←→
+D νe)Bµν
+R′
+e
+Be
+1
+2(eγµi←→
+D νe) eBµν
+Table 2:
+Physical and redundant operators with two fermions.
+48
+
+===PAGE 49===
+Four-quark
+Four-lepton
+Semileptonic
+O(1)
+qq
+(qγµq)(qγµq)
+Oℓℓ
+(ℓγµℓ)(ℓγµℓ)
+O(1)
+ℓq
+(ℓγµℓ)(qγµq)
+O(3)
+qq
+(qγµσIq)(qγµσIq)
+Oee
+(eγµe)(eγµe)
+O(3)
+ℓq
+(ℓγµσIℓ)(qγµσIq)
+Ouu
+(uγµu)(uγµu)
+Oℓe
+(ℓγµℓ)(eγµe)
+Oeu
+(eγµe)(uγµu)
+Odd
+(dγµd)(dγµd)
+Oed
+(eγµe)(dγµd)
+O(1)
+ud
+(uγµu)(dγµd)
+Oqe
+(qγµq)(eγµe)
+O(8)
+ud
+(uγµT Au)(dγµT Ad)
+Oℓu
+(ℓγµℓ)(uγµu)
+O(1)
+qu
+(qγµq)(uγµu)
+Oℓd
+(ℓγµℓ)(dγµd)
+O(8)
+qu
+(qγµT Aq)(uγµT Au)
+Oℓedq
+(ℓe)(dq)
+O(1)
+qd
+(qγµq)(dγµd)
+O(1)
+ℓequ
+(ℓre)ϵrs(qsu)
+O(8)
+qd
+(qγµT Aq)(dγµT Ad)
+O(3)
+ℓequ
+(ℓrσµνe)ϵrs(qsσµνu)
+O(1)
+quqd
+(qru)ϵrs(qsd)
+O(8)
+quqd
+(qrT Au)ϵrs(qsT Ad)
+Table 3:
+Baryon and lepton number conserving operators with four fermions.
+49
+
+===PAGE 50===
+Ψ2XH + h.c.
+Ψ2XD
+EuG
+¯qT Aσµνu eH eGA
+µν
+EGq
+¯qT A(σµνγρ + γρσµν)qDρ eGA
+µν
+EGd
+¯dT A(σµνγρ + γρσµν)dDρ eGA
+µν
+EuW
+¯qσIσµνu eHf
+W I
+µν
+E′
+Gq
+i¯q(T Aσµν /D −
+←
+/DσµνT A)qGA
+µν
+E′
+Gd
+i ¯d(T Aσµν /D −
+←
+/DσµνT A)dGA
+µν
+EuB
+¯qσµνu eH eBµν
+E′
+eGq
+i¯q(T Aσµν /D −
+←
+/DσµνT A)q eGA
+µν
+E′
+eGd
+i ¯d(T Aσµν /D −
+←
+/DσµνT A)d eGA
+µν
+EdG
+¯qT AσµνdH eGA
+µν
+EWq
+¯qσI(σµνγρ + γρσµν)qDρf
+W I
+µν
+EBd
+¯d(σµνγρ + γρσµν)d∂ρ eBµν
+EdW
+¯qσIσµνdHf
+W I
+µν
+E′
+Wq
+i¯q(σIσµν /D −
+←
+/DσµνσI)qW I
+µν
+E′
+Bd
+i ¯d(σµν /D −
+←
+/Dσµν)dBA
+µν
+EdB
+¯qσµνdH eBµν
+E′
+f
+Wq
+i¯q(σIσµν /D −
+←
+/DσµνσI)qf
+W I
+µν
+E′
+e
+Bd
+i ¯d(σµν /D −
+←
+/Dσµν)d eBµν
+EeW
+¯ℓσIσµνeHf
+W I
+µν
+EBq
+¯q(σµνγρ + γρσµν)q∂ρ eBµν
+EWℓ
+¯ℓσI(σµνγρ + γρσµν)ℓDρf
+W I
+µν
+EeB
+¯ℓσµνeH eBµν
+E′
+Bq
+i¯q(σµν /D −
+←
+/Dσµν)qBµν
+E′
+Wℓ
+i¯ℓ(σIσµν /D −
+←
+/DσµνσI)ℓW I
+µν
+ψ2HD2 + h.c.
+E′
+e
+Bq
+i¯q(σµν /D −
+←
+/Dσµν)q eBµν
+E′
+f
+Wℓ
+i¯ℓ(σIσµν /D −
+←
+/DσµνσI)ℓf
+W I
+µν
+EuH
+¯qσµνDρuDσ eHϵµνρσ
+EGu
+¯uT A(σµνγρ + γρσµν)uDρ eGA
+µν
+EBℓ
+¯ℓ(σµνγρ + γρσµν)ℓ∂ρ eBµν
+EdH
+¯qσµνDρdDσHϵµνρσ
+E′
+Gu
+i¯u(T Aσµν /D −
+←
+/DσµνT A)uGA
+µν
+E′
+Bℓ
+i¯ℓ(σµν /D −
+←
+/Dσµν)ℓBµν
+EeH
+¯ℓσµνDρeDσHϵµνρσ
+E′
+eGu
+i¯u(T Aσµν /D −
+←
+/DσµνT A)u eGA
+µν
+E′
+e
+Bℓ
+i¯ℓ(σµν /D −
+←
+/Dσµν)ℓeBµν
+EBu
+¯u(σµνγρ + γρσµν)u∂ρ eBµν
+EBe
+¯e(σµνγρ + γρσµν)e∂ρ eBµν
+E′
+Bu
+i¯u(σµν /D −
+←
+/Dσµν)uBµν
+E′
+Be
+i¯e(σµν /D −
+←
+/Dσµν)eBµν
+E′
+e
+Bu
+i¯u(σµν /D −
+←
+/Dσµν)u eBµν
+E′
+e
+Be
+i¯e(σµν /D −
+←
+/Dσµν)e eBµν
+Table 4:
+Evanescent operators with two fermions.
+50
+
+===PAGE 51===
+¯LR ¯
+RL
+¯
+RR ¯
+RR
+¯LL ¯
+RR
+Equ
+(¯qu)(¯uq)
+E(8)
+uu
+(¯uγµT Au)(¯uγµT Au)
+E[3]
+qu
+(¯qγµνρq)(¯uγµνρu)
+E(8)
+qu
+(¯qT Au)(¯uT Aq)
+E[3]
+uu
+(¯uγµνρu)(¯uγµνρu)
+E[3](8)
+qu
+(¯qγµνρT Aq)(¯uγµνρT Au)
+Eqd
+(¯qd)( ¯dq)
+E[3](8)
+uu
+(¯uγµνρT Au)(¯uγµνρT Au)
+E[3]
+qd
+(¯qγµνρq)( ¯dγµνρd)
+E(8)
+qd
+(¯qT Ad)( ¯dT Aq)
+E(8)
+dd
+( ¯dγµT Ad)( ¯dγµT Ad)
+E[3](8)
+qd
+(¯qγµνρT Aq)( ¯dγµνρT Ad)
+E[2]
+qu
+(¯qγµνu)(¯uγµνq)
+E[3]
+dd
+( ¯dγµνρd)( ¯dγµνρd)
+¯LL¯LL
+E[2](8)
+qu
+(¯qγµνT Au)(¯uγµνT Aq)
+E[3](8)
+dd
+( ¯dγµνρT Ad)( ¯dγµνρT Ad)
+E(8)
+qq
+(¯qγµT Aq)(¯qγµT Aq)
+E[2]
+qd
+(¯qγµνd)( ¯dγµνq)
+Eud
+(¯uγµd)( ¯dγµu)
+E(3,8)
+qq
+(¯qγµσIT Aq)(¯qγµσIT Aq)
+E[2](8)
+qd
+(¯qγµνT Ad)( ¯dγµνT Aq)
+E(8)
+ud
+(¯uγµT Ad)( ¯dγµT Au)
+E[3](1)
+qq
+(¯qγµνρq)(¯qγµνρq)
+¯LR¯LR
+E[3]
+ud
+(¯uγµνρd)( ¯dγµνρu)
+E[3](3)
+qq
+(¯qγµνρσIq)(¯qγµνρσIq)
+E[2]
+quqd
+(¯qrγµνu)ϵrs(¯qsγµνd)
+E[3](8)
+ud
+(¯uγµνρT Ad)( ¯dγµνρT Au)
+E[3](8)
+qq
+(¯qγµνρT Aq)(¯qγµνρT Aq)
+E[2](8)
+quqd
+(¯qrγµνT Au)ϵrs(¯qsγµνT Ad)
+E′ [3]
+ud
+(¯uγµνρu)( ¯dγµνρd)
+E[3](3,8)
+qq
+(¯qγµνρσIT Aq)(¯qγµνρσIT Aq)
+E′ [3](8)
+ud
+(¯uγµνρT Au)( ¯dγµνρT Ad)
+Table 5:
+Evanescent operators with four fermions involving only quarks.
+¯LR ¯
+RL
+¯
+RR ¯
+RR
+¯LL ¯
+RR
+Eℓu
+(¯ℓu)(¯uℓ)
+Eeu
+(¯eγµu)(¯uγµe)
+Eℓqde
+(¯ℓγµq)( ¯dγµe)
+Eℓd
+(¯ℓd)( ¯dℓ)
+Eed
+(¯eγµd)( ¯dγµe)
+E[3]
+ℓu
+(¯ℓγµνρℓ)(¯uγµνρu)
+Eqe
+(¯qe)(¯eq)
+E[3]
+eu
+(¯eγµνρu)(¯uγµνρe)
+E[3]
+ℓd
+(¯ℓγµνρℓ)( ¯dγµνρd)
+E[2]
+ℓedq
+(¯ℓγµνe)( ¯dγµνq)
+E[3]
+ed
+(¯eγµνρd)( ¯dγµνρe)
+E[3]
+qe
+(¯qγµνρq)(¯eγµνρe)
+E[2]
+ℓu
+(¯ℓγµνu)(¯uγµνℓ)
+E′ [3]
+eu
+(¯eγµνρe)(¯uγµνρu)
+E[3]
+ℓqde
+(¯ℓγµνρq)( ¯dγµνρe)
+E[2]
+ℓd
+(¯ℓγµνd)( ¯dγµνℓ)
+E′ [3]
+ed
+(¯eγµνρe)( ¯dγµνρd)
+¯LL¯LL
+E[2]
+qe
+(¯qγµνe)(¯eγµνq)
+Eℓq
+(¯ℓγµq)(¯qγµℓ)
+¯LR¯LR
+E(3)
+ℓq
+(¯ℓγµσIq)(¯qγµσIℓ)
+E[2]
+ℓequ
+(¯ℓrγµνe)ϵrs(¯qsγµνu)
+E[3]
+ℓq
+(¯ℓγµνρq)(¯qγµνρℓ)
+Eℓuqe
+(¯ℓru)ϵrs(¯qse)
+E[3](3)
+ℓq
+(¯ℓγµνρσIq)(¯qγµνρσIℓ)
+E[2]
+ℓuqe
+(¯ℓrγµνu)ϵrs(¯qsγµνe)
+E′ [3]
+ℓq
+(¯ℓγµνρℓ)(¯qγµνρq)
+E′ [3](3)
+ℓq
+(¯ℓγµνρσIℓ)(¯qγµνρσIq)
+Table 6:
+Semileptonic four-fermion evanescent operators. We use the shorthand notation
+γµ1...µn ≡γµ1 . . . γµn with no (anti)symmetrization.
+51
+
+===PAGE 52===
+¯
+RR ¯
+RR
+¯LL¯LL
+¯LL ¯
+RR
+E[3]
+ee
+(¯eγµνρe)(¯eγµνρe)
+E(3)
+ℓℓ
+(¯ℓγµσIℓ)(¯ℓγµσIℓ)
+E[3]
+ℓe
+(¯ℓγµνρl)(¯eγµνρe)
+¯LR ¯
+RL
+E[3]
+ℓℓ
+(¯ℓγµνρl)(¯ℓγµνρℓ)
+E(3)
+ℓℓ
+(¯ℓγµσIℓ)(¯ℓγµσIℓ)
+E[3](3)
+ℓℓ
+(¯ℓγµνρσIl)(¯ℓγµνρσIℓ)
+E[3]
+ℓℓ
+(¯ℓγµνρl)(¯ℓγµνρℓ)
+E[3](3)
+ℓℓ
+(¯ℓγµνρσIl)(¯ℓγµνρσIℓ)
+Table 7:
+Leptonic four-fermion evanescent operators. We use the shorthand notation
+γµ1...µn ≡γµ1 . . . γµn with no (anti)symmetrization.
+¯LcL¯LLc
+¯
+RcR ¯
+RRc
+¯
+RcR¯LLc
+Ec
+qq
+(qcarqbs)(¯qbsqc
+ar)
+Ec
+uu
+(ucaub)(¯ubuc
+a)
+Ec
+udqq
+(ucadb)(¯qbrϵrsqc
+as)
+Ec ′
+qq
+(qcarqbs)(¯qasqc
+br)
+Ec
+dd
+(dcadb)( ¯dbdc
+a)
+Ec [2]
+udqq
+(ucaγµνdb)(¯qbrϵrsγµνqc
+as)
+Ec [2]
+qq
+(qcarγµνqbs)(¯qbsγµνqc
+ar)
+Ec
+ud
+(ucadb)( ¯dbuc
+a)
+¯LcR ¯
+RLc
+Ec ′[2]
+qq
+(qcarγµνqbs)(¯qasγµνqc
+br)
+Ec ′
+ud
+(ucadb)( ¯dauc
+b)
+Ec
+qu
+(qcaγµub)(¯ubγµqc
+a)
+Ec [2]
+uu
+(ucaγµνub)(¯ubγµνuc
+a)
+Ec
+qd
+(qcaγµdb)( ¯dbγµqc
+a)
+Ec [2]
+dd
+(dcaγµνdb)( ¯dbγµνdc
+a)
+Ec ′
+qu
+(qcaγµub)(¯uaγµqc
+b)
+Ec [2]
+ud
+(ucaγµνdb)( ¯dbγµνuc
+a)
+Ec ′
+qd
+(qcaγµdb)( ¯daγµqc
+b)
+Ec ′[2]
+ud
+(ucaγµνdb)( ¯daγµνuc
+b)
+Table 8:
+Evanescent operators with four fermions involving only quarks and featur-
+ing charge conjugation.
+We use the shorthand notation γµ1...µn ≡γµ1 . . . γµn with no
+(anti)symmetrization.
+52
+
+===PAGE 53===
+¯LcL¯LLc
+¯
+RcR ¯
+RRc
+¯
+RcR¯LLc
+Ec
+ℓℓ
+(ℓcrℓs)(¯ℓsℓc
+r)
+Ec
+ee
+(ece)(¯eec)
+Ec
+ueℓq
+(uce)(¯ℓrϵrsqc
+s)
+Ec
+qℓ
+(qcrℓs)(¯ℓsqc
+r)
+Ec
+eu
+(ecu)(¯uec)
+Ec [2]
+ueℓq
+(ucγµνe)(¯ℓrγµνϵrsqc
+s)
+Ec ′
+qℓ
+(qcrℓs)(¯qrℓc
+s)
+Ec
+ed
+(ecd)( ¯dec)
+¯LcR ¯
+RLc
+Ec [2]
+ℓℓ
+(ℓcrγµνℓs)(¯ℓsγµνqc
+r)
+Ec [2]
+ee
+(ecγµνe)(¯eγµνec)
+Ec
+ℓe
+(ℓcγµe)(¯eγµℓc)
+Ec [2]
+qℓ
+(qcrγµνℓs)(¯qsγµνqc
+r)
+Ec [2]
+eu
+(ecγµνu)(¯uγµνec)
+Ec
+qe
+(qcγµe)(¯eγµqc)
+Ec ′[2]
+qℓ
+(qcrγµνℓs)(¯qrγµνℓc
+s)
+Ec [2]
+ed
+(ecγµνd)( ¯dγµνec)
+Ec
+ℓu
+(ℓcγµu)(¯uγµℓc)
+Ec
+ℓd
+(ℓcγµd)( ¯dγµℓc)
+Ec
+qedℓ
+(qcγµe)( ¯dγµℓc)
+Table 9:
+Semileptonic and leptonic evanescent operators with four fermions featur-
+ing charge conjugation.
+We use the shorthand notation γµ1...µn ≡γµ1 . . . γµn with no
+(anti)symmetrization.
+53
+
+===PAGE 54===
+References
+[1] H. Georgi, Eﬀective ﬁeld theory, Ann. Rev. Nucl. Part. Sci. 43 (1993) 209–252.
+[2] N. P. Hartland, F. Maltoni, E. R. Nocera, J. Rojo, E. Slade, E. Vryonidou et al., A
+Monte Carlo global analysis of the Standard Model Eﬀective Field Theory: the top
+quark sector, JHEP 04 (2019) 100, [1901.05965].
+[3] I. Brivio, S. Bruggisser, F. Maltoni, R. Moutaﬁs, T. Plehn, E. Vryonidou et al., O
+new physics, where art thou? A global search in the top sector, JHEP 02 (2020)
+131, [1910.03606].
+[4] S. Banerjee, R. S. Gupta, J. Y. Reiness, S. Seth and M. Spannowsky, Towards the
+ultimate diﬀerential SMEFT analysis, JHEP 09 (2020) 170, [1912.07628].
+[5] R. Aoude, T. Hurth, S. Renner and W. Shepherd, The impact of ﬂavour data on
+global ﬁts of the MFV SMEFT, JHEP 12 (2020) 113, [2003.05432].
+[6] S. Dawson, S. Homiller and S. D. Lane, Putting standard model EFT ﬁts to work,
+Phys. Rev. D 102 (2020) 055012, [2007.01296].
+[7] Anisha, S. Das Bakshi, J. Chakrabortty and S. K. Patra, Connecting
+electroweak-scale observables to BSM physics through EFT and Bayesian statistics,
+Phys. Rev. D 103 (2021) 076007, [2010.04088].
+[8] A. Falkowski, M. Gonz´alez-Alonso and O. Naviliat-Cuncic, Comprehensive analysis
+of beta decays within and beyond the Standard Model, JHEP 04 (2021) 126,
+[2010.13797].
+[9] J. Ellis, M. Madigan, K. Mimasu, V. Sanz and T. You, Top, Higgs, Diboson and
+Electroweak Fit to the Standard Model Eﬀective Field Theory, JHEP 04 (2021) 279,
+[2012.02779].
+[10] SMEFiT collaboration, J. J. Ethier, G. Magni, F. Maltoni, L. Mantani, E. R.
+Nocera, J. Rojo et al., Combined SMEFT interpretation of Higgs, diboson, and top
+quark data from the LHC, JHEP 11 (2021) 089, [2105.00006].
+[11] I. Brivio, S. Bruggisser, E. Geoﬀray, W. Kilian, M. Kr¨amer, M. Luchmann et al.,
+From Models to SMEFT and Back?, 2108.01094.
+[12] E. d. S. Almeida, A. Alves, O. J. P. ´Eboli and M. C. Gonzalez-Garcia, Electroweak
+legacy of the LHC Run II, 2108.04828.
+[13] Anisha, S. Das Bakshi, S. Banerjee, A. Biek¨otter, J. Chakrabortty, S. Kumar Patra
+et al., Eﬀective limits on single scalar extensions in the light of recent LHC data,
+2111.05876.
+54
+
+===PAGE 55===
+[14] I. Brivio and M. Trott, The Standard Model as an Eﬀective Field Theory, Phys.
+Rept. 793 (2019) 1–98, [1706.08945].
+[15] E. E. Jenkins, A. V. Manohar and M. Trott, Renormalization Group Evolution of
+the Standard Model Dimension Six Operators I: Formalism and lambda Dependence,
+JHEP 10 (2013) 087, [1308.2627].
+[16] E. E. Jenkins, A. V. Manohar and M. Trott, Renormalization Group Evolution of
+the Standard Model Dimension Six Operators II: Yukawa Dependence, JHEP 01
+(2014) 035, [1310.4838].
+[17] R. Alonso, E. E. Jenkins, A. V. Manohar and M. Trott, Renormalization Group
+Evolution of the Standard Model Dimension Six Operators III: Gauge Coupling
+Dependence and Phenomenology, JHEP 04 (2014) 159, [1312.2014].
+[18] R. Alonso, H.-M. Chang, E. E. Jenkins, A. V. Manohar and B. Shotwell,
+Renormalization group evolution of dimension-six baryon number violating
+operators, Phys. Lett. B 734 (2014) 302–307, [1405.0486].
+[19] C. Grojean, E. E. Jenkins, A. V. Manohar and M. Trott, Renormalization Group
+Scaling of Higgs Operators and \Gamma(h -> \gamma \gamma), JHEP 04 (2013)
+016, [1301.2588].
+[20] J. Elias-Miro, J. R. Espinosa, E. Masso and A. Pomarol, Higgs windows to new
+physics through d=6 operators: constraints and one-loop anomalous dimensions,
+JHEP 11 (2013) 066, [1308.1879].
+[21] S. Davidson, M. Gorbahn and M. Leak, Majorana neutrino masses in the
+renormalization group equations for lepton ﬂavor violation, Phys. Rev. D 98 (2018)
+095014, [1807.04283].
+[22] M. Chala and A. Titov, Neutrino masses in the Standard Model eﬀective ﬁeld
+theory, Phys. Rev. D 104 (2021) 035002, [2104.08248].
+[23] Y. Liao and X.-D. Ma, Renormalization Group Evolution of Dimension-seven
+Baryon- and Lepton-number-violating Operators, JHEP 11 (2016) 043,
+[1607.07309].
+[24] M. Chala, G. Guedes, M. Ramos and J. Santiago, Towards the renormalisation of
+the Standard Model eﬀective ﬁeld theory to dimension eight: Bosonic interactions I,
+SciPost Phys. 11 (2021) 065, [2106.05291].
+[25] E. E. Jenkins, A. V. Manohar and P. Stoﬀer, Low-Energy Eﬀective Field Theory
+below the Electroweak Scale: Operators and Matching, JHEP 03 (2018) 016,
+[1709.04486].
+55
+
+===PAGE 56===
+[26] W. Dekens and P. Stoﬀer, Low-energy eﬀective ﬁeld theory below the electroweak
+scale: matching at one loop, JHEP 10 (2019) 197, [1908.05295].
+[27] E. E. Jenkins, A. V. Manohar and P. Stoﬀer, Low-Energy Eﬀective Field Theory
+below the Electroweak Scale: Anomalous Dimensions, JHEP 01 (2018) 084,
+[1711.05270].
+[28] A. Celis, J. Fuentes-Martin, A. Vicente and J. Virto, DsixTools: The Standard
+Model Eﬀective Field Theory Toolkit, Eur. Phys. J. C 77 (2017) 405, [1704.04504].
+[29] J. Fuentes-Martin, P. Ruiz-Femenia, A. Vicente and J. Virto, DsixTools 2.0: The
+Eﬀective Field Theory Toolkit, Eur. Phys. J. C 81 (2021) 167, [2010.16341].
+[30] J. Aebischer, J. Kumar and D. M. Straub, Wilson: a Python package for the
+running and matching of Wilson coeﬃcients above and below the electroweak scale,
+Eur. Phys. J. C 78 (2018) 1026, [1804.05033].
+[31] J. de Blas, J. C. Criado, M. Perez-Victoria and J. Santiago, Eﬀective description of
+general extensions of the Standard Model: the complete tree-level dictionary, JHEP
+03 (2018) 109, [1711.10391].
+[32] F. del Aguila, M. Perez-Victoria and J. Santiago, Observable contributions of new
+exotic quarks to quark mixing, JHEP 09 (2000) 011, [hep-ph/0007316].
+[33] F. del Aguila, J. de Blas and M. Perez-Victoria, Eﬀects of new leptons in
+Electroweak Precision Data, Phys. Rev. D 78 (2008) 013010, [0803.4008].
+[34] F. del Aguila, J. de Blas and M. Perez-Victoria, Electroweak Limits on General
+New Vector Bosons, JHEP 09 (2010) 033, [1005.3998].
+[35] J. de Blas, M. Chala, M. Perez-Victoria and J. Santiago, Observable Eﬀects of
+General New Scalar Particles, JHEP 04 (2015) 078, [1412.8480].
+[36] B. Henning, X. Lu and H. Murayama, How to use the Standard Model eﬀective ﬁeld
+theory, JHEP 01 (2016) 023, [1412.1837].
+[37] M. K. Gaillard, The Eﬀective One Loop Lagrangian With Derivative Couplings,
+Nucl. Phys. B 268 (1986) 669–692.
+[38] O. Cheyette, Eﬀective Action for the Standard Model With Large Higgs Mass, Nucl.
+Phys. B 297 (1988) 183–204.
+[39] A. Drozd, J. Ellis, J. Quevillon and T. You, The Universal One-Loop Eﬀective
+Action, JHEP 03 (2016) 180, [1512.03003].
+56
+
+===PAGE 57===
+[40] F. del Aguila, Z. Kunszt and J. Santiago, One-loop eﬀective lagrangians after
+matching, Eur. Phys. J. C 76 (2016) 244, [1602.00126].
+[41] B. Henning, X. Lu and H. Murayama, One-loop Matching and Running with
+Covariant Derivative Expansion, JHEP 01 (2018) 123, [1604.01019].
+[42] S. A. R. Ellis, J. Quevillon, T. You and Z. Zhang, Mixed heavy–light matching in
+the Universal One-Loop Eﬀective Action, Phys. Lett. B 762 (2016) 166–176,
+[1604.02445].
+[43] J. Fuentes-Martin, J. Portoles and P. Ruiz-Femenia, Integrating out heavy particles
+with functional methods: a simpliﬁed framework, JHEP 09 (2016) 156,
+[1607.02142].
+[44] Z. Zhang, Covariant diagrams for one-loop matching, JHEP 05 (2017) 152,
+[1610.00710].
+[45] S. A. R. Ellis, J. Quevillon, T. You and Z. Zhang, Extending the Universal
+One-Loop Eﬀective Action: Heavy-Light Coeﬃcients, JHEP 08 (2017) 054,
+[1706.07765].
+[46] M. Kr¨amer, B. Summ and A. Voigt, Completing the scalar and fermionic Universal
+One-Loop Eﬀective Action, JHEP 01 (2020) 079, [1908.04798].
+[47] S. A. R. Ellis, J. Quevillon, P. N. H. Vuong, T. You and Z. Zhang, The Fermionic
+Universal One-Loop Eﬀective Action, JHEP 11 (2020) 078, [2006.16260].
+[48] A. Angelescu and P. Huang, Integrating Out New Fermions at One Loop, JHEP 01
+(2021) 049, [2006.16532].
+[49] T. Cohen, X. Lu and Z. Zhang, Functional Prescription for EFT Matching, JHEP
+02 (2021) 228, [2011.02484].
+[50] S. Dittmaier, S. Schuhmacher and M. Stahlhofen, Integrating out heavy ﬁelds in the
+path integral using the background-ﬁeld method: general formalism, Eur. Phys. J. C
+81 (2021) 826, [2102.12020].
+[51] T. Cohen, X. Lu and Z. Zhang, STrEAMlining EFT Matching, SciPost Phys. 10
+(2021) 098, [2012.07851].
+[52] J. Fuentes-Martin, M. K¨onig, J. Pag`es, A. E. Thomsen and F. Wilsch, SuperTracer:
+A Calculator of Functional Supertraces for One-Loop EFT Matching, JHEP 04
+(2021) 281, [2012.08506].
+57
+
+===PAGE 58===
+[53] S. Das Bakshi, J. Chakrabortty and S. K. Patra, CoDEx: Wilson coeﬃcient
+calculator connecting SMEFT to UV theory, Eur. Phys. J. C 79 (2019) 21,
+[1808.04403].
+[54] G. Uhlrich, F. Mahmoudi and A. Arbey, Automatic extraction of one-loop Wilson
+coeﬃcients in general BSM scenarios using MARTY-1.4, in European Physical
+Society Conference on High Energy Physics 2021, 10, 2021. 2110.14515.
+[55] A. Alloul, N. D. Christensen, C. Degrande, C. Duhr and B. Fuks, FeynRules 2.0 -
+A complete toolbox for tree-level phenomenology, Comput. Phys. Commun. 185
+(2014) 2250–2300, [1310.1921].
+[56] A. V. Manohar, Introduction to Eﬀective Field Theories, 1804.05863.
+[57] T. Cohen, As Scales Become Separated: Lectures on Eﬀective Field Theory, PoS
+TASI2018 (2019) 011, [1903.03622].
+[58] P. Nogueira, Automatic Feynman graph generation, J. Comput. Phys. 105 (1993)
+279–289.
+[59] B. Ruijl, T. Ueda and J. Vermaseren, FORM version 4.2, 1707.06453.
+[60] A. Denner, H. Eck, O. Hahn and J. Kublbeck, Feynman rules for fermion number
+violating interactions, Nucl. Phys. B 387 (1992) 467–481.
+[61] A. Denner, H. Eck, O. Hahn and J. Kublbeck, Compact Feynman rules for
+Majorana fermions, Phys. Lett. B 291 (1992) 278–280.
+[62] V. Gherardi, D. Marzocca and E. Venturini, Matching scalar leptoquarks to the
+SMEFT at one loop, JHEP 07 (2020) 225, [2003.12525].
+[63] C. Gnendiger et al., To d, or not to d: recent developments and comparisons of
+regularization schemes, Eur. Phys. J. C 77 (2017) 471, [1705.01827].
+[64] M. Chala, G. Guedes, M. Ramos and J. Santiago, Running in the ALPs, Eur. Phys.
+J. C 81 (2021) 181, [2012.09017].
+[65] M. Chala and J. Santiago, Positivity bounds in the Standard Model eﬀective ﬁeld
+theory beyond tree level, 2110.01624.
+[66] B. Grzadkowski, M. Iskrzynski, M. Misiak and J. Rosiek, Dimension-Six Terms in
+the Standard Model Lagrangian, JHEP 10 (2010) 085, [1008.4884].
+[67] U. Haisch, M. Ruhdorfer, E. Salvioni, E. Venturini and A. Weiler, Singlet night in
+Feynman-ville: one-loop matching of a real scalar, JHEP 04 (2020) 164,
+[2003.05936].
+58
+
+===PAGE 59===
+[68] M. Jiang, N. Craig, Y.-Y. Li and D. Sutherland, Complete one-loop matching for a
+singlet scalar in the Standard Model EFT, JHEP 02 (2019) 031, [1811.08878].
+[69] D. Zhang and S. Zhou, Complete One-loop Matching of the Type-I Seesaw Model
+onto the Standard Model Eﬀective Field Theory, 2107.12133.
+[70] M. S. Bilenky and A. Santamaria, One loop eﬀective Lagrangian for a standard
+model with a heavy charged scalar singlet, Nucl. Phys. B 420 (1994) 47–93,
+[hep-ph/9310302].
+[71] G. Guedes and J. Santiago, New leptons with exotic decays: collider limits and dark
+matter complementarity, 2107.03429.
+[72] A. Falkowski, B. Fuks, K. Mawatari, K. Mimasu, F. Riva and V. Sanz, Rosetta: an
+operator basis translator for Standard Model eﬀective ﬁeld theory, Eur. Phys. J. C
+75 (2015) 583, [1508.05895].
+[73] A. Diaz-Carmona, Chala, Mikael and G. Guedes, Towards a complete Green basis
+for the SMEFT at dimension 8: bosonic operators, 2112.xxxxx.
+[74] M. Chala and A. Titov, One-loop matching in the SMEFT extended with a sterile
+neutrino, JHEP 05 (2020) 139, [2001.07732].
+59
