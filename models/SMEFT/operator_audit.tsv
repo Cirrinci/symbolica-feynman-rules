@@ -1,0 +1,240 @@
+operator_name	table_number	type	paper_label	paper_expression	implementation_location	builder_function	wilson_coefficient	flavour_rank	hermiticity	implementation_status	confidence_level
+O3G	1	physical	O_{3G}	f^{ABC} G^A_{μν} G^{B νρ} G^C_{ρμ}	models/SMEFT/operators_bosonic.py	_o3g	alpha_O3G	0	Hermitian / self-conjugate	implemented	high
+O3Gtilde	1	physical	O_{3\tilde G}	f^{ABC}  \tilde G^A_{μν} G^{B νρ} G^C_{ρμ}	models/SMEFT/operators_bosonic.py	_o3gt	alpha_O3Gtilde	0	Hermitian / self-conjugate	implemented	high
+O3W	1	physical	O_{3W}	ε^{IJK} W^I_{μν} W^{J νρ} W^K_{ρμ}	models/SMEFT/operators_bosonic.py	_o3w	alpha_O3W	0	Hermitian / self-conjugate	implemented	high
+O3Wtilde	1	physical	O_{3\tilde W}	ε^{IJK}  \tilde W^I_{μν} W^{J νρ} W^K_{ρμ}	models/SMEFT/operators_bosonic.py	_o3wt	alpha_O3Wtilde	0	Hermitian / self-conjugate	implemented	high
+OH	1	physical	O_H	(H^† H)^3	models/SMEFT/operators_bosonic.py	_oh	alpha_OH	0	Hermitian / self-conjugate	implemented	high
+OHB	1	physical	O_{HB}	(H^† H) B_{μν} B^{μν}	models/SMEFT/operators_bosonic.py	_ohb	alpha_OHB	0	Hermitian / self-conjugate	implemented	high
+OHBtilde	1	physical	O_{H\tilde B}	(H^† H)  \tilde B_{μν} B^{μν}	models/SMEFT/operators_bosonic.py	_ohbt	alpha_OHBtilde	0	Hermitian / self-conjugate	implemented	high
+OHD	1	physical	O_{HD}	(H^† D_μ H)^† (H^† D^μ H)	models/SMEFT/operators_bosonic.py	_ohd	alpha_OHD	0	Hermitian / self-conjugate	implemented	high
+OHG	1	physical	O_{HG}	(H^† H) G^A_{μν} G^{A μν}	models/SMEFT/operators_bosonic.py	_ohg	alpha_OHG	0	Hermitian / self-conjugate	implemented	high
+OHGtilde	1	physical	O_{H\tilde G}	(H^† H)  \tilde G^A_{μν} G^{A μν}	models/SMEFT/operators_bosonic.py	_ohgt	alpha_OHGtilde	0	Hermitian / self-conjugate	implemented	high
+OHW	1	physical	O_{HW}	(H^† H) W^I_{μν} W^{I μν}	models/SMEFT/operators_bosonic.py	_ohw	alpha_OHW	0	Hermitian / self-conjugate	implemented	high
+OHWB	1	physical	O_{HWB}	(H^† σ^I H) W^I_{μν} B^{μν}	models/SMEFT/operators_bosonic.py	_ohwb	alpha_OHWB	0	Hermitian / self-conjugate	implemented	high
+OHWBtilde	1	physical	O_{H\tilde WB}	(H^† σ^I H)  \tilde W^I_{μν} B^{μν}	models/SMEFT/operators_bosonic.py	_ohwbt	alpha_OHWBtilde	0	Hermitian / self-conjugate	implemented	high
+OHWtilde	1	physical	O_{H\tilde W}	(H^† H)  \tilde W^I_{μν} W^{I μν}	models/SMEFT/operators_bosonic.py	_ohwt	alpha_OHWtilde	0	Hermitian / self-conjugate	implemented	high
+OHbox	1	physical	O_{H\Box}	(H^† H) □(H^† H)	models/SMEFT/operators_bosonic.py	_ohbox	alpha_OHbox	0	Hermitian / self-conjugate	implemented	high
+R2B	1	redundant	R_{2B}	-1/2 (∂_μ B^{μν})(∂_ρ B^{ρ}{}_ν)	models/SMEFT/operators_bosonic.py	_r2b	beta_R2B	0	Hermitian / self-conjugate	implemented	high
+R2G	1	redundant	R_{2G}	-1/2 (D_μ G^{A μν})(D_ρ G^{A ρ}{}_ν)	models/SMEFT/operators_bosonic.py	_r2g	beta_R2G	0	Hermitian / self-conjugate	implemented	high
+R2W	1	redundant	R_{2W}	-1/2 (D_μ W^{I μν})(D_ρ W^{I ρ}{}_ν)	models/SMEFT/operators_bosonic.py	_r2w	beta_R2W	0	Hermitian / self-conjugate	implemented	high
+RBDH	1	redundant	R_{BDH}	(∂_ν B^{μν})(H^† i↔D_μ H)	models/SMEFT/operators_bosonic.py	_rbdh	beta_RBDH	0	Hermitian / self-conjugate	implemented	high
+RDH	1	redundant	R_{DH}	(D_μ D^μ H)^† (D_ν D^ν H)	models/SMEFT/operators_bosonic.py	_rdh	beta_RDH	0	Hermitian / self-conjugate	implemented	high
+RWDH	1	redundant	R_{WDH}	(D_ν W^{I μν})(H^† i↔D^I_μ H)	models/SMEFT/operators_bosonic.py	_rwdh	beta_RWDH	0	Hermitian / self-conjugate	implemented	high
+RpHD	1	redundant	R'_{HD}	(H^† H) (D_μ H)^† (D^μ H)	models/SMEFT/operators_bosonic.py	_rphd	beta_RpHD	0	Hermitian / self-conjugate	implemented	high
+RppHD	1	redundant	R''_{HD}	(H^† H) ∂_μ(H^† i↔D^μ H)	models/SMEFT/operators_bosonic.py	_rpphd	beta_RppHD	0	Hermitian / self-conjugate	implemented	medium-high
+OHd	2	physical	O_{Hd}	(d̄_i γ^μ d_j)(H^† i↔D_μ H)	models/SMEFT/operators_two_fermion.py	_ohd	alpha_OHd	2	Hermitian / self-conjugate	implemented	high
+OHe	2	physical	O_{He}	(ē_i γ^μ e_j)(H^† i↔D_μ H)	models/SMEFT/operators_two_fermion.py	_ohe	alpha_OHe	2	Hermitian / self-conjugate	implemented	high
+OHl1	2	physical	O_{Hl}^{(1)}	(ℓ̄_i γ^μ ℓ_j)(H^† i↔D_μ H)	models/SMEFT/operators_two_fermion.py	_ohl1	alpha_OHl1	2	Hermitian / self-conjugate	implemented	high
+OHl3	2	physical	O_{Hl}^{(3)}	(ℓ̄_i γ^μ σ^I ℓ_j)(H^† i↔D^I_μ H)	models/SMEFT/operators_two_fermion.py	_ohl3	alpha_OHl3	2	Hermitian / self-conjugate	implemented	high
+OHq1	2	physical	O_{Hq}^{(1)}	(q̄_i γ^μ q_j)(H^† i↔D_μ H)	models/SMEFT/operators_two_fermion.py	_ohq1	alpha_OHq1	2	Hermitian / self-conjugate	implemented	high
+OHq3	2	physical	O_{Hq}^{(3)}	(q̄_i γ^μ σ^I q_j)(H^† i↔D^I_μ H)	models/SMEFT/operators_two_fermion.py	_ohq3	alpha_OHq3	2	Hermitian / self-conjugate	implemented	high
+OHu	2	physical	O_{Hu}	(ū_i γ^μ u_j)(H^† i↔D_μ H)	models/SMEFT/operators_two_fermion.py	_ohu	alpha_OHu	2	Hermitian / self-conjugate	implemented	high
+OHud	2	physical	O_{Hud}	(ū_i γ^μ d_j)( \tilde H^† i D_μ H) + h.c.	models/SMEFT/operators_two_fermion.py	_ohud	alpha_OHud	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OdB	2	physical	O_{dB}	(q̄_i σ^{μν} d_j) H B_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_odb	alpha_OdB	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OdG	2	physical	O_{dG}	(q̄_i σ^{μν} T^A d_j) H G^A_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_odg	alpha_OdG	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OdH	2	physical	O_{dH}	(H^† H)(q̄_i d_j) H + h.c.	models/SMEFT/operators_two_fermion.py	_odh	alpha_OdH	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OdW	2	physical	O_{dW}	(q̄_i σ^{μν} σ^I d_j) H W^I_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_odw	alpha_OdW	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OeB	2	physical	O_{eB}	(ℓ̄_i σ^{μν} e_j) H B_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_oeb	alpha_OeB	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OeH	2	physical	O_{eH}	(H^† H)(ℓ̄_i e_j) H + h.c.	models/SMEFT/operators_two_fermion.py	_oeh	alpha_OeH	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OeW	2	physical	O_{eW}	(ℓ̄_i σ^{μν} σ^I e_j) H W^I_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_oew	alpha_OeW	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OuB	2	physical	O_{uB}	(q̄_i σ^{μν} u_j)  \tilde H B_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_oub	alpha_OuB	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OuG	2	physical	O_{uG}	(q̄_i σ^{μν} T^A u_j)  \tilde H G^A_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_oug	alpha_OuG	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OuH	2	physical	O_{uH}	(H^† H)(q̄_i u_j)  \tilde H + h.c.	models/SMEFT/operators_two_fermion.py	_ouh	alpha_OuH	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+OuW	2	physical	O_{uW}	(q̄_i σ^{μν} σ^I u_j)  \tilde H W^I_{μν} + h.c.	models/SMEFT/operators_two_fermion.py	_ouw	alpha_OuW	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RBd	2	redundant	R_{Bd}	(d̄_i γ^μ d_j) ∂^ν B_{μν}	models/SMEFT/operators_two_fermion.py	_rbd	beta_RBd	2	Hermitian / self-conjugate	implemented	high
+RBe	2	redundant	R_{Be}	(ē_i γ^μ e_j) ∂^ν B_{μν}	models/SMEFT/operators_two_fermion.py	_rbe	beta_RBe	2	Hermitian / self-conjugate	implemented	high
+RBl	2	redundant	R_{Bl}	(ℓ̄_i γ^μ ℓ_j) ∂^ν B_{μν}	models/SMEFT/operators_two_fermion.py	_rbl	beta_RBl	2	Hermitian / self-conjugate	implemented	high
+RBq	2	redundant	R_{Bq}	(q̄_i γ^μ q_j) ∂^ν B_{μν}	models/SMEFT/operators_two_fermion.py	_rbq	beta_RBq	2	Hermitian / self-conjugate	implemented	high
+RBu	2	redundant	R_{Bu}	(ū_i γ^μ u_j) ∂^ν B_{μν}	models/SMEFT/operators_two_fermion.py	_rbu	beta_RBu	2	Hermitian / self-conjugate	implemented	high
+RGd	2	redundant	R_{Gd}	(d̄_i T^A γ^μ d_j) D^ν G^A_{μν}	models/SMEFT/operators_two_fermion.py	_rgd	beta_RGd	2	Hermitian / self-conjugate	implemented	high
+RGq	2	redundant	R_{Gq}	(q̄_i T^A γ^μ q_j) D^ν G^A_{μν}	models/SMEFT/operators_two_fermion.py	_rgq	beta_RGq	2	Hermitian / self-conjugate	implemented	high
+RGu	2	redundant	R_{Gu}	(ū_i T^A γ^μ u_j) D^ν G^A_{μν}	models/SMEFT/operators_two_fermion.py	_rgu	beta_RGu	2	Hermitian / self-conjugate	implemented	high
+RWl	2	redundant	R_{Wl}	(ℓ̄_i σ^I γ^μ ℓ_j) D^ν W^I_{μν}	models/SMEFT/operators_two_fermion.py	_rwl	beta_RWl	2	Hermitian / self-conjugate	implemented	high
+RWq	2	redundant	R_{Wq}	(q̄_i σ^I γ^μ q_j) D^ν W^I_{μν}	models/SMEFT/operators_two_fermion.py	_rwq	beta_RWq	2	Hermitian / self-conjugate	implemented	high
+RdD	2	redundant	R_{dD}	i/2 (d̄_i {D_μ D^μ, /D} d_j)	models/SMEFT/operators_two_fermion.py	_rdd	beta_RdD	2	Hermitian / self-conjugate	implemented	high
+RdHD1	2	redundant	R_{dHD}1	(q̄_i d_j) D_μ D^μ H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RdHD1	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RdHD2	2	redundant	R_{dHD}2	(q̄_i iσ^{μν} D_μ d_j) D_ν H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RdHD2	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RdHD3	2	redundant	R_{dHD}3	(q̄_i D_μ D^μ d_j) H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RdHD3	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RdHD4	2	redundant	R_{dHD}4	(q̄_i D_μ d_j) D^μ H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RdHD4	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+ReD	2	redundant	R_{eD}	i/2 (ē_i {D_μ D^μ, /D} e_j)	models/SMEFT/operators_two_fermion.py	_red	beta_ReD	2	Hermitian / self-conjugate	implemented	high
+ReHD1	2	redundant	R_{eHD}1	(ℓ̄_i e_j) D_μ D^μ H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_ReHD1	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+ReHD2	2	redundant	R_{eHD}2	(ℓ̄_i iσ^{μν} D_μ e_j) D_ν H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_ReHD2	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+ReHD3	2	redundant	R_{eHD}3	(ℓ̄_i D_μ D^μ e_j) H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_ReHD3	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+ReHD4	2	redundant	R_{eHD}4	(ℓ̄_i D_μ e_j) D^μ H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_ReHD4	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RlD	2	redundant	R_{lD}	i/2 (ℓ̄_i {D_μ D^μ, /D} ℓ_j)	models/SMEFT/operators_two_fermion.py	_rld	beta_RlD	2	Hermitian / self-conjugate	implemented	high
+Rp1Hl	2	redundant	R'^{(1)}_{Hl}	(ℓ̄_i i↔/D ℓ_j)(H^† H)	models/SMEFT/operators_two_fermion.py	_rp1hl	beta_Rp1Hl	2	Hermitian / self-conjugate	implemented	high
+Rp1Hq	2	redundant	R'^{(1)}_{Hq}	(q̄_i i↔/D q_j)(H^† H)	models/SMEFT/operators_two_fermion.py	_rp1hq	beta_Rp1Hq	2	Hermitian / self-conjugate	implemented	high
+Rp3Hl	2	redundant	R'^{(3)}_{Hl}	(ℓ̄_i i↔/D^I ℓ_j)(H^† σ^I H)	models/SMEFT/operators_two_fermion.py	_rp3hl	beta_Rp3Hl	2	Hermitian / self-conjugate	implemented	high
+Rp3Hq	2	redundant	R'^{(3)}_{Hq}	(q̄_i i↔/D^I q_j)(H^† σ^I H)	models/SMEFT/operators_two_fermion.py	_rp3hq	beta_Rp3Hq	2	Hermitian / self-conjugate	implemented	high
+RpBd	2	redundant	R'_{Bd}	1/2 (d̄_i γ^μ i↔D^ν d_j) B_{μν}	models/SMEFT/operators_two_fermion.py	_rpbd	beta_RpBd	2	Hermitian / self-conjugate	implemented	high
+RpBe	2	redundant	R'_{Be}	1/2 (ē_i γ^μ i↔D^ν e_j) B_{μν}	models/SMEFT/operators_two_fermion.py	_rpbe	beta_RpBe	2	Hermitian / self-conjugate	implemented	high
+RpBl	2	redundant	R'_{Bl}	1/2 (ℓ̄_i γ^μ i↔D^ν ℓ_j) B_{μν}	models/SMEFT/operators_two_fermion.py	_rpbl	beta_RpBl	2	Hermitian / self-conjugate	implemented	high
+RpBq	2	redundant	R'_{Bq}	1/2 (q̄_i γ^μ i↔D^ν q_j) B_{μν}	models/SMEFT/operators_two_fermion.py	_rpbq	beta_RpBq	2	Hermitian / self-conjugate	implemented	high
+RpBtd	2	redundant	R'_{Btilde d}	R'_{Btilde d}	models/SMEFT/operators_two_fermion.py	_rpbtd	beta_RpBtd	2	Hermitian / self-conjugate	implemented	high
+RpBte	2	redundant	R'_{Btilde e}	R'_{Btilde e}	models/SMEFT/operators_two_fermion.py	_rpbte	beta_RpBte	2	Hermitian / self-conjugate	implemented	high
+RpBtl	2	redundant	R'_{Btilde l}	R'_{Btilde l}	models/SMEFT/operators_two_fermion.py	_rpbtl	beta_RpBtl	2	Hermitian / self-conjugate	implemented	high
+RpBtq	2	redundant	R'_{Btilde q}	R'_{Btilde q}	models/SMEFT/operators_two_fermion.py	_rpbtq	beta_RpBtq	2	Hermitian / self-conjugate	implemented	high
+RpBtu	2	redundant	R'_{Btilde u}	R'_{Btilde u}	models/SMEFT/operators_two_fermion.py	_rpbtu	beta_RpBtu	2	Hermitian / self-conjugate	implemented	high
+RpBu	2	redundant	R'_{Bu}	1/2 (ū_i γ^μ i↔D^ν u_j) B_{μν}	models/SMEFT/operators_two_fermion.py	_rpbu	beta_RpBu	2	Hermitian / self-conjugate	implemented	high
+RpGd	2	redundant	R'_{Gd}	1/2 (d̄_i T^A γ^μ i↔D^ν d_j) G^A_{μν}	models/SMEFT/operators_two_fermion.py	_rpgd	beta_RpGd	2	Hermitian / self-conjugate	implemented	high
+RpGq	2	redundant	R'_{Gq}	1/2 (q̄_i T^A γ^μ i↔D^ν q_j) G^A_{μν}	models/SMEFT/operators_two_fermion.py	_rpgq	beta_RpGq	2	Hermitian / self-conjugate	implemented	high
+RpGtd	2	redundant	R'_{Gtilde d}	R'_{Gtilde d}	models/SMEFT/operators_two_fermion.py	_rpgtd	beta_RpGtd	2	Hermitian / self-conjugate	implemented	high
+RpGtq	2	redundant	R'_{Gtilde q}	R'_{Gtilde q}	models/SMEFT/operators_two_fermion.py	_rpgtq	beta_RpGtq	2	Hermitian / self-conjugate	implemented	high
+RpGtu	2	redundant	R'_{Gtilde u}	R'_{Gtilde u}	models/SMEFT/operators_two_fermion.py	_rpgtu	beta_RpGtu	2	Hermitian / self-conjugate	implemented	high
+RpGu	2	redundant	R'_{Gu}	1/2 (ū_i T^A γ^μ i↔D^ν u_j) G^A_{μν}	models/SMEFT/operators_two_fermion.py	_rpgu	beta_RpGu	2	Hermitian / self-conjugate	implemented	high
+RpHd	2	redundant	R'_{Hd}	(d̄_i i↔/D d_j)(H^† H)	models/SMEFT/operators_two_fermion.py	_rphd	beta_RpHd	2	Hermitian / self-conjugate	implemented	high
+RpHe	2	redundant	R'_{He}	(ē_i i↔/D e_j)(H^† H)	models/SMEFT/operators_two_fermion.py	_rphe	beta_RpHe	2	Hermitian / self-conjugate	implemented	high
+RpHu	2	redundant	R'_{Hu}	(ū_i i↔/D u_j)(H^† H)	models/SMEFT/operators_two_fermion.py	_rphu	beta_RpHu	2	Hermitian / self-conjugate	implemented	high
+RpWl	2	redundant	R'_{Wl}	1/2 (ℓ̄_i σ^I γ^μ i↔D^ν ℓ_j) W^I_{μν}	models/SMEFT/operators_two_fermion.py	_rpwl	beta_RpWl	2	Hermitian / self-conjugate	implemented	high
+RpWq	2	redundant	R'_{Wq}	1/2 (q̄_i σ^I γ^μ i↔D^ν q_j) W^I_{μν}	models/SMEFT/operators_two_fermion.py	_rpwq	beta_RpWq	2	Hermitian / self-conjugate	implemented	high
+RpWtl	2	redundant	R'_{Wtilde l}	R'_{Wtilde l}	models/SMEFT/operators_two_fermion.py	_rpwtl	beta_RpWtl	2	Hermitian / self-conjugate	implemented	high
+RpWtq	2	redundant	R'_{Wtilde q}	R'_{Wtilde q}	models/SMEFT/operators_two_fermion.py	_rpwtq	beta_RpWtq	2	Hermitian / self-conjugate	implemented	high
+Rpp1Hl	2	redundant	R''^{(1)}_{Hl}	(ℓ̄_i γ^μ ℓ_j) ∂_μ(H^† H)	models/SMEFT/operators_two_fermion.py	_rpp1hl	beta_Rpp1Hl	2	Hermitian / self-conjugate	implemented	high
+Rpp1Hq	2	redundant	R''^{(1)}_{Hq}	(q̄_i γ^μ q_j) ∂_μ(H^† H)	models/SMEFT/operators_two_fermion.py	_rpp1hq	beta_Rpp1Hq	2	Hermitian / self-conjugate	implemented	high
+Rpp3Hl	2	redundant	R''^{(3)}_{Hl}	(ℓ̄_i σ^I γ^μ ℓ_j) D_μ(H^† σ^I H)	models/SMEFT/operators_two_fermion.py	_rpp3hl	beta_Rpp3Hl	2	Hermitian / self-conjugate	implemented	high
+Rpp3Hq	2	redundant	R''^{(3)}_{Hq}	(q̄_i σ^I γ^μ q_j) D_μ(H^† σ^I H)	models/SMEFT/operators_two_fermion.py	_rpp3hq	beta_Rpp3Hq	2	Hermitian / self-conjugate	implemented	high
+RppHd	2	redundant	R''_{Hd}	(d̄_i γ^μ d_j) ∂_μ(H^† H)	models/SMEFT/operators_two_fermion.py	_rpphd	beta_RppHd	2	Hermitian / self-conjugate	implemented	high
+RppHe	2	redundant	R''_{He}	(ē_i γ^μ e_j) ∂_μ(H^† H)	models/SMEFT/operators_two_fermion.py	_rpphe	beta_RppHe	2	Hermitian / self-conjugate	implemented	high
+RppHu	2	redundant	R''_{Hu}	(ū_i γ^μ u_j) ∂_μ(H^† H)	models/SMEFT/operators_two_fermion.py	_rpphu	beta_RppHu	2	Hermitian / self-conjugate	implemented	high
+RqD	2	redundant	R_{qD}	i/2 (q̄_i {D_μ D^μ, /D} q_j)	models/SMEFT/operators_two_fermion.py	_rqd	beta_RqD	2	Hermitian / self-conjugate	implemented	high
+RuD	2	redundant	R_{uD}	i/2 (ū_i {D_μ D^μ, /D} u_j)	models/SMEFT/operators_two_fermion.py	_rud	beta_RuD	2	Hermitian / self-conjugate	implemented	high
+RuHD1	2	redundant	R_{uHD}1	(q̄_i u_j) D_μ D^μ \tilde H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RuHD1	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RuHD2	2	redundant	R_{uHD}2	(q̄_i iσ^{μν} D_μ u_j) D_ν \tilde H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RuHD2	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RuHD3	2	redundant	R_{uHD}3	(q̄_i D_μ D^μ u_j) \tilde H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RuHD3	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+RuHD4	2	redundant	R_{uHD}4	(q̄_i D_μ u_j) D^μ \tilde H + h.c.	models/SMEFT/operators_two_fermion.py	_builder	beta_RuHD4	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+Odd	3	physical	O_{dd}	(d̄_i γ_μ d_j)(d̄_k γ^μ d_l)	models/SMEFT/operators_four_fermion.py	_odd	alpha_Odd	4	Hermitian / self-conjugate	implemented	high
+Oed	3	physical	O_{ed}	(ē_i γ_μ e_j)(d̄_k γ^μ d_l)	models/SMEFT/operators_four_fermion.py	_oed	alpha_Oed	4	Hermitian / self-conjugate	implemented	high
+Oee	3	physical	O_{ee}	(ē_i γ_μ e_j)(ē_k γ^μ e_l)	models/SMEFT/operators_four_fermion.py	_oee	alpha_Oee	4	Hermitian / self-conjugate	implemented	high
+Oeu	3	physical	O_{eu}	(ē_i γ_μ e_j)(ū_k γ^μ u_l)	models/SMEFT/operators_four_fermion.py	_oeu	alpha_Oeu	4	Hermitian / self-conjugate	implemented	high
+Old	3	physical	O_{ld}	(ℓ̄_i γ_μ ℓ_j)(d̄_k γ^μ d_l)	models/SMEFT/operators_four_fermion.py	_old	alpha_Old	4	Hermitian / self-conjugate	implemented	high
+Ole	3	physical	O_{le}	(ℓ̄_i γ_μ ℓ_j)(ē_k γ^μ e_l)	models/SMEFT/operators_four_fermion.py	_ole	alpha_Ole	4	Hermitian / self-conjugate	implemented	high
+Oledq	3	physical	O_{ledq}	(ℓ̄_{i r} e_j)(d̄_k q_{l r}) + h.c.	models/SMEFT/operators_four_fermion.py	_oledq	alpha_Oledq	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+Olequ1	3	physical	O_{lequ}^{(1)}	(ℓ̄_{i r} e_j) ε_{rs} (q̄_{k s} u_l) + h.c.	models/SMEFT/operators_four_fermion.py	_olequ1	alpha_Olequ1	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+Olequ3	3	physical	O_{lequ}^{(3)}	(ℓ̄_{i r} σ_{μν} e_j) ε_{rs} (q̄_{k s} σ^{μν} u_l) + h.c.	models/SMEFT/operators_four_fermion.py	_olequ3	alpha_Olequ3	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+Oll	3	physical	O_{ll}	(ℓ̄_i γ_μ ℓ_j)(ℓ̄_k γ^μ ℓ_l)	models/SMEFT/operators_four_fermion.py	_oll	alpha_Oll	4	Hermitian / self-conjugate	implemented	high
+Olq1	3	physical	O_{lq}^{(1)}	(ℓ̄_i γ_μ ℓ_j)(q̄_k γ^μ q_l)	models/SMEFT/operators_four_fermion.py	_olq1	alpha_Olq1	4	Hermitian / self-conjugate	implemented	high
+Olq3	3	physical	O_{lq}^{(3)}	(ℓ̄_i γ_μ σ^I ℓ_j)(q̄_k γ^μ σ^I q_l)	models/SMEFT/operators_four_fermion.py	_olq3	alpha_Olq3	4	Hermitian / self-conjugate	implemented	high
+Olu	3	physical	O_{lu}	(ℓ̄_i γ_μ ℓ_j)(ū_k γ^μ u_l)	models/SMEFT/operators_four_fermion.py	_olu	alpha_Olu	4	Hermitian / self-conjugate	implemented	high
+Oqd1	3	physical	O_{qd}^{(1)}	(q̄_i γ_μ q_j)(d̄_k γ^μ d_l)	models/SMEFT/operators_four_fermion.py	_oqd1	alpha_Oqd1	4	Hermitian / self-conjugate	implemented	high
+Oqd8	3	physical	O_{qd}^{(8)}	(q̄_i γ_μ T^A q_j)(d̄_k γ^μ T^A d_l)	models/SMEFT/operators_four_fermion.py	_oqd8	alpha_Oqd8	4	Hermitian / self-conjugate	implemented	high
+Oqe	3	physical	O_{qe}	(q̄_i γ_μ q_j)(ē_k γ^μ e_l)	models/SMEFT/operators_four_fermion.py	_oqe	alpha_Oqe	4	Hermitian / self-conjugate	implemented	high
+Oqq1	3	physical	O_{qq}^{(1)}	(q̄_i γ_μ q_j)(q̄_k γ^μ q_l)	models/SMEFT/operators_four_fermion.py	_oqq1	alpha_Oqq1	4	Hermitian / self-conjugate	implemented	high
+Oqq3	3	physical	O_{qq}^{(3)}	(q̄_i γ_μ σ^I q_j)(q̄_k γ^μ σ^I q_l)	models/SMEFT/operators_four_fermion.py	_oqq3	alpha_Oqq3	4	Hermitian / self-conjugate	implemented	high
+Oqu1	3	physical	O_{qu}^{(1)}	(q̄_i γ_μ q_j)(ū_k γ^μ u_l)	models/SMEFT/operators_four_fermion.py	_oqu1	alpha_Oqu1	4	Hermitian / self-conjugate	implemented	high
+Oqu8	3	physical	O_{qu}^{(8)}	(q̄_i γ_μ T^A q_j)(ū_k γ^μ T^A u_l)	models/SMEFT/operators_four_fermion.py	_oqu8	alpha_Oqu8	4	Hermitian / self-conjugate	implemented	high
+Oquqd1	3	physical	O_{quqd}^{(1)}	(q̄_{i r} u_j) ε_{rs} (q̄_{k s} d_l) + h.c.	models/SMEFT/operators_four_fermion.py	_oquqd1	alpha_Oquqd1	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+Oquqd8	3	physical	O_{quqd}^{(8)}	(q̄_{i r} T^A u_j) ε_{rs} (q̄_{k s} T^A d_l) + h.c.	models/SMEFT/operators_four_fermion.py	_oquqd8	alpha_Oquqd8	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+Oud1	3	physical	O_{ud}^{(1)}	(ū_i γ_μ u_j)(d̄_k γ^μ d_l)	models/SMEFT/operators_four_fermion.py	_oud1	alpha_Oud1	4	Hermitian / self-conjugate	implemented	high
+Oud8	3	physical	O_{ud}^{(8)}	(ū_i γ_μ T^A u_j)(d̄_k γ^μ T^A d_l)	models/SMEFT/operators_four_fermion.py	_oud8	alpha_Oud8	4	Hermitian / self-conjugate	implemented	high
+Ouu	3	physical	O_{uu}	(ū_i γ_μ u_j)(ū_k γ^μ u_l)	models/SMEFT/operators_four_fermion.py	_ouu	alpha_Ouu	4	Hermitian / self-conjugate	implemented	high
+EBd	4	evanescent	E_{Bd}	(d̄_i (σ^{μν}γ^ρ + γ^ρσ^{μν}) d_j) D_ρ \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EBd	2	Hermitian / self-conjugate	implemented	high
+EBe	4	evanescent	E_{Be}	(ē_i (σ^{μν}γ^ρ + γ^ρσ^{μν}) e_j) D_ρ \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EBe	2	Hermitian / self-conjugate	implemented	high
+EBl	4	evanescent	E_{Bl}	(ℓ̄_i (σ^{μν}γ^ρ + γ^ρσ^{μν}) ℓ_j) D_ρ \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EBl	2	Hermitian / self-conjugate	implemented	high
+EBq	4	evanescent	E_{Bq}	(q̄_i (σ^{μν}γ^ρ + γ^ρσ^{μν}) q_j) D_ρ \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EBq	2	Hermitian / self-conjugate	implemented	high
+EBu	4	evanescent	E_{Bu}	(ū_i (σ^{μν}γ^ρ + γ^ρσ^{μν}) u_j) D_ρ \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EBu	2	Hermitian / self-conjugate	implemented	high
+EGd	4	evanescent	E_{Gd}	(d̄_i T^A (σ^{μν}γ^ρ + γ^ρσ^{μν}) d_j) D_ρ \tilde G^A_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EGd	2	Hermitian / self-conjugate	implemented	high
+EGq	4	evanescent	E_{Gq}	(q̄_i T^A (σ^{μν}γ^ρ + γ^ρσ^{μν}) q_j) D_ρ \tilde G^A_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EGq	2	Hermitian / self-conjugate	implemented	high
+EGu	4	evanescent	E_{Gu}	(ū_i T^A (σ^{μν}γ^ρ + γ^ρσ^{μν}) u_j) D_ρ \tilde G^A_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EGu	2	Hermitian / self-conjugate	implemented	high
+EWl	4	evanescent	E_{Wl}	(ℓ̄_i σ^I (σ^{μν}γ^ρ + γ^ρσ^{μν}) ℓ_j) D_ρ \tilde W^I_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EWl	2	Hermitian / self-conjugate	implemented	high
+EWq	4	evanescent	E_{Wq}	(q̄_i σ^I (σ^{μν}γ^ρ + γ^ρσ^{μν}) q_j) D_ρ \tilde W^I_{μν}	models/SMEFT/operators_evanescent.py	_e	gamma_EWq	2	Hermitian / self-conjugate	implemented	high
+EdB	4	evanescent	E_{dB}	(q̄_i σ^{μν} d_j) H  \tilde B_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_edB	gamma_EdB	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EdG	4	evanescent	E_{dG}	(q̄_i σ^{μν} T^A d_j) H  \tilde G^A_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_edG	gamma_EdG	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EdH	4	evanescent	E_{dH}	(q̄_i σ^{μν} D_ρ d_j) D_σ H ε_{μνρσ} + h.c.	models/SMEFT/operators_evanescent.py	_edH	gamma_EdH	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EdW	4	evanescent	E_{dW}	(q̄_i σ^{μν} σ^I d_j) H  \tilde W^I_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_edW	gamma_EdW	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EeB	4	evanescent	E_{eB}	(ℓ̄_i σ^{μν} e_j) H  \tilde B_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_eeB	gamma_EeB	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EeH	4	evanescent	E_{eH}	(ℓ̄_i σ^{μν} D_ρ e_j) D_σ H ε_{μνρσ} + h.c.	models/SMEFT/operators_evanescent.py	_eeH	gamma_EeH	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EeW	4	evanescent	E_{eW}	(ℓ̄_i σ^{μν} σ^I e_j) H  \tilde W^I_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_eeW	gamma_EeW	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EpBd	4	evanescent	E'_{Bd}	i (d̄_i (σ^{μν} /D - ←/D σ^{μν}) d_j) B_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpBd	2	Hermitian / self-conjugate	implemented	high
+EpBe	4	evanescent	E'_{Be}	i (ē_i (σ^{μν} /D - ←/D σ^{μν}) e_j) B_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpBe	2	Hermitian / self-conjugate	implemented	high
+EpBl	4	evanescent	E'_{Bl}	i (ℓ̄_i (σ^{μν} /D - ←/D σ^{μν}) ℓ_j) B_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpBl	2	Hermitian / self-conjugate	implemented	high
+EpBq	4	evanescent	E'_{Bq}	i (q̄_i (σ^{μν} /D - ←/D σ^{μν}) q_j) B_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpBq	2	Hermitian / self-conjugate	implemented	high
+EpBtd	4	evanescent	E'_{Btilde d}	i (d̄_i (σ^{μν} /D - ←/D σ^{μν}) d_j) \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpBtd	2	Hermitian / self-conjugate	implemented	high
+EpBte	4	evanescent	E'_{Btilde e}	i (ē_i (σ^{μν} /D - ←/D σ^{μν}) e_j) \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpBte	2	Hermitian / self-conjugate	implemented	high
+EpBtl	4	evanescent	E'_{Btilde l}	i (ℓ̄_i (σ^{μν} /D - ←/D σ^{μν}) ℓ_j) \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpBtl	2	Hermitian / self-conjugate	implemented	high
+EpBtq	4	evanescent	E'_{Btilde q}	i (q̄_i (σ^{μν} /D - ←/D σ^{μν}) q_j) \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpBtq	2	Hermitian / self-conjugate	implemented	high
+EpBtu	4	evanescent	E'_{Btilde u}	i (ū_i (σ^{μν} /D - ←/D σ^{μν}) u_j) \tilde B_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpBtu	2	Hermitian / self-conjugate	implemented	high
+EpBu	4	evanescent	E'_{Bu}	i (ū_i (σ^{μν} /D - ←/D σ^{μν}) u_j) B_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpBu	2	Hermitian / self-conjugate	implemented	high
+EpGd	4	evanescent	E'_{Gd}	i (d̄_i (T^A σ^{μν} /D - ←/D σ^{μν}T^A ) d_j) G^A_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpGd	2	Hermitian / self-conjugate	implemented	high
+EpGq	4	evanescent	E'_{Gq}	i (q̄_i (T^A σ^{μν} /D - ←/D σ^{μν}T^A ) q_j) G^A_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpGq	2	Hermitian / self-conjugate	implemented	high
+EpGtd	4	evanescent	E'_{Gtilde d}	i (d̄_i (T^A σ^{μν} /D - ←/D σ^{μν}T^A ) d_j) \tilde G^A_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpGtd	2	Hermitian / self-conjugate	implemented	high
+EpGtq	4	evanescent	E'_{Gtilde q}	i (q̄_i (T^A σ^{μν} /D - ←/D σ^{μν}T^A ) q_j) \tilde G^A_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpGtq	2	Hermitian / self-conjugate	implemented	high
+EpGtu	4	evanescent	E'_{Gtilde u}	i (ū_i (T^A σ^{μν} /D - ←/D σ^{μν}T^A ) u_j) \tilde G^A_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpGtu	2	Hermitian / self-conjugate	implemented	high
+EpGu	4	evanescent	E'_{Gu}	i (ū_i (T^A σ^{μν} /D - ←/D σ^{μν}T^A ) u_j) G^A_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpGu	2	Hermitian / self-conjugate	implemented	high
+EpWl	4	evanescent	E'_{Wl}	i (ℓ̄_i (σ^I σ^{μν} /D - ←/D σ^{μν}σ^I ) ℓ_j) W^I_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpWl	2	Hermitian / self-conjugate	implemented	high
+EpWq	4	evanescent	E'_{Wq}	i (q̄_i (σ^I σ^{μν} /D - ←/D σ^{μν}σ^I ) q_j) W^I_{μν}	models/SMEFT/operators_evanescent.py	_ep	gamma_EpWq	2	Hermitian / self-conjugate	implemented	high
+EpWtl	4	evanescent	E'_{Wtilde l}	i (ℓ̄_i (σ^I σ^{μν} /D - ←/D σ^{μν}σ^I ) ℓ_j) \tilde W^I_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpWtl	2	Hermitian / self-conjugate	implemented	high
+EpWtq	4	evanescent	E'_{Wtilde q}	i (q̄_i (σ^I σ^{μν} /D - ←/D σ^{μν}σ^I ) q_j) \tilde W^I_{μν}	models/SMEFT/operators_evanescent.py	_ept	gamma_EpWtq	2	Hermitian / self-conjugate	implemented	high
+EuB	4	evanescent	E_{uB}	(q̄_i σ^{μν} u_j)  \tilde H  \tilde B_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_euB	gamma_EuB	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EuG	4	evanescent	E_{uG}	(q̄_i σ^{μν} T^A u_j)  \tilde H  \tilde G^A_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_euG	gamma_EuG	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EuH	4	evanescent	E_{uH}	(q̄_i σ^{μν} D_ρ u_j) D_σ  \tilde H ε_{μνρσ} + h.c.	models/SMEFT/operators_evanescent.py	_euH	gamma_EuH	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+EuW	4	evanescent	E_{uW}	(q̄_i σ^{μν} σ^I u_j)  \tilde H  \tilde W^I_{μν} + h.c.	models/SMEFT/operators_evanescent.py	_euW	gamma_EuW	2	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	high
+E2_8qd	5	evanescent	E^{[2](8)}_{qd}	(q̄_i γ^{μν} T^A d_j)(d̄_k γ^{μν} T^A q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E2_8qd	4	Hermitian / self-conjugate	implemented	medium
+E2_8qu	5	evanescent	E^{[2](8)}_{qu}	(q̄_i γ^{μν} T^A u_j)(ū_k γ^{μν} T^A q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E2_8qu	4	Hermitian / self-conjugate	implemented	medium
+E2_8quqd	5	evanescent	E^{[2](8)}_{quqd}	(q̄_i γ^{μν} T^A u_j) ε_{rs} (q̄_k γ^{μν} T^A d_l) + h.c.	models/SMEFT/operators_evanescent.py	_b	gamma_E2_8quqd	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	medium
+E2qd	5	evanescent	E^{[2]}_{qd}	(q̄_i γ^{μν} d_j)(d̄_k γ^{μν} q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E2qd	4	Hermitian / self-conjugate	implemented	medium
+E2qu	5	evanescent	E^{[2]}_{qu}	(q̄_i γ^{μν} u_j)(ū_k γ^{μν} q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E2qu	4	Hermitian / self-conjugate	implemented	medium
+E2quqd	5	evanescent	E^{[2]}_{quqd}	(q̄_i γ^{μν} u_j) ε_{rs} (q̄_k γ^{μν} d_l) + h.c.	models/SMEFT/operators_evanescent.py	_b	gamma_E2quqd	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	medium
+E38qq	5	evanescent	E^{(3,8)}_{qq}	(q̄_i γ^μ T^A σ^I q_j)(q̄_k γ^μ T^A σ^I q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E38qq	4	Hermitian / self-conjugate	implemented	medium
+E3_1qq	5	evanescent	E^{[3](1)}_{qq}	(q̄_i γ^{μνρ} q_j)(q̄_k γ^{μνρ} q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_1qq	4	Hermitian / self-conjugate	implemented	medium
+E3_38qq	5	evanescent	E^{[3](3,8)}_{qq}	(q̄_i γ^{μνρ} T^A σ^I q_j)(q̄_k γ^{μνρ} T^A σ^I q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_38qq	4	Hermitian / self-conjugate	implemented	medium
+E3_3qq	5	evanescent	E^{[3](3)}_{qq}	(q̄_i γ^{μνρ} σ^I q_j)(q̄_k γ^{μνρ} σ^I q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_3qq	4	Hermitian / self-conjugate	implemented	medium
+E3_8dd	5	evanescent	E^{[3](8)}_{dd}	(d̄_i γ^{μνρ} T^A d_j)(d̄_k γ^{μνρ} T^A d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_8dd	4	Hermitian / self-conjugate	implemented	medium
+E3_8qd	5	evanescent	E^{[3](8)}_{qd}	(q̄_i γ^{μνρ} T^A q_j)(d̄_k γ^{μνρ} T^A d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_8qd	4	Hermitian / self-conjugate	implemented	medium
+E3_8qq	5	evanescent	E^{[3](8)}_{qq}	(q̄_i γ^{μνρ} T^A q_j)(q̄_k γ^{μνρ} T^A q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_8qq	4	Hermitian / self-conjugate	implemented	medium
+E3_8qu	5	evanescent	E^{[3](8)}_{qu}	(q̄_i γ^{μνρ} T^A q_j)(ū_k γ^{μνρ} T^A u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_8qu	4	Hermitian / self-conjugate	implemented	medium
+E3_8ud	5	evanescent	E^{[3](8)}_{ud}	(ū_i γ^{μνρ} T^A d_j)(d̄_k γ^{μνρ} T^A u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_8ud	4	Hermitian / self-conjugate	implemented	medium
+E3_8uu	5	evanescent	E^{[3](8)}_{uu}	(ū_i γ^{μνρ} T^A u_j)(ū_k γ^{μνρ} T^A u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_8uu	4	Hermitian / self-conjugate	implemented	medium
+E3dd	5	evanescent	E^{[3]}_{dd}	(d̄_i γ^{μνρ} d_j)(d̄_k γ^{μνρ} d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3dd	4	Hermitian / self-conjugate	implemented	medium
+E3qd	5	evanescent	E^{[3]}_{qd}	(q̄_i γ^{μνρ} q_j)(d̄_k γ^{μνρ} d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3qd	4	Hermitian / self-conjugate	implemented	medium
+E3qu	5	evanescent	E^{[3]}_{qu}	(q̄_i γ^{μνρ} q_j)(ū_k γ^{μνρ} u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3qu	4	Hermitian / self-conjugate	implemented	medium
+E3ud	5	evanescent	E^{[3]}_{ud}	(ū_i γ^{μνρ} d_j)(d̄_k γ^{μνρ} u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3ud	4	Hermitian / self-conjugate	implemented	medium
+E3uu	5	evanescent	E^{[3]}_{uu}	(ū_i γ^{μνρ} u_j)(ū_k γ^{μνρ} u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3uu	4	Hermitian / self-conjugate	implemented	medium
+E8dd	5	evanescent	E^{(8)}_{dd}	(d̄_i γ^μ T^A d_j)(d̄_k γ^μ T^A d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E8dd	4	Hermitian / self-conjugate	implemented	medium
+E8qd	5	evanescent	E^{(8)}_{qd}	(q̄_i 1 T^A d_j)(d̄_k 1 T^A q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E8qd	4	Hermitian / self-conjugate	implemented	medium
+E8qq	5	evanescent	E^{(8)}_{qq}	(q̄_i γ^μ T^A q_j)(q̄_k γ^μ T^A q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E8qq	4	Hermitian / self-conjugate	implemented	medium
+E8qu	5	evanescent	E^{(8)}_{qu}	(q̄_i 1 T^A u_j)(ū_k 1 T^A q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E8qu	4	Hermitian / self-conjugate	implemented	medium
+E8ud	5	evanescent	E^{(8)}_{ud}	(ū_i γ^μ T^A d_j)(d̄_k γ^μ T^A u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E8ud	4	Hermitian / self-conjugate	implemented	medium
+E8uu	5	evanescent	E^{(8)}_{uu}	(ū_i γ^μ T^A u_j)(ū_k γ^μ T^A u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E8uu	4	Hermitian / self-conjugate	implemented	medium
+Ep3_8ud	5	evanescent	E'^{[3](8)}_{ud}	(ū_i γ^{μνρ} T^A u_j)(d̄_k γ^{μνρ} T^A d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Ep3_8ud	4	Hermitian / self-conjugate	implemented	medium
+Ep3ud	5	evanescent	E'^{[3]}_{ud}	(ū_i γ^{μνρ} u_j)(d̄_k γ^{μνρ} d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Ep3ud	4	Hermitian / self-conjugate	implemented	medium
+Eqd	5	evanescent	E_{qd}	(q̄_i 1 d_j)(d̄_k 1 q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Eqd	4	Hermitian / self-conjugate	implemented	medium
+Equ	5	evanescent	E_{qu}	(q̄_i 1 u_j)(ū_k 1 q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Equ	4	Hermitian / self-conjugate	implemented	medium
+Eud	5	evanescent	E_{ud}	(ū_i γ^μ d_j)(d̄_k γ^μ u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Eud	4	Hermitian / self-conjugate	implemented	medium
+E2ld	6	evanescent	E^{[2]}_{ld}	(ℓ̄_i γ^{μν} d_j)(d̄_k γ^{μν} ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E2ld	4	Hermitian / self-conjugate	implemented	medium
+E2ledq	6	evanescent	E^{[2]}_{ledq}	(ℓ̄_i γ^{μν} e_j)(d̄_k γ_{μν} q_l) + h.c.	models/SMEFT/operators_evanescent.py	_e2ledq	gamma_E2ledq	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	medium
+E2lequ	6	evanescent	E^{[2]}_{lequ}	(ℓ̄_i γ^{μν} e_j) ε_{rs} (q̄_k γ^{μν} u_l) + h.c.	models/SMEFT/operators_evanescent.py	_b	gamma_E2lequ	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	medium
+E2lu	6	evanescent	E^{[2]}_{lu}	(ℓ̄_i γ^{μν} u_j)(ū_k γ^{μν} ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E2lu	4	Hermitian / self-conjugate	implemented	medium
+E2luqe	6	evanescent	E^{[2]}_{luqe}	(ℓ̄_i γ^{μν} u_j) ε_{rs} (q̄_k γ^{μν} e_l) + h.c.	models/SMEFT/operators_evanescent.py	_b	gamma_E2luqe	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	medium
+E2qe	6	evanescent	E^{[2]}_{qe}	(q̄_i γ^{μν} e_j)(ē_k γ^{μν} q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E2qe	4	Hermitian / self-conjugate	implemented	medium
+E3_3lq	6	evanescent	E^{[3](3)}_{lq}	(ℓ̄_i γ^{μνρ} σ^I ℓ_j)(q̄_k γ^{μνρ} σ^I q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_3lq	4	Hermitian / self-conjugate	implemented	medium
+E3ed	6	evanescent	E^{[3]}_{ed}	(ē_i γ^{μνρ} d_j)(d̄_k γ^{μνρ} e_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3ed	4	Hermitian / self-conjugate	implemented	medium
+E3eu	6	evanescent	E^{[3]}_{eu}	(ē_i γ^{μνρ} u_j)(ū_k γ^{μνρ} e_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3eu	4	Hermitian / self-conjugate	implemented	medium
+E3ld	6	evanescent	E^{[3]}_{ld}	(ℓ̄_i γ^{μνρ} ℓ_j)(d̄_k γ^{μνρ} d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3ld	4	Hermitian / self-conjugate	implemented	medium
+E3lq	6	evanescent	E^{[3]}_{lq}	(ℓ̄_i γ^{μνρ} q_j)(q̄_k γ^{μνρ} ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3lq	4	Hermitian / self-conjugate	implemented	medium
+E3lq_1	6	evanescent	E^{(3)}_{lq}	(ℓ̄_i γ^μ σ^I q_j)(q̄_k γ^μ σ^I ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3lq_1	4	Hermitian / self-conjugate	implemented	medium
+E3lu	6	evanescent	E^{[3]}_{lu}	(ℓ̄_i γ^{μνρ} ℓ_j)(ū_k γ^{μνρ} u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3lu	4	Hermitian / self-conjugate	implemented	medium
+E3qe	6	evanescent	E^{[3]}_{qe}	(q̄_i γ^{μνρ} q_j)(ē_k γ^{μνρ} e_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3qe	4	Hermitian / self-conjugate	implemented	medium
+Eed	6	evanescent	E_{ed}	(ē_i γ^μ d_j)(d̄_k γ^μ e_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Eed	4	Hermitian / self-conjugate	implemented	medium
+Eeu	6	evanescent	E_{eu}	(ē_i γ^μ u_j)(ū_k γ^μ e_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Eeu	4	Hermitian / self-conjugate	implemented	medium
+Eld	6	evanescent	E_{ld}	(ℓ̄_i 1 d_j)(d̄_k 1 ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Eld	4	Hermitian / self-conjugate	implemented	medium
+Elq	6	evanescent	E_{lq}	(ℓ̄_i γ^μ q_j)(q̄_k γ^μ ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Elq	4	Hermitian / self-conjugate	implemented	medium
+Elu	6	evanescent	E_{lu}	(ℓ̄_i 1 u_j)(ū_k 1 ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Elu	4	Hermitian / self-conjugate	implemented	medium
+Eluqe	6	evanescent	E_{luqe}	(ℓ̄_i 1 u_j) ε_{rs} (q̄_k 1 e_l) + h.c.	models/SMEFT/operators_evanescent.py	_b	gamma_Eluqe	4	non-Hermitian (+ h.c. in compiled Lagrangian)	implemented	medium
+Ep3_3lq	6	evanescent	E'^{[3](3)}_{lq}	(ℓ̄_i γ^{μνρ} σ^I ℓ_j)(q̄_k γ^{μνρ} σ^I q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Ep3_3lq	4	Hermitian / self-conjugate	implemented	medium
+Ep3ed	6	evanescent	E'^{[3]}_{ed}	(ē_i γ^{μνρ} e_j)(d̄_k γ^{μνρ} d_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Ep3ed	4	Hermitian / self-conjugate	implemented	medium
+Ep3eu	6	evanescent	E'^{[3]}_{eu}	(ē_i γ^{μνρ} e_j)(ū_k γ^{μνρ} u_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Ep3eu	4	Hermitian / self-conjugate	implemented	medium
+Ep3lq	6	evanescent	E'^{[3]}_{lq}	(ℓ̄_i γ^{μνρ} ℓ_j)(q̄_k γ^{μνρ} q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Ep3lq	4	Hermitian / self-conjugate	implemented	medium
+Eqe	6	evanescent	E_{qe}	(q̄_i 1 e_j)(ē_k 1 q_l)	models/SMEFT/operators_evanescent.py	_b	gamma_Eqe	4	Hermitian / self-conjugate	implemented	medium
+E1_3ll	7	evanescent	E^{(3)}_{ll}	(ℓ̄_i γ^μ σ^I ℓ_j)(ℓ̄_k γ^μ σ^I ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E1_3ll	4	Hermitian / self-conjugate	implemented	medium
+E3_3ll	7	evanescent	E^{[3](3)}_{ll}	(ℓ̄_i γ^{μνρ} σ^I ℓ_j)(ℓ̄_k γ^{μνρ} σ^I ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3_3ll	4	Hermitian / self-conjugate	implemented	medium
+E3ee	7	evanescent	E^{[3]}_{ee}	(ē_i γ^{μνρ} e_j)(ē_k γ^{μνρ} e_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3ee	4	Hermitian / self-conjugate	implemented	medium
+E3le	7	evanescent	E^{[3]}_{le}	(ℓ̄_i γ^{μνρ} ℓ_j)(ē_k γ^{μνρ} e_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3le	4	Hermitian / self-conjugate	implemented	medium
+E3ll	7	evanescent	E^{[3]}_{ll}	(ℓ̄_i γ^{μνρ} ℓ_j)(ℓ̄_k γ^{μνρ} ℓ_l)	models/SMEFT/operators_evanescent.py	_b	gamma_E3ll	4	Hermitian / self-conjugate	implemented	medium
+Ec2dd	8	evanescent	E^{c[2]}_{dd}	(d^c γ^{μν} d)(d̄ γ^{μν} d^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ec2dd	4	blocked / non-Hermitian handling unavailable	blocked	low
+Ec2uu	8	evanescent	E^{c[2]}_{uu}	(u^c γ^{μν} u)(ū γ^{μν} u^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ec2uu	4	blocked / non-Hermitian handling unavailable	blocked	low
+Ecdd	8	evanescent	E^{c}_{dd}	(d^c d)(d̄ d^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ecdd	4	blocked / non-Hermitian handling unavailable	blocked	low
+Ecqq	8	evanescent	E^{c}_{qq}	(q^c q)(q̄ q^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ecqq	4	blocked / non-Hermitian handling unavailable	blocked	low
+Ecuu	8	evanescent	E^{c}_{uu}	(u^c u)(ū u^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ecuu	4	blocked / non-Hermitian handling unavailable	blocked	low
+Ec2ee	9	evanescent	E^{c[2]}_{ee}	(e^c γ^{μν} e)(ē γ^{μν} e^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ec2ee	4	blocked / non-Hermitian handling unavailable	blocked	low
+Ecee	9	evanescent	E^{c}_{ee}	(e^c e)(ē e^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ecee	4	blocked / non-Hermitian handling unavailable	blocked	low
+Ecll	9	evanescent	E^{c}_{ll}	(ℓ^c ℓ)(ℓ̄ ℓ^c) [representative blocked C-chain entry]	models/SMEFT/operators_evanescent.py	_b	gamma_Ecll	4	blocked / non-Hermitian handling unavailable	blocked	low

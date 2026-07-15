@@ -2,13 +2,16 @@
 
 Reference: **Appendix D of arXiv:2112.10787** (Tables 1-9).
 
-Every operator is implemented in the fully explicit style (raw Spenso tensors +
-declarative `DC`/`FS`), with explicit chiral projectors so ordered gamma chains
-survive (compiled with `simplify_gamma=False`).  No EOM / IBP / Fierz / 4D
-reduction is applied anywhere.  Each operator is individually reachable via the
-registry (`get_operator`, `operators_in`) and can be inspected
-(`op.structure(core)`), compiled (`op.lagrangian(core)`) and turned into Feynman
-rules (`op.feynman_rule(core, ...)`).
+Every **registered** operator is written in the fully explicit style (raw
+Spenso tensors + declarative `DC`/`FS`), with explicit chiral projectors so
+ordered gamma chains survive (compiled with `simplify_gamma=False`). No EOM /
+IBP / Fierz / 4D reduction is applied anywhere. Each registered operator is
+individually reachable via the registry (`get_operator`, `operators_in`) and
+can be inspected (`op.structure(core)`), compiled (`op.lagrangian(core)`) and
+turned into Feynman rules (`op.feynman_rule(core, ...)`).
+
+This file no longer claims full Appendix D completeness: the Tables 8-9
+charge-conjugation sector is only partially represented in the registry.
 
 ## Summary
 
@@ -23,13 +26,14 @@ rules (`op.feynman_rule(core, ...)`).
 | 5     | four-fermion  | evanescent | 32    | implemented               |
 | 6     | four-fermion  | evanescent | 25    | implemented               |
 | 7     | four-fermion  | evanescent | 5     | implemented               |
-| 8-9   | four-fermion  | evanescent | 8*    | **blocked** (see below)   |
+| 8     | four-fermion  | evanescent | 18    | 5 representative entries registered as blocked; 13 unsupported |
+| 9     | four-fermion  | evanescent | 19    | 3 representative entries registered as blocked; 16 unsupported |
 
-`*` Representative charge-conjugation operators are registered so their declared
-structure is inspectable; they cannot be compiled (documented blocker below).
-
-**Totals:** 239 operators registered, 231 compile to Feynman rules at canonical
-mass dimension 6, 8 charge-conjugation operators are declared-only (blocked).
+**Totals:** Appendix D contains 268 operators. The current registry contains 239
+entries: 231 compile to Feynman rules at canonical mass dimension 6, 8
+charge-conjugation operators are registered as declared-only blocked
+representatives, and the remaining 29 charge-conjugation operators from Tables
+8-9 are not yet registered.
 
 ## Conventions (Appendix D)
 
@@ -105,6 +109,11 @@ Ec2uu, Ec2dd` (Table 8, quarks) and `Ecee, Ecll, Ec2ee` (Table 9, leptons),
 spanning the scalar / vector / tensor C-chain structures.  Their declared
 structure is inspectable (`op.structure(core)` builds the `psi^T C Gamma psi`
 chains verbatim), but compilation is blocked.
+
+Appendix D contains **37** such operators in total: **18** in Table 8 and
+**19** in Table 9. Only the 8 representative entries listed above are currently
+registered. The completeness claim "the complete dimension-six SMEFT Green basis
+has been implemented" is therefore false as written.
 
 **Exact blocker.**  The engine's local fermion-flow lowering
 (`_ordered_local_dirac_bilinears` / `_unsupported_local_fermion_ordering_error`
