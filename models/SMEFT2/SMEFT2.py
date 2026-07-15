@@ -1,0 +1,2057 @@
+"""Simple unbroken-gauge-basis SMEFT model from ``models/SMEFT 2``.
+
+This follows the field names and operator sectors in
+``SMEFT_Green_Bpreserving.fr`` while staying inside the current declarative
+surface of FeynPy. The implementation intentionally avoids extra framework
+machinery: define the parameters, gauge groups, fields and the Lagrangian in a
+single builder, close to how a user would write it.
+
+The omitted sectors require features that the current FeynPy layer does not
+expose cleanly, most notably true ``D_mu F^{mu nu}`` operators and genuine
+nested covariant derivatives acting on already-covariant matter fields.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from fractions import Fraction
+
+from symbolica import Expression, S
+
+from feynpy import (
+    COLOR_ADJ_INDEX,
+    COLOR_FUND_INDEX,
+    DC,
+    DeclaredLagrangian,
+    Field,
+    FS,
+    Gamma,
+    GaugeGroup,
+    GaugeRepresentation,
+    LORENTZ_INDEX,
+    Model,
+    Parameter,
+    PartialD,
+    SPINOR_INDEX,
+    WEAK_ADJ_INDEX,
+    WEAK_FUND_INDEX,
+    flavor_index,
+)
+from symbolic.spenso_structures import (
+    dirac_charge_conjugation,
+    gauge_generator,
+    lorentz_levi_civita,
+    structure_constant,
+    weak_eps2,
+    weak_gauge_generator,
+    weak_structure_constant,
+)
+from symbolic.vertex_engine import I
+
+
+ZERO = Expression.num(0)
+ONE = Expression.num(1)
+TWO = Expression.num(2)
+THREE = Expression.num(3)
+FOUR = Expression.num(4)
+SIX = Expression.num(6)
+HALF = ONE / TWO
+
+
+OMITTED_SECTORS = (
+    "LX2D2",
+    "LH2XD2",
+    "LH2D4",
+    "LF2D3",
+    "LF2HD2",
+    "LF2XD",
+    "LEvF2HD2",
+    "LEvF2XD",
+    "LEv4q",
+    "LEv4lq",
+    "LEvCCLLLL",
+    "LEvCCRRRR",
+    "LEvCCLRRL",
+    "LEvCCRRLL",
+)
+
+
+@dataclass(frozen=True)
+class SMEFT2Bundle:
+    model: Model
+    fields: dict[str, Field]
+    parameters: dict[str, Parameter]
+    gauge_groups: dict[str, GaugeGroup]
+    lagrangians: dict[str, DeclaredLagrangian]
+    omitted_sectors: tuple[str, ...] = OMITTED_SECTORS
+
+
+def _param(name: str, *, indices=(), complex_param: bool = False) -> Parameter:
+    return Parameter(name, indices=indices, complex_param=complex_param)
+
+
+def _dual_fs(group, mu, nu, rho, sigma, adjoint=None):
+    if adjoint is None:
+        return HALF * lorentz_levi_civita(mu, nu, rho, sigma) * FS(
+            group, rho, sigma
+        )
+    return HALF * lorentz_levi_civita(mu, nu, rho, sigma) * FS(
+        group, rho, sigma, adjoint
+    )
+
+
+def build_smeft_green_bpreserving(
+    *,
+    name: str = "SMEFT_Green_Bpreserving",
+) -> SMEFT2Bundle:
+    """Return the supported unbroken-basis SMEFT model."""
+
+    generation = flavor_index("Generation", 3, prefix="f")
+
+    parameters: dict[str, Parameter] = {
+        "g1": _param("g1"),
+        "g2": _param("g2"),
+        "g3": _param("g3"),
+        "muH": _param("muH"),
+        "lam": _param("lam"),
+        "yl": _param(
+            "yl", indices=(generation, generation), complex_param=True
+        ),
+        "yu": _param(
+            "yu", indices=(generation, generation), complex_param=True
+        ),
+        "yd": _param(
+            "yd", indices=(generation, generation), complex_param=True
+        ),
+    }
+
+    for param_name in (
+        "alphaOmuH2",
+        "alphaKB",
+        "alphaKW",
+        "alphaKG",
+        "alphaKH",
+        "alphaOlambda",
+        "alphaO3G",
+        "alphaO3Gt",
+        "alphaO3W",
+        "alphaO3Wt",
+        "alphaR2G",
+        "alphaR2W",
+        "alphaR2B",
+        "alphaOHG",
+        "alphaOHGt",
+        "alphaOHW",
+        "alphaOHWt",
+        "alphaOHB",
+        "alphaOHBt",
+        "alphaOHWB",
+        "alphaOHWBt",
+        "alphaRWDH",
+        "alphaRBDH",
+        "alphaRDH",
+        "alphaOHBox",
+        "alphaOHD",
+        "alphaRHDp",
+        "alphaRHDpp",
+        "alphaOH",
+    ):
+        parameters[param_name] = _param(param_name)
+
+    for param_name in (
+        "alphaKq",
+        "alphaKl",
+        "alphaKu",
+        "alphaKd",
+        "alphaKe",
+        "alphaOlambdad",
+        "alphaOlambdae",
+        "alphaOlambdau",
+        "alphaOuG",
+        "alphaOuW",
+        "alphaOuB",
+        "alphaOdG",
+        "alphaOdW",
+        "alphaOdB",
+        "alphaOeW",
+        "alphaOeB",
+        "alphaOHq1",
+        "alphaRHq1p",
+        "alphaRHq1pp",
+        "alphaOHq3",
+        "alphaRHq3p",
+        "alphaRHq3pp",
+        "alphaOHu",
+        "alphaRHup",
+        "alphaRHupp",
+        "alphaOHd",
+        "alphaRHdp",
+        "alphaRHdpp",
+        "alphaOHud",
+        "alphaOHl1",
+        "alphaRHl1p",
+        "alphaRHl1pp",
+        "alphaOHl3",
+        "alphaRHl3p",
+        "alphaRHl3pp",
+        "alphaOHe",
+        "alphaRHep",
+        "alphaRHepp",
+        "alphaOuH",
+        "alphaOdH",
+        "alphaOeH",
+        "alphaWeinberg",
+        "alphaRqD",
+        "alphaRuD",
+        "alphaRdD",
+        "alphaRlD",
+        "alphaReD",
+        "alphaRuHD1",
+        "alphaRuHD2",
+        "alphaRuHD3",
+        "alphaRuHD4",
+        "alphaRdHD1",
+        "alphaRdHD2",
+        "alphaRdHD3",
+        "alphaRdHD4",
+        "alphaReHD1",
+        "alphaReHD2",
+        "alphaReHD3",
+        "alphaReHD4",
+        "alphaRGq",
+        "alphaRGqp",
+        "alphaRGqtp",
+        "alphaRWq",
+        "alphaRWqp",
+        "alphaRWqtp",
+        "alphaRBq",
+        "alphaRBqp",
+        "alphaRBqtp",
+        "alphaRGu",
+        "alphaRGup",
+        "alphaRGutp",
+        "alphaRBu",
+        "alphaRBup",
+        "alphaRButp",
+        "alphaRGd",
+        "alphaRGdp",
+        "alphaRGdtp",
+        "alphaRBd",
+        "alphaRBdp",
+        "alphaRBdtp",
+        "alphaRWl",
+        "alphaRWlp",
+        "alphaRWltp",
+        "alphaRBl",
+        "alphaRBlp",
+        "alphaRBltp",
+        "alphaRBe",
+        "alphaRBep",
+        "alphaRBetp",
+        "alphaEuG",
+        "alphaEuW",
+        "alphaEuB",
+        "alphaEdG",
+        "alphaEdW",
+        "alphaEdB",
+        "alphaEeW",
+        "alphaEeB",
+        "alphaEuH",
+        "alphaEdH",
+        "alphaEeH",
+    ):
+        parameters[param_name] = _param(
+            param_name,
+            indices=(generation, generation),
+            complex_param=True,
+        )
+
+    for param_name in (
+        "alphaOqq1",
+        "alphaOqq3",
+        "alphaOuu",
+        "alphaOdd",
+        "alphaOud1",
+        "alphaOud8",
+        "alphaOqu1",
+        "alphaOqu8",
+        "alphaOqd1",
+        "alphaOqd8",
+        "alphaOquqd1",
+        "alphaOquqd8",
+        "alphaOll",
+        "alphaOee",
+        "alphaOle",
+        "alphaOlq1",
+        "alphaOlq3",
+        "alphaOeu",
+        "alphaOed",
+        "alphaOqe",
+        "alphaOlu",
+        "alphaOld",
+        "alphaOledq",
+        "alphaOlequ1",
+        "alphaEqu",
+        "alphaEqu8",
+        "alphaEqd",
+        "alphaEqd8",
+        "alphaEqutwo",
+        "alphaEqutwo8",
+        "alphaEqdtwo",
+        "alphaEqdtwo8",
+        "alphaEquqdtwo",
+        "alphaEquqdtwo8",
+        "alphaEuu8",
+        "alphaEuuthree",
+        "alphaEuuthree8",
+        "alphaEdd8",
+        "alphaEddthree",
+        "alphaEddthree8",
+        "alphaEud",
+        "alphaEud8",
+        "alphaEudthree",
+        "alphaEudthree8",
+        "alphaEudthreep",
+        "alphaEudthree8p",
+        "alphaEquthree",
+        "alphaEquthree8",
+        "alphaEqdthree",
+        "alphaEqdthree8",
+        "alphaEqq8",
+        "alphaEqq38",
+        "alphaEqqthree1",
+        "alphaEqqthree3",
+        "alphaEqqthree8",
+        "alphaEqqthree38",
+        "alphaEeethree",
+        "alphaEll3",
+        "alphaEllthree",
+        "alphaEllthree3",
+        "alphaEle",
+        "alphaEletwo",
+        "alphaElethree",
+        "alphaEeu",
+        "alphaEed",
+        "alphaEeuthree",
+        "alphaEedthree",
+        "alphaEeuthreep",
+        "alphaEedthreep",
+        "alphaElq",
+        "alphaElq3",
+        "alphaElqthree",
+        "alphaElqthree3",
+        "alphaElqthreep",
+        "alphaElqthree3p",
+        "alphaElequtwo",
+        "alphaEluqe",
+        "alphaEluqetwo",
+        "alphaElu",
+        "alphaEld",
+        "alphaEqe",
+        "alphaEledqtwo",
+        "alphaElutwo",
+        "alphaEldtwo",
+        "alphaEqetwo",
+        "alphaElqde",
+        "alphaEluthree",
+        "alphaEldthree",
+        "alphaEqethree",
+        "alphaElqdethree",
+        "alphaEcll",
+        "alphaEclltwo",
+        "alphaEcqq",
+        "alphaEcqqtwo",
+        "alphaEcqqp",
+        "alphaEcqqptwo",
+        "alphaEcql",
+        "alphaEcqltwo",
+        "alphaEcqlp",
+        "alphaEcqlptwo",
+        "alphaEcee",
+        "alphaEceetwo",
+        "alphaEceu",
+        "alphaEceutwo",
+        "alphaEced",
+        "alphaEcedtwo",
+        "alphaEcuu",
+        "alphaEcuutwo",
+        "alphaEcdd",
+        "alphaEcddtwo",
+        "alphaEcud",
+        "alphaEcudtwo",
+        "alphaEcudp",
+        "alphaEcudptwo",
+        "alphaEcle",
+        "alphaEcqe",
+        "alphaEclu",
+        "alphaEcld",
+        "alphaEcqu",
+        "alphaEcqd",
+        "alphaEcqup",
+        "alphaEcqdp",
+        "alphaEcqedl",
+        "alphaEclethree",
+        "alphaEcqethree",
+        "alphaEcluthree",
+        "alphaEcldthree",
+        "alphaEcquthree",
+        "alphaEcqdthree",
+        "alphaEcqupthree",
+        "alphaEcqdpthree",
+        "alphaEcqedlthree",
+        "alphaEcuelq",
+        "alphaEcudqq",
+        "alphaEcuelqtwo",
+        "alphaEcudqqtwo",
+    ):
+        parameters[param_name] = _param(
+            param_name,
+            indices=(generation, generation, generation, generation),
+            complex_param=True,
+        )
+
+    fields: dict[str, Field] = {
+        "B": Field("B", spin=1, self_conjugate=True, indices=(LORENTZ_INDEX,)),
+        "Wi": Field(
+            "Wi",
+            spin=1,
+            self_conjugate=True,
+            indices=(LORENTZ_INDEX, WEAK_ADJ_INDEX),
+        ),
+        "G": Field(
+            "G",
+            spin=1,
+            self_conjugate=True,
+            indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+        ),
+        "LL": Field(
+            "LL",
+            spin=Fraction(1, 2),
+            self_conjugate=False,
+            indices=(SPINOR_INDEX, WEAK_FUND_INDEX, generation),
+            quantum_numbers={"Y": -HALF},
+        ),
+        "LR": Field(
+            "LR",
+            spin=Fraction(1, 2),
+            self_conjugate=False,
+            indices=(SPINOR_INDEX, generation),
+            quantum_numbers={"Y": -ONE},
+        ),
+        "QL": Field(
+            "QL",
+            spin=Fraction(1, 2),
+            self_conjugate=False,
+            indices=(SPINOR_INDEX, WEAK_FUND_INDEX, generation, COLOR_FUND_INDEX),
+            quantum_numbers={"Y": ONE / SIX},
+        ),
+        "UR": Field(
+            "UR",
+            spin=Fraction(1, 2),
+            self_conjugate=False,
+            indices=(SPINOR_INDEX, generation, COLOR_FUND_INDEX),
+            quantum_numbers={"Y": TWO / THREE},
+        ),
+        "DR": Field(
+            "DR",
+            spin=Fraction(1, 2),
+            self_conjugate=False,
+            indices=(SPINOR_INDEX, generation, COLOR_FUND_INDEX),
+            quantum_numbers={"Y": -(ONE / THREE)},
+        ),
+        "Phi": Field(
+            "Phi",
+            spin=0,
+            self_conjugate=False,
+            conjugate_symbol=S("Phibar"),
+            indices=(WEAK_FUND_INDEX,),
+            quantum_numbers={"Y": HALF},
+        ),
+    }
+
+    gauge_groups: dict[str, GaugeGroup] = {
+        "U1Y": GaugeGroup(
+            "U1Y",
+            abelian=True,
+            coupling=parameters["g1"],
+            gauge_boson=fields["B"],
+            charge="Y",
+        ),
+        "SU2L": GaugeGroup(
+            "SU2L",
+            abelian=False,
+            coupling=parameters["g2"],
+            gauge_boson=fields["Wi"],
+            structure_constant=weak_structure_constant,
+            representations=(
+                GaugeRepresentation(
+                    WEAK_FUND_INDEX,
+                    weak_gauge_generator,
+                    name="doublet",
+                ),
+            ),
+        ),
+        "SU3C": GaugeGroup(
+            "SU3C",
+            abelian=False,
+            coupling=parameters["g3"],
+            gauge_boson=fields["G"],
+            structure_constant=structure_constant,
+            representations=(
+                GaugeRepresentation(
+                    COLOR_FUND_INDEX,
+                    gauge_generator,
+                    name="fundamental",
+                ),
+            ),
+        ),
+    }
+
+    B = fields["B"]
+    Wi = fields["Wi"]
+    G = fields["G"]
+    LL = fields["LL"]
+    LR = fields["LR"]
+    QL = fields["QL"]
+    UR = fields["UR"]
+    DR = fields["DR"]
+    Phi = fields["Phi"]
+
+    weak_kind = WEAK_FUND_INDEX.kind
+    generation_kind = generation.kind
+    color_kind = COLOR_FUND_INDEX.kind
+
+    def ql(*, sp=None, w=None, f=None, c=None, bar=False):
+        labels = {}
+        if w is not None:
+            labels[weak_kind] = w
+        if f is not None:
+            labels[generation_kind] = f
+        if c is not None:
+            labels[color_kind] = c
+        target = QL.bar if bar else QL
+        if sp is None:
+            return target(index_labels=labels)
+        return target(sp, index_labels=labels)
+
+    def ur(*, sp=None, f=None, c=None, bar=False):
+        labels = {}
+        if f is not None:
+            labels[generation_kind] = f
+        if c is not None:
+            labels[color_kind] = c
+        target = UR.bar if bar else UR
+        if sp is None:
+            return target(index_labels=labels)
+        return target(sp, index_labels=labels)
+
+    def dr(*, sp=None, f=None, c=None, bar=False):
+        labels = {}
+        if f is not None:
+            labels[generation_kind] = f
+        if c is not None:
+            labels[color_kind] = c
+        target = DR.bar if bar else DR
+        if sp is None:
+            return target(index_labels=labels)
+        return target(sp, index_labels=labels)
+
+    def ll(*, sp=None, w=None, f=None, bar=False):
+        labels = {}
+        if w is not None:
+            labels[weak_kind] = w
+        if f is not None:
+            labels[generation_kind] = f
+        target = LL.bar if bar else LL
+        if sp is None:
+            return target(index_labels=labels)
+        return target(sp, index_labels=labels)
+
+    def lr(*, sp=None, f=None, bar=False):
+        labels = {}
+        if f is not None:
+            labels[generation_kind] = f
+        target = LR.bar if bar else LR
+        if sp is None:
+            return target(index_labels=labels)
+        return target(sp, index_labels=labels)
+
+    def weak_t(adjoint, left, right):
+        return TWO * weak_gauge_generator(adjoint, left, right)
+
+    def phitilde(target, source):
+        return weak_eps2(target, source) * Phi.bar(source)
+
+    def phitildebar(target, source):
+        return weak_eps2(target, source) * Phi(source)
+
+    def sigma_term(prefactor, left, right, mu, nu):
+        return (
+            (I / TWO) * prefactor * left * Gamma(mu) * Gamma(nu) * right
+            - (I / TWO) * prefactor * left * Gamma(nu) * Gamma(mu) * right
+        )
+
+    def gamma2(left, right, mu, nu, middle):
+        return Gamma(left, middle, mu) * Gamma(middle, right, nu)
+
+    def gamma3(left, right, mu, nu, rho, middle1, middle2):
+        return (
+            Gamma(left, middle1, mu)
+            * Gamma(middle1, middle2, nu)
+            * Gamma(middle2, right, rho)
+        )
+
+    def partial_div_covd_phi(target, source, mu, adjoint):
+        return (
+            PartialD(PartialD(Phi(target), mu), mu)
+            - I
+            * HALF
+            * p["g1"]
+            * (PartialD(B(mu), mu) * Phi(target) + B(mu) * PartialD(Phi(target), mu))
+            - I
+            * p["g2"]
+            * (
+                PartialD(Wi(mu, adjoint), mu)
+                * weak_t(adjoint, target, source)
+                * Phi(source)
+                + Wi(mu, adjoint)
+                * weak_t(adjoint, target, source)
+                * PartialD(Phi(source), mu)
+            )
+        )
+
+    def partial_div_covd_phibar(target, source, mu, adjoint):
+        return (
+            PartialD(PartialD(Phi.bar(target), mu), mu)
+            + I
+            * HALF
+            * p["g1"]
+            * (
+                PartialD(B(mu), mu) * Phi.bar(target)
+                + B(mu) * PartialD(Phi.bar(target), mu)
+            )
+            + I
+            * p["g2"]
+            * (
+                PartialD(Wi(mu, adjoint), mu)
+                * Phi.bar(source)
+                * weak_t(adjoint, source, target)
+                + Wi(mu, adjoint)
+                * PartialD(Phi.bar(source), mu)
+                * weak_t(adjoint, source, target)
+            )
+        )
+
+    mu, nu, rho, rho2, sigma = (
+        S("mu"),
+        S("nu"),
+        S("rho"),
+        S("rho2"),
+        S("sigma"),
+    )
+    w1, w2, w3, w4 = S("w1"), S("w2"), S("w3"), S("w4")
+    aW, aW1, aW2, aW3 = S("aW"), S("aW1"), S("aW2"), S("aW3")
+    aC, aC1, aC2, aC3 = S("aC"), S("aC1"), S("aC2"), S("aC3")
+    f1, f2, f3, f4 = S("f1"), S("f2"), S("f3"), S("f4")
+    c1, c2, c3, c4 = S("c1"), S("c2"), S("c3"), S("c4")
+    sp1, sp2, sp3, sp4, sp5, sp6, sp7, sp8, sp9, sp10, sp11, sp12 = (
+        S("sp1"),
+        S("sp2"),
+        S("sp3"),
+        S("sp4"),
+        S("sp5"),
+        S("sp6"),
+        S("sp7"),
+        S("sp8"),
+        S("sp9"),
+        S("sp10"),
+        S("sp11"),
+        S("sp12"),
+    )
+
+    p = parameters
+    g = gauge_groups
+
+    LGauge = (
+        -(ONE / FOUR) * FS(g["U1Y"], mu, nu) * FS(g["U1Y"], mu, nu)
+        - (ONE / FOUR) * FS(g["SU2L"], mu, nu, aW) * FS(g["SU2L"], mu, nu, aW)
+        - (ONE / FOUR) * FS(g["SU3C"], mu, nu, aC) * FS(g["SU3C"], mu, nu, aC)
+    )
+
+    LFermions = (
+        I * QL.bar * Gamma(mu) * DC(QL, mu)
+        + I * LL.bar * Gamma(mu) * DC(LL, mu)
+        + I * UR.bar * Gamma(mu) * DC(UR, mu)
+        + I * DR.bar * Gamma(mu) * DC(DR, mu)
+        + I * LR.bar * Gamma(mu) * DC(LR, mu)
+    )
+
+    LHiggs = (
+        DC(Phi.bar, mu) * DC(Phi, mu)
+        - p["muH"]**2 * Phi.bar * Phi
+        - p["lam"] * Phi.bar * Phi * Phi.bar * Phi
+    )
+
+    LYukawa = (
+        -p["yd"](f1, f2)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * dr(f=f2, c=c1)
+        * Phi(w1)
+        - p["yl"](f1, f2) * ll(w=w1, f=f1, bar=True) * lr(f=f2) * Phi(w1)
+        - p["yu"](f1, f2)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * ur(f=f2, c=c1)
+        * phitilde(w1, w2)
+        - p["yd"](f1, f2).conj()
+        * Phi.bar(w1)
+        * dr(f=f2, c=c1, bar=True)
+        * ql(w=w1, f=f1, c=c1)
+        - p["yl"](f1, f2).conj()
+        * Phi.bar(w1)
+        * lr(f=f2, bar=True)
+        * ll(w=w1, f=f1)
+        - p["yu"](f1, f2).conj()
+        * phitildebar(w1, w2)
+        * ur(f=f2, c=c1, bar=True)
+        * ql(w=w1, f=f1, c=c1)
+    )
+
+    L2Higgs = -p["alphaOmuH2"] * Phi.bar * Phi
+
+    L4Gauge = (
+        -(p["alphaKB"] / FOUR) * FS(g["U1Y"], mu, nu) * FS(g["U1Y"], mu, nu)
+        - (p["alphaKW"] / FOUR)
+        * FS(g["SU2L"], mu, nu, aW)
+        * FS(g["SU2L"], mu, nu, aW)
+        - (p["alphaKG"] / FOUR)
+        * FS(g["SU3C"], mu, nu, aC)
+        * FS(g["SU3C"], mu, nu, aC)
+    )
+
+    L4Fermions = (
+        I
+        * p["alphaKq"](f1, f2)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(QL, mu)
+        + I
+        * p["alphaKl"](f1, f2)
+        * ll(w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * DC(LL, mu)
+        + I * p["alphaKu"](f1, f2) * ur(f=f1, c=c1, bar=True) * Gamma(mu) * DC(UR, mu)
+        + I * p["alphaKd"](f1, f2) * dr(f=f1, c=c1, bar=True) * Gamma(mu) * DC(DR, mu)
+        + I * p["alphaKe"](f1, f2) * lr(f=f1, bar=True) * Gamma(mu) * DC(LR, mu)
+    )
+
+    L4Higgs = (
+        p["alphaKH"] * DC(Phi.bar, mu) * DC(Phi, mu)
+        - p["alphaOlambda"] * Phi.bar * Phi * Phi.bar * Phi
+    )
+
+    L4Yukawa = (
+        -p["alphaOlambdad"](f1, f2)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * dr(f=f2, c=c1)
+        * Phi(w1)
+        - p["alphaOlambdae"](f1, f2)
+        * ll(w=w1, f=f1, bar=True)
+        * lr(f=f2)
+        * Phi(w1)
+        - p["alphaOlambdau"](f1, f2)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * ur(f=f2, c=c1)
+        * phitilde(w1, w2)
+        - p["alphaOlambdad"](f1, f2).conj()
+        * Phi.bar(w1)
+        * dr(f=f2, c=c1, bar=True)
+        * ql(w=w1, f=f1, c=c1)
+        - p["alphaOlambdae"](f1, f2).conj()
+        * Phi.bar(w1)
+        * lr(f=f2, bar=True)
+        * ll(w=w1, f=f1)
+        - p["alphaOlambdau"](f1, f2).conj()
+        * phitildebar(w1, w2)
+        * ur(f=f2, c=c1, bar=True)
+        * ql(w=w1, f=f1, c=c1)
+    )
+
+    LWeinberg = (
+        p["alphaWeinberg"](f1, f2)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * dirac_charge_conjugation(sp1, sp2)
+        * ll(sp=sp2, w=w2, f=f2)
+        * weak_eps2(w3, w1)
+        * weak_eps2(w4, w2)
+        * Phi(w4)
+        * Phi(w3)
+        + p["alphaWeinberg"](f1, f2).conj()
+        * Phi.bar(w3)
+        * Phi.bar(w4)
+        * ll(sp=sp2, w=w2, f=f2, bar=True)
+        * dirac_charge_conjugation(sp2, sp1)
+        * ll(sp=sp1, w=w1, f=f1)
+        * weak_eps2(w3, w1)
+        * weak_eps2(w4, w2)
+    )
+
+    LX3 = (
+        p["alphaO3G"]
+        * structure_constant(aC1, aC2, aC3)
+        * FS(g["SU3C"], mu, nu, aC1)
+        * FS(g["SU3C"], nu, rho, aC2)
+        * FS(g["SU3C"], rho, mu, aC3)
+        + p["alphaO3Gt"]
+        * structure_constant(aC1, aC2, aC3)
+        * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
+        * FS(g["SU3C"], nu, rho2, aC2)
+        * FS(g["SU3C"], rho2, mu, aC3)
+        + p["alphaO3W"]
+        * weak_structure_constant(aW1, aW2, aW3)
+        * FS(g["SU2L"], mu, nu, aW1)
+        * FS(g["SU2L"], nu, rho, aW2)
+        * FS(g["SU2L"], rho, mu, aW3)
+        + p["alphaO3Wt"]
+        * weak_structure_constant(aW1, aW2, aW3)
+        * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+        * FS(g["SU2L"], nu, rho2, aW2)
+        * FS(g["SU2L"], rho2, mu, aW3)
+    )
+
+    LX2H2 = (
+        p["alphaOHG"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * FS(g["SU3C"], mu, nu, aC1)
+        * FS(g["SU3C"], mu, nu, aC1)
+        + p["alphaOHGt"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * FS(g["SU3C"], mu, nu, aC1)
+        * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
+        + p["alphaOHW"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * FS(g["SU2L"], mu, nu, aW1)
+        * FS(g["SU2L"], mu, nu, aW1)
+        + p["alphaOHWt"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * FS(g["SU2L"], mu, nu, aW1)
+        * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+        + p["alphaOHB"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * FS(g["U1Y"], mu, nu)
+        * FS(g["U1Y"], mu, nu)
+        + p["alphaOHBt"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * FS(g["U1Y"], mu, nu)
+        * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
+        + p["alphaOHWB"]
+        * Phi.bar(w1)
+        * Phi(w2)
+        * weak_t(aW1, w1, w2)
+        * FS(g["SU2L"], mu, nu, aW1)
+        * FS(g["U1Y"], mu, nu)
+        + p["alphaOHWBt"]
+        * Phi.bar(w1)
+        * Phi(w2)
+        * weak_t(aW1, w1, w2)
+        * FS(g["SU2L"], mu, nu, aW1)
+        * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
+    )
+
+    LH4D2 = (
+        p["alphaOHBox"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(PartialD(Phi.bar(w2), mu), mu)
+        * Phi(w2)
+        + TWO
+        * p["alphaOHBox"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(Phi.bar(w2), mu)
+        * PartialD(Phi(w2), mu)
+        + p["alphaOHBox"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * PartialD(PartialD(Phi(w2), mu), mu)
+        + p["alphaOHD"]
+        * DC(Phi.bar, mu)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * DC(Phi, mu)
+        + p["alphaRHDp"] * Phi.bar(w1) * Phi(w1) * DC(Phi.bar, mu) * DC(Phi, mu)
+        + I
+        * p["alphaRHDpp"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(Phi.bar(w2), mu)
+        * PartialD(Phi(w2), mu)
+        + HALF
+        * p["alphaRHDpp"]
+        * p["g1"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(Phi.bar(w2), mu)
+        * B(mu)
+        * Phi(w2)
+        + p["alphaRHDpp"]
+        * p["g2"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(Phi.bar(w2), mu)
+        * Wi(mu, aW1)
+        * weak_t(aW1, w2, w3)
+        * Phi(w3)
+        + I
+        * p["alphaRHDpp"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * PartialD(PartialD(Phi(w2), mu), mu)
+        + HALF
+        * p["alphaRHDpp"]
+        * p["g1"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * PartialD(B(mu), mu)
+        * Phi(w2)
+        + HALF
+        * p["alphaRHDpp"]
+        * p["g1"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * B(mu)
+        * PartialD(Phi(w2), mu)
+        + p["alphaRHDpp"]
+        * p["g2"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * PartialD(Wi(mu, aW1), mu)
+        * weak_t(aW1, w2, w3)
+        * Phi(w3)
+        + p["alphaRHDpp"]
+        * p["g2"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * Wi(mu, aW1)
+        * weak_t(aW1, w2, w3)
+        * PartialD(Phi(w3), mu)
+        - I
+        * p["alphaRHDpp"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(PartialD(Phi.bar(w2), mu), mu)
+        * Phi(w2)
+        + HALF
+        * p["alphaRHDpp"]
+        * p["g1"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(B(mu), mu)
+        * Phi.bar(w2)
+        * Phi(w2)
+        + HALF
+        * p["alphaRHDpp"]
+        * p["g1"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * B(mu)
+        * PartialD(Phi.bar(w2), mu)
+        * Phi(w2)
+        + p["alphaRHDpp"]
+        * p["g2"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(Wi(mu, aW1), mu)
+        * Phi.bar(w3)
+        * weak_t(aW1, w3, w2)
+        * Phi(w2)
+        + p["alphaRHDpp"]
+        * p["g2"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Wi(mu, aW1)
+        * PartialD(Phi.bar(w3), mu)
+        * weak_t(aW1, w3, w2)
+        * Phi(w2)
+        - I
+        * p["alphaRHDpp"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * PartialD(Phi.bar(w3), mu)
+        * PartialD(Phi(w3), mu)
+        + HALF
+        * p["alphaRHDpp"]
+        * p["g1"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * B(mu)
+        * Phi.bar(w3)
+        * PartialD(Phi(w3), mu)
+        + p["alphaRHDpp"]
+        * p["g2"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Wi(mu, aW1)
+        * Phi.bar(w2)
+        * weak_t(aW1, w2, w3)
+        * PartialD(Phi(w3), mu)
+    )
+
+    LH6 = (
+        p["alphaOH"]
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * Phi(w2)
+        * Phi.bar(w3)
+        * Phi(w3)
+    )
+
+    LF2XH = (
+        sigma_term(
+            p["alphaOuG"](f1, f2)
+            * FS(g["SU3C"], mu, nu, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * phitilde(w1, w2),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            ur(f=f2, c=c2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOuW"](f1, f2)
+            * FS(g["SU2L"], mu, nu, aW1)
+            * weak_t(aW1, w1, w2)
+            * phitilde(w2, w3),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            ur(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOuB"](f1, f2)
+            * FS(g["U1Y"], mu, nu)
+            * phitilde(w1, w2),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            ur(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOdG"](f1, f2)
+            * FS(g["SU3C"], mu, nu, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * Phi(w1),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            dr(f=f2, c=c2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOdW"](f1, f2)
+            * FS(g["SU2L"], mu, nu, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi(w2),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            dr(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOdB"](f1, f2) * FS(g["U1Y"], mu, nu) * Phi(w1),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            dr(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOeW"](f1, f2)
+            * FS(g["SU2L"], mu, nu, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi(w2),
+            ll(w=w1, f=f1, bar=True),
+            lr(f=f2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOeB"](f1, f2) * FS(g["U1Y"], mu, nu) * Phi(w1),
+            ll(w=w1, f=f1, bar=True),
+            lr(f=f2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOuG"](f1, f2).conj()
+            * FS(g["SU3C"], mu, nu, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * phitildebar(w1, w2),
+            ur(f=f2, c=c2, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOuW"](f1, f2).conj()
+            * FS(g["SU2L"], mu, nu, aW1)
+            * weak_t(aW1, w1, w2)
+            * phitildebar(w2, w3),
+            ur(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOuB"](f1, f2).conj()
+            * FS(g["U1Y"], mu, nu)
+            * phitildebar(w1, w2),
+            ur(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOdG"](f1, f2).conj()
+            * FS(g["SU3C"], mu, nu, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * Phi.bar(w1),
+            dr(f=f2, c=c2, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOdW"](f1, f2).conj()
+            * FS(g["SU2L"], mu, nu, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi.bar(w2),
+            dr(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOdB"](f1, f2).conj() * FS(g["U1Y"], mu, nu) * Phi.bar(w1),
+            dr(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOeW"](f1, f2).conj()
+            * FS(g["SU2L"], mu, nu, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi.bar(w2),
+            lr(f=f2, bar=True),
+            ll(w=w1, f=f1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaOeB"](f1, f2).conj() * FS(g["U1Y"], mu, nu) * Phi.bar(w1),
+            lr(f=f2, bar=True),
+            ll(w=w1, f=f1),
+            mu,
+            nu,
+        )
+    )
+
+    LF2HD2 = (
+        sigma_term(
+            p["alphaRuHD2"](f1, f2)
+            * weak_eps2(w1, w2)
+            * DC(Phi.bar, nu),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            DC(UR, mu),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaRuHD2"](f1, f2).conj()
+            * weak_eps2(w1, w2)
+            * DC(Phi, nu),
+            DC(UR.bar, mu),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+    )
+
+    LF2DH2 = (
+        I
+        * p["alphaOHq1"](f1, f2)
+        * Phi.bar(w1)
+        * DC(Phi, mu)
+        * ql(w=w2, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        - I
+        * p["alphaOHq1"](f1, f2)
+        * DC(Phi.bar, mu)
+        * Phi(w1)
+        * ql(w=w2, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + I
+        * p["alphaRHq1p"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * ql(w=w2, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(QL, mu)
+        - I
+        * p["alphaRHq1p"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * DC(QL.bar, mu)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + p["alphaRHq1pp"](f1, f2)
+        * PartialD(Phi.bar(w1), mu)
+        * Phi(w1)
+        * ql(w=w2, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + p["alphaRHq1pp"](f1, f2)
+        * Phi.bar(w1)
+        * PartialD(Phi(w1), mu)
+        * ql(w=w2, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + I
+        * p["alphaOHq3"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * DC(Phi, mu)
+        * ql(w=w3, f=f1, c=c1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        - I
+        * p["alphaOHq3"](f1, f2)
+        * DC(Phi.bar, mu)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * ql(w=w3, f=f1, c=c1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + I
+        * p["alphaRHq3p"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * ql(w=w3, f=f1, c=c1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * DC(QL, mu)
+        - I
+        * p["alphaRHq3p"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * DC(QL.bar, mu)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + p["alphaRHq3pp"](f1, f2)
+        * PartialD(Phi.bar(w1), mu)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * ql(w=w3, f=f1, c=c1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + p["alphaRHq3pp"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * DC(Phi, mu)
+        * ql(w=w3, f=f1, c=c1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        + I
+        * p["alphaOHu"](f1, f2)
+        * Phi.bar(w1)
+        * DC(Phi, mu)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f2, c=c1)
+        - I
+        * p["alphaOHu"](f1, f2)
+        * DC(Phi.bar, mu)
+        * Phi(w1)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f2, c=c1)
+        + I
+        * p["alphaRHup"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(UR, mu)
+        - I
+        * p["alphaRHup"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * DC(UR.bar, mu)
+        * Gamma(mu)
+        * ur(f=f2, c=c1)
+        + p["alphaRHupp"](f1, f2)
+        * PartialD(Phi.bar(w1), mu)
+        * Phi(w1)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f2, c=c1)
+        + p["alphaRHupp"](f1, f2)
+        * Phi.bar(w1)
+        * PartialD(Phi(w1), mu)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f2, c=c1)
+        + I
+        * p["alphaOHd"](f1, f2)
+        * Phi.bar(w1)
+        * DC(Phi, mu)
+        * dr(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f2, c=c1)
+        - I
+        * p["alphaOHd"](f1, f2)
+        * DC(Phi.bar, mu)
+        * Phi(w1)
+        * dr(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f2, c=c1)
+        + I
+        * p["alphaRHdp"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * dr(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(DR, mu)
+        - I
+        * p["alphaRHdp"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * DC(DR.bar, mu)
+        * Gamma(mu)
+        * dr(f=f2, c=c1)
+        + p["alphaRHdpp"](f1, f2)
+        * PartialD(Phi.bar(w1), mu)
+        * Phi(w1)
+        * dr(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f2, c=c1)
+        + p["alphaRHdpp"](f1, f2)
+        * Phi.bar(w1)
+        * PartialD(Phi(w1), mu)
+        * dr(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f2, c=c1)
+        + I
+        * p["alphaOHl1"](f1, f2)
+        * Phi.bar(w1)
+        * DC(Phi, mu)
+        * ll(w=w2, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        - I
+        * p["alphaOHl1"](f1, f2)
+        * DC(Phi.bar, mu)
+        * Phi(w1)
+        * ll(w=w2, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + I
+        * p["alphaRHl1p"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * ll(w=w2, f=f1, bar=True)
+        * Gamma(mu)
+        * DC(LL, mu)
+        - I
+        * p["alphaRHl1p"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * DC(LL.bar, mu)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + p["alphaRHl1pp"](f1, f2)
+        * PartialD(Phi.bar(w1), mu)
+        * Phi(w1)
+        * ll(w=w2, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + p["alphaRHl1pp"](f1, f2)
+        * Phi.bar(w1)
+        * PartialD(Phi(w1), mu)
+        * ll(w=w2, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + I
+        * p["alphaOHl3"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * DC(Phi, mu)
+        * ll(w=w3, f=f1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        - I
+        * p["alphaOHl3"](f1, f2)
+        * DC(Phi.bar, mu)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * ll(w=w3, f=f1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + I
+        * p["alphaRHl3p"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * ll(w=w3, f=f1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * DC(LL, mu)
+        - I
+        * p["alphaRHl3p"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * DC(LL.bar, mu)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + p["alphaRHl3pp"](f1, f2)
+        * PartialD(Phi.bar(w1), mu)
+        * weak_t(aW1, w1, w2)
+        * Phi(w2)
+        * ll(w=w3, f=f1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + p["alphaRHl3pp"](f1, f2)
+        * Phi.bar(w1)
+        * weak_t(aW1, w1, w2)
+        * DC(Phi, mu)
+        * ll(w=w3, f=f1, bar=True)
+        * weak_t(aW1, w3, w2)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        + I
+        * p["alphaOHe"](f1, f2)
+        * Phi.bar(w1)
+        * DC(Phi, mu)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * lr(f=f2)
+        - I
+        * p["alphaOHe"](f1, f2)
+        * DC(Phi.bar, mu)
+        * Phi(w1)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * lr(f=f2)
+        + I
+        * p["alphaRHep"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * DC(LR, mu)
+        - I
+        * p["alphaRHep"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * DC(LR.bar, mu)
+        * Gamma(mu)
+        * lr(f=f2)
+        + p["alphaRHepp"](f1, f2)
+        * PartialD(Phi.bar(w1), mu)
+        * Phi(w1)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * lr(f=f2)
+        + p["alphaRHepp"](f1, f2)
+        * Phi.bar(w1)
+        * PartialD(Phi(w1), mu)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * lr(f=f2)
+        + I
+        * p["alphaOHud"](f1, f2)
+        * phitildebar(w1, w2)
+        * DC(Phi, mu)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f2, c=c1)
+        - I
+        * p["alphaOHud"](f1, f2).conj()
+        * DC(Phi.bar, mu)
+        * phitilde(w1, w2)
+        * dr(f=f2, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f1, c=c1)
+    )
+
+    LF2H3 = (
+        p["alphaOeH"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * ll(w=w2, f=f1, bar=True)
+        * lr(f=f2)
+        * Phi(w2)
+        + p["alphaOuH"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * ql(w=w2, f=f1, c=c1, bar=True)
+        * ur(f=f2, c=c1)
+        * phitilde(w2, w3)
+        + p["alphaOdH"](f1, f2)
+        * Phi.bar(w1)
+        * Phi(w1)
+        * ql(w=w2, f=f1, c=c1, bar=True)
+        * dr(f=f2, c=c1)
+        * Phi(w2)
+        + p["alphaOeH"](f1, f2).conj()
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * lr(f=f2, bar=True)
+        * ll(w=w2, f=f1)
+        + p["alphaOuH"](f1, f2).conj()
+        * Phi.bar(w1)
+        * Phi(w1)
+        * phitildebar(w2, w3)
+        * ur(f=f2, c=c1, bar=True)
+        * ql(w=w2, f=f1, c=c1)
+        + p["alphaOdH"](f1, f2).conj()
+        * Phi.bar(w1)
+        * Phi(w1)
+        * Phi.bar(w2)
+        * dr(f=f2, c=c1, bar=True)
+        * ql(w=w2, f=f1, c=c1)
+    )
+
+    L4q = (
+        p["alphaOqq1"](f1, f2, f3, f4)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w1, f=f2, c=c1)
+        * ql(w=w2, f=f3, c=c2, bar=True)
+        * Gamma(mu)
+        * ql(w=w2, f=f4, c=c2)
+        + p["alphaOqq3"](f1, f2, f3, f4)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * weak_t(aW1, w1, w2)
+        * Gamma(mu)
+        * ql(w=w2, f=f2, c=c1)
+        * ql(w=w3, f=f3, c=c2, bar=True)
+        * weak_t(aW1, w3, w1)
+        * Gamma(mu)
+        * ql(w=w1, f=f4, c=c2)
+        + p["alphaOuu"](f1, f2, f3, f4)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f2, c=c1)
+        * ur(f=f3, c=c2, bar=True)
+        * Gamma(mu)
+        * ur(f=f4, c=c2)
+        + p["alphaOdd"](f1, f2, f3, f4)
+        * dr(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f2, c=c1)
+        * dr(f=f3, c=c2, bar=True)
+        * Gamma(mu)
+        * dr(f=f4, c=c2)
+        + p["alphaOud1"](f1, f2, f3, f4)
+        * ur(f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f2, c=c1)
+        * dr(f=f3, c=c2, bar=True)
+        * Gamma(mu)
+        * dr(f=f4, c=c2)
+        + p["alphaOud8"](f1, f2, f3, f4)
+        * ur(f=f1, c=c1, bar=True)
+        * gauge_generator(aC1, c1, c2)
+        * Gamma(mu)
+        * ur(f=f2, c=c2)
+        * dr(f=f3, c=c3, bar=True)
+        * gauge_generator(aC1, c3, c4)
+        * Gamma(mu)
+        * dr(f=f4, c=c4)
+        + p["alphaOqu1"](f1, f2, f3, f4)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w1, f=f2, c=c1)
+        * ur(f=f3, c=c2, bar=True)
+        * Gamma(mu)
+        * ur(f=f4, c=c2)
+        + p["alphaOqu8"](f1, f2, f3, f4)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * gauge_generator(aC1, c1, c2)
+        * Gamma(mu)
+        * ql(w=w1, f=f2, c=c2)
+        * ur(f=f3, c=c3, bar=True)
+        * gauge_generator(aC1, c3, c4)
+        * Gamma(mu)
+        * ur(f=f4, c=c4)
+        + p["alphaOqd1"](f1, f2, f3, f4)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w1, f=f2, c=c1)
+        * dr(f=f3, c=c2, bar=True)
+        * Gamma(mu)
+        * dr(f=f4, c=c2)
+        + p["alphaOqd8"](f1, f2, f3, f4)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * gauge_generator(aC1, c1, c2)
+        * Gamma(mu)
+        * ql(w=w1, f=f2, c=c2)
+        * dr(f=f3, c=c3, bar=True)
+        * gauge_generator(aC1, c3, c4)
+        * Gamma(mu)
+        * dr(f=f4, c=c4)
+        + p["alphaOquqd1"](f1, f2, f3, f4)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * ur(sp=sp1, f=f2, c=c1)
+        * ql(sp=sp2, w=w2, f=f3, c=c2, bar=True)
+        * dr(sp=sp2, f=f4, c=c2)
+        * weak_eps2(w1, w2)
+        + p["alphaOquqd8"](f1, f2, f3, f4)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * ur(sp=sp1, f=f2, c=c2)
+        * ql(sp=sp2, w=w2, f=f3, c=c3, bar=True)
+        * dr(sp=sp2, f=f4, c=c4)
+        * weak_eps2(w1, w2)
+        * gauge_generator(aC1, c1, c2)
+        * gauge_generator(aC1, c3, c4)
+        + p["alphaOquqd1"](f1, f2, f3, f4).conj()
+        * ur(sp=sp1, f=f2, c=c1, bar=True)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * dr(sp=sp2, f=f4, c=c2, bar=True)
+        * ql(sp=sp2, w=w2, f=f3, c=c2)
+        * weak_eps2(w1, w2)
+        + p["alphaOquqd8"](f1, f2, f3, f4).conj()
+        * ur(sp=sp1, f=f2, c=c2, bar=True)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * dr(sp=sp2, f=f4, c=c4, bar=True)
+        * ql(sp=sp2, w=w2, f=f3, c=c3)
+        * weak_eps2(w1, w2)
+        * gauge_generator(aC1, c1, c2)
+        * gauge_generator(aC1, c3, c4)
+    )
+
+    L4l = (
+        p["alphaOll"](f1, f2, f3, f4)
+        * ll(w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w1, f=f2)
+        * ll(w=w2, f=f3, bar=True)
+        * Gamma(mu)
+        * ll(w=w2, f=f4)
+        + p["alphaOee"](f1, f2, f3, f4)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * lr(f=f2)
+        * lr(f=f3, bar=True)
+        * Gamma(mu)
+        * lr(f=f4)
+        + p["alphaOle"](f1, f2, f3, f4)
+        * ll(w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w1, f=f2)
+        * lr(f=f3, bar=True)
+        * Gamma(mu)
+        * lr(f=f4)
+    )
+
+    L4lq = (
+        p["alphaOlq1"](f1, f2, f3, f4)
+        * ll(w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w1, f=f2)
+        * ql(w=w2, f=f3, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w2, f=f4, c=c1)
+        + p["alphaOlq3"](f1, f2, f3, f4)
+        * ll(w=w1, f=f1, bar=True)
+        * weak_t(aW1, w1, w2)
+        * Gamma(mu)
+        * ll(w=w2, f=f2)
+        * ql(w=w3, f=f3, c=c1, bar=True)
+        * weak_t(aW1, w3, w1)
+        * Gamma(mu)
+        * ql(w=w1, f=f4, c=c1)
+        + p["alphaOeu"](f1, f2, f3, f4)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * lr(f=f2)
+        * ur(f=f3, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f4, c=c1)
+        + p["alphaOed"](f1, f2, f3, f4)
+        * lr(f=f1, bar=True)
+        * Gamma(mu)
+        * lr(f=f2)
+        * dr(f=f3, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f4, c=c1)
+        + p["alphaOqe"](f1, f2, f3, f4)
+        * ql(w=w1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * ql(w=w1, f=f2, c=c1)
+        * lr(f=f3, bar=True)
+        * Gamma(mu)
+        * lr(f=f4)
+        + p["alphaOlu"](f1, f2, f3, f4)
+        * ll(w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w1, f=f2)
+        * ur(f=f3, c=c1, bar=True)
+        * Gamma(mu)
+        * ur(f=f4, c=c1)
+        + p["alphaOld"](f1, f2, f3, f4)
+        * ll(w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * ll(w=w1, f=f2)
+        * dr(f=f3, c=c1, bar=True)
+        * Gamma(mu)
+        * dr(f=f4, c=c1)
+        + p["alphaOledq"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * lr(sp=sp1, f=f2)
+        * dr(sp=sp2, f=f3, c=c1, bar=True)
+        * ql(sp=sp2, w=w1, f=f4, c=c1)
+        + p["alphaOlequ1"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * lr(sp=sp1, f=f2)
+        * ql(sp=sp2, w=w2, f=f3, c=c1, bar=True)
+        * ur(sp=sp2, f=f4, c=c1)
+        * weak_eps2(w1, w2)
+        + p["alphaOledq"](f1, f2, f3, f4).conj()
+        * lr(sp=sp1, f=f2, bar=True)
+        * ll(sp=sp1, w=w1, f=f1)
+        * ql(sp=sp2, w=w1, f=f4, c=c1, bar=True)
+        * dr(sp=sp2, f=f3, c=c1)
+        + p["alphaOlequ1"](f1, f2, f3, f4).conj()
+        * lr(sp=sp1, f=f2, bar=True)
+        * ll(sp=sp1, w=w1, f=f1)
+        * ur(sp=sp2, f=f4, c=c1, bar=True)
+        * ql(sp=sp2, w=w2, f=f3, c=c1)
+        * weak_eps2(w1, w2)
+    )
+
+    LEvF2XH = (
+        sigma_term(
+            p["alphaEuG"](f1, f2)
+            * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * phitilde(w1, w2),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            ur(f=f2, c=c2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEuW"](f1, f2)
+            * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+            * weak_t(aW1, w1, w2)
+            * phitilde(w2, w3),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            ur(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEuB"](f1, f2)
+            * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
+            * phitilde(w1, w2),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            ur(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEdG"](f1, f2)
+            * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * Phi(w1),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            dr(f=f2, c=c2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEdW"](f1, f2)
+            * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi(w2),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            dr(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEdB"](f1, f2) * _dual_fs(g["U1Y"], mu, nu, rho, sigma) * Phi(w1),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            dr(f=f2, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEeW"](f1, f2)
+            * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi(w2),
+            ll(w=w1, f=f1, bar=True),
+            lr(f=f2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEeB"](f1, f2) * _dual_fs(g["U1Y"], mu, nu, rho, sigma) * Phi(w1),
+            ll(w=w1, f=f1, bar=True),
+            lr(f=f2),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEuG"](f1, f2).conj()
+            * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * phitildebar(w1, w2),
+            ur(f=f2, c=c2, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEuW"](f1, f2).conj()
+            * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+            * weak_t(aW1, w1, w2)
+            * phitildebar(w2, w3),
+            ur(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEuB"](f1, f2).conj()
+            * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
+            * phitildebar(w1, w2),
+            ur(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEdG"](f1, f2).conj()
+            * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
+            * gauge_generator(aC1, c1, c2)
+            * Phi.bar(w1),
+            dr(f=f2, c=c2, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEdW"](f1, f2).conj()
+            * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi.bar(w2),
+            dr(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEdB"](f1, f2).conj()
+            * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
+            * Phi.bar(w1),
+            dr(f=f2, c=c1, bar=True),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEeW"](f1, f2).conj()
+            * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
+            * weak_t(aW1, w1, w2)
+            * Phi.bar(w2),
+            lr(f=f2, bar=True),
+            ll(w=w1, f=f1),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEeB"](f1, f2).conj()
+            * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
+            * Phi.bar(w1),
+            lr(f=f2, bar=True),
+            ll(w=w1, f=f1),
+            mu,
+            nu,
+        )
+    )
+
+    LEvF2HD2 = (
+        sigma_term(
+            p["alphaEuH"](f1, f2)
+            * lorentz_levi_civita(mu, nu, rho, sigma)
+            * weak_eps2(w1, w2)
+            * DC(Phi.bar, sigma),
+            ql(w=w1, f=f1, c=c1, bar=True),
+            DC(UR, rho),
+            mu,
+            nu,
+        )
+        + sigma_term(
+            p["alphaEuH"](f1, f2).conj()
+            * lorentz_levi_civita(mu, nu, rho, sigma)
+            * weak_eps2(w1, w2)
+            * DC(Phi, sigma),
+            DC(UR.bar, rho),
+            ql(w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+    )
+
+    LEv4l = (
+        p["alphaEeethree"](f1, f2, f3, f4)
+        * lr(sp=sp1, f=f1, bar=True)
+        * lr(sp=sp2, f=f2)
+        * lr(sp=sp3, f=f3, bar=True)
+        * lr(sp=sp4, f=f4)
+        * gamma3(sp1, sp2, mu, nu, rho, sp5, sp6)
+        * gamma3(sp3, sp4, mu, nu, rho, sp7, sp8)
+        + p["alphaEll3"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * ll(sp=sp2, w=w2, f=f2)
+        * ll(sp=sp3, w=w3, f=f3, bar=True)
+        * ll(sp=sp4, w=w4, f=f4)
+        * Gamma(sp1, sp2, mu)
+        * Gamma(sp3, sp4, mu)
+        * weak_t(aW1, w1, w2)
+        * weak_t(aW1, w3, w4)
+        + p["alphaEllthree"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * ll(sp=sp2, w=w1, f=f2)
+        * ll(sp=sp3, w=w2, f=f3, bar=True)
+        * ll(sp=sp4, w=w2, f=f4)
+        * gamma3(sp1, sp2, mu, nu, rho, sp5, sp6)
+        * gamma3(sp3, sp4, mu, nu, rho, sp7, sp8)
+        + p["alphaEllthree3"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * ll(sp=sp2, w=w2, f=f2)
+        * ll(sp=sp3, w=w3, f=f3, bar=True)
+        * ll(sp=sp4, w=w4, f=f4)
+        * gamma3(sp1, sp2, mu, nu, rho, sp5, sp6)
+        * gamma3(sp3, sp4, mu, nu, rho, sp7, sp8)
+        * weak_t(aW1, w1, w2)
+        * weak_t(aW1, w3, w4)
+        + p["alphaEle"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * lr(sp=sp1, f=f2)
+        * lr(sp=sp2, f=f3, bar=True)
+        * ll(sp=sp2, w=w1, f=f4)
+        + p["alphaEletwo"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * lr(sp=sp2, f=f2)
+        * lr(sp=sp3, f=f3, bar=True)
+        * ll(sp=sp4, w=w1, f=f4)
+        * gamma2(sp1, sp2, mu, nu, sp5)
+        * gamma2(sp3, sp4, mu, nu, sp6)
+        + p["alphaElethree"](f1, f2, f3, f4)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * ll(sp=sp2, w=w1, f=f2)
+        * lr(sp=sp3, f=f3, bar=True)
+        * lr(sp=sp4, f=f4)
+        * gamma3(sp1, sp2, mu, nu, rho, sp5, sp6)
+        * gamma3(sp3, sp4, mu, nu, rho, sp7, sp8)
+    )
+
+    LSM = LGauge + LFermions + LHiggs + LYukawa
+    Ltot = (
+        LSM
+        + L2Higgs
+        + L4Gauge
+        + L4Fermions
+        + L4Higgs
+        + L4Yukawa
+        + LWeinberg
+        + LX3
+        + LX2H2
+        + LH4D2
+        + LH6
+        + LF2XH
+        + LF2DH2
+        + LF2H3
+        + L4q
+        + L4l
+        + L4lq
+        + LEvF2XH
+        + LEv4l
+    )
+
+    lagrangians = {
+        "LGauge": DeclaredLagrangian.from_item(LGauge),
+        "LFermions": DeclaredLagrangian.from_item(LFermions),
+        "LHiggs": DeclaredLagrangian.from_item(LHiggs),
+        "LYukawa": DeclaredLagrangian.from_item(LYukawa),
+        "LSM": DeclaredLagrangian.from_item(LSM),
+        "L2Higgs": DeclaredLagrangian.from_item(L2Higgs),
+        "L4Gauge": DeclaredLagrangian.from_item(L4Gauge),
+        "L4Fermions": DeclaredLagrangian.from_item(L4Fermions),
+        "L4Higgs": DeclaredLagrangian.from_item(L4Higgs),
+        "L4Yukawa": DeclaredLagrangian.from_item(L4Yukawa),
+        "LWeinberg": DeclaredLagrangian.from_item(LWeinberg),
+        "LX3": DeclaredLagrangian.from_item(LX3),
+        "LX2H2": DeclaredLagrangian.from_item(LX2H2),
+        "LH4D2": DeclaredLagrangian.from_item(LH4D2),
+        "LH6": DeclaredLagrangian.from_item(LH6),
+        "LF2XH": DeclaredLagrangian.from_item(LF2XH),
+        "LF2DH2": DeclaredLagrangian.from_item(LF2DH2),
+        "LF2H3": DeclaredLagrangian.from_item(LF2H3),
+        "L4q": DeclaredLagrangian.from_item(L4q),
+        "L4l": DeclaredLagrangian.from_item(L4l),
+        "L4lq": DeclaredLagrangian.from_item(L4lq),
+        "LEvF2XH": DeclaredLagrangian.from_item(LEvF2XH),
+        "LEv4l": DeclaredLagrangian.from_item(LEv4l),
+        "Ltot": DeclaredLagrangian.from_item(Ltot),
+    }
+
+    model = Model(
+        name=name,
+        gauge_groups=tuple(gauge_groups.values()),
+        fields=tuple(fields.values()),
+        parameters=tuple(parameters.values()),
+        lagrangian_decl=lagrangians["Ltot"],
+    )
+
+    return SMEFT2Bundle(
+        model=model,
+        fields=fields,
+        parameters=parameters,
+        gauge_groups=gauge_groups,
+        lagrangians=lagrangians,
+    )
+
+
+__all__ = ("OMITTED_SECTORS", "SMEFT2Bundle", "build_smeft_green_bpreserving")
