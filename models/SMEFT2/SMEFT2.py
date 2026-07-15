@@ -1,10 +1,10 @@
-"""Simple unbroken-gauge-basis SMEFT model from ``models/SMEFT 2``.
+"""Simple unbroken-gauge-basis SMEFT model bundled in ``models/SMEFT2``.
 
 This follows the field names and operator sectors in
-``SMEFT_Green_Bpreserving.fr`` while staying inside the current declarative
-surface of FeynPy. The implementation intentionally avoids extra framework
-machinery: define the parameters, gauge groups, fields and the Lagrangian in a
-single builder, close to how a user would write it.
+``reference/feynrules/SMEFT_Green_Bpreserving.fr`` while staying inside the
+current declarative surface of FeynPy. The implementation intentionally avoids
+extra framework machinery: define the parameters, gauge groups, fields and the
+Lagrangian in a single builder, close to how a user would write it.
 
 The omitted sectors require features that the current FeynPy layer does not
 expose cleanly, most notably true ``D_mu F^{mu nu}`` operators and genuine

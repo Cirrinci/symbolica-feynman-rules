@@ -1,4 +1,4 @@
-"""Supported-sector SMEFT implementation based on ``models/SMEFT 2``."""
+"""Supported-sector SMEFT implementation with bundled FR sources in ``SMEFT2``."""
 
 from .SMEFT2 import (
     OMITTED_SECTORS,

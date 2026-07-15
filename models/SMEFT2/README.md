@@ -1,9 +1,11 @@
 # SMEFT2 FeynPy Status
 
 This folder contains the simple FeynPy translation of
-`models/SMEFT 2/SMEFT_Green_Bpreserving.fr`.
+`reference/feynrules/SMEFT_Green_Bpreserving.fr`.
 
 The implementation lives in [SMEFT2.py](/Users/rems/Documents/MScThesis/models/SMEFT2/SMEFT2.py).
+The bundled FR sources live in
+[reference/feynrules](/Users/rems/Documents/MScThesis/models/SMEFT2/reference/feynrules).
 The goal is to stay close to the FR file:
 
 - same field names
