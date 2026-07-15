@@ -38,20 +38,18 @@ These sectors are included in the compiled `Ltot`:
 - `L4l`
 - `L4lq`
 - `LEvF2XH`
-- `LEv4l`
-
-## What Is Still Omitted
-
-There are two different reasons for omissions.
-
-Not yet transcribed, but structurally feasible in the same style:
-
+- `LEvF2HD2`
 - `LEv4q`
+- `LEv4l`
 - `LEv4lq`
 - `LEvCCLLLL`
 - `LEvCCRRRR`
 - `LEvCCLRRL`
 - `LEvCCRRLL`
+
+## What Is Still Omitted
+
+There are two different reasons for omissions.
 
 Blocked by the current declarative lowering, because they need true
 `D_mu F^{mu nu}` operators or genuine nested covariant derivatives:
@@ -62,12 +60,14 @@ Blocked by the current declarative lowering, because they need true
 - `LF2D3`
 - `LF2HD2`
 - `LF2XD`
-- `LEvF2HD2`
 - `LEvF2XD`
 
-In particular, the current API can expand a first `DC(...)` cleanly, but it
-does not yet give a reliable exact path for the full FR structures with
-`DC[DC[...]]` or derivatives acting on `FS(...)`.
+`LEvF2HD2` is now implemented by expanding every first covariant derivative
+term-by-term into `PartialD(...)` and gauge-field pieces before building the
+sigma-matrix chain. The same strategy does not fully rescue `LF2HD2`, because
+that FR block also contains genuine `DC[DC[...]]` terms, and the current API
+does not yet give an exact path for those or for derivatives acting on
+`FS(...)`.
 
 ## Check
 
