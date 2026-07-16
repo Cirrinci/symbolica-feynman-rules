@@ -7,7 +7,9 @@ from typing import Optional
 
 from .declared import (
     CovariantDerivativeFactor,
+    CovariantDerivativeOperatorFactor,
     DifferentiatedCovariantFactor,
+    DifferentiatedOperatorFactor,
     FieldStrengthFactor,
     GaugeFixingDeclaration,
     GhostLagrangianDeclaration,
@@ -70,6 +72,24 @@ _GAUGE_GROUP_DECLARATION_TERM_TYPES = (
 )
 
 
+def _collect_declared_factor_metadata(factor, *, fields: list[Field], gauge_groups: list[GaugeGroup]):
+    if isinstance(factor, (_FieldFactor, CovariantDerivativeFactor, PartialDerivativeFactor)):
+        _append_unique_identity(fields, factor.field)
+        return
+    if isinstance(factor, DifferentiatedCovariantFactor):
+        _append_unique_identity(fields, factor.covariant_factor.field)
+        return
+    if isinstance(factor, FieldStrengthFactor):
+        _append_gauge_group(gauge_groups, factor.gauge_group)
+        return
+    if isinstance(factor, (CovariantDerivativeOperatorFactor, DifferentiatedOperatorFactor)):
+        _collect_declared_factor_metadata(
+            factor.operand,
+            fields=fields,
+            gauge_groups=gauge_groups,
+        )
+
+
 def _collect_declared_term_metadata(term, *, fields: list[Field], gauge_groups: list[GaugeGroup]):
     if isinstance(term, (DiracKineticTerm, ComplexScalarKineticTerm)):
         _append_gauge_group(gauge_groups, term.gauge_group)
@@ -83,14 +103,11 @@ def _collect_declared_term_metadata(term, *, fields: list[Field], gauge_groups: 
 
     if isinstance(term, _DeclaredMonomial):
         for factor in term.factors:
-            if isinstance(factor, (_FieldFactor, CovariantDerivativeFactor, PartialDerivativeFactor)):
-                _append_unique_identity(fields, factor.field)
-                continue
-            if isinstance(factor, DifferentiatedCovariantFactor):
-                _append_unique_identity(fields, factor.covariant_factor.field)
-                continue
-            if isinstance(factor, FieldStrengthFactor):
-                _append_gauge_group(gauge_groups, factor.gauge_group)
+            _collect_declared_factor_metadata(
+                factor,
+                fields=fields,
+                gauge_groups=gauge_groups,
+            )
 
 
 def _infer_model_metadata(

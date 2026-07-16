@@ -19,7 +19,9 @@ from .declared import (
     _DeclaredMonomial,
     _FieldFactor,
     CovariantDerivativeFactor,
+    CovariantDerivativeOperatorFactor,
     DifferentiatedCovariantFactor,
+    DifferentiatedOperatorFactor,
     PartialDerivativeFactor,
     GammaFactor,
     Gamma5Factor,
@@ -681,6 +683,25 @@ def _declared_factor_explicit_label_refs(
                 _gauge_group_adjoint_index_type(factor.gauge_group) or COLOR_ADJ_INDEX
             )
             refs.append((adjoint_index, factor.adjoint_index, "FieldStrength"))
+    elif isinstance(factor, CovariantDerivativeOperatorFactor):
+        refs.extend(
+            _declared_factor_explicit_label_refs(
+                factor.operand,
+                lorentz_index=lorentz_index,
+            )
+        )
+        refs.append((lorentz_index, factor.lorentz_index, f"DC({factor.operand})"))
+    elif isinstance(factor, DifferentiatedOperatorFactor):
+        refs.extend(
+            _declared_factor_explicit_label_refs(
+                factor.operand,
+                lorentz_index=lorentz_index,
+            )
+        )
+        refs.extend(
+            (lorentz_index, lorentz_index_label, f"PartialD({factor.operand})")
+            for lorentz_index_label in factor.lorentz_indices
+        )
     return tuple(refs)
 
 
@@ -1804,6 +1825,31 @@ def _monomial_has_field_strength(term: _DeclaredMonomial) -> bool:
     return any(isinstance(factor, FieldStrengthFactor) for factor in term.factors)
 
 
+def _declared_factor_has_covd(factor) -> bool:
+    if isinstance(
+        factor,
+        (
+            CovariantDerivativeFactor,
+            DifferentiatedCovariantFactor,
+            CovariantDerivativeOperatorFactor,
+        ),
+    ):
+        return True
+    if isinstance(factor, DifferentiatedOperatorFactor):
+        return _declared_factor_has_covd(factor.operand)
+    return False
+
+
+def _declared_factor_requires_recursive_operator_expansion(factor) -> bool:
+    return isinstance(
+        factor,
+        (
+            CovariantDerivativeOperatorFactor,
+            DifferentiatedOperatorFactor,
+        ),
+    )
+
+
 def _field_strength_adjoint_label_counts(term: _DeclaredMonomial) -> Counter:
     """Count user-declared adjoint labels across one field-strength monomial.
 
@@ -2027,8 +2073,8 @@ def _analyze_declared_source_term(
                 covariant_spectators=spectators,
             )
 
-    if isinstance(term, _DeclaredMonomial) and _monomial_has_field_strength(term):
-        return AnalyzedSourceTerm(term=term, field_strength_monomial=term)
+    if isinstance(term, _DeclaredMonomial) and _is_generic_covariant_monomial_candidate(term):
+        return AnalyzedSourceTerm(term=term, generic_covariant_monomial=term)
 
     gauge_fixing = _source_term_gauge_fixing(term)
     if gauge_fixing is not None:
@@ -2038,8 +2084,8 @@ def _analyze_declared_source_term(
     if ghost is not None:
         return AnalyzedSourceTerm(term=term, ghost=ghost)
 
-    if isinstance(term, _DeclaredMonomial) and _is_generic_covariant_monomial_candidate(term):
-        return AnalyzedSourceTerm(term=term, generic_covariant_monomial=term)
+    if isinstance(term, _DeclaredMonomial) and _monomial_has_field_strength(term):
+        return AnalyzedSourceTerm(term=term, field_strength_monomial=term)
 
     return None
 
@@ -2052,6 +2098,9 @@ def _unsupported_declared_source_term_error():
         "either optionally multiplied by local spectator fields, "
         "more general local monomials with one or more CovD(...) factors that can be "
         "expanded using model gauge metadata, "
+        "nested operator monomials such as DC(DC(field, nu), mu), "
+        "PartialD(DC(...), mu), PartialD(FieldStrength(...), mu), and "
+        "DC(FieldStrength(...), mu), "
         "arbitrary products of FieldStrength(G, mu, nu[, a]) factors (e.g. "
         "-1/4 * FieldStrength(G, mu, nu, a) * FieldStrength(G, mu, nu, a), or higher "
         "F^n operators contracted with StructureConstant(...)), "
@@ -2177,15 +2226,25 @@ def _source_term_ghost(term) -> Optional[GhostTerm]:
 
 
 def _declared_monomial_has_covd(term: _DeclaredMonomial) -> bool:
+    return any(_declared_factor_has_covd(factor) for factor in term.factors)
+
+
+def _declared_monomial_requires_recursive_operator_expansion(
+    term: _DeclaredMonomial,
+) -> bool:
     return any(
-        isinstance(factor, (CovariantDerivativeFactor, DifferentiatedCovariantFactor))
+        _declared_factor_requires_recursive_operator_expansion(factor)
         for factor in term.factors
     )
 
 
 def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
-    if not _declared_monomial_has_covd(term):
+    has_covd = _declared_monomial_has_covd(term)
+    has_recursive_operator = _declared_monomial_requires_recursive_operator_expansion(term)
+    if not has_covd and not has_recursive_operator:
         return False
+    if has_recursive_operator:
+        return True
 
     field_factors = [factor for factor in term.factors if isinstance(factor, _FieldFactor)]
     gamma_factors = [factor for factor in term.factors if isinstance(factor, GammaFactor)]

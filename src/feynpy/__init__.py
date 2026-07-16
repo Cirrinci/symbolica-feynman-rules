@@ -66,9 +66,11 @@ from .metadata import (
 # ---- declarative factors -------------------------------------------------
 from .declared import (
     CovariantDerivativeFactor,
+    CovariantDerivativeOperatorFactor,
     CovD,
     DC,
     DifferentiatedCovariantFactor,
+    DifferentiatedOperatorFactor,
     FS,
     FieldStrength,
     FieldStrengthFactor,

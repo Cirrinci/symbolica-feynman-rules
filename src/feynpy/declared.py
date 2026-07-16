@@ -96,6 +96,37 @@ class DifferentiatedCovariantFactor(_DeclaredFactorMixin):
 
 
 @dataclass(frozen=True)
+class CovariantDerivativeOperatorFactor(_DeclaredFactorMixin):
+    """Covariant derivative acting on an already-declared operator factor.
+
+    Plain ``CovariantDerivativeFactor`` remains the compact representation for
+    ``DC(field, mu)``. This node covers nested forms such as
+    ``DC(DC(field, nu), mu)`` and ``DC(FS(G, nu, rho, a), mu)`` without forcing
+    those operands to masquerade as fields.
+    """
+
+    operand: object
+    lorentz_index: object
+
+    def __str__(self):
+        return f"DC({self.operand}, {self.lorentz_index})"
+
+
+@dataclass(frozen=True)
+class DifferentiatedOperatorFactor(_DeclaredFactorMixin):
+    """Partial derivatives acting on a non-field operator factor."""
+
+    operand: object
+    lorentz_indices: tuple[object, ...]
+
+    def __str__(self):
+        rendered = str(self.operand)
+        for lorentz_index in self.lorentz_indices:
+            rendered = f"PartialD({rendered}, {lorentz_index})"
+        return rendered
+
+
+@dataclass(frozen=True)
 class PartialDerivativeFactor(_DeclaredFactorMixin):
     field: Field
     lorentz_indices: tuple[object, ...]
@@ -200,6 +231,20 @@ class FieldStrengthFactor(_DeclaredFactorMixin):
                 f"{self.right_index}, {self.adjoint_index})"
             )
         return f"FS({group_name}, {self.left_index}, {self.right_index})"
+
+
+def _is_declared_operator_operand(value) -> bool:
+    return isinstance(
+        value,
+        (
+            CovariantDerivativeFactor,
+            DifferentiatedCovariantFactor,
+            CovariantDerivativeOperatorFactor,
+            DifferentiatedOperatorFactor,
+            PartialDerivativeFactor,
+            FieldStrengthFactor,
+        ),
+    )
 
 
 @dataclass(frozen=True)
@@ -333,6 +378,8 @@ def _is_decl_scalar(value) -> bool:
             _FieldFactor,
             CovariantDerivativeFactor,
             DifferentiatedCovariantFactor,
+            CovariantDerivativeOperatorFactor,
+            DifferentiatedOperatorFactor,
             PartialDerivativeFactor,
             GammaFactor,
             Gamma5Factor,
@@ -373,7 +420,10 @@ def _coerce_decl_factor(value):
         (
             _FieldFactor,
             CovariantDerivativeFactor,
+            DifferentiatedCovariantFactor,
+            CovariantDerivativeOperatorFactor,
             PartialDerivativeFactor,
+            DifferentiatedOperatorFactor,
             GammaFactor,
             Gamma5Factor,
             _MatrixFactor,
@@ -470,6 +520,17 @@ def DC(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
     """
     from .interactions import _parse_field_arg
 
+    if _is_declared_operator_operand(field):
+        if conjugated:
+            raise TypeError(
+                "Nested DC(...) operands already carry their own conjugation; "
+                "apply .bar to the underlying field before nesting."
+            )
+        return CovariantDerivativeOperatorFactor(
+            operand=field,
+            lorentz_index=lorentz_index,
+        )
+
     field_obj, parsed_conjugated = _parse_field_arg(field)
     return CovariantDerivativeFactor(
         field=field_obj,
@@ -492,6 +553,25 @@ def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialD
     from .interactions import FieldOccurrence
     from .interactions import _parse_field_arg
 
+    if isinstance(field, DifferentiatedOperatorFactor):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Nested PartialD(...) operator operands already carry labels and conjugation."
+            )
+        return DifferentiatedOperatorFactor(
+            operand=field.operand,
+            lorentz_indices=field.lorentz_indices + (lorentz_index,),
+        )
+    if isinstance(field, (CovariantDerivativeOperatorFactor, FieldStrengthFactor)):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Pass labels/conjugation to the underlying field/operator before "
+                "wrapping it in PartialD(...)."
+            )
+        return DifferentiatedOperatorFactor(
+            operand=field,
+            lorentz_indices=(lorentz_index,),
+        )
     if isinstance(field, DifferentiatedCovariantFactor):
         if labels is not None or conjugated:
             raise TypeError(

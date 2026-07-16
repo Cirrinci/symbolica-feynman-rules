@@ -53,7 +53,10 @@ from feynpy import (
 from feynpy.declared import (
     _DeclaredMonomial,
     _FieldFactor,
+    CovariantDerivativeOperatorFactor,
     DifferentiatedCovariantFactor,
+    DifferentiatedOperatorFactor,
+    FieldStrengthFactor,
     GeneratorFactor,
     PartialDerivativeFactor,
 )
@@ -66,6 +69,7 @@ from feynpy.lagrangian import (
 from feynpy.lowering import (
     _analyze_declared_source_term,
     _expand_field_strengths_in_monomial,
+    _expand_one_field_strength,
     _lower_local_interaction_monomial,
 )
 from feynpy.interactions import DerivativeAction, InteractionTerm
@@ -1163,6 +1167,390 @@ def _expand_differentiated_covd_factor(
     return branches
 
 
+def _field_like_covariant_operand(factor) -> Optional[tuple[Field, bool]]:
+    """Return the matter field whose representation a nested operand carries."""
+    if isinstance(factor, _FieldFactor):
+        return factor.field, factor.conjugated
+    if isinstance(factor, PartialDerivativeFactor):
+        return factor.field, factor.conjugated
+    if isinstance(factor, CovariantDerivativeFactor):
+        return factor.field, factor.conjugated
+    if isinstance(factor, DifferentiatedCovariantFactor):
+        covariant = factor.covariant_factor
+        return covariant.field, covariant.conjugated
+    if isinstance(factor, (CovariantDerivativeOperatorFactor, DifferentiatedOperatorFactor)):
+        return _field_like_covariant_operand(factor.operand)
+    return None
+
+
+def _field_strength_like_operand(factor) -> Optional[FieldStrengthFactor]:
+    """Return the root field-strength factor for an adjoint-valued operand."""
+    if isinstance(factor, FieldStrengthFactor):
+        return factor
+    if isinstance(factor, (CovariantDerivativeOperatorFactor, DifferentiatedOperatorFactor)):
+        return _field_strength_like_operand(factor.operand)
+    return None
+
+
+def _replace_field_strength_adjoint_operand(factor, adjoint_index):
+    """Relabel the root adjoint index of a field-strength-valued operand."""
+    if isinstance(factor, FieldStrengthFactor):
+        if factor.adjoint_index is None:
+            return factor
+        return replace(factor, adjoint_index=adjoint_index)
+    if isinstance(factor, CovariantDerivativeOperatorFactor):
+        return CovariantDerivativeOperatorFactor(
+            operand=_replace_field_strength_adjoint_operand(
+                factor.operand,
+                adjoint_index,
+            ),
+            lorentz_index=factor.lorentz_index,
+        )
+    if isinstance(factor, DifferentiatedOperatorFactor):
+        return DifferentiatedOperatorFactor(
+            operand=_replace_field_strength_adjoint_operand(
+                factor.operand,
+                adjoint_index,
+            ),
+            lorentz_indices=factor.lorentz_indices,
+        )
+    return factor
+
+
+def _declared_monomial_branch(
+    monomial: _DeclaredMonomial,
+    *,
+    factors_as_tail: bool,
+) -> _GenericCovariantBranch:
+    if factors_as_tail:
+        return _GenericCovariantBranch(
+            coefficient=monomial.coefficient,
+            tail_factors=monomial.factors,
+        )
+    return _GenericCovariantBranch(
+        coefficient=monomial.coefficient,
+        inline_factors=monomial.factors,
+    )
+
+
+def _expand_field_strength_factor_to_branches(
+    model: Model,
+    factor: FieldStrengthFactor,
+    *,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    def fresh_adjoint_label():
+        return _fresh_generic_covd_label(
+            "adj",
+            counters,
+            "field_strength",
+        )
+
+    return tuple(
+        _declared_monomial_branch(piece, factors_as_tail=True)
+        for piece in _expand_one_field_strength(factor, model, fresh_adjoint_label)
+    )
+
+
+def _apply_partial_derivative_to_branches(
+    branches: tuple[_GenericCovariantBranch, ...],
+    *,
+    lorentz_index,
+) -> tuple[_GenericCovariantBranch, ...]:
+    differentiated: list[_GenericCovariantBranch] = []
+    for branch in branches:
+        differentiated.extend(
+            _differentiate_generic_covariant_branch(
+                branch,
+                lorentz_index=lorentz_index,
+            )
+        )
+    return tuple(differentiated)
+
+
+def _apply_partial_derivatives_to_branches(
+    branches: tuple[_GenericCovariantBranch, ...],
+    *,
+    lorentz_indices: tuple[object, ...],
+) -> tuple[_GenericCovariantBranch, ...]:
+    for lorentz_index in lorentz_indices:
+        branches = _apply_partial_derivative_to_branches(
+            branches,
+            lorentz_index=lorentz_index,
+        )
+    return branches
+
+
+def _expand_differentiated_operator_factor(
+    model: Model,
+    factor: DifferentiatedOperatorFactor,
+    *,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    branches = _expand_operator_operand_to_branches(
+        model,
+        factor.operand,
+        counters=counters,
+    )
+    return _apply_partial_derivatives_to_branches(
+        branches,
+        lorentz_indices=factor.lorentz_indices,
+    )
+
+
+def _apply_field_like_covariant_derivative(
+    model: Model,
+    *,
+    operand_branches: tuple[_GenericCovariantBranch, ...],
+    field: Field,
+    conjugated: bool,
+    lorentz_index,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    """Apply ``D_mu`` to branches transforming like one matter field."""
+    partial_branches = _apply_partial_derivative_to_branches(
+        operand_branches,
+        lorentz_index=lorentz_index,
+    )
+
+    expanded = expand_cov_der(
+        model,
+        CovariantDerivativeFactor(
+            field=field,
+            lorentz_index=lorentz_index,
+            conjugated=conjugated,
+        ),
+    )
+
+    gauge_branches: list[_GenericCovariantBranch] = []
+    for branch in operand_branches:
+        for piece in expanded.gauge_current_pieces:
+            adjoint_label = None
+            if not piece.metadata.gauge_group.abelian:
+                adj_kind, _ = _adjoint_slot_info(
+                    piece.metadata.gauge_field,
+                    purpose="Nested declared CovD lowering",
+                )
+                adjoint_label = _fresh_generic_covd_label(
+                    adj_kind,
+                    counters,
+                    f"{piece.metadata.gauge_field.name}_{piece.metadata.gauge_group.name}_nested_covd",
+                )
+
+            action = _GaugeAction.from_piece(
+                expanded.field,
+                piece,
+                lorentz_label=piece.lorentz_index,
+                adjoint_label=adjoint_label,
+                purpose="Nested declared CovD lowering",
+            )
+            generator_factors: tuple[object, ...] = ()
+            if action.representation is not None:
+                generator_factors = (
+                    GeneratorFactor(
+                        action.adjoint_label,
+                        generator_builder=action.representation.generator_builder,
+                        index_kind=action.representation.index.kind,
+                    ),
+                )
+
+            if expanded.conjugated:
+                inline_factors = branch.inline_factors + generator_factors
+            else:
+                inline_factors = generator_factors + branch.inline_factors
+
+            gauge_branches.append(
+                _GenericCovariantBranch(
+                    coefficient=branch.coefficient
+                    * _generic_covd_piece_prefactor(
+                        conjugated=expanded.conjugated,
+                        action=action,
+                    ),
+                    inline_factors=inline_factors,
+                    tail_factors=branch.tail_factors
+                    + (
+                        _FieldFactor(
+                            field=action.gauge_field,
+                            labels=action.gauge_labels(),
+                        ),
+                    ),
+                )
+            )
+
+    return partial_branches + tuple(gauge_branches)
+
+
+def _expand_field_strength_covariant_operator_factor(
+    model: Model,
+    factor: CovariantDerivativeOperatorFactor,
+    *,
+    root: FieldStrengthFactor,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    """Apply the adjoint covariant derivative to an FS-valued operand."""
+    operand_branches = _expand_operator_operand_to_branches(
+        model,
+        factor.operand,
+        counters=counters,
+    )
+    partial_branches = _apply_partial_derivative_to_branches(
+        operand_branches,
+        lorentz_index=factor.lorentz_index,
+    )
+
+    purpose = "Nested FieldStrength CovD lowering"
+    gauge_group = _require_declared_gauge_group(
+        model,
+        root.gauge_group,
+        purpose=purpose,
+    )
+    if gauge_group.abelian:
+        return partial_branches
+    if root.adjoint_index is None:
+        raise ValueError(
+            f"{purpose}: non-abelian field-strength operands require an adjoint index."
+        )
+    if gauge_group.structure_constant is None or not callable(gauge_group.structure_constant):
+        raise ValueError(
+            f"{purpose}: non-abelian gauge group {gauge_group.name!r} needs a callable "
+            "structure_constant builder."
+        )
+
+    gauge_field = model.gauge_boson_field(gauge_group)
+    gauge_lorentz_slot = unique_lorentz_slot(gauge_field, purpose=purpose)
+    adjoint_kind, adjoint_slot = _adjoint_slot_info(gauge_field, purpose=purpose)
+    gauge_adjoint = _fresh_generic_covd_label(
+        adjoint_kind,
+        counters,
+        f"{gauge_field.name}_{gauge_group.name}_fs_covd_gauge",
+    )
+    operand_adjoint = _fresh_generic_covd_label(
+        adjoint_kind,
+        counters,
+        f"{gauge_field.name}_{gauge_group.name}_fs_covd_operand",
+    )
+    relabeled_operand = _replace_field_strength_adjoint_operand(
+        factor.operand,
+        operand_adjoint,
+    )
+    relabeled_branches = _expand_operator_operand_to_branches(
+        model,
+        relabeled_operand,
+        counters=counters,
+    )
+    gauge_factor = _FieldFactor(
+        field=gauge_field,
+        labels=gauge_field.pack_slot_labels(
+            {
+                gauge_lorentz_slot: factor.lorentz_index,
+                adjoint_slot: gauge_adjoint,
+            }
+        ),
+    )
+    structure = gauge_group.structure_constant(
+        root.adjoint_index,
+        gauge_adjoint,
+        operand_adjoint,
+    )
+    gauge_branches = tuple(
+        _GenericCovariantBranch(
+            coefficient=branch.coefficient * gauge_group.coupling * structure,
+            inline_factors=branch.inline_factors,
+            tail_factors=branch.tail_factors + (gauge_factor,),
+        )
+        for branch in relabeled_branches
+    )
+    return partial_branches + gauge_branches
+
+
+def _expand_covariant_operator_factor(
+    model: Model,
+    factor: CovariantDerivativeOperatorFactor,
+    *,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    field_like = _field_like_covariant_operand(factor.operand)
+    if field_like is not None:
+        field, conjugated = field_like
+        operand_branches = _expand_operator_operand_to_branches(
+            model,
+            factor.operand,
+            counters=counters,
+        )
+        return _apply_field_like_covariant_derivative(
+            model,
+            operand_branches=operand_branches,
+            field=field,
+            conjugated=conjugated,
+            lorentz_index=factor.lorentz_index,
+            counters=counters,
+        )
+
+    field_strength_like = _field_strength_like_operand(factor.operand)
+    if field_strength_like is not None:
+        return _expand_field_strength_covariant_operator_factor(
+            model,
+            factor,
+            root=field_strength_like,
+            counters=counters,
+        )
+
+    raise TypeError(
+        "Nested DC(...) currently supports operands built from fields, "
+        "CovD(...), PartialD(...), and FieldStrength(...); "
+        f"got {type(factor.operand).__name__}."
+    )
+
+
+def _expand_operator_operand_to_branches(
+    model: Model,
+    factor,
+    *,
+    counters: dict[str, int],
+) -> tuple[_GenericCovariantBranch, ...]:
+    if isinstance(factor, CovariantDerivativeFactor):
+        return _expand_generic_covd_factor(model, factor, counters=counters)
+    if isinstance(factor, DifferentiatedCovariantFactor):
+        return _expand_differentiated_covd_factor(model, factor, counters=counters)
+    if isinstance(factor, CovariantDerivativeOperatorFactor):
+        return _expand_covariant_operator_factor(model, factor, counters=counters)
+    if isinstance(factor, DifferentiatedOperatorFactor):
+        return _expand_differentiated_operator_factor(model, factor, counters=counters)
+    if isinstance(factor, FieldStrengthFactor):
+        return _expand_field_strength_factor_to_branches(
+            model,
+            factor,
+            counters=counters,
+        )
+    if isinstance(factor, (_FieldFactor, PartialDerivativeFactor)):
+        return (_GenericCovariantBranch(inline_factors=(factor,)),)
+    raise TypeError(f"Unsupported nested operator operand {type(factor).__name__}.")
+
+
+def _expand_declared_factor_to_operator_branches(
+    model: Model,
+    factor,
+    *,
+    counters: dict[str, int],
+) -> Optional[tuple[_GenericCovariantBranch, ...]]:
+    if isinstance(
+        factor,
+        (
+            CovariantDerivativeFactor,
+            DifferentiatedCovariantFactor,
+            CovariantDerivativeOperatorFactor,
+            DifferentiatedOperatorFactor,
+            FieldStrengthFactor,
+        ),
+    ):
+        return _expand_operator_operand_to_branches(
+            model,
+            factor,
+            counters=counters,
+        )
+    return None
+
+
 def _expand_generic_declared_covariant_monomial(
     model: Model,
     term: _DeclaredMonomial,
@@ -1171,19 +1559,12 @@ def _expand_generic_declared_covariant_monomial(
     branches = (_GenericCovariantBranch(),)
 
     for factor in term.factors:
-        if isinstance(factor, CovariantDerivativeFactor):
-            replacements = _expand_generic_covd_factor(
-                model,
-                factor,
-                counters=counters,
-            )
-        elif isinstance(factor, DifferentiatedCovariantFactor):
-            replacements = _expand_differentiated_covd_factor(
-                model,
-                factor,
-                counters=counters,
-            )
-        else:
+        replacements = _expand_declared_factor_to_operator_branches(
+            model,
+            factor,
+            counters=counters,
+        )
+        if replacements is None:
             branches = tuple(
                 _GenericCovariantBranch(
                     coefficient=branch.coefficient,
@@ -1227,7 +1608,8 @@ def _compile_generic_declared_covariant_monomial(
         interaction = _lower_local_interaction_monomial(expanded_term)
         if interaction is None:
             raise ValueError(
-                "Could not lower a declarative monomial after expanding CovD(...). "
+                "Could not lower a declarative monomial after expanding nested "
+                "DC(...), PartialD(...), and FieldStrength(...) operators. "
                 "That structure is not covered by the modern declarative Model(...) API."
             )
         interactions.append(interaction)
