@@ -149,10 +149,10 @@ Run the complete suite with:
 .venv/bin/python -m pytest -q
 ```
 
-Run the Standard Model example with:
+Run the Standard Model playground with:
 
 ```bash
-.venv/bin/python models/SM/examples/example_standard_model.py
+.venv/bin/python models/SM/playground.py
 ```
 
 The chronological development record is

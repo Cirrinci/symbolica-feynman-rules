@@ -12,7 +12,8 @@ This directory is the complete Standard Model vertical slice for FeynPy.
 - `reference/feynrules/` — tracked FeynRules `SM.fr` JSON oracle.
 - `tests/` — Standard Model and oracle regression tests.
 - `docs/SM_FR_COMPARISON_REVIEW.md` — scope and reliability review.
-- `examples/` — runnable model-specific example.
+- `playground.py` — runnable Standard-Model playground with concise imports
+  and formatted vertex display.
 
 Reusable framework code remains under `src/feynpy/`. Generic FeynRules parsing
 and canonical comparison remain under `src/feynrules/`.
