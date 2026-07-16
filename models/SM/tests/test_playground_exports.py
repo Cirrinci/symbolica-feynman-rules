@@ -3,6 +3,7 @@ from __future__ import annotations
 from symbolica import S
 
 import models.SM as sm_pkg
+from models.SM import playground as sm_playground
 
 
 def test_star_import_exposes_playground_names():
@@ -38,3 +39,25 @@ def test_sm_model_builds_custom_term_with_standard_model_metadata():
     assert model.find_field(sm_pkg.QL) is sm_pkg.QL
     assert model.find_field(sm_pkg.dR) is sm_pkg.dR
     assert model.find_field(sm_pkg.Phi) is sm_pkg.Phi
+
+
+def test_playground_sector_models_and_formatter_are_available():
+    assert tuple(sm_playground.SECTOR_MODELS) == (
+        "Gauge Sector",
+        "Fermion Sector",
+        "Higgs Sector",
+        "Yukawa Sector",
+        "Gauge-Fixing Sector",
+        "Ghost Sector",
+        "Total Lagrangian",
+    )
+
+    rules = sm_playground.custom_yukawa_model.feynman_rule(include_delta=False)
+    formatted = sm_playground.format_rule(
+        sm_playground.custom_yukawa_model,
+        next(iter(rules.values())),
+    )
+
+    assert "spenso::" not in formatted
+    assert "python::" not in formatted
+    assert "deltaColor" in formatted
