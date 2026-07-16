@@ -121,6 +121,13 @@ from .transformation_postprocess import (
     find_source_basis_occurrences,
     validate_compiled_index_multiplicities,
 )
+from .display import (
+    clean_text,
+    format_rule,
+    pretty_expression,
+    show_model,
+    show_result,
+)
 
 # ---- internal symbols still used across the codebase ---------------------
 from .declared import _DeclaredMonomial
