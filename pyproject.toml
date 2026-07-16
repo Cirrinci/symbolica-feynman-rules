@@ -30,6 +30,7 @@ packages = [
     "models.SM",
     "models.UnbrokenSM_BFM",
     "models.SMEFT",
+    "models.SMEFT2",
 ]
 
 [tool.setuptools.package-dir]
@@ -42,6 +43,7 @@ models = "models"
 "models.SM" = "models/SM"
 "models.UnbrokenSM_BFM" = "models/UnbrokenSM_BFM"
 "models.SMEFT" = "models/SMEFT"
+"models.SMEFT2" = "models/SMEFT2"
 
 [tool.setuptools.package-data]
 "models.SM" = [
@@ -55,6 +57,13 @@ models = "models"
     "reference/feynrules/*.fr",
     "reference/feynrules/*.nb",
 ]
+"models.SMEFT2" = [
+    "COMPARISON.md",
+    "feynpy_vertices.json",
+    "vertex_comparison_report.json",
+    "reference/*.json",
+    "reference/feynrules/*.fr",
+]
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -62,4 +71,5 @@ testpaths = [
     "models/SM/tests",
     "models/UnbrokenSM_BFM/tests",
     "models/SMEFT/tests",
+    "models/SMEFT2/tests",
 ]

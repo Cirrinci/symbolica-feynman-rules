@@ -83,6 +83,15 @@ def _param(name: str, *, indices=(), complex_param: bool = False) -> Parameter:
     return Parameter(name, indices=indices, complex_param=complex_param)
 
 
+def _sum_supported_lagrangian_blocks(*blocks):
+    total = None
+    for block in blocks:
+        if block is ZERO:
+            continue
+        total = block if total is None else total + block
+    return ZERO if total is None else total
+
+
 def _dual_fs(group, mu, nu, rho, sigma, adjoint=None):
     if adjoint is None:
         return HALF * lorentz_levi_civita(mu, nu, rho, sigma) * FS(
@@ -811,6 +820,8 @@ def build_smeft_green_bpreserving(
         * FS(g["SU2L"], rho2, mu, aW3)
     )
 
+    LX2D2 = ZERO
+
     LX2H2 = (
         p["alphaOHG"]
         * Phi.bar(w1)
@@ -855,6 +866,9 @@ def build_smeft_green_bpreserving(
         * FS(g["SU2L"], mu, nu, aW1)
         * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
     )
+
+    LH2XD2 = ZERO
+    LH2D4 = ZERO
 
     LH4D2 = (
         p["alphaOHBox"]
@@ -1160,7 +1174,9 @@ def build_smeft_green_bpreserving(
         )
     )
 
-    LF2HD2 = (
+    LF2D3 = ZERO
+
+    LF2HD2_partial = (
         sigma_term(
             p["alphaRuHD2"](f1, f2)
             * weak_eps2(w1, w2)
@@ -1180,6 +1196,9 @@ def build_smeft_green_bpreserving(
             nu,
         )
     )
+    LF2HD2 = ZERO
+
+    LF2XD = ZERO
 
     LF2DH2 = (
         I
@@ -2050,6 +2069,8 @@ def build_smeft_green_bpreserving(
                 * sigma_chain
                 * ll(sp=sp2, w=w1, f=f1)
             )
+
+    LEvF2XD = ZERO
 
     LEv4q = (
         p["alphaEqu"](f1, f2, f3, f4)
@@ -3079,34 +3100,41 @@ def build_smeft_green_bpreserving(
     )
 
     LSM = LGauge + LFermions + LHiggs + LYukawa
-    Ltot = (
-        LSM
-        + L2Higgs
-        + L4Gauge
-        + L4Fermions
-        + L4Higgs
-        + L4Yukawa
-        + LWeinberg
-        + LX3
-        + LX2H2
-        + LH4D2
-        + LH6
-        + LF2XH
-        + LF2DH2
-        + LF2H3
-        + L4q
-        + L4l
-        + L4lq
-        + LEvF2XH
-        + LEvF2HD2
-        + LEv4q
-        + LEv4l
-        + LEv4lq
-        + LEvCCLLLL
-        + LEvCCRRRR
-        + LEvCCLRRL
-        + LEvCCRRLL
+    Ltot = _sum_supported_lagrangian_blocks(
+        L2Higgs,
+        L4Gauge,
+        L4Fermions,
+        L4Higgs,
+        L4Yukawa,
+        LWeinberg,
+        LX3,
+        LX2D2,
+        LX2H2,
+        LH2XD2,
+        LH2D4,
+        LH4D2,
+        LH6,
+        LF2D3,
+        LF2HD2,
+        LF2XH,
+        LF2XD,
+        LF2DH2,
+        LF2H3,
+        L4q,
+        L4l,
+        L4lq,
+        LEvF2XH,
+        LEvF2HD2,
+        LEvF2XD,
+        LEv4q,
+        LEv4l,
+        LEv4lq,
+        LEvCCLLLL,
+        LEvCCRRRR,
+        LEvCCLRRL,
+        LEvCCRRLL,
     )
+    Lfull = LSM + Ltot
 
     lagrangians = {
         "LGauge": DeclaredLagrangian.from_item(LGauge),
@@ -3121,10 +3149,16 @@ def build_smeft_green_bpreserving(
         "L4Yukawa": DeclaredLagrangian.from_item(L4Yukawa),
         "LWeinberg": DeclaredLagrangian.from_item(LWeinberg),
         "LX3": DeclaredLagrangian.from_item(LX3),
+        "LX2D2": DeclaredLagrangian(),
         "LX2H2": DeclaredLagrangian.from_item(LX2H2),
+        "LH2XD2": DeclaredLagrangian(),
+        "LH2D4": DeclaredLagrangian(),
         "LH4D2": DeclaredLagrangian.from_item(LH4D2),
         "LH6": DeclaredLagrangian.from_item(LH6),
+        "LF2D3": DeclaredLagrangian(),
+        "LF2HD2": DeclaredLagrangian(),
         "LF2XH": DeclaredLagrangian.from_item(LF2XH),
+        "LF2XD": DeclaredLagrangian(),
         "LF2DH2": DeclaredLagrangian.from_item(LF2DH2),
         "LF2H3": DeclaredLagrangian.from_item(LF2H3),
         "L4q": DeclaredLagrangian.from_item(L4q),
@@ -3132,6 +3166,7 @@ def build_smeft_green_bpreserving(
         "L4lq": DeclaredLagrangian.from_item(L4lq),
         "LEvF2XH": DeclaredLagrangian.from_item(LEvF2XH),
         "LEvF2HD2": DeclaredLagrangian.from_item(LEvF2HD2),
+        "LEvF2XD": DeclaredLagrangian(),
         "LEv4q": DeclaredLagrangian.from_item(LEv4q),
         "LEv4l": DeclaredLagrangian.from_item(LEv4l),
         "LEv4lq": DeclaredLagrangian.from_item(LEv4lq),
@@ -3140,6 +3175,7 @@ def build_smeft_green_bpreserving(
         "LEvCCLRRL": DeclaredLagrangian.from_item(LEvCCLRRL),
         "LEvCCRRLL": DeclaredLagrangian.from_item(LEvCCRRLL),
         "Ltot": DeclaredLagrangian.from_item(Ltot),
+        "Lfull": DeclaredLagrangian.from_item(Lfull),
     }
 
     model = Model(
