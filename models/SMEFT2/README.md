@@ -13,6 +13,10 @@ The goal is to stay close to the FR file:
 - same coefficient names
 - direct Lagrangian blocks written inside the model builder
 
+The default bundled model now follows the FeynRules convention that `Ltot` is
+the EFT-only Lagrangian. The local SM core is still available separately as
+`LSM`, and the old SM-plus-EFT combination is available as `Lfull`.
+
 ## What Is Implemented
 
 The file now declares the SM fields, gauge groups, and a broad parameter set,
@@ -68,6 +72,25 @@ sigma-matrix chain. The same strategy does not fully rescue `LF2HD2`, because
 that FR block also contains genuine `DC[DC[...]]` terms, and the current API
 does not yet give an exact path for those or for derivatives acting on
 `FS(...)`.
+
+## Comparison
+
+The reproducible comparison entry point is:
+
+```bash
+.venv/bin/python models/SMEFT2/comparison.py
+```
+
+It regenerates:
+
+- `COMPARISON.md` — human-readable summary.
+- `vertex_comparison_report.json` — per-signature comparison rows.
+- `feynpy_vertices.json` — local FeynPy 3-6 point vertex rules.
+
+The comparison currently checks signature coverage and coefficient-head content
+after normalizing field names to the FeynRules convention. It does not claim
+full tensor-rule equality for SMEFT2 yet; the omitted derivative sectors remain
+the dominant gap.
 
 ## Check
 
