@@ -908,6 +908,137 @@ def build_standard_model(
     )
 
 
+_DEFAULT_STANDARD_MODEL: StandardModel | None = None
+_PLAYGROUND_NAMESPACE: dict[str, object] | None = None
+
+_INDEX_EXPORTS = tuple(StandardModelIndices.__annotations__)
+_GAUGE_GROUP_EXPORTS = tuple(StandardModelGaugeGroups.__annotations__)
+_FIELD_EXPORTS = tuple(StandardModelFields.__annotations__)
+_PARAMETER_EXPORTS = tuple(StandardModelParameters.__annotations__)
+_LAGRANGIAN_EXPORTS = tuple(StandardModelLagrangians.__annotations__)
+_PLAYGROUND_ALIAS_EXPORTS = (
+    "default_standard_model",
+    "sm_model",
+    "STANDARD_MODEL",
+    "SM_MODEL",
+    "SM_SOURCE_MODEL",
+    "SM_LAGRANGIAN",
+    "SM_INDICES",
+    "SM_FIELDS",
+    "SM_PARAMETERS",
+    "SM_GAUGE_GROUP_NAMESPACE",
+    "SM_GAUGE_GROUPS",
+    "SM_LAGRANGIANS",
+    "SM_TRANSFORMATIONS",
+    "L_gauge",
+    "L_fermions",
+    "L_higgs",
+    "L_yukawa",
+    "L_gauge_fixing",
+    "L_ghost",
+    "L_tot",
+    "mu",
+    "nu",
+    "weak_adj",
+    "colour_adj",
+    "spinor",
+    "weak_left",
+    "weak_right",
+    "colour",
+    "f1",
+    "f2",
+    "f3",
+)
+
+
+def _namespace_dict(namespace) -> dict[str, object]:
+    return dict(vars(namespace))
+
+
+def _standard_model_gauge_groups(sm: StandardModel) -> tuple[GaugeGroup, ...]:
+    return tuple(_namespace_dict(sm.gauge_groups).values())
+
+
+def default_standard_model() -> StandardModel:
+    """Return the shared broken-phase Standard Model instance for playground use."""
+
+    global _DEFAULT_STANDARD_MODEL
+    if _DEFAULT_STANDARD_MODEL is None:
+        _DEFAULT_STANDARD_MODEL = build_standard_model()
+    return _DEFAULT_STANDARD_MODEL
+
+
+def sm_model(lagrangian_decl, *, name: str = "") -> Model:
+    """Build a ``Model`` with the default Standard-Model metadata attached."""
+
+    sm = default_standard_model()
+    return Model(
+        lagrangian_decl,
+        name=name,
+        gauge_groups=_standard_model_gauge_groups(sm),
+        parameters=sm.model.parameters,
+    )
+
+
+def _playground_namespace() -> dict[str, object]:
+    global _PLAYGROUND_NAMESPACE
+    if _PLAYGROUND_NAMESPACE is not None:
+        return _PLAYGROUND_NAMESPACE
+
+    sm = default_standard_model()
+    lagrangians = sm.lagrangians
+    namespace = {
+        "STANDARD_MODEL": sm,
+        "SM_MODEL": sm.model,
+        "SM_SOURCE_MODEL": sm.source_model,
+        "SM_LAGRANGIAN": sm.lagrangian,
+        "SM_INDICES": sm.indices,
+        "SM_FIELDS": sm.fields,
+        "SM_PARAMETERS": sm.model.parameters,
+        "SM_GAUGE_GROUP_NAMESPACE": sm.gauge_groups,
+        "SM_GAUGE_GROUPS": _standard_model_gauge_groups(sm),
+        "SM_LAGRANGIANS": lagrangians,
+        "SM_TRANSFORMATIONS": sm.transformations,
+        "L_gauge": lagrangians.LGauge,
+        "L_fermions": lagrangians.LFermions,
+        "L_higgs": lagrangians.LHiggs,
+        "L_yukawa": lagrangians.LYukawa,
+        "L_gauge_fixing": lagrangians.LGaugeFixing,
+        "L_ghost": lagrangians.LGhost,
+        "L_tot": lagrangians.LSM,
+        "mu": S("mu"),
+        "nu": S("nu"),
+        "weak_adj": S("aW"),
+        "colour_adj": S("aC"),
+        "spinor": S("sp"),
+        "weak_left": S("ii"),
+        "weak_right": S("jj"),
+        "colour": S("cc"),
+        "f1": S("ff1"),
+        "f2": S("ff2"),
+        "f3": S("ff3"),
+    }
+    namespace.update(_namespace_dict(sm.indices))
+    namespace.update(_namespace_dict(sm.gauge_groups))
+    namespace.update(_namespace_dict(sm.fields))
+    namespace.update(_namespace_dict(sm.parameters))
+    namespace.update(_namespace_dict(lagrangians))
+
+    _PLAYGROUND_NAMESPACE = namespace
+    return namespace
+
+
+def __getattr__(name: str):
+    namespace = _playground_namespace()
+    if name in namespace:
+        return namespace[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
+
+
 __all__ = (
     "StandardModel",
     "StandardModelFields",
@@ -916,5 +1047,13 @@ __all__ = (
     "StandardModelLagrangians",
     "StandardModelParameters",
     "build_standard_model",
+    "default_standard_model",
+    "sm_model",
     "standard_model_weak_tensor_components",
+    *_INDEX_EXPORTS,
+    *_GAUGE_GROUP_EXPORTS,
+    *_FIELD_EXPORTS,
+    *_PARAMETER_EXPORTS,
+    *_LAGRANGIAN_EXPORTS,
+    *_PLAYGROUND_ALIAS_EXPORTS,
 )

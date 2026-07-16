@@ -22,3 +22,23 @@ The public model import is:
 ```python
 from models.SM import build_standard_model
 ```
+
+For a minimal playground-style workflow, the package now also re-exports the
+default Standard-Model fields, parameters, gauge groups, and source sectors:
+
+```python
+from feynpy import *
+from models.SM import *
+
+L = sm_model(L_gauge)
+
+L2 = sm_model(
+    -Yd(f2, f3)
+    * CKM(f1, f2)
+    * QL.bar(spinor, weak_left, f1, colour)
+    * dR(spinor, f3, colour)
+    * Phi(weak_left)
+)
+```
+
+The ready-to-edit playground file is [playground.py](/Users/rems/Documents/MScThesis/models/SM/playground.py).
