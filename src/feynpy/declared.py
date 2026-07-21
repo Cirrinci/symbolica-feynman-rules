@@ -67,6 +67,7 @@ class CovariantDerivativeFactor(_DeclaredFactorMixin):
     field: Field
     lorentz_index: object
     conjugated: bool = False
+    labels: dict = dataclass_field(default_factory=dict)
 
     @property
     def bar(self) -> "CovariantDerivativeFactor":
@@ -76,6 +77,7 @@ class CovariantDerivativeFactor(_DeclaredFactorMixin):
             field=self.field,
             lorentz_index=self.lorentz_index,
             conjugated=not self.conjugated,
+            labels=self.labels,
         )
 
     def __str__(self):
@@ -516,26 +518,41 @@ class _DeclaredMonomial:
         return " * ".join(pieces)
 
 
-def DC(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
+def DC(field, lorentz_index, *, labels=None, conjugated=False) -> CovariantDerivativeFactor:
     """FeynRules-style covariant derivative for ``DeclaredLagrangian``.
 
-    Accepts ``Field``, ``Field.bar``, or ``(Field, bool)`` and can be used in
-    expressions such as ``I * Psi.bar * Gamma(mu) * DC(Psi, mu)``.
+    Accepts ``Field``, ``Field.bar``, ``FieldOccurrence``, or ``(Field, bool)``
+    and can be used in expressions such as
+    ``I * Psi.bar * Gamma(mu) * DC(Psi, mu)``.
 
     ``DC(...)`` is metadata-dependent: it belongs in a ``Model(...)``
     declaration compiled through ``model.lagrangian()``.
     """
+    from .interactions import FieldOccurrence
     from .interactions import _parse_field_arg
 
     if _is_declared_operator_operand(field):
-        if conjugated:
+        if labels is not None or conjugated:
             raise TypeError(
                 "Nested DC(...) operands already carry their own conjugation; "
-                "apply .bar to the underlying field before nesting."
+                "apply labels/conjugation to the underlying field before nesting."
             )
         return CovariantDerivativeOperatorFactor(
             operand=field,
             lorentz_index=lorentz_index,
+        )
+
+    if isinstance(field, FieldOccurrence):
+        if labels is not None or conjugated:
+            raise TypeError(
+                "Pass labels/conjugation either through FieldOccurrence(...) "
+                "or through DC(...), not both."
+            )
+        return CovariantDerivativeFactor(
+            field=field.field,
+            lorentz_index=lorentz_index,
+            conjugated=field.conjugated,
+            labels=field.labels,
         )
 
     field_obj, parsed_conjugated = _parse_field_arg(field)
@@ -543,6 +560,7 @@ def DC(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
         field=field_obj,
         lorentz_index=lorentz_index,
         conjugated=bool(parsed_conjugated or conjugated),
+        labels=labels or {},
     )
 
 

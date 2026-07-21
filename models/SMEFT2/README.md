@@ -32,10 +32,16 @@ These sectors are included in the compiled `Ltot`:
 - `L4Yukawa`
 - `LWeinberg`
 - `LX3`
+- `LX2D2`
 - `LX2H2`
+- `LH2XD2`
+- `LH2D4`
 - `LH4D2` including `alphaRHDpp`
 - `LH6`
+- `LF2D3`
+- `LF2HD2`
 - `LF2XH`
+- `LF2XD`
 - `LF2DH2`
 - `LF2H3`
 - `L4q`
@@ -43,6 +49,7 @@ These sectors are included in the compiled `Ltot`:
 - `L4lq`
 - `LEvF2XH`
 - `LEvF2HD2`
+- `LEvF2XD`
 - `LEv4q`
 - `LEv4l`
 - `LEv4lq`
@@ -53,22 +60,12 @@ These sectors are included in the compiled `Ltot`:
 
 ## What Is Still Omitted
 
-These sectors still need translation and validation against the FeynRules
-reference:
+No Green-basis sectors are currently omitted from the compiled `Ltot`.
 
-- `LX2D2`
-- `LH2XD2`
-- `LH2D4`
-- `LF2D3`
-- `LF2HD2`
-- `LF2XD`
-- `LEvF2XD`
-
-The nested derivative API now supports the core structures these blocks need,
-including `DC(FS(...))`, `PartialD(FS(...))`, `DC(DC(field, ...), ...)`, and
-`PartialD(DC(...), ...)`. The remaining work is model-level migration: rewrite
-each sector in the new declarative form, add golden content tests for the
-affected vertices, and then enable it in `Ltot`.
+The nested derivative API supports the core structures these blocks need,
+including `DC(FS(...))`, `PartialD(FS(...))`, `DC(DC(field, ...), ...)`,
+`PartialD(DC(...), ...)`, and mixed monomials containing both matter
+`DC(...)` factors and raw `FS(...)` factors.
 
 `LEvF2HD2` is now implemented by expanding every first covariant derivative
 term-by-term into `PartialD(...)` and gauge-field pieces before building the

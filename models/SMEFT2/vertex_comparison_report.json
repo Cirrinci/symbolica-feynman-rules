@@ -5,35 +5,25 @@
   "comparison_level": "Signature coverage and coefficient-head content. Full tensor-rule equality is not claimed by this SMEFT2 report.",
   "summary": {
     "reference_vertex_count": 184,
-    "feynpy_signature_count_3_to_6": 147,
-    "shared_signatures": 137,
-    "reference_only_signatures": 47,
+    "feynpy_signature_count_3_to_6": 192,
+    "shared_signatures": 182,
+    "reference_only_signatures": 2,
     "feynpy_only_signatures": 10,
-    "shared_head_matches": 51,
+    "shared_head_matches": 168,
     "status_counts": {
       "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING": 8,
       "FEYNPY_ONLY_WEINBERG_PACKAGING": 2,
-      "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS": 45,
       "MISSING_SIGNATURE_WEINBERG_PACKAGING": 2,
       "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH": 6,
-      "SHARED_HEADS_MATCH": 51,
-      "SHARED_LOCAL_PP_EXTRA": 2,
-      "SHARED_MISSING_OMITTED_HEADS": 72,
-      "SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA": 6
+      "SHARED_HEADS_MATCH": 168,
+      "SHARED_LOCAL_EXTRA_HEADS": 6,
+      "SHARED_LOCAL_PP_EXTRA": 2
     },
     "comparison_basis": {
       "reference_ltot": "EFT-only FeynRules Ltot",
       "local_ltot": "EFT-only FeynPy Ltot",
       "local_sm_plus_eft_lagrangian": "Lfull",
-      "omitted_sectors": [
-        "LX2D2",
-        "LH2XD2",
-        "LH2D4",
-        "LF2D3",
-        "LF2HD2",
-        "LF2XD",
-        "LEvF2XD"
-      ]
+      "omitted_sectors": []
     }
   },
   "reference_vertices": [
@@ -69,18 +59,34 @@
         "alphaRDH",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRDH",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "Phibar",
+        "Phi",
+        "B",
+        "B",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "Phi.bar",
+        "Phi",
+        "B",
+        "B",
+        "B",
+        "B"
+      ],
+      "local_term_count": 1,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 8,
@@ -111,18 +117,32 @@
         "alphaRDH",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRDH",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "Phibar",
+        "Phi",
+        "B",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "Phi.bar",
+        "Phi",
+        "B",
+        "B",
+        "B"
+      ],
+      "local_term_count": 4,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 87,
@@ -157,19 +177,35 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRDH",
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "Phibar",
+        "Phi",
+        "B",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "Phi.bar",
+        "Phi",
+        "B",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "local_term_count": 4,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 173,
@@ -200,18 +236,32 @@
         "alphaRdD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRdD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "dRbar",
+        "dR",
+        "B",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "DR.bar",
+        "DR",
+        "B",
+        "B",
+        "B"
+      ],
+      "local_term_count": 2,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 151,
@@ -242,18 +292,32 @@
         "alphaReD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaReD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "eRbar",
+        "eR",
+        "B",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "LR.bar",
+        "LR",
+        "B",
+        "B",
+        "B"
+      ],
+      "local_term_count": 2,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 117,
@@ -284,18 +348,32 @@
         "alphaRlD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRlD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "lLbar",
+        "lL",
+        "B",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "LL.bar",
+        "LL",
+        "B",
+        "B",
+        "B"
+      ],
+      "local_term_count": 2,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 130,
@@ -326,18 +404,32 @@
         "alphaRqD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRqD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "B",
+        "B"
+      ],
+      "local_term_count": 2,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 158,
@@ -368,18 +460,32 @@
         "alphaRuD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRuD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "uRbar",
+        "uR",
+        "B",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "UR.bar",
+        "UR",
+        "B",
+        "B",
+        "B"
+      ],
+      "local_term_count": 2,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 176,
@@ -411,19 +517,33 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRdD",
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "dRbar",
+        "dR",
+        "B",
+        "B",
+        "G"
+      ],
+      "feynpy_names": [
+        "DR.bar",
+        "DR",
+        "B",
+        "B",
+        "G"
+      ],
+      "local_term_count": 6,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 133,
@@ -455,19 +575,33 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRqD",
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "B",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "B",
+        "G"
+      ],
+      "local_term_count": 6,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 161,
@@ -499,19 +633,33 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRuD",
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "uRbar",
+        "uR",
+        "B",
+        "B",
+        "G"
+      ],
+      "feynpy_names": [
+        "UR.bar",
+        "UR",
+        "B",
+        "B",
+        "G"
+      ],
+      "local_term_count": 6,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 26,
@@ -546,36 +694,35 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD1",
         "alphaRdHD3",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
       ],
       "local_names": [
-        "B",
+        "dRbar",
+        "qL",
         "Phibar",
         "B",
-        "dRbar",
-        "qL"
+        "B"
       ],
       "feynpy_names": [
-        "B",
+        "DR.bar",
+        "QL",
         "Phi.bar",
         "B",
-        "DR.bar",
-        "QL"
+        "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA",
-      "reason": "Local rule misses omitted derivative-sector heads from the reference and also has additional local heads."
+      "status": "SHARED_LOCAL_EXTRA_HEADS",
+      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
     },
     {
       "id": 23,
@@ -610,36 +757,35 @@
       ],
       "feynpy_heads": [
         "alphaEeH",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaReHD1",
         "alphaReHD3",
-        "alphaReHD4"
+        "alphaReHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
       ],
       "local_names": [
-        "B",
+        "eRbar",
+        "lL",
         "Phibar",
         "B",
-        "eRbar",
-        "lL"
+        "B"
       ],
       "feynpy_names": [
-        "B",
+        "LR.bar",
+        "LL",
         "Phi.bar",
         "B",
-        "LR.bar",
-        "LL"
+        "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA",
-      "reason": "Local rule misses omitted derivative-sector heads from the reference and also has additional local heads."
+      "status": "SHARED_LOCAL_EXTRA_HEADS",
+      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
     },
     {
       "id": 48,
@@ -674,36 +820,35 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD1",
         "alphaRuHD3",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
       ],
       "local_names": [
-        "B",
-        "Phibar",
         "qLbar",
+        "uR",
+        "Phibar",
         "B",
-        "uR"
+        "B"
       ],
       "feynpy_names": [
-        "B",
-        "Phi.bar",
         "QL.bar",
+        "UR",
+        "Phi.bar",
         "B",
-        "UR"
+        "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA",
-      "reason": "Local rule misses omitted derivative-sector heads from the reference and also has additional local heads."
+      "status": "SHARED_LOCAL_EXTRA_HEADS",
+      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
     },
     {
       "id": 2,
@@ -739,12 +884,11 @@
         "alphaKH",
         "alphaOHB",
         "alphaOHBt",
+        "alphaRBDH",
+        "alphaRDH",
         "g1"
       ],
-      "feynrules_extra_heads": [
-        "alphaRBDH",
-        "alphaRDH"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -758,12 +902,12 @@
         "B",
         "B"
       ],
-      "local_term_count": 9,
+      "local_term_count": 19,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 79,
@@ -795,19 +939,33 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRDH",
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "Phibar",
+        "Phi",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "Phi.bar",
+        "Phi",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "local_term_count": 14,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 89,
@@ -842,19 +1000,35 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRDH",
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "Phibar",
+        "Phi",
+        "B",
+        "B",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "Phi.bar",
+        "Phi",
+        "B",
+        "B",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 6,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 16,
@@ -952,36 +1126,35 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD1",
         "alphaRdHD3",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
       ],
       "local_names": [
-        "B",
-        "Phi",
         "qLbar",
+        "dR",
+        "Phi",
         "B",
-        "dR"
+        "B"
       ],
       "feynpy_names": [
-        "B",
-        "Phi",
         "QL.bar",
+        "DR",
+        "Phi",
         "B",
-        "DR"
+        "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA",
-      "reason": "Local rule misses omitted derivative-sector heads from the reference and also has additional local heads."
+      "status": "SHARED_LOCAL_EXTRA_HEADS",
+      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
     },
     {
       "id": 35,
@@ -1016,36 +1189,35 @@
       ],
       "feynpy_heads": [
         "alphaEeH",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaReHD1",
         "alphaReHD3",
-        "alphaReHD4"
+        "alphaReHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
       ],
       "local_names": [
-        "B",
-        "Phi",
         "lLbar",
+        "eR",
+        "Phi",
         "B",
-        "eR"
+        "B"
       ],
       "feynpy_names": [
-        "B",
-        "Phi",
         "LL.bar",
+        "LR",
+        "Phi",
         "B",
-        "LR"
+        "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA",
-      "reason": "Local rule misses omitted derivative-sector heads from the reference and also has additional local heads."
+      "status": "SHARED_LOCAL_EXTRA_HEADS",
+      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
     },
     {
       "id": 27,
@@ -1080,36 +1252,35 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD1",
         "alphaRuHD3",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
       ],
       "local_names": [
-        "B",
+        "uRbar",
+        "qL",
         "Phi",
         "B",
-        "uRbar",
-        "qL"
+        "B"
       ],
       "feynpy_names": [
-        "B",
+        "UR.bar",
+        "QL",
         "Phi",
         "B",
-        "UR.bar",
-        "QL"
+        "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA",
-      "reason": "Local rule misses omitted derivative-sector heads from the reference and also has additional local heads."
+      "status": "SHARED_LOCAL_EXTRA_HEADS",
+      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
     },
     {
       "id": 119,
@@ -1141,19 +1312,33 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRlD",
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "lLbar",
+        "lL",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "LL.bar",
+        "LL",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "local_term_count": 6,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 138,
@@ -1185,19 +1370,33 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRqD",
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "B",
+        "Wi"
+      ],
+      "local_term_count": 6,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 172,
@@ -1229,8 +1428,7 @@
         "alphaRdD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBdp",
         "alphaEBdtp",
         "alphaRBdp",
@@ -1238,13 +1436,26 @@
         "alphaRdD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "dRbar",
+        "dR",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "DR.bar",
+        "DR",
+        "B",
+        "B"
+      ],
+      "local_term_count": 15,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 150,
@@ -1276,8 +1487,7 @@
         "alphaReD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBep",
         "alphaEBetp",
         "alphaRBep",
@@ -1285,13 +1495,26 @@
         "alphaReD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "eRbar",
+        "eR",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "LR.bar",
+        "LR",
+        "B",
+        "B"
+      ],
+      "local_term_count": 15,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 116,
@@ -1323,8 +1546,7 @@
         "alphaRlD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBlp",
         "alphaEBltp",
         "alphaRBlp",
@@ -1332,13 +1554,26 @@
         "alphaRlD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "lLbar",
+        "lL",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "LL.bar",
+        "LL",
+        "B",
+        "B"
+      ],
+      "local_term_count": 15,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 129,
@@ -1370,8 +1605,7 @@
         "alphaRqD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBqp",
         "alphaEBqtp",
         "alphaRBqp",
@@ -1379,13 +1613,26 @@
         "alphaRqD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "B"
+      ],
+      "local_term_count": 15,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 157,
@@ -1417,8 +1664,7 @@
         "alphaRuD",
         "g1"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBup",
         "alphaEButp",
         "alphaRBup",
@@ -1426,13 +1672,26 @@
         "alphaRuD",
         "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "uRbar",
+        "uR",
+        "B",
+        "B"
+      ],
+      "feynpy_names": [
+        "UR.bar",
+        "UR",
+        "B",
+        "B"
+      ],
+      "local_term_count": 15,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 177,
@@ -1468,8 +1727,7 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGdp",
         "alphaEGdtp",
         "alphaRGdp",
@@ -1478,13 +1736,28 @@
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "dRbar",
+        "dR",
+        "B",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "DR.bar",
+        "DR",
+        "B",
+        "G",
+        "G"
+      ],
+      "local_term_count": 10,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 134,
@@ -1520,8 +1793,7 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGqp",
         "alphaEGqtp",
         "alphaRGqp",
@@ -1530,13 +1802,28 @@
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "G",
+        "G"
+      ],
+      "local_term_count": 10,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 162,
@@ -1572,8 +1859,7 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGup",
         "alphaEGutp",
         "alphaRGup",
@@ -1582,13 +1868,28 @@
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "uRbar",
+        "uR",
+        "B",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "UR.bar",
+        "UR",
+        "B",
+        "G",
+        "G"
+      ],
+      "local_term_count": 10,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 75,
@@ -1625,35 +1926,34 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
+        "alphaRdHD2",
+        "alphaRdHD3",
+        "alphaRdHD4",
         "g1",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD2",
-        "alphaRdHD3",
-        "alphaRdHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "B",
         "Phibar",
-        "G",
         "dRbar",
-        "qL"
+        "qL",
+        "B",
+        "G"
       ],
       "feynpy_names": [
-        "B",
         "Phi.bar",
-        "G",
         "DR.bar",
-        "QL"
+        "QL",
+        "B",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 66,
@@ -1690,35 +1990,34 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
+        "alphaRuHD2",
+        "alphaRuHD3",
+        "alphaRuHD4",
         "g1",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD2",
-        "alphaRuHD3",
-        "alphaRuHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "B",
         "Phibar",
         "qLbar",
-        "G",
-        "uR"
+        "uR",
+        "B",
+        "G"
       ],
       "feynpy_names": [
-        "B",
         "Phi.bar",
         "QL.bar",
-        "G",
-        "UR"
+        "UR",
+        "B",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 72,
@@ -1755,35 +2054,34 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
+        "alphaRdHD2",
+        "alphaRdHD3",
+        "alphaRdHD4",
         "g1",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD2",
-        "alphaRdHD3",
-        "alphaRdHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "B",
         "Phi",
         "qLbar",
-        "G",
-        "dR"
+        "dR",
+        "B",
+        "G"
       ],
       "feynpy_names": [
-        "B",
         "Phi",
         "QL.bar",
-        "G",
-        "DR"
+        "DR",
+        "B",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 69,
@@ -1820,35 +2118,34 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
+        "alphaRuHD2",
+        "alphaRuHD3",
+        "alphaRuHD4",
         "g1",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD2",
-        "alphaRuHD3",
-        "alphaRuHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "B",
         "Phi",
-        "G",
         "uRbar",
-        "qL"
+        "qL",
+        "B",
+        "G"
       ],
       "feynpy_names": [
-        "B",
         "Phi",
-        "G",
         "UR.bar",
-        "QL"
+        "QL",
+        "B",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 139,
@@ -1881,20 +2178,34 @@
         "g2",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRqD",
         "g1",
         "g2",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "Wi",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "Wi",
+        "G"
+      ],
+      "local_term_count": 12,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 174,
@@ -1931,8 +2242,7 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBdp",
         "alphaEBdtp",
         "alphaEGdp",
@@ -1945,13 +2255,26 @@
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "dRbar",
+        "dR",
+        "B",
+        "G"
+      ],
+      "feynpy_names": [
+        "DR.bar",
+        "DR",
+        "B",
+        "G"
+      ],
+      "local_term_count": 45,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 131,
@@ -1988,8 +2311,7 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBqp",
         "alphaEBqtp",
         "alphaEGqp",
@@ -2002,13 +2324,26 @@
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "G"
+      ],
+      "local_term_count": 45,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 159,
@@ -2045,8 +2380,7 @@
         "g1",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBup",
         "alphaEButp",
         "alphaEGup",
@@ -2059,13 +2393,26 @@
         "g1",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "uRbar",
+        "uR",
+        "B",
+        "G"
+      ],
+      "feynpy_names": [
+        "UR.bar",
+        "UR",
+        "B",
+        "G"
+      ],
+      "local_term_count": 45,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 99,
@@ -2102,35 +2449,34 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
+        "alphaRdHD1",
+        "alphaRdHD2",
+        "alphaRdHD4",
         "g1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD1",
-        "alphaRdHD2",
-        "alphaRdHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
+        "dRbar",
+        "qL",
         "Phibar",
         "B",
-        "dRbar",
-        "qL"
+        "Wi"
       ],
       "feynpy_names": [
-        "Wi",
+        "DR.bar",
+        "QL",
         "Phi.bar",
         "B",
-        "DR.bar",
-        "QL"
+        "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 105,
@@ -2167,35 +2513,34 @@
       ],
       "feynpy_heads": [
         "alphaEeH",
+        "alphaReHD1",
+        "alphaReHD2",
+        "alphaReHD4",
         "g1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaReHD1",
-        "alphaReHD2",
-        "alphaReHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
+        "eRbar",
+        "lL",
         "Phibar",
         "B",
-        "eRbar",
-        "lL"
+        "Wi"
       ],
       "feynpy_names": [
-        "Wi",
+        "LR.bar",
+        "LL",
         "Phi.bar",
         "B",
-        "LR.bar",
-        "LL"
+        "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 94,
@@ -2232,35 +2577,34 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
+        "alphaRuHD1",
+        "alphaRuHD2",
+        "alphaRuHD4",
         "g1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD1",
-        "alphaRuHD2",
-        "alphaRuHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
-        "Phibar",
         "qLbar",
+        "uR",
+        "Phibar",
         "B",
-        "uR"
+        "Wi"
       ],
       "feynpy_names": [
-        "Wi",
-        "Phi.bar",
         "QL.bar",
+        "UR",
+        "Phi.bar",
         "B",
-        "UR"
+        "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 24,
@@ -2298,33 +2642,32 @@
         "alphaEdB",
         "alphaEdH",
         "alphaOdB",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD1",
         "alphaRdHD2",
         "alphaRdHD3",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "dRbar",
         "qL",
+        "Phibar",
         "B"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "DR.bar",
         "QL",
+        "Phi.bar",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 11,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 22,
@@ -2362,33 +2705,32 @@
         "alphaEeB",
         "alphaEeH",
         "alphaOeB",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaReHD1",
         "alphaReHD2",
         "alphaReHD3",
-        "alphaReHD4"
+        "alphaReHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "eRbar",
         "lL",
+        "Phibar",
         "B"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "LR.bar",
         "LL",
+        "Phi.bar",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 11,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 46,
@@ -2426,33 +2768,32 @@
         "alphaEuB",
         "alphaEuH",
         "alphaOuB",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD1",
         "alphaRuHD2",
         "alphaRuHD3",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "qLbar",
         "uR",
+        "Phibar",
         "B"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "QL.bar",
         "UR",
+        "Phi.bar",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 11,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 1,
@@ -2481,12 +2822,11 @@
       ],
       "feynpy_heads": [
         "alphaKH",
+        "alphaRBDH",
+        "alphaRDH",
         "g1"
       ],
-      "feynrules_extra_heads": [
-        "alphaRBDH",
-        "alphaRDH"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -2498,12 +2838,12 @@
         "Phi",
         "B"
       ],
-      "local_term_count": 2,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 78,
@@ -2541,14 +2881,13 @@
         "alphaKH",
         "alphaOHWB",
         "alphaOHWBt",
+        "alphaRBDH",
+        "alphaRDH",
+        "alphaRWDH",
         "g1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRBDH",
-        "alphaRDH",
-        "alphaRWDH"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -2562,12 +2901,12 @@
         "B",
         "Wi"
       ],
-      "local_term_count": 10,
+      "local_term_count": 32,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 88,
@@ -2605,13 +2944,12 @@
       "feynpy_heads": [
         "alphaOHWB",
         "alphaOHWBt",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaRDH",
         "alphaRWDH",
-        "g1"
+        "g1",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -2627,12 +2965,12 @@
         "Wi",
         "B"
       ],
-      "local_term_count": 4,
+      "local_term_count": 24,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 109,
@@ -2668,20 +3006,36 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaRDH",
         "alphaRWDH",
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "Phibar",
+        "Phi",
+        "B",
+        "Wi",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "Phi.bar",
+        "Phi",
+        "B",
+        "Wi",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 5,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 180,
@@ -3147,35 +3501,34 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
+        "alphaRdHD1",
+        "alphaRdHD2",
+        "alphaRdHD4",
         "g1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD1",
-        "alphaRdHD2",
-        "alphaRdHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
-        "Phi",
         "qLbar",
+        "dR",
+        "Phi",
         "B",
-        "dR"
+        "Wi"
       ],
       "feynpy_names": [
-        "Wi",
-        "Phi",
         "QL.bar",
+        "DR",
+        "Phi",
         "B",
-        "DR"
+        "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 106,
@@ -3212,35 +3565,34 @@
       ],
       "feynpy_heads": [
         "alphaEeH",
+        "alphaReHD1",
+        "alphaReHD2",
+        "alphaReHD4",
         "g1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaReHD1",
-        "alphaReHD2",
-        "alphaReHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
-        "Phi",
         "lLbar",
+        "eR",
+        "Phi",
         "B",
-        "eR"
+        "Wi"
       ],
       "feynpy_names": [
-        "Wi",
-        "Phi",
         "LL.bar",
+        "LR",
+        "Phi",
         "B",
-        "LR"
+        "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 93,
@@ -3277,35 +3629,34 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
+        "alphaRuHD1",
+        "alphaRuHD2",
+        "alphaRuHD4",
         "g1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD1",
-        "alphaRuHD2",
-        "alphaRuHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
+        "uRbar",
+        "qL",
         "Phi",
         "B",
-        "uRbar",
-        "qL"
+        "Wi"
       ],
       "feynpy_names": [
-        "Wi",
+        "UR.bar",
+        "QL",
         "Phi",
         "B",
-        "UR.bar",
-        "QL"
+        "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 45,
@@ -3343,33 +3694,32 @@
         "alphaEdB",
         "alphaEdH",
         "alphaOdB",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD1",
         "alphaRdHD2",
         "alphaRdHD3",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "qLbar",
         "dR",
+        "Phi",
         "B"
       ],
       "feynpy_names": [
-        "Phi",
         "QL.bar",
         "DR",
+        "Phi",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 11,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 34,
@@ -3407,33 +3757,32 @@
         "alphaEeB",
         "alphaEeH",
         "alphaOeB",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaReHD1",
         "alphaReHD2",
         "alphaReHD3",
-        "alphaReHD4"
+        "alphaReHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "lLbar",
         "eR",
+        "Phi",
         "B"
       ],
       "feynpy_names": [
-        "Phi",
         "LL.bar",
         "LR",
+        "Phi",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 11,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 25,
@@ -3471,33 +3820,32 @@
         "alphaEuB",
         "alphaEuH",
         "alphaOuB",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD1",
         "alphaRuHD2",
         "alphaRuHD3",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "uRbar",
         "qL",
+        "Phi",
         "B"
       ],
       "feynpy_names": [
-        "Phi",
         "UR.bar",
         "QL",
+        "Phi",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 11,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 121,
@@ -3533,8 +3881,7 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEWlp",
         "alphaEWltp",
         "alphaRWlp",
@@ -3543,13 +3890,28 @@
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "lLbar",
+        "lL",
+        "B",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "LL.bar",
+        "LL",
+        "B",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 10,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 142,
@@ -3585,8 +3947,7 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEWqp",
         "alphaEWqtp",
         "alphaRWqp",
@@ -3595,13 +3956,28 @@
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 10,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 118,
@@ -3638,8 +4014,7 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBlp",
         "alphaEBltp",
         "alphaEWlp",
@@ -3652,13 +4027,26 @@
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "lLbar",
+        "lL",
+        "B",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "LL.bar",
+        "LL",
+        "B",
+        "Wi"
+      ],
+      "local_term_count": 45,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 136,
@@ -3695,8 +4083,7 @@
         "g1",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEBqp",
         "alphaEBqtp",
         "alphaEWqp",
@@ -3709,13 +4096,26 @@
         "g1",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "B",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "B",
+        "Wi"
+      ],
+      "local_term_count": 45,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 170,
@@ -3748,18 +4148,17 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaKd",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaEBd",
         "alphaEBdp",
         "alphaEBdtp",
+        "alphaKd",
         "alphaRBd",
         "alphaRBdp",
         "alphaRBdtp",
-        "alphaRdD"
+        "alphaRdD",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "dRbar",
@@ -3771,12 +4170,12 @@
         "DR",
         "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 26,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 149,
@@ -3809,18 +4208,17 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaKe",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaEBe",
         "alphaEBep",
         "alphaEBetp",
+        "alphaKe",
         "alphaRBe",
         "alphaRBep",
         "alphaRBetp",
-        "alphaReD"
+        "alphaReD",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "eRbar",
@@ -3832,12 +4230,12 @@
         "LR",
         "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 26,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 114,
@@ -3870,18 +4268,17 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaKl",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaEBl",
         "alphaEBlp",
         "alphaEBltp",
+        "alphaKl",
         "alphaRBl",
         "alphaRBlp",
         "alphaRBltp",
-        "alphaRlD"
+        "alphaRlD",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "lLbar",
@@ -3893,12 +4290,12 @@
         "LL",
         "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 26,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 126,
@@ -3931,18 +4328,17 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaKq",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaEBq",
         "alphaEBqp",
         "alphaEBqtp",
+        "alphaKq",
         "alphaRBq",
         "alphaRBqp",
         "alphaRBqtp",
-        "alphaRqD"
+        "alphaRqD",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "qLbar",
@@ -3954,12 +4350,12 @@
         "QL",
         "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 26,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 155,
@@ -3992,18 +4388,17 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaKu",
-        "g1"
-      ],
-      "feynrules_extra_heads": [
         "alphaEBu",
         "alphaEBup",
         "alphaEButp",
+        "alphaKu",
         "alphaRBu",
         "alphaRBup",
         "alphaRButp",
-        "alphaRuD"
+        "alphaRuD",
+        "g1"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "uRbar",
@@ -4015,12 +4410,12 @@
         "UR",
         "B"
       ],
-      "local_term_count": 1,
+      "local_term_count": 26,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 4,
@@ -4052,11 +4447,10 @@
         "alphaKG",
         "alphaO3G",
         "alphaO3Gt",
+        "alphaR2G",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2G"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "G",
@@ -4068,12 +4462,12 @@
         "G",
         "G"
       ],
-      "local_term_count": 20,
+      "local_term_count": 36,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 5,
@@ -4108,11 +4502,10 @@
         "alphaKG",
         "alphaO3G",
         "alphaO3Gt",
+        "alphaR2G",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2G"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "G",
@@ -4126,12 +4519,12 @@
         "G",
         "G"
       ],
-      "local_term_count": 25,
+      "local_term_count": 45,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 6,
@@ -4167,11 +4560,10 @@
       "feynpy_heads": [
         "alphaO3G",
         "alphaO3Gt",
+        "alphaR2G",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2G"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "G",
@@ -4187,12 +4579,12 @@
         "G",
         "G"
       ],
-      "local_term_count": 12,
+      "local_term_count": 20,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 7,
@@ -4231,11 +4623,10 @@
       "feynpy_heads": [
         "alphaO3G",
         "alphaO3Gt",
+        "alphaR2G",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2G"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "G",
@@ -4253,12 +4644,12 @@
         "G",
         "G"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 14,
@@ -4416,8 +4807,7 @@
         "alphaRdD",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGd",
         "alphaEGdp",
         "alphaEGdtp",
@@ -4427,13 +4817,28 @@
         "alphaRdD",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "dRbar",
+        "dR",
+        "G",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "DR.bar",
+        "DR",
+        "G",
+        "G",
+        "G"
+      ],
+      "local_term_count": 12,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 135,
@@ -4470,8 +4875,7 @@
         "alphaRqD",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGq",
         "alphaEGqp",
         "alphaEGqtp",
@@ -4481,13 +4885,28 @@
         "alphaRqD",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "G",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "G",
+        "G",
+        "G"
+      ],
+      "local_term_count": 12,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 163,
@@ -4524,8 +4943,7 @@
         "alphaRuD",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGu",
         "alphaEGup",
         "alphaEGutp",
@@ -4535,13 +4953,28 @@
         "alphaRuD",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "uRbar",
+        "uR",
+        "G",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "UR.bar",
+        "UR",
+        "G",
+        "G",
+        "G"
+      ],
+      "local_term_count": 12,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 76,
@@ -4577,32 +5010,31 @@
       "feynpy_heads": [
         "alphaEdG",
         "alphaOdG",
+        "alphaRdHD3",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD3"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "dRbar",
         "qL",
+        "Phibar",
         "G",
         "G"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "DR.bar",
         "QL",
+        "Phi.bar",
         "G",
         "G"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 67,
@@ -4638,32 +5070,31 @@
       "feynpy_heads": [
         "alphaEuG",
         "alphaOuG",
+        "alphaRuHD3",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD3"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "qLbar",
         "uR",
+        "Phibar",
         "G",
         "G"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "QL.bar",
         "UR",
+        "Phi.bar",
         "G",
         "G"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 10,
@@ -4750,32 +5181,31 @@
       "feynpy_heads": [
         "alphaEdG",
         "alphaOdG",
+        "alphaRdHD3",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD3"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "qLbar",
         "dR",
+        "Phi",
         "G",
         "G"
       ],
       "feynpy_names": [
-        "Phi",
         "QL.bar",
         "DR",
+        "Phi",
         "G",
         "G"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 70,
@@ -4811,32 +5241,31 @@
       "feynpy_heads": [
         "alphaEuG",
         "alphaOuG",
+        "alphaRuHD3",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD3"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "uRbar",
         "qL",
+        "Phi",
         "G",
         "G"
       ],
       "feynpy_names": [
-        "Phi",
         "UR.bar",
         "QL",
+        "Phi",
         "G",
         "G"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 140,
@@ -4872,8 +5301,7 @@
         "g2",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGqp",
         "alphaEGqtp",
         "alphaRGqp",
@@ -4882,13 +5310,28 @@
         "g2",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "Wi",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "Wi",
+        "G",
+        "G"
+      ],
+      "local_term_count": 14,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 175,
@@ -4922,8 +5365,7 @@
         "alphaRdD",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGd",
         "alphaEGdp",
         "alphaEGdtp",
@@ -4933,13 +5375,26 @@
         "alphaRdD",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "dRbar",
+        "dR",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "DR.bar",
+        "DR",
+        "G",
+        "G"
+      ],
+      "local_term_count": 44,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 132,
@@ -4973,8 +5428,7 @@
         "alphaRqD",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGq",
         "alphaEGqp",
         "alphaEGqtp",
@@ -4984,13 +5438,26 @@
         "alphaRqD",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "G",
+        "G"
+      ],
+      "local_term_count": 44,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 160,
@@ -5024,8 +5491,7 @@
         "alphaRuD",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGu",
         "alphaEGup",
         "alphaEGutp",
@@ -5035,13 +5501,26 @@
         "alphaRuD",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "uRbar",
+        "uR",
+        "G",
+        "G"
+      ],
+      "feynpy_names": [
+        "UR.bar",
+        "UR",
+        "G",
+        "G"
+      ],
+      "local_term_count": 44,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 103,
@@ -5077,34 +5556,33 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
+        "alphaRdHD2",
+        "alphaRdHD4",
         "g2",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD2",
-        "alphaRdHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
         "Phibar",
-        "G",
         "dRbar",
-        "qL"
+        "qL",
+        "Wi",
+        "G"
       ],
       "feynpy_names": [
-        "Wi",
         "Phi.bar",
-        "G",
         "DR.bar",
-        "QL"
+        "QL",
+        "Wi",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 98,
@@ -5140,34 +5618,33 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
+        "alphaRuHD2",
+        "alphaRuHD4",
         "g2",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD2",
-        "alphaRuHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
         "Phibar",
         "qLbar",
-        "G",
-        "uR"
+        "uR",
+        "Wi",
+        "G"
       ],
       "feynpy_names": [
-        "Wi",
         "Phi.bar",
         "QL.bar",
-        "G",
-        "UR"
+        "UR",
+        "Wi",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 74,
@@ -5204,13 +5681,12 @@
         "alphaEdG",
         "alphaEdH",
         "alphaOdG",
-        "g3"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD2",
         "alphaRdHD3",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -5224,12 +5700,12 @@
         "QL",
         "G"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 65,
@@ -5266,13 +5742,12 @@
         "alphaEuG",
         "alphaEuH",
         "alphaOuG",
-        "g3"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD2",
         "alphaRuHD3",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -5286,12 +5761,12 @@
         "UR",
         "G"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 181,
@@ -5497,34 +5972,33 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
+        "alphaRdHD2",
+        "alphaRdHD4",
         "g2",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD2",
-        "alphaRdHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
         "Phi",
         "qLbar",
-        "G",
-        "dR"
+        "dR",
+        "Wi",
+        "G"
       ],
       "feynpy_names": [
-        "Wi",
         "Phi",
         "QL.bar",
-        "G",
-        "DR"
+        "DR",
+        "Wi",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 97,
@@ -5560,34 +6034,33 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
+        "alphaRuHD2",
+        "alphaRuHD4",
         "g2",
         "g3"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD2",
-        "alphaRuHD4"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Wi",
         "Phi",
-        "G",
         "uRbar",
-        "qL"
+        "qL",
+        "Wi",
+        "G"
       ],
       "feynpy_names": [
-        "Wi",
         "Phi",
-        "G",
         "UR.bar",
-        "QL"
+        "QL",
+        "Wi",
+        "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 71,
@@ -5624,13 +6097,12 @@
         "alphaEdG",
         "alphaEdH",
         "alphaOdG",
-        "g3"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD2",
         "alphaRdHD3",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phi",
@@ -5644,12 +6116,12 @@
         "DR",
         "G"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 68,
@@ -5686,13 +6158,12 @@
         "alphaEuG",
         "alphaEuH",
         "alphaOuG",
-        "g3"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD2",
         "alphaRuHD3",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phi",
@@ -5706,12 +6177,12 @@
         "QL",
         "G"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 143,
@@ -5747,8 +6218,7 @@
         "g2",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEWqp",
         "alphaEWqtp",
         "alphaRWqp",
@@ -5757,13 +6227,28 @@
         "g2",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "Wi",
+        "Wi",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "Wi",
+        "Wi",
+        "G"
+      ],
+      "local_term_count": 14,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 137,
@@ -5800,8 +6285,7 @@
         "g2",
         "g3"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEGqp",
         "alphaEGqtp",
         "alphaEWqp",
@@ -5814,13 +6298,26 @@
         "g2",
         "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "Wi",
+        "G"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "Wi",
+        "G"
+      ],
+      "local_term_count": 56,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 171,
@@ -5853,18 +6350,17 @@
         "g3"
       ],
       "feynpy_heads": [
-        "alphaKd",
-        "g3"
-      ],
-      "feynrules_extra_heads": [
         "alphaEGd",
         "alphaEGdp",
         "alphaEGdtp",
+        "alphaKd",
         "alphaRGd",
         "alphaRGdp",
         "alphaRGdtp",
-        "alphaRdD"
+        "alphaRdD",
+        "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "dRbar",
@@ -5876,12 +6372,12 @@
         "DR",
         "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 34,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 127,
@@ -5914,18 +6410,17 @@
         "g3"
       ],
       "feynpy_heads": [
-        "alphaKq",
-        "g3"
-      ],
-      "feynrules_extra_heads": [
         "alphaEGq",
         "alphaEGqp",
         "alphaEGqtp",
+        "alphaKq",
         "alphaRGq",
         "alphaRGqp",
         "alphaRGqtp",
-        "alphaRqD"
+        "alphaRqD",
+        "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "qLbar",
@@ -5937,12 +6432,12 @@
         "QL",
         "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 34,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 156,
@@ -5975,18 +6470,17 @@
         "g3"
       ],
       "feynpy_heads": [
-        "alphaKu",
-        "g3"
-      ],
-      "feynrules_extra_heads": [
         "alphaEGu",
         "alphaEGup",
         "alphaEGutp",
+        "alphaKu",
         "alphaRGu",
         "alphaRGup",
         "alphaRGutp",
-        "alphaRuD"
+        "alphaRuD",
+        "g3"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "uRbar",
@@ -5998,12 +6492,12 @@
         "UR",
         "G"
       ],
-      "local_term_count": 1,
+      "local_term_count": 34,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 184,
@@ -6181,32 +6675,31 @@
       "feynpy_heads": [
         "alphaEdW",
         "alphaOdW",
+        "alphaRdHD1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD1"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "dRbar",
         "qL",
+        "Phibar",
         "Wi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "DR.bar",
         "QL",
+        "Phi.bar",
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 108,
@@ -6242,32 +6735,31 @@
       "feynpy_heads": [
         "alphaEeW",
         "alphaOeW",
+        "alphaReHD1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaReHD1"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "eRbar",
         "lL",
+        "Phibar",
         "Wi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "LR.bar",
         "LL",
+        "Phi.bar",
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 95,
@@ -6303,32 +6795,31 @@
       "feynpy_heads": [
         "alphaEuW",
         "alphaOuW",
+        "alphaRuHD1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD1"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "qLbar",
         "uR",
+        "Phibar",
         "Wi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "QL.bar",
         "UR",
+        "Phi.bar",
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 83,
@@ -6365,32 +6856,31 @@
         "alphaEdH",
         "alphaEdW",
         "alphaOdW",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD1",
         "alphaRdHD2",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "dRbar",
         "qL",
+        "Phibar",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "DR.bar",
         "QL",
+        "Phi.bar",
         "Wi"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 85,
@@ -6427,32 +6917,31 @@
         "alphaEeH",
         "alphaEeW",
         "alphaOeW",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaReHD1",
         "alphaReHD2",
-        "alphaReHD4"
+        "alphaReHD4",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "eRbar",
         "lL",
+        "Phibar",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "LR.bar",
         "LL",
+        "Phi.bar",
         "Wi"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 82,
@@ -6489,32 +6978,31 @@
         "alphaEuH",
         "alphaEuW",
         "alphaOuW",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD1",
         "alphaRuHD2",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phibar",
         "qLbar",
         "uR",
+        "Phibar",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi.bar",
         "QL.bar",
         "UR",
+        "Phi.bar",
         "Wi"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 20,
@@ -6545,14 +7033,13 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
-        "alphaOlambdad"
-      ],
-      "feynrules_extra_heads": [
+        "alphaOlambdad",
         "alphaRdHD1",
         "alphaRdHD2",
         "alphaRdHD3",
         "alphaRdHD4"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -6564,12 +7051,12 @@
         "DR.bar",
         "QL"
       ],
-      "local_term_count": 2,
+      "local_term_count": 6,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 19,
@@ -6600,14 +7087,13 @@
       ],
       "feynpy_heads": [
         "alphaEeH",
-        "alphaOlambdae"
-      ],
-      "feynrules_extra_heads": [
+        "alphaOlambdae",
         "alphaReHD1",
         "alphaReHD2",
         "alphaReHD3",
         "alphaReHD4"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -6619,12 +7105,12 @@
         "LR.bar",
         "LL"
       ],
-      "local_term_count": 2,
+      "local_term_count": 6,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 44,
@@ -6655,14 +7141,13 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
-        "alphaOlambdau"
-      ],
-      "feynrules_extra_heads": [
+        "alphaOlambdau",
         "alphaRuHD1",
         "alphaRuHD2",
         "alphaRuHD3",
         "alphaRuHD4"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "qLbar",
@@ -6674,12 +7159,12 @@
         "UR",
         "Phi.bar"
       ],
-      "local_term_count": 2,
+      "local_term_count": 6,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 29,
@@ -6870,12 +7355,11 @@
       ],
       "feynpy_heads": [
         "alphaKH",
+        "alphaRDH",
+        "alphaRWDH",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRDH",
-        "alphaRWDH"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -6887,12 +7371,12 @@
         "Phi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 12,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 12,
@@ -6928,12 +7412,11 @@
         "alphaKH",
         "alphaOHW",
         "alphaOHWt",
+        "alphaRDH",
+        "alphaRWDH",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRDH",
-        "alphaRWDH"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -6947,12 +7430,12 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 9,
+      "local_term_count": 32,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 90,
@@ -6989,12 +7472,11 @@
       "feynpy_heads": [
         "alphaOHW",
         "alphaOHWt",
+        "alphaRDH",
+        "alphaRWDH",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRDH",
-        "alphaRWDH"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -7010,12 +7492,12 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 8,
+      "local_term_count": 24,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 110,
@@ -7055,12 +7537,11 @@
       "feynpy_heads": [
         "alphaOHW",
         "alphaOHWt",
+        "alphaRDH",
+        "alphaRWDH",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRDH",
-        "alphaRWDH"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
@@ -7078,12 +7559,12 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 182,
@@ -8235,32 +8716,31 @@
       "feynpy_heads": [
         "alphaEdW",
         "alphaOdW",
+        "alphaRdHD1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRdHD1"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "qLbar",
         "dR",
+        "Phi",
         "Wi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi",
         "QL.bar",
         "DR",
+        "Phi",
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 107,
@@ -8296,32 +8776,31 @@
       "feynpy_heads": [
         "alphaEeW",
         "alphaOeW",
+        "alphaReHD1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaReHD1"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "lLbar",
         "eR",
+        "Phi",
         "Wi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi",
         "LL.bar",
         "LR",
+        "Phi",
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 96,
@@ -8357,32 +8836,31 @@
       "feynpy_heads": [
         "alphaEuW",
         "alphaOuW",
+        "alphaRuHD1",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaRuHD1"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "uRbar",
         "qL",
+        "Phi",
         "Wi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi",
         "UR.bar",
         "QL",
+        "Phi",
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 84,
@@ -8419,32 +8897,31 @@
         "alphaEdH",
         "alphaEdW",
         "alphaOdW",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaRdHD1",
         "alphaRdHD2",
-        "alphaRdHD4"
+        "alphaRdHD4",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "qLbar",
         "dR",
+        "Phi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi",
         "QL.bar",
         "DR",
+        "Phi",
         "Wi"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 86,
@@ -8481,32 +8958,31 @@
         "alphaEeH",
         "alphaEeW",
         "alphaOeW",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaReHD1",
         "alphaReHD2",
-        "alphaReHD4"
+        "alphaReHD4",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "lLbar",
         "eR",
+        "Phi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi",
         "LL.bar",
         "LR",
+        "Phi",
         "Wi"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 81,
@@ -8543,32 +9019,31 @@
         "alphaEuH",
         "alphaEuW",
         "alphaOuW",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaRuHD1",
         "alphaRuHD2",
-        "alphaRuHD4"
+        "alphaRuHD4",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
-        "Phi",
         "uRbar",
         "qL",
+        "Phi",
         "Wi"
       ],
       "feynpy_names": [
-        "Phi",
         "UR.bar",
         "QL",
+        "Phi",
         "Wi"
       ],
-      "local_term_count": 5,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 43,
@@ -8599,14 +9074,13 @@
       ],
       "feynpy_heads": [
         "alphaEdH",
-        "alphaOlambdad"
-      ],
-      "feynrules_extra_heads": [
+        "alphaOlambdad",
         "alphaRdHD1",
         "alphaRdHD2",
         "alphaRdHD3",
         "alphaRdHD4"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "qLbar",
@@ -8618,12 +9092,12 @@
         "DR",
         "Phi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 6,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 33,
@@ -8654,14 +9128,13 @@
       ],
       "feynpy_heads": [
         "alphaEeH",
-        "alphaOlambdae"
-      ],
-      "feynrules_extra_heads": [
+        "alphaOlambdae",
         "alphaReHD1",
         "alphaReHD2",
         "alphaReHD3",
         "alphaReHD4"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "lLbar",
@@ -8673,12 +9146,12 @@
         "LR",
         "Phi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 6,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 21,
@@ -8709,14 +9182,13 @@
       ],
       "feynpy_heads": [
         "alphaEuH",
-        "alphaOlambdau"
-      ],
-      "feynrules_extra_heads": [
+        "alphaOlambdau",
         "alphaRuHD1",
         "alphaRuHD2",
         "alphaRuHD3",
         "alphaRuHD4"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phi",
@@ -8728,12 +9200,12 @@
         "UR.bar",
         "QL"
       ],
-      "local_term_count": 2,
+      "local_term_count": 6,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 3,
@@ -8765,11 +9237,10 @@
         "alphaKW",
         "alphaO3W",
         "alphaO3Wt",
+        "alphaR2W",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2W"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Wi",
@@ -8781,12 +9252,12 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 20,
+      "local_term_count": 36,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 111,
@@ -8821,11 +9292,10 @@
         "alphaKW",
         "alphaO3W",
         "alphaO3Wt",
+        "alphaR2W",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2W"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Wi",
@@ -8839,12 +9309,12 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 25,
+      "local_term_count": 45,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 112,
@@ -8880,11 +9350,10 @@
       "feynpy_heads": [
         "alphaO3W",
         "alphaO3Wt",
+        "alphaR2W",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2W"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Wi",
@@ -8900,12 +9369,12 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 12,
+      "local_term_count": 20,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 113,
@@ -8944,11 +9413,10 @@
       "feynpy_heads": [
         "alphaO3W",
         "alphaO3Wt",
+        "alphaR2W",
         "g2"
       ],
-      "feynrules_extra_heads": [
-        "alphaR2W"
-      ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Wi",
@@ -8966,12 +9434,12 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 2,
+      "local_term_count": 3,
       "sectors": [
         "pure_gauge"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 122,
@@ -9008,8 +9476,7 @@
         "alphaRlD",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEWl",
         "alphaEWlp",
         "alphaEWltp",
@@ -9019,13 +9486,28 @@
         "alphaRlD",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "lLbar",
+        "lL",
+        "Wi",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "LL.bar",
+        "LL",
+        "Wi",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 12,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 144,
@@ -9062,8 +9544,7 @@
         "alphaRqD",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEWq",
         "alphaEWqp",
         "alphaEWqtp",
@@ -9073,13 +9554,28 @@
         "alphaRqD",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "Wi",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "Wi",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 12,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 120,
@@ -9113,8 +9609,7 @@
         "alphaRlD",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEWl",
         "alphaEWlp",
         "alphaEWltp",
@@ -9124,13 +9619,26 @@
         "alphaRlD",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "lLbar",
+        "lL",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "LL.bar",
+        "LL",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 44,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 141,
@@ -9164,8 +9672,7 @@
         "alphaRqD",
         "g2"
       ],
-      "feynpy_heads": [],
-      "feynrules_extra_heads": [
+      "feynpy_heads": [
         "alphaEWq",
         "alphaEWqp",
         "alphaEWqtp",
@@ -9175,13 +9682,26 @@
         "alphaRqD",
         "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
-      "local_names": [],
-      "feynpy_names": [],
-      "local_term_count": 0,
-      "sectors": [],
-      "status": "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS",
-      "reason": "Reference signature is driven by derivative-sector coefficient families that are explicitly not lowered in local SMEFT2."
+      "local_names": [
+        "qLbar",
+        "qL",
+        "Wi",
+        "Wi"
+      ],
+      "feynpy_names": [
+        "QL.bar",
+        "QL",
+        "Wi",
+        "Wi"
+      ],
+      "local_term_count": 44,
+      "sectors": [
+        "matter"
+      ],
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 115,
@@ -9214,18 +9734,17 @@
         "g2"
       ],
       "feynpy_heads": [
-        "alphaKl",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaEWl",
         "alphaEWlp",
         "alphaEWltp",
+        "alphaKl",
         "alphaRWl",
         "alphaRWlp",
         "alphaRWltp",
-        "alphaRlD"
+        "alphaRlD",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "lLbar",
@@ -9237,12 +9756,12 @@
         "LL",
         "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 34,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 128,
@@ -9275,18 +9794,17 @@
         "g2"
       ],
       "feynpy_heads": [
-        "alphaKq",
-        "g2"
-      ],
-      "feynrules_extra_heads": [
         "alphaEWq",
         "alphaEWqp",
         "alphaEWqtp",
+        "alphaKq",
         "alphaRWq",
         "alphaRWqp",
         "alphaRWqtp",
-        "alphaRqD"
+        "alphaRqD",
+        "g2"
       ],
+      "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "qLbar",
@@ -9298,12 +9816,12 @@
         "QL",
         "Wi"
       ],
-      "local_term_count": 1,
+      "local_term_count": 34,
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_MISSING_OMITTED_HEADS",
-      "reason": "Shared field multiset, but the reference contains omitted derivative-sector coefficient heads."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 37,

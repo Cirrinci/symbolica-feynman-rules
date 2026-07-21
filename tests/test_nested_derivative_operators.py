@@ -12,6 +12,7 @@ from feynpy import (
     DifferentiatedOperatorFactor,
     FS,
     Field,
+    Gamma,
     GaugeGroup,
     GaugeRepresentation,
     LORENTZ_INDEX,
@@ -487,6 +488,25 @@ def test_deeper_mixed_fs_dc_partiald_combinations_compile():
         ("G", "G", "G", "G"),
         ("G", "G", "G", "G", "G"),
     }
+
+
+def test_raw_field_strength_and_matter_covd_expand_together():
+    mu, nu, a = S("mu"), S("nu"), S("a")
+    sp1, sp2 = S("sp1"), S("sp2")
+    c1, c2 = S("c1"), S("c2")
+
+    model = _su3_quark_model(
+        lambda quark, _gluon, su3: gauge_generator(a, c1, c2)
+        * quark(sp1, c1, conjugated=True)
+        * Gamma(mu)
+        * DC(quark(sp2, c2), nu)
+        * FS(su3, mu, nu, a)
+    )
+
+    signatures = _signature_names(model)
+    assert ("q.bar", "q", "G") in signatures
+    assert ("q.bar", "q", "G", "G") in signatures
+    assert ("q.bar", "q", "G", "G", "G") in signatures
 
 
 def test_triple_nested_field_strength_covariant_derivative_term_count_regression():

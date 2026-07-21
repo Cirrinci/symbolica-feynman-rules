@@ -927,6 +927,7 @@ def expand_cov_der(
         field=field,
         lorentz_index=cov_factor.lorentz_index,
         conjugated=effective_conjugated,
+        labels=cov_factor.labels,
     )
     gauge_groups = _resolve_covariant_gauge_groups(
         model,
@@ -985,26 +986,80 @@ def _generic_covd_piece_prefactor(
     return sign * Expression.I * action.coupling
 
 
-def _generic_covd_matter_factor(
+def _covd_active_slot_tensor_data(
     field: Field,
     *,
     conjugated: bool,
+    labels: dict,
     action: _GaugeAction,
     counters: dict[str, int],
-) -> _FieldFactor:
-    labels = {}
+) -> tuple[dict[int, object], tuple[object, ...], object, object, object]:
+    slot_labels = field.unpack_slot_labels(labels)
+    generator_factors: tuple[object, ...] = ()
+    generator_coefficient = Expression.num(1)
+    output_label = None
+    source_label = None
+
     if action.representation is not None and action.representation_slot is not None:
-        label = _fresh_generic_covd_label(
+        output_label = slot_labels.get(action.representation_slot)
+        source_label = _fresh_generic_covd_label(
             action.representation.index.prefix,
             counters,
             f"{field.name}_slot{action.representation_slot + 1}_covd",
         )
-        labels = field.pack_slot_labels({action.representation_slot: label})
+        slot_labels[action.representation_slot] = source_label
+        if output_label is None:
+            generator_factors = (
+                GeneratorFactor(
+                    action.adjoint_label,
+                    generator_builder=action.representation.generator_builder,
+                    index_kind=action.representation.index.kind,
+                ),
+            )
+        elif conjugated:
+            generator_coefficient = action.representation.generator_builder(
+                action.adjoint_label,
+                source_label,
+                output_label,
+            )
+        else:
+            generator_coefficient = action.representation.generator_builder(
+                action.adjoint_label,
+                output_label,
+                source_label,
+            )
+
+    return (
+        slot_labels,
+        generator_factors,
+        generator_coefficient,
+        output_label,
+        source_label,
+    )
+
+
+def _generic_covd_matter_factor(
+    field: Field,
+    *,
+    conjugated: bool,
+    labels: dict,
+    action: _GaugeAction,
+    counters: dict[str, int],
+) -> tuple[_FieldFactor, tuple[object, ...], object]:
+    slot_labels, generator_factors, generator_coefficient, _output_label, _source_label = (
+        _covd_active_slot_tensor_data(
+            field,
+            conjugated=conjugated,
+            labels=labels,
+            action=action,
+            counters=counters,
+        )
+    )
     return _FieldFactor(
         field=field,
         conjugated=conjugated,
-        labels=labels,
-    )
+        labels=field.pack_slot_labels(slot_labels),
+    ), generator_factors, generator_coefficient
 
 
 def _expand_generic_covd_factor(
@@ -1022,7 +1077,7 @@ def _expand_generic_covd_factor(
                     field=expanded.field,
                     lorentz_indices=(expanded.derivative_piece.lorentz_index,),
                     conjugated=expanded.conjugated,
-                    labels={},
+                    labels=cov_factor.labels,
                 ),
             ),
         )
@@ -1048,32 +1103,19 @@ def _expand_generic_covd_factor(
             adjoint_label=adjoint_label,
             purpose="Generic declared CovD lowering",
         )
-        matter_factor = _generic_covd_matter_factor(
+        matter_factor, generator_factors, generator_coefficient = _generic_covd_matter_factor(
             expanded.field,
             conjugated=expanded.conjugated,
+            labels=cov_factor.labels,
             action=action,
             counters=counters,
         )
         inline_factors: list[object] = []
         if expanded.conjugated:
             inline_factors.append(matter_factor)
-            if action.representation is not None:
-                inline_factors.append(
-                    GeneratorFactor(
-                        action.adjoint_label,
-                        generator_builder=action.representation.generator_builder,
-                        index_kind=action.representation.index.kind,
-                    )
-                )
+            inline_factors.extend(generator_factors)
         else:
-            if action.representation is not None:
-                inline_factors.append(
-                    GeneratorFactor(
-                        action.adjoint_label,
-                        generator_builder=action.representation.generator_builder,
-                        index_kind=action.representation.index.kind,
-                    )
-                )
+            inline_factors.extend(generator_factors)
             inline_factors.append(matter_factor)
 
         branches.append(
@@ -1081,7 +1123,8 @@ def _expand_generic_covd_factor(
                 coefficient=_generic_covd_piece_prefactor(
                     conjugated=expanded.conjugated,
                     action=action,
-                ),
+                )
+                * generator_coefficient,
                 inline_factors=tuple(inline_factors),
                 tail_factors=(
                     _FieldFactor(
@@ -1163,17 +1206,17 @@ def _expand_differentiated_covd_factor(
     )
 
 
-def _field_like_covariant_operand(factor) -> Optional[tuple[Field, bool]]:
+def _field_like_covariant_operand(factor) -> Optional[tuple[Field, bool, dict]]:
     """Return the matter field whose representation a nested operand carries."""
     if isinstance(factor, _FieldFactor):
-        return factor.field, factor.conjugated
+        return factor.field, factor.conjugated, factor.labels
     if isinstance(factor, PartialDerivativeFactor):
-        return factor.field, factor.conjugated
+        return factor.field, factor.conjugated, factor.labels
     if isinstance(factor, CovariantDerivativeFactor):
-        return factor.field, factor.conjugated
+        return factor.field, factor.conjugated, factor.labels
     if isinstance(factor, DifferentiatedCovariantFactor):
         covariant = factor.covariant_factor
-        return covariant.field, covariant.conjugated
+        return covariant.field, covariant.conjugated, covariant.labels
     if isinstance(factor, (CovariantDerivativeOperatorFactor, DifferentiatedOperatorFactor)):
         return _field_like_covariant_operand(factor.operand)
     return None
@@ -1400,6 +1443,7 @@ def _apply_field_like_covariant_derivative(
     operand_branches: tuple[_GenericCovariantBranch, ...],
     field: Field,
     conjugated: bool,
+    labels: dict,
     lorentz_index,
     counters: dict[str, int],
 ) -> tuple[_GenericCovariantBranch, ...]:
@@ -1415,6 +1459,7 @@ def _apply_field_like_covariant_derivative(
             field=field,
             lorentz_index=lorentz_index,
             conjugated=conjugated,
+            labels=labels,
         ),
     )
 
@@ -1440,30 +1485,42 @@ def _apply_field_like_covariant_derivative(
                 adjoint_label=adjoint_label,
                 purpose="Nested declared CovD lowering",
             )
-            generator_factors: tuple[object, ...] = ()
-            if action.representation is not None:
-                generator_factors = (
-                    GeneratorFactor(
-                        action.adjoint_label,
-                        generator_builder=action.representation.generator_builder,
-                        index_kind=action.representation.index.kind,
-                    ),
+            (
+                _slot_labels,
+                generator_factors,
+                generator_coefficient,
+                output_label,
+                source_label,
+            ) = _covd_active_slot_tensor_data(
+                expanded.field,
+                conjugated=expanded.conjugated,
+                labels=labels,
+                action=action,
+                counters=counters,
+            )
+            active_branch = branch
+            if output_label is not None and source_label is not None:
+                active_branch = _relabel_generic_covariant_branch(
+                    branch,
+                    old_label=output_label,
+                    new_label=source_label,
                 )
 
             if expanded.conjugated:
-                inline_factors = branch.inline_factors + generator_factors
+                inline_factors = active_branch.inline_factors + generator_factors
             else:
-                inline_factors = generator_factors + branch.inline_factors
+                inline_factors = generator_factors + active_branch.inline_factors
 
             gauge_branches.append(
                 _GenericCovariantBranch(
-                    coefficient=branch.coefficient
+                    coefficient=active_branch.coefficient
                     * _generic_covd_piece_prefactor(
                         conjugated=expanded.conjugated,
                         action=action,
-                    ),
+                    )
+                    * generator_coefficient,
                     inline_factors=inline_factors,
-                    tail_factors=branch.tail_factors
+                    tail_factors=active_branch.tail_factors
                     + (
                         _FieldFactor(
                             field=action.gauge_field,
@@ -1572,7 +1629,7 @@ def _expand_covariant_operator_factor(
 ) -> tuple[_GenericCovariantBranch, ...]:
     field_like = _field_like_covariant_operand(factor.operand)
     if field_like is not None:
-        field, conjugated = field_like
+        field, conjugated, labels = field_like
         operand_branches = _expand_operator_operand_to_branches(
             model,
             factor.operand,
@@ -1583,6 +1640,7 @@ def _expand_covariant_operator_factor(
             operand_branches=operand_branches,
             field=field,
             conjugated=conjugated,
+            labels=labels,
             lorentz_index=factor.lorentz_index,
             counters=counters,
         )

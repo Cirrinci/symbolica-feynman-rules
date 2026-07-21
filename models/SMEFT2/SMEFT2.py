@@ -54,15 +54,7 @@ SIX = Expression.num(6)
 HALF = ONE / TWO
 
 
-OMITTED_SECTORS = (
-    "LX2D2",
-    "LH2XD2",
-    "LH2D4",
-    "LF2D3",
-    "LF2HD2",
-    "LF2XD",
-    "LEvF2XD",
-)
+OMITTED_SECTORS = ()
 
 
 @dataclass(frozen=True)
@@ -88,13 +80,28 @@ def _sum_supported_lagrangian_blocks(*blocks):
     return ZERO if total is None else total
 
 
-def _dual_fs(group, mu, nu, rho, sigma, adjoint=None):
+def _field_strength(group, mu, nu, adjoint=None):
     if adjoint is None:
-        return HALF * lorentz_levi_civita(mu, nu, rho, sigma) * FS(
-            group, rho, sigma
-        )
-    return HALF * lorentz_levi_civita(mu, nu, rho, sigma) * FS(
+        return FS(group, mu, nu)
+    return FS(group, mu, nu, adjoint)
+
+
+def _covd_fs(group, mu, nu, derivative, adjoint=None):
+    fs_factor = _field_strength(group, mu, nu, adjoint)
+    if adjoint is None:
+        return PartialD(fs_factor, derivative)
+    return DC(fs_factor, derivative)
+
+
+def _dual_fs(group, mu, nu, rho, sigma, adjoint=None):
+    return HALF * lorentz_levi_civita(mu, nu, rho, sigma) * _field_strength(
         group, rho, sigma, adjoint
+    )
+
+
+def _dual_covd_fs(group, mu, nu, derivative, rho, sigma, adjoint=None):
+    return HALF * lorentz_levi_civita(mu, nu, rho, sigma) * _covd_fs(
+        group, rho, sigma, derivative, adjoint
     )
 
 
@@ -257,6 +264,36 @@ def build_smeft_green_bpreserving(
         "alphaEuH",
         "alphaEdH",
         "alphaEeH",
+        "alphaEGq",
+        "alphaEGqp",
+        "alphaEGqtp",
+        "alphaEWq",
+        "alphaEWqp",
+        "alphaEWqtp",
+        "alphaEBq",
+        "alphaEBqp",
+        "alphaEBqtp",
+        "alphaEGu",
+        "alphaEGup",
+        "alphaEGutp",
+        "alphaEBu",
+        "alphaEBup",
+        "alphaEButp",
+        "alphaEGd",
+        "alphaEGdp",
+        "alphaEGdtp",
+        "alphaEBd",
+        "alphaEBdp",
+        "alphaEBdtp",
+        "alphaEWl",
+        "alphaEWlp",
+        "alphaEWltp",
+        "alphaEBl",
+        "alphaEBlp",
+        "alphaEBltp",
+        "alphaEBe",
+        "alphaEBep",
+        "alphaEBetp",
     ):
         parameters[param_name] = _param(
             param_name,
@@ -589,6 +626,11 @@ def build_smeft_green_bpreserving(
             - (I / TWO) * prefactor * left * Gamma(nu) * Gamma(mu) * right
         )
 
+    def sigma_matrix(left, right, mu, nu, middle):
+        return (I / TWO) * gamma2(left, right, mu, nu, middle) - (
+            I / TWO
+        ) * gamma2(left, right, nu, mu, middle)
+
     def gamma2(left, right, mu, nu, middle):
         return Gamma(left, middle, mu) * Gamma(middle, right, nu)
 
@@ -775,7 +817,20 @@ def build_smeft_green_bpreserving(
         * FS(g["SU2L"], rho2, mu, aW3)
     )
 
-    LX2D2 = ZERO
+    LX2D2 = (
+        -HALF
+        * p["alphaR2G"]
+        * DC(FS(g["SU3C"], mu, nu, aC1), mu)
+        * DC(FS(g["SU3C"], rho, nu, aC1), rho)
+        - HALF
+        * p["alphaR2W"]
+        * DC(FS(g["SU2L"], mu, nu, aW1), mu)
+        * DC(FS(g["SU2L"], rho, nu, aW1), rho)
+        - HALF
+        * p["alphaR2B"]
+        * PartialD(FS(g["U1Y"], mu, nu), mu)
+        * PartialD(FS(g["U1Y"], rho, nu), rho)
+    )
 
     LX2H2 = (
         p["alphaOHG"]
@@ -822,8 +877,36 @@ def build_smeft_green_bpreserving(
         * _dual_fs(g["U1Y"], mu, nu, rho, sigma)
     )
 
-    LH2XD2 = ZERO
-    LH2D4 = ZERO
+    LH2XD2 = (
+        I
+        * p["alphaRWDH"]
+        * Phi.bar(w1)
+        * DC(Phi, mu)
+        * weak_t(aW1, w1, w2)
+        * DC(FS(g["SU2L"], mu, nu, aW1), nu)
+        - I
+        * p["alphaRWDH"]
+        * DC(Phi.bar, mu)
+        * Phi(w2)
+        * weak_t(aW1, w1, w2)
+        * DC(FS(g["SU2L"], mu, nu, aW1), nu)
+        + I
+        * p["alphaRBDH"]
+        * Phi.bar(w1)
+        * DC(Phi, mu)
+        * PartialD(FS(g["U1Y"], mu, nu), nu)
+        - I
+        * p["alphaRBDH"]
+        * DC(Phi.bar, mu)
+        * Phi(w1)
+        * PartialD(FS(g["U1Y"], mu, nu), nu)
+    )
+
+    LH2D4 = (
+        p["alphaRDH"]
+        * DC(DC(Phi.bar, mu), mu)
+        * DC(DC(Phi, nu), nu)
+    )
 
     LH4D2 = (
         p["alphaOHBox"]
@@ -1033,31 +1116,431 @@ def build_smeft_green_bpreserving(
         )
     )
 
-    LF2D3 = ZERO
+    LF2D3 = (
+        I
+        * HALF
+        * p["alphaRqD"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(ql(sp=sp2, w=w1, f=f2, c=c1), nu), nu), mu)
+        + I
+        * HALF
+        * p["alphaRqD"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(ql(sp=sp2, w=w1, f=f2, c=c1), mu), nu), nu)
+        + I
+        * HALF
+        * p["alphaRuD"](f1, f2)
+        * ur(sp=sp1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(ur(sp=sp2, f=f2, c=c1), nu), nu), mu)
+        + I
+        * HALF
+        * p["alphaRuD"](f1, f2)
+        * ur(sp=sp1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(ur(sp=sp2, f=f2, c=c1), mu), nu), nu)
+        + I
+        * HALF
+        * p["alphaRdD"](f1, f2)
+        * dr(sp=sp1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(dr(sp=sp2, f=f2, c=c1), nu), nu), mu)
+        + I
+        * HALF
+        * p["alphaRdD"](f1, f2)
+        * dr(sp=sp1, f=f1, c=c1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(dr(sp=sp2, f=f2, c=c1), mu), nu), nu)
+        + I
+        * HALF
+        * p["alphaRlD"](f1, f2)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(ll(sp=sp2, w=w1, f=f2), nu), nu), mu)
+        + I
+        * HALF
+        * p["alphaRlD"](f1, f2)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(ll(sp=sp2, w=w1, f=f2), mu), nu), nu)
+        + I
+        * HALF
+        * p["alphaReD"](f1, f2)
+        * lr(sp=sp1, f=f1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(lr(sp=sp2, f=f2), nu), nu), mu)
+        + I
+        * HALF
+        * p["alphaReD"](f1, f2)
+        * lr(sp=sp1, f=f1, bar=True)
+        * Gamma(mu)
+        * DC(DC(DC(lr(sp=sp2, f=f2), mu), nu), nu)
+    )
 
-    LF2HD2_partial = (
-        sigma_term(
+    LF2HD2 = (
+        p["alphaRuHD1"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * ur(sp=sp1, f=f2, c=c1)
+        * weak_eps2(w1, w2)
+        * DC(DC(Phi.bar(w2), mu), mu)
+        + sigma_term(
             p["alphaRuHD2"](f1, f2)
             * weak_eps2(w1, w2)
-            * DC(Phi.bar, nu),
-            ql(w=w1, f=f1, c=c1, bar=True),
-            DC(UR, mu),
+            * DC(Phi.bar(w2), nu),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            DC(ur(sp=sp2, f=f2, c=c1), mu),
             mu,
             nu,
         )
+        + p["alphaRuHD3"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * DC(DC(ur(sp=sp1, f=f2, c=c1), mu), mu)
+        * weak_eps2(w1, w2)
+        * Phi.bar(w2)
+        + p["alphaRuHD4"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * DC(ur(sp=sp1, f=f2, c=c1), mu)
+        * weak_eps2(w1, w2)
+        * DC(Phi.bar(w2), mu)
+        + p["alphaRdHD1"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * dr(sp=sp1, f=f2, c=c1)
+        * DC(DC(Phi(w1), mu), mu)
+        + sigma_term(
+            p["alphaRdHD2"](f1, f2) * DC(Phi(w1), nu),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            DC(dr(sp=sp2, f=f2, c=c1), mu),
+            mu,
+            nu,
+        )
+        + p["alphaRdHD3"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * DC(DC(dr(sp=sp1, f=f2, c=c1), mu), mu)
+        * Phi(w1)
+        + p["alphaRdHD4"](f1, f2)
+        * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
+        * DC(dr(sp=sp1, f=f2, c=c1), mu)
+        * DC(Phi(w1), mu)
+        + p["alphaReHD1"](f1, f2)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * lr(sp=sp1, f=f2)
+        * DC(DC(Phi(w1), mu), mu)
+        + sigma_term(
+            p["alphaReHD2"](f1, f2) * DC(Phi(w1), nu),
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            DC(lr(sp=sp2, f=f2), mu),
+            mu,
+            nu,
+        )
+        + p["alphaReHD3"](f1, f2)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * DC(DC(lr(sp=sp1, f=f2), mu), mu)
+        * Phi(w1)
+        + p["alphaReHD4"](f1, f2)
+        * ll(sp=sp1, w=w1, f=f1, bar=True)
+        * DC(lr(sp=sp1, f=f2), mu)
+        * DC(Phi(w1), mu)
+        + p["alphaRuHD1"](f1, f2).conj()
+        * ur(sp=sp1, f=f2, c=c1, bar=True)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * weak_eps2(w1, w2)
+        * DC(DC(Phi(w2), mu), mu)
         + sigma_term(
             p["alphaRuHD2"](f1, f2).conj()
             * weak_eps2(w1, w2)
-            * DC(Phi, nu),
-            DC(UR.bar, mu),
-            ql(w=w1, f=f1, c=c1),
+            * DC(Phi(w2), nu),
+            DC(ur(sp=sp1, f=f2, c=c1, bar=True), mu),
+            ql(sp=sp2, w=w1, f=f1, c=c1),
             mu,
             nu,
         )
+        + p["alphaRuHD3"](f1, f2).conj()
+        * DC(DC(ur(sp=sp1, f=f2, c=c1, bar=True), mu), mu)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * weak_eps2(w1, w2)
+        * Phi(w2)
+        + p["alphaRuHD4"](f1, f2).conj()
+        * DC(ur(sp=sp1, f=f2, c=c1, bar=True), mu)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * weak_eps2(w1, w2)
+        * DC(Phi(w2), mu)
+        + p["alphaRdHD1"](f1, f2).conj()
+        * dr(sp=sp1, f=f2, c=c1, bar=True)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * DC(DC(Phi.bar(w1), mu), mu)
+        + sigma_term(
+            p["alphaRdHD2"](f1, f2).conj() * DC(Phi.bar(w1), nu),
+            DC(dr(sp=sp1, f=f2, c=c1, bar=True), mu),
+            ql(sp=sp2, w=w1, f=f1, c=c1),
+            mu,
+            nu,
+        )
+        + p["alphaRdHD3"](f1, f2).conj()
+        * DC(DC(dr(sp=sp1, f=f2, c=c1, bar=True), mu), mu)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * Phi.bar(w1)
+        + p["alphaRdHD4"](f1, f2).conj()
+        * DC(dr(sp=sp1, f=f2, c=c1, bar=True), mu)
+        * ql(sp=sp1, w=w1, f=f1, c=c1)
+        * DC(Phi.bar(w1), mu)
+        + p["alphaReHD1"](f1, f2).conj()
+        * lr(sp=sp1, f=f2, bar=True)
+        * ll(sp=sp1, w=w1, f=f1)
+        * DC(DC(Phi.bar(w1), mu), mu)
+        + sigma_term(
+            p["alphaReHD2"](f1, f2).conj() * DC(Phi.bar(w1), nu),
+            DC(lr(sp=sp1, f=f2, bar=True), mu),
+            ll(sp=sp2, w=w1, f=f1),
+            mu,
+            nu,
+        )
+        + p["alphaReHD3"](f1, f2).conj()
+        * DC(DC(lr(sp=sp1, f=f2, bar=True), mu), mu)
+        * ll(sp=sp1, w=w1, f=f1)
+        * Phi.bar(w1)
+        + p["alphaReHD4"](f1, f2).conj()
+        * DC(lr(sp=sp1, f=f2, bar=True), mu)
+        * ll(sp=sp1, w=w1, f=f1)
+        * DC(Phi.bar(w1), mu)
     )
-    LF2HD2 = ZERO
 
-    LF2XD = ZERO
+    def f2xd_fs_current(coeff, tensor, left, right, fs_derivative):
+        return coeff * tensor * left * Gamma(mu) * right * fs_derivative
+
+    def f2xd_derivative_current(coeff, tensor, left, right, fs_factor):
+        return (
+            I
+            * HALF
+            * coeff
+            * tensor
+            * left
+            * Gamma(mu)
+            * DC(right, nu)
+            * fs_factor
+            - I
+            * HALF
+            * coeff
+            * tensor
+            * DC(left, nu)
+            * Gamma(mu)
+            * right
+            * fs_factor
+        )
+
+    LF2XD = (
+        f2xd_fs_current(
+            p["alphaRGq"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w1, f=f2, c=c2),
+            _covd_fs(g["SU3C"], mu, nu, nu, aC1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRGqp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w1, f=f2, c=c2),
+            FS(g["SU3C"], mu, nu, aC1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRGqtp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w1, f=f2, c=c2),
+            _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1),
+        )
+        + f2xd_fs_current(
+            p["alphaRWq"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w2, f=f2, c=c1),
+            _covd_fs(g["SU2L"], mu, nu, nu, aW1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRWqp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w2, f=f2, c=c1),
+            FS(g["SU2L"], mu, nu, aW1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRWqtp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w2, f=f2, c=c1),
+            _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1),
+        )
+        + f2xd_fs_current(
+            p["alphaRBq"](f1, f2),
+            ONE,
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w1, f=f2, c=c1),
+            _covd_fs(g["U1Y"], mu, nu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBqp"](f1, f2),
+            ONE,
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w1, f=f2, c=c1),
+            FS(g["U1Y"], mu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBqtp"](f1, f2),
+            ONE,
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp2, w=w1, f=f2, c=c1),
+            _dual_fs(g["U1Y"], mu, nu, rho, sigma),
+        )
+        + f2xd_fs_current(
+            p["alphaRGu"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp2, f=f2, c=c2),
+            _covd_fs(g["SU3C"], mu, nu, nu, aC1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRGup"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp2, f=f2, c=c2),
+            FS(g["SU3C"], mu, nu, aC1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRGutp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp2, f=f2, c=c2),
+            _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1),
+        )
+        + f2xd_fs_current(
+            p["alphaRBu"](f1, f2),
+            ONE,
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp2, f=f2, c=c1),
+            _covd_fs(g["U1Y"], mu, nu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBup"](f1, f2),
+            ONE,
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp2, f=f2, c=c1),
+            FS(g["U1Y"], mu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRButp"](f1, f2),
+            ONE,
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp2, f=f2, c=c1),
+            _dual_fs(g["U1Y"], mu, nu, rho, sigma),
+        )
+        + f2xd_fs_current(
+            p["alphaRGd"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp2, f=f2, c=c2),
+            _covd_fs(g["SU3C"], mu, nu, nu, aC1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRGdp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp2, f=f2, c=c2),
+            FS(g["SU3C"], mu, nu, aC1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRGdtp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp2, f=f2, c=c2),
+            _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1),
+        )
+        + f2xd_fs_current(
+            p["alphaRBd"](f1, f2),
+            ONE,
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp2, f=f2, c=c1),
+            _covd_fs(g["U1Y"], mu, nu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBdp"](f1, f2),
+            ONE,
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp2, f=f2, c=c1),
+            FS(g["U1Y"], mu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBdtp"](f1, f2),
+            ONE,
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp2, f=f2, c=c1),
+            _dual_fs(g["U1Y"], mu, nu, rho, sigma),
+        )
+        + f2xd_fs_current(
+            p["alphaRWl"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp2, w=w2, f=f2),
+            _covd_fs(g["SU2L"], mu, nu, nu, aW1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRWlp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp2, w=w2, f=f2),
+            FS(g["SU2L"], mu, nu, aW1),
+        )
+        + f2xd_derivative_current(
+            p["alphaRWltp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp2, w=w2, f=f2),
+            _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1),
+        )
+        + f2xd_fs_current(
+            p["alphaRBl"](f1, f2),
+            ONE,
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp2, w=w1, f=f2),
+            _covd_fs(g["U1Y"], mu, nu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBlp"](f1, f2),
+            ONE,
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp2, w=w1, f=f2),
+            FS(g["U1Y"], mu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBltp"](f1, f2),
+            ONE,
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp2, w=w1, f=f2),
+            _dual_fs(g["U1Y"], mu, nu, rho, sigma),
+        )
+        + f2xd_fs_current(
+            p["alphaRBe"](f1, f2),
+            ONE,
+            lr(sp=sp1, f=f1, bar=True),
+            lr(sp=sp2, f=f2),
+            _covd_fs(g["U1Y"], mu, nu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBep"](f1, f2),
+            ONE,
+            lr(sp=sp1, f=f1, bar=True),
+            lr(sp=sp2, f=f2),
+            FS(g["U1Y"], mu, nu),
+        )
+        + f2xd_derivative_current(
+            p["alphaRBetp"](f1, f2),
+            ONE,
+            lr(sp=sp1, f=f1, bar=True),
+            lr(sp=sp2, f=f2),
+            _dual_fs(g["U1Y"], mu, nu, rho, sigma),
+        )
+    )
 
     LF2DH2 = (
         I
@@ -1929,7 +2412,245 @@ def build_smeft_green_bpreserving(
                 * ll(sp=sp2, w=w1, f=f1)
             )
 
-    LEvF2XD = ZERO
+    sigma_gamma_left = sigma_matrix(sp1, sp2, mu, nu, sp5) * Gamma(sp2, sp3, rho)
+    gamma_sigma_right = Gamma(sp1, sp2, rho) * sigma_matrix(
+        sp2, sp3, mu, nu, sp6
+    )
+    mixed_sigma_gamma = sigma_gamma_left + gamma_sigma_right
+
+    def ev_f2xd_fs_current(coeff, tensor, left, right, dual_fs_derivative):
+        return coeff * tensor * left * mixed_sigma_gamma * right * dual_fs_derivative
+
+    def ev_f2xd_derivative_current(coeff, tensor, left, right, fs_factor):
+        return (
+            I
+            * coeff
+            * tensor
+            * left
+            * sigma_gamma_left
+            * DC(right, rho)
+            * fs_factor
+            - I
+            * coeff
+            * tensor
+            * DC(left, rho)
+            * gamma_sigma_right
+            * right
+            * fs_factor
+        )
+
+    LEvF2XD = (
+        ev_f2xd_fs_current(
+            p["alphaEGq"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w1, f=f2, c=c2),
+            _dual_covd_fs(g["SU3C"], mu, nu, rho, rho2, sigma, aC1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEGqp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w1, f=f2, c=c2),
+            FS(g["SU3C"], mu, nu, aC1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEGqtp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w1, f=f2, c=c2),
+            _dual_fs(g["SU3C"], mu, nu, rho2, sigma, aC1),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEWq"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w2, f=f2, c=c1),
+            _dual_covd_fs(g["SU2L"], mu, nu, rho, rho2, sigma, aW1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEWqp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w2, f=f2, c=c1),
+            FS(g["SU2L"], mu, nu, aW1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEWqtp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w2, f=f2, c=c1),
+            _dual_fs(g["SU2L"], mu, nu, rho2, sigma, aW1),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEBq"](f1, f2),
+            ONE,
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w1, f=f2, c=c1),
+            _dual_covd_fs(g["U1Y"], mu, nu, rho, rho2, sigma),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBqp"](f1, f2),
+            ONE,
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w1, f=f2, c=c1),
+            FS(g["U1Y"], mu, nu),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBqtp"](f1, f2),
+            ONE,
+            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
+            ql(sp=sp3, w=w1, f=f2, c=c1),
+            _dual_fs(g["U1Y"], mu, nu, rho2, sigma),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEGu"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp3, f=f2, c=c2),
+            _dual_covd_fs(g["SU3C"], mu, nu, rho, rho2, sigma, aC1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEGup"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp3, f=f2, c=c2),
+            FS(g["SU3C"], mu, nu, aC1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEGutp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp3, f=f2, c=c2),
+            _dual_fs(g["SU3C"], mu, nu, rho2, sigma, aC1),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEBu"](f1, f2),
+            ONE,
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp3, f=f2, c=c1),
+            _dual_covd_fs(g["U1Y"], mu, nu, rho, rho2, sigma),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBup"](f1, f2),
+            ONE,
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp3, f=f2, c=c1),
+            FS(g["U1Y"], mu, nu),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEButp"](f1, f2),
+            ONE,
+            ur(sp=sp1, f=f1, c=c1, bar=True),
+            ur(sp=sp3, f=f2, c=c1),
+            _dual_fs(g["U1Y"], mu, nu, rho2, sigma),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEGd"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp3, f=f2, c=c2),
+            _dual_covd_fs(g["SU3C"], mu, nu, rho, rho2, sigma, aC1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEGdp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp3, f=f2, c=c2),
+            FS(g["SU3C"], mu, nu, aC1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEGdtp"](f1, f2),
+            gauge_generator(aC1, c1, c2),
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp3, f=f2, c=c2),
+            _dual_fs(g["SU3C"], mu, nu, rho2, sigma, aC1),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEBd"](f1, f2),
+            ONE,
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp3, f=f2, c=c1),
+            _dual_covd_fs(g["U1Y"], mu, nu, rho, rho2, sigma),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBdp"](f1, f2),
+            ONE,
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp3, f=f2, c=c1),
+            FS(g["U1Y"], mu, nu),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBdtp"](f1, f2),
+            ONE,
+            dr(sp=sp1, f=f1, c=c1, bar=True),
+            dr(sp=sp3, f=f2, c=c1),
+            _dual_fs(g["U1Y"], mu, nu, rho2, sigma),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEWl"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp3, w=w2, f=f2),
+            _dual_covd_fs(g["SU2L"], mu, nu, rho, rho2, sigma, aW1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEWlp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp3, w=w2, f=f2),
+            FS(g["SU2L"], mu, nu, aW1),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEWltp"](f1, f2),
+            weak_t(aW1, w1, w2),
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp3, w=w2, f=f2),
+            _dual_fs(g["SU2L"], mu, nu, rho2, sigma, aW1),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEBl"](f1, f2),
+            ONE,
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp3, w=w1, f=f2),
+            _dual_covd_fs(g["U1Y"], mu, nu, rho, rho2, sigma),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBlp"](f1, f2),
+            ONE,
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp3, w=w1, f=f2),
+            FS(g["U1Y"], mu, nu),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBltp"](f1, f2),
+            ONE,
+            ll(sp=sp1, w=w1, f=f1, bar=True),
+            ll(sp=sp3, w=w1, f=f2),
+            _dual_fs(g["U1Y"], mu, nu, rho2, sigma),
+        )
+        + ev_f2xd_fs_current(
+            p["alphaEBe"](f1, f2),
+            ONE,
+            lr(sp=sp1, f=f1, bar=True),
+            lr(sp=sp3, f=f2),
+            _dual_covd_fs(g["U1Y"], mu, nu, rho, rho2, sigma),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBep"](f1, f2),
+            ONE,
+            lr(sp=sp1, f=f1, bar=True),
+            lr(sp=sp3, f=f2),
+            FS(g["U1Y"], mu, nu),
+        )
+        + ev_f2xd_derivative_current(
+            p["alphaEBetp"](f1, f2),
+            ONE,
+            lr(sp=sp1, f=f1, bar=True),
+            lr(sp=sp3, f=f2),
+            _dual_fs(g["U1Y"], mu, nu, rho2, sigma),
+        )
+    )
 
     LEv4q = (
         p["alphaEqu"](f1, f2, f3, f4)
@@ -3008,16 +3729,16 @@ def build_smeft_green_bpreserving(
         "L4Yukawa": DeclaredLagrangian.from_item(L4Yukawa),
         "LWeinberg": DeclaredLagrangian.from_item(LWeinberg),
         "LX3": DeclaredLagrangian.from_item(LX3),
-        "LX2D2": DeclaredLagrangian(),
+        "LX2D2": DeclaredLagrangian.from_item(LX2D2),
         "LX2H2": DeclaredLagrangian.from_item(LX2H2),
-        "LH2XD2": DeclaredLagrangian(),
-        "LH2D4": DeclaredLagrangian(),
+        "LH2XD2": DeclaredLagrangian.from_item(LH2XD2),
+        "LH2D4": DeclaredLagrangian.from_item(LH2D4),
         "LH4D2": DeclaredLagrangian.from_item(LH4D2),
         "LH6": DeclaredLagrangian.from_item(LH6),
-        "LF2D3": DeclaredLagrangian(),
-        "LF2HD2": DeclaredLagrangian(),
+        "LF2D3": DeclaredLagrangian.from_item(LF2D3),
+        "LF2HD2": DeclaredLagrangian.from_item(LF2HD2),
         "LF2XH": DeclaredLagrangian.from_item(LF2XH),
-        "LF2XD": DeclaredLagrangian(),
+        "LF2XD": DeclaredLagrangian.from_item(LF2XD),
         "LF2DH2": DeclaredLagrangian.from_item(LF2DH2),
         "LF2H3": DeclaredLagrangian.from_item(LF2H3),
         "L4q": DeclaredLagrangian.from_item(L4q),
@@ -3025,7 +3746,7 @@ def build_smeft_green_bpreserving(
         "L4lq": DeclaredLagrangian.from_item(L4lq),
         "LEvF2XH": DeclaredLagrangian.from_item(LEvF2XH),
         "LEvF2HD2": DeclaredLagrangian.from_item(LEvF2HD2),
-        "LEvF2XD": DeclaredLagrangian(),
+        "LEvF2XD": DeclaredLagrangian.from_item(LEvF2XD),
         "LEv4q": DeclaredLagrangian.from_item(LEv4q),
         "LEv4l": DeclaredLagrangian.from_item(LEv4l),
         "LEv4lq": DeclaredLagrangian.from_item(LEv4lq),

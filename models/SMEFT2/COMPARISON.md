@@ -9,18 +9,18 @@ Signature coverage and coefficient-head content. Full tensor-rule equality is no
 | Item | Value |
 | --- | ---: |
 | Reference vertices | 184 |
-| FeynPy 3-6 point signatures | 147 |
-| Shared signatures | 137 |
-| Reference-only signatures | 47 |
+| FeynPy 3-6 point signatures | 192 |
+| Shared signatures | 182 |
+| Reference-only signatures | 2 |
 | FeynPy-only signatures | 10 |
-| Shared coefficient-head matches | 51 |
+| Shared coefficient-head matches | 168 |
 
 ## Basis
 
 - Reference: `EFT-only FeynRules Ltot`.
 - Local default model: `EFT-only FeynPy Ltot`.
 - Local SM plus EFT model: `Lfull`.
-- Omitted sectors: `LX2D2, LH2XD2, LH2D4, LF2D3, LF2HD2, LF2XD, LEvF2XD`.
+- Omitted sectors: `none`.
 
 ## Status Counts
 
@@ -28,38 +28,23 @@ Signature coverage and coefficient-head content. Full tensor-rule equality is no
 | --- | ---: |
 | `FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING` | 8 |
 | `FEYNPY_ONLY_WEINBERG_PACKAGING` | 2 |
-| `MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS` | 45 |
 | `MISSING_SIGNATURE_WEINBERG_PACKAGING` | 2 |
 | `SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH` | 6 |
-| `SHARED_HEADS_MATCH` | 51 |
+| `SHARED_HEADS_MATCH` | 168 |
+| `SHARED_LOCAL_EXTRA_HEADS` | 6 |
 | `SHARED_LOCAL_PP_EXTRA` | 2 |
-| `SHARED_MISSING_OMITTED_HEADS` | 72 |
-| `SHARED_MISSING_OMITTED_HEADS_PLUS_LOCAL_EXTRA` | 6 |
 
 ## Largest Reference-Side Head Gaps
 
 | Head | Count |
 | --- | ---: |
-| `g1` | 33 |
-| `alphaRqD` | 19 |
-| `g3` | 19 |
-| `g2` | 18 |
-| `alphaRdHD4` | 16 |
-| `alphaRuHD4` | 16 |
-| `alphaRDH` | 14 |
-| `alphaRdHD2` | 14 |
-| `alphaRuHD2` | 14 |
-| `alphaRdHD1` | 12 |
-| `alphaRdHD3` | 12 |
-| `alphaReHD1` | 12 |
-| `alphaRuHD1` | 12 |
-| `alphaRuHD3` | 12 |
-| `alphaReHD4` | 10 |
-| `alphaRdD` | 9 |
-| `alphaRlD` | 9 |
-| `alphaRuD` | 9 |
-| `alphaReHD2` | 8 |
-| `alphaEGqp` | 7 |
+| `alphaWeinberg` | 2 |
+| `alphaEcqedl` | 2 |
+| `alphaEcqedlthree` | 2 |
+| `alphaEcudqq` | 2 |
+| `alphaEcudqqtwo` | 2 |
+| `alphaEcuelq` | 2 |
+| `alphaEcuelqtwo` | 2 |
 
 ## Largest Local Extra Heads
 

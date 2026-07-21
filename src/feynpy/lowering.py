@@ -647,9 +647,17 @@ def _declared_factor_explicit_label_refs(
     refs: list[tuple[IndexType, object, str]] = []
     if isinstance(factor, CovariantDerivativeFactor):
         refs.append((lorentz_index, factor.lorentz_index, f"CovD({factor.field.name})"))
+        refs.extend(
+            (factor.field.indices[slot], label, f"CovD({factor.field.name})")
+            for slot, label in factor.field.unpack_slot_labels(factor.labels).items()
+        )
     elif isinstance(factor, DifferentiatedCovariantFactor):
         covariant = factor.covariant_factor
         refs.append((lorentz_index, covariant.lorentz_index, f"CovD({covariant.field.name})"))
+        refs.extend(
+            (covariant.field.indices[slot], label, f"CovD({covariant.field.name})")
+            for slot, label in covariant.field.unpack_slot_labels(covariant.labels).items()
+        )
         refs.extend(
             (lorentz_index, lorentz_index_label, f"PartialD(CovD({covariant.field.name}))")
             for lorentz_index_label in factor.lorentz_indices
@@ -2251,9 +2259,15 @@ def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
     covd_factors = [
         factor for factor in term.factors if isinstance(factor, CovariantDerivativeFactor)
     ]
+    field_strength_factors = [
+        factor for factor in term.factors if isinstance(factor, FieldStrengthFactor)
+    ]
     differentiated_covd_factors = [
         factor for factor in term.factors if isinstance(factor, DifferentiatedCovariantFactor)
     ]
+
+    if field_strength_factors:
+        return True
 
     # Keep malformed bare kinetic cores on the old strict-validation path.
     if (
