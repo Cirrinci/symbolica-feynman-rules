@@ -53,10 +53,8 @@ These sectors are included in the compiled `Ltot`:
 
 ## What Is Still Omitted
 
-There are two different reasons for omissions.
-
-Blocked by the current declarative lowering, because they need true
-`D_mu F^{mu nu}` operators or genuine nested covariant derivatives:
+These sectors still need translation and validation against the FeynRules
+reference:
 
 - `LX2D2`
 - `LH2XD2`
@@ -66,12 +64,17 @@ Blocked by the current declarative lowering, because they need true
 - `LF2XD`
 - `LEvF2XD`
 
+The nested derivative API now supports the core structures these blocks need,
+including `DC(FS(...))`, `PartialD(FS(...))`, `DC(DC(field, ...), ...)`, and
+`PartialD(DC(...), ...)`. The remaining work is model-level migration: rewrite
+each sector in the new declarative form, add golden content tests for the
+affected vertices, and then enable it in `Ltot`.
+
 `LEvF2HD2` is now implemented by expanding every first covariant derivative
 term-by-term into `PartialD(...)` and gauge-field pieces before building the
-sigma-matrix chain. The same strategy does not fully rescue `LF2HD2`, because
-that FR block also contains genuine `DC[DC[...]]` terms, and the current API
-does not yet give an exact path for those or for derivatives acting on
-`FS(...)`.
+sigma-matrix chain. A direct `DC(...)` rewrite compiles for simpler Higgs
+operators, but this block still needs local-lowering support for preserving
+the sigma-chain fermion pairing through generic covariant branches.
 
 ## Comparison
 

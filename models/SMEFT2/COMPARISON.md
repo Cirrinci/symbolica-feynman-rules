@@ -1,6 +1,6 @@
 # SMEFT2 FeynRules/FeynPy Comparison
 
-Generated on `2026-07-16` by `models/SMEFT2/comparison.py`.
+Generated on `2026-07-21` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 

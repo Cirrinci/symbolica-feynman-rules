@@ -1,5 +1,5 @@
 {
-  "generated_on": "2026-07-16",
+  "generated_on": "2026-07-21",
   "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
   "local_model": "models/SMEFT2/SMEFT2.py",
   "comparison_level": "Signature coverage and coefficient-head content. Full tensor-rule equality is not claimed by this SMEFT2 report.",
@@ -7708,7 +7708,7 @@
         "Phi.bar",
         "Phi"
       ],
-      "local_term_count": 7,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],

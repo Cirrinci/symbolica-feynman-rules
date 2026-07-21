@@ -5,10 +5,6 @@ This follows the field names and operator sectors in
 current declarative surface of FeynPy. The implementation intentionally avoids
 extra framework machinery: define the parameters, gauge groups, fields and the
 Lagrangian in a single builder, close to how a user would write it.
-
-The omitted sectors require features that the current FeynPy layer does not
-expose cleanly, most notably true ``D_mu F^{mu nu}`` operators and genuine
-nested covariant derivatives acting on already-covariant matter fields.
 """
 
 from __future__ import annotations
@@ -603,47 +599,6 @@ def build_smeft_green_bpreserving(
             * Gamma(middle2, right, rho)
         )
 
-    def partial_div_covd_phi(target, source, mu, adjoint):
-        return (
-            PartialD(PartialD(Phi(target), mu), mu)
-            - I
-            * HALF
-            * p["g1"]
-            * (PartialD(B(mu), mu) * Phi(target) + B(mu) * PartialD(Phi(target), mu))
-            - I
-            * p["g2"]
-            * (
-                PartialD(Wi(mu, adjoint), mu)
-                * weak_t(adjoint, target, source)
-                * Phi(source)
-                + Wi(mu, adjoint)
-                * weak_t(adjoint, target, source)
-                * PartialD(Phi(source), mu)
-            )
-        )
-
-    def partial_div_covd_phibar(target, source, mu, adjoint):
-        return (
-            PartialD(PartialD(Phi.bar(target), mu), mu)
-            + I
-            * HALF
-            * p["g1"]
-            * (
-                PartialD(B(mu), mu) * Phi.bar(target)
-                + B(mu) * PartialD(Phi.bar(target), mu)
-            )
-            + I
-            * p["g2"]
-            * (
-                PartialD(Wi(mu, adjoint), mu)
-                * Phi.bar(source)
-                * weak_t(adjoint, source, target)
-                + Wi(mu, adjoint)
-                * PartialD(Phi.bar(source), mu)
-                * weak_t(adjoint, source, target)
-            )
-        )
-
     mu, nu, rho, rho2, sigma = (
         S("mu"),
         S("nu"),
@@ -898,121 +853,25 @@ def build_smeft_green_bpreserving(
         * Phi.bar(w1)
         * Phi(w1)
         * PartialD(Phi.bar(w2), mu)
-        * PartialD(Phi(w2), mu)
-        + HALF
-        * p["alphaRHDpp"]
-        * p["g1"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(Phi.bar(w2), mu)
-        * B(mu)
-        * Phi(w2)
-        + p["alphaRHDpp"]
-        * p["g2"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(Phi.bar(w2), mu)
-        * Wi(mu, aW1)
-        * weak_t(aW1, w2, w3)
-        * Phi(w3)
+        * DC(Phi, mu)
         + I
         * p["alphaRHDpp"]
         * Phi.bar(w1)
         * Phi(w1)
         * Phi.bar(w2)
-        * PartialD(PartialD(Phi(w2), mu), mu)
-        + HALF
+        * PartialD(DC(Phi, mu), mu)
+        - I
         * p["alphaRHDpp"]
-        * p["g1"]
         * Phi.bar(w1)
         * Phi(w1)
-        * Phi.bar(w2)
-        * PartialD(B(mu), mu)
+        * PartialD(DC(Phi.bar, mu), mu)
         * Phi(w2)
-        + HALF
+        - I
         * p["alphaRHDpp"]
-        * p["g1"]
         * Phi.bar(w1)
         * Phi(w1)
-        * Phi.bar(w2)
-        * B(mu)
+        * DC(Phi.bar, mu)
         * PartialD(Phi(w2), mu)
-        + p["alphaRHDpp"]
-        * p["g2"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * Phi.bar(w2)
-        * PartialD(Wi(mu, aW1), mu)
-        * weak_t(aW1, w2, w3)
-        * Phi(w3)
-        + p["alphaRHDpp"]
-        * p["g2"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * Phi.bar(w2)
-        * Wi(mu, aW1)
-        * weak_t(aW1, w2, w3)
-        * PartialD(Phi(w3), mu)
-        - I
-        * p["alphaRHDpp"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(PartialD(Phi.bar(w2), mu), mu)
-        * Phi(w2)
-        + HALF
-        * p["alphaRHDpp"]
-        * p["g1"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(B(mu), mu)
-        * Phi.bar(w2)
-        * Phi(w2)
-        + HALF
-        * p["alphaRHDpp"]
-        * p["g1"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * B(mu)
-        * PartialD(Phi.bar(w2), mu)
-        * Phi(w2)
-        + p["alphaRHDpp"]
-        * p["g2"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(Wi(mu, aW1), mu)
-        * Phi.bar(w3)
-        * weak_t(aW1, w3, w2)
-        * Phi(w2)
-        + p["alphaRHDpp"]
-        * p["g2"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * Wi(mu, aW1)
-        * PartialD(Phi.bar(w3), mu)
-        * weak_t(aW1, w3, w2)
-        * Phi(w2)
-        - I
-        * p["alphaRHDpp"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(Phi.bar(w3), mu)
-        * PartialD(Phi(w3), mu)
-        + HALF
-        * p["alphaRHDpp"]
-        * p["g1"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * B(mu)
-        * Phi.bar(w3)
-        * PartialD(Phi(w3), mu)
-        + p["alphaRHDpp"]
-        * p["g2"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * Wi(mu, aW1)
-        * Phi.bar(w2)
-        * weak_t(aW1, w2, w3)
-        * PartialD(Phi(w3), mu)
     )
 
     LH6 = (
@@ -1922,8 +1781,8 @@ def build_smeft_green_bpreserving(
         )
     )
 
-    # Expand the single covariant derivatives explicitly: the current
-    # declarative lowering does not distribute these sigma.D(psi).D(phi) terms.
+    # Keep these first covariant derivatives explicit for now: the compact
+    # DC(...) form changes the local sigma-chain fermion-pair inference.
     dphitildebar_sigma_terms = (
         weak_eps2(w1, w2) * PartialD(Phi.bar(w2), sigma),
         I
