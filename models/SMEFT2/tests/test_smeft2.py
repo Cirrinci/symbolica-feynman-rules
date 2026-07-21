@@ -72,3 +72,12 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["reference_vertex_count"] == 184
     assert report["summary"]["feynpy_signature_count_3_to_6"] == 192
     assert report["summary"]["shared_head_matches"] == 168
+    assert report["summary"]["shared_head_count_matches"] == 83
+    assert report["summary"]["shared_head_count_mismatches"] == 99
+    assert all(
+        "head_count_status" in row
+        and "reference_head_counts" in row
+        and "feynpy_head_counts" in row
+        and "head_count_delta" in row
+        for row in report["reference_vertices"]
+    )

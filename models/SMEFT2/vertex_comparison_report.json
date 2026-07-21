@@ -2,7 +2,7 @@
   "generated_on": "2026-07-21",
   "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
   "local_model": "models/SMEFT2/SMEFT2.py",
-  "comparison_level": "Signature coverage and coefficient-head content. Full tensor-rule equality is not claimed by this SMEFT2 report.",
+  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics. Full tensor-rule equality is not claimed by this SMEFT2 report.",
   "summary": {
     "reference_vertex_count": 184,
     "feynpy_signature_count_3_to_6": 192,
@@ -10,6 +10,8 @@
     "reference_only_signatures": 2,
     "feynpy_only_signatures": 10,
     "shared_head_matches": 168,
+    "shared_head_count_matches": 83,
+    "shared_head_count_mismatches": 99,
     "status_counts": {
       "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING": 8,
       "FEYNPY_ONLY_WEINBERG_PACKAGING": 2,
@@ -63,6 +65,16 @@
         "alphaRDH",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRDH": 3,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRDH": 3,
+        "g1": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -121,6 +133,16 @@
         "alphaRDH",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRDH": 6,
+        "g1": 6
+      },
+      "feynpy_head_counts": {
+        "alphaRDH": 6,
+        "g1": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -182,6 +204,18 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaRDH": 3,
+        "g1": 3,
+        "g2": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRDH": 3,
+        "g1": 3,
+        "g2": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -240,6 +274,16 @@
         "alphaRdD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRdD": 3,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRdD": 3,
+        "g1": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -296,6 +340,16 @@
         "alphaReD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaReD": 3,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaReD": 3,
+        "g1": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -352,6 +406,16 @@
         "alphaRlD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRlD": 3,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRlD": 3,
+        "g1": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -408,6 +472,16 @@
         "alphaRqD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -464,6 +538,16 @@
         "alphaRuD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRuD": 3,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRuD": 3,
+        "g1": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -522,6 +606,18 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaRdD": 3,
+        "g1": 3,
+        "g3": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRdD": 3,
+        "g1": 3,
+        "g3": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -580,6 +676,18 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3,
+        "g3": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3,
+        "g3": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -638,6 +746,18 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaRuD": 3,
+        "g1": 3,
+        "g3": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRuD": 3,
+        "g1": 3,
+        "g3": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -699,6 +819,30 @@
         "alphaRdHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRdHD1": 1,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 4,
+        "alphaRdHD1": 1,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 7
+      },
+      "head_count_delta": {
+        "alphaEdH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
@@ -762,6 +906,30 @@
         "alphaReHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaReHD1": 1,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 4,
+        "alphaReHD1": 1,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1,
+        "g1": 7
+      },
+      "head_count_delta": {
+        "alphaEeH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
@@ -825,6 +993,30 @@
         "alphaRuHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRuHD1": 1,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 4,
+        "alphaRuHD1": 1,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 7
+      },
+      "head_count_delta": {
+        "alphaEuH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
@@ -888,6 +1080,29 @@
         "alphaRDH",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaKH": 1,
+        "alphaOHB": 2,
+        "alphaOHBt": 2,
+        "alphaRBDH": 4,
+        "alphaRDH": 9,
+        "g1": 14
+      },
+      "feynpy_head_counts": {
+        "alphaKH": 1,
+        "alphaOHB": 2,
+        "alphaOHBt": 8,
+        "alphaRBDH": 4,
+        "alphaRDH": 9,
+        "g1": 14
+      },
+      "head_count_delta": {
+        "alphaOHBt": {
+          "reference": 2,
+          "feynpy": 8
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -944,6 +1159,18 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaRDH": 6,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaRDH": 6,
+        "g1": 6,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1005,6 +1232,31 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaRDH": 6,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaRDH": 14,
+        "g1": 14,
+        "g2": 14
+      },
+      "head_count_delta": {
+        "alphaRDH": {
+          "reference": 6,
+          "feynpy": 14
+        },
+        "g1": {
+          "reference": 6,
+          "feynpy": 14
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 14
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1068,6 +1320,18 @@
         "alphaRHDp",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaOHD": 2,
+        "alphaRHDp": 2,
+        "g1": 4
+      },
+      "feynpy_head_counts": {
+        "alphaOHD": 2,
+        "alphaRHDp": 2,
+        "g1": 4
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1131,6 +1395,30 @@
         "alphaRdHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRdHD1": 1,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 4,
+        "alphaRdHD1": 1,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 7
+      },
+      "head_count_delta": {
+        "alphaEdH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
@@ -1194,6 +1482,30 @@
         "alphaReHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaReHD1": 1,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 4,
+        "alphaReHD1": 1,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1,
+        "g1": 7
+      },
+      "head_count_delta": {
+        "alphaEeH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
@@ -1257,6 +1569,30 @@
         "alphaRuHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaRuHD1": 1,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 3
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 4,
+        "alphaRuHD1": 1,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 7
+      },
+      "head_count_delta": {
+        "alphaEuH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
@@ -1317,6 +1653,18 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaRlD": 3,
+        "g1": 3,
+        "g2": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRlD": 3,
+        "g1": 3,
+        "g2": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1375,6 +1723,18 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3,
+        "g2": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3,
+        "g2": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1436,6 +1796,37 @@
         "alphaRdD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBdp": 8,
+        "alphaEBdtp": 8,
+        "alphaRBdp": 4,
+        "alphaRBdtp": 2,
+        "alphaRdD": 9,
+        "g1": 31
+      },
+      "feynpy_head_counts": {
+        "alphaEBdp": 8,
+        "alphaEBdtp": 16,
+        "alphaRBdp": 4,
+        "alphaRBdtp": 4,
+        "alphaRdD": 9,
+        "g1": 41
+      },
+      "head_count_delta": {
+        "alphaEBdtp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBdtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1495,6 +1886,37 @@
         "alphaReD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBep": 8,
+        "alphaEBetp": 8,
+        "alphaRBep": 4,
+        "alphaRBetp": 2,
+        "alphaReD": 9,
+        "g1": 31
+      },
+      "feynpy_head_counts": {
+        "alphaEBep": 8,
+        "alphaEBetp": 16,
+        "alphaRBep": 4,
+        "alphaRBetp": 4,
+        "alphaReD": 9,
+        "g1": 41
+      },
+      "head_count_delta": {
+        "alphaEBetp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBetp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1554,6 +1976,37 @@
         "alphaRlD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBlp": 8,
+        "alphaEBltp": 8,
+        "alphaRBlp": 4,
+        "alphaRBltp": 2,
+        "alphaRlD": 9,
+        "g1": 31
+      },
+      "feynpy_head_counts": {
+        "alphaEBlp": 8,
+        "alphaEBltp": 16,
+        "alphaRBlp": 4,
+        "alphaRBltp": 4,
+        "alphaRlD": 9,
+        "g1": 41
+      },
+      "head_count_delta": {
+        "alphaEBltp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBltp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1613,6 +2066,37 @@
         "alphaRqD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBqp": 8,
+        "alphaEBqtp": 8,
+        "alphaRBqp": 4,
+        "alphaRBqtp": 2,
+        "alphaRqD": 9,
+        "g1": 31
+      },
+      "feynpy_head_counts": {
+        "alphaEBqp": 8,
+        "alphaEBqtp": 16,
+        "alphaRBqp": 4,
+        "alphaRBqtp": 4,
+        "alphaRqD": 9,
+        "g1": 41
+      },
+      "head_count_delta": {
+        "alphaEBqtp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1672,6 +2156,37 @@
         "alphaRuD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBup": 8,
+        "alphaEButp": 8,
+        "alphaRBup": 4,
+        "alphaRButp": 2,
+        "alphaRuD": 9,
+        "g1": 31
+      },
+      "feynpy_head_counts": {
+        "alphaEBup": 8,
+        "alphaEButp": 16,
+        "alphaRBup": 4,
+        "alphaRButp": 4,
+        "alphaRuD": 9,
+        "g1": 41
+      },
+      "head_count_delta": {
+        "alphaEButp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRButp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1736,6 +2251,51 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGdp": 4,
+        "alphaEGdtp": 4,
+        "alphaRGdp": 2,
+        "alphaRGdtp": 1,
+        "alphaRdD": 6,
+        "g1": 17,
+        "g3": 17
+      },
+      "feynpy_head_counts": {
+        "alphaEGdp": 8,
+        "alphaEGdtp": 8,
+        "alphaRGdp": 2,
+        "alphaRGdtp": 2,
+        "alphaRdD": 12,
+        "g1": 32,
+        "g3": 32
+      },
+      "head_count_delta": {
+        "alphaEGdp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGdtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGdtp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRdD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1802,6 +2362,51 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGqp": 4,
+        "alphaEGqtp": 4,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 1,
+        "alphaRqD": 6,
+        "g1": 17,
+        "g3": 17
+      },
+      "feynpy_head_counts": {
+        "alphaEGqp": 8,
+        "alphaEGqtp": 8,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 2,
+        "alphaRqD": 12,
+        "g1": 32,
+        "g3": 32
+      },
+      "head_count_delta": {
+        "alphaEGqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGqtp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1868,6 +2473,51 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGup": 4,
+        "alphaEGutp": 4,
+        "alphaRGup": 2,
+        "alphaRGutp": 1,
+        "alphaRuD": 6,
+        "g1": 17,
+        "g3": 17
+      },
+      "feynpy_head_counts": {
+        "alphaEGup": 8,
+        "alphaEGutp": 8,
+        "alphaRGup": 2,
+        "alphaRGutp": 2,
+        "alphaRuD": 12,
+        "g1": 32,
+        "g3": 32
+      },
+      "head_count_delta": {
+        "alphaEGup": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGutp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGutp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRuD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1932,6 +2582,24 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1996,6 +2664,24 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2060,6 +2746,24 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2124,6 +2828,24 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g3": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2184,6 +2906,20 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3,
+        "g2": 3,
+        "g3": 3
+      },
+      "feynpy_head_counts": {
+        "alphaRqD": 3,
+        "g1": 3,
+        "g2": 3,
+        "g3": 3
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2255,6 +2991,51 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEBdp": 4,
+        "alphaEBdtp": 4,
+        "alphaEGdp": 4,
+        "alphaEGdtp": 8,
+        "alphaRBdp": 2,
+        "alphaRBdtp": 2,
+        "alphaRGdp": 2,
+        "alphaRGdtp": 2,
+        "alphaRdD": 9,
+        "g1": 25,
+        "g3": 21
+      },
+      "feynpy_head_counts": {
+        "alphaEBdp": 4,
+        "alphaEBdtp": 8,
+        "alphaEGdp": 4,
+        "alphaEGdtp": 8,
+        "alphaRBdp": 4,
+        "alphaRBdtp": 4,
+        "alphaRGdp": 2,
+        "alphaRGdtp": 2,
+        "alphaRdD": 9,
+        "g1": 25,
+        "g3": 29
+      },
+      "head_count_delta": {
+        "alphaEBdtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBdp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBdtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2324,6 +3105,51 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEBqp": 4,
+        "alphaEBqtp": 4,
+        "alphaEGqp": 4,
+        "alphaEGqtp": 8,
+        "alphaRBqp": 2,
+        "alphaRBqtp": 2,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 2,
+        "alphaRqD": 9,
+        "g1": 25,
+        "g3": 21
+      },
+      "feynpy_head_counts": {
+        "alphaEBqp": 4,
+        "alphaEBqtp": 8,
+        "alphaEGqp": 4,
+        "alphaEGqtp": 8,
+        "alphaRBqp": 4,
+        "alphaRBqtp": 4,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 2,
+        "alphaRqD": 9,
+        "g1": 25,
+        "g3": 29
+      },
+      "head_count_delta": {
+        "alphaEBqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2393,6 +3219,51 @@
         "g1",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEBup": 4,
+        "alphaEButp": 4,
+        "alphaEGup": 4,
+        "alphaEGutp": 8,
+        "alphaRBup": 2,
+        "alphaRButp": 2,
+        "alphaRGup": 2,
+        "alphaRGutp": 2,
+        "alphaRuD": 9,
+        "g1": 25,
+        "g3": 21
+      },
+      "feynpy_head_counts": {
+        "alphaEBup": 4,
+        "alphaEButp": 8,
+        "alphaEGup": 4,
+        "alphaEGutp": 8,
+        "alphaRBup": 4,
+        "alphaRButp": 4,
+        "alphaRGup": 2,
+        "alphaRGutp": 2,
+        "alphaRuD": 9,
+        "g1": 25,
+        "g3": 29
+      },
+      "head_count_delta": {
+        "alphaEButp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBup": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRButp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2455,6 +3326,24 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2519,6 +3408,24 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEeH": 2,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 2,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2583,6 +3490,24 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2648,6 +3573,33 @@
         "alphaRdHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEdB": 2,
+        "alphaEdH": 4,
+        "alphaOdB": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 4,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 2,
+        "g1": 14
+      },
+      "feynpy_head_counts": {
+        "alphaEdB": 4,
+        "alphaEdH": 4,
+        "alphaOdB": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 4,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 2,
+        "g1": 14
+      },
+      "head_count_delta": {
+        "alphaEdB": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2711,6 +3663,33 @@
         "alphaReHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEeB": 2,
+        "alphaEeH": 4,
+        "alphaOeB": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 4,
+        "alphaReHD3": 2,
+        "alphaReHD4": 2,
+        "g1": 14
+      },
+      "feynpy_head_counts": {
+        "alphaEeB": 4,
+        "alphaEeH": 4,
+        "alphaOeB": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 4,
+        "alphaReHD3": 2,
+        "alphaReHD4": 2,
+        "g1": 14
+      },
+      "head_count_delta": {
+        "alphaEeB": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2774,6 +3753,33 @@
         "alphaRuHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEuB": 2,
+        "alphaEuH": 4,
+        "alphaOuB": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 4,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 2,
+        "g1": 14
+      },
+      "feynpy_head_counts": {
+        "alphaEuB": 4,
+        "alphaEuH": 4,
+        "alphaOuB": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 4,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 2,
+        "g1": 14
+      },
+      "head_count_delta": {
+        "alphaEuB": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2826,6 +3832,20 @@
         "alphaRDH",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaKH": 2,
+        "alphaRBDH": 4,
+        "alphaRDH": 4,
+        "g1": 6
+      },
+      "feynpy_head_counts": {
+        "alphaKH": 2,
+        "alphaRBDH": 4,
+        "alphaRDH": 4,
+        "g1": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2887,6 +3907,37 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaKH": 1,
+        "alphaOHWB": 2,
+        "alphaOHWBt": 4,
+        "alphaRBDH": 2,
+        "alphaRDH": 9,
+        "alphaRWDH": 2,
+        "g1": 12,
+        "g2": 12
+      },
+      "feynpy_head_counts": {
+        "alphaKH": 1,
+        "alphaOHWB": 2,
+        "alphaOHWBt": 4,
+        "alphaRBDH": 4,
+        "alphaRDH": 9,
+        "alphaRWDH": 2,
+        "g1": 12,
+        "g2": 14
+      },
+      "head_count_delta": {
+        "alphaRBDH": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 12,
+          "feynpy": 14
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2949,6 +4000,49 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHWB": 2,
+        "alphaOHWBt": 2,
+        "alphaRDH": 12,
+        "alphaRWDH": 6,
+        "g1": 18,
+        "g2": 22
+      },
+      "feynpy_head_counts": {
+        "alphaOHWB": 4,
+        "alphaOHWBt": 4,
+        "alphaRDH": 24,
+        "alphaRWDH": 8,
+        "g1": 32,
+        "g2": 40
+      },
+      "head_count_delta": {
+        "alphaOHWB": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOHWBt": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRDH": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRWDH": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 18,
+          "feynpy": 32
+        },
+        "g2": {
+          "reference": 22,
+          "feynpy": 40
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3012,6 +4106,33 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaRDH": 12,
+        "alphaRWDH": 6,
+        "g1": 18,
+        "g2": 18
+      },
+      "feynpy_head_counts": {
+        "alphaRDH": 24,
+        "alphaRWDH": 6,
+        "g1": 30,
+        "g2": 30
+      },
+      "head_count_delta": {
+        "alphaRDH": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "g1": {
+          "reference": 18,
+          "feynpy": 30
+        },
+        "g2": {
+          "reference": 18,
+          "feynpy": 30
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3072,6 +4193,27 @@
         "alphaRHdp",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaOHd": 1,
+        "alphaRHdp": 1,
+        "g1": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHd": 1,
+        "alphaRHdp": 2,
+        "g1": 3
+      },
+      "head_count_delta": {
+        "alphaRHdp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g1": {
+          "reference": 2,
+          "feynpy": 3
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3130,6 +4272,27 @@
         "alphaRHep",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaOHe": 1,
+        "alphaRHep": 1,
+        "g1": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHe": 1,
+        "alphaRHep": 2,
+        "g1": 3
+      },
+      "head_count_delta": {
+        "alphaRHep": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g1": {
+          "reference": 2,
+          "feynpy": 3
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3193,6 +4356,44 @@
         "alphaRHl3pp",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaOHl1": 1,
+        "alphaOHl3": 1,
+        "alphaRHl1p": 1,
+        "alphaRHl3p": 1,
+        "g1": 4
+      },
+      "feynpy_head_counts": {
+        "alphaOHl1": 1,
+        "alphaOHl3": 2,
+        "alphaRHl1p": 2,
+        "alphaRHl3p": 2,
+        "alphaRHl3pp": 1,
+        "g1": 8
+      },
+      "head_count_delta": {
+        "alphaOHl3": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl3p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl3pp": {
+          "reference": 0,
+          "feynpy": 1
+        },
+        "g1": {
+          "reference": 4,
+          "feynpy": 8
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaRHl3pp"
@@ -3258,6 +4459,44 @@
         "alphaRHq3pp",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaOHq1": 1,
+        "alphaOHq3": 1,
+        "alphaRHq1p": 1,
+        "alphaRHq3p": 1,
+        "g1": 4
+      },
+      "feynpy_head_counts": {
+        "alphaOHq1": 1,
+        "alphaOHq3": 2,
+        "alphaRHq1p": 2,
+        "alphaRHq3p": 2,
+        "alphaRHq3pp": 1,
+        "g1": 8
+      },
+      "head_count_delta": {
+        "alphaOHq3": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3pp": {
+          "reference": 0,
+          "feynpy": 1
+        },
+        "g1": {
+          "reference": 4,
+          "feynpy": 8
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaRHq3pp"
@@ -3318,6 +4557,27 @@
         "alphaRHup",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaOHu": 1,
+        "alphaRHup": 1,
+        "g1": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHu": 1,
+        "alphaRHup": 2,
+        "g1": 3
+      },
+      "head_count_delta": {
+        "alphaRHup": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g1": {
+          "reference": 2,
+          "feynpy": 3
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3378,6 +4638,29 @@
         "alphaRHDpp",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaOHD": 8,
+        "alphaRHDp": 8,
+        "alphaRHDpp": 10,
+        "g1": 26
+      },
+      "feynpy_head_counts": {
+        "alphaOHD": 8,
+        "alphaRHDp": 8,
+        "alphaRHDpp": 12,
+        "g1": 28
+      },
+      "head_count_delta": {
+        "alphaRHDpp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 26,
+          "feynpy": 28
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3441,6 +4724,20 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHD": 4,
+        "alphaRHDp": 4,
+        "g1": 8,
+        "g2": 8
+      },
+      "feynpy_head_counts": {
+        "alphaOHD": 4,
+        "alphaRHDp": 4,
+        "g1": 8,
+        "g2": 8
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3507,6 +4804,24 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3571,6 +4886,24 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEeH": 2,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 2,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3635,6 +4968,24 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g1": 6,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3700,6 +5051,33 @@
         "alphaRdHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEdB": 2,
+        "alphaEdH": 4,
+        "alphaOdB": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 4,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 2,
+        "g1": 14
+      },
+      "feynpy_head_counts": {
+        "alphaEdB": 4,
+        "alphaEdH": 4,
+        "alphaOdB": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 4,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 2,
+        "g1": 14
+      },
+      "head_count_delta": {
+        "alphaEdB": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3763,6 +5141,33 @@
         "alphaReHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEeB": 2,
+        "alphaEeH": 4,
+        "alphaOeB": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 4,
+        "alphaReHD3": 2,
+        "alphaReHD4": 2,
+        "g1": 14
+      },
+      "feynpy_head_counts": {
+        "alphaEeB": 4,
+        "alphaEeH": 4,
+        "alphaOeB": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 4,
+        "alphaReHD3": 2,
+        "alphaReHD4": 2,
+        "g1": 14
+      },
+      "head_count_delta": {
+        "alphaEeB": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3826,6 +5231,33 @@
         "alphaRuHD4",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEuB": 2,
+        "alphaEuH": 4,
+        "alphaOuB": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 4,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 2,
+        "g1": 14
+      },
+      "feynpy_head_counts": {
+        "alphaEuB": 4,
+        "alphaEuH": 4,
+        "alphaOuB": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 4,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 2,
+        "g1": 14
+      },
+      "head_count_delta": {
+        "alphaEuB": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3890,6 +5322,51 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWlp": 4,
+        "alphaEWltp": 4,
+        "alphaRWlp": 2,
+        "alphaRWltp": 1,
+        "alphaRlD": 6,
+        "g1": 17,
+        "g2": 17
+      },
+      "feynpy_head_counts": {
+        "alphaEWlp": 8,
+        "alphaEWltp": 8,
+        "alphaRWlp": 2,
+        "alphaRWltp": 2,
+        "alphaRlD": 12,
+        "g1": 32,
+        "g2": 32
+      },
+      "head_count_delta": {
+        "alphaEWlp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEWltp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRWltp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRlD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3956,6 +5433,51 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWqp": 4,
+        "alphaEWqtp": 4,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 1,
+        "alphaRqD": 6,
+        "g1": 17,
+        "g2": 17
+      },
+      "feynpy_head_counts": {
+        "alphaEWqp": 8,
+        "alphaEWqtp": 8,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 2,
+        "alphaRqD": 12,
+        "g1": 32,
+        "g2": 32
+      },
+      "head_count_delta": {
+        "alphaEWqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEWqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRWqtp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4027,6 +5549,51 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEBlp": 4,
+        "alphaEBltp": 4,
+        "alphaEWlp": 4,
+        "alphaEWltp": 8,
+        "alphaRBlp": 2,
+        "alphaRBltp": 2,
+        "alphaRWlp": 2,
+        "alphaRWltp": 2,
+        "alphaRlD": 9,
+        "g1": 25,
+        "g2": 21
+      },
+      "feynpy_head_counts": {
+        "alphaEBlp": 4,
+        "alphaEBltp": 8,
+        "alphaEWlp": 4,
+        "alphaEWltp": 8,
+        "alphaRBlp": 4,
+        "alphaRBltp": 4,
+        "alphaRWlp": 2,
+        "alphaRWltp": 2,
+        "alphaRlD": 9,
+        "g1": 25,
+        "g2": 29
+      },
+      "head_count_delta": {
+        "alphaEBltp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBlp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBltp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4096,6 +5663,51 @@
         "g1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEBqp": 4,
+        "alphaEBqtp": 4,
+        "alphaEWqp": 4,
+        "alphaEWqtp": 8,
+        "alphaRBqp": 2,
+        "alphaRBqtp": 2,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 2,
+        "alphaRqD": 9,
+        "g1": 25,
+        "g2": 21
+      },
+      "feynpy_head_counts": {
+        "alphaEBqp": 4,
+        "alphaEBqtp": 8,
+        "alphaEWqp": 4,
+        "alphaEWqtp": 8,
+        "alphaRBqp": 4,
+        "alphaRBqtp": 4,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 2,
+        "alphaRqD": 9,
+        "g1": 25,
+        "g2": 29
+      },
+      "head_count_delta": {
+        "alphaEBqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4158,6 +5770,51 @@
         "alphaRdD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBd": 4,
+        "alphaEBdp": 4,
+        "alphaEBdtp": 4,
+        "alphaKd": 1,
+        "alphaRBd": 2,
+        "alphaRBdp": 4,
+        "alphaRBdtp": 2,
+        "alphaRdD": 7,
+        "g1": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEBd": 8,
+        "alphaEBdp": 4,
+        "alphaEBdtp": 8,
+        "alphaKd": 1,
+        "alphaRBd": 2,
+        "alphaRBdp": 4,
+        "alphaRBdtp": 4,
+        "alphaRdD": 8,
+        "g1": 9
+      },
+      "head_count_delta": {
+        "alphaEBd": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEBdtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBdtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRdD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4218,6 +5875,51 @@
         "alphaReD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBe": 4,
+        "alphaEBep": 4,
+        "alphaEBetp": 4,
+        "alphaKe": 1,
+        "alphaRBe": 2,
+        "alphaRBep": 4,
+        "alphaRBetp": 2,
+        "alphaReD": 7,
+        "g1": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEBe": 8,
+        "alphaEBep": 4,
+        "alphaEBetp": 8,
+        "alphaKe": 1,
+        "alphaRBe": 2,
+        "alphaRBep": 4,
+        "alphaRBetp": 4,
+        "alphaReD": 8,
+        "g1": 9
+      },
+      "head_count_delta": {
+        "alphaEBe": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEBetp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBetp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaReD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4278,6 +5980,51 @@
         "alphaRlD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBl": 4,
+        "alphaEBlp": 4,
+        "alphaEBltp": 4,
+        "alphaKl": 1,
+        "alphaRBl": 2,
+        "alphaRBlp": 4,
+        "alphaRBltp": 2,
+        "alphaRlD": 7,
+        "g1": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEBl": 8,
+        "alphaEBlp": 4,
+        "alphaEBltp": 8,
+        "alphaKl": 1,
+        "alphaRBl": 2,
+        "alphaRBlp": 4,
+        "alphaRBltp": 4,
+        "alphaRlD": 8,
+        "g1": 9
+      },
+      "head_count_delta": {
+        "alphaEBl": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEBltp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBltp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRlD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4338,6 +6085,51 @@
         "alphaRqD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBq": 4,
+        "alphaEBqp": 4,
+        "alphaEBqtp": 4,
+        "alphaKq": 1,
+        "alphaRBq": 2,
+        "alphaRBqp": 4,
+        "alphaRBqtp": 2,
+        "alphaRqD": 7,
+        "g1": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEBq": 8,
+        "alphaEBqp": 4,
+        "alphaEBqtp": 8,
+        "alphaKq": 1,
+        "alphaRBq": 2,
+        "alphaRBqp": 4,
+        "alphaRBqtp": 4,
+        "alphaRqD": 8,
+        "g1": 9
+      },
+      "head_count_delta": {
+        "alphaEBq": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEBqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRqD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4398,6 +6190,51 @@
         "alphaRuD",
         "g1"
       ],
+      "reference_head_counts": {
+        "alphaEBu": 4,
+        "alphaEBup": 4,
+        "alphaEButp": 4,
+        "alphaKu": 1,
+        "alphaRBu": 2,
+        "alphaRBup": 4,
+        "alphaRButp": 2,
+        "alphaRuD": 7,
+        "g1": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEBu": 8,
+        "alphaEBup": 4,
+        "alphaEButp": 8,
+        "alphaKu": 1,
+        "alphaRBu": 2,
+        "alphaRBup": 4,
+        "alphaRButp": 4,
+        "alphaRuD": 8,
+        "g1": 9
+      },
+      "head_count_delta": {
+        "alphaEBu": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEButp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRButp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRuD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4450,6 +6287,39 @@
         "alphaR2G",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaKG": 6,
+        "alphaO3G": 8,
+        "alphaO3Gt": 42,
+        "alphaR2G": 36,
+        "g3": 42
+      },
+      "feynpy_head_counts": {
+        "alphaKG": 6,
+        "alphaO3G": 14,
+        "alphaO3Gt": 21,
+        "alphaR2G": 54,
+        "g3": 60
+      },
+      "head_count_delta": {
+        "alphaO3G": {
+          "reference": 8,
+          "feynpy": 14
+        },
+        "alphaO3Gt": {
+          "reference": 42,
+          "feynpy": 21
+        },
+        "alphaR2G": {
+          "reference": 36,
+          "feynpy": 54
+        },
+        "g3": {
+          "reference": 42,
+          "feynpy": 60
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4505,6 +6375,39 @@
         "alphaR2G",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaKG": 6,
+        "alphaO3G": 48,
+        "alphaO3Gt": 186,
+        "alphaR2G": 156,
+        "g3": 396
+      },
+      "feynpy_head_counts": {
+        "alphaKG": 6,
+        "alphaO3G": 144,
+        "alphaO3Gt": 138,
+        "alphaR2G": 204,
+        "g3": 492
+      },
+      "head_count_delta": {
+        "alphaO3G": {
+          "reference": 48,
+          "feynpy": 144
+        },
+        "alphaO3Gt": {
+          "reference": 186,
+          "feynpy": 138
+        },
+        "alphaR2G": {
+          "reference": 156,
+          "feynpy": 204
+        },
+        "g3": {
+          "reference": 396,
+          "feynpy": 492
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4563,6 +6466,37 @@
         "alphaR2G",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaO3G": 240,
+        "alphaO3Gt": 420,
+        "alphaR2G": 360,
+        "g3": 1020
+      },
+      "feynpy_head_counts": {
+        "alphaO3G": 720,
+        "alphaO3Gt": 720,
+        "alphaR2G": 720,
+        "g3": 2160
+      },
+      "head_count_delta": {
+        "alphaO3G": {
+          "reference": 240,
+          "feynpy": 720
+        },
+        "alphaO3Gt": {
+          "reference": 420,
+          "feynpy": 720
+        },
+        "alphaR2G": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g3": {
+          "reference": 1020,
+          "feynpy": 2160
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4626,6 +6560,33 @@
         "alphaR2G",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaO3G": 720,
+        "alphaO3Gt": 360,
+        "alphaR2G": 360,
+        "g3": 1440
+      },
+      "feynpy_head_counts": {
+        "alphaO3G": 720,
+        "alphaO3Gt": 720,
+        "alphaR2G": 720,
+        "g3": 2160
+      },
+      "head_count_delta": {
+        "alphaO3Gt": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "alphaR2G": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g3": {
+          "reference": 1440,
+          "feynpy": 2160
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4689,6 +6650,31 @@
         "alphaOHGt",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaOHG": 6,
+        "alphaOHGt": 3,
+        "g3": 9
+      },
+      "feynpy_head_counts": {
+        "alphaOHG": 12,
+        "alphaOHGt": 24,
+        "g3": 36
+      },
+      "head_count_delta": {
+        "alphaOHG": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHGt": {
+          "reference": 3,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 9,
+          "feynpy": 36
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4749,6 +6735,31 @@
         "alphaOHGt",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaOHG": 6,
+        "alphaOHGt": 12,
+        "g3": 18
+      },
+      "feynpy_head_counts": {
+        "alphaOHG": 12,
+        "alphaOHGt": 24,
+        "g3": 36
+      },
+      "head_count_delta": {
+        "alphaOHG": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHGt": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 18,
+          "feynpy": 36
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4817,6 +6828,53 @@
         "alphaRdD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGd": 30,
+        "alphaEGdp": 12,
+        "alphaEGdtp": 12,
+        "alphaRGd": 6,
+        "alphaRGdp": 12,
+        "alphaRGdtp": 6,
+        "alphaRdD": 30,
+        "g3": 108
+      },
+      "feynpy_head_counts": {
+        "alphaEGd": 24,
+        "alphaEGdp": 24,
+        "alphaEGdtp": 24,
+        "alphaRGd": 6,
+        "alphaRGdp": 12,
+        "alphaRGdtp": 12,
+        "alphaRdD": 12,
+        "g3": 114
+      },
+      "head_count_delta": {
+        "alphaEGd": {
+          "reference": 30,
+          "feynpy": 24
+        },
+        "alphaEGdp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEGdtp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRGdtp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRdD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g3": {
+          "reference": 108,
+          "feynpy": 114
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4885,6 +6943,53 @@
         "alphaRqD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGq": 30,
+        "alphaEGqp": 12,
+        "alphaEGqtp": 12,
+        "alphaRGq": 6,
+        "alphaRGqp": 12,
+        "alphaRGqtp": 6,
+        "alphaRqD": 30,
+        "g3": 108
+      },
+      "feynpy_head_counts": {
+        "alphaEGq": 24,
+        "alphaEGqp": 24,
+        "alphaEGqtp": 24,
+        "alphaRGq": 6,
+        "alphaRGqp": 12,
+        "alphaRGqtp": 12,
+        "alphaRqD": 12,
+        "g3": 114
+      },
+      "head_count_delta": {
+        "alphaEGq": {
+          "reference": 30,
+          "feynpy": 24
+        },
+        "alphaEGqp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEGqtp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRGqtp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g3": {
+          "reference": 108,
+          "feynpy": 114
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4953,6 +7058,53 @@
         "alphaRuD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGu": 30,
+        "alphaEGup": 12,
+        "alphaEGutp": 12,
+        "alphaRGu": 6,
+        "alphaRGup": 12,
+        "alphaRGutp": 6,
+        "alphaRuD": 30,
+        "g3": 108
+      },
+      "feynpy_head_counts": {
+        "alphaEGu": 24,
+        "alphaEGup": 24,
+        "alphaEGutp": 24,
+        "alphaRGu": 6,
+        "alphaRGup": 12,
+        "alphaRGutp": 12,
+        "alphaRuD": 12,
+        "g3": 114
+      },
+      "head_count_delta": {
+        "alphaEGu": {
+          "reference": 30,
+          "feynpy": 24
+        },
+        "alphaEGup": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEGutp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRGutp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRuD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g3": {
+          "reference": 108,
+          "feynpy": 114
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5013,6 +7165,33 @@
         "alphaRdHD3",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdG": 2,
+        "alphaOdG": 2,
+        "alphaRdHD3": 2,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdG": 4,
+        "alphaOdG": 4,
+        "alphaRdHD3": 2,
+        "g3": 10
+      },
+      "head_count_delta": {
+        "alphaEdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5073,6 +7252,33 @@
         "alphaRuHD3",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuG": 2,
+        "alphaOuG": 2,
+        "alphaRuHD3": 2,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuG": 4,
+        "alphaOuG": 4,
+        "alphaRuHD3": 2,
+        "g3": 10
+      },
+      "head_count_delta": {
+        "alphaEuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5126,6 +7332,16 @@
         "alphaOHG",
         "alphaOHGt"
       ],
+      "reference_head_counts": {
+        "alphaOHG": 2,
+        "alphaOHGt": 8
+      },
+      "feynpy_head_counts": {
+        "alphaOHG": 2,
+        "alphaOHGt": 8
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5184,6 +7400,33 @@
         "alphaRdHD3",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdG": 2,
+        "alphaOdG": 2,
+        "alphaRdHD3": 2,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdG": 4,
+        "alphaOdG": 4,
+        "alphaRdHD3": 2,
+        "g3": 10
+      },
+      "head_count_delta": {
+        "alphaEdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5244,6 +7487,33 @@
         "alphaRuHD3",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuG": 2,
+        "alphaOuG": 2,
+        "alphaRuHD3": 2,
+        "g3": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuG": 4,
+        "alphaOuG": 4,
+        "alphaRuHD3": 2,
+        "g3": 10
+      },
+      "head_count_delta": {
+        "alphaEuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5310,6 +7580,55 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGqp": 4,
+        "alphaEGqtp": 4,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 1,
+        "alphaRqD": 6,
+        "g2": 17,
+        "g3": 17
+      },
+      "feynpy_head_counts": {
+        "alphaEGqp": 8,
+        "alphaEGqtp": 8,
+        "alphaRGqp": 4,
+        "alphaRGqtp": 4,
+        "alphaRqD": 12,
+        "g2": 36,
+        "g3": 36
+      },
+      "head_count_delta": {
+        "alphaEGqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRGqtp": {
+          "reference": 1,
+          "feynpy": 4
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 36
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 36
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5375,6 +7694,57 @@
         "alphaRdD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGd": 26,
+        "alphaEGdp": 12,
+        "alphaEGdtp": 20,
+        "alphaRGd": 6,
+        "alphaRGdp": 12,
+        "alphaRGdtp": 10,
+        "alphaRdD": 18,
+        "g3": 104
+      },
+      "feynpy_head_counts": {
+        "alphaEGd": 32,
+        "alphaEGdp": 16,
+        "alphaEGdtp": 24,
+        "alphaRGd": 8,
+        "alphaRGdp": 12,
+        "alphaRGdtp": 12,
+        "alphaRdD": 24,
+        "g3": 128
+      },
+      "head_count_delta": {
+        "alphaEGd": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEGdp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEGdtp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRGd": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRGdtp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRdD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5438,6 +7808,57 @@
         "alphaRqD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGq": 26,
+        "alphaEGqp": 12,
+        "alphaEGqtp": 20,
+        "alphaRGq": 6,
+        "alphaRGqp": 12,
+        "alphaRGqtp": 10,
+        "alphaRqD": 18,
+        "g3": 104
+      },
+      "feynpy_head_counts": {
+        "alphaEGq": 32,
+        "alphaEGqp": 16,
+        "alphaEGqtp": 24,
+        "alphaRGq": 8,
+        "alphaRGqp": 12,
+        "alphaRGqtp": 12,
+        "alphaRqD": 24,
+        "g3": 128
+      },
+      "head_count_delta": {
+        "alphaEGq": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEGqp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEGqtp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRGq": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRGqtp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5501,6 +7922,57 @@
         "alphaRuD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGu": 26,
+        "alphaEGup": 12,
+        "alphaEGutp": 20,
+        "alphaRGu": 6,
+        "alphaRGup": 12,
+        "alphaRGutp": 10,
+        "alphaRuD": 18,
+        "g3": 104
+      },
+      "feynpy_head_counts": {
+        "alphaEGu": 32,
+        "alphaEGup": 16,
+        "alphaEGutp": 24,
+        "alphaRGu": 8,
+        "alphaRGup": 12,
+        "alphaRGutp": 12,
+        "alphaRuD": 24,
+        "g3": 128
+      },
+      "head_count_delta": {
+        "alphaEGu": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEGup": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEGutp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRGu": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRGutp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRuD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5561,6 +8033,22 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5623,6 +8111,22 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5686,6 +8190,26 @@
         "alphaRdHD4",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdG": 4,
+        "alphaEdH": 2,
+        "alphaOdG": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 1,
+        "g3": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEdG": 4,
+        "alphaEdH": 2,
+        "alphaOdG": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 1,
+        "g3": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5747,6 +8271,26 @@
         "alphaRuHD4",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuG": 4,
+        "alphaEuH": 2,
+        "alphaOuG": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 1,
+        "g3": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEuG": 4,
+        "alphaEuH": 2,
+        "alphaOuG": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 1,
+        "g3": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5801,6 +8345,25 @@
         "alphaRHdp",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaRHdp": 1,
+        "g3": 1
+      },
+      "feynpy_head_counts": {
+        "alphaRHdp": 2,
+        "g3": 2
+      },
+      "head_count_delta": {
+        "alphaRHdp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g3": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5859,6 +8422,31 @@
         "alphaRHq3p",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaRHq1p": 1,
+        "alphaRHq3p": 1,
+        "g3": 2
+      },
+      "feynpy_head_counts": {
+        "alphaRHq1p": 2,
+        "alphaRHq3p": 2,
+        "g3": 4
+      },
+      "head_count_delta": {
+        "alphaRHq1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g3": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5915,6 +8503,25 @@
         "alphaRHup",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaRHup": 1,
+        "g3": 1
+      },
+      "feynpy_head_counts": {
+        "alphaRHup": 2,
+        "g3": 2
+      },
+      "head_count_delta": {
+        "alphaRHup": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g3": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5977,6 +8584,22 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6039,6 +8662,22 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 5,
+        "g3": 5
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6102,6 +8741,26 @@
         "alphaRdHD4",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEdG": 4,
+        "alphaEdH": 2,
+        "alphaOdG": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 1,
+        "g3": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEdG": 4,
+        "alphaEdH": 2,
+        "alphaOdG": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 2,
+        "alphaRdHD4": 1,
+        "g3": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6163,6 +8822,26 @@
         "alphaRuHD4",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEuG": 4,
+        "alphaEuH": 2,
+        "alphaOuG": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 1,
+        "g3": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEuG": 4,
+        "alphaEuH": 2,
+        "alphaOuG": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 2,
+        "alphaRuHD4": 1,
+        "g3": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6227,6 +8906,55 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEWqp": 4,
+        "alphaEWqtp": 4,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 1,
+        "alphaRqD": 6,
+        "g2": 17,
+        "g3": 17
+      },
+      "feynpy_head_counts": {
+        "alphaEWqp": 8,
+        "alphaEWqtp": 8,
+        "alphaRWqp": 4,
+        "alphaRWqtp": 4,
+        "alphaRqD": 12,
+        "g2": 36,
+        "g3": 36
+      },
+      "head_count_delta": {
+        "alphaEWqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEWqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRWqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRWqtp": {
+          "reference": 1,
+          "feynpy": 4
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 36
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 36
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6298,6 +9026,59 @@
         "g2",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGqp": 4,
+        "alphaEGqtp": 8,
+        "alphaEWqp": 4,
+        "alphaEWqtp": 8,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 2,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 2,
+        "alphaRqD": 9,
+        "g2": 25,
+        "g3": 25
+      },
+      "feynpy_head_counts": {
+        "alphaEGqp": 4,
+        "alphaEGqtp": 8,
+        "alphaEWqp": 4,
+        "alphaEWqtp": 8,
+        "alphaRGqp": 4,
+        "alphaRGqtp": 4,
+        "alphaRWqp": 4,
+        "alphaRWqtp": 4,
+        "alphaRqD": 9,
+        "g2": 29,
+        "g3": 29
+      },
+      "head_count_delta": {
+        "alphaRGqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRGqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRWqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRWqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 25,
+          "feynpy": 29
+        },
+        "g3": {
+          "reference": 25,
+          "feynpy": 29
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6360,6 +9141,39 @@
         "alphaRdD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGd": 8,
+        "alphaEGdp": 4,
+        "alphaEGdtp": 8,
+        "alphaKd": 1,
+        "alphaRGd": 2,
+        "alphaRGdp": 4,
+        "alphaRGdtp": 4,
+        "alphaRdD": 7,
+        "g3": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEGd": 8,
+        "alphaEGdp": 4,
+        "alphaEGdtp": 8,
+        "alphaKd": 1,
+        "alphaRGd": 2,
+        "alphaRGdp": 4,
+        "alphaRGdtp": 4,
+        "alphaRdD": 8,
+        "g3": 9
+      },
+      "head_count_delta": {
+        "alphaRdD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g3": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6420,6 +9234,39 @@
         "alphaRqD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGq": 8,
+        "alphaEGqp": 4,
+        "alphaEGqtp": 8,
+        "alphaKq": 1,
+        "alphaRGq": 2,
+        "alphaRGqp": 4,
+        "alphaRGqtp": 4,
+        "alphaRqD": 7,
+        "g3": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEGq": 8,
+        "alphaEGqp": 4,
+        "alphaEGqtp": 8,
+        "alphaKq": 1,
+        "alphaRGq": 2,
+        "alphaRGqp": 4,
+        "alphaRGqtp": 4,
+        "alphaRqD": 8,
+        "g3": 9
+      },
+      "head_count_delta": {
+        "alphaRqD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g3": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6480,6 +9327,39 @@
         "alphaRuD",
         "g3"
       ],
+      "reference_head_counts": {
+        "alphaEGu": 8,
+        "alphaEGup": 4,
+        "alphaEGutp": 8,
+        "alphaKu": 1,
+        "alphaRGu": 2,
+        "alphaRGup": 4,
+        "alphaRGutp": 4,
+        "alphaRuD": 7,
+        "g3": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEGu": 8,
+        "alphaEGup": 4,
+        "alphaEGutp": 8,
+        "alphaKu": 1,
+        "alphaRGu": 2,
+        "alphaRGup": 4,
+        "alphaRGutp": 4,
+        "alphaRuD": 8,
+        "g3": 9
+      },
+      "head_count_delta": {
+        "alphaRuD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g3": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6532,6 +9412,16 @@
         "alphaOHud",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHud": 2,
+        "g2": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHud": 2,
+        "g2": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6583,6 +9473,14 @@
       "feynpy_heads": [
         "alphaOHud"
       ],
+      "reference_head_counts": {
+        "alphaOHud": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHud": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6630,6 +9528,17 @@
         "alphaWeinberg"
       ],
       "feynpy_heads": [],
+      "reference_head_counts": {
+        "alphaWeinberg": 4
+      },
+      "feynpy_head_counts": {},
+      "head_count_delta": {
+        "alphaWeinberg": {
+          "reference": 4,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "NO_LOCAL_SIGNATURE",
       "feynrules_extra_heads": [
         "alphaWeinberg"
       ],
@@ -6678,6 +9587,33 @@
         "alphaRdHD1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEdW": 2,
+        "alphaOdW": 2,
+        "alphaRdHD1": 2,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdW": 4,
+        "alphaOdW": 4,
+        "alphaRdHD1": 2,
+        "g2": 10
+      },
+      "head_count_delta": {
+        "alphaEdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6738,6 +9674,33 @@
         "alphaReHD1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEeW": 2,
+        "alphaOeW": 2,
+        "alphaReHD1": 2,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEeW": 4,
+        "alphaOeW": 4,
+        "alphaReHD1": 2,
+        "g2": 10
+      },
+      "head_count_delta": {
+        "alphaEeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6798,6 +9761,33 @@
         "alphaRuHD1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEuW": 2,
+        "alphaOuW": 2,
+        "alphaRuHD1": 2,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuW": 4,
+        "alphaOuW": 4,
+        "alphaRuHD1": 2,
+        "g2": 10
+      },
+      "head_count_delta": {
+        "alphaEuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6861,6 +9851,26 @@
         "alphaRdHD4",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaEdW": 4,
+        "alphaOdW": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaEdW": 4,
+        "alphaOdW": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6922,6 +9932,26 @@
         "alphaReHD4",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEeH": 2,
+        "alphaEeW": 4,
+        "alphaOeW": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g2": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 2,
+        "alphaEeW": 4,
+        "alphaOeW": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g2": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6983,6 +10013,26 @@
         "alphaRuHD4",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaEuW": 4,
+        "alphaOuW": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaEuW": 4,
+        "alphaOuW": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7039,6 +10089,24 @@
         "alphaRdHD3",
         "alphaRdHD4"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaOlambdad": 1,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaOlambdad": 1,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7093,6 +10161,24 @@
         "alphaReHD3",
         "alphaReHD4"
       ],
+      "reference_head_counts": {
+        "alphaEeH": 2,
+        "alphaOlambdae": 1,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 2,
+        "alphaOlambdae": 1,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7147,6 +10233,24 @@
         "alphaRuHD3",
         "alphaRuHD4"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaOlambdau": 1,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaOlambdau": 1,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7197,6 +10301,14 @@
       "feynpy_heads": [
         "alphaOdH"
       ],
+      "reference_head_counts": {
+        "alphaOdH": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOdH": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7251,6 +10363,14 @@
       "feynpy_heads": [
         "alphaOeH"
       ],
+      "reference_head_counts": {
+        "alphaOeH": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOeH": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7305,6 +10425,14 @@
       "feynpy_heads": [
         "alphaOuH"
       ],
+      "reference_head_counts": {
+        "alphaOuH": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOuH": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7359,6 +10487,20 @@
         "alphaRWDH",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaKH": 2,
+        "alphaRDH": 4,
+        "alphaRWDH": 4,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaKH": 2,
+        "alphaRDH": 4,
+        "alphaRWDH": 4,
+        "g2": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7416,6 +10558,33 @@
         "alphaRWDH",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaKH": 2,
+        "alphaOHW": 2,
+        "alphaOHWt": 8,
+        "alphaRDH": 12,
+        "alphaRWDH": 20,
+        "g2": 34
+      },
+      "feynpy_head_counts": {
+        "alphaKH": 2,
+        "alphaOHW": 2,
+        "alphaOHWt": 8,
+        "alphaRDH": 20,
+        "alphaRWDH": 20,
+        "g2": 42
+      },
+      "head_count_delta": {
+        "alphaRDH": {
+          "reference": 12,
+          "feynpy": 20
+        },
+        "g2": {
+          "reference": 34,
+          "feynpy": 42
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7476,6 +10645,43 @@
         "alphaRWDH",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHW": 6,
+        "alphaOHWt": 12,
+        "alphaRDH": 24,
+        "alphaRWDH": 48,
+        "g2": 90
+      },
+      "feynpy_head_counts": {
+        "alphaOHW": 12,
+        "alphaOHWt": 24,
+        "alphaRDH": 36,
+        "alphaRWDH": 36,
+        "g2": 108
+      },
+      "head_count_delta": {
+        "alphaOHW": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHWt": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRDH": {
+          "reference": 24,
+          "feynpy": 36
+        },
+        "alphaRWDH": {
+          "reference": 48,
+          "feynpy": 36
+        },
+        "g2": {
+          "reference": 90,
+          "feynpy": 108
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7541,6 +10747,39 @@
         "alphaRWDH",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHW": 6,
+        "alphaOHWt": 3,
+        "alphaRDH": 24,
+        "alphaRWDH": 48,
+        "g2": 81
+      },
+      "feynpy_head_counts": {
+        "alphaOHW": 12,
+        "alphaOHWt": 24,
+        "alphaRDH": 24,
+        "alphaRWDH": 24,
+        "g2": 84
+      },
+      "head_count_delta": {
+        "alphaOHW": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHWt": {
+          "reference": 3,
+          "feynpy": 24
+        },
+        "alphaRWDH": {
+          "reference": 48,
+          "feynpy": 24
+        },
+        "g2": {
+          "reference": 81,
+          "feynpy": 84
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7599,6 +10838,25 @@
         "alphaOHd",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHd": 1,
+        "g2": 1
+      },
+      "feynpy_head_counts": {
+        "alphaOHd": 2,
+        "g2": 2
+      },
+      "head_count_delta": {
+        "alphaOHd": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g2": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7655,6 +10913,25 @@
         "alphaOHe",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHe": 1,
+        "g2": 1
+      },
+      "feynpy_head_counts": {
+        "alphaOHe": 2,
+        "g2": 2
+      },
+      "head_count_delta": {
+        "alphaOHe": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g2": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7719,6 +10996,41 @@
         "alphaRHl3pp",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHl1": 1,
+        "alphaOHl3": 2,
+        "alphaRHl1p": 1,
+        "alphaRHl3p": 2,
+        "alphaRHl3pp": 2,
+        "g2": 8
+      },
+      "feynpy_head_counts": {
+        "alphaOHl1": 2,
+        "alphaOHl3": 2,
+        "alphaRHl1p": 2,
+        "alphaRHl3p": 2,
+        "alphaRHl3pp": 1,
+        "g2": 9
+      },
+      "head_count_delta": {
+        "alphaOHl1": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl3pp": {
+          "reference": 2,
+          "feynpy": 1
+        },
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7783,6 +11095,41 @@
         "alphaRHq3pp",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHq1": 1,
+        "alphaOHq3": 2,
+        "alphaRHq1p": 1,
+        "alphaRHq3p": 2,
+        "alphaRHq3pp": 2,
+        "g2": 8
+      },
+      "feynpy_head_counts": {
+        "alphaOHq1": 2,
+        "alphaOHq3": 2,
+        "alphaRHq1p": 2,
+        "alphaRHq3p": 2,
+        "alphaRHq3pp": 1,
+        "g2": 9
+      },
+      "head_count_delta": {
+        "alphaOHq1": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3pp": {
+          "reference": 2,
+          "feynpy": 1
+        },
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7839,6 +11186,25 @@
         "alphaOHu",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHu": 1,
+        "g2": 1
+      },
+      "feynpy_head_counts": {
+        "alphaOHu": 2,
+        "g2": 2
+      },
+      "head_count_delta": {
+        "alphaOHu": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g2": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7894,6 +11260,18 @@
         "alphaRHdp",
         "alphaRHdpp"
       ],
+      "reference_head_counts": {
+        "alphaOHd": 2,
+        "alphaRHdp": 2,
+        "alphaRHdpp": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHd": 2,
+        "alphaRHdp": 2,
+        "alphaRHdpp": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7947,6 +11325,18 @@
         "alphaRHep",
         "alphaRHepp"
       ],
+      "reference_head_counts": {
+        "alphaOHe": 2,
+        "alphaRHep": 2,
+        "alphaRHepp": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHe": 2,
+        "alphaRHep": 2,
+        "alphaRHepp": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8006,6 +11396,24 @@
         "alphaRHl3p",
         "alphaRHl3pp"
       ],
+      "reference_head_counts": {
+        "alphaOHl1": 2,
+        "alphaOHl3": 2,
+        "alphaRHl1p": 2,
+        "alphaRHl1pp": 2,
+        "alphaRHl3p": 2,
+        "alphaRHl3pp": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHl1": 2,
+        "alphaOHl3": 2,
+        "alphaRHl1p": 2,
+        "alphaRHl1pp": 2,
+        "alphaRHl3p": 2,
+        "alphaRHl3pp": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8065,6 +11473,24 @@
         "alphaRHq3p",
         "alphaRHq3pp"
       ],
+      "reference_head_counts": {
+        "alphaOHq1": 2,
+        "alphaOHq3": 2,
+        "alphaRHq1p": 2,
+        "alphaRHq1pp": 2,
+        "alphaRHq3p": 2,
+        "alphaRHq3pp": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHq1": 2,
+        "alphaOHq3": 2,
+        "alphaRHq1p": 2,
+        "alphaRHq1pp": 2,
+        "alphaRHq3p": 2,
+        "alphaRHq3pp": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8118,6 +11544,18 @@
         "alphaRHup",
         "alphaRHupp"
       ],
+      "reference_head_counts": {
+        "alphaOHu": 2,
+        "alphaRHup": 2,
+        "alphaRHupp": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHu": 2,
+        "alphaRHup": 2,
+        "alphaRHupp": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8175,6 +11613,22 @@
         "alphaRHDp",
         "alphaRHDpp"
       ],
+      "reference_head_counts": {
+        "alphaOHBox": 12,
+        "alphaOHD": 4,
+        "alphaOlambda": 2,
+        "alphaRHDp": 4,
+        "alphaRHDpp": 8
+      },
+      "feynpy_head_counts": {
+        "alphaOHBox": 12,
+        "alphaOHD": 4,
+        "alphaOlambda": 2,
+        "alphaRHDp": 4,
+        "alphaRHDpp": 8
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8233,6 +11687,20 @@
         "alphaRHDpp",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHD": 8,
+        "alphaRHDp": 8,
+        "alphaRHDpp": 12,
+        "g2": 28
+      },
+      "feynpy_head_counts": {
+        "alphaOHD": 8,
+        "alphaRHDp": 8,
+        "alphaRHDpp": 12,
+        "g2": 28
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8294,6 +11762,27 @@
         "alphaRHDp",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHD": 4,
+        "alphaRHDp": 8,
+        "g2": 12
+      },
+      "feynpy_head_counts": {
+        "alphaOHD": 8,
+        "alphaRHDp": 8,
+        "g2": 16
+      },
+      "head_count_delta": {
+        "alphaOHD": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "g2": {
+          "reference": 12,
+          "feynpy": 16
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8350,6 +11839,14 @@
       "feynpy_heads": [
         "alphaOdH"
       ],
+      "reference_head_counts": {
+        "alphaOdH": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOdH": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8404,6 +11901,14 @@
       "feynpy_heads": [
         "alphaOeH"
       ],
+      "reference_head_counts": {
+        "alphaOeH": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOeH": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8458,6 +11963,14 @@
       "feynpy_heads": [
         "alphaOuH"
       ],
+      "reference_head_counts": {
+        "alphaOuH": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOuH": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8515,6 +12028,14 @@
       "feynpy_heads": [
         "alphaOH"
       ],
+      "reference_head_counts": {
+        "alphaOH": 6
+      },
+      "feynpy_head_counts": {
+        "alphaOH": 6
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8573,6 +12094,16 @@
         "alphaOHud",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaOHud": 2,
+        "g2": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHud": 2,
+        "g2": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8624,6 +12155,14 @@
       "feynpy_heads": [
         "alphaOHud"
       ],
+      "reference_head_counts": {
+        "alphaOHud": 2
+      },
+      "feynpy_head_counts": {
+        "alphaOHud": 2
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8671,6 +12210,17 @@
         "alphaWeinberg"
       ],
       "feynpy_heads": [],
+      "reference_head_counts": {
+        "alphaWeinberg": 4
+      },
+      "feynpy_head_counts": {},
+      "head_count_delta": {
+        "alphaWeinberg": {
+          "reference": 4,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "NO_LOCAL_SIGNATURE",
       "feynrules_extra_heads": [
         "alphaWeinberg"
       ],
@@ -8719,6 +12269,33 @@
         "alphaRdHD1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEdW": 2,
+        "alphaOdW": 2,
+        "alphaRdHD1": 2,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEdW": 4,
+        "alphaOdW": 4,
+        "alphaRdHD1": 2,
+        "g2": 10
+      },
+      "head_count_delta": {
+        "alphaEdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8779,6 +12356,33 @@
         "alphaReHD1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEeW": 2,
+        "alphaOeW": 2,
+        "alphaReHD1": 2,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEeW": 4,
+        "alphaOeW": 4,
+        "alphaReHD1": 2,
+        "g2": 10
+      },
+      "head_count_delta": {
+        "alphaEeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8839,6 +12443,33 @@
         "alphaRuHD1",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEuW": 2,
+        "alphaOuW": 2,
+        "alphaRuHD1": 2,
+        "g2": 6
+      },
+      "feynpy_head_counts": {
+        "alphaEuW": 4,
+        "alphaOuW": 4,
+        "alphaRuHD1": 2,
+        "g2": 10
+      },
+      "head_count_delta": {
+        "alphaEuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8902,6 +12533,26 @@
         "alphaRdHD4",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaEdW": 4,
+        "alphaOdW": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaEdW": 4,
+        "alphaOdW": 2,
+        "alphaRdHD1": 2,
+        "alphaRdHD2": 2,
+        "alphaRdHD4": 1,
+        "g2": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8963,6 +12614,26 @@
         "alphaReHD4",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEeH": 2,
+        "alphaEeW": 4,
+        "alphaOeW": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g2": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 2,
+        "alphaEeW": 4,
+        "alphaOeW": 2,
+        "alphaReHD1": 2,
+        "alphaReHD2": 2,
+        "alphaReHD4": 1,
+        "g2": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9024,6 +12695,26 @@
         "alphaRuHD4",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaEuW": 4,
+        "alphaOuW": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 7
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaEuW": 4,
+        "alphaOuW": 2,
+        "alphaRuHD1": 2,
+        "alphaRuHD2": 2,
+        "alphaRuHD4": 1,
+        "g2": 7
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9080,6 +12771,24 @@
         "alphaRdHD3",
         "alphaRdHD4"
       ],
+      "reference_head_counts": {
+        "alphaEdH": 2,
+        "alphaOlambdad": 1,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEdH": 2,
+        "alphaOlambdad": 1,
+        "alphaRdHD1": 1,
+        "alphaRdHD2": 2,
+        "alphaRdHD3": 1,
+        "alphaRdHD4": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9134,6 +12843,24 @@
         "alphaReHD3",
         "alphaReHD4"
       ],
+      "reference_head_counts": {
+        "alphaEeH": 2,
+        "alphaOlambdae": 1,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEeH": 2,
+        "alphaOlambdae": 1,
+        "alphaReHD1": 1,
+        "alphaReHD2": 2,
+        "alphaReHD3": 1,
+        "alphaReHD4": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9188,6 +12915,24 @@
         "alphaRuHD3",
         "alphaRuHD4"
       ],
+      "reference_head_counts": {
+        "alphaEuH": 2,
+        "alphaOlambdau": 1,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEuH": 2,
+        "alphaOlambdau": 1,
+        "alphaRuHD1": 1,
+        "alphaRuHD2": 2,
+        "alphaRuHD3": 1,
+        "alphaRuHD4": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9240,6 +12985,39 @@
         "alphaR2W",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaKW": 6,
+        "alphaO3W": 8,
+        "alphaO3Wt": 42,
+        "alphaR2W": 36,
+        "g2": 42
+      },
+      "feynpy_head_counts": {
+        "alphaKW": 6,
+        "alphaO3W": 14,
+        "alphaO3Wt": 21,
+        "alphaR2W": 54,
+        "g2": 60
+      },
+      "head_count_delta": {
+        "alphaO3W": {
+          "reference": 8,
+          "feynpy": 14
+        },
+        "alphaO3Wt": {
+          "reference": 42,
+          "feynpy": 21
+        },
+        "alphaR2W": {
+          "reference": 36,
+          "feynpy": 54
+        },
+        "g2": {
+          "reference": 42,
+          "feynpy": 60
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9295,6 +13073,39 @@
         "alphaR2W",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaKW": 6,
+        "alphaO3W": 48,
+        "alphaO3Wt": 186,
+        "alphaR2W": 156,
+        "g2": 396
+      },
+      "feynpy_head_counts": {
+        "alphaKW": 6,
+        "alphaO3W": 144,
+        "alphaO3Wt": 138,
+        "alphaR2W": 204,
+        "g2": 492
+      },
+      "head_count_delta": {
+        "alphaO3W": {
+          "reference": 48,
+          "feynpy": 144
+        },
+        "alphaO3Wt": {
+          "reference": 186,
+          "feynpy": 138
+        },
+        "alphaR2W": {
+          "reference": 156,
+          "feynpy": 204
+        },
+        "g2": {
+          "reference": 396,
+          "feynpy": 492
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9353,6 +13164,37 @@
         "alphaR2W",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaO3W": 240,
+        "alphaO3Wt": 420,
+        "alphaR2W": 360,
+        "g2": 1020
+      },
+      "feynpy_head_counts": {
+        "alphaO3W": 720,
+        "alphaO3Wt": 720,
+        "alphaR2W": 720,
+        "g2": 2160
+      },
+      "head_count_delta": {
+        "alphaO3W": {
+          "reference": 240,
+          "feynpy": 720
+        },
+        "alphaO3Wt": {
+          "reference": 420,
+          "feynpy": 720
+        },
+        "alphaR2W": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g2": {
+          "reference": 1020,
+          "feynpy": 2160
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9416,6 +13258,33 @@
         "alphaR2W",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaO3W": 720,
+        "alphaO3Wt": 360,
+        "alphaR2W": 360,
+        "g2": 1440
+      },
+      "feynpy_head_counts": {
+        "alphaO3W": 720,
+        "alphaO3Wt": 720,
+        "alphaR2W": 720,
+        "g2": 2160
+      },
+      "head_count_delta": {
+        "alphaO3Wt": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "alphaR2W": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g2": {
+          "reference": 1440,
+          "feynpy": 2160
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9486,6 +13355,49 @@
         "alphaRlD",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWl": 24,
+        "alphaEWlp": 12,
+        "alphaEWltp": 12,
+        "alphaRWl": 6,
+        "alphaRWlp": 12,
+        "alphaRWltp": 6,
+        "alphaRlD": 30,
+        "g2": 102
+      },
+      "feynpy_head_counts": {
+        "alphaEWl": 24,
+        "alphaEWlp": 24,
+        "alphaEWltp": 24,
+        "alphaRWl": 6,
+        "alphaRWlp": 12,
+        "alphaRWltp": 12,
+        "alphaRlD": 12,
+        "g2": 114
+      },
+      "head_count_delta": {
+        "alphaEWlp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEWltp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRWltp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRlD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 102,
+          "feynpy": 114
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9554,6 +13466,49 @@
         "alphaRqD",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWq": 24,
+        "alphaEWqp": 12,
+        "alphaEWqtp": 12,
+        "alphaRWq": 6,
+        "alphaRWqp": 12,
+        "alphaRWqtp": 6,
+        "alphaRqD": 30,
+        "g2": 102
+      },
+      "feynpy_head_counts": {
+        "alphaEWq": 24,
+        "alphaEWqp": 24,
+        "alphaEWqtp": 24,
+        "alphaRWq": 6,
+        "alphaRWqp": 12,
+        "alphaRWqtp": 12,
+        "alphaRqD": 12,
+        "g2": 114
+      },
+      "head_count_delta": {
+        "alphaEWqp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEWqtp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRWqtp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 102,
+          "feynpy": 114
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9619,6 +13574,57 @@
         "alphaRlD",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWl": 26,
+        "alphaEWlp": 12,
+        "alphaEWltp": 20,
+        "alphaRWl": 6,
+        "alphaRWlp": 12,
+        "alphaRWltp": 10,
+        "alphaRlD": 18,
+        "g2": 104
+      },
+      "feynpy_head_counts": {
+        "alphaEWl": 32,
+        "alphaEWlp": 16,
+        "alphaEWltp": 24,
+        "alphaRWl": 8,
+        "alphaRWlp": 12,
+        "alphaRWltp": 12,
+        "alphaRlD": 24,
+        "g2": 128
+      },
+      "head_count_delta": {
+        "alphaEWl": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEWlp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEWltp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRWl": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRWltp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRlD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g2": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9682,6 +13688,57 @@
         "alphaRqD",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWq": 26,
+        "alphaEWqp": 12,
+        "alphaEWqtp": 20,
+        "alphaRWq": 6,
+        "alphaRWqp": 12,
+        "alphaRWqtp": 10,
+        "alphaRqD": 18,
+        "g2": 104
+      },
+      "feynpy_head_counts": {
+        "alphaEWq": 32,
+        "alphaEWqp": 16,
+        "alphaEWqtp": 24,
+        "alphaRWq": 8,
+        "alphaRWqp": 12,
+        "alphaRWqtp": 12,
+        "alphaRqD": 24,
+        "g2": 128
+      },
+      "head_count_delta": {
+        "alphaEWq": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEWqp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEWqtp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRWq": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRWqtp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g2": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9744,6 +13801,39 @@
         "alphaRlD",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWl": 8,
+        "alphaEWlp": 4,
+        "alphaEWltp": 8,
+        "alphaKl": 1,
+        "alphaRWl": 2,
+        "alphaRWlp": 4,
+        "alphaRWltp": 4,
+        "alphaRlD": 7,
+        "g2": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEWl": 8,
+        "alphaEWlp": 4,
+        "alphaEWltp": 8,
+        "alphaKl": 1,
+        "alphaRWl": 2,
+        "alphaRWlp": 4,
+        "alphaRWltp": 4,
+        "alphaRlD": 8,
+        "g2": 9
+      },
+      "head_count_delta": {
+        "alphaRlD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9804,6 +13894,39 @@
         "alphaRqD",
         "g2"
       ],
+      "reference_head_counts": {
+        "alphaEWq": 8,
+        "alphaEWqp": 4,
+        "alphaEWqtp": 8,
+        "alphaKq": 1,
+        "alphaRWq": 2,
+        "alphaRWqp": 4,
+        "alphaRWqtp": 4,
+        "alphaRqD": 7,
+        "g2": 8
+      },
+      "feynpy_head_counts": {
+        "alphaEWq": 8,
+        "alphaEWqp": 4,
+        "alphaEWqtp": 8,
+        "alphaKq": 1,
+        "alphaRWq": 2,
+        "alphaRWqp": 4,
+        "alphaRWqtp": 4,
+        "alphaRqD": 8,
+        "g2": 9
+      },
+      "head_count_delta": {
+        "alphaRqD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9859,6 +13982,31 @@
         "alphaElqdethree",
         "alphaOledq"
       ],
+      "reference_head_counts": {
+        "alphaEcqedl": 1,
+        "alphaEcqedlthree": 1,
+        "alphaEledqtwo": 1,
+        "alphaElqde": 1,
+        "alphaElqdethree": 1,
+        "alphaOledq": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEledqtwo": 1,
+        "alphaElqde": 1,
+        "alphaElqdethree": 1,
+        "alphaOledq": 1
+      },
+      "head_count_delta": {
+        "alphaEcqedl": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcqedlthree": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -9919,6 +14067,31 @@
         "alphaOquqd1",
         "alphaOquqd8"
       ],
+      "reference_head_counts": {
+        "alphaEcudqq": 2,
+        "alphaEcudqqtwo": 2,
+        "alphaEquqdtwo": 2,
+        "alphaEquqdtwo8": 2,
+        "alphaOquqd1": 2,
+        "alphaOquqd8": 2
+      },
+      "feynpy_head_counts": {
+        "alphaEquqdtwo": 2,
+        "alphaEquqdtwo8": 2,
+        "alphaOquqd1": 2,
+        "alphaOquqd8": 2
+      },
+      "head_count_delta": {
+        "alphaEcudqq": {
+          "reference": 2,
+          "feynpy": 0
+        },
+        "alphaEcudqqtwo": {
+          "reference": 2,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -9981,6 +14154,24 @@
         "alphaEedthreep",
         "alphaOed"
       ],
+      "reference_head_counts": {
+        "alphaEced": 1,
+        "alphaEcedtwo": 1,
+        "alphaEed": 1,
+        "alphaEedthree": 1,
+        "alphaEedthreep": 1,
+        "alphaOed": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEced": 1,
+        "alphaEcedtwo": 1,
+        "alphaEed": 1,
+        "alphaEedthree": 1,
+        "alphaEedthreep": 1,
+        "alphaOed": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10040,6 +14231,24 @@
         "alphaEldtwo",
         "alphaOld"
       ],
+      "reference_head_counts": {
+        "alphaEcld": 1,
+        "alphaEcldthree": 1,
+        "alphaEld": 1,
+        "alphaEldthree": 1,
+        "alphaEldtwo": 1,
+        "alphaOld": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEcld": 1,
+        "alphaEcldthree": 1,
+        "alphaEld": 1,
+        "alphaEldthree": 1,
+        "alphaEldtwo": 1,
+        "alphaOld": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10111,6 +14320,36 @@
         "alphaOqd1",
         "alphaOqd8"
       ],
+      "reference_head_counts": {
+        "alphaEcqd": 1,
+        "alphaEcqdp": 1,
+        "alphaEcqdpthree": 1,
+        "alphaEcqdthree": 1,
+        "alphaEqd": 1,
+        "alphaEqd8": 1,
+        "alphaEqdthree": 1,
+        "alphaEqdthree8": 1,
+        "alphaEqdtwo": 1,
+        "alphaEqdtwo8": 1,
+        "alphaOqd1": 1,
+        "alphaOqd8": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEcqd": 1,
+        "alphaEcqdp": 1,
+        "alphaEcqdpthree": 1,
+        "alphaEcqdthree": 1,
+        "alphaEqd": 1,
+        "alphaEqd8": 1,
+        "alphaEqdthree": 1,
+        "alphaEqdthree8": 1,
+        "alphaEqdtwo": 1,
+        "alphaEqdtwo8": 1,
+        "alphaOqd1": 1,
+        "alphaOqd8": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10182,6 +14421,36 @@
         "alphaOud1",
         "alphaOud8"
       ],
+      "reference_head_counts": {
+        "alphaEcud": 1,
+        "alphaEcudp": 1,
+        "alphaEcudptwo": 1,
+        "alphaEcudtwo": 1,
+        "alphaEud": 1,
+        "alphaEud8": 1,
+        "alphaEudthree": 1,
+        "alphaEudthree8": 1,
+        "alphaEudthree8p": 1,
+        "alphaEudthreep": 1,
+        "alphaOud1": 1,
+        "alphaOud8": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEcud": 1,
+        "alphaEcudp": 1,
+        "alphaEcudptwo": 1,
+        "alphaEcudtwo": 1,
+        "alphaEud": 1,
+        "alphaEud8": 1,
+        "alphaEudthree": 1,
+        "alphaEudthree8": 1,
+        "alphaEudthree8p": 1,
+        "alphaEudthreep": 1,
+        "alphaOud1": 1,
+        "alphaOud8": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10241,6 +14510,24 @@
         "alphaEddthree8",
         "alphaOdd"
       ],
+      "reference_head_counts": {
+        "alphaEcdd": 4,
+        "alphaEcddtwo": 4,
+        "alphaEdd8": 4,
+        "alphaEddthree": 4,
+        "alphaEddthree8": 4,
+        "alphaOdd": 4
+      },
+      "feynpy_head_counts": {
+        "alphaEcdd": 4,
+        "alphaEcddtwo": 4,
+        "alphaEdd8": 4,
+        "alphaEddthree": 4,
+        "alphaEddthree8": 4,
+        "alphaOdd": 4
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10298,6 +14585,31 @@
         "alphaElqdethree",
         "alphaOledq"
       ],
+      "reference_head_counts": {
+        "alphaEcqedl": 1,
+        "alphaEcqedlthree": 1,
+        "alphaEledqtwo": 1,
+        "alphaElqde": 1,
+        "alphaElqdethree": 1,
+        "alphaOledq": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEledqtwo": 1,
+        "alphaElqde": 1,
+        "alphaElqdethree": 1,
+        "alphaOledq": 1
+      },
+      "head_count_delta": {
+        "alphaEcqedl": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcqedlthree": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -10358,6 +14670,31 @@
         "alphaOquqd1",
         "alphaOquqd8"
       ],
+      "reference_head_counts": {
+        "alphaEcudqq": 2,
+        "alphaEcudqqtwo": 2,
+        "alphaEquqdtwo": 2,
+        "alphaEquqdtwo8": 2,
+        "alphaOquqd1": 2,
+        "alphaOquqd8": 2
+      },
+      "feynpy_head_counts": {
+        "alphaEquqdtwo": 2,
+        "alphaEquqdtwo8": 2,
+        "alphaOquqd1": 2,
+        "alphaOquqd8": 2
+      },
+      "head_count_delta": {
+        "alphaEcudqq": {
+          "reference": 2,
+          "feynpy": 0
+        },
+        "alphaEcudqqtwo": {
+          "reference": 2,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -10418,6 +14755,31 @@
         "alphaEluqetwo",
         "alphaOlequ1"
       ],
+      "reference_head_counts": {
+        "alphaEcuelq": 1,
+        "alphaEcuelqtwo": 1,
+        "alphaElequtwo": 1,
+        "alphaEluqe": 1,
+        "alphaEluqetwo": 1,
+        "alphaOlequ1": 1
+      },
+      "feynpy_head_counts": {
+        "alphaElequtwo": 1,
+        "alphaEluqe": 1,
+        "alphaEluqetwo": 1,
+        "alphaOlequ1": 1
+      },
+      "head_count_delta": {
+        "alphaEcuelq": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcuelqtwo": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -10480,6 +14842,24 @@
         "alphaEletwo",
         "alphaOle"
       ],
+      "reference_head_counts": {
+        "alphaEcle": 1,
+        "alphaEclethree": 1,
+        "alphaEle": 1,
+        "alphaElethree": 1,
+        "alphaEletwo": 1,
+        "alphaOle": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEcle": 1,
+        "alphaEclethree": 1,
+        "alphaEle": 1,
+        "alphaElethree": 1,
+        "alphaEletwo": 1,
+        "alphaOle": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10539,6 +14919,24 @@
         "alphaEqetwo",
         "alphaOqe"
       ],
+      "reference_head_counts": {
+        "alphaEcqe": 1,
+        "alphaEcqethree": 1,
+        "alphaEqe": 1,
+        "alphaEqethree": 1,
+        "alphaEqetwo": 1,
+        "alphaOqe": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEcqe": 1,
+        "alphaEcqethree": 1,
+        "alphaEqe": 1,
+        "alphaEqethree": 1,
+        "alphaEqetwo": 1,
+        "alphaOqe": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10598,6 +14996,24 @@
         "alphaEeuthreep",
         "alphaOeu"
       ],
+      "reference_head_counts": {
+        "alphaEceu": 1,
+        "alphaEceutwo": 1,
+        "alphaEeu": 1,
+        "alphaEeuthree": 1,
+        "alphaEeuthreep": 1,
+        "alphaOeu": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEceu": 1,
+        "alphaEceutwo": 1,
+        "alphaEeu": 1,
+        "alphaEeuthree": 1,
+        "alphaEeuthreep": 1,
+        "alphaOeu": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10653,6 +15069,20 @@
         "alphaEeethree",
         "alphaOee"
       ],
+      "reference_head_counts": {
+        "alphaEcee": 4,
+        "alphaEceetwo": 4,
+        "alphaEeethree": 4,
+        "alphaOee": 4
+      },
+      "feynpy_head_counts": {
+        "alphaEcee": 4,
+        "alphaEceetwo": 4,
+        "alphaEeethree": 4,
+        "alphaOee": 4
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10710,6 +15140,31 @@
         "alphaEluqetwo",
         "alphaOlequ1"
       ],
+      "reference_head_counts": {
+        "alphaEcuelq": 1,
+        "alphaEcuelqtwo": 1,
+        "alphaElequtwo": 1,
+        "alphaEluqe": 1,
+        "alphaEluqetwo": 1,
+        "alphaOlequ1": 1
+      },
+      "feynpy_head_counts": {
+        "alphaElequtwo": 1,
+        "alphaEluqe": 1,
+        "alphaEluqetwo": 1,
+        "alphaOlequ1": 1
+      },
+      "head_count_delta": {
+        "alphaEcuelq": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcuelqtwo": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -10784,6 +15239,36 @@
         "alphaOlq1",
         "alphaOlq3"
       ],
+      "reference_head_counts": {
+        "alphaEcql": 1,
+        "alphaEcqlp": 1,
+        "alphaEcqlptwo": 1,
+        "alphaEcqltwo": 1,
+        "alphaElq": 1,
+        "alphaElq3": 1,
+        "alphaElqthree": 1,
+        "alphaElqthree3": 1,
+        "alphaElqthree3p": 1,
+        "alphaElqthreep": 1,
+        "alphaOlq1": 1,
+        "alphaOlq3": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEcql": 1,
+        "alphaEcqlp": 1,
+        "alphaEcqlptwo": 1,
+        "alphaEcqltwo": 1,
+        "alphaElq": 1,
+        "alphaElq3": 1,
+        "alphaElqthree": 1,
+        "alphaElqthree3": 1,
+        "alphaElqthree3p": 1,
+        "alphaElqthreep": 1,
+        "alphaOlq1": 1,
+        "alphaOlq3": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10843,6 +15328,24 @@
         "alphaElutwo",
         "alphaOlu"
       ],
+      "reference_head_counts": {
+        "alphaEclu": 1,
+        "alphaEcluthree": 1,
+        "alphaElu": 1,
+        "alphaEluthree": 1,
+        "alphaElutwo": 1,
+        "alphaOlu": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEclu": 1,
+        "alphaEcluthree": 1,
+        "alphaElu": 1,
+        "alphaEluthree": 1,
+        "alphaElutwo": 1,
+        "alphaOlu": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10902,6 +15405,24 @@
         "alphaEllthree3",
         "alphaOll"
       ],
+      "reference_head_counts": {
+        "alphaEcll": 4,
+        "alphaEclltwo": 4,
+        "alphaEll3": 4,
+        "alphaEllthree": 4,
+        "alphaEllthree3": 4,
+        "alphaOll": 4
+      },
+      "feynpy_head_counts": {
+        "alphaEcll": 4,
+        "alphaEclltwo": 4,
+        "alphaEll3": 4,
+        "alphaEllthree": 4,
+        "alphaEllthree3": 4,
+        "alphaOll": 4
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10973,6 +15494,36 @@
         "alphaOqu1",
         "alphaOqu8"
       ],
+      "reference_head_counts": {
+        "alphaEcqu": 1,
+        "alphaEcqup": 1,
+        "alphaEcqupthree": 1,
+        "alphaEcquthree": 1,
+        "alphaEqu": 1,
+        "alphaEqu8": 1,
+        "alphaEquthree": 1,
+        "alphaEquthree8": 1,
+        "alphaEqutwo": 1,
+        "alphaEqutwo8": 1,
+        "alphaOqu1": 1,
+        "alphaOqu8": 1
+      },
+      "feynpy_head_counts": {
+        "alphaEcqu": 1,
+        "alphaEcqup": 1,
+        "alphaEcqupthree": 1,
+        "alphaEcquthree": 1,
+        "alphaEqu": 1,
+        "alphaEqu8": 1,
+        "alphaEquthree": 1,
+        "alphaEquthree8": 1,
+        "alphaEqutwo": 1,
+        "alphaEqutwo8": 1,
+        "alphaOqu1": 1,
+        "alphaOqu8": 1
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11044,6 +15595,36 @@
         "alphaOqq1",
         "alphaOqq3"
       ],
+      "reference_head_counts": {
+        "alphaEcqq": 4,
+        "alphaEcqqp": 4,
+        "alphaEcqqptwo": 4,
+        "alphaEcqqtwo": 4,
+        "alphaEqq38": 4,
+        "alphaEqq8": 4,
+        "alphaEqqthree1": 4,
+        "alphaEqqthree3": 4,
+        "alphaEqqthree38": 4,
+        "alphaEqqthree8": 4,
+        "alphaOqq1": 4,
+        "alphaOqq3": 4
+      },
+      "feynpy_head_counts": {
+        "alphaEcqq": 4,
+        "alphaEcqqp": 4,
+        "alphaEcqqptwo": 4,
+        "alphaEcqqtwo": 4,
+        "alphaEqq38": 4,
+        "alphaEqq8": 4,
+        "alphaEqqthree1": 4,
+        "alphaEqqthree3": 4,
+        "alphaEqqthree38": 4,
+        "alphaEqqthree8": 4,
+        "alphaOqq1": 4,
+        "alphaOqq3": 4
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11103,6 +15684,24 @@
         "alphaEuuthree8",
         "alphaOuu"
       ],
+      "reference_head_counts": {
+        "alphaEcuu": 4,
+        "alphaEcuutwo": 4,
+        "alphaEuu8": 4,
+        "alphaEuuthree": 4,
+        "alphaEuuthree8": 4,
+        "alphaOuu": 4
+      },
+      "feynpy_head_counts": {
+        "alphaEcuu": 4,
+        "alphaEcuutwo": 4,
+        "alphaEuu8": 4,
+        "alphaEuuthree": 4,
+        "alphaEuuthree8": 4,
+        "alphaOuu": 4
+      },
+      "head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11154,6 +15753,9 @@
       "feynpy_heads": [
         "alphaWeinberg"
       ],
+      "feynpy_head_counts": {
+        "alphaWeinberg": 2
+      },
       "status": "FEYNPY_ONLY_WEINBERG_PACKAGING",
       "reason": "Local model emits a Weinberg bar/conjugation signature not present as a separate FeynRules signature."
     },
@@ -11185,6 +15787,9 @@
       "feynpy_heads": [
         "alphaWeinberg"
       ],
+      "feynpy_head_counts": {
+        "alphaWeinberg": 2
+      },
       "status": "FEYNPY_ONLY_WEINBERG_PACKAGING",
       "reason": "Local model emits a Weinberg bar/conjugation signature not present as a separate FeynRules signature."
     },
@@ -11217,6 +15822,10 @@
         "alphaEcqedl",
         "alphaEcqedlthree"
       ],
+      "feynpy_head_counts": {
+        "alphaEcqedl": 1,
+        "alphaEcqedlthree": 1
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     },
@@ -11249,6 +15858,10 @@
         "alphaEcudqq",
         "alphaEcudqqtwo"
       ],
+      "feynpy_head_counts": {
+        "alphaEcudqq": 1,
+        "alphaEcudqqtwo": 1
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     },
@@ -11281,6 +15894,10 @@
         "alphaEcqedl",
         "alphaEcqedlthree"
       ],
+      "feynpy_head_counts": {
+        "alphaEcqedl": 1,
+        "alphaEcqedlthree": 1
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     },
@@ -11313,6 +15930,10 @@
         "alphaEcudqq",
         "alphaEcudqqtwo"
       ],
+      "feynpy_head_counts": {
+        "alphaEcudqq": 1,
+        "alphaEcudqqtwo": 1
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     },
@@ -11345,6 +15966,10 @@
         "alphaEcuelq",
         "alphaEcuelqtwo"
       ],
+      "feynpy_head_counts": {
+        "alphaEcuelq": 1,
+        "alphaEcuelqtwo": 1
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     },
@@ -11377,6 +16002,10 @@
         "alphaEcuelq",
         "alphaEcuelqtwo"
       ],
+      "feynpy_head_counts": {
+        "alphaEcuelq": 1,
+        "alphaEcuelqtwo": 1
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     },
@@ -11412,6 +16041,10 @@
         "alphaOHud",
         "g1"
       ],
+      "feynpy_head_counts": {
+        "alphaOHud": 2,
+        "g1": 2
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     },
@@ -11447,6 +16080,10 @@
         "alphaOHud",
         "g1"
       ],
+      "feynpy_head_counts": {
+        "alphaOHud": 2,
+        "g1": 2
+      },
       "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
       "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
     }

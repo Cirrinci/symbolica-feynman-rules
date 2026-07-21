@@ -4,7 +4,7 @@ Generated on `2026-07-21` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
-Signature coverage and coefficient-head content. Full tensor-rule equality is not claimed by this SMEFT2 report.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics. Full tensor-rule equality is not claimed by this SMEFT2 report.
 
 | Item | Value |
 | --- | ---: |
@@ -14,6 +14,8 @@ Signature coverage and coefficient-head content. Full tensor-rule equality is no
 | Reference-only signatures | 2 |
 | FeynPy-only signatures | 10 |
 | Shared coefficient-head matches | 168 |
+| Shared raw head-count matches | 83 |
+| Shared raw head-count mismatches | 99 |
 
 ## Basis
 
@@ -55,6 +57,33 @@ Signature coverage and coefficient-head content. Full tensor-rule equality is no
 | `alphaEuH` | 2 |
 | `alphaRHl3pp` | 1 |
 | `alphaRHq3pp` | 1 |
+
+## Largest Raw Head-Count Deltas
+
+These are raw coefficient-head occurrence-count diagnostics. They catch some missing or duplicated content, but they are not tensor-rule equality proofs because equivalent algebra can be printed with different occurrence counts.
+
+| Head | Total absolute delta |
+| --- | ---: |
+| `g3` | 2243 |
+| `g2` | 2238 |
+| `alphaR2G` | 786 |
+| `alphaR2W` | 786 |
+| `alphaO3Gt` | 729 |
+| `alphaO3Wt` | 729 |
+| `alphaO3G` | 582 |
+| `alphaO3W` | 582 |
+| `g1` | 201 |
+| `alphaRqD` | 75 |
+| `alphaRDH` | 52 |
+| `alphaRWDH` | 38 |
+| `alphaOHGt` | 33 |
+| `alphaOHWt` | 33 |
+| `alphaRdD` | 32 |
+| `alphaRuD` | 32 |
+| `alphaRlD` | 32 |
+| `alphaEGqp` | 24 |
+| `alphaEGqtp` | 24 |
+| `alphaEWqp` | 24 |
 
 ## Files
 

@@ -1,10 +1,11 @@
 """Regenerate the SMEFT2 FeynRules/FeynPy comparison artifacts.
 
 The FeynRules reference JSON is a full tensor-rule export. This script performs
-the reproducible comparison currently supported for SMEFT2: signature coverage
-and coefficient-head content after normalizing field names to the FeynRules
-convention. It also exports the local FeynPy vertex rules so individual rows
-can be inspected against the reference JSON.
+the reproducible comparison currently supported for SMEFT2: signature coverage,
+coefficient-head content, and raw coefficient-head multiplicity diagnostics
+after normalizing field names to the FeynRules convention. It also exports the
+local FeynPy vertex rules so individual rows can be inspected against the
+reference JSON.
 """
 
 from __future__ import annotations
@@ -68,6 +69,7 @@ class LocalVertex:
     term_count: int
     sectors: tuple[str, ...]
     heads: tuple[str, ...]
+    head_counts: tuple[tuple[str, int], ...]
     rule: str
 
 
@@ -82,12 +84,26 @@ def _normalize_local_name(name: str) -> str:
         raise ValueError(f"No FeynRules name mapping for local field {name!r}") from exc
 
 
-def _parameter_heads_from_text(text: str, parameter_names: Iterable[str]) -> tuple[str, ...]:
-    heads = set(re.findall(r"\balpha[A-Za-z0-9]+(?=\[|\(|\b)", text))
+def _parameter_head_counts_from_text(
+    text: str,
+    parameter_names: Iterable[str],
+) -> dict[str, int]:
+    counts = Counter(re.findall(r"\balpha[A-Za-z0-9]+(?=\[|\(|\b)", text))
     for name in parameter_names:
+        if name.startswith("alpha"):
+            continue
         if re.search(rf"(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])", text):
-            heads.add(name)
-    return tuple(sorted(heads))
+            counts[name] += len(
+                re.findall(
+                    rf"(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])",
+                    text,
+                )
+            )
+    return dict(sorted((head, count) for head, count in counts.items() if count))
+
+
+def _parameter_heads_from_text(text: str, parameter_names: Iterable[str]) -> tuple[str, ...]:
+    return tuple(_parameter_head_counts_from_text(text, parameter_names))
 
 
 def _reference_heads(
@@ -95,6 +111,29 @@ def _reference_heads(
     parameter_names: Iterable[str],
 ) -> tuple[str, ...]:
     return _parameter_heads_from_text(reference.rule, parameter_names)
+
+
+def _reference_head_counts(
+    reference: FeynRulesVertex,
+    parameter_names: Iterable[str],
+) -> dict[str, int]:
+    return _parameter_head_counts_from_text(reference.rule, parameter_names)
+
+
+def _head_count_delta(
+    reference_counts: dict[str, int],
+    local_counts: dict[str, int],
+) -> dict[str, dict[str, int]]:
+    delta = {}
+    for head in sorted(set(reference_counts) | set(local_counts)):
+        reference_count = reference_counts.get(head, 0)
+        local_count = local_counts.get(head, 0)
+        if reference_count != local_count:
+            delta[head] = {
+                "reference": reference_count,
+                "feynpy": local_count,
+            }
+    return delta
 
 
 def _local_vertices(parameter_names: Iterable[str]) -> tuple[LocalVertex, ...]:
@@ -106,6 +145,7 @@ def _local_vertices(parameter_names: Iterable[str]) -> tuple[LocalVertex, ...]:
             continue
         rule = lagrangian.feynman_rule(*signature.fields, simplify=True)
         rule_text = rule.cancel().expand().to_canonical_string()
+        head_counts = _parameter_head_counts_from_text(rule_text, parameter_names)
         local_names = tuple(_normalize_local_name(name) for name in signature.names)
         normalized_signature = tuple(sorted(local_names))
         rows.append(
@@ -117,7 +157,8 @@ def _local_vertices(parameter_names: Iterable[str]) -> tuple[LocalVertex, ...]:
                 arity=signature.arity,
                 term_count=signature.term_count,
                 sectors=signature.sectors,
-                heads=_parameter_heads_from_text(rule_text, parameter_names),
+                heads=tuple(head_counts),
+                head_counts=tuple(head_counts.items()),
                 rule=rule_text,
             )
         )
@@ -241,21 +282,32 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
     ):
         key = _name_key(reference.fields)
         reference_heads = set(_reference_heads(reference, parameter_names))
+        reference_head_counts = _reference_head_counts(reference, parameter_names)
         local = local_by_key.get(key)
         if local is None:
             status = _missing_reference_status(reference_heads)
             local_heads: set[str] = set()
+            local_head_counts: dict[str, int] = {}
             local_names: tuple[str, ...] = ()
             feynpy_names: tuple[str, ...] = ()
             sectors: tuple[str, ...] = ()
             term_count = 0
         else:
             local_heads = set(local.heads)
+            local_head_counts = dict(local.head_counts)
             status = _shared_status(reference_heads, local_heads)
             local_names = local.local_names
             feynpy_names = local.feynpy_names
             sectors = local.sectors
             term_count = local.term_count
+
+        head_count_delta = _head_count_delta(reference_head_counts, local_head_counts)
+        if local is None:
+            head_count_status = "NO_LOCAL_SIGNATURE"
+        elif head_count_delta:
+            head_count_status = "COUNT_MISMATCH"
+        else:
+            head_count_status = "COUNT_MATCH"
 
         status_counts[status] += 1
         reference_rows.append(
@@ -268,6 +320,10 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
                 "arity": len(reference.fields),
                 "reference_heads": sorted(reference_heads),
                 "feynpy_heads": sorted(local_heads),
+                "reference_head_counts": reference_head_counts,
+                "feynpy_head_counts": local_head_counts,
+                "head_count_delta": head_count_delta,
+                "head_count_status": head_count_status,
                 "feynrules_extra_heads": sorted(reference_heads - local_heads),
                 "feynpy_extra_heads": sorted(local_heads - reference_heads),
                 "local_names": list(local_names),
@@ -295,19 +351,26 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
                 "term_count": local.term_count,
                 "sectors": list(local.sectors),
                 "feynpy_heads": list(local.heads),
+                "feynpy_head_counts": dict(local.head_counts),
                 "status": status,
                 "reason": _reason_for_status(status),
             }
         )
 
     shared = sum(1 for row in reference_rows if row["feynpy_heads"])
+    head_count_matches = sum(
+        1
+        for row in reference_rows
+        if row["head_count_status"] == "COUNT_MATCH"
+    )
     matched = status_counts["SHARED_HEADS_MATCH"]
     report = {
         "generated_on": date.today().isoformat(),
         "reference": str(reference_path.relative_to(ROOT)),
         "local_model": str((MODEL_DIR / "SMEFT2.py").relative_to(ROOT)),
         "comparison_level": (
-            "Signature coverage and coefficient-head content. Full tensor-rule "
+            "Signature coverage, coefficient-head content, and raw "
+            "coefficient-head multiplicity diagnostics. Full tensor-rule "
             "equality is not claimed by this SMEFT2 report."
         ),
         "summary": {
@@ -317,6 +380,8 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "reference_only_signatures": len(references) - shared,
             "feynpy_only_signatures": len(feynpy_only_rows),
             "shared_head_matches": matched,
+            "shared_head_count_matches": head_count_matches,
+            "shared_head_count_mismatches": shared - head_count_matches,
             "status_counts": dict(sorted(status_counts.items())),
             "comparison_basis": {
                 "reference_ltot": "EFT-only FeynRules Ltot",
@@ -342,6 +407,7 @@ def _vertex_payload(local_vertices: Iterable[LocalVertex]) -> list[dict[str, obj
             "term_count": vertex.term_count,
             "sectors": list(vertex.sectors),
             "heads": list(vertex.heads),
+            "head_counts": dict(vertex.head_counts),
             "rule": vertex.rule,
         }
         for vertex in local_vertices
@@ -389,6 +455,8 @@ def _markdown_report(report: dict[str, object]) -> str:
         f"| Reference-only signatures | {summary['reference_only_signatures']} |",
         f"| FeynPy-only signatures | {summary['feynpy_only_signatures']} |",
         f"| Shared coefficient-head matches | {summary['shared_head_matches']} |",
+        f"| Shared raw head-count matches | {summary['shared_head_count_matches']} |",
+        f"| Shared raw head-count mismatches | {summary['shared_head_count_mismatches']} |",
         "",
         "## Basis",
         "",
@@ -407,9 +475,14 @@ def _markdown_report(report: dict[str, object]) -> str:
 
     missing_heads = Counter()
     local_extra_heads = Counter()
+    head_count_deltas = Counter()
     for row in report["reference_vertices"]:
         missing_heads.update(row["feynrules_extra_heads"])
         local_extra_heads.update(row["feynpy_extra_heads"])
+        for head, counts_for_head in row["head_count_delta"].items():
+            head_count_deltas[head] += abs(
+                counts_for_head["reference"] - counts_for_head["feynpy"]
+            )
 
     lines.extend(
         [
@@ -433,6 +506,23 @@ def _markdown_report(report: dict[str, object]) -> str:
         ]
     )
     for head, count in local_extra_heads.most_common(20):
+        lines.append(f"| `{head}` | {count} |")
+
+    lines.extend(
+        [
+            "",
+            "## Largest Raw Head-Count Deltas",
+            "",
+            "These are raw coefficient-head occurrence-count diagnostics. They catch "
+            "some missing or duplicated content, but they are not tensor-rule equality "
+            "proofs because equivalent algebra can be printed with different occurrence "
+            "counts.",
+            "",
+            "| Head | Total absolute delta |",
+            "| --- | ---: |",
+        ]
+    )
+    for head, count in head_count_deltas.most_common(20):
         lines.append(f"| `{head}` | {count} |")
 
     lines.extend(
@@ -468,6 +558,14 @@ def main(argv: list[str] | None = None) -> int:
             "full head-level match."
         ),
     )
+    parser.add_argument(
+        "--strict-counts",
+        action="store_true",
+        help=(
+            "With --check, also require matching raw coefficient-head occurrence "
+            "counts for every shared signature."
+        ),
+    )
     args = parser.parse_args(argv)
 
     report, local_vertices = compare(args.reference)
@@ -478,13 +576,16 @@ def main(argv: list[str] | None = None) -> int:
     print(
         "SMEFT2 comparison: "
         f"{summary['shared_head_matches']}/{summary['reference_vertex_count']} "
-        "reference vertices match at coefficient-head level; "
+        "reference vertices match at coefficient-head set level; "
+        f"raw-head-count matches={summary['shared_head_count_matches']}/"
+        f"{summary['shared_signatures']}; "
         f"reference-only={summary['reference_only_signatures']}; "
         f"feynpy-only={summary['feynpy_only_signatures']}."
     )
     if args.check and (
         summary["shared_head_matches"] != summary["reference_vertex_count"]
         or summary["feynpy_only_signatures"]
+        or (args.strict_counts and summary["shared_head_count_mismatches"])
     ):
         return 1
     return 0
