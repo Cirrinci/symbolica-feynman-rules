@@ -11,6 +11,8 @@ Frozen conventions for the physical path:
 - Fourier transform derivatives act as ``-i p_mu``
 - ``vertex_factor(...)`` contributes the universal overall ``+i``
 - matter covariant derivatives use ``D_mu = partial_mu - i g A_mu``
+- adjoint covariant derivatives use
+  ``(D_mu X)^a = partial_mu X^a + g f^{abc} A^b_mu X^c``
 - non-abelian field strengths use
   ``F^a_{mu nu} = partial_mu A^a_nu - partial_nu A^a_mu + g f^{abc} A^b_mu A^c_nu``
 
@@ -59,6 +61,7 @@ from feynpy.declared import (
     FieldStrengthFactor,
     GeneratorFactor,
     PartialDerivativeFactor,
+    StructureConstantFactor,
 )
 from feynpy.lagrangian import (
     ComplexScalarKineticTerm,
@@ -1192,29 +1195,126 @@ def _field_strength_like_operand(factor) -> Optional[FieldStrengthFactor]:
     return None
 
 
-def _replace_field_strength_adjoint_operand(factor, adjoint_index):
-    """Relabel the root adjoint index of a field-strength-valued operand."""
-    if isinstance(factor, FieldStrengthFactor):
-        if factor.adjoint_index is None:
-            return factor
-        return replace(factor, adjoint_index=adjoint_index)
-    if isinstance(factor, CovariantDerivativeOperatorFactor):
-        return CovariantDerivativeOperatorFactor(
-            operand=_replace_field_strength_adjoint_operand(
-                factor.operand,
-                adjoint_index,
+def _replace_symbolic_label(value, old_label, new_label):
+    """Replace one Symbolica-style label inside ``value`` when supported."""
+    if old_label is None:
+        return value
+    try:
+        if bool(value == old_label):
+            return new_label
+    except Exception:
+        pass
+    replacer = getattr(value, "replace", None)
+    if replacer is None:
+        return value
+    try:
+        return replacer(old_label, new_label)
+    except Exception:
+        return value
+
+
+def _relabel_factor_slot_labels(labels: dict, *, old_label, new_label) -> dict:
+    return {
+        slot: _replace_symbolic_label(label, old_label, new_label)
+        for slot, label in labels.items()
+    }
+
+
+def _relabel_expanded_branch_factor(factor, *, old_label, new_label):
+    """Relabel one already-expanded branch factor.
+
+    This is used for the adjoint connection in ``DC(FS(...))``. The operand is
+    expanded once; then the same additive branches are copied with the root
+    adjoint label replaced by the adjoint label carried by the ``X`` in
+    ``g f^{abc} A^b_mu X^c``.
+    """
+    if isinstance(factor, _FieldFactor):
+        return replace(
+            factor,
+            labels=_relabel_factor_slot_labels(
+                factor.labels,
+                old_label=old_label,
+                new_label=new_label,
             ),
-            lorentz_index=factor.lorentz_index,
         )
-    if isinstance(factor, DifferentiatedOperatorFactor):
-        return DifferentiatedOperatorFactor(
-            operand=_replace_field_strength_adjoint_operand(
-                factor.operand,
-                adjoint_index,
+    if isinstance(factor, PartialDerivativeFactor):
+        return replace(
+            factor,
+            labels=_relabel_factor_slot_labels(
+                factor.labels,
+                old_label=old_label,
+                new_label=new_label,
             ),
-            lorentz_indices=factor.lorentz_indices,
+        )
+    if isinstance(factor, GeneratorFactor):
+        return replace(
+            factor,
+            adjoint_index=_replace_symbolic_label(
+                factor.adjoint_index,
+                old_label,
+                new_label,
+            ),
+        )
+    if isinstance(factor, StructureConstantFactor):
+        return replace(
+            factor,
+            left_index=_replace_symbolic_label(
+                factor.left_index,
+                old_label,
+                new_label,
+            ),
+            middle_index=_replace_symbolic_label(
+                factor.middle_index,
+                old_label,
+                new_label,
+            ),
+            right_index=_replace_symbolic_label(
+                factor.right_index,
+                old_label,
+                new_label,
+            ),
+        )
+    if isinstance(factor, FieldStrengthFactor):
+        return replace(
+            factor,
+            adjoint_index=_replace_symbolic_label(
+                factor.adjoint_index,
+                old_label,
+                new_label,
+            ),
         )
     return factor
+
+
+def _relabel_generic_covariant_branch(
+    branch: _GenericCovariantBranch,
+    *,
+    old_label,
+    new_label,
+) -> _GenericCovariantBranch:
+    return _GenericCovariantBranch(
+        coefficient=_replace_symbolic_label(
+            branch.coefficient,
+            old_label,
+            new_label,
+        ),
+        inline_factors=tuple(
+            _relabel_expanded_branch_factor(
+                factor,
+                old_label=old_label,
+                new_label=new_label,
+            )
+            for factor in branch.inline_factors
+        ),
+        tail_factors=tuple(
+            _relabel_expanded_branch_factor(
+                factor,
+                old_label=old_label,
+                new_label=new_label,
+            )
+            for factor in branch.tail_factors
+        ),
+    )
 
 
 def _declared_monomial_branch(
@@ -1387,7 +1487,13 @@ def _expand_field_strength_covariant_operator_factor(
     root: FieldStrengthFactor,
     counters: dict[str, int],
 ) -> tuple[_GenericCovariantBranch, ...]:
-    """Apply the adjoint covariant derivative to an FS-valued operand."""
+    """Apply the adjoint covariant derivative to an FS-valued operand.
+
+    Convention:
+    ``(D_mu X)^a = partial_mu X^a + g f^{abc} A^b_mu X^c`` for any
+    adjoint-valued operand ``X`` built from ``FS``, ``DC(FS)``, or
+    ``PartialD(FS)``.
+    """
     operand_branches = _expand_operator_operand_to_branches(
         model,
         factor.operand,
@@ -1429,14 +1535,13 @@ def _expand_field_strength_covariant_operator_factor(
         counters,
         f"{gauge_field.name}_{gauge_group.name}_fs_covd_operand",
     )
-    relabeled_operand = _replace_field_strength_adjoint_operand(
-        factor.operand,
-        operand_adjoint,
-    )
-    relabeled_branches = _expand_operator_operand_to_branches(
-        model,
-        relabeled_operand,
-        counters=counters,
+    relabeled_branches = tuple(
+        _relabel_generic_covariant_branch(
+            branch,
+            old_label=root.adjoint_index,
+            new_label=operand_adjoint,
+        )
+        for branch in operand_branches
     )
     gauge_factor = _FieldFactor(
         field=gauge_field,
