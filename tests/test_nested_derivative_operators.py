@@ -6,7 +6,10 @@ from symbolica import Expression, S
 from feynpy import (
     COLOR_ADJ_INDEX,
     COLOR_FUND_INDEX,
+    CovariantDerivativeFactor,
     DC,
+    DifferentiatedCovariantFactor,
+    DifferentiatedOperatorFactor,
     FS,
     Field,
     GaugeGroup,
@@ -132,6 +135,62 @@ def _su3_quark_model(lagrangian_decl):
 
 def _signature_names(model):
     return {signature.names for signature in model.lagrangian().vertex_signatures()}
+
+
+def test_partiald_of_covd_uses_unified_operator_factor_with_legacy_compatibility():
+    mu = S("mu")
+    probe = Field(
+        "probe",
+        spin=0,
+        self_conjugate=False,
+        symbol=S("probe"),
+        conjugate_symbol=S("probebar"),
+    )
+
+    factor = PartialD(DC(probe, mu), mu)
+    assert isinstance(factor, DifferentiatedOperatorFactor)
+    assert isinstance(factor.operand, CovariantDerivativeFactor)
+    assert factor.lorentz_indices == (mu,)
+
+    current_model = _u1_scalar_model(
+        lambda phi, _photon, _u1: phi.bar * PartialD(DC(phi, mu), mu)
+    )
+    legacy_model = _u1_scalar_model(
+        lambda phi, _photon, _u1: phi.bar
+        * DifferentiatedCovariantFactor(
+            covariant_factor=DC(phi, mu),
+            lorentz_indices=(mu,),
+        )
+    )
+    current_photon, current_phi = current_model.fields
+    legacy_photon, legacy_phi = legacy_model.fields
+
+    _assert_canon_equal(
+        current_model.lagrangian().feynman_rule(
+            current_phi.bar,
+            current_phi,
+            include_delta=False,
+        ),
+        legacy_model.lagrangian().feynman_rule(
+            legacy_phi.bar,
+            legacy_phi,
+            include_delta=False,
+        ),
+    )
+    _assert_canon_equal(
+        current_model.lagrangian().feynman_rule(
+            current_phi.bar,
+            current_phi,
+            current_photon,
+            include_delta=False,
+        ),
+        legacy_model.lagrangian().feynman_rule(
+            legacy_phi.bar,
+            legacy_phi,
+            legacy_photon,
+            include_delta=False,
+        ),
+    )
 
 
 def test_nested_covariant_derivative_of_charged_scalar_compiles_all_branches():

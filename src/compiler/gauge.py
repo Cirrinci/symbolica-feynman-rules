@@ -1152,22 +1152,15 @@ def _expand_differentiated_covd_factor(
     *,
     counters: dict[str, int],
 ) -> tuple[_GenericCovariantBranch, ...]:
-    branches = _expand_generic_covd_factor(
+    """Expand legacy ``DifferentiatedCovariantFactor`` through the generic node."""
+    return _expand_differentiated_operator_factor(
         model,
-        factor.covariant_factor,
+        DifferentiatedOperatorFactor(
+            operand=factor.covariant_factor,
+            lorentz_indices=factor.lorentz_indices,
+        ),
         counters=counters,
     )
-    for lorentz_index in factor.lorentz_indices:
-        next_branches: list[_GenericCovariantBranch] = []
-        for branch in branches:
-            next_branches.extend(
-                _differentiate_generic_covariant_branch(
-                    branch,
-                    lorentz_index=lorentz_index,
-                )
-            )
-        branches = tuple(next_branches)
-    return branches
 
 
 def _field_like_covariant_operand(factor) -> Optional[tuple[Field, bool]]:

@@ -25,8 +25,9 @@ outer `∂_μ` in `R''_{HD}` did not act on `DC(H, μ)` or `DC(H.bar, μ)`, so
 
 The fix was to extend `_differentiate_factor()` so `partial()` also handles:
 
-* `CovariantDerivativeFactor -> DifferentiatedCovariantFactor`
-* `DifferentiatedCovariantFactor -> append one more ordinary derivative`
+* `CovariantDerivativeFactor -> DifferentiatedOperatorFactor`
+* legacy `DifferentiatedCovariantFactor -> DifferentiatedOperatorFactor`
+  with one more ordinary derivative
 
 Regression test: `tests/test_bosonic.py::test_rpphd_outer_derivative_hits_covariant_derivative`.
 

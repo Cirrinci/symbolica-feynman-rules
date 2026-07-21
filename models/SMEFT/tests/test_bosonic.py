@@ -6,7 +6,7 @@ import pytest
 
 from models.SMEFT.sm_core import build_sm_core
 from models.SMEFT.registry import get_operator, operators_in
-from feynpy.declared import DifferentiatedCovariantFactor
+from feynpy.declared import CovariantDerivativeFactor, DifferentiatedOperatorFactor
 
 
 @pytest.fixture(scope="module")
@@ -74,6 +74,10 @@ def test_rpphd_outer_derivative_hits_covariant_derivative(core):
     terms = op.structure(core).source_terms
     assert len(terms) == 4
     assert any(
-        any(isinstance(factor, DifferentiatedCovariantFactor) for factor in term.factors)
+        any(
+            isinstance(factor, DifferentiatedOperatorFactor)
+            and isinstance(factor.operand, CovariantDerivativeFactor)
+            for factor in term.factors
+        )
         for term in terms
     )

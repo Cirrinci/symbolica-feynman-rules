@@ -85,6 +85,13 @@ class CovariantDerivativeFactor(_DeclaredFactorMixin):
 
 @dataclass(frozen=True)
 class DifferentiatedCovariantFactor(_DeclaredFactorMixin):
+    """Legacy specialized form for ``PartialD(DC(field, ...), ...)``.
+
+    New ``PartialD(DC(...), ...)`` calls emit ``DifferentiatedOperatorFactor``
+    with a ``CovariantDerivativeFactor`` operand. This class remains accepted
+    for backward compatibility with existing model files and serialized code.
+    """
+
     covariant_factor: CovariantDerivativeFactor
     lorentz_indices: tuple[object, ...]
 
@@ -114,7 +121,7 @@ class CovariantDerivativeOperatorFactor(_DeclaredFactorMixin):
 
 @dataclass(frozen=True)
 class DifferentiatedOperatorFactor(_DeclaredFactorMixin):
-    """Partial derivatives acting on a non-field operator factor."""
+    """Partial derivatives acting on an operator factor."""
 
     operand: object
     lorentz_indices: tuple[object, ...]
@@ -543,7 +550,7 @@ def DC(field, lorentz_index, *, conjugated=False) -> CovariantDerivativeFactor:
 CovD = DC
 
 
-def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialDerivativeFactor:
+def PartialD(field, lorentz_index, *, labels=None, conjugated=False):
     """Declarative partial derivative factor for local derivative monomials.
 
     Accepts ``Field``, ``Field.bar``, ``FieldOccurrence``, ``(Field, bool)``,
@@ -577,8 +584,8 @@ def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialD
             raise TypeError(
                 "Nested PartialD(DC(...)) already carries field labels and conjugation."
             )
-        return DifferentiatedCovariantFactor(
-            covariant_factor=field.covariant_factor,
+        return DifferentiatedOperatorFactor(
+            operand=field.covariant_factor,
             lorentz_indices=field.lorentz_indices + (lorentz_index,),
         )
     if isinstance(field, CovariantDerivativeFactor):
@@ -587,8 +594,8 @@ def PartialD(field, lorentz_index, *, labels=None, conjugated=False) -> PartialD
                 "Pass labels/conjugation either through DC(...) or through PartialD(...), "
                 "not both."
             )
-        return DifferentiatedCovariantFactor(
-            covariant_factor=field,
+        return DifferentiatedOperatorFactor(
+            operand=field,
             lorentz_indices=(lorentz_index,),
         )
     if isinstance(field, PartialDerivativeFactor):

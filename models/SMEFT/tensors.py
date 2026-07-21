@@ -32,6 +32,7 @@ from feynpy import DC, FS, PartialD
 from feynpy.declared import (
     CovariantDerivativeFactor,
     DifferentiatedCovariantFactor,
+    DifferentiatedOperatorFactor,
     PartialDerivativeFactor,
     _DeclaredMonomial,
     _FieldFactor,
@@ -160,13 +161,18 @@ def _differentiate_factor(factor, mu):
             labels=dict(factor.labels),
         )
     if isinstance(factor, CovariantDerivativeFactor):
-        return DifferentiatedCovariantFactor(
-            covariant_factor=factor,
+        return DifferentiatedOperatorFactor(
+            operand=factor,
             lorentz_indices=(mu,),
         )
     if isinstance(factor, DifferentiatedCovariantFactor):
-        return DifferentiatedCovariantFactor(
-            covariant_factor=factor.covariant_factor,
+        return DifferentiatedOperatorFactor(
+            operand=factor.covariant_factor,
+            lorentz_indices=factor.lorentz_indices + (mu,),
+        )
+    if isinstance(factor, DifferentiatedOperatorFactor):
+        return DifferentiatedOperatorFactor(
+            operand=factor.operand,
             lorentz_indices=factor.lorentz_indices + (mu,),
         )
     if isinstance(factor, PartialDerivativeFactor):

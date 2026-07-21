@@ -202,28 +202,38 @@ def term_mass_dimension(monomial):
 
     from feynpy.declared import (
         CovariantDerivativeFactor,
+        CovariantDerivativeOperatorFactor,
         DifferentiatedCovariantFactor,
+        DifferentiatedOperatorFactor,
         FieldStrengthFactor,
         PartialDerivativeFactor,
         _FieldFactor,
     )
 
-    total = Fraction(0)
-    for factor in monomial.factors:
+    def factor_mass_dimension(factor):
         if isinstance(factor, _FieldFactor):
-            total += _field_mass_dimension(factor.field)
-        elif isinstance(factor, CovariantDerivativeFactor):
-            total += _field_mass_dimension(factor.field) + 1
-        elif isinstance(factor, DifferentiatedCovariantFactor):
-            total += (
+            return _field_mass_dimension(factor.field)
+        if isinstance(factor, CovariantDerivativeFactor):
+            return _field_mass_dimension(factor.field) + 1
+        if isinstance(factor, DifferentiatedCovariantFactor):
+            return (
                 _field_mass_dimension(factor.covariant_factor.field)
                 + 1
                 + len(factor.lorentz_indices)
             )
-        elif isinstance(factor, PartialDerivativeFactor):
-            total += _field_mass_dimension(factor.field) + len(factor.lorentz_indices)
-        elif isinstance(factor, FieldStrengthFactor):
-            total += Fraction(2)
+        if isinstance(factor, PartialDerivativeFactor):
+            return _field_mass_dimension(factor.field) + len(factor.lorentz_indices)
+        if isinstance(factor, FieldStrengthFactor):
+            return Fraction(2)
+        if isinstance(factor, CovariantDerivativeOperatorFactor):
+            return factor_mass_dimension(factor.operand) + 1
+        if isinstance(factor, DifferentiatedOperatorFactor):
+            return factor_mass_dimension(factor.operand) + len(factor.lorentz_indices)
+        return Fraction(0)
+
+    total = Fraction(0)
+    for factor in monomial.factors:
+        total += factor_mass_dimension(factor)
         # gamma / gamma5 / metric / generator / structure-constant / projector
         # factors and scalar coefficients are dimensionless.
     return total
