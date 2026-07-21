@@ -12,6 +12,7 @@ from feynpy import (
     GaugeGroup,
     GaugeRepresentation,
     LORENTZ_INDEX,
+    Metric,
     Model,
     PartialD,
     SPINOR_INDEX,
@@ -426,6 +427,26 @@ def test_deeper_mixed_fs_dc_partiald_combinations_compile():
         ("G", "G", "G"),
         ("G", "G", "G", "G"),
         ("G", "G", "G", "G", "G"),
+    }
+
+
+def test_triple_nested_field_strength_covariant_derivative_term_count_regression():
+    mu, nu, rho, sigma, a = S("mu"), S("nu"), S("rho"), S("sigma"), S("a")
+
+    model = _su3_gauge_model(
+        lambda gluon, su3: Metric(rho, sigma)
+        * gluon(nu, a)
+        * DC(DC(DC(FS(su3, mu, nu, a), rho), sigma), mu)
+    )
+    lagrangian = model.lagrangian()
+
+    assert len(lagrangian.terms) == 67
+    assert Counter(len(term.fields) for term in lagrangian.terms) == {
+        2: 2,
+        3: 22,
+        4: 31,
+        5: 11,
+        6: 1,
     }
 
 

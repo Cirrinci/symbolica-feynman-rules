@@ -1283,7 +1283,10 @@ def _relabel_expanded_branch_factor(factor, *, old_label, new_label):
                 new_label,
             ),
         )
-    return factor
+    raise TypeError(
+        "Cannot relabel adjoint branch label inside expanded nested operator "
+        f"factor {type(factor).__name__}."
+    )
 
 
 def _relabel_generic_covariant_branch(
