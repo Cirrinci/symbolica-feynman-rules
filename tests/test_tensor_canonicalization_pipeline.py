@@ -12,12 +12,16 @@ from symbolic.spenso_structures import (
     weak_structure_constant,
 )
 from symbolic.tensor_canonicalization import (
+    CanonicalTensorMonomial,
     _canonicalize_commuting_partial_derivatives,
     _contract_plain_metric_heads,
     _infer_index_groups_from_expression,
     _jacobi_reduce_structure_constant_products,
+    canonical_external_index_set,
+    canonical_tensor_monomial_map,
     canonize_full,
 )
+from symbolic.vertex_engine import pcomp
 
 
 def _canon(expr):
@@ -303,3 +307,105 @@ def test_jacobi_pass_can_be_disabled_in_canonize_full():
     )
     assert _canon(with_jacobi) == _canon(Expression.num(0))
     assert _canon(without_jacobi) != _canon(Expression.num(0))
+
+
+def _canonical_map(expr, *, external_indices=frozenset(), **kwargs):
+    return canonical_tensor_monomial_map(
+        expr,
+        external_indices=external_indices,
+        **kwargs,
+    )
+
+
+def _assert_empty_canonical_map(expr, *, external_indices=frozenset(), **kwargs):
+    assert _canonical_map(
+        expr,
+        external_indices=external_indices,
+        **kwargs,
+    ) == {}
+
+
+def test_monomial_map_canonicalizes_symmetric_metric_arguments():
+    mu, nu = S("mu"), S("nu")
+    _assert_empty_canonical_map(LORENTZ.g(mu, nu).to_expression() - LORENTZ.g(nu, mu).to_expression())
+
+
+def test_monomial_map_canonicalizes_antisymmetric_tensor_signs():
+    a, b, c = S("a"), S("b"), S("c")
+    _assert_empty_canonical_map(structure_constant(a, b, c) + structure_constant(b, a, c))
+    _assert_empty_canonical_map(structure_constant(a, b, c) - structure_constant(b, c, a))
+
+
+def test_monomial_map_drops_repeated_antisymmetric_indices():
+    a, c = S("a"), S("c")
+    _assert_empty_canonical_map(structure_constant(a, a, c))
+
+
+def test_monomial_map_uses_global_dummy_contraction_graph():
+    a1, a2, a3, a4, a5 = (S(f"a{i}") for i in range(1, 6))
+    x, y = S("x"), S("y")
+    u, v = S("u"), S("v")
+    lhs = (
+        structure_constant(a1, x, y)
+        * structure_constant(x, a2, a3)
+        * structure_constant(y, a4, a5)
+    )
+    rhs = (
+        structure_constant(a1, u, v)
+        * structure_constant(u, a2, a3)
+        * structure_constant(v, a4, a5)
+    )
+    externals = canonical_external_index_set(
+        color_adjoint=(a1, a2, a3, a4, a5),
+    )
+    _assert_empty_canonical_map(lhs - rhs, external_indices=externals)
+
+
+def test_monomial_map_sorts_commuting_factors_and_collects():
+    mu1, mu2, mu3 = S("mu1"), S("mu2"), S("mu3")
+    lhs = pcomp(S("q1"), mu1) * LORENTZ.g(mu2, mu3).to_expression()
+    rhs = LORENTZ.g(mu2, mu3).to_expression() * pcomp(S("q1"), mu1)
+    _assert_empty_canonical_map(lhs - rhs)
+
+
+def test_monomial_map_preserves_declared_ordered_factors():
+    ordered = S("Ordered")
+    x, y = S("x"), S("y")
+    result = _canonical_map(
+        ordered(x, y) - ordered(y, x),
+        noncommuting_heads=("Ordered",),
+    )
+    assert len(result) == 2
+
+
+def test_monomial_map_keeps_external_indices_fixed():
+    a1, a2, a3, a4, a5 = (S(f"a{i}") for i in range(1, 6))
+    x, y = S("x"), S("y")
+    term = (
+        structure_constant(a1, x, y)
+        * structure_constant(x, a2, a3)
+        * structure_constant(y, a4, a5)
+    )
+    externals = canonical_external_index_set(
+        color_adjoint=(a1, a2, a3, a4, a5),
+    )
+    result = _canonical_map(term, external_indices=externals)
+    assert len(result) == 1
+    key = next(iter(result))
+    assert isinstance(key, CanonicalTensorMonomial)
+    assert "E:A:a1" in repr(key)
+    assert "D:A:1" in repr(key)
+
+
+def test_monomial_map_does_not_apply_jacobi_identity():
+    a, b, c, d, e = S("a"), S("b"), S("c"), S("d"), S("e")
+    p12 = structure_constant(a, b, e) * structure_constant(c, d, e)
+    p13 = structure_constant(a, c, e) * structure_constant(b, d, e)
+    p14 = structure_constant(a, d, e) * structure_constant(b, c, e)
+    assert len(_canonical_map(p12 - p13 + p14)) == 3
+
+
+def test_monomial_map_does_not_apply_momentum_conservation():
+    mu = S("mu")
+    expr = pcomp(S("q1"), mu) + pcomp(S("q2"), mu) + pcomp(S("q3"), mu)
+    assert len(_canonical_map(expr, external_indices={("lorentz", "mu")})) == 3

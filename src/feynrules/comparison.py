@@ -28,8 +28,10 @@ from symbolic.spenso_structures import (
     chiral_projector_right,
     gamma_matrix,
     gauge_generator,
+    lorentz_levi_civita,
     lorentz_metric,
     structure_constant,
+    weak_structure_constant,
 )
 from symbolic.vertex_engine import pcomp
 
@@ -90,6 +92,28 @@ class VertexComparisonReport:
         )
 
 
+@dataclass(frozen=True)
+class CanonicalCoefficientComparison:
+    """Canonical monomial-map comparison for one coefficient sector."""
+
+    coefficient: str
+    feynpy_raw_terms: int
+    feynrules_raw_terms: int
+    feynpy_canonical_terms: int
+    feynrules_canonical_terms: int
+    feynpy_only: Mapping[object, Expression]
+    feynrules_only: Mapping[object, Expression]
+    coefficient_mismatches: Mapping[object, tuple[Expression, Expression]]
+
+    @property
+    def matches(self) -> bool:
+        return (
+            not self.feynpy_only
+            and not self.feynrules_only
+            and not self.coefficient_mismatches
+        )
+
+
 def load_feynrules_json(path: str | Path) -> tuple[FeynRulesVertex, ...]:
     """Load the list-style FeynRules vertex JSON format."""
 
@@ -131,6 +155,28 @@ def _as_expression(value) -> Expression:
     raise TypeError(f"Expected a Symbolica expression or Parameter, got {value!r}")
 
 
+_FEYNRULES_GREEK_ASCII = {
+    "α": "alpha",
+    "β": "beta",
+    "γ": "gamma",
+    "δ": "delta",
+    "μ": "mu",
+    "ν": "nu",
+    "ρ": "rho",
+    "σ": "sigma",
+}
+
+
+def _feynrules_ascii_label(label: str) -> str:
+    result = label.strip().replace("$", "_")
+    for greek, ascii_name in _FEYNRULES_GREEK_ASCII.items():
+        result = result.replace(greek, ascii_name)
+    result = re.sub(r"[^A-Za-z0-9_]+", "_", result)
+    if result and result[0].isdigit():
+        result = f"idx_{result}"
+    return result
+
+
 def parse_feynrules_gauge_rule(
     rule: str,
     *,
@@ -139,11 +185,13 @@ def parse_feynrules_gauge_rule(
     """Parse the gauge tensors used by the FeynRules JSON export.
 
     Supported external heads are ``ME`` (Lorentz metric), ``FV`` (incoming
-    momentum), and the SU(3) structure constant ``f``. The resulting
+    momentum), ``SP`` (scalar momentum product), SU(3)/SU(2) structure
+    constants (``f``, ``fsu3``, ``fsu2``), and Lorentz ``Eps``. The resulting
     expression uses the same native Spenso tensor heads as FeynPy.
     """
 
     text = rule
+    scalar_product_counter = 0
     text = re.sub(
         r"Index\[Lorentz,\s*Ext\[(\d+)\]\]",
         lambda match: f"mu{match.group(1)}",
@@ -155,8 +203,23 @@ def parse_feynrules_gauge_rule(
         text,
     )
     text = re.sub(
-        r"Index\[Gluon,\s*Gluon\$(\d+)\]",
-        lambda match: f"a_feynrules_dummy_{match.group(1)}",
+        r"Index\[SU2W,\s*Ext\[(\d+)\]\]",
+        lambda match: f"aw{match.group(1)}",
+        text,
+    )
+    text = re.sub(
+        r"Index\[Lorentz,\s*([^\]]+)\]",
+        lambda match: f"mu_feynrules_dummy_{_feynrules_ascii_label(match.group(1))}",
+        text,
+    )
+    text = re.sub(
+        r"Index\[Gluon,\s*([^\]]+)\]",
+        lambda match: f"a_feynrules_dummy_{_feynrules_ascii_label(match.group(1))}",
+        text,
+    )
+    text = re.sub(
+        r"Index\[SU2W,\s*([^\]]+)\]",
+        lambda match: f"aw_feynrules_dummy_{_feynrules_ascii_label(match.group(1))}",
         text,
     )
     text = re.sub(
@@ -175,12 +238,42 @@ def parse_feynrules_gauge_rule(
         ).to_canonical_string(),
         text,
     )
+
+    def replace_scalar_product(match: re.Match[str]) -> str:
+        nonlocal scalar_product_counter
+        scalar_product_counter += 1
+        dummy = S(f"mu_feynrules_dummy_sp_{scalar_product_counter}")
+        return (
+            pcomp(S(f"q{match.group(1)}"), dummy)
+            * pcomp(S(f"q{match.group(2)}"), dummy)
+        ).to_canonical_string()
+
+    text = re.sub(r"SP\[(\d+),\s*(\d+)\]", replace_scalar_product, text)
     text = re.sub(
-        r"f\[([^,\]]+),\s*([^,\]]+),\s*([^\]]+)\]",
+        r"(?:f|fsu3)\[([^,\]]+),\s*([^,\]]+),\s*([^\]]+)\]",
         lambda match: structure_constant(
             S(match.group(1).strip()),
             S(match.group(2).strip()),
             S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"fsu2\[([^,\]]+),\s*([^,\]]+),\s*([^\]]+)\]",
+        lambda match: weak_structure_constant(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Eps\[([^,\]]+),\s*([^,\]]+),\s*([^,\]]+),\s*([^\]]+)\]",
+        lambda match: lorentz_levi_civita(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+            S(match.group(4).strip()),
         ).to_canonical_string(),
         text,
     )
@@ -710,6 +803,77 @@ def canonicalize_gauge_rule(expression: Expression) -> Expression:
         adjoint_indices=adjoint_indices,
     )
     return canonical.cancel().expand()
+
+
+def compare_canonical_coefficient_maps(
+    feynpy_rule: Expression | str,
+    feynrules_rule: Expression | str,
+    *,
+    coefficients: Iterable[str],
+    external_indices: Iterable[tuple[str, object]],
+    max_dummy_permutations: int = 50_000,
+) -> dict[str, CanonicalCoefficientComparison]:
+    """Compare two rules by canonical monomial maps per coefficient.
+
+    This comparison does not use raw strings. It maps each coefficient sector to
+    ``canonical tensor monomial -> exact coefficient`` using intrinsic tensor
+    symmetries, global dummy-index renaming, commuting-factor ordering, and
+    exact collection.
+    """
+
+    from symbolic.tensor_canonicalization import canonical_tensor_monomial_report
+
+    feynpy_expression = (
+        Expression.parse(feynpy_rule)
+        if isinstance(feynpy_rule, str)
+        else feynpy_rule
+    )
+    feynrules_expression = (
+        parse_feynrules_gauge_rule(feynrules_rule)
+        if isinstance(feynrules_rule, str)
+        else feynrules_rule
+    )
+
+    comparisons = {}
+    for coefficient in coefficients:
+        feynpy_report = canonical_tensor_monomial_report(
+            feynpy_expression,
+            coefficient=coefficient,
+            external_indices=external_indices,
+            max_dummy_permutations=max_dummy_permutations,
+        )
+        feynrules_report = canonical_tensor_monomial_report(
+            feynrules_expression,
+            coefficient=coefficient,
+            external_indices=external_indices,
+            max_dummy_permutations=max_dummy_permutations,
+        )
+        feynpy_keys = set(feynpy_report.map)
+        feynrules_keys = set(feynrules_report.map)
+        shared_keys = feynpy_keys & feynrules_keys
+        coefficient_mismatches = {
+            key: (feynpy_report.map[key], feynrules_report.map[key])
+            for key in shared_keys
+            if feynpy_report.map[key].cancel().expand().to_canonical_string()
+            != feynrules_report.map[key].cancel().expand().to_canonical_string()
+        }
+        comparisons[coefficient] = CanonicalCoefficientComparison(
+            coefficient=coefficient,
+            feynpy_raw_terms=feynpy_report.raw_terms,
+            feynrules_raw_terms=feynrules_report.raw_terms,
+            feynpy_canonical_terms=feynpy_report.canonical_terms,
+            feynrules_canonical_terms=feynrules_report.canonical_terms,
+            feynpy_only={
+                key: feynpy_report.map[key]
+                for key in sorted(feynpy_keys - feynrules_keys, key=repr)
+            },
+            feynrules_only={
+                key: feynrules_report.map[key]
+                for key in sorted(feynrules_keys - feynpy_keys, key=repr)
+            },
+            coefficient_mismatches=coefficient_mismatches,
+        )
+    return comparisons
 
 
 def canonicalize_matter_rule(expression: Expression) -> Expression:
@@ -1426,12 +1590,14 @@ def compare_feynrules_yukawa_vertices(
 
 
 __all__ = (
+    "CanonicalCoefficientComparison",
     "FeynRulesVertex",
     "VertexComparison",
     "VertexComparisonReport",
     "canonicalize_gauge_rule",
     "canonicalize_matter_rule",
     "canonicalize_yukawa_rule",
+    "compare_canonical_coefficient_maps",
     "compare_feynrules_bosonic_vertices",
     "compare_feynrules_gauge_vertices",
     "compare_feynrules_matter_vertices",

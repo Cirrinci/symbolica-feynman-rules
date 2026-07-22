@@ -19,9 +19,11 @@ elsewhere in the pipeline.
 from __future__ import annotations
 
 import re
+import math
+from collections import Counter, defaultdict
 from dataclasses import dataclass
-from itertools import combinations
-from typing import Iterable, Optional, Sequence
+from itertools import combinations, permutations
+from typing import Iterable, Mapping, Optional, Sequence
 
 from symbolica import AtomType, Expression, S
 
@@ -753,6 +755,16 @@ def _term_factors(term) -> tuple[Expression, ...]:
     return (term,)
 
 
+def _terms(expression) -> tuple[Expression, ...]:
+    if not isinstance(expression, Expression):
+        return (expression,)
+    if _expression_is_zero(expression):
+        return ()
+    if expression.get_type() == AtomType.Add:
+        return tuple(expression)
+    return (expression,)
+
+
 def _term_structure_constants(term) -> tuple[Expression, ...]:
     return tuple(
         factor
@@ -1352,6 +1364,454 @@ def _drop_zero_terms_from_antisymmetric_structure_constants(
         weak_adj_indices=weak_adj_indices,
         extra_index_groups=extra_index_groups,
     )
+
+
+@dataclass(frozen=True)
+class CanonicalTensorMonomial:
+    """Canonical key for one tensor/momentum monomial."""
+
+    commuting_factors: tuple[object, ...]
+    ordered_factors: tuple[object, ...] = ()
+
+
+@dataclass(frozen=True)
+class CanonicalMonomialReport:
+    """Raw/canonical term counts plus the canonical coefficient map."""
+
+    raw_terms: int
+    canonical_terms: int
+    map: Mapping[CanonicalTensorMonomial, Expression]
+
+
+class TensorMonomialCanonicalizationError(ValueError):
+    """Raised when exact dummy relabeling would be too expensive."""
+
+
+_CANONICAL_INDEX_GROUP_KEYS = {
+    LORENTZ_KIND: "L",
+    COLOR_ADJ_KIND: "A",
+    COLOR_FUND_KIND: "C",
+    SPINOR_KIND: "S",
+    WEAK_FUND_KIND: "W",
+    WEAK_ADJ_KIND: "AW",
+}
+
+
+def canonical_external_index_set(
+    *,
+    lorentz: Iterable[object] = (),
+    color_adjoint: Iterable[object] = (),
+    color_fund: Iterable[object] = (),
+    spinor: Iterable[object] = (),
+    weak_fund: Iterable[object] = (),
+    weak_adjoint: Iterable[object] = (),
+) -> frozenset[tuple[str, str]]:
+    """Build fixed external-index labels for canonical monomial maps."""
+
+    groups = (
+        (LORENTZ_KIND, lorentz),
+        (COLOR_ADJ_KIND, color_adjoint),
+        (COLOR_FUND_KIND, color_fund),
+        (SPINOR_KIND, spinor),
+        (WEAK_FUND_KIND, weak_fund),
+        (WEAK_ADJ_KIND, weak_adjoint),
+    )
+    return frozenset(
+        (kind, _canonical_symbol_label(index))
+        for kind, indices in groups
+        for index in indices
+    )
+
+
+def canonical_tensor_monomial_map(
+    expression: Expression,
+    *,
+    coefficient: object | None = None,
+    external_indices: Iterable[tuple[str, object]] = (),
+    tensor_head_specs: Sequence[TensorHeadSpec] = SPENSO_TENSOR_HEAD_SPECS,
+    noncommuting_heads: Iterable[str] = (),
+    max_dummy_permutations: int = 50_000,
+) -> dict[CanonicalTensorMonomial, Expression]:
+    """Return ``canonical monomial -> exact coefficient``.
+
+    The normalization uses only intrinsic tensor symmetries, global dummy-index
+    relabeling, deterministic ordering of commuting factors, and exact
+    coefficient collection. It intentionally does not apply Jacobi identities,
+    momentum conservation, Schouten identities, equations of motion, integration
+    by parts, Fierz identities, or dimension-specific reductions.
+    """
+
+    if coefficient is not None:
+        coefficient_expr = S(coefficient) if isinstance(coefficient, str) else coefficient
+        expression = expression.coefficient(coefficient_expr)
+
+    tensor_specs = {spec.raw_name: spec for spec in tensor_head_specs}
+    noncommuting = {_canonical_head_name(head) for head in noncommuting_heads}
+    fixed_indices = {
+        (kind, _canonical_symbol_label(index))
+        for kind, index in external_indices
+    }
+
+    collected: dict[CanonicalTensorMonomial, Expression] = {}
+    for term in _terms(expression.cancel().expand()):
+        key, coeff = _canonicalize_tensor_monomial_term(
+            term,
+            tensor_specs=tensor_specs,
+            fixed_indices=fixed_indices,
+            noncommuting_heads=noncommuting,
+            max_dummy_permutations=max_dummy_permutations,
+        )
+        if key is None or _expression_is_zero(coeff):
+            continue
+        collected[key] = (
+            collected.get(key, Expression.num(0)) + coeff
+        ).cancel().expand()
+
+    return {
+        key: coeff
+        for key, coeff in sorted(collected.items(), key=lambda item: repr(item[0]))
+        if not _expression_is_zero(coeff)
+    }
+
+
+def canonical_tensor_monomial_report(
+    expression: Expression,
+    **kwargs,
+) -> CanonicalMonomialReport:
+    """Return raw and canonical term counts with the canonical map."""
+
+    if kwargs.get("coefficient") is not None:
+        coefficient = kwargs["coefficient"]
+        coefficient_expr = S(coefficient) if isinstance(coefficient, str) else coefficient
+        counted_expression = expression.coefficient(coefficient_expr)
+    else:
+        counted_expression = expression
+    counted_expression = counted_expression.cancel().expand()
+    monomial_map = canonical_tensor_monomial_map(expression, **kwargs)
+    return CanonicalMonomialReport(
+        raw_terms=len(_terms(counted_expression)),
+        canonical_terms=len(monomial_map),
+        map=monomial_map,
+    )
+
+
+def _expression_is_zero(expression: Expression) -> bool:
+    return expression.cancel().expand().to_canonical_string() == "0"
+
+
+def _canonical_head_name(head: object) -> str:
+    if isinstance(head, Expression):
+        text = head.get_name()
+    else:
+        text = str(head)
+    return text.rsplit("::", 1)[-1]
+
+
+def _canonical_symbol_label(symbol: object) -> str:
+    text = symbol.to_canonical_string() if isinstance(symbol, Expression) else str(symbol)
+    return (
+        text.replace("python::{}::", "")
+        .replace("python::", "")
+        .replace("spenso::", "")
+        .replace("spenso_python::{}::", "")
+    )
+
+
+def _canonical_slot_kind_label(atom: Expression) -> tuple[str, str] | None:
+    typed = _typed_spenso_slot_kind_and_label(atom)
+    if typed is None:
+        return None
+    kind, label = typed
+    return kind, _canonical_symbol_label(label)
+
+
+def _factor_index_occurrences(factor: Expression) -> tuple[tuple[str, str], ...]:
+    if not isinstance(factor, Expression):
+        return ()
+
+    atom_type = factor.get_type()
+    if atom_type == AtomType.Fn:
+        name = factor.get_name()
+        args = tuple(factor)
+        if _canonical_head_name(name) == "pcomp" and len(args) == 2:
+            return ((LORENTZ_KIND, _canonical_symbol_label(args[1])),)
+
+        occurrences: list[tuple[str, str]] = []
+        for arg in args:
+            slot = _canonical_slot_kind_label(arg)
+            if slot is not None:
+                occurrences.append(slot)
+            else:
+                occurrences.extend(_factor_index_occurrences(arg))
+        return tuple(occurrences)
+
+    if atom_type in (AtomType.Add, AtomType.Mul, AtomType.Pow):
+        return tuple(
+            occurrence
+            for child in factor
+            for occurrence in _factor_index_occurrences(child)
+        )
+    return ()
+
+
+def _is_canonical_scalar_factor(factor: Expression) -> bool:
+    if factor.get_type() in (AtomType.Num, AtomType.Var):
+        return True
+    return not _factor_index_occurrences(factor)
+
+
+def _is_ordered_monomial_factor(
+    factor: Expression,
+    noncommuting_heads: set[str],
+) -> bool:
+    return (
+        isinstance(factor, Expression)
+        and factor.get_type() == AtomType.Fn
+        and _canonical_head_name(factor.get_name()) in noncommuting_heads
+    )
+
+
+def _canonicalize_tensor_monomial_term(
+    term: Expression,
+    *,
+    tensor_specs: Mapping[str, TensorHeadSpec],
+    fixed_indices: set[tuple[str, str]],
+    noncommuting_heads: set[str],
+    max_dummy_permutations: int,
+) -> tuple[CanonicalTensorMonomial | None, Expression]:
+    coefficient = Expression.num(1)
+    scalar_factors: list[Expression] = []
+    tensor_factors: list[Expression] = []
+
+    for factor in _term_factors(term):
+        if factor.get_type() == AtomType.Num:
+            coefficient *= factor
+        elif (
+            not _is_ordered_monomial_factor(factor, noncommuting_heads)
+            and _is_canonical_scalar_factor(factor)
+        ):
+            scalar_factors.append(factor)
+        else:
+            tensor_factors.append(factor)
+
+    index_counts = Counter(
+        occurrence
+        for factor in tensor_factors
+        for occurrence in _factor_index_occurrences(factor)
+    )
+    dummy_indices: dict[str, list[str]] = defaultdict(list)
+    for index, count in index_counts.items():
+        kind, label = index
+        if index in fixed_indices or count == 1:
+            continue
+        dummy_indices[kind].append(label)
+
+    candidates = _dummy_relabeling_candidates(
+        dummy_indices,
+        max_dummy_permutations=max_dummy_permutations,
+    )
+    all_indices = set(index_counts)
+    best_key: CanonicalTensorMonomial | None = None
+    best_key_text = ""
+    best_signs: list[int] = []
+
+    for candidate in candidates:
+        index_map = {
+            index: candidate.get(index, _canonical_external_index_key(index))
+            for index in all_indices
+        }
+        sign = 1
+        commuting: list[object] = []
+        ordered: list[object] = []
+        zero = False
+
+        for factor in tensor_factors:
+            factor_sign, factor_key = _canonical_monomial_factor_key(
+                factor,
+                index_map=index_map,
+                tensor_specs=tensor_specs,
+            )
+            if factor_sign == 0:
+                zero = True
+                break
+            sign *= factor_sign
+            if _is_ordered_monomial_factor(factor, noncommuting_heads):
+                ordered.append(factor_key)
+            else:
+                commuting.append(factor_key)
+
+        if zero:
+            continue
+
+        key = CanonicalTensorMonomial(
+            commuting_factors=tuple(sorted(commuting, key=repr)),
+            ordered_factors=tuple(ordered),
+        )
+        key_text = repr(key)
+        if best_key is None or key_text < best_key_text:
+            best_key = key
+            best_key_text = key_text
+            best_signs = [sign]
+        elif key_text == best_key_text:
+            best_signs.append(sign)
+
+    if best_key is None:
+        return None, Expression.num(0)
+
+    if 1 in best_signs and -1 in best_signs:
+        return None, Expression.num(0)
+
+    for scalar in sorted(
+        scalar_factors,
+        key=lambda item: item.to_canonical_string(),
+    ):
+        coefficient *= scalar
+    if best_signs and best_signs[0] < 0:
+        coefficient *= -1
+    return best_key, coefficient.cancel().expand()
+
+
+def _dummy_relabeling_candidates(
+    dummy_indices: Mapping[str, Sequence[str]],
+    *,
+    max_dummy_permutations: int,
+) -> tuple[dict[tuple[str, str], str], ...]:
+    total = 1
+    for labels in dummy_indices.values():
+        total *= math.factorial(len(set(labels)))
+    if total > max_dummy_permutations:
+        raise TensorMonomialCanonicalizationError(
+            "Canonical dummy relabeling would require "
+            f"{total} permutations, exceeding max_dummy_permutations="
+            f"{max_dummy_permutations}."
+        )
+
+    candidates: list[dict[tuple[str, str], str]] = [{}]
+    for kind, labels in sorted(dummy_indices.items()):
+        unique_labels = sorted(set(labels))
+        group = _CANONICAL_INDEX_GROUP_KEYS.get(kind, kind)
+        expanded: list[dict[tuple[str, str], str]] = []
+        for permutation in permutations(range(1, len(unique_labels) + 1)):
+            relabeling = {
+                (kind, label): f"D:{group}:{slot}"
+                for label, slot in zip(unique_labels, permutation)
+            }
+            for candidate in candidates:
+                merged = dict(candidate)
+                merged.update(relabeling)
+                expanded.append(merged)
+        candidates = expanded
+    return tuple(candidates)
+
+
+def _canonical_external_index_key(index: tuple[str, str]) -> str:
+    kind, label = index
+    group = _CANONICAL_INDEX_GROUP_KEYS.get(kind, kind)
+    return f"E:{group}:{label}"
+
+
+def _canonical_monomial_factor_key(
+    factor: Expression,
+    *,
+    index_map: Mapping[tuple[str, str], str],
+    tensor_specs: Mapping[str, TensorHeadSpec],
+) -> tuple[int, object]:
+    atom_type = factor.get_type()
+    if atom_type == AtomType.Fn:
+        name = factor.get_name()
+        bare_name = _canonical_head_name(name)
+        args = tuple(factor)
+        if bare_name == "pcomp" and len(args) == 2:
+            momentum = _canonical_symbol_label(args[0])
+            lorentz_index = (LORENTZ_KIND, _canonical_symbol_label(args[1]))
+            return 1, ("pcomp", momentum, index_map[lorentz_index])
+
+        spec = tensor_specs.get(name)
+        if spec is not None and len(args) == spec.arity:
+            sign, canonical_args = _canonical_tensor_monomial_arguments(
+                args,
+                spec=spec,
+                index_map=index_map,
+            )
+            if sign == 0:
+                return 0, None
+            return sign, (
+                bare_name,
+                _tensor_representation_signature(args),
+                canonical_args,
+            )
+
+        return 1, (
+            bare_name,
+            tuple(
+                _canonical_generic_monomial_argument(arg, index_map=index_map)
+                for arg in args
+            ),
+        )
+
+    if atom_type == AtomType.Pow:
+        base, exponent = tuple(factor)
+        sign, base_key = _canonical_monomial_factor_key(
+            base,
+            index_map=index_map,
+            tensor_specs=tensor_specs,
+        )
+        if sign == 0:
+            return 0, None
+        return sign, ("pow", base_key, _canonical_symbol_label(exponent))
+
+    return 1, ("raw", _canonical_symbol_label(factor))
+
+
+def _canonical_tensor_monomial_arguments(
+    args: Sequence[Expression],
+    *,
+    spec: TensorHeadSpec,
+    index_map: Mapping[tuple[str, str], str],
+) -> tuple[int, tuple[object, ...]]:
+    canonical_args = tuple(
+        _canonical_generic_monomial_argument(arg, index_map=index_map)
+        for arg in args
+    )
+
+    if spec.head_kwargs.get("is_symmetric") is True:
+        return 1, tuple(sorted(canonical_args))
+
+    if spec.head_kwargs.get("is_antisymmetric") is True:
+        if len(set(canonical_args)) != len(canonical_args):
+            return 0, ()
+        ordered = tuple(sorted(canonical_args))
+        return _perm_sign(canonical_args, ordered), ordered
+
+    return 1, canonical_args
+
+
+def _canonical_generic_monomial_argument(
+    arg: Expression,
+    *,
+    index_map: Mapping[tuple[str, str], str],
+) -> object:
+    slot = _canonical_slot_kind_label(arg)
+    if slot is not None:
+        return index_map[slot]
+
+    if isinstance(arg, Expression) and arg.get_type() == AtomType.Fn:
+        return (
+            _canonical_head_name(arg.get_name()),
+            tuple(
+                _canonical_generic_monomial_argument(child, index_map=index_map)
+                for child in arg
+            ),
+        )
+    return _canonical_symbol_label(arg)
+
+
+def _tensor_representation_signature(args: Sequence[Expression]) -> tuple[str, ...]:
+    signature = []
+    for arg in args:
+        slot = _canonical_slot_kind_label(arg)
+        signature.append(slot[0] if slot is not None else "?")
+    return tuple(signature)
 
 
 # ---------------------------------------------------------------------------

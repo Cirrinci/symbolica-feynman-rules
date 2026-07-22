@@ -1,11 +1,34 @@
 import json
 from pathlib import Path
 
+from feynrules.comparison import compare_canonical_coefficient_maps
 from feynpy import Model
 from models.SMEFT2 import OMITTED_SECTORS, build_smeft_green_bpreserving
+from symbolic.tensor_canonicalization import canonical_external_index_set
+from symbolica import S
 
 
 MODEL_DIR = Path(__file__).resolve().parents[1]
+
+
+def _reference_vertex_by_key(key: str) -> dict:
+    vertices = json.loads(
+        (MODEL_DIR / "reference" / "Ltot_SMEFT_FeynRules.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    return next(
+        vertex
+        for vertex in vertices
+        if "|".join(sorted(vertex["fields"])) == key
+    )
+
+
+def _feynpy_vertex_by_key(key: str) -> dict:
+    vertices = json.loads(
+        (MODEL_DIR / "feynpy_vertices.json").read_text(encoding="utf-8")
+    )
+    return next(vertex for vertex in vertices if vertex["key"] == key)
 
 
 def test_smeft2_supported_subset_builds_and_compiles():
@@ -76,6 +99,13 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_count_mismatches"] == 99
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
     assert report["summary"]["shared_head_count_unexplained_mismatches"] == 90
+    assert report["summary"]["canonical_map_supported_vertices"] == 8
+    assert report["summary"]["canonical_map_equal_vertices"] == 4
+    assert report["summary"]["canonical_map_unequal_vertices"] == 4
+    assert report["summary"]["canonical_map_error_vertices"] == 0
+    assert report["summary"]["canonical_map_supported_coefficient_sectors"] == 28
+    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 24
+    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 4
     assert report["summary"]["benign_head_count_delta_heads"] == 15
     assert report["summary"]["unexplained_head_count_delta_heads"] == 331
     assert all(
@@ -85,6 +115,9 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
         and "head_count_delta" in row
         and "benign_head_count_delta_reasons" in row
         and "unexplained_head_count_delta" in row
+        and "canonical_map_status" in row
+        and "canonical_map_coefficients" in row
+        and "canonical_map_error" in row
         for row in report["reference_vertices"]
     )
 
@@ -101,3 +134,39 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
         "g2": "DUMMY_LORENTZ_MERGE",
     }
     assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"
+    assert rows_by_key["G|G|G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
+    assert rows_by_key["G|G|G"]["canonical_map_coefficients"]["alphaR2G"][
+        "matches"
+    ] is False
+
+
+def test_smeft2_five_gluon_canonical_map_matches_feynrules_reference():
+    reference = _reference_vertex_by_key("G|G|G|G|G")
+    local = _feynpy_vertex_by_key("G|G|G|G|G")
+    external_indices = canonical_external_index_set(
+        lorentz=tuple(S(f"mu{slot}") for slot in range(1, 6)),
+        color_adjoint=tuple(S(f"a{slot}") for slot in range(1, 6)),
+    )
+
+    comparisons = compare_canonical_coefficient_maps(
+        local["rule"],
+        reference["rule"],
+        coefficients=("alphaO3G", "alphaO3Gt", "alphaR2G"),
+        external_indices=external_indices,
+        max_dummy_permutations=2_000_000,
+    )
+
+    assert all(comparison.matches for comparison in comparisons.values())
+    assert {
+        coefficient: (
+            comparison.feynpy_raw_terms,
+            comparison.feynrules_raw_terms,
+            comparison.feynpy_canonical_terms,
+            comparison.feynrules_canonical_terms,
+        )
+        for coefficient, comparison in comparisons.items()
+    } == {
+        "alphaO3G": (720, 240, 120, 120),
+        "alphaO3Gt": (720, 420, 180, 180),
+        "alphaR2G": (720, 360, 360, 360),
+    }

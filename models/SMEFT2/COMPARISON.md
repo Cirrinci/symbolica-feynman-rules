@@ -1,10 +1,10 @@
 # SMEFT2 FeynRules/FeynPy Comparison
 
-Generated on `2026-07-21` by `models/SMEFT2/comparison.py`.
+Generated on `2026-07-22` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
-Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics. Full tensor-rule equality is not claimed by this SMEFT2 report.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.
 
 | Item | Value |
 | --- | ---: |
@@ -18,6 +18,12 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Shared raw head-count mismatches | 99 |
 | Shared raw head-count benign expansions | 9 |
 | Shared raw head-count mismatches with unexplained deltas | 90 |
+| Canonical tensor-map supported vertices | 8 |
+| Canonical tensor-map equal vertices | 4 |
+| Canonical tensor-map unequal vertices | 4 |
+| Canonical tensor-map error vertices | 0 |
+| Canonical tensor-map equal coefficient sectors | 24 |
+| Canonical tensor-map unequal coefficient sectors | 4 |
 | Explained benign head-count deltas | 15 |
 | Unexplained head-count deltas | 331 |
 
@@ -39,6 +45,21 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | `SHARED_HEADS_MATCH` | 168 |
 | `SHARED_LOCAL_EXTRA_HEADS` | 6 |
 | `SHARED_LOCAL_PP_EXTRA` | 2 |
+
+## Canonical Tensor-Map Gauge Comparison
+
+This comparison is currently enabled for pure nonabelian gauge vertices (`G^n` and `Wi^n`). It parses FeynRules `ME`, `FV`, `SP`, `Eps`, `fsu3`, and `fsu2` into native tensors, then compares canonical monomial maps per Wilson coefficient. It uses intrinsic tensor symmetries, dummy-index relabeling, commuting factor ordering, and exact coefficient collection; it does not use Jacobi, momentum conservation, EOM, IBP, or 4D reductions.
+
+| Signature | Status | Coefficient sectors |
+| --- | --- | --- |
+| `G|G|G` | `CANONICAL_MAP_MISMATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 14/8 -> canonical 8/8; `alphaO3Gt` match: raw 21/42 -> canonical 12/12; `alphaR2G` mismatch: raw 54/36 -> canonical 54/36 |
+| `G|G|G|G` | `CANONICAL_MAP_MISMATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 144/48 -> canonical 48/48; `alphaO3Gt` match: raw 138/186 -> canonical 72/72; `alphaR2G` mismatch: raw 204/156 -> canonical 156/156 |
+| `G|G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaO3G` match: raw 720/240 -> canonical 120/120; `alphaO3Gt` match: raw 720/420 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
+| `G|G|G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaO3G` match: raw 720/720 -> canonical 120/120; `alphaO3Gt` match: raw 720/360 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
+| `Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 14/8 -> canonical 8/8; `alphaO3Wt` match: raw 21/42 -> canonical 12/12; `alphaR2W` mismatch: raw 54/36 -> canonical 54/36 |
+| `Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 144/48 -> canonical 48/48; `alphaO3Wt` match: raw 138/186 -> canonical 72/72; `alphaR2W` mismatch: raw 204/156 -> canonical 156/156 |
+| `Wi|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaO3W` match: raw 720/240 -> canonical 120/120; `alphaO3Wt` match: raw 720/420 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
+| `Wi|Wi|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaO3W` match: raw 720/720 -> canonical 120/120; `alphaO3Wt` match: raw 720/360 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
 
 ## Largest Reference-Side Head Gaps
 
@@ -86,7 +107,7 @@ These are raw coefficient-head occurrence-count diagnostics. They catch some mis
 
 ## Largest Unexplained Raw Head-Count Deltas
 
-These exclude the explicit benign expansions listed above. The large `G^5`/`W^5` deltas are still left as expansion noise until they are reduced or checked against a stronger tensor-level oracle.
+These exclude the explicit benign expansions listed above. The large pure-gauge raw deltas can remain large even where the canonical tensor-map comparison above proves equality.
 
 | Head | Total absolute delta |
 | --- | ---: |
