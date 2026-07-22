@@ -4,7 +4,7 @@ Generated on `2026-07-22` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
-Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for supported bosonic rows and canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.
 
 | Item | Value |
 | --- | ---: |
@@ -18,6 +18,10 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Shared raw head-count mismatches | 99 |
 | Shared raw head-count benign expansions | 9 |
 | Shared raw head-count mismatches with unexplained deltas | 90 |
+| Exact symbolic supported vertices | 32 |
+| Exact symbolic equal vertices | 11 |
+| Exact symbolic unequal vertices | 21 |
+| Exact symbolic error vertices | 0 |
 | Canonical tensor-map supported vertices | 8 |
 | Canonical tensor-map equal vertices | 4 |
 | Canonical tensor-map unequal vertices | 4 |
@@ -45,6 +49,45 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | `SHARED_HEADS_MATCH` | 168 |
 | `SHARED_LOCAL_EXTRA_HEADS` | 6 |
 | `SHARED_LOCAL_PP_EXTRA` | 2 |
+
+## Exact Symbolic Comparison
+
+This layer is currently enabled for bosonic SMEFT2 rows. It parses the full FeynRules tensor rule into native tensors, canonicalizes index structure, and checks whether the exact symbolic difference is zero. Two-fermion and four-fermion rows still fall back to the signature/head diagnostics above.
+
+| Signature | Status |
+| --- | --- |
+| `B|B|B|B|Phi|Phibar` | `EXACT_MATCH` |
+| `B|B|B|Phi|Phibar` | `EXACT_MATCH` |
+| `B|B|B|Phi|Phibar|Wi` | `EXACT_MATCH` |
+| `B|B|Phi|Phibar` | `EXACT_MISMATCH` |
+| `B|B|Phi|Phibar|Wi` | `EXACT_MATCH` |
+| `B|B|Phi|Phibar|Wi|Wi` | `EXACT_MISMATCH` |
+| `B|B|Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
+| `B|Phi|Phibar` | `EXACT_MISMATCH` |
+| `B|Phi|Phibar|Wi` | `EXACT_MISMATCH` |
+| `B|Phi|Phibar|Wi|Wi` | `EXACT_MISMATCH` |
+| `B|Phi|Phibar|Wi|Wi|Wi` | `EXACT_MISMATCH` |
+| `B|Phi|Phi|Phibar|Phibar` | `EXACT_MISMATCH` |
+| `B|Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
+| `G|G|G` | `EXACT_MISMATCH` |
+| `G|G|G|G` | `EXACT_MISMATCH` |
+| `G|G|G|G|G` | `EXACT_MISMATCH` |
+| `G|G|G|G|G|G` | `EXACT_MATCH` |
+| `G|G|G|G|Phi|Phibar` | `EXACT_MATCH` |
+| `G|G|G|Phi|Phibar` | `EXACT_MATCH` |
+| `G|G|Phi|Phibar` | `EXACT_MISMATCH` |
+| `Phi|Phibar|Wi` | `EXACT_MISMATCH` |
+| `Phi|Phibar|Wi|Wi` | `EXACT_MISMATCH` |
+| `Phi|Phibar|Wi|Wi|Wi` | `EXACT_MISMATCH` |
+| `Phi|Phibar|Wi|Wi|Wi|Wi` | `EXACT_MISMATCH` |
+| `Phi|Phi|Phibar|Phibar` | `EXACT_MISMATCH` |
+| `Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MISMATCH` |
+| `Phi|Phi|Phibar|Phibar|Wi|Wi` | `EXACT_MISMATCH` |
+| `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `EXACT_MATCH` |
+| `Wi|Wi|Wi` | `EXACT_MISMATCH` |
+| `Wi|Wi|Wi|Wi` | `EXACT_MISMATCH` |
+| `Wi|Wi|Wi|Wi|Wi` | `EXACT_MISMATCH` |
+| `Wi|Wi|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
 
 ## Canonical Tensor-Map Gauge Comparison
 

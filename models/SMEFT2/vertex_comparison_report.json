@@ -2,7 +2,7 @@
   "generated_on": "2026-07-22",
   "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
   "local_model": "models/SMEFT2/SMEFT2.py",
-  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.",
+  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for supported bosonic rows and canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.",
   "summary": {
     "reference_vertex_count": 184,
     "feynpy_signature_count_3_to_6": 192,
@@ -25,6 +25,21 @@
     "canonical_map_status_counts": {
       "CANONICAL_MAP_MATCH": 4,
       "CANONICAL_MAP_MISMATCH": 4
+    },
+    "exact_symbolic_supported_vertices": 32,
+    "exact_symbolic_equal_vertices": 11,
+    "exact_symbolic_unequal_vertices": 21,
+    "exact_symbolic_missing_local_vertices": 0,
+    "exact_symbolic_error_vertices": 0,
+    "exact_symbolic_status_counts": {
+      "EXACT_MATCH": 11,
+      "EXACT_MISMATCH": 21,
+      "EXACT_UNSUPPORTED": 152
+    },
+    "exact_symbolic_family_counts": {
+      "BOSONIC": 32,
+      "FOUR_FERMION": 21,
+      "TWO_FERMION": 131
     },
     "benign_head_count_delta_heads": 15,
     "unexplained_head_count_delta_heads": 331,
@@ -101,6 +116,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -174,6 +192,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -252,6 +273,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -325,6 +349,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -396,6 +423,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -467,6 +497,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -538,6 +571,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -609,6 +645,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -684,6 +723,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -759,6 +801,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -834,6 +879,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -933,6 +981,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
@@ -1034,6 +1085,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
@@ -1135,6 +1189,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
@@ -1231,6 +1288,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1304,6 +1364,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1408,6 +1471,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1488,6 +1554,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1589,6 +1658,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
@@ -1690,6 +1762,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
@@ -1791,6 +1866,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
@@ -1868,6 +1946,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1943,6 +2024,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2053,6 +2137,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2161,6 +2248,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2269,6 +2359,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2377,6 +2470,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2485,6 +2581,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2624,6 +2723,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2765,6 +2867,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2906,6 +3011,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2993,6 +3101,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3080,6 +3191,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3167,6 +3281,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3254,6 +3371,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3333,6 +3453,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3471,6 +3594,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3607,6 +3733,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3743,6 +3872,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3828,6 +3960,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3915,6 +4050,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4002,6 +4140,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4101,6 +4242,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4198,6 +4342,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4295,6 +4442,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4366,6 +4516,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4472,6 +4625,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4607,6 +4763,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4715,6 +4874,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4810,6 +4972,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4903,6 +5068,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5030,6 +5198,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaRHl3pp"
@@ -5159,6 +5330,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaRHq3pp"
@@ -5254,6 +5428,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5351,6 +5528,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5433,6 +5613,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5522,6 +5705,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5609,6 +5795,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5696,6 +5885,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5795,6 +5987,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5892,6 +6087,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5989,6 +6187,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6128,6 +6329,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6269,6 +6473,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6407,6 +6614,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6543,6 +6753,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6676,6 +6889,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6807,6 +7023,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6938,6 +7157,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7054,6 +7276,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7185,6 +7410,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7351,6 +7579,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7520,6 +7751,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7671,6 +7905,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7819,6 +8056,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7925,6 +8165,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8028,6 +8271,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8173,6 +8419,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8318,6 +8567,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8463,6 +8715,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8568,6 +8823,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8673,6 +8931,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8741,6 +9002,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8844,6 +9108,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8949,6 +9216,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9098,6 +9368,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9248,6 +9521,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9396,6 +9672,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9544,6 +9823,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9625,6 +9907,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9708,6 +9993,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9796,6 +10084,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9882,6 +10173,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9969,6 +10263,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10070,6 +10367,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10159,6 +10459,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10242,6 +10545,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10325,6 +10631,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10413,6 +10722,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10499,6 +10811,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10646,6 +10961,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10800,6 +11118,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10909,6 +11230,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11010,6 +11334,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11117,6 +11444,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11184,6 +11514,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11248,6 +11581,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11316,6 +11652,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaWeinberg"
       ],
@@ -11409,6 +11748,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11514,6 +11856,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11619,6 +11964,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11707,6 +12055,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11793,6 +12144,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11879,6 +12233,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11958,6 +12315,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12035,6 +12395,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12112,6 +12475,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12175,6 +12541,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12242,6 +12611,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12309,6 +12681,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12382,6 +12757,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12480,6 +12858,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12603,6 +12984,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12723,6 +13107,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12814,6 +13201,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12903,6 +13293,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13024,6 +13417,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13145,6 +13541,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13234,6 +13633,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13306,6 +13708,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13376,6 +13781,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13458,6 +13866,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13540,6 +13951,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13610,6 +14024,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13688,6 +14105,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13765,6 +14185,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13861,6 +14284,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13930,6 +14356,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13997,6 +14426,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14064,6 +14496,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14134,6 +14569,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14207,6 +14645,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14271,6 +14712,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14339,6 +14783,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaWeinberg"
       ],
@@ -14432,6 +14879,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14537,6 +14987,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14642,6 +15095,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14730,6 +15186,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14816,6 +15275,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14902,6 +15364,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14981,6 +15446,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15058,6 +15526,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15135,6 +15606,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15301,6 +15775,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15470,6 +15947,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15621,6 +16101,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MISMATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is non-zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15769,6 +16252,9 @@
         }
       },
       "canonical_map_error": "",
+      "exact_symbolic_family": "BOSONIC",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical symbolic difference is zero",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15908,6 +16394,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16045,6 +16534,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16195,6 +16687,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16343,6 +16838,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16452,6 +16950,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16553,6 +17054,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "TWO_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16647,6 +17151,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -16746,6 +17253,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -16831,6 +17341,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16913,6 +17426,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17019,6 +17535,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17125,6 +17644,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17207,6 +17729,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17303,6 +17828,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -17402,6 +17930,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -17501,6 +18032,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -17586,6 +18120,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17668,6 +18205,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17750,6 +18290,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17824,6 +18367,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17920,6 +18466,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -18029,6 +18578,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18111,6 +18663,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18193,6 +18748,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18299,6 +18857,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18405,6 +18966,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18487,6 +19051,9 @@
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
+      "exact_symbolic_family": "FOUR_FERMION",
+      "exact_symbolic_status": "EXACT_UNSUPPORTED",
+      "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [

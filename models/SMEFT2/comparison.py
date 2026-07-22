@@ -28,6 +28,7 @@ for path in (ROOT, SRC):
 
 from feynrules.comparison import (
     FeynRulesVertex,
+    compare_feynrules_bosonic_vertices,
     compare_canonical_coefficient_maps,
     load_feynrules_json,
 )
@@ -63,6 +64,21 @@ FIELD_NAME_MAP = {
 GENERIC_PARAMETER_NAMES = frozenset({"g1", "g2", "g3", "muH", "lam", "yl", "yu", "yd"})
 
 OMITTED_COEFFICIENT_HEADS = frozenset()
+
+REFERENCE_FERMION_NAMES = frozenset(
+    {
+        "qL",
+        "qLbar",
+        "uR",
+        "uRbar",
+        "dR",
+        "dRbar",
+        "lL",
+        "lLbar",
+        "eR",
+        "eRbar",
+    }
+)
 
 DUAL_FS_ANTISYMMETRY = "DUAL_FS_ANTISYMMETRY"
 DUMMY_LORENTZ_MERGE = "DUMMY_LORENTZ_MERGE"
@@ -116,6 +132,79 @@ class LocalVertex:
     heads: tuple[str, ...]
     head_counts: tuple[tuple[str, int], ...]
     rule: str
+
+
+def _comparison_field_map(bundle) -> dict[str, object]:
+    field_map = {}
+    for local_name, reference_name in FIELD_NAME_MAP.items():
+        if local_name.endswith(".bar"):
+            field_map[reference_name] = bundle.fields[local_name[:-4]].bar
+        else:
+            field_map[reference_name] = bundle.fields[local_name]
+    return field_map
+
+
+def _exact_symbolic_family(fields: Iterable[str]) -> str:
+    fermion_count = sum(name in REFERENCE_FERMION_NAMES for name in fields)
+    return {
+        0: "BOSONIC",
+        2: "TWO_FERMION",
+        4: "FOUR_FERMION",
+    }.get(fermion_count, "UNCLASSIFIED")
+
+
+def _unsupported_exact_symbolic_detail(family: str) -> str:
+    return {
+        "TWO_FERMION": (
+            "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion "
+            "rows; they still rely on signature and coefficient-head diagnostics."
+        ),
+        "FOUR_FERMION": (
+            "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion "
+            "rows; they still rely on signature and coefficient-head diagnostics."
+        ),
+        "UNCLASSIFIED": (
+            "Exact symbolic comparison is not enabled for this field-content class."
+        ),
+        "BOSONIC": (
+            "Bosonic exact symbolic comparison should have been attempted for this row."
+        ),
+    }[family]
+
+
+def _bosonic_exact_symbolic_rows(
+    references: Iterable[FeynRulesVertex],
+    bundle,
+) -> dict[str, dict[str, str]]:
+    bosonic_references = tuple(
+        reference
+        for reference in references
+        if _exact_symbolic_family(reference.fields) == "BOSONIC"
+    )
+    if not bosonic_references:
+        return {}
+
+    report = compare_feynrules_bosonic_vertices(
+        bundle.model.lagrangian(),
+        bosonic_references,
+        field_map=_comparison_field_map(bundle),
+        feynpy_name_aliases=FIELD_NAME_MAP,
+    )
+    status_map = {
+        "MATCH": "EXACT_MATCH",
+        "MISMATCH": "EXACT_MISMATCH",
+        "MISSING_FEYNPY": "EXACT_NO_LOCAL_SIGNATURE",
+        "MISSING_FIELD_MAP": "EXACT_ERROR",
+        "ERROR": "EXACT_ERROR",
+    }
+    return {
+        _name_key(row.reference.fields): {
+            "family": "BOSONIC",
+            "status": status_map[row.status],
+            "detail": row.detail,
+        }
+        for row in report.rows
+    }
 
 
 def _name_key(names: Iterable[str]) -> str:
@@ -480,6 +569,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
     parameter_names = set(bundle.parameters) | GENERIC_PARAMETER_NAMES
 
     local_vertices = _local_vertices(parameter_names)
+    exact_symbolic_by_key = _bosonic_exact_symbolic_rows(references, bundle)
     local_by_key = {vertex.key: vertex for vertex in local_vertices}
     reference_keys = {_name_key(reference.fields) for reference in references}
 
@@ -531,6 +621,14 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             reference_heads=reference_heads,
             local_heads=local_heads,
         )
+        exact_symbolic_family = _exact_symbolic_family(reference.fields)
+        exact_symbolic = exact_symbolic_by_key.get(key)
+        if exact_symbolic is None:
+            exact_symbolic = {
+                "family": exact_symbolic_family,
+                "status": "EXACT_UNSUPPORTED",
+                "detail": _unsupported_exact_symbolic_detail(exact_symbolic_family),
+            }
 
         status_counts[status] += 1
         reference_rows.append(
@@ -552,6 +650,9 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
                 "canonical_map_status": canonical_map["status"],
                 "canonical_map_coefficients": canonical_map["coefficients"],
                 "canonical_map_error": canonical_map["error"],
+                "exact_symbolic_family": exact_symbolic["family"],
+                "exact_symbolic_status": exact_symbolic["status"],
+                "exact_symbolic_detail": exact_symbolic["detail"],
                 "feynrules_extra_heads": sorted(reference_heads - local_heads),
                 "feynpy_extra_heads": sorted(local_heads - reference_heads),
                 "local_names": list(local_names),
@@ -617,6 +718,17 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         )
         for row in canonical_map_rows
     )
+    exact_symbolic_rows = [
+        row
+        for row in reference_rows
+        if row["exact_symbolic_status"] != "EXACT_UNSUPPORTED"
+    ]
+    exact_symbolic_status_counts = Counter(
+        row["exact_symbolic_status"] for row in reference_rows
+    )
+    exact_symbolic_family_counts = Counter(
+        row["exact_symbolic_family"] for row in reference_rows
+    )
     shared_reference_rows = [
         row for row in reference_rows if row["head_count_status"] != "NO_LOCAL_SIGNATURE"
     ]
@@ -635,9 +747,10 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         "local_model": str((MODEL_DIR / "SMEFT2.py").relative_to(ROOT)),
         "comparison_level": (
             "Signature coverage, coefficient-head content, and raw "
-            "coefficient-head multiplicity diagnostics, plus canonical "
-            "tensor-monomial equality for supported pure nonabelian gauge "
-            "vertices. Full tensor-rule equality is not claimed globally."
+            "coefficient-head multiplicity diagnostics, plus exact symbolic "
+            "comparison for supported bosonic rows and canonical tensor-"
+            "monomial equality for supported pure nonabelian gauge vertices. "
+            "Full tensor-rule equality is not claimed globally."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -675,6 +788,25 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             ),
             "canonical_map_status_counts": dict(
                 sorted(canonical_map_status_counts.items())
+            ),
+            "exact_symbolic_supported_vertices": len(exact_symbolic_rows),
+            "exact_symbolic_equal_vertices": exact_symbolic_status_counts[
+                "EXACT_MATCH"
+            ],
+            "exact_symbolic_unequal_vertices": exact_symbolic_status_counts[
+                "EXACT_MISMATCH"
+            ],
+            "exact_symbolic_missing_local_vertices": exact_symbolic_status_counts[
+                "EXACT_NO_LOCAL_SIGNATURE"
+            ],
+            "exact_symbolic_error_vertices": exact_symbolic_status_counts[
+                "EXACT_ERROR"
+            ],
+            "exact_symbolic_status_counts": dict(
+                sorted(exact_symbolic_status_counts.items())
+            ),
+            "exact_symbolic_family_counts": dict(
+                sorted(exact_symbolic_family_counts.items())
             ),
             "benign_head_count_delta_heads": benign_head_count_delta_heads,
             "unexplained_head_count_delta_heads": unexplained_head_count_delta_heads,
@@ -757,6 +889,10 @@ def _markdown_report(report: dict[str, object]) -> str:
         f"| Shared raw head-count benign expansions | {summary['shared_head_count_benign_expansions']} |",
         "| Shared raw head-count mismatches with unexplained deltas | "
         f"{summary['shared_head_count_unexplained_mismatches']} |",
+        f"| Exact symbolic supported vertices | {summary['exact_symbolic_supported_vertices']} |",
+        f"| Exact symbolic equal vertices | {summary['exact_symbolic_equal_vertices']} |",
+        f"| Exact symbolic unequal vertices | {summary['exact_symbolic_unequal_vertices']} |",
+        f"| Exact symbolic error vertices | {summary['exact_symbolic_error_vertices']} |",
         f"| Canonical tensor-map supported vertices | {summary['canonical_map_supported_vertices']} |",
         f"| Canonical tensor-map equal vertices | {summary['canonical_map_equal_vertices']} |",
         f"| Canonical tensor-map unequal vertices | {summary['canonical_map_unequal_vertices']} |",
@@ -782,6 +918,31 @@ def _markdown_report(report: dict[str, object]) -> str:
     ]
     for status, count in sorted(counts.items()):
         lines.append(f"| `{status}` | {count} |")
+
+    exact_rows = [
+        row
+        for row in report["reference_vertices"]
+        if row["exact_symbolic_status"] != "EXACT_UNSUPPORTED"
+    ]
+    lines.extend(
+        [
+            "",
+            "## Exact Symbolic Comparison",
+            "",
+            "This layer is currently enabled for bosonic SMEFT2 rows. It "
+            "parses the full FeynRules tensor rule into native tensors, "
+            "canonicalizes index structure, and checks whether the exact "
+            "symbolic difference is zero. Two-fermion and four-fermion rows "
+            "still fall back to the signature/head diagnostics above.",
+            "",
+            "| Signature | Status |",
+            "| --- | --- |",
+        ]
+    )
+    for row in exact_rows:
+        lines.append(
+            f"| `{row['key']}` | `{row['exact_symbolic_status']}` |"
+        )
 
     canonical_rows = [
         row
@@ -960,6 +1121,9 @@ def main(argv: list[str] | None = None) -> int:
         "SMEFT2 comparison: "
         f"{summary['shared_head_matches']}/{summary['reference_vertex_count']} "
         "reference vertices match at coefficient-head set level; "
+        "exact symbolic matches="
+        f"{summary['exact_symbolic_equal_vertices']}/"
+        f"{summary['exact_symbolic_supported_vertices']} supported vertices; "
         f"raw-head-count matches={summary['shared_head_count_matches']}/"
         f"{summary['shared_signatures']}; "
         "canonical tensor-map matches="

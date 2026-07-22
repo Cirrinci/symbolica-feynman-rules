@@ -99,6 +99,11 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_count_mismatches"] == 99
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
     assert report["summary"]["shared_head_count_unexplained_mismatches"] == 90
+    assert report["summary"]["exact_symbolic_supported_vertices"] == 32
+    assert report["summary"]["exact_symbolic_equal_vertices"] == 11
+    assert report["summary"]["exact_symbolic_unequal_vertices"] == 21
+    assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
+    assert report["summary"]["exact_symbolic_error_vertices"] == 0
     assert report["summary"]["canonical_map_supported_vertices"] == 8
     assert report["summary"]["canonical_map_equal_vertices"] == 4
     assert report["summary"]["canonical_map_unequal_vertices"] == 4
@@ -118,6 +123,9 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
         and "canonical_map_status" in row
         and "canonical_map_coefficients" in row
         and "canonical_map_error" in row
+        and "exact_symbolic_family" in row
+        and "exact_symbolic_status" in row
+        and "exact_symbolic_detail" in row
         for row in report["reference_vertices"]
     )
 
@@ -134,6 +142,10 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
         "g2": "DUMMY_LORENTZ_MERGE",
     }
     assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"
+    assert rows_by_key["B|B|B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MISMATCH"
+    assert rows_by_key["G|G|G|G|G"]["exact_symbolic_status"] == "EXACT_MISMATCH"
+    assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
     assert rows_by_key["G|G|G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G"]["canonical_map_coefficients"]["alphaR2G"][
         "matches"

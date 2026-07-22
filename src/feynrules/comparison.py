@@ -23,7 +23,10 @@ import sympy
 from symbolica import AtomType, Expression, S
 
 from symbolic.spenso_structures import (
+    COLOR_ADJ,
     COLOR_FUND,
+    WEAK_ADJ,
+    WEAK_FUND,
     chiral_projector_left,
     chiral_projector_right,
     gamma_matrix,
@@ -31,6 +34,7 @@ from symbolic.spenso_structures import (
     lorentz_levi_civita,
     lorentz_metric,
     structure_constant,
+    weak_gauge_generator,
     weak_structure_constant,
 )
 from symbolic.vertex_engine import pcomp
@@ -208,6 +212,11 @@ def parse_feynrules_gauge_rule(
         text,
     )
     text = re.sub(
+        r"Index\[SU2D,\s*Ext\[(\d+)\]\]",
+        lambda match: f"w{match.group(1)}",
+        text,
+    )
+    text = re.sub(
         r"Index\[Lorentz,\s*([^\]]+)\]",
         lambda match: f"mu_feynrules_dummy_{_feynrules_ascii_label(match.group(1))}",
         text,
@@ -220,6 +229,11 @@ def parse_feynrules_gauge_rule(
     text = re.sub(
         r"Index\[SU2W,\s*([^\]]+)\]",
         lambda match: f"aw_feynrules_dummy_{_feynrules_ascii_label(match.group(1))}",
+        text,
+    )
+    text = re.sub(
+        r"Index\[SU2D,\s*([^\]]+)\]",
+        lambda match: f"w_feynrules_dummy_{_feynrules_ascii_label(match.group(1))}",
         text,
     )
     text = re.sub(
@@ -261,6 +275,85 @@ def parse_feynrules_gauge_rule(
     text = re.sub(
         r"fsu2\[([^,\]]+),\s*([^,\]]+),\s*([^\]]+)\]",
         lambda match: weak_structure_constant(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\["
+        r"Index\[Gluon,\s*([^\]]+)\],\s*"
+        r"Index\[Gluon,\s*([^\]]+)\]"
+        r"\]",
+        lambda match: COLOR_ADJ.g(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_expression().to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\["
+        r"Index\[SU2W,\s*([^\]]+)\],\s*"
+        r"Index\[SU2W,\s*([^\]]+)\]"
+        r"\]",
+        lambda match: WEAK_ADJ.g(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_expression().to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\["
+        r"Index\[SU2D,\s*([^\]]+)\],\s*"
+        r"Index\[SU2D,\s*([^\]]+)\]"
+        r"\]",
+        lambda match: WEAK_FUND.g(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_expression().to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\[(a[^,\]]+),\s*(a[^\]]+)\]",
+        lambda match: COLOR_ADJ.g(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_expression().to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\[(aw[^,\]]+),\s*(aw[^\]]+)\]",
+        lambda match: WEAK_ADJ.g(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_expression().to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\[(w[^,\]]+),\s*(w[^\]]+)\]",
+        lambda match: WEAK_FUND.g(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_expression().to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Ta\["
+        r"Index\[SU2W,\s*([^\]]+)\],\s*"
+        r"Index\[SU2D,\s*([^\]]+)\],\s*"
+        r"Index\[SU2D,\s*([^\]]+)\]"
+        r"\]",
+        lambda match: weak_gauge_generator(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Ta\[(aw[^,\]]+),\s*(w[^,\]]+),\s*(w[^\]]+)\]",
+        lambda match: weak_gauge_generator(
             S(match.group(1).strip()),
             S(match.group(2).strip()),
             S(match.group(3).strip()),
@@ -797,10 +890,16 @@ def canonicalize_gauge_rule(expression: Expression) -> Expression:
         head="spenso::coad",
         dimension=8,
     )
+    weak_adjoint_indices = _representation_labels(
+        expression,
+        head="spenso::coad",
+        dimension=3,
+    )
     canonical = _canonize_structure_constant_products(
         expression,
         lorentz_indices=lorentz_indices,
         adjoint_indices=adjoint_indices,
+        weak_adj_indices=weak_adjoint_indices,
     )
     return canonical.cancel().expand()
 
@@ -1346,6 +1445,7 @@ def compare_feynrules_bosonic_vertices(
     minimum_scalar_fields: int = 0,
     use_momentum_conservation: bool = False,
     scalar_relations: Sequence[object] = (),
+    include_delta: bool = False,
 ) -> VertexComparisonReport:
     """Compare scalar/vector/ghost tensor vertices with FeynRules."""
 
@@ -1385,7 +1485,7 @@ def compare_feynrules_bosonic_vertices(
         rule = lagrangian.feynman_rule(
             *signature.fields,
             simplify=True,
-            include_delta=False,
+            include_delta=include_delta,
         )
         rule = _apply_expression_substitutions(rule, feynpy_substitutions)
         if rule.to_canonical_string() == "0":
@@ -1418,7 +1518,7 @@ def compare_feynrules_bosonic_vertices(
             feynpy_rule = lagrangian.feynman_rule(
                 *(field_map[name] for name in reference.fields),
                 simplify=True,
-                include_delta=False,
+                include_delta=include_delta,
             )
             feynpy_rule = _apply_expression_substitutions(
                 feynpy_rule,
