@@ -26,8 +26,14 @@ for path in (ROOT, SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from feynrules.comparison import FeynRulesVertex, load_feynrules_json
+from feynrules.comparison import (
+    FeynRulesVertex,
+    compare_canonical_coefficient_maps,
+    load_feynrules_json,
+)
 from models.SMEFT2 import build_smeft_green_bpreserving
+from symbolic.tensor_canonicalization import canonical_external_index_set
+from symbolica import S
 
 
 MODEL_DIR = Path(__file__).resolve().parent
@@ -90,6 +96,11 @@ BENIGN_HEAD_COUNT_DELTAS = {
     ("G|qL|qLbar", "g3"): DUMMY_LORENTZ_MERGE,
     ("Wi|qL|qLbar", "alphaRqD"): DUMMY_LORENTZ_MERGE,
     ("Wi|qL|qLbar", "g2"): DUMMY_LORENTZ_MERGE,
+}
+
+CANONICAL_GAUGE_EXTERNAL_INDEX_PREFIX = {
+    "G": ("color_adjoint", "a"),
+    "Wi": ("weak_adjoint", "aw"),
 }
 
 
@@ -200,6 +211,138 @@ def _head_count_status(
     if benign_reasons:
         return "COUNT_MIXED_BENIGN_AND_UNEXPLAINED"
     return "COUNT_MISMATCH"
+
+
+def _canonical_map_external_indices(
+    fields: tuple[str, ...],
+) -> frozenset[tuple[str, str]] | None:
+    field_names = set(fields)
+    if len(field_names) != 1:
+        return None
+    field = next(iter(field_names))
+    index_info = CANONICAL_GAUGE_EXTERNAL_INDEX_PREFIX.get(field)
+    if index_info is None:
+        return None
+
+    arity = len(fields)
+    lorentz = tuple(S(f"mu{slot}") for slot in range(1, arity + 1))
+    index_kind, index_prefix = index_info
+    gauge_indices = tuple(S(f"{index_prefix}{slot}") for slot in range(1, arity + 1))
+    if index_kind == "color_adjoint":
+        return canonical_external_index_set(
+            lorentz=lorentz,
+            color_adjoint=gauge_indices,
+        )
+    if index_kind == "weak_adjoint":
+        return canonical_external_index_set(
+            lorentz=lorentz,
+            weak_adjoint=gauge_indices,
+        )
+    raise AssertionError(f"Unsupported gauge index kind {index_kind!r}")
+
+
+def _canonical_map_coefficients(
+    reference_heads: set[str],
+    local_heads: set[str],
+) -> tuple[str, ...]:
+    return tuple(
+        sorted(
+            head
+            for head in reference_heads & local_heads
+            if head.startswith("alpha")
+        )
+    )
+
+
+def _first_canonical_map_item(mapping) -> dict[str, str] | None:
+    if not mapping:
+        return None
+    key = next(iter(mapping))
+    return {
+        "monomial": repr(key),
+        "coefficient": mapping[key].cancel().expand().to_canonical_string(),
+    }
+
+
+def _first_coefficient_mismatch(mapping) -> dict[str, str] | None:
+    if not mapping:
+        return None
+    key = next(iter(mapping))
+    feynpy_coefficient, feynrules_coefficient = mapping[key]
+    return {
+        "monomial": repr(key),
+        "feynpy_coefficient": feynpy_coefficient.cancel().expand().to_canonical_string(),
+        "feynrules_coefficient": feynrules_coefficient.cancel().expand().to_canonical_string(),
+    }
+
+
+def _canonical_map_diagnostic(
+    *,
+    reference: FeynRulesVertex,
+    local: LocalVertex | None,
+    reference_heads: set[str],
+    local_heads: set[str],
+) -> dict[str, object]:
+    external_indices = _canonical_map_external_indices(reference.fields)
+    if local is None or external_indices is None:
+        return {
+            "status": "CANONICAL_MAP_UNSUPPORTED",
+            "coefficients": {},
+            "error": "",
+        }
+
+    coefficients = _canonical_map_coefficients(reference_heads, local_heads)
+    if not coefficients:
+        return {
+            "status": "CANONICAL_MAP_UNSUPPORTED",
+            "coefficients": {},
+            "error": "",
+        }
+
+    try:
+        comparisons = compare_canonical_coefficient_maps(
+            local.rule,
+            reference.rule,
+            coefficients=coefficients,
+            external_indices=external_indices,
+            max_dummy_permutations=2_000_000,
+        )
+    except Exception as exc:  # pragma: no cover - reported in JSON/Markdown.
+        return {
+            "status": "CANONICAL_MAP_ERROR",
+            "coefficients": {},
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
+    coefficient_payload = {}
+    for coefficient, comparison in comparisons.items():
+        coefficient_payload[coefficient] = {
+            "matches": comparison.matches,
+            "feynpy_raw_terms": comparison.feynpy_raw_terms,
+            "feynrules_raw_terms": comparison.feynrules_raw_terms,
+            "feynpy_canonical_terms": comparison.feynpy_canonical_terms,
+            "feynrules_canonical_terms": comparison.feynrules_canonical_terms,
+            "feynpy_only_count": len(comparison.feynpy_only),
+            "feynrules_only_count": len(comparison.feynrules_only),
+            "coefficient_mismatch_count": len(comparison.coefficient_mismatches),
+            "first_feynpy_only": _first_canonical_map_item(comparison.feynpy_only),
+            "first_feynrules_only": _first_canonical_map_item(
+                comparison.feynrules_only
+            ),
+            "first_coefficient_mismatch": _first_coefficient_mismatch(
+                comparison.coefficient_mismatches
+            ),
+        }
+
+    return {
+        "status": (
+            "CANONICAL_MAP_MATCH"
+            if all(comparison.matches for comparison in comparisons.values())
+            else "CANONICAL_MAP_MISMATCH"
+        ),
+        "coefficients": coefficient_payload,
+        "error": "",
+    }
 
 
 def _local_vertices(parameter_names: Iterable[str]) -> tuple[LocalVertex, ...]:
@@ -382,6 +525,12 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             head_count_delta=head_count_delta,
             benign_reasons=benign_head_count_delta_reasons,
         )
+        canonical_map = _canonical_map_diagnostic(
+            reference=reference,
+            local=local,
+            reference_heads=reference_heads,
+            local_heads=local_heads,
+        )
 
         status_counts[status] += 1
         reference_rows.append(
@@ -400,6 +549,9 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
                 "benign_head_count_delta_reasons": benign_head_count_delta_reasons,
                 "unexplained_head_count_delta": unexplained_head_count_delta,
                 "head_count_status": head_count_status,
+                "canonical_map_status": canonical_map["status"],
+                "canonical_map_coefficients": canonical_map["coefficients"],
+                "canonical_map_error": canonical_map["error"],
                 "feynrules_extra_heads": sorted(reference_heads - local_heads),
                 "feynpy_extra_heads": sorted(local_heads - reference_heads),
                 "local_names": list(local_names),
@@ -444,6 +596,27 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         for row in reference_rows
         if row["head_count_status"] != "NO_LOCAL_SIGNATURE"
     )
+    canonical_map_rows = [
+        row
+        for row in reference_rows
+        if row["canonical_map_status"] != "CANONICAL_MAP_UNSUPPORTED"
+    ]
+    canonical_map_status_counts = Counter(
+        row["canonical_map_status"]
+        for row in canonical_map_rows
+    )
+    canonical_map_sector_count = sum(
+        len(row["canonical_map_coefficients"])
+        for row in canonical_map_rows
+    )
+    canonical_map_equal_sector_count = sum(
+        sum(
+            1
+            for coefficient in row["canonical_map_coefficients"].values()
+            if coefficient["matches"]
+        )
+        for row in canonical_map_rows
+    )
     shared_reference_rows = [
         row for row in reference_rows if row["head_count_status"] != "NO_LOCAL_SIGNATURE"
     ]
@@ -462,8 +635,9 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         "local_model": str((MODEL_DIR / "SMEFT2.py").relative_to(ROOT)),
         "comparison_level": (
             "Signature coverage, coefficient-head content, and raw "
-            "coefficient-head multiplicity diagnostics. Full tensor-rule "
-            "equality is not claimed by this SMEFT2 report."
+            "coefficient-head multiplicity diagnostics, plus canonical "
+            "tensor-monomial equality for supported pure nonabelian gauge "
+            "vertices. Full tensor-rule equality is not claimed globally."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -483,6 +657,24 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "shared_head_count_unexplained_mismatches": (
                 head_count_status_counts["COUNT_MISMATCH"]
                 + head_count_status_counts["COUNT_MIXED_BENIGN_AND_UNEXPLAINED"]
+            ),
+            "canonical_map_supported_vertices": len(canonical_map_rows),
+            "canonical_map_equal_vertices": canonical_map_status_counts[
+                "CANONICAL_MAP_MATCH"
+            ],
+            "canonical_map_unequal_vertices": canonical_map_status_counts[
+                "CANONICAL_MAP_MISMATCH"
+            ],
+            "canonical_map_error_vertices": canonical_map_status_counts[
+                "CANONICAL_MAP_ERROR"
+            ],
+            "canonical_map_supported_coefficient_sectors": canonical_map_sector_count,
+            "canonical_map_equal_coefficient_sectors": canonical_map_equal_sector_count,
+            "canonical_map_unequal_coefficient_sectors": (
+                canonical_map_sector_count - canonical_map_equal_sector_count
+            ),
+            "canonical_map_status_counts": dict(
+                sorted(canonical_map_status_counts.items())
             ),
             "benign_head_count_delta_heads": benign_head_count_delta_heads,
             "unexplained_head_count_delta_heads": unexplained_head_count_delta_heads,
@@ -565,6 +757,14 @@ def _markdown_report(report: dict[str, object]) -> str:
         f"| Shared raw head-count benign expansions | {summary['shared_head_count_benign_expansions']} |",
         "| Shared raw head-count mismatches with unexplained deltas | "
         f"{summary['shared_head_count_unexplained_mismatches']} |",
+        f"| Canonical tensor-map supported vertices | {summary['canonical_map_supported_vertices']} |",
+        f"| Canonical tensor-map equal vertices | {summary['canonical_map_equal_vertices']} |",
+        f"| Canonical tensor-map unequal vertices | {summary['canonical_map_unequal_vertices']} |",
+        f"| Canonical tensor-map error vertices | {summary['canonical_map_error_vertices']} |",
+        "| Canonical tensor-map equal coefficient sectors | "
+        f"{summary['canonical_map_equal_coefficient_sectors']} |",
+        "| Canonical tensor-map unequal coefficient sectors | "
+        f"{summary['canonical_map_unequal_coefficient_sectors']} |",
         f"| Explained benign head-count deltas | {summary['benign_head_count_delta_heads']} |",
         f"| Unexplained head-count deltas | {summary['unexplained_head_count_delta_heads']} |",
         "",
@@ -582,6 +782,46 @@ def _markdown_report(report: dict[str, object]) -> str:
     ]
     for status, count in sorted(counts.items()):
         lines.append(f"| `{status}` | {count} |")
+
+    canonical_rows = [
+        row
+        for row in report["reference_vertices"]
+        if row["canonical_map_status"] != "CANONICAL_MAP_UNSUPPORTED"
+    ]
+    lines.extend(
+        [
+            "",
+            "## Canonical Tensor-Map Gauge Comparison",
+            "",
+            "This comparison is currently enabled for pure nonabelian gauge "
+            "vertices (`G^n` and `Wi^n`). It parses FeynRules `ME`, `FV`, "
+            "`SP`, `Eps`, `fsu3`, and `fsu2` into native tensors, then "
+            "compares canonical monomial maps per Wilson coefficient. It uses "
+            "intrinsic tensor symmetries, dummy-index relabeling, commuting "
+            "factor ordering, and exact coefficient collection; it does not "
+            "use Jacobi, momentum conservation, EOM, IBP, or 4D reductions.",
+            "",
+            "| Signature | Status | Coefficient sectors |",
+            "| --- | --- | --- |",
+        ]
+    )
+    for row in canonical_rows:
+        sector_summaries = []
+        for coefficient, diagnostic in sorted(
+            row["canonical_map_coefficients"].items()
+        ):
+            status = "match" if diagnostic["matches"] else "mismatch"
+            sector_summaries.append(
+                f"`{coefficient}` {status}: raw "
+                f"{diagnostic['feynpy_raw_terms']}/"
+                f"{diagnostic['feynrules_raw_terms']} -> canonical "
+                f"{diagnostic['feynpy_canonical_terms']}/"
+                f"{diagnostic['feynrules_canonical_terms']}"
+            )
+        lines.append(
+            f"| `{row['key']}` | `{row['canonical_map_status']}` | "
+            f"{'; '.join(sector_summaries)} |"
+        )
 
     missing_heads = Counter()
     local_extra_heads = Counter()
@@ -658,8 +898,8 @@ def _markdown_report(report: dict[str, object]) -> str:
             "## Largest Unexplained Raw Head-Count Deltas",
             "",
             "These exclude the explicit benign expansions listed above. The large "
-            "`G^5`/`W^5` deltas are still left as expansion noise until they are "
-            "reduced or checked against a stronger tensor-level oracle.",
+            "pure-gauge raw deltas can remain large even where the canonical "
+            "tensor-map comparison above proves equality.",
             "",
             "| Head | Total absolute delta |",
             "| --- | ---: |",
@@ -722,6 +962,11 @@ def main(argv: list[str] | None = None) -> int:
         "reference vertices match at coefficient-head set level; "
         f"raw-head-count matches={summary['shared_head_count_matches']}/"
         f"{summary['shared_signatures']}; "
+        "canonical tensor-map matches="
+        f"{summary['canonical_map_equal_vertices']}/"
+        f"{summary['canonical_map_supported_vertices']} supported vertices "
+        f"({summary['canonical_map_equal_coefficient_sectors']}/"
+        f"{summary['canonical_map_supported_coefficient_sectors']} sectors); "
         f"reference-only={summary['reference_only_signatures']}; "
         f"feynpy-only={summary['feynpy_only_signatures']}."
     )

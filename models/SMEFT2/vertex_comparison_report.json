@@ -1,8 +1,8 @@
 {
-  "generated_on": "2026-07-21",
+  "generated_on": "2026-07-22",
   "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
   "local_model": "models/SMEFT2/SMEFT2.py",
-  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics. Full tensor-rule equality is not claimed by this SMEFT2 report.",
+  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.",
   "summary": {
     "reference_vertex_count": 184,
     "feynpy_signature_count_3_to_6": 192,
@@ -15,6 +15,17 @@
     "shared_head_count_benign_expansions": 9,
     "shared_head_count_mixed_benign_unexplained": 0,
     "shared_head_count_unexplained_mismatches": 90,
+    "canonical_map_supported_vertices": 8,
+    "canonical_map_equal_vertices": 4,
+    "canonical_map_unequal_vertices": 4,
+    "canonical_map_error_vertices": 0,
+    "canonical_map_supported_coefficient_sectors": 28,
+    "canonical_map_equal_coefficient_sectors": 24,
+    "canonical_map_unequal_coefficient_sectors": 4,
+    "canonical_map_status_counts": {
+      "CANONICAL_MAP_MATCH": 4,
+      "CANONICAL_MAP_MISMATCH": 4
+    },
     "benign_head_count_delta_heads": 15,
     "unexplained_head_count_delta_heads": 331,
     "head_count_status_counts": {
@@ -87,6 +98,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -157,6 +171,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -232,6 +249,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -302,6 +322,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -370,6 +393,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -438,6 +464,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -506,6 +535,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -574,6 +606,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -646,6 +681,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -718,6 +756,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -790,6 +831,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -886,6 +930,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
@@ -984,6 +1031,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
@@ -1082,6 +1132,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
@@ -1175,6 +1228,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1245,6 +1301,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1346,6 +1405,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1423,6 +1485,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1521,6 +1586,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEdH"
@@ -1619,6 +1687,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEeH"
@@ -1717,6 +1788,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaEuH"
@@ -1791,6 +1865,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1863,6 +1940,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -1970,6 +2050,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2075,6 +2158,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2180,6 +2266,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2285,6 +2374,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2390,6 +2482,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2526,6 +2621,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2664,6 +2762,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2802,6 +2903,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2886,6 +2990,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -2970,6 +3077,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3054,6 +3164,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3138,6 +3251,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3214,6 +3330,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3349,6 +3468,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3482,6 +3604,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3615,6 +3740,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3697,6 +3825,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3781,6 +3912,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3865,6 +3999,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3961,6 +4098,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4055,6 +4195,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4149,6 +4292,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4217,6 +4363,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4320,6 +4469,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4452,6 +4604,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4557,6 +4712,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4649,6 +4807,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4739,6 +4900,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4863,6 +5027,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaRHl3pp"
@@ -4989,6 +5156,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
         "alphaRHq3pp"
@@ -5081,6 +5251,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5175,6 +5348,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5254,6 +5430,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5340,6 +5519,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5424,6 +5606,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5508,6 +5693,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5604,6 +5792,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5698,6 +5889,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5792,6 +5986,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5928,6 +6125,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6066,6 +6266,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6201,6 +6404,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6334,6 +6540,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6464,6 +6673,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6592,6 +6804,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6720,6 +6935,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6833,6 +7051,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6961,6 +7182,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7065,6 +7289,68 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_coefficients": {
+        "alphaKG": {
+          "matches": true,
+          "feynpy_raw_terms": 6,
+          "feynrules_raw_terms": 6,
+          "feynpy_canonical_terms": 6,
+          "feynrules_canonical_terms": 6,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3G": {
+          "matches": true,
+          "feynpy_raw_terms": 14,
+          "feynrules_raw_terms": 8,
+          "feynpy_canonical_terms": 8,
+          "feynrules_canonical_terms": 8,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Gt": {
+          "matches": true,
+          "feynpy_raw_terms": 21,
+          "feynrules_raw_terms": 42,
+          "feynpy_canonical_terms": 12,
+          "feynrules_canonical_terms": 12,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2G": {
+          "matches": false,
+          "feynpy_raw_terms": 54,
+          "feynrules_raw_terms": 36,
+          "feynpy_canonical_terms": 54,
+          "feynrules_canonical_terms": 36,
+          "feynpy_only_count": 36,
+          "feynrules_only_count": 18,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('E:A:a1', 'E:A:a2', 'E:A:a3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu1_int'), '2')), ordered_factors=())",
+            "coefficient": "python::{}::g3"
+          },
+          "first_feynrules_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('E:A:a1', 'E:A:a2', 'E:A:a3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu_feynrules_dummy_sp_19'), '2')), ordered_factors=())",
+            "coefficient": "2*python::{}::g3"
+          },
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7172,6 +7458,68 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_coefficients": {
+        "alphaKG": {
+          "matches": true,
+          "feynpy_raw_terms": 6,
+          "feynrules_raw_terms": 6,
+          "feynpy_canonical_terms": 6,
+          "feynrules_canonical_terms": 6,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3G": {
+          "matches": true,
+          "feynpy_raw_terms": 144,
+          "feynrules_raw_terms": 48,
+          "feynpy_canonical_terms": 48,
+          "feynrules_canonical_terms": 48,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Gt": {
+          "matches": true,
+          "feynpy_raw_terms": 138,
+          "feynrules_raw_terms": 186,
+          "feynpy_canonical_terms": 72,
+          "feynrules_canonical_terms": 72,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2G": {
+          "matches": false,
+          "feynpy_raw_terms": 204,
+          "feynrules_raw_terms": 156,
+          "feynpy_canonical_terms": 156,
+          "feynrules_canonical_terms": 156,
+          "feynpy_only_count": 24,
+          "feynrules_only_count": 24,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a1', 'E:A:a2')), ('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a3', 'E:A:a4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu1_int'), '2')), ordered_factors=())",
+            "coefficient": "-1\ud835\udc56*python::{}::g3^2"
+          },
+          "first_feynrules_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a1', 'E:A:a2')), ('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a3', 'E:A:a4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu_feynrules_dummy_sp_4'), '2')), ordered_factors=())",
+            "coefficient": "-1\ud835\udc56*python::{}::g3^2"
+          },
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7280,6 +7628,49 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
+      "canonical_map_coefficients": {
+        "alphaO3G": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 240,
+          "feynpy_canonical_terms": 120,
+          "feynrules_canonical_terms": 120,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Gt": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 420,
+          "feynpy_canonical_terms": 180,
+          "feynrules_canonical_terms": 180,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2G": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 360,
+          "feynpy_canonical_terms": 360,
+          "feynrules_canonical_terms": 360,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7385,6 +7776,49 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
+      "canonical_map_coefficients": {
+        "alphaO3G": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 720,
+          "feynpy_canonical_terms": 120,
+          "feynrules_canonical_terms": 120,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Gt": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 360,
+          "feynpy_canonical_terms": 180,
+          "feynrules_canonical_terms": 180,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2G": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 360,
+          "feynpy_canonical_terms": 360,
+          "feynrules_canonical_terms": 360,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7488,6 +7922,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7588,6 +8025,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7730,6 +8170,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7872,6 +8315,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8014,6 +8460,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8116,6 +8565,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8218,6 +8670,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8283,6 +8738,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8383,6 +8841,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8485,6 +8946,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8631,6 +9095,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8778,6 +9245,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8923,6 +9393,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9068,6 +9541,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9146,6 +9622,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9226,6 +9705,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9311,6 +9793,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9394,6 +9879,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9478,6 +9966,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9576,6 +10067,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9662,6 +10156,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9742,6 +10239,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9822,6 +10322,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9907,6 +10410,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9990,6 +10496,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10134,6 +10643,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10285,6 +10797,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10391,6 +10906,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10489,6 +11007,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10593,6 +11114,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10657,6 +11181,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10718,6 +11245,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10783,6 +11313,9 @@
         }
       },
       "head_count_status": "NO_LOCAL_SIGNATURE",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaWeinberg"
       ],
@@ -10873,6 +11406,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10975,6 +11511,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11077,6 +11616,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11162,6 +11704,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11245,6 +11790,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11328,6 +11876,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11404,6 +11955,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11478,6 +12032,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11552,6 +12109,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11612,6 +12172,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11676,6 +12239,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11740,6 +12306,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11810,6 +12379,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11905,6 +12477,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12025,6 +12600,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12142,6 +12720,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12230,6 +12811,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12316,6 +12900,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12434,6 +13021,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12552,6 +13142,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12638,6 +13231,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12707,6 +13303,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12774,6 +13373,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12853,6 +13455,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12932,6 +13537,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12999,6 +13607,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13074,6 +13685,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13148,6 +13762,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13241,6 +13858,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13307,6 +13927,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13371,6 +13994,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13435,6 +14061,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13502,6 +14131,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13572,6 +14204,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13633,6 +14268,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13698,6 +14336,9 @@
         }
       },
       "head_count_status": "NO_LOCAL_SIGNATURE",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaWeinberg"
       ],
@@ -13788,6 +14429,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13890,6 +14534,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13992,6 +14639,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14077,6 +14727,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14160,6 +14813,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14243,6 +14899,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14319,6 +14978,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14393,6 +15055,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14467,6 +15132,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14571,6 +15239,68 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_coefficients": {
+        "alphaKW": {
+          "matches": true,
+          "feynpy_raw_terms": 6,
+          "feynrules_raw_terms": 6,
+          "feynpy_canonical_terms": 6,
+          "feynrules_canonical_terms": 6,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3W": {
+          "matches": true,
+          "feynpy_raw_terms": 14,
+          "feynrules_raw_terms": 8,
+          "feynpy_canonical_terms": 8,
+          "feynrules_canonical_terms": 8,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Wt": {
+          "matches": true,
+          "feynpy_raw_terms": 21,
+          "feynrules_raw_terms": 42,
+          "feynpy_canonical_terms": 12,
+          "feynrules_canonical_terms": 12,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2W": {
+          "matches": false,
+          "feynpy_raw_terms": 54,
+          "feynrules_raw_terms": 36,
+          "feynpy_canonical_terms": 54,
+          "feynrules_canonical_terms": 36,
+          "feynpy_only_count": 36,
+          "feynrules_only_count": 18,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('E:AW:aw1', 'E:AW:aw2', 'E:AW:aw3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu1_int'), '2')), ordered_factors=())",
+            "coefficient": "python::{}::g2"
+          },
+          "first_feynrules_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('E:AW:aw1', 'E:AW:aw2', 'E:AW:aw3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu_feynrules_dummy_sp_19'), '2')), ordered_factors=())",
+            "coefficient": "2*python::{}::g2"
+          },
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14678,6 +15408,68 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_coefficients": {
+        "alphaKW": {
+          "matches": true,
+          "feynpy_raw_terms": 6,
+          "feynrules_raw_terms": 6,
+          "feynpy_canonical_terms": 6,
+          "feynrules_canonical_terms": 6,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3W": {
+          "matches": true,
+          "feynpy_raw_terms": 144,
+          "feynrules_raw_terms": 48,
+          "feynpy_canonical_terms": 48,
+          "feynrules_canonical_terms": 48,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Wt": {
+          "matches": true,
+          "feynpy_raw_terms": 138,
+          "feynrules_raw_terms": 186,
+          "feynpy_canonical_terms": 72,
+          "feynrules_canonical_terms": 72,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2W": {
+          "matches": false,
+          "feynpy_raw_terms": 204,
+          "feynrules_raw_terms": 156,
+          "feynpy_canonical_terms": 156,
+          "feynrules_canonical_terms": 156,
+          "feynpy_only_count": 24,
+          "feynrules_only_count": 24,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw1', 'E:AW:aw2')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu1_int'), '2')), ordered_factors=())",
+            "coefficient": "-1\ud835\udc56*python::{}::g2^2"
+          },
+          "first_feynrules_only": {
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw1', 'E:AW:aw2')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu_feynrules_dummy_sp_4'), '2')), ordered_factors=())",
+            "coefficient": "-1\ud835\udc56*python::{}::g2^2"
+          },
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14786,6 +15578,49 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
+      "canonical_map_coefficients": {
+        "alphaO3W": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 240,
+          "feynpy_canonical_terms": 120,
+          "feynrules_canonical_terms": 120,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Wt": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 420,
+          "feynpy_canonical_terms": 180,
+          "feynrules_canonical_terms": 180,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2W": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 360,
+          "feynpy_canonical_terms": 360,
+          "feynrules_canonical_terms": 360,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14891,6 +15726,49 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
+      "canonical_map_coefficients": {
+        "alphaO3W": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 720,
+          "feynpy_canonical_terms": 120,
+          "feynrules_canonical_terms": 120,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaO3Wt": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 360,
+          "feynpy_canonical_terms": 180,
+          "feynrules_canonical_terms": 180,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        },
+        "alphaR2W": {
+          "matches": true,
+          "feynpy_raw_terms": 720,
+          "feynrules_raw_terms": 360,
+          "feynpy_canonical_terms": 360,
+          "feynrules_canonical_terms": 360,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
+          "coefficient_mismatch_count": 0,
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
+          "first_coefficient_mismatch": null
+        }
+      },
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15027,6 +15905,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15161,6 +16042,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15308,6 +16192,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15453,6 +16340,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15559,6 +16449,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15657,6 +16550,9 @@
       },
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_BENIGN_EXPANSION",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15748,6 +16644,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -15844,6 +16743,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -15926,6 +16828,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16005,6 +16910,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16108,6 +17016,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16211,6 +17122,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16290,6 +17204,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16383,6 +17300,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -16479,6 +17399,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -16575,6 +17498,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -16657,6 +17583,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16736,6 +17665,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16815,6 +17747,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16886,6 +17821,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16979,6 +17917,9 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -17085,6 +18026,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17164,6 +18108,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17243,6 +18190,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17346,6 +18296,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17449,6 +18402,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17528,6 +18484,9 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
+      "canonical_map_coefficients": {},
+      "canonical_map_error": "",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
