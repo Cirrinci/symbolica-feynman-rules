@@ -114,9 +114,13 @@ BENIGN_HEAD_COUNT_DELTAS = {
     ("Wi|qL|qLbar", "g2"): DUMMY_LORENTZ_MERGE,
 }
 
-CANONICAL_GAUGE_EXTERNAL_INDEX_PREFIX = {
-    "G": ("color_adjoint", "a"),
-    "Wi": ("weak_adjoint", "aw"),
+CANONICAL_EXTERNAL_INDEX_GROUP_BY_KIND = {
+    "lorentz": "lorentz",
+    "color_adj": "color_adjoint",
+    "color_fund": "color_fund",
+    "spinor": "spinor",
+    "weak_fund": "weak_fund",
+    "weak_adj": "weak_adjoint",
 }
 
 
@@ -304,30 +308,34 @@ def _head_count_status(
 
 def _canonical_map_external_indices(
     fields: tuple[str, ...],
+    *,
+    field_map: dict[str, object],
 ) -> frozenset[tuple[str, str]] | None:
-    field_names = set(fields)
-    if len(field_names) != 1:
-        return None
-    field = next(iter(field_names))
-    index_info = CANONICAL_GAUGE_EXTERNAL_INDEX_PREFIX.get(field)
-    if index_info is None:
+    if _exact_symbolic_family(fields) != "BOSONIC":
         return None
 
-    arity = len(fields)
-    lorentz = tuple(S(f"mu{slot}") for slot in range(1, arity + 1))
-    index_kind, index_prefix = index_info
-    gauge_indices = tuple(S(f"{index_prefix}{slot}") for slot in range(1, arity + 1))
-    if index_kind == "color_adjoint":
-        return canonical_external_index_set(
-            lorentz=lorentz,
-            color_adjoint=gauge_indices,
-        )
-    if index_kind == "weak_adjoint":
-        return canonical_external_index_set(
-            lorentz=lorentz,
-            weak_adjoint=gauge_indices,
-        )
-    raise AssertionError(f"Unsupported gauge index kind {index_kind!r}")
+    grouped: dict[str, list[object]] = {}
+    for slot, name in enumerate(fields, start=1):
+        field = field_map.get(name)
+        if field is None:
+            return None
+        base = field.field if hasattr(field, "field") else field
+        for index in getattr(base, "indices", ()):
+            kind = getattr(index, "kind", None)
+            group = CANONICAL_EXTERNAL_INDEX_GROUP_BY_KIND.get(kind)
+            prefix = getattr(index, "prefix", None)
+            if group is None or not prefix:
+                return None
+            grouped.setdefault(group, []).append(S(f"{prefix}{slot}"))
+
+    return canonical_external_index_set(
+        lorentz=tuple(grouped.get("lorentz", ())),
+        color_adjoint=tuple(grouped.get("color_adjoint", ())),
+        color_fund=tuple(grouped.get("color_fund", ())),
+        spinor=tuple(grouped.get("spinor", ())),
+        weak_fund=tuple(grouped.get("weak_fund", ())),
+        weak_adjoint=tuple(grouped.get("weak_adjoint", ())),
+    )
 
 
 def _canonical_map_coefficients(
@@ -371,8 +379,13 @@ def _canonical_map_diagnostic(
     local: LocalVertex | None,
     reference_heads: set[str],
     local_heads: set[str],
+    lagrangian,
+    field_map: dict[str, object],
 ) -> dict[str, object]:
-    external_indices = _canonical_map_external_indices(reference.fields)
+    external_indices = _canonical_map_external_indices(
+        reference.fields,
+        field_map=field_map,
+    )
     if local is None or external_indices is None:
         return {
             "status": "CANONICAL_MAP_UNSUPPORTED",
@@ -389,8 +402,12 @@ def _canonical_map_diagnostic(
         }
 
     try:
+        local_rule = lagrangian.feynman_rule(
+            *(field_map[name] for name in reference.fields),
+            simplify=True,
+        )
         comparisons = compare_canonical_coefficient_maps(
-            local.rule,
+            local_rule,
             reference.rule,
             coefficients=coefficients,
             external_indices=external_indices,
@@ -566,6 +583,8 @@ def _feynpy_only_status(local_heads: set[str]) -> str:
 def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[LocalVertex, ...]]:
     references = load_feynrules_json(reference_path)
     bundle = build_smeft_green_bpreserving()
+    lagrangian = bundle.model.lagrangian()
+    field_map = _comparison_field_map(bundle)
     parameter_names = set(bundle.parameters) | GENERIC_PARAMETER_NAMES
 
     local_vertices = _local_vertices(parameter_names)
@@ -620,6 +639,8 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             local=local,
             reference_heads=reference_heads,
             local_heads=local_heads,
+            lagrangian=lagrangian,
+            field_map=field_map,
         )
         exact_symbolic_family = _exact_symbolic_family(reference.fields)
         exact_symbolic = exact_symbolic_by_key.get(key)

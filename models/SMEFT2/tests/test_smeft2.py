@@ -100,17 +100,17 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
     assert report["summary"]["shared_head_count_unexplained_mismatches"] == 90
     assert report["summary"]["exact_symbolic_supported_vertices"] == 32
-    assert report["summary"]["exact_symbolic_equal_vertices"] == 11
-    assert report["summary"]["exact_symbolic_unequal_vertices"] == 21
+    assert report["summary"]["exact_symbolic_equal_vertices"] == 24
+    assert report["summary"]["exact_symbolic_unequal_vertices"] == 8
     assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
     assert report["summary"]["exact_symbolic_error_vertices"] == 0
-    assert report["summary"]["canonical_map_supported_vertices"] == 8
-    assert report["summary"]["canonical_map_equal_vertices"] == 8
-    assert report["summary"]["canonical_map_unequal_vertices"] == 0
+    assert report["summary"]["canonical_map_supported_vertices"] == 32
+    assert report["summary"]["canonical_map_equal_vertices"] == 24
+    assert report["summary"]["canonical_map_unequal_vertices"] == 8
     assert report["summary"]["canonical_map_error_vertices"] == 0
-    assert report["summary"]["canonical_map_supported_coefficient_sectors"] == 28
-    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 28
-    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 0
+    assert report["summary"]["canonical_map_supported_coefficient_sectors"] == 93
+    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 82
+    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 11
     assert report["summary"]["benign_head_count_delta_heads"] == 15
     assert report["summary"]["unexplained_head_count_delta_heads"] == 331
     assert all(
@@ -143,8 +143,16 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     }
     assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"
     assert rows_by_key["B|B|B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
-    assert rows_by_key["B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MISMATCH"
-    assert rows_by_key["G|G|G|G|G"]["exact_symbolic_status"] == "EXACT_MISMATCH"
+    assert rows_by_key["B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["B|B|Phi|Phibar"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
+    assert (
+        rows_by_key["B|B|Phi|Phibar"]["canonical_map_coefficients"]["alphaRBDH"][
+            "matches"
+        ]
+        is True
+    )
+    assert rows_by_key["G|G|G"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["G|G|G|G|G"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
     assert rows_by_key["G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
@@ -182,4 +190,45 @@ def test_smeft2_five_gluon_canonical_map_matches_feynrules_reference():
         "alphaO3G": (720, 240, 120, 120),
         "alphaO3Gt": (720, 420, 180, 180),
         "alphaR2G": (720, 360, 360, 360),
+    }
+
+
+def test_smeft2_bbphiphibar_canonical_map_matches_feynrules_reference_order():
+    reference = _reference_vertex_by_key("B|B|Phi|Phibar")
+    bundle = build_smeft_green_bpreserving()
+    local_rule = bundle.model.lagrangian().feynman_rule(
+        bundle.fields["B"],
+        bundle.fields["B"],
+        bundle.fields["Phi"],
+        bundle.fields["Phi"].bar,
+        simplify=True,
+    )
+    external_indices = canonical_external_index_set(
+        lorentz=(S("mu1"), S("mu2")),
+        weak_fund=(S("w3"), S("w4")),
+    )
+
+    comparisons = compare_canonical_coefficient_maps(
+        local_rule,
+        reference["rule"],
+        coefficients=("alphaKH", "alphaOHB", "alphaOHBt", "alphaRBDH", "alphaRDH"),
+        external_indices=external_indices,
+        max_dummy_permutations=2_000_000,
+    )
+
+    assert all(comparison.matches for comparison in comparisons.values())
+    assert {
+        coefficient: (
+            comparison.feynpy_raw_terms,
+            comparison.feynrules_raw_terms,
+            comparison.feynpy_canonical_terms,
+            comparison.feynrules_canonical_terms,
+        )
+        for coefficient, comparison in comparisons.items()
+    } == {
+        "alphaKH": (1, 1, 1, 1),
+        "alphaOHB": (2, 2, 2, 2),
+        "alphaOHBt": (8, 2, 1, 1),
+        "alphaRBDH": (4, 4, 4, 4),
+        "alphaRDH": (9, 9, 9, 9),
     }

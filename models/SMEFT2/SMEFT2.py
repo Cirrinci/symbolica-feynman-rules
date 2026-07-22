@@ -881,23 +881,23 @@ def build_smeft_green_bpreserving(
         I
         * p["alphaRWDH"]
         * Phi.bar(w1)
-        * DC(Phi, mu)
+        * DC(Phi(w2), mu)
         * weak_t(aW1, w1, w2)
         * DC(FS(g["SU2L"], mu, nu, aW1), nu)
         - I
         * p["alphaRWDH"]
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * Phi(w2)
         * weak_t(aW1, w1, w2)
         * DC(FS(g["SU2L"], mu, nu, aW1), nu)
         + I
         * p["alphaRBDH"]
         * Phi.bar(w1)
-        * DC(Phi, mu)
+        * DC(Phi(w1), mu)
         * PartialD(FS(g["U1Y"], mu, nu), nu)
         - I
         * p["alphaRBDH"]
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * Phi(w1)
         * PartialD(FS(g["U1Y"], mu, nu), nu)
     )

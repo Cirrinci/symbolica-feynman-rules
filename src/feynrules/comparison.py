@@ -37,6 +37,11 @@ from symbolic.spenso_structures import (
     weak_gauge_generator,
     weak_structure_constant,
 )
+from symbolic.tensor_canonicalization import (
+    TensorMonomialCanonicalizationError,
+    canonical_external_index_set,
+    canonical_tensor_monomial_report,
+)
 from symbolic.vertex_engine import pcomp
 
 
@@ -1174,6 +1179,43 @@ def _field_kind(field) -> str | None:
     return getattr(base, "kind", None)
 
 
+_CANONICAL_EXTERNAL_INDEX_GROUP_BY_KIND = {
+    "lorentz": "lorentz",
+    "color_adj": "color_adjoint",
+    "color_fund": "color_fund",
+    "spinor": "spinor",
+    "weak_fund": "weak_fund",
+    "weak_adj": "weak_adjoint",
+}
+
+
+def _canonical_external_indices_for_fields(
+    fields: Sequence[str],
+    field_map: Mapping[str, object],
+):
+    grouped: dict[str, list[Expression]] = {}
+    for slot, name in enumerate(fields, start=1):
+        field = field_map.get(name)
+        if field is None:
+            return None
+        base = field.field if hasattr(field, "field") else field
+        for index in getattr(base, "indices", ()):
+            kind = getattr(index, "kind", None)
+            group = _CANONICAL_EXTERNAL_INDEX_GROUP_BY_KIND.get(kind)
+            prefix = getattr(index, "prefix", None)
+            if group is None or not prefix:
+                return None
+            grouped.setdefault(group, []).append(S(f"{prefix}{slot}"))
+    return canonical_external_index_set(
+        lorentz=tuple(grouped.get("lorentz", ())),
+        color_adjoint=tuple(grouped.get("color_adjoint", ())),
+        color_fund=tuple(grouped.get("color_fund", ())),
+        spinor=tuple(grouped.get("spinor", ())),
+        weak_fund=tuple(grouped.get("weak_fund", ())),
+        weak_adjoint=tuple(grouped.get("weak_adjoint", ())),
+    )
+
+
 def compare_feynrules_gauge_vertices(
     lagrangian,
     references: Sequence[FeynRulesVertex],
@@ -1526,21 +1568,67 @@ def compare_feynrules_bosonic_vertices(
             )
             feynrules_rule = canonicalize_gauge_rule(feynrules_rule)
             feynpy_rule = canonicalize_gauge_rule(feynpy_rule)
-            difference = _exact_difference(
-                feynpy_rule,
-                feynrules_rule,
-                momentum_arity=(
-                    len(reference.fields)
-                    if use_momentum_conservation
-                    else None
-                ),
-                scalar_relations=scalar_relations,
-            )
-            status = (
-                "MATCH"
-                if difference.to_canonical_string() == "0"
-                else "MISMATCH"
-            )
+            external_indices = None
+            if not use_momentum_conservation and not scalar_relations:
+                external_indices = _canonical_external_indices_for_fields(
+                    reference.fields,
+                    field_map,
+                )
+
+            status = "MISMATCH"
+            difference = None
+            detail = ""
+            if external_indices is not None:
+                try:
+                    feynpy_report = canonical_tensor_monomial_report(
+                        feynpy_rule,
+                        external_indices=external_indices,
+                        max_dummy_permutations=2_000_000,
+                    )
+                    feynrules_report = canonical_tensor_monomial_report(
+                        feynrules_rule,
+                        external_indices=external_indices,
+                        max_dummy_permutations=2_000_000,
+                    )
+                except TensorMonomialCanonicalizationError:
+                    feynpy_report = None
+                    feynrules_report = None
+                else:
+                    if feynpy_report.map == feynrules_report.map:
+                        status = "MATCH"
+                        difference = Expression.num(0)
+                        detail = (
+                            "Canonical tensor-monomial maps agree exactly"
+                        )
+                    else:
+                        difference = (
+                            feynpy_rule - feynrules_rule
+                        ).cancel().expand()
+                        detail = (
+                            "Canonical tensor-monomial maps differ"
+                        )
+
+            if difference is None:
+                difference = _exact_difference(
+                    feynpy_rule,
+                    feynrules_rule,
+                    momentum_arity=(
+                        len(reference.fields)
+                        if use_momentum_conservation
+                        else None
+                    ),
+                    scalar_relations=scalar_relations,
+                )
+                status = (
+                    "MATCH"
+                    if difference.to_canonical_string() == "0"
+                    else "MISMATCH"
+                )
+                detail = (
+                    "Canonical symbolic difference is zero"
+                    if status == "MATCH"
+                    else "Canonical symbolic difference is non-zero"
+                )
             rows.append(
                 VertexComparison(
                     reference=reference,
@@ -1548,11 +1636,7 @@ def compare_feynrules_bosonic_vertices(
                     feynpy_rule=feynpy_rule,
                     feynrules_rule=feynrules_rule,
                     difference=difference,
-                    detail=(
-                        "Canonical symbolic difference is zero"
-                        if status == "MATCH"
-                        else "Canonical symbolic difference is non-zero"
-                    ),
+                    detail=detail,
                 )
             )
         except Exception as error:
