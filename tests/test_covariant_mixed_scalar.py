@@ -41,6 +41,63 @@ def _scalar_decl(field):
     return CovD(field.bar, S("mu_decl")) * CovD(field, S("mu_decl"))
 
 
+def test_scalar_covd_with_explicit_spectator_labels_uses_generic_path():
+    mu = S("mu_explicit")
+    charge = S("q_explicit")
+    photon_symbol = S("A_explicit")
+    scalar_symbol = S("phi_explicit")
+    scalar_bar_symbol = S("phibar_explicit")
+    c1, c2 = S("c1"), S("c2")
+
+    photon = Field(
+        "AExplicit",
+        spin=1,
+        self_conjugate=True,
+        symbol=photon_symbol,
+        indices=(LORENTZ_INDEX,),
+    )
+    scalar = Field(
+        "PhiExplicit",
+        spin=0,
+        self_conjugate=False,
+        symbol=scalar_symbol,
+        conjugate_symbol=scalar_bar_symbol,
+        indices=(COLOR_FUND_INDEX,),
+        quantum_numbers={"Q": charge},
+    )
+    u1 = GaugeGroup(
+        name="U1Explicit",
+        abelian=True,
+        coupling=S("g_explicit"),
+        gauge_boson=photon.symbol,
+        charge="Q",
+    )
+    model = Model(
+        name="explicit-scalar-spectators",
+        gauge_groups=(u1,),
+        fields=(photon, scalar),
+        lagrangian_decl=(
+            CovD(scalar.bar(c1), mu)
+            * scalar(c1)
+            * scalar.bar(c2)
+            * CovD(scalar(c2), mu)
+        ),
+    )
+
+    derivative_terms = [
+        term
+        for term in model.lagrangian().terms
+        if len(term.fields) == 4 and len(term.derivatives) == 2
+    ]
+
+    assert len(derivative_terms) == 1
+    term = derivative_terms[0]
+    assert [occ.conjugated for occ in term.fields] == [True, False, True, False]
+    assert [occ.slot_labels.get(0) for occ in term.fields] == [c1, c1, c2, c2]
+    assert tuple(action.target for action in term.derivatives) == (0, 3)
+    assert all(action.lorentz_index == mu for action in term.derivatives)
+
+
 def test_compile_mixed_complex_scalar_contact_terms_abelian_nonabelian():
     d = S("d")
     p1, p2, p3, p4 = S("p1", "p2", "p3", "p4")

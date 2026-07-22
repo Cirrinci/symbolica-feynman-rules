@@ -649,6 +649,8 @@ def build_smeft_green_bpreserving(
         S("sigma"),
     )
     w1, w2, w3, w4 = S("w1"), S("w2"), S("w3"), S("w4")
+    w_h2xd2_1, w_h2xd2_2 = S("w_h2xd2_1"), S("w_h2xd2_2")
+    w_h4d2_1, w_h4d2_2 = S("w_h4d2_1"), S("w_h4d2_2")
     aW, aW1, aW2, aW3 = S("aW"), S("aW1"), S("aW2"), S("aW3")
     aC, aC1, aC2, aC3 = S("aC"), S("aC1"), S("aC2"), S("aC3")
     f1, f2, f3, f4 = S("f1"), S("f2"), S("f3"), S("f4")
@@ -880,15 +882,15 @@ def build_smeft_green_bpreserving(
     LH2XD2 = (
         I
         * p["alphaRWDH"]
-        * Phi.bar(w1)
-        * DC(Phi(w2), mu)
-        * weak_t(aW1, w1, w2)
+        * Phi.bar(w_h2xd2_1)
+        * DC(Phi(w_h2xd2_2), mu)
+        * weak_t(aW1, w_h2xd2_1, w_h2xd2_2)
         * DC(FS(g["SU2L"], mu, nu, aW1), nu)
         - I
         * p["alphaRWDH"]
-        * DC(Phi.bar(w1), mu)
-        * Phi(w2)
-        * weak_t(aW1, w1, w2)
+        * DC(Phi.bar(w_h2xd2_1), mu)
+        * Phi(w_h2xd2_2)
+        * weak_t(aW1, w_h2xd2_1, w_h2xd2_2)
         * DC(FS(g["SU2L"], mu, nu, aW1), nu)
         + I
         * p["alphaRBDH"]
@@ -926,35 +928,39 @@ def build_smeft_green_bpreserving(
         * Phi.bar(w2)
         * PartialD(PartialD(Phi(w2), mu), mu)
         + p["alphaOHD"]
-        * DC(Phi.bar, mu)
-        * Phi(w1)
-        * Phi.bar(w2)
-        * DC(Phi, mu)
-        + p["alphaRHDp"] * Phi.bar(w1) * Phi(w1) * DC(Phi.bar, mu) * DC(Phi, mu)
+        * DC(Phi.bar(w_h4d2_1), mu)
+        * Phi(w_h4d2_1)
+        * Phi.bar(w_h4d2_2)
+        * DC(Phi(w_h4d2_2), mu)
+        + p["alphaRHDp"]
+        * Phi.bar(w_h4d2_1)
+        * Phi(w_h4d2_1)
+        * DC(Phi.bar(w_h4d2_2), mu)
+        * DC(Phi(w_h4d2_2), mu)
         + I
         * p["alphaRHDpp"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(Phi.bar(w2), mu)
-        * DC(Phi, mu)
+        * Phi.bar(w_h4d2_1)
+        * Phi(w_h4d2_1)
+        * PartialD(Phi.bar(w_h4d2_2), mu)
+        * DC(Phi(w_h4d2_2), mu)
         + I
         * p["alphaRHDpp"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * Phi.bar(w2)
-        * PartialD(DC(Phi, mu), mu)
+        * Phi.bar(w_h4d2_1)
+        * Phi(w_h4d2_1)
+        * Phi.bar(w_h4d2_2)
+        * PartialD(DC(Phi(w_h4d2_2), mu), mu)
         - I
         * p["alphaRHDpp"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * PartialD(DC(Phi.bar, mu), mu)
-        * Phi(w2)
+        * Phi.bar(w_h4d2_1)
+        * Phi(w_h4d2_1)
+        * PartialD(DC(Phi.bar(w_h4d2_2), mu), mu)
+        * Phi(w_h4d2_2)
         - I
         * p["alphaRHDpp"]
-        * Phi.bar(w1)
-        * Phi(w1)
-        * DC(Phi.bar, mu)
-        * PartialD(Phi(w2), mu)
+        * Phi.bar(w_h4d2_1)
+        * Phi(w_h4d2_1)
+        * DC(Phi.bar(w_h4d2_2), mu)
+        * PartialD(Phi(w_h4d2_2), mu)
     )
 
     LH6 = (

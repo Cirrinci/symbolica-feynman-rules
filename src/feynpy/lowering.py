@@ -157,6 +157,15 @@ def _match_covariant_monomial(
         )
         if core is not None:
             spectators = tuple((factor.field, factor.conjugated) for factor in field_factors)
+            if spectators and any(
+                factor.labels
+                for factor in (*covd_factors, *field_factors)
+            ):
+                # Spectator-decorated scalar cores only preserve the original
+                # derivative-slot pairing when the monomial does not pin the
+                # spectator contractions with explicit labels. Once labels are
+                # explicit, the generic CovD expansion path is the faithful one.
+                return None
             return core, spectators
 
     return None

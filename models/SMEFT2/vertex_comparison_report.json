@@ -10,30 +10,28 @@
     "reference_only_signatures": 2,
     "feynpy_only_signatures": 10,
     "shared_head_matches": 168,
-    "shared_head_count_matches": 88,
-    "shared_head_count_mismatches": 94,
+    "shared_head_count_matches": 90,
+    "shared_head_count_mismatches": 92,
     "shared_head_count_benign_expansions": 9,
     "shared_head_count_mixed_benign_unexplained": 0,
-    "shared_head_count_unexplained_mismatches": 85,
+    "shared_head_count_unexplained_mismatches": 83,
     "canonical_map_supported_vertices": 32,
-    "canonical_map_equal_vertices": 25,
-    "canonical_map_unequal_vertices": 7,
+    "canonical_map_equal_vertices": 32,
+    "canonical_map_unequal_vertices": 0,
     "canonical_map_error_vertices": 0,
     "canonical_map_supported_coefficient_sectors": 93,
-    "canonical_map_equal_coefficient_sectors": 85,
-    "canonical_map_unequal_coefficient_sectors": 8,
+    "canonical_map_equal_coefficient_sectors": 93,
+    "canonical_map_unequal_coefficient_sectors": 0,
     "canonical_map_status_counts": {
-      "CANONICAL_MAP_MATCH": 25,
-      "CANONICAL_MAP_MISMATCH": 7
+      "CANONICAL_MAP_MATCH": 32
     },
     "exact_symbolic_supported_vertices": 32,
-    "exact_symbolic_equal_vertices": 25,
-    "exact_symbolic_unequal_vertices": 7,
+    "exact_symbolic_equal_vertices": 32,
+    "exact_symbolic_unequal_vertices": 0,
     "exact_symbolic_missing_local_vertices": 0,
     "exact_symbolic_error_vertices": 0,
     "exact_symbolic_status_counts": {
-      "EXACT_MATCH": 25,
-      "EXACT_MISMATCH": 7,
+      "EXACT_MATCH": 32,
       "EXACT_UNSUPPORTED": 152
     },
     "exact_symbolic_family_counts": {
@@ -42,11 +40,11 @@
       "TWO_FERMION": 131
     },
     "benign_head_count_delta_heads": 15,
-    "unexplained_head_count_delta_heads": 301,
+    "unexplained_head_count_delta_heads": 297,
     "head_count_status_counts": {
       "COUNT_BENIGN_EXPANSION": 9,
-      "COUNT_MATCH": 88,
-      "COUNT_MISMATCH": 85
+      "COUNT_MATCH": 90,
+      "COUNT_MISMATCH": 83
     },
     "status_counts": {
       "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING": 8,
@@ -1725,20 +1723,20 @@
       "local_names": [
         "Phibar",
         "Phi",
-        "B",
-        "B",
+        "Phibar",
         "Phi",
-        "Phibar"
+        "B",
+        "B"
       ],
       "feynpy_names": [
         "Phi.bar",
         "Phi",
-        "B",
-        "B",
+        "Phi.bar",
         "Phi",
-        "Phi.bar"
+        "B",
+        "B"
       ],
-      "local_term_count": 2,
+      "local_term_count": 1,
       "sectors": [
         "matter"
       ],
@@ -5796,32 +5794,14 @@
       "feynpy_head_counts": {
         "alphaOHD": 8,
         "alphaRHDp": 8,
-        "alphaRHDpp": 12,
-        "g1": 28
+        "alphaRHDpp": 10,
+        "g1": 26
       },
-      "head_count_delta": {
-        "alphaRHDpp": {
-          "reference": 10,
-          "feynpy": 12
-        },
-        "g1": {
-          "reference": 26,
-          "feynpy": 28
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHDpp": {
-          "reference": 10,
-          "feynpy": 12
-        },
-        "g1": {
-          "reference": 26,
-          "feynpy": 28
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaOHD": {
           "matches": true,
@@ -5850,46 +5830,40 @@
           "first_coefficient_mismatch": null
         },
         "alphaRHDpp": {
-          "matches": false,
-          "feynpy_raw_terms": 12,
+          "matches": true,
+          "feynpy_raw_terms": 10,
           "feynrules_raw_terms": 10,
-          "feynpy_canonical_terms": 12,
+          "feynpy_canonical_terms": 10,
           "feynrules_canonical_terms": 10,
-          "feynpy_only_count": 12,
-          "feynrules_only_count": 10,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w2', 'E:W:w4')), ('pcomp', 'q1', 'E:L:mu1')), ordered_factors=())",
-            "coefficient": "python::{}::g1"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w2', 'E:W:w4')), ('g', ('weak_fund', 'weak_fund'), ('E:W:w3', 'E:W:w5')), ('pcomp', 'q1', 'E:L:mu1')), ordered_factors=())",
-            "coefficient": "2*python::{}::g1"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
         "Phi",
-        "B",
+        "Phibar",
         "Phi",
-        "Phibar"
+        "B"
       ],
       "feynpy_names": [
         "Phi.bar",
         "Phi",
-        "B",
+        "Phi.bar",
         "Phi",
-        "Phi.bar"
+        "B"
       ],
-      "local_term_count": 10,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
@@ -5990,20 +5964,20 @@
       "local_names": [
         "Phibar",
         "Phi",
-        "B",
-        "Wi",
+        "Phibar",
         "Phi",
-        "Phibar"
+        "B",
+        "Wi"
       ],
       "feynpy_names": [
         "Phi.bar",
         "Phi",
-        "B",
-        "Wi",
+        "Phi.bar",
         "Phi",
-        "Phi.bar"
+        "B",
+        "Wi"
       ],
-      "local_term_count": 4,
+      "local_term_count": 3,
       "sectors": [
         "matter"
       ],
@@ -13243,7 +13217,7 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaKH": {
           "matches": true,
@@ -13298,29 +13272,23 @@
           "first_coefficient_mismatch": null
         },
         "alphaRWDH": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 24,
           "feynrules_raw_terms": 20,
           "feynpy_canonical_terms": 20,
           "feynrules_canonical_terms": 20,
-          "feynpy_only_count": 8,
-          "feynrules_only_count": 8,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pow', ('pcomp', 'q3', 'D:L:1'), '2'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw3', 'E:W:w1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw4', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "2\ud835\udc56*python::{}::g2"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pow', ('pcomp', 'q3', 'D:L:1'), '2'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw3', 'D:W:1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw4', 'E:W:w2', 'D:W:1'))), ordered_factors=())",
-            "coefficient": "2\ud835\udc56*python::{}::g2"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13441,7 +13409,7 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaOHW": {
           "matches": true,
@@ -13483,29 +13451,23 @@
           "first_coefficient_mismatch": null
         },
         "alphaRWDH": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 60,
           "feynrules_raw_terms": 48,
           "feynpy_canonical_terms": 48,
           "feynrules_canonical_terms": 48,
-          "feynpy_only_count": 36,
-          "feynrules_only_count": 36,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q3', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:1', 'E:W:w1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2*python::{}::g2^2"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q3', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:1', 'D:W:1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'E:W:w2', 'D:W:1'))), ordered_factors=())",
-            "coefficient": "-2*python::{}::g2^2"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13615,7 +13577,7 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaOHW": {
           "matches": true,
@@ -13657,29 +13619,23 @@
           "first_coefficient_mismatch": null
         },
         "alphaRWDH": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 48,
           "feynrules_raw_terms": 48,
           "feynpy_canonical_terms": 48,
           "feynrules_canonical_terms": 48,
-          "feynpy_only_count": 48,
-          "feynrules_only_count": 48,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'D:AW:2', 'E:AW:aw3')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw4', 'E:AW:aw5')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu5', 'E:L:mu6')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:2', 'E:W:w1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw6', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2\ud835\udc56*python::{}::g2^3"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'D:AW:2', 'E:AW:aw3')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw4', 'E:AW:aw5')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu5', 'E:L:mu6')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:2', 'D:W:1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw6', 'E:W:w2', 'D:W:1'))), ordered_factors=())",
-            "coefficient": "-2\ud835\udc56*python::{}::g2^3"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14586,7 +14542,7 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaOHBox": {
           "matches": true,
@@ -14602,22 +14558,16 @@
           "first_coefficient_mismatch": null
         },
         "alphaOHD": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 4,
           "feynrules_raw_terms": 4,
           "feynpy_canonical_terms": 4,
           "feynrules_canonical_terms": 4,
-          "feynpy_only_count": 4,
-          "feynrules_only_count": 4,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w1', 'E:W:w3')), ('g', ('weak_fund', 'weak_fund'), ('E:W:w2', 'E:W:w4')), ('pcomp', 'q1', 'D:L:1'), ('pcomp', 'q3', 'D:L:1')), ordered_factors=())",
-            "coefficient": "-1\ud835\udc56"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w1', 'E:W:w3')), ('g', ('weak_fund', 'weak_fund'), ('E:W:w2', 'E:W:w4')), ('pcomp', 'q1', 'D:L:1'), ('pcomp', 'q4', 'D:L:1')), ordered_factors=())",
-            "coefficient": "-1\ud835\udc56"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         },
         "alphaOlambda": {
@@ -14647,29 +14597,23 @@
           "first_coefficient_mismatch": null
         },
         "alphaRHDpp": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 8,
           "feynrules_raw_terms": 8,
           "feynpy_canonical_terms": 8,
           "feynrules_canonical_terms": 8,
-          "feynpy_only_count": 8,
-          "feynrules_only_count": 8,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w1', 'E:W:w3')), ('pow', ('pcomp', 'q2', 'D:L:1'), '2')), ordered_factors=())",
-            "coefficient": "1"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w1', 'E:W:w3')), ('g', ('weak_fund', 'weak_fund'), ('E:W:w2', 'E:W:w4')), ('pow', ('pcomp', 'q1', 'D:L:1'), '2')), ordered_factors=())",
-            "coefficient": "1"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14684,7 +14628,7 @@
         "Phi.bar",
         "Phi"
       ],
-      "local_term_count": 10,
+      "local_term_count": 8,
       "sectors": [
         "matter"
       ],
@@ -14744,25 +14688,19 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaOHD": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 8,
           "feynrules_raw_terms": 8,
           "feynpy_canonical_terms": 8,
           "feynrules_canonical_terms": 8,
-          "feynpy_only_count": 8,
-          "feynrules_only_count": 8,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w1', 'E:W:w3')), ('pcomp', 'q2', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'E:W:w4', 'E:W:w2'))), ordered_factors=())",
-            "coefficient": "1\ud835\udc56*python::{}::g2"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('weak_fund', 'weak_fund'), ('E:W:w1', 'E:W:w3')), ('pcomp', 'q1', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'E:W:w4', 'E:W:w2'))), ordered_factors=())",
-            "coefficient": "1\ud835\udc56*python::{}::g2"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         },
         "alphaRHDp": {
@@ -14794,25 +14732,25 @@
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
         "Phi",
-        "Wi",
+        "Phibar",
         "Phi",
-        "Phibar"
+        "Wi"
       ],
       "feynpy_names": [
         "Phi.bar",
         "Phi",
-        "Wi",
+        "Phi.bar",
         "Phi",
-        "Phi.bar"
+        "Wi"
       ],
-      "local_term_count": 10,
+      "local_term_count": 9,
       "sectors": [
         "matter"
       ],
@@ -14863,51 +14801,27 @@
         "g2": 12
       },
       "feynpy_head_counts": {
-        "alphaOHD": 8,
+        "alphaOHD": 4,
         "alphaRHDp": 8,
-        "g2": 16
+        "g2": 12
       },
-      "head_count_delta": {
-        "alphaOHD": {
-          "reference": 4,
-          "feynpy": 8
-        },
-        "g2": {
-          "reference": 12,
-          "feynpy": 16
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaOHD": {
-          "reference": 4,
-          "feynpy": 8
-        },
-        "g2": {
-          "reference": 12,
-          "feynpy": 16
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaOHD": {
-          "matches": false,
-          "feynpy_raw_terms": 8,
+          "matches": true,
+          "feynpy_raw_terms": 4,
           "feynrules_raw_terms": 4,
-          "feynpy_canonical_terms": 8,
+          "feynpy_canonical_terms": 4,
           "feynrules_canonical_terms": 4,
-          "feynpy_only_count": 8,
-          "feynrules_only_count": 4,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('lorentz', 'lorentz'), ('E:L:mu5', 'E:L:mu6')), ('g', ('weak_fund', 'weak_fund'), ('E:W:w1', 'E:W:w3')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'D:W:1', 'E:W:w2')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw6', 'E:W:w4', 'D:W:1'))), ordered_factors=())",
-            "coefficient": "1\ud835\udc56*python::{}::g2^2"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('lorentz', 'lorentz'), ('E:L:mu5', 'E:L:mu6')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'E:W:w3', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw6', 'E:W:w4', 'E:W:w2'))), ordered_factors=())",
-            "coefficient": "2\ud835\udc56*python::{}::g2^2"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         },
         "alphaRHDp": {
@@ -14926,25 +14840,25 @@
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
         "Phi",
-        "Wi",
-        "Wi",
+        "Phibar",
         "Phi",
-        "Phibar"
+        "Wi",
+        "Wi"
       ],
       "feynpy_names": [
         "Phi.bar",
         "Phi",
-        "Wi",
-        "Wi",
+        "Phi.bar",
         "Phi",
-        "Phi.bar"
+        "Wi",
+        "Wi"
       ],
       "local_term_count": 2,
       "sectors": [

@@ -95,24 +95,24 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["reference_vertex_count"] == 184
     assert report["summary"]["feynpy_signature_count_3_to_6"] == 192
     assert report["summary"]["shared_head_matches"] == 168
-    assert report["summary"]["shared_head_count_matches"] == 88
-    assert report["summary"]["shared_head_count_mismatches"] == 94
+    assert report["summary"]["shared_head_count_matches"] == 90
+    assert report["summary"]["shared_head_count_mismatches"] == 92
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
-    assert report["summary"]["shared_head_count_unexplained_mismatches"] == 85
+    assert report["summary"]["shared_head_count_unexplained_mismatches"] == 83
     assert report["summary"]["exact_symbolic_supported_vertices"] == 32
-    assert report["summary"]["exact_symbolic_equal_vertices"] == 25
-    assert report["summary"]["exact_symbolic_unequal_vertices"] == 7
+    assert report["summary"]["exact_symbolic_equal_vertices"] == 32
+    assert report["summary"]["exact_symbolic_unequal_vertices"] == 0
     assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
     assert report["summary"]["exact_symbolic_error_vertices"] == 0
     assert report["summary"]["canonical_map_supported_vertices"] == 32
-    assert report["summary"]["canonical_map_equal_vertices"] == 25
-    assert report["summary"]["canonical_map_unequal_vertices"] == 7
+    assert report["summary"]["canonical_map_equal_vertices"] == 32
+    assert report["summary"]["canonical_map_unequal_vertices"] == 0
     assert report["summary"]["canonical_map_error_vertices"] == 0
     assert report["summary"]["canonical_map_supported_coefficient_sectors"] == 93
-    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 85
-    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 8
+    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 93
+    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 0
     assert report["summary"]["benign_head_count_delta_heads"] == 15
-    assert report["summary"]["unexplained_head_count_delta_heads"] == 301
+    assert report["summary"]["unexplained_head_count_delta_heads"] == 297
     assert all(
         "head_count_status" in row
         and "reference_head_counts" in row
@@ -166,7 +166,12 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     ] is True
     assert rows_by_key["Phi|Phibar|Wi|Wi"]["canonical_map_coefficients"]["alphaRWDH"][
         "matches"
-    ] is False
+    ] is True
+    assert rows_by_key["Phi|Phi|Phibar|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["Phi|Phi|Phibar|Phibar|Wi"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["Phi|Phi|Phibar|Phibar|Wi|Wi"]["canonical_map_coefficients"][
+        "alphaRHDp"
+    ]["matches"] is True
     assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
     assert rows_by_key["G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"

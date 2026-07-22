@@ -14,22 +14,22 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Reference-only signatures | 2 |
 | FeynPy-only signatures | 10 |
 | Shared coefficient-head matches | 168 |
-| Shared raw head-count matches | 88 |
-| Shared raw head-count mismatches | 94 |
+| Shared raw head-count matches | 90 |
+| Shared raw head-count mismatches | 92 |
 | Shared raw head-count benign expansions | 9 |
-| Shared raw head-count mismatches with unexplained deltas | 85 |
+| Shared raw head-count mismatches with unexplained deltas | 83 |
 | Exact symbolic supported vertices | 32 |
-| Exact symbolic equal vertices | 25 |
-| Exact symbolic unequal vertices | 7 |
+| Exact symbolic equal vertices | 32 |
+| Exact symbolic unequal vertices | 0 |
 | Exact symbolic error vertices | 0 |
 | Canonical tensor-map supported vertices | 32 |
-| Canonical tensor-map equal vertices | 25 |
-| Canonical tensor-map unequal vertices | 7 |
+| Canonical tensor-map equal vertices | 32 |
+| Canonical tensor-map unequal vertices | 0 |
 | Canonical tensor-map error vertices | 0 |
-| Canonical tensor-map equal coefficient sectors | 85 |
-| Canonical tensor-map unequal coefficient sectors | 8 |
+| Canonical tensor-map equal coefficient sectors | 93 |
+| Canonical tensor-map unequal coefficient sectors | 0 |
 | Explained benign head-count deltas | 15 |
-| Unexplained head-count deltas | 301 |
+| Unexplained head-count deltas | 297 |
 
 ## Basis
 
@@ -67,7 +67,7 @@ This layer is currently enabled for bosonic SMEFT2 rows. It parses the full Feyn
 | `B|Phi|Phibar|Wi` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `B|Phi|Phi|Phibar|Phibar` | `EXACT_MISMATCH` |
+| `B|Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
 | `B|Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
 | `G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G` | `EXACT_MATCH` |
@@ -77,12 +77,12 @@ This layer is currently enabled for bosonic SMEFT2 rows. It parses the full Feyn
 | `G|G|G|Phi|Phibar` | `EXACT_MATCH` |
 | `G|G|Phi|Phibar` | `EXACT_MATCH` |
 | `Phi|Phibar|Wi` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|Wi` | `EXACT_MISMATCH` |
-| `Phi|Phibar|Wi|Wi|Wi` | `EXACT_MISMATCH` |
-| `Phi|Phibar|Wi|Wi|Wi|Wi` | `EXACT_MISMATCH` |
-| `Phi|Phi|Phibar|Phibar` | `EXACT_MISMATCH` |
-| `Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MISMATCH` |
-| `Phi|Phi|Phibar|Phibar|Wi|Wi` | `EXACT_MISMATCH` |
+| `Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|Wi|Wi` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
+| `Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
+| `Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
+| `Phi|Phi|Phibar|Phibar|Wi|Wi` | `EXACT_MATCH` |
 | `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `EXACT_MATCH` |
 | `Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
@@ -106,7 +106,7 @@ This comparison is currently enabled for pure nonabelian gauge vertices (`G^n` a
 | `B|Phi|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 1/1 -> canonical 1/1; `alphaOHWB` match: raw 2/2 -> canonical 2/2; `alphaOHWBt` match: raw 4/4 -> canonical 1/1; `alphaRBDH` match: raw 2/2 -> canonical 2/2; `alphaRDH` match: raw 9/9 -> canonical 9/9; `alphaRWDH` match: raw 2/2 -> canonical 2/2 |
 | `B|Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHWB` match: raw 4/2 -> canonical 2/2; `alphaOHWBt` match: raw 4/2 -> canonical 1/1; `alphaRDH` match: raw 24/12 -> canonical 12/12; `alphaRWDH` match: raw 8/6 -> canonical 6/6 |
 | `B|Phi|Phibar|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaRDH` match: raw 24/12 -> canonical 12/12; `alphaRWDH` match: raw 6/6 -> canonical 6/6 |
-| `B|Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MISMATCH` | `alphaOHD` match: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` mismatch: raw 12/10 -> canonical 12/10 |
+| `B|Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` match: raw 10/10 -> canonical 10/10 |
 | `B|Phi|Phi|Phibar|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaRHDp` match: raw 4/4 -> canonical 4/4 |
 | `G|G|G` | `CANONICAL_MAP_MATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 14/8 -> canonical 8/8; `alphaO3Gt` match: raw 21/42 -> canonical 12/12; `alphaR2G` match: raw 54/36 -> canonical 36/36 |
 | `G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 144/48 -> canonical 48/48; `alphaO3Gt` match: raw 138/186 -> canonical 72/72; `alphaR2G` match: raw 204/156 -> canonical 156/156 |
@@ -116,12 +116,12 @@ This comparison is currently enabled for pure nonabelian gauge vertices (`G^n` a
 | `G|G|G|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHG` match: raw 12/6 -> canonical 6/6; `alphaOHGt` match: raw 24/12 -> canonical 3/3 |
 | `G|G|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHG` match: raw 2/2 -> canonical 2/2; `alphaOHGt` match: raw 8/8 -> canonical 1/1 |
 | `Phi|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaRDH` match: raw 4/4 -> canonical 4/4; `alphaRWDH` match: raw 4/4 -> canonical 4/4 |
-| `Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaOHW` match: raw 2/2 -> canonical 2/2; `alphaOHWt` match: raw 8/8 -> canonical 1/1; `alphaRDH` match: raw 20/12 -> canonical 12/12; `alphaRWDH` mismatch: raw 24/20 -> canonical 20/20 |
-| `Phi|Phibar|Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/12 -> canonical 3/3; `alphaRDH` match: raw 36/24 -> canonical 24/24; `alphaRWDH` mismatch: raw 60/48 -> canonical 48/48 |
-| `Phi|Phibar|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/3 -> canonical 3/3; `alphaRDH` match: raw 24/24 -> canonical 24/24; `alphaRWDH` mismatch: raw 48/48 -> canonical 48/48 |
-| `Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MISMATCH` | `alphaOHBox` match: raw 12/12 -> canonical 12/12; `alphaOHD` mismatch: raw 4/4 -> canonical 4/4; `alphaOlambda` match: raw 2/2 -> canonical 2/2; `alphaRHDp` match: raw 4/4 -> canonical 4/4; `alphaRHDpp` mismatch: raw 8/8 -> canonical 8/8 |
-| `Phi|Phi|Phibar|Phibar|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaOHD` mismatch: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` match: raw 12/12 -> canonical 12/12 |
-| `Phi|Phi|Phibar|Phibar|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaOHD` mismatch: raw 8/4 -> canonical 8/4; `alphaRHDp` match: raw 8/8 -> canonical 8/8 |
+| `Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaOHW` match: raw 2/2 -> canonical 2/2; `alphaOHWt` match: raw 8/8 -> canonical 1/1; `alphaRDH` match: raw 20/12 -> canonical 12/12; `alphaRWDH` match: raw 24/20 -> canonical 20/20 |
+| `Phi|Phibar|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/12 -> canonical 3/3; `alphaRDH` match: raw 36/24 -> canonical 24/24; `alphaRWDH` match: raw 60/48 -> canonical 48/48 |
+| `Phi|Phibar|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/3 -> canonical 3/3; `alphaRDH` match: raw 24/24 -> canonical 24/24; `alphaRWDH` match: raw 48/48 -> canonical 48/48 |
+| `Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHBox` match: raw 12/12 -> canonical 12/12; `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaOlambda` match: raw 2/2 -> canonical 2/2; `alphaRHDp` match: raw 4/4 -> canonical 4/4; `alphaRHDpp` match: raw 8/8 -> canonical 8/8 |
+| `Phi|Phi|Phibar|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` match: raw 12/12 -> canonical 12/12 |
+| `Phi|Phi|Phibar|Phibar|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaRHDp` match: raw 8/8 -> canonical 8/8 |
 | `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOH` match: raw 6/6 -> canonical 6/6 |
 | `Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 14/8 -> canonical 8/8; `alphaO3Wt` match: raw 21/42 -> canonical 12/12; `alphaR2W` match: raw 54/36 -> canonical 36/36 |
 | `Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 144/48 -> canonical 48/48; `alphaO3Wt` match: raw 138/186 -> canonical 72/72; `alphaR2W` match: raw 204/156 -> canonical 156/156 |
@@ -178,7 +178,7 @@ These exclude the explicit benign expansions listed above. The large pure-gauge 
 
 | Head | Total absolute delta |
 | --- | ---: |
-| `g2` | 2262 |
+| `g2` | 2258 |
 | `g3` | 2218 |
 | `alphaR2G` | 786 |
 | `alphaR2W` | 786 |
@@ -186,7 +186,7 @@ These exclude the explicit benign expansions listed above. The large pure-gauge 
 | `alphaO3Wt` | 729 |
 | `alphaO3G` | 582 |
 | `alphaO3W` | 582 |
-| `g1` | 200 |
+| `g1` | 198 |
 | `alphaRqD` | 72 |
 | `alphaRDH` | 52 |
 | `alphaOHGt` | 33 |
