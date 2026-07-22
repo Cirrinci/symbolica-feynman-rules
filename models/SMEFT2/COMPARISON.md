@@ -26,8 +26,8 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Canonical tensor-map equal vertices | 25 |
 | Canonical tensor-map unequal vertices | 7 |
 | Canonical tensor-map error vertices | 0 |
-| Canonical tensor-map equal coefficient sectors | 83 |
-| Canonical tensor-map unequal coefficient sectors | 10 |
+| Canonical tensor-map equal coefficient sectors | 85 |
+| Canonical tensor-map unequal coefficient sectors | 8 |
 | Explained benign head-count deltas | 15 |
 | Unexplained head-count deltas | 301 |
 
@@ -116,7 +116,7 @@ This comparison is currently enabled for pure nonabelian gauge vertices (`G^n` a
 | `G|G|G|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHG` match: raw 12/6 -> canonical 6/6; `alphaOHGt` match: raw 24/12 -> canonical 3/3 |
 | `G|G|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHG` match: raw 2/2 -> canonical 2/2; `alphaOHGt` match: raw 8/8 -> canonical 1/1 |
 | `Phi|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaRDH` match: raw 4/4 -> canonical 4/4; `alphaRWDH` match: raw 4/4 -> canonical 4/4 |
-| `Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaOHW` mismatch: raw 2/2 -> canonical 2/2; `alphaOHWt` mismatch: raw 8/8 -> canonical 1/1; `alphaRDH` match: raw 20/12 -> canonical 12/12; `alphaRWDH` mismatch: raw 24/20 -> canonical 20/20 |
+| `Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaOHW` match: raw 2/2 -> canonical 2/2; `alphaOHWt` match: raw 8/8 -> canonical 1/1; `alphaRDH` match: raw 20/12 -> canonical 12/12; `alphaRWDH` mismatch: raw 24/20 -> canonical 20/20 |
 | `Phi|Phibar|Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/12 -> canonical 3/3; `alphaRDH` match: raw 36/24 -> canonical 24/24; `alphaRWDH` mismatch: raw 60/48 -> canonical 48/48 |
 | `Phi|Phibar|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/3 -> canonical 3/3; `alphaRDH` match: raw 24/24 -> canonical 24/24; `alphaRWDH` mismatch: raw 48/48 -> canonical 48/48 |
 | `Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MISMATCH` | `alphaOHBox` match: raw 12/12 -> canonical 12/12; `alphaOHD` mismatch: raw 4/4 -> canonical 4/4; `alphaOlambda` match: raw 2/2 -> canonical 2/2; `alphaRHDp` match: raw 4/4 -> canonical 4/4; `alphaRHDpp` mismatch: raw 8/8 -> canonical 8/8 |

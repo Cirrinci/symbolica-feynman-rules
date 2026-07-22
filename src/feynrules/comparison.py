@@ -320,16 +320,16 @@ def parse_feynrules_gauge_rule(
         text,
     )
     text = re.sub(
-        r"IndexDelta\[(a[^,\]]+),\s*(a[^\]]+)\]",
-        lambda match: COLOR_ADJ.g(
+        r"IndexDelta\[(aw[^,\]]+),\s*(aw[^\]]+)\]",
+        lambda match: WEAK_ADJ.g(
             S(match.group(1).strip()),
             S(match.group(2).strip()),
         ).to_expression().to_canonical_string(),
         text,
     )
     text = re.sub(
-        r"IndexDelta\[(aw[^,\]]+),\s*(aw[^\]]+)\]",
-        lambda match: WEAK_ADJ.g(
+        r"IndexDelta\[(a[^,\]]+),\s*(a[^\]]+)\]",
+        lambda match: COLOR_ADJ.g(
             S(match.group(1).strip()),
             S(match.group(2).strip()),
         ).to_expression().to_canonical_string(),

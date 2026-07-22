@@ -109,8 +109,8 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["canonical_map_unequal_vertices"] == 7
     assert report["summary"]["canonical_map_error_vertices"] == 0
     assert report["summary"]["canonical_map_supported_coefficient_sectors"] == 93
-    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 83
-    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 10
+    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 85
+    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 8
     assert report["summary"]["benign_head_count_delta_heads"] == 15
     assert report["summary"]["unexplained_head_count_delta_heads"] == 301
     assert all(
@@ -158,6 +158,15 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert rows_by_key["Phi|Phibar|Wi"]["canonical_map_coefficients"]["alphaRWDH"][
         "matches"
     ] is True
+    assert rows_by_key["Phi|Phibar|Wi|Wi"]["canonical_map_coefficients"]["alphaOHW"][
+        "matches"
+    ] is True
+    assert rows_by_key["Phi|Phibar|Wi|Wi"]["canonical_map_coefficients"]["alphaOHWt"][
+        "matches"
+    ] is True
+    assert rows_by_key["Phi|Phibar|Wi|Wi"]["canonical_map_coefficients"]["alphaRWDH"][
+        "matches"
+    ] is False
     assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
     assert rows_by_key["G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
