@@ -161,6 +161,51 @@ def _index_label_key(label) -> str:
     return label.to_canonical_string() if hasattr(label, "to_canonical_string") else str(label)
 
 
+def _fresh_simultaneous_replace_placeholders(expr, replacements):
+    """Choose temporary symbols that cannot collide with live labels."""
+
+    occupied = set()
+    if hasattr(expr, "get_all_symbols"):
+        occupied.update(
+            symbol.to_canonical_string()
+            for symbol in expr.get_all_symbols()
+        )
+    for old, new in replacements:
+        occupied.add(_index_label_key(old))
+        occupied.add(_index_label_key(new))
+
+    placeholders = []
+    slot = 1
+    while len(placeholders) < len(replacements):
+        candidate = S(f"__vertex_label_tmp_{slot}")
+        slot += 1
+        key = candidate.to_canonical_string()
+        if key in occupied:
+            continue
+        placeholders.append(candidate)
+        occupied.add(key)
+    return tuple(placeholders)
+
+
+def _simultaneous_replace_labels(expr, replacements):
+    """Apply label replacements without letting one rewrite feed another."""
+
+    if not replacements:
+        return expr
+
+    staged = expr
+    temporary_labels = _fresh_simultaneous_replace_placeholders(
+        expr,
+        replacements,
+    )
+    for temp, (old, _new) in zip(temporary_labels, replacements):
+        staged = staged.replace(old, temp)
+
+    for temp, (_old, new) in zip(temporary_labels, replacements):
+        staged = staged.replace(temp, new)
+    return staged
+
+
 # ---------------------------------------------------------------------------
 # Fermion helpers
 # ---------------------------------------------------------------------------
@@ -663,11 +708,16 @@ def contract_to_full_expression(
 
         coupling_term = coupling if coupling is not None else Expression.num(1)
         if open_index_slots and leg_index_labels is not None:
+            label_replacements = []
             for slot_idx, kind, ordinal, label in open_index_slots:
                 target_leg = perm[slot_idx]
                 target_label = _get_label(leg_index_labels[target_leg], kind, ordinal)
                 if target_label is not None:
-                    coupling_term = coupling_term.replace(label, target_label)
+                    label_replacements.append((label, target_label))
+            coupling_term = _simultaneous_replace_labels(
+                coupling_term,
+                label_replacements,
+            )
         term *= coupling_term
 
         valid = True
