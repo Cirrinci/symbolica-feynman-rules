@@ -105,12 +105,12 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
     assert report["summary"]["exact_symbolic_error_vertices"] == 0
     assert report["summary"]["canonical_map_supported_vertices"] == 8
-    assert report["summary"]["canonical_map_equal_vertices"] == 4
-    assert report["summary"]["canonical_map_unequal_vertices"] == 4
+    assert report["summary"]["canonical_map_equal_vertices"] == 8
+    assert report["summary"]["canonical_map_unequal_vertices"] == 0
     assert report["summary"]["canonical_map_error_vertices"] == 0
     assert report["summary"]["canonical_map_supported_coefficient_sectors"] == 28
-    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 24
-    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 4
+    assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 28
+    assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 0
     assert report["summary"]["benign_head_count_delta_heads"] == 15
     assert report["summary"]["unexplained_head_count_delta_heads"] == 331
     assert all(
@@ -146,10 +146,11 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert rows_by_key["B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MISMATCH"
     assert rows_by_key["G|G|G|G|G"]["exact_symbolic_status"] == "EXACT_MISMATCH"
     assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
+    assert rows_by_key["G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G"]["canonical_map_coefficients"]["alphaR2G"][
         "matches"
-    ] is False
+    ] is True
 
 
 def test_smeft2_five_gluon_canonical_map_matches_feynrules_reference():

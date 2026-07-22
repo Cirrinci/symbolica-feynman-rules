@@ -1545,7 +1545,24 @@ def _factor_index_occurrences(factor: Expression) -> tuple[tuple[str, str], ...]
                 occurrences.extend(_factor_index_occurrences(arg))
         return tuple(occurrences)
 
-    if atom_type in (AtomType.Add, AtomType.Mul, AtomType.Pow):
+    if atom_type == AtomType.Pow:
+        base, exponent = tuple(factor)
+        occurrences = _factor_index_occurrences(base)
+        try:
+            exponent_value = int(exponent.to_canonical_string())
+        except ValueError:
+            exponent_value = None
+        if exponent_value is not None:
+            if exponent_value == 0:
+                return ()
+            return occurrences * abs(exponent_value)
+        return tuple(
+            occurrence
+            for child in factor
+            for occurrence in _factor_index_occurrences(child)
+        )
+
+    if atom_type in (AtomType.Add, AtomType.Mul):
         return tuple(
             occurrence
             for child in factor

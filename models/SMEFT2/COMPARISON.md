@@ -23,11 +23,11 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Exact symbolic unequal vertices | 21 |
 | Exact symbolic error vertices | 0 |
 | Canonical tensor-map supported vertices | 8 |
-| Canonical tensor-map equal vertices | 4 |
-| Canonical tensor-map unequal vertices | 4 |
+| Canonical tensor-map equal vertices | 8 |
+| Canonical tensor-map unequal vertices | 0 |
 | Canonical tensor-map error vertices | 0 |
-| Canonical tensor-map equal coefficient sectors | 24 |
-| Canonical tensor-map unequal coefficient sectors | 4 |
+| Canonical tensor-map equal coefficient sectors | 28 |
+| Canonical tensor-map unequal coefficient sectors | 0 |
 | Explained benign head-count deltas | 15 |
 | Unexplained head-count deltas | 331 |
 
@@ -95,12 +95,12 @@ This comparison is currently enabled for pure nonabelian gauge vertices (`G^n` a
 
 | Signature | Status | Coefficient sectors |
 | --- | --- | --- |
-| `G|G|G` | `CANONICAL_MAP_MISMATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 14/8 -> canonical 8/8; `alphaO3Gt` match: raw 21/42 -> canonical 12/12; `alphaR2G` mismatch: raw 54/36 -> canonical 54/36 |
-| `G|G|G|G` | `CANONICAL_MAP_MISMATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 144/48 -> canonical 48/48; `alphaO3Gt` match: raw 138/186 -> canonical 72/72; `alphaR2G` mismatch: raw 204/156 -> canonical 156/156 |
+| `G|G|G` | `CANONICAL_MAP_MATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 14/8 -> canonical 8/8; `alphaO3Gt` match: raw 21/42 -> canonical 12/12; `alphaR2G` match: raw 54/36 -> canonical 36/36 |
+| `G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 144/48 -> canonical 48/48; `alphaO3Gt` match: raw 138/186 -> canonical 72/72; `alphaR2G` match: raw 204/156 -> canonical 156/156 |
 | `G|G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaO3G` match: raw 720/240 -> canonical 120/120; `alphaO3Gt` match: raw 720/420 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
 | `G|G|G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaO3G` match: raw 720/720 -> canonical 120/120; `alphaO3Gt` match: raw 720/360 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
-| `Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 14/8 -> canonical 8/8; `alphaO3Wt` match: raw 21/42 -> canonical 12/12; `alphaR2W` mismatch: raw 54/36 -> canonical 54/36 |
-| `Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MISMATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 144/48 -> canonical 48/48; `alphaO3Wt` match: raw 138/186 -> canonical 72/72; `alphaR2W` mismatch: raw 204/156 -> canonical 156/156 |
+| `Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 14/8 -> canonical 8/8; `alphaO3Wt` match: raw 21/42 -> canonical 12/12; `alphaR2W` match: raw 54/36 -> canonical 36/36 |
+| `Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 144/48 -> canonical 48/48; `alphaO3Wt` match: raw 138/186 -> canonical 72/72; `alphaR2W` match: raw 204/156 -> canonical 156/156 |
 | `Wi|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaO3W` match: raw 720/240 -> canonical 120/120; `alphaO3Wt` match: raw 720/420 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
 | `Wi|Wi|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaO3W` match: raw 720/720 -> canonical 120/120; `alphaO3Wt` match: raw 720/360 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
 

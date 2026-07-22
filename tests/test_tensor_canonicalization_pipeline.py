@@ -18,6 +18,7 @@ from symbolic.tensor_canonicalization import (
     _infer_index_groups_from_expression,
     _jacobi_reduce_structure_constant_products,
     canonical_external_index_set,
+    canonical_tensor_monomial_report,
     canonical_tensor_monomial_map,
     canonize_full,
 )
@@ -242,6 +243,22 @@ def test_non_jacobi_structure_constant_products_are_preserved():
     expr = structure_constant(a, b, e1) * structure_constant(c, d, e2)
     reduced = _jacobi_reduce_structure_constant_products(expr)
     assert _canon(reduced) == _canon(expr)
+
+
+def test_canonical_tensor_monomial_report_merges_dummy_indices_inside_pcomp_powers():
+    mu_a, mu_b, q2 = S("mu_a"), S("mu_b"), S("q2")
+    expr = pcomp(q2, mu_a) ** 2 + pcomp(q2, mu_b) ** 2
+
+    report = canonical_tensor_monomial_report(
+        expr,
+        external_indices=canonical_external_index_set(),
+        max_dummy_permutations=1000,
+    )
+
+    assert report.raw_terms == 2
+    assert report.canonical_terms == 1
+    assert len(report.map) == 1
+    assert next(iter(report.map.values())).to_canonical_string() == "2"
 
 
 def test_symmetric_derivative_times_antisymmetric_f_is_dropped():

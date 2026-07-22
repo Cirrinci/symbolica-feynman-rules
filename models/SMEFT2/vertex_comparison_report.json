@@ -16,15 +16,14 @@
     "shared_head_count_mixed_benign_unexplained": 0,
     "shared_head_count_unexplained_mismatches": 90,
     "canonical_map_supported_vertices": 8,
-    "canonical_map_equal_vertices": 4,
-    "canonical_map_unequal_vertices": 4,
+    "canonical_map_equal_vertices": 8,
+    "canonical_map_unequal_vertices": 0,
     "canonical_map_error_vertices": 0,
     "canonical_map_supported_coefficient_sectors": 28,
-    "canonical_map_equal_coefficient_sectors": 24,
-    "canonical_map_unequal_coefficient_sectors": 4,
+    "canonical_map_equal_coefficient_sectors": 28,
+    "canonical_map_unequal_coefficient_sectors": 0,
     "canonical_map_status_counts": {
-      "CANONICAL_MAP_MATCH": 4,
-      "CANONICAL_MAP_MISMATCH": 4
+      "CANONICAL_MAP_MATCH": 8
     },
     "exact_symbolic_supported_vertices": 32,
     "exact_symbolic_equal_vertices": 11,
@@ -7517,7 +7516,7 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaKG": {
           "matches": true,
@@ -7559,22 +7558,16 @@
           "first_coefficient_mismatch": null
         },
         "alphaR2G": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 54,
           "feynrules_raw_terms": 36,
-          "feynpy_canonical_terms": 54,
+          "feynpy_canonical_terms": 36,
           "feynrules_canonical_terms": 36,
-          "feynpy_only_count": 36,
-          "feynrules_only_count": 18,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('E:A:a1', 'E:A:a2', 'E:A:a3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu1_int'), '2')), ordered_factors=())",
-            "coefficient": "python::{}::g3"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('E:A:a1', 'E:A:a2', 'E:A:a3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu_feynrules_dummy_sp_19'), '2')), ordered_factors=())",
-            "coefficient": "2*python::{}::g3"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
@@ -7689,7 +7682,7 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaKG": {
           "matches": true,
@@ -7731,22 +7724,16 @@
           "first_coefficient_mismatch": null
         },
         "alphaR2G": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 204,
           "feynrules_raw_terms": 156,
           "feynpy_canonical_terms": 156,
           "feynrules_canonical_terms": 156,
-          "feynpy_only_count": 24,
-          "feynrules_only_count": 24,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a1', 'E:A:a2')), ('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a3', 'E:A:a4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu1_int'), '2')), ordered_factors=())",
-            "coefficient": "-1\ud835\udc56*python::{}::g3^2"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a1', 'E:A:a2')), ('f', ('color_adj', 'color_adj', 'color_adj'), ('D:A:1', 'E:A:a3', 'E:A:a4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu_feynrules_dummy_sp_4'), '2')), ordered_factors=())",
-            "coefficient": "-1\ud835\udc56*python::{}::g3^2"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
@@ -15713,7 +15700,7 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaKW": {
           "matches": true,
@@ -15755,22 +15742,16 @@
           "first_coefficient_mismatch": null
         },
         "alphaR2W": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 54,
           "feynrules_raw_terms": 36,
-          "feynpy_canonical_terms": 54,
+          "feynpy_canonical_terms": 36,
           "feynrules_canonical_terms": 36,
-          "feynpy_only_count": 36,
-          "feynrules_only_count": 18,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('E:AW:aw1', 'E:AW:aw2', 'E:AW:aw3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu1_int'), '2')), ordered_factors=())",
-            "coefficient": "python::{}::g2"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('E:AW:aw1', 'E:AW:aw2', 'E:AW:aw3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu2')), ('pcomp', 'q1', 'E:L:mu3'), ('pow', ('pcomp', 'q2', 'E:L:mu_feynrules_dummy_sp_19'), '2')), ordered_factors=())",
-            "coefficient": "2*python::{}::g2"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
@@ -15885,7 +15866,7 @@
         }
       },
       "head_count_status": "COUNT_MISMATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaKW": {
           "matches": true,
@@ -15927,22 +15908,16 @@
           "first_coefficient_mismatch": null
         },
         "alphaR2W": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 204,
           "feynrules_raw_terms": 156,
           "feynpy_canonical_terms": 156,
           "feynrules_canonical_terms": 156,
-          "feynpy_only_count": 24,
-          "feynrules_only_count": 24,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw1', 'E:AW:aw2')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu1_int'), '2')), ordered_factors=())",
-            "coefficient": "-1\ud835\udc56*python::{}::g2^2"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw1', 'E:AW:aw2')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu1', 'E:L:mu3')), ('g', ('lorentz', 'lorentz'), ('E:L:mu2', 'E:L:mu4')), ('pow', ('pcomp', 'q1', 'E:L:mu_feynrules_dummy_sp_4'), '2')), ordered_factors=())",
-            "coefficient": "-1\ud835\udc56*python::{}::g2^2"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
