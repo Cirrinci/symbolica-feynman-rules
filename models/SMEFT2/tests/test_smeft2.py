@@ -74,10 +74,30 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_matches"] == 168
     assert report["summary"]["shared_head_count_matches"] == 83
     assert report["summary"]["shared_head_count_mismatches"] == 99
+    assert report["summary"]["shared_head_count_benign_expansions"] == 9
+    assert report["summary"]["shared_head_count_unexplained_mismatches"] == 90
+    assert report["summary"]["benign_head_count_delta_heads"] == 15
+    assert report["summary"]["unexplained_head_count_delta_heads"] == 331
     assert all(
         "head_count_status" in row
         and "reference_head_counts" in row
         and "feynpy_head_counts" in row
         and "head_count_delta" in row
+        and "benign_head_count_delta_reasons" in row
+        and "unexplained_head_count_delta" in row
         for row in report["reference_vertices"]
     )
+
+    rows_by_key = {row["key"]: row for row in report["reference_vertices"]}
+    assert rows_by_key["B|Phi|qL|uRbar"]["benign_head_count_delta_reasons"] == {
+        "alphaEuB": "DUAL_FS_ANTISYMMETRY"
+    }
+    assert rows_by_key["G|qL|qLbar"]["benign_head_count_delta_reasons"] == {
+        "alphaRqD": "DUMMY_LORENTZ_MERGE",
+        "g3": "DUMMY_LORENTZ_MERGE",
+    }
+    assert rows_by_key["Wi|qL|qLbar"]["benign_head_count_delta_reasons"] == {
+        "alphaRqD": "DUMMY_LORENTZ_MERGE",
+        "g2": "DUMMY_LORENTZ_MERGE",
+    }
+    assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"

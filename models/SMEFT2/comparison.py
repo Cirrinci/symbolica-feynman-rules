@@ -58,6 +58,40 @@ GENERIC_PARAMETER_NAMES = frozenset({"g1", "g2", "g3", "muH", "lam", "yl", "yu",
 
 OMITTED_COEFFICIENT_HEADS = frozenset()
 
+DUAL_FS_ANTISYMMETRY = "DUAL_FS_ANTISYMMETRY"
+DUMMY_LORENTZ_MERGE = "DUMMY_LORENTZ_MERGE"
+
+BENIGN_HEAD_COUNT_REASON_TEXT = {
+    DUAL_FS_ANTISYMMETRY: (
+        "FeynPy prints the two antisymmetric branches from "
+        "`Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already "
+        "collapsed them with epsilon antisymmetry."
+    ),
+    DUMMY_LORENTZ_MERGE: (
+        "FeynPy leaves the two `alphaRqD` derivative-order branches as "
+        "separate dummy-Lorentz contractions; FeynRules merges the identical "
+        "contraction into one term with a doubled coefficient."
+    ),
+}
+
+BENIGN_HEAD_COUNT_DELTAS = {
+    ("B|Phi|qL|uRbar", "alphaEuB"): DUAL_FS_ANTISYMMETRY,
+    ("B|Phibar|qLbar|uR", "alphaEuB"): DUAL_FS_ANTISYMMETRY,
+    ("B|Phi|dR|qLbar", "alphaEdB"): DUAL_FS_ANTISYMMETRY,
+    ("B|Phibar|dRbar|qL", "alphaEdB"): DUAL_FS_ANTISYMMETRY,
+    ("B|Phi|eR|lLbar", "alphaEeB"): DUAL_FS_ANTISYMMETRY,
+    ("B|Phibar|eRbar|lL", "alphaEeB"): DUAL_FS_ANTISYMMETRY,
+    ("B|qL|qLbar", "alphaEBq"): DUAL_FS_ANTISYMMETRY,
+    ("B|qL|qLbar", "alphaEBqtp"): DUAL_FS_ANTISYMMETRY,
+    ("B|qL|qLbar", "alphaRBqtp"): DUAL_FS_ANTISYMMETRY,
+    ("B|qL|qLbar", "alphaRqD"): DUMMY_LORENTZ_MERGE,
+    ("B|qL|qLbar", "g1"): DUMMY_LORENTZ_MERGE,
+    ("G|qL|qLbar", "alphaRqD"): DUMMY_LORENTZ_MERGE,
+    ("G|qL|qLbar", "g3"): DUMMY_LORENTZ_MERGE,
+    ("Wi|qL|qLbar", "alphaRqD"): DUMMY_LORENTZ_MERGE,
+    ("Wi|qL|qLbar", "g2"): DUMMY_LORENTZ_MERGE,
+}
+
 
 @dataclass(frozen=True)
 class LocalVertex:
@@ -134,6 +168,38 @@ def _head_count_delta(
                 "feynpy": local_count,
             }
     return delta
+
+
+def _benign_head_count_delta_reasons(
+    key: str,
+    head_count_delta: dict[str, dict[str, int]],
+) -> dict[str, str]:
+    reasons = {}
+    for head, counts in head_count_delta.items():
+        reason = BENIGN_HEAD_COUNT_DELTAS.get((key, head))
+        if reason is None:
+            continue
+        if counts["feynpy"] <= counts["reference"]:
+            continue
+        reasons[head] = reason
+    return reasons
+
+
+def _head_count_status(
+    *,
+    has_local_signature: bool,
+    head_count_delta: dict[str, dict[str, int]],
+    benign_reasons: dict[str, str],
+) -> str:
+    if not has_local_signature:
+        return "NO_LOCAL_SIGNATURE"
+    if not head_count_delta:
+        return "COUNT_MATCH"
+    if len(benign_reasons) == len(head_count_delta):
+        return "COUNT_BENIGN_EXPANSION"
+    if benign_reasons:
+        return "COUNT_MIXED_BENIGN_AND_UNEXPLAINED"
+    return "COUNT_MISMATCH"
 
 
 def _local_vertices(parameter_names: Iterable[str]) -> tuple[LocalVertex, ...]:
@@ -302,12 +368,20 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             term_count = local.term_count
 
         head_count_delta = _head_count_delta(reference_head_counts, local_head_counts)
-        if local is None:
-            head_count_status = "NO_LOCAL_SIGNATURE"
-        elif head_count_delta:
-            head_count_status = "COUNT_MISMATCH"
-        else:
-            head_count_status = "COUNT_MATCH"
+        benign_head_count_delta_reasons = _benign_head_count_delta_reasons(
+            key,
+            head_count_delta,
+        )
+        unexplained_head_count_delta = {
+            head: counts
+            for head, counts in head_count_delta.items()
+            if head not in benign_head_count_delta_reasons
+        }
+        head_count_status = _head_count_status(
+            has_local_signature=local is not None,
+            head_count_delta=head_count_delta,
+            benign_reasons=benign_head_count_delta_reasons,
+        )
 
         status_counts[status] += 1
         reference_rows.append(
@@ -323,6 +397,8 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
                 "reference_head_counts": reference_head_counts,
                 "feynpy_head_counts": local_head_counts,
                 "head_count_delta": head_count_delta,
+                "benign_head_count_delta_reasons": benign_head_count_delta_reasons,
+                "unexplained_head_count_delta": unexplained_head_count_delta,
                 "head_count_status": head_count_status,
                 "feynrules_extra_heads": sorted(reference_heads - local_heads),
                 "feynpy_extra_heads": sorted(local_heads - reference_heads),
@@ -363,6 +439,22 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         for row in reference_rows
         if row["head_count_status"] == "COUNT_MATCH"
     )
+    head_count_status_counts = Counter(
+        row["head_count_status"]
+        for row in reference_rows
+        if row["head_count_status"] != "NO_LOCAL_SIGNATURE"
+    )
+    shared_reference_rows = [
+        row for row in reference_rows if row["head_count_status"] != "NO_LOCAL_SIGNATURE"
+    ]
+    benign_head_count_delta_heads = sum(
+        len(row["benign_head_count_delta_reasons"])
+        for row in shared_reference_rows
+    )
+    unexplained_head_count_delta_heads = sum(
+        len(row["unexplained_head_count_delta"])
+        for row in shared_reference_rows
+    )
     matched = status_counts["SHARED_HEADS_MATCH"]
     report = {
         "generated_on": date.today().isoformat(),
@@ -382,6 +474,19 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "shared_head_matches": matched,
             "shared_head_count_matches": head_count_matches,
             "shared_head_count_mismatches": shared - head_count_matches,
+            "shared_head_count_benign_expansions": head_count_status_counts[
+                "COUNT_BENIGN_EXPANSION"
+            ],
+            "shared_head_count_mixed_benign_unexplained": head_count_status_counts[
+                "COUNT_MIXED_BENIGN_AND_UNEXPLAINED"
+            ],
+            "shared_head_count_unexplained_mismatches": (
+                head_count_status_counts["COUNT_MISMATCH"]
+                + head_count_status_counts["COUNT_MIXED_BENIGN_AND_UNEXPLAINED"]
+            ),
+            "benign_head_count_delta_heads": benign_head_count_delta_heads,
+            "unexplained_head_count_delta_heads": unexplained_head_count_delta_heads,
+            "head_count_status_counts": dict(sorted(head_count_status_counts.items())),
             "status_counts": dict(sorted(status_counts.items())),
             "comparison_basis": {
                 "reference_ltot": "EFT-only FeynRules Ltot",
@@ -457,6 +562,11 @@ def _markdown_report(report: dict[str, object]) -> str:
         f"| Shared coefficient-head matches | {summary['shared_head_matches']} |",
         f"| Shared raw head-count matches | {summary['shared_head_count_matches']} |",
         f"| Shared raw head-count mismatches | {summary['shared_head_count_mismatches']} |",
+        f"| Shared raw head-count benign expansions | {summary['shared_head_count_benign_expansions']} |",
+        "| Shared raw head-count mismatches with unexplained deltas | "
+        f"{summary['shared_head_count_unexplained_mismatches']} |",
+        f"| Explained benign head-count deltas | {summary['benign_head_count_delta_heads']} |",
+        f"| Unexplained head-count deltas | {summary['unexplained_head_count_delta_heads']} |",
         "",
         "## Basis",
         "",
@@ -475,12 +585,26 @@ def _markdown_report(report: dict[str, object]) -> str:
 
     missing_heads = Counter()
     local_extra_heads = Counter()
-    head_count_deltas = Counter()
+    unexplained_head_count_deltas = Counter()
+    benign_head_count_deltas = []
     for row in report["reference_vertices"]:
         missing_heads.update(row["feynrules_extra_heads"])
         local_extra_heads.update(row["feynpy_extra_heads"])
-        for head, counts_for_head in row["head_count_delta"].items():
-            head_count_deltas[head] += abs(
+        if row["head_count_status"] == "NO_LOCAL_SIGNATURE":
+            continue
+        for head, reason in row["benign_head_count_delta_reasons"].items():
+            counts_for_head = row["head_count_delta"][head]
+            benign_head_count_deltas.append(
+                (
+                    row["key"],
+                    head,
+                    counts_for_head["reference"],
+                    counts_for_head["feynpy"],
+                    reason,
+                )
+            )
+        for head, counts_for_head in row["unexplained_head_count_delta"].items():
+            unexplained_head_count_deltas[head] += abs(
                 counts_for_head["reference"] - counts_for_head["feynpy"]
             )
 
@@ -511,18 +635,37 @@ def _markdown_report(report: dict[str, object]) -> str:
     lines.extend(
         [
             "",
-            "## Largest Raw Head-Count Deltas",
+            "## Explained Benign Raw Head-Count Deltas",
             "",
             "These are raw coefficient-head occurrence-count diagnostics. They catch "
             "some missing or duplicated content, but they are not tensor-rule equality "
             "proofs because equivalent algebra can be printed with different occurrence "
             "counts.",
             "",
+            "| Signature | Head | Reference | FeynPy | Reason |",
+            "| --- | --- | ---: | ---: | --- |",
+        ]
+    )
+    for key, head, reference_count, feynpy_count, reason in sorted(benign_head_count_deltas):
+        lines.append(
+            f"| `{key}` | `{head}` | {reference_count} | {feynpy_count} | "
+            f"{BENIGN_HEAD_COUNT_REASON_TEXT[reason]} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Largest Unexplained Raw Head-Count Deltas",
+            "",
+            "These exclude the explicit benign expansions listed above. The large "
+            "`G^5`/`W^5` deltas are still left as expansion noise until they are "
+            "reduced or checked against a stronger tensor-level oracle.",
+            "",
             "| Head | Total absolute delta |",
             "| --- | ---: |",
         ]
     )
-    for head, count in head_count_deltas.most_common(20):
+    for head, count in unexplained_head_count_deltas.most_common(20):
         lines.append(f"| `{head}` | {count} |")
 
     lines.extend(

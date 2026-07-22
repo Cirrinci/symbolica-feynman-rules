@@ -12,6 +12,16 @@
     "shared_head_matches": 168,
     "shared_head_count_matches": 83,
     "shared_head_count_mismatches": 99,
+    "shared_head_count_benign_expansions": 9,
+    "shared_head_count_mixed_benign_unexplained": 0,
+    "shared_head_count_unexplained_mismatches": 90,
+    "benign_head_count_delta_heads": 15,
+    "unexplained_head_count_delta_heads": 331,
+    "head_count_status_counts": {
+      "COUNT_BENIGN_EXPANSION": 9,
+      "COUNT_MATCH": 83,
+      "COUNT_MISMATCH": 90
+    },
     "status_counts": {
       "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING": 8,
       "FEYNPY_ONLY_WEINBERG_PACKAGING": 2,
@@ -74,6 +84,8 @@
         "g1": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -142,6 +154,8 @@
         "g1": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -215,6 +229,8 @@
         "g2": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -283,6 +299,8 @@
         "g1": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -349,6 +367,8 @@
         "g1": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -415,6 +435,8 @@
         "g1": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -481,6 +503,8 @@
         "g1": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -547,6 +571,8 @@
         "g1": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -617,6 +643,8 @@
         "g3": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -687,6 +715,8 @@
         "g3": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -757,6 +787,8 @@
         "g3": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -833,6 +865,17 @@
         "g1": 7
       },
       "head_count_delta": {
+        "alphaEdH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEdH": {
           "reference": 0,
           "feynpy": 4
@@ -929,6 +972,17 @@
           "feynpy": 7
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEeH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
@@ -1007,6 +1061,17 @@
         "g1": 7
       },
       "head_count_delta": {
+        "alphaEuH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEuH": {
           "reference": 0,
           "feynpy": 4
@@ -1102,6 +1167,13 @@
           "feynpy": 8
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaOHBt": {
+          "reference": 2,
+          "feynpy": 8
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -1170,6 +1242,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -1243,6 +1317,21 @@
         "g2": 14
       },
       "head_count_delta": {
+        "alphaRDH": {
+          "reference": 6,
+          "feynpy": 14
+        },
+        "g1": {
+          "reference": 6,
+          "feynpy": 14
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 14
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRDH": {
           "reference": 6,
           "feynpy": 14
@@ -1331,6 +1420,8 @@
         "g1": 4
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -1409,6 +1500,17 @@
         "g1": 7
       },
       "head_count_delta": {
+        "alphaEdH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEdH": {
           "reference": 0,
           "feynpy": 4
@@ -1505,6 +1607,17 @@
           "feynpy": 7
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEeH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
@@ -1592,6 +1705,17 @@
           "feynpy": 7
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEuH": {
+          "reference": 0,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 3,
+          "feynpy": 7
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
@@ -1664,6 +1788,8 @@
         "g2": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -1734,6 +1860,8 @@
         "g2": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -1813,6 +1941,21 @@
         "g1": 41
       },
       "head_count_delta": {
+        "alphaEBdtp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBdtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEBdtp": {
           "reference": 8,
           "feynpy": 16
@@ -1916,6 +2059,21 @@
           "feynpy": 41
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEBetp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBetp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -1993,6 +2151,21 @@
         "g1": 41
       },
       "head_count_delta": {
+        "alphaEBltp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBltp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEBltp": {
           "reference": 8,
           "feynpy": 16
@@ -2096,6 +2269,21 @@
           "feynpy": 41
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEBqtp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRBqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -2173,6 +2361,21 @@
         "g1": 41
       },
       "head_count_delta": {
+        "alphaEButp": {
+          "reference": 8,
+          "feynpy": 16
+        },
+        "alphaRButp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g1": {
+          "reference": 31,
+          "feynpy": 41
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEButp": {
           "reference": 8,
           "feynpy": 16
@@ -2270,6 +2473,33 @@
         "g3": 32
       },
       "head_count_delta": {
+        "alphaEGdp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGdtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGdtp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRdD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEGdp": {
           "reference": 4,
           "feynpy": 8
@@ -2406,6 +2636,33 @@
           "feynpy": 32
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEGqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGqtp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -2517,6 +2774,33 @@
           "feynpy": 32
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEGup": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGutp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGutp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRuD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -2599,6 +2883,8 @@
         "g3": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -2681,6 +2967,8 @@
         "g3": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -2763,6 +3051,8 @@
         "g3": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -2845,6 +3135,8 @@
         "g3": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -2919,6 +3211,8 @@
         "g3": 3
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -3018,6 +3312,25 @@
         "g3": 29
       },
       "head_count_delta": {
+        "alphaEBdtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBdp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBdtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEBdtp": {
           "reference": 4,
           "feynpy": 8
@@ -3149,6 +3462,25 @@
           "feynpy": 29
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEBqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -3263,6 +3595,25 @@
           "feynpy": 29
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEButp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBup": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRButp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -3343,6 +3694,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -3425,6 +3778,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -3507,6 +3862,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -3599,7 +3956,11 @@
           "feynpy": 4
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaEdB": "DUAL_FS_ANTISYMMETRY"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3689,7 +4050,11 @@
           "feynpy": 4
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaEeB": "DUAL_FS_ANTISYMMETRY"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3779,7 +4144,11 @@
           "feynpy": 4
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaEuB": "DUAL_FS_ANTISYMMETRY"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3845,6 +4214,8 @@
         "g1": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -3937,6 +4308,17 @@
           "feynpy": 14
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaRBDH": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 12,
+          "feynpy": 14
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -4017,6 +4399,33 @@
         "g2": 40
       },
       "head_count_delta": {
+        "alphaOHWB": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOHWBt": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRDH": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRWDH": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 18,
+          "feynpy": 32
+        },
+        "g2": {
+          "reference": 22,
+          "feynpy": 40
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaOHWB": {
           "reference": 2,
           "feynpy": 4
@@ -4132,6 +4541,21 @@
           "feynpy": 30
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaRDH": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "g1": {
+          "reference": 18,
+          "feynpy": 30
+        },
+        "g2": {
+          "reference": 18,
+          "feynpy": 30
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -4213,6 +4637,17 @@
           "feynpy": 3
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaRHdp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g1": {
+          "reference": 2,
+          "feynpy": 3
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -4283,6 +4718,17 @@
         "g1": 3
       },
       "head_count_delta": {
+        "alphaRHep": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g1": {
+          "reference": 2,
+          "feynpy": 3
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRHep": {
           "reference": 1,
           "feynpy": 2
@@ -4372,6 +4818,29 @@
         "g1": 8
       },
       "head_count_delta": {
+        "alphaOHl3": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl3p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl3pp": {
+          "reference": 0,
+          "feynpy": 1
+        },
+        "g1": {
+          "reference": 4,
+          "feynpy": 8
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaOHl3": {
           "reference": 1,
           "feynpy": 2
@@ -4496,6 +4965,29 @@
           "feynpy": 8
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaOHq3": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3pp": {
+          "reference": 0,
+          "feynpy": 1
+        },
+        "g1": {
+          "reference": 4,
+          "feynpy": 8
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [
@@ -4568,6 +5060,17 @@
         "g1": 3
       },
       "head_count_delta": {
+        "alphaRHup": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g1": {
+          "reference": 2,
+          "feynpy": 3
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRHup": {
           "reference": 1,
           "feynpy": 2
@@ -4660,6 +5163,17 @@
           "feynpy": 28
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaRHDpp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 26,
+          "feynpy": 28
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -4737,6 +5251,8 @@
         "g2": 8
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -4821,6 +5337,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -4903,6 +5421,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -4985,6 +5505,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -5077,7 +5599,11 @@
           "feynpy": 4
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaEdB": "DUAL_FS_ANTISYMMETRY"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5167,7 +5693,11 @@
           "feynpy": 4
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaEeB": "DUAL_FS_ANTISYMMETRY"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5257,7 +5787,11 @@
           "feynpy": 4
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaEuB": "DUAL_FS_ANTISYMMETRY"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5341,6 +5875,33 @@
         "g2": 32
       },
       "head_count_delta": {
+        "alphaEWlp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEWltp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRWltp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRlD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEWlp": {
           "reference": 4,
           "feynpy": 8
@@ -5452,6 +6013,33 @@
         "g2": 32
       },
       "head_count_delta": {
+        "alphaEWqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEWqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRWqtp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g1": {
+          "reference": 17,
+          "feynpy": 32
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 32
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEWqp": {
           "reference": 4,
           "feynpy": 8
@@ -5593,6 +6181,25 @@
           "feynpy": 29
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEBltp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBlp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBltp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -5707,6 +6314,25 @@
           "feynpy": 29
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEBqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRBqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 21,
+          "feynpy": 29
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -5793,6 +6419,29 @@
         "g1": 9
       },
       "head_count_delta": {
+        "alphaEBd": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEBdtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBdtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRdD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEBd": {
           "reference": 4,
           "feynpy": 8
@@ -5919,6 +6568,29 @@
           "feynpy": 9
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEBe": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEBetp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBetp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaReD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -6003,6 +6675,29 @@
         "g1": 9
       },
       "head_count_delta": {
+        "alphaEBl": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEBltp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRBltp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRlD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEBl": {
           "reference": 4,
           "feynpy": 8
@@ -6129,7 +6824,15 @@
           "feynpy": 9
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaEBq": "DUAL_FS_ANTISYMMETRY",
+        "alphaEBqtp": "DUAL_FS_ANTISYMMETRY",
+        "alphaRBqtp": "DUAL_FS_ANTISYMMETRY",
+        "alphaRqD": "DUMMY_LORENTZ_MERGE",
+        "g1": "DUMMY_LORENTZ_MERGE"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6213,6 +6916,29 @@
         "g1": 9
       },
       "head_count_delta": {
+        "alphaEBu": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEButp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRButp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRuD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g1": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEBu": {
           "reference": 4,
           "feynpy": 8
@@ -6319,6 +7045,25 @@
           "feynpy": 60
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaO3G": {
+          "reference": 8,
+          "feynpy": 14
+        },
+        "alphaO3Gt": {
+          "reference": 42,
+          "feynpy": 21
+        },
+        "alphaR2G": {
+          "reference": 36,
+          "feynpy": 54
+        },
+        "g3": {
+          "reference": 42,
+          "feynpy": 60
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -6390,6 +7135,25 @@
         "g3": 492
       },
       "head_count_delta": {
+        "alphaO3G": {
+          "reference": 48,
+          "feynpy": 144
+        },
+        "alphaO3Gt": {
+          "reference": 186,
+          "feynpy": 138
+        },
+        "alphaR2G": {
+          "reference": 156,
+          "feynpy": 204
+        },
+        "g3": {
+          "reference": 396,
+          "feynpy": 492
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaO3G": {
           "reference": 48,
           "feynpy": 144
@@ -6479,6 +7243,25 @@
         "g3": 2160
       },
       "head_count_delta": {
+        "alphaO3G": {
+          "reference": 240,
+          "feynpy": 720
+        },
+        "alphaO3Gt": {
+          "reference": 420,
+          "feynpy": 720
+        },
+        "alphaR2G": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g3": {
+          "reference": 1020,
+          "feynpy": 2160
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaO3G": {
           "reference": 240,
           "feynpy": 720
@@ -6586,6 +7369,21 @@
           "feynpy": 2160
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaO3Gt": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "alphaR2G": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g3": {
+          "reference": 1440,
+          "feynpy": 2160
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -6674,6 +7472,21 @@
           "feynpy": 36
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaOHG": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHGt": {
+          "reference": 3,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 9,
+          "feynpy": 36
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -6746,6 +7559,21 @@
         "g3": 36
       },
       "head_count_delta": {
+        "alphaOHG": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHGt": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 18,
+          "feynpy": 36
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaOHG": {
           "reference": 6,
           "feynpy": 12
@@ -6849,6 +7677,33 @@
         "g3": 114
       },
       "head_count_delta": {
+        "alphaEGd": {
+          "reference": 30,
+          "feynpy": 24
+        },
+        "alphaEGdp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEGdtp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRGdtp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRdD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g3": {
+          "reference": 108,
+          "feynpy": 114
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEGd": {
           "reference": 30,
           "feynpy": 24
@@ -6989,6 +7844,33 @@
           "feynpy": 114
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEGq": {
+          "reference": 30,
+          "feynpy": 24
+        },
+        "alphaEGqp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEGqtp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRGqtp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g3": {
+          "reference": 108,
+          "feynpy": 114
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -7104,6 +7986,33 @@
           "feynpy": 114
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEGu": {
+          "reference": 30,
+          "feynpy": 24
+        },
+        "alphaEGup": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEGutp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRGutp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRuD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g3": {
+          "reference": 108,
+          "feynpy": 114
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -7178,6 +8087,21 @@
         "g3": 10
       },
       "head_count_delta": {
+        "alphaEdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEdG": {
           "reference": 2,
           "feynpy": 4
@@ -7278,6 +8202,21 @@
           "feynpy": 10
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -7341,6 +8280,8 @@
         "alphaOHGt": 8
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -7413,6 +8354,21 @@
         "g3": 10
       },
       "head_count_delta": {
+        "alphaEdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEdG": {
           "reference": 2,
           "feynpy": 4
@@ -7513,6 +8469,21 @@
           "feynpy": 10
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuG": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g3": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -7599,6 +8570,37 @@
         "g3": 36
       },
       "head_count_delta": {
+        "alphaEGqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEGqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRGqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRGqtp": {
+          "reference": 1,
+          "feynpy": 4
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 36
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 36
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEGqp": {
           "reference": 4,
           "feynpy": 8
@@ -7744,6 +8746,37 @@
           "feynpy": 128
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEGd": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEGdp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEGdtp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRGd": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRGdtp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRdD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -7829,6 +8862,37 @@
         "g3": 128
       },
       "head_count_delta": {
+        "alphaEGq": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEGqp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEGqtp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRGq": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRGqtp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEGq": {
           "reference": 26,
           "feynpy": 32
@@ -7972,6 +9036,37 @@
           "feynpy": 128
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEGu": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEGup": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEGutp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRGu": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRGutp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRuD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g3": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8048,6 +9143,8 @@
         "g3": 5
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8126,6 +9223,8 @@
         "g3": 5
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8209,6 +9308,8 @@
         "g3": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8290,6 +9391,8 @@
         "g3": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8354,6 +9457,17 @@
         "g3": 2
       },
       "head_count_delta": {
+        "alphaRHdp": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g3": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRHdp": {
           "reference": 1,
           "feynpy": 2
@@ -8446,6 +9560,21 @@
           "feynpy": 4
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaRHq1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g3": {
+          "reference": 2,
+          "feynpy": 4
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8512,6 +9641,17 @@
         "g3": 2
       },
       "head_count_delta": {
+        "alphaRHup": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g3": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRHup": {
           "reference": 1,
           "feynpy": 2
@@ -8599,6 +9739,8 @@
         "g3": 5
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8677,6 +9819,8 @@
         "g3": 5
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8760,6 +9904,8 @@
         "g3": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8841,6 +9987,8 @@
         "g3": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -8925,6 +10073,37 @@
         "g3": 36
       },
       "head_count_delta": {
+        "alphaEWqp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaEWqtp": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "alphaRWqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRWqtp": {
+          "reference": 1,
+          "feynpy": 4
+        },
+        "alphaRqD": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 17,
+          "feynpy": 36
+        },
+        "g3": {
+          "reference": 17,
+          "feynpy": 36
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEWqp": {
           "reference": 4,
           "feynpy": 8
@@ -9078,6 +10257,33 @@
           "feynpy": 29
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaRGqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRGqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRWqp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaRWqtp": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 25,
+          "feynpy": 29
+        },
+        "g3": {
+          "reference": 25,
+          "feynpy": 29
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -9164,6 +10370,17 @@
         "g3": 9
       },
       "head_count_delta": {
+        "alphaRdD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g3": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRdD": {
           "reference": 7,
           "feynpy": 8
@@ -9266,7 +10483,12 @@
           "feynpy": 9
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaRqD": "DUMMY_LORENTZ_MERGE",
+        "g3": "DUMMY_LORENTZ_MERGE"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9359,6 +10581,17 @@
           "feynpy": 9
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaRuD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g3": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -9421,6 +10654,8 @@
         "g2": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -9480,6 +10715,8 @@
         "alphaOHud": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -9533,6 +10770,13 @@
       },
       "feynpy_head_counts": {},
       "head_count_delta": {
+        "alphaWeinberg": {
+          "reference": 4,
+          "feynpy": 0
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaWeinberg": {
           "reference": 4,
           "feynpy": 0
@@ -9600,6 +10844,21 @@
         "g2": 10
       },
       "head_count_delta": {
+        "alphaEdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEdW": {
           "reference": 2,
           "feynpy": 4
@@ -9700,6 +10959,21 @@
           "feynpy": 10
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -9774,6 +11048,21 @@
         "g2": 10
       },
       "head_count_delta": {
+        "alphaEuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEuW": {
           "reference": 2,
           "feynpy": 4
@@ -9870,6 +11159,8 @@
         "g2": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -9951,6 +11242,8 @@
         "g2": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10032,6 +11325,8 @@
         "g2": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10106,6 +11401,8 @@
         "alphaRdHD4": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10178,6 +11475,8 @@
         "alphaReHD4": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10250,6 +11549,8 @@
         "alphaRuHD4": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10308,6 +11609,8 @@
         "alphaOdH": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10370,6 +11673,8 @@
         "alphaOeH": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10432,6 +11737,8 @@
         "alphaOuH": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10500,6 +11807,8 @@
         "g2": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10575,6 +11884,17 @@
         "g2": 42
       },
       "head_count_delta": {
+        "alphaRDH": {
+          "reference": 12,
+          "feynpy": 20
+        },
+        "g2": {
+          "reference": 34,
+          "feynpy": 42
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRDH": {
           "reference": 12,
           "feynpy": 20
@@ -10660,6 +11980,29 @@
         "g2": 108
       },
       "head_count_delta": {
+        "alphaOHW": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHWt": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRDH": {
+          "reference": 24,
+          "feynpy": 36
+        },
+        "alphaRWDH": {
+          "reference": 48,
+          "feynpy": 36
+        },
+        "g2": {
+          "reference": 90,
+          "feynpy": 108
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaOHW": {
           "reference": 6,
           "feynpy": 12
@@ -10779,6 +12122,25 @@
           "feynpy": 84
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaOHW": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaOHWt": {
+          "reference": 3,
+          "feynpy": 24
+        },
+        "alphaRWDH": {
+          "reference": 48,
+          "feynpy": 24
+        },
+        "g2": {
+          "reference": 81,
+          "feynpy": 84
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10856,6 +12218,17 @@
           "feynpy": 2
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaOHd": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g2": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -10922,6 +12295,17 @@
         "g2": 2
       },
       "head_count_delta": {
+        "alphaOHe": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g2": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaOHe": {
           "reference": 1,
           "feynpy": 2
@@ -11013,6 +12397,25 @@
         "g2": 9
       },
       "head_count_delta": {
+        "alphaOHl1": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHl3pp": {
+          "reference": 2,
+          "feynpy": 1
+        },
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaOHl1": {
           "reference": 1,
           "feynpy": 2
@@ -11129,6 +12532,25 @@
           "feynpy": 9
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaOHq1": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq1p": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "alphaRHq3pp": {
+          "reference": 2,
+          "feynpy": 1
+        },
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11195,6 +12617,17 @@
         "g2": 2
       },
       "head_count_delta": {
+        "alphaOHu": {
+          "reference": 1,
+          "feynpy": 2
+        },
+        "g2": {
+          "reference": 1,
+          "feynpy": 2
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaOHu": {
           "reference": 1,
           "feynpy": 2
@@ -11271,6 +12704,8 @@
         "alphaRHdpp": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11336,6 +12771,8 @@
         "alphaRHepp": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11413,6 +12850,8 @@
         "alphaRHl3pp": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11490,6 +12929,8 @@
         "alphaRHq3pp": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11555,6 +12996,8 @@
         "alphaRHupp": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11628,6 +13071,8 @@
         "alphaRHDpp": 8
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11700,6 +13145,8 @@
         "g2": 28
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11782,6 +13229,17 @@
           "feynpy": 16
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaOHD": {
+          "reference": 4,
+          "feynpy": 8
+        },
+        "g2": {
+          "reference": 12,
+          "feynpy": 16
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11846,6 +13304,8 @@
         "alphaOdH": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11908,6 +13368,8 @@
         "alphaOeH": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -11970,6 +13432,8 @@
         "alphaOuH": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12035,6 +13499,8 @@
         "alphaOH": 6
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12103,6 +13569,8 @@
         "g2": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12162,6 +13630,8 @@
         "alphaOHud": 2
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12215,6 +13685,13 @@
       },
       "feynpy_head_counts": {},
       "head_count_delta": {
+        "alphaWeinberg": {
+          "reference": 4,
+          "feynpy": 0
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaWeinberg": {
           "reference": 4,
           "feynpy": 0
@@ -12282,6 +13759,21 @@
         "g2": 10
       },
       "head_count_delta": {
+        "alphaEdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOdW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEdW": {
           "reference": 2,
           "feynpy": 4
@@ -12382,6 +13874,21 @@
           "feynpy": 10
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOeW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12456,6 +13963,21 @@
         "g2": 10
       },
       "head_count_delta": {
+        "alphaEuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "alphaOuW": {
+          "reference": 2,
+          "feynpy": 4
+        },
+        "g2": {
+          "reference": 6,
+          "feynpy": 10
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEuW": {
           "reference": 2,
           "feynpy": 4
@@ -12552,6 +14074,8 @@
         "g2": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12633,6 +14157,8 @@
         "g2": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12714,6 +14240,8 @@
         "g2": 7
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12788,6 +14316,8 @@
         "alphaRdHD4": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12860,6 +14390,8 @@
         "alphaReHD4": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -12932,6 +14464,8 @@
         "alphaRuHD4": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -13000,6 +14534,25 @@
         "g2": 60
       },
       "head_count_delta": {
+        "alphaO3W": {
+          "reference": 8,
+          "feynpy": 14
+        },
+        "alphaO3Wt": {
+          "reference": 42,
+          "feynpy": 21
+        },
+        "alphaR2W": {
+          "reference": 36,
+          "feynpy": 54
+        },
+        "g2": {
+          "reference": 42,
+          "feynpy": 60
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaO3W": {
           "reference": 8,
           "feynpy": 14
@@ -13105,6 +14658,25 @@
           "feynpy": 492
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaO3W": {
+          "reference": 48,
+          "feynpy": 144
+        },
+        "alphaO3Wt": {
+          "reference": 186,
+          "feynpy": 138
+        },
+        "alphaR2W": {
+          "reference": 156,
+          "feynpy": 204
+        },
+        "g2": {
+          "reference": 396,
+          "feynpy": 492
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -13177,6 +14749,25 @@
         "g2": 2160
       },
       "head_count_delta": {
+        "alphaO3W": {
+          "reference": 240,
+          "feynpy": 720
+        },
+        "alphaO3Wt": {
+          "reference": 420,
+          "feynpy": 720
+        },
+        "alphaR2W": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g2": {
+          "reference": 1020,
+          "feynpy": 2160
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaO3W": {
           "reference": 240,
           "feynpy": 720
@@ -13284,6 +14875,21 @@
           "feynpy": 2160
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaO3Wt": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "alphaR2W": {
+          "reference": 360,
+          "feynpy": 720
+        },
+        "g2": {
+          "reference": 1440,
+          "feynpy": 2160
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -13376,6 +14982,29 @@
         "g2": 114
       },
       "head_count_delta": {
+        "alphaEWlp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEWltp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRWltp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRlD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 102,
+          "feynpy": 114
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEWlp": {
           "reference": 12,
           "feynpy": 24
@@ -13508,6 +15137,29 @@
           "feynpy": 114
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEWqp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaEWqtp": {
+          "reference": 12,
+          "feynpy": 24
+        },
+        "alphaRWqtp": {
+          "reference": 6,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 30,
+          "feynpy": 12
+        },
+        "g2": {
+          "reference": 102,
+          "feynpy": 114
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -13595,6 +15247,37 @@
         "g2": 128
       },
       "head_count_delta": {
+        "alphaEWl": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEWlp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEWltp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRWl": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRWltp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRlD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g2": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEWl": {
           "reference": 26,
           "feynpy": 32
@@ -13738,6 +15421,37 @@
           "feynpy": 128
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEWq": {
+          "reference": 26,
+          "feynpy": 32
+        },
+        "alphaEWqp": {
+          "reference": 12,
+          "feynpy": 16
+        },
+        "alphaEWqtp": {
+          "reference": 20,
+          "feynpy": 24
+        },
+        "alphaRWq": {
+          "reference": 6,
+          "feynpy": 8
+        },
+        "alphaRWqtp": {
+          "reference": 10,
+          "feynpy": 12
+        },
+        "alphaRqD": {
+          "reference": 18,
+          "feynpy": 24
+        },
+        "g2": {
+          "reference": 104,
+          "feynpy": 128
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -13824,6 +15538,17 @@
         "g2": 9
       },
       "head_count_delta": {
+        "alphaRlD": {
+          "reference": 7,
+          "feynpy": 8
+        },
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaRlD": {
           "reference": 7,
           "feynpy": 8
@@ -13926,7 +15651,12 @@
           "feynpy": 9
         }
       },
-      "head_count_status": "COUNT_MISMATCH",
+      "benign_head_count_delta_reasons": {
+        "alphaRqD": "DUMMY_LORENTZ_MERGE",
+        "g2": "DUMMY_LORENTZ_MERGE"
+      },
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_BENIGN_EXPANSION",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13997,6 +15727,17 @@
         "alphaOledq": 1
       },
       "head_count_delta": {
+        "alphaEcqedl": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcqedlthree": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEcqedl": {
           "reference": 1,
           "feynpy": 0
@@ -14091,6 +15832,17 @@
           "feynpy": 0
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEcudqq": {
+          "reference": 2,
+          "feynpy": 0
+        },
+        "alphaEcudqqtwo": {
+          "reference": 2,
+          "feynpy": 0
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcudqq",
@@ -14171,6 +15923,8 @@
         "alphaOed": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -14248,6 +16002,8 @@
         "alphaOld": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -14349,6 +16105,8 @@
         "alphaOqd8": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -14450,6 +16208,8 @@
         "alphaOud8": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -14527,6 +16287,8 @@
         "alphaOdd": 4
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -14600,6 +16362,17 @@
         "alphaOledq": 1
       },
       "head_count_delta": {
+        "alphaEcqedl": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcqedlthree": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEcqedl": {
           "reference": 1,
           "feynpy": 0
@@ -14694,6 +16467,17 @@
           "feynpy": 0
         }
       },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
+        "alphaEcudqq": {
+          "reference": 2,
+          "feynpy": 0
+        },
+        "alphaEcudqqtwo": {
+          "reference": 2,
+          "feynpy": 0
+        }
+      },
       "head_count_status": "COUNT_MISMATCH",
       "feynrules_extra_heads": [
         "alphaEcudqq",
@@ -14770,6 +16554,17 @@
         "alphaOlequ1": 1
       },
       "head_count_delta": {
+        "alphaEcuelq": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcuelqtwo": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEcuelq": {
           "reference": 1,
           "feynpy": 0
@@ -14859,6 +16654,8 @@
         "alphaOle": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -14936,6 +16733,8 @@
         "alphaOqe": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15013,6 +16812,8 @@
         "alphaOeu": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15082,6 +16883,8 @@
         "alphaOee": 4
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15155,6 +16958,17 @@
         "alphaOlequ1": 1
       },
       "head_count_delta": {
+        "alphaEcuelq": {
+          "reference": 1,
+          "feynpy": 0
+        },
+        "alphaEcuelqtwo": {
+          "reference": 1,
+          "feynpy": 0
+        }
+      },
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {
         "alphaEcuelq": {
           "reference": 1,
           "feynpy": 0
@@ -15268,6 +17082,8 @@
         "alphaOlq3": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15345,6 +17161,8 @@
         "alphaOlu": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15422,6 +17240,8 @@
         "alphaOll": 4
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15523,6 +17343,8 @@
         "alphaOqu8": 1
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15624,6 +17446,8 @@
         "alphaOqq3": 4
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
@@ -15701,6 +17525,8 @@
         "alphaOuu": 4
       },
       "head_count_delta": {},
+      "benign_head_count_delta_reasons": {},
+      "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
