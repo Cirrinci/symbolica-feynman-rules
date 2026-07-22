@@ -10,30 +10,30 @@
     "reference_only_signatures": 2,
     "feynpy_only_signatures": 10,
     "shared_head_matches": 168,
-    "shared_head_count_matches": 83,
-    "shared_head_count_mismatches": 99,
+    "shared_head_count_matches": 88,
+    "shared_head_count_mismatches": 94,
     "shared_head_count_benign_expansions": 9,
     "shared_head_count_mixed_benign_unexplained": 0,
-    "shared_head_count_unexplained_mismatches": 90,
+    "shared_head_count_unexplained_mismatches": 85,
     "canonical_map_supported_vertices": 32,
-    "canonical_map_equal_vertices": 24,
-    "canonical_map_unequal_vertices": 8,
+    "canonical_map_equal_vertices": 25,
+    "canonical_map_unequal_vertices": 7,
     "canonical_map_error_vertices": 0,
     "canonical_map_supported_coefficient_sectors": 93,
-    "canonical_map_equal_coefficient_sectors": 82,
-    "canonical_map_unequal_coefficient_sectors": 11,
+    "canonical_map_equal_coefficient_sectors": 83,
+    "canonical_map_unequal_coefficient_sectors": 10,
     "canonical_map_status_counts": {
-      "CANONICAL_MAP_MATCH": 24,
-      "CANONICAL_MAP_MISMATCH": 8
+      "CANONICAL_MAP_MATCH": 25,
+      "CANONICAL_MAP_MISMATCH": 7
     },
     "exact_symbolic_supported_vertices": 32,
-    "exact_symbolic_equal_vertices": 24,
-    "exact_symbolic_unequal_vertices": 8,
+    "exact_symbolic_equal_vertices": 25,
+    "exact_symbolic_unequal_vertices": 7,
     "exact_symbolic_missing_local_vertices": 0,
     "exact_symbolic_error_vertices": 0,
     "exact_symbolic_status_counts": {
-      "EXACT_MATCH": 24,
-      "EXACT_MISMATCH": 8,
+      "EXACT_MATCH": 25,
+      "EXACT_MISMATCH": 7,
       "EXACT_UNSUPPORTED": 152
     },
     "exact_symbolic_family_counts": {
@@ -42,11 +42,11 @@
       "TWO_FERMION": 131
     },
     "benign_head_count_delta_heads": 15,
-    "unexplained_head_count_delta_heads": 331,
+    "unexplained_head_count_delta_heads": 301,
     "head_count_status_counts": {
       "COUNT_BENIGN_EXPANSION": 9,
-      "COUNT_MATCH": 83,
-      "COUNT_MISMATCH": 90
+      "COUNT_MATCH": 88,
+      "COUNT_MISMATCH": 85
     },
     "status_counts": {
       "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING": 8,
@@ -3708,30 +3708,22 @@
         "alphaEBdtp": 8,
         "alphaEGdp": 4,
         "alphaEGdtp": 8,
-        "alphaRBdp": 4,
-        "alphaRBdtp": 4,
+        "alphaRBdp": 2,
+        "alphaRBdtp": 2,
         "alphaRGdp": 2,
         "alphaRGdtp": 2,
         "alphaRdD": 9,
         "g1": 25,
-        "g3": 29
+        "g3": 25
       },
       "head_count_delta": {
         "alphaEBdtp": {
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBdp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBdtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g3": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -3740,17 +3732,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBdp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBdtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g3": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -3847,30 +3831,22 @@
         "alphaEBqtp": 8,
         "alphaEGqp": 4,
         "alphaEGqtp": 8,
-        "alphaRBqp": 4,
-        "alphaRBqtp": 4,
+        "alphaRBqp": 2,
+        "alphaRBqtp": 2,
         "alphaRGqp": 2,
         "alphaRGqtp": 2,
         "alphaRqD": 9,
         "g1": 25,
-        "g3": 29
+        "g3": 25
       },
       "head_count_delta": {
         "alphaEBqtp": {
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g3": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -3879,17 +3855,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g3": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -3986,30 +3954,22 @@
         "alphaEButp": 8,
         "alphaEGup": 4,
         "alphaEGutp": 8,
-        "alphaRBup": 4,
-        "alphaRButp": 4,
+        "alphaRBup": 2,
+        "alphaRButp": 2,
         "alphaRGup": 2,
         "alphaRGutp": 2,
         "alphaRuD": 9,
         "g1": 25,
-        "g3": 29
+        "g3": 25
       },
       "head_count_delta": {
         "alphaEButp": {
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBup": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRButp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g3": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -4018,17 +3978,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBup": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRButp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g3": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -4797,34 +4749,16 @@
         "alphaKH": 1,
         "alphaOHWB": 2,
         "alphaOHWBt": 4,
-        "alphaRBDH": 4,
+        "alphaRBDH": 2,
         "alphaRDH": 9,
         "alphaRWDH": 2,
         "g1": 12,
-        "g2": 14
+        "g2": 12
       },
-      "head_count_delta": {
-        "alphaRBDH": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "g2": {
-          "reference": 12,
-          "feynpy": 14
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRBDH": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "g2": {
-          "reference": 12,
-          "feynpy": 14
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaKH": {
@@ -7000,30 +6934,22 @@
         "alphaEBltp": 8,
         "alphaEWlp": 4,
         "alphaEWltp": 8,
-        "alphaRBlp": 4,
-        "alphaRBltp": 4,
+        "alphaRBlp": 2,
+        "alphaRBltp": 2,
         "alphaRWlp": 2,
         "alphaRWltp": 2,
         "alphaRlD": 9,
         "g1": 25,
-        "g2": 29
+        "g2": 25
       },
       "head_count_delta": {
         "alphaEBltp": {
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBlp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBltp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g2": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -7032,17 +6958,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBlp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBltp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g2": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -7139,30 +7057,22 @@
         "alphaEBqtp": 8,
         "alphaEWqp": 4,
         "alphaEWqtp": 8,
-        "alphaRBqp": 4,
-        "alphaRBqtp": 4,
+        "alphaRBqp": 2,
+        "alphaRBqtp": 2,
         "alphaRWqp": 2,
         "alphaRWqtp": 2,
         "alphaRqD": 9,
         "g1": 25,
-        "g2": 29
+        "g2": 25
       },
       "head_count_delta": {
         "alphaEBqtp": {
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g2": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -7171,17 +7081,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRBqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRBqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "g2": {
           "reference": 21,
-          "feynpy": 29
+          "feynpy": 25
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -9801,11 +9703,11 @@
       "feynpy_head_counts": {
         "alphaEGqp": 8,
         "alphaEGqtp": 8,
-        "alphaRGqp": 4,
-        "alphaRGqtp": 4,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 2,
         "alphaRqD": 12,
-        "g2": 36,
-        "g3": 36
+        "g2": 32,
+        "g3": 32
       },
       "head_count_delta": {
         "alphaEGqp": {
@@ -9816,13 +9718,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRGqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "alphaRGqtp": {
           "reference": 1,
-          "feynpy": 4
+          "feynpy": 2
         },
         "alphaRqD": {
           "reference": 6,
@@ -9830,11 +9728,11 @@
         },
         "g2": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         },
         "g3": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -9847,13 +9745,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRGqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "alphaRGqtp": {
           "reference": 1,
-          "feynpy": 4
+          "feynpy": 2
         },
         "alphaRqD": {
           "reference": 6,
@@ -9861,11 +9755,11 @@
         },
         "g2": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         },
         "g3": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -11394,11 +11288,11 @@
       "feynpy_head_counts": {
         "alphaEWqp": 8,
         "alphaEWqtp": 8,
-        "alphaRWqp": 4,
-        "alphaRWqtp": 4,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 2,
         "alphaRqD": 12,
-        "g2": 36,
-        "g3": 36
+        "g2": 32,
+        "g3": 32
       },
       "head_count_delta": {
         "alphaEWqp": {
@@ -11409,13 +11303,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRWqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "alphaRWqtp": {
           "reference": 1,
-          "feynpy": 4
+          "feynpy": 2
         },
         "alphaRqD": {
           "reference": 6,
@@ -11423,11 +11313,11 @@
         },
         "g2": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         },
         "g3": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -11440,13 +11330,9 @@
           "reference": 4,
           "feynpy": 8
         },
-        "alphaRWqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
         "alphaRWqtp": {
           "reference": 1,
-          "feynpy": 4
+          "feynpy": 2
         },
         "alphaRqD": {
           "reference": 6,
@@ -11454,11 +11340,11 @@
         },
         "g2": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         },
         "g3": {
           "reference": 17,
-          "feynpy": 36
+          "feynpy": 32
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -11557,68 +11443,18 @@
         "alphaEGqtp": 8,
         "alphaEWqp": 4,
         "alphaEWqtp": 8,
-        "alphaRGqp": 4,
-        "alphaRGqtp": 4,
-        "alphaRWqp": 4,
-        "alphaRWqtp": 4,
+        "alphaRGqp": 2,
+        "alphaRGqtp": 2,
+        "alphaRWqp": 2,
+        "alphaRWqtp": 2,
         "alphaRqD": 9,
-        "g2": 29,
-        "g3": 29
+        "g2": 25,
+        "g3": 25
       },
-      "head_count_delta": {
-        "alphaRGqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRGqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRWqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRWqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "g2": {
-          "reference": 25,
-          "feynpy": 29
-        },
-        "g3": {
-          "reference": 25,
-          "feynpy": 29
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRGqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRGqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRWqp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "alphaRWqtp": {
-          "reference": 2,
-          "feynpy": 4
-        },
-        "g2": {
-          "reference": 25,
-          "feynpy": 29
-        },
-        "g3": {
-          "reference": 25,
-          "feynpy": 29
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
@@ -13258,7 +13094,7 @@
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {},
       "head_count_status": "COUNT_MATCH",
-      "canonical_map_status": "CANONICAL_MAP_MISMATCH",
+      "canonical_map_status": "CANONICAL_MAP_MATCH",
       "canonical_map_coefficients": {
         "alphaKH": {
           "matches": true,
@@ -13287,29 +13123,23 @@
           "first_coefficient_mismatch": null
         },
         "alphaRWDH": {
-          "matches": false,
+          "matches": true,
           "feynpy_raw_terms": 4,
           "feynrules_raw_terms": 4,
           "feynpy_canonical_terms": 4,
           "feynrules_canonical_terms": 4,
-          "feynpy_only_count": 4,
-          "feynrules_only_count": 4,
+          "feynpy_only_count": 0,
+          "feynrules_only_count": 0,
           "coefficient_mismatch_count": 0,
-          "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('pcomp', 'q1', 'D:L:1'), ('pcomp', 'q3', 'D:L:1'), ('pcomp', 'q3', 'E:L:mu3'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw3', 'E:W:w1', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2\ud835\udc56"
-          },
-          "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('pcomp', 'q1', 'D:L:1'), ('pcomp', 'q3', 'D:L:1'), ('pcomp', 'q3', 'E:L:mu3'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw3', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2\ud835\udc56"
-          },
+          "first_feynpy_only": null,
+          "first_feynrules_only": null,
           "first_coefficient_mismatch": null
         }
       },
       "canonical_map_error": "",
       "exact_symbolic_family": "BOSONIC",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree exactly",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13485,16 +13315,16 @@
           "feynrules_raw_terms": 20,
           "feynpy_canonical_terms": 20,
           "feynrules_canonical_terms": 20,
-          "feynpy_only_count": 20,
-          "feynrules_only_count": 20,
+          "feynpy_only_count": 8,
+          "feynrules_only_count": 8,
           "coefficient_mismatch_count": 0,
           "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q1', 'D:L:1'), ('pcomp', 'q3', 'D:L:1'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:1', 'E:W:w1', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2*python::{}::g2"
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pow', ('pcomp', 'q3', 'D:L:1'), '2'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw3', 'E:W:w1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw4', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
+            "coefficient": "2\ud835\udc56*python::{}::g2"
           },
           "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q1', 'D:L:1'), ('pcomp', 'q3', 'D:L:1'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:1', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2*python::{}::g2"
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pow', ('pcomp', 'q3', 'D:L:1'), '2'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw3', 'D:W:1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw4', 'E:W:w2', 'D:W:1'))), ordered_factors=())",
+            "coefficient": "2\ud835\udc56*python::{}::g2"
           },
           "first_coefficient_mismatch": null
         }
@@ -13670,16 +13500,16 @@
           "feynrules_raw_terms": 48,
           "feynpy_canonical_terms": 48,
           "feynrules_canonical_terms": 48,
-          "feynpy_only_count": 48,
-          "feynrules_only_count": 48,
+          "feynpy_only_count": 36,
+          "feynrules_only_count": 36,
           "coefficient_mismatch_count": 0,
           "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'D:AW:2', 'E:AW:aw3')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw4', 'E:AW:aw5')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q1', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:2', 'E:W:w1', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2\ud835\udc56*python::{}::g2^2"
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q3', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:1', 'E:W:w1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
+            "coefficient": "-2*python::{}::g2^2"
           },
           "first_feynrules_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'D:AW:2', 'E:AW:aw3')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw4', 'E:AW:aw5')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q1', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:2', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
-            "coefficient": "-2\ud835\udc56*python::{}::g2^2"
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw3', 'E:AW:aw4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('pcomp', 'q3', 'E:L:mu5'), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:1', 'D:W:1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw5', 'E:W:w2', 'D:W:1'))), ordered_factors=())",
+            "coefficient": "-2*python::{}::g2^2"
           },
           "first_coefficient_mismatch": null
         }
@@ -13848,7 +13678,7 @@
           "feynrules_only_count": 48,
           "coefficient_mismatch_count": 0,
           "first_feynpy_only": {
-            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'D:AW:2', 'E:AW:aw3')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw4', 'E:AW:aw5')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu5', 'E:L:mu6')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:2', 'E:W:w1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw6', 'E:W:w1', 'E:W:w1'))), ordered_factors=())",
+            "monomial": "CanonicalTensorMonomial(commuting_factors=(('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'D:AW:2', 'E:AW:aw3')), ('f', ('weak_adj', 'weak_adj', 'weak_adj'), ('D:AW:1', 'E:AW:aw4', 'E:AW:aw5')), ('g', ('lorentz', 'lorentz'), ('E:L:mu3', 'E:L:mu4')), ('g', ('lorentz', 'lorentz'), ('E:L:mu5', 'E:L:mu6')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('D:AW:2', 'E:W:w1', 'E:W:w1')), ('t', ('weak_adj', 'weak_fund', 'weak_fund'), ('E:AW:aw6', 'E:W:w2', 'E:W:w1'))), ordered_factors=())",
             "coefficient": "-2\ud835\udc56*python::{}::g2^3"
           },
           "first_feynrules_only": {
@@ -13925,31 +13755,13 @@
         "g2": 1
       },
       "feynpy_head_counts": {
-        "alphaOHd": 2,
-        "g2": 2
+        "alphaOHd": 1,
+        "g2": 1
       },
-      "head_count_delta": {
-        "alphaOHd": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaOHd": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
@@ -14017,31 +13829,13 @@
         "g2": 1
       },
       "feynpy_head_counts": {
-        "alphaOHe": 2,
-        "g2": 2
+        "alphaOHe": 1,
+        "g2": 1
       },
-      "head_count_delta": {
-        "alphaOHe": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaOHe": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
@@ -14121,18 +13915,14 @@
         "g2": 8
       },
       "feynpy_head_counts": {
-        "alphaOHl1": 2,
+        "alphaOHl1": 1,
         "alphaOHl3": 2,
         "alphaRHl1p": 2,
         "alphaRHl3p": 2,
         "alphaRHl3pp": 1,
-        "g2": 9
+        "g2": 8
       },
       "head_count_delta": {
-        "alphaOHl1": {
-          "reference": 1,
-          "feynpy": 2
-        },
         "alphaRHl1p": {
           "reference": 1,
           "feynpy": 2
@@ -14140,18 +13930,10 @@
         "alphaRHl3pp": {
           "reference": 2,
           "feynpy": 1
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
         }
       },
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {
-        "alphaOHl1": {
-          "reference": 1,
-          "feynpy": 2
-        },
         "alphaRHl1p": {
           "reference": 1,
           "feynpy": 2
@@ -14159,10 +13941,6 @@
         "alphaRHl3pp": {
           "reference": 2,
           "feynpy": 1
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -14245,18 +14023,14 @@
         "g2": 8
       },
       "feynpy_head_counts": {
-        "alphaOHq1": 2,
+        "alphaOHq1": 1,
         "alphaOHq3": 2,
         "alphaRHq1p": 2,
         "alphaRHq3p": 2,
         "alphaRHq3pp": 1,
-        "g2": 9
+        "g2": 8
       },
       "head_count_delta": {
-        "alphaOHq1": {
-          "reference": 1,
-          "feynpy": 2
-        },
         "alphaRHq1p": {
           "reference": 1,
           "feynpy": 2
@@ -14264,18 +14038,10 @@
         "alphaRHq3pp": {
           "reference": 2,
           "feynpy": 1
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
         }
       },
       "benign_head_count_delta_reasons": {},
       "unexplained_head_count_delta": {
-        "alphaOHq1": {
-          "reference": 1,
-          "feynpy": 2
-        },
         "alphaRHq1p": {
           "reference": 1,
           "feynpy": 2
@@ -14283,10 +14049,6 @@
         "alphaRHq3pp": {
           "reference": 2,
           "feynpy": 1
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -14357,31 +14119,13 @@
         "g2": 1
       },
       "feynpy_head_counts": {
-        "alphaOHu": 2,
-        "g2": 2
+        "alphaOHu": 1,
+        "g2": 1
       },
-      "head_count_delta": {
-        "alphaOHu": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaOHu": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",

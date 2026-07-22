@@ -19,6 +19,7 @@ from symbolic.vertex_engine import (  # noqa: E402
     Delta,
     Dot,
     I,
+    _simultaneous_replace_labels,
     U,
     UF,
     UbarF,
@@ -46,6 +47,19 @@ MODEL_QCD_GAUGE_COVARIANT = Model(
     fields=(GluonField,),
     lagrangian_decl=gauge_kinetic_decl(QCD_GROUP, mu=mu, nu=nu),
 )
+
+
+def test_simultaneous_replace_labels_avoids_placeholder_collisions():
+    a = S("a")
+    b = S("b")
+    existing_temp = S("__vertex_label_tmp_1")
+
+    got = _simultaneous_replace_labels(
+        a + existing_temp,
+        ((a, b),),
+    )
+
+    assert _canon(got) == _canon(b + existing_temp)
 
 
 def test_vertex_factor_output_policy_matches_manual_postprocessing_for_quartic_scalar():
