@@ -12,9 +12,9 @@
     "feynpy_only_zero_signatures": 2,
     "feynpy_only_charge_conjugation_partners": 8,
     "feynpy_only_unexplained_signatures": 0,
-    "shared_head_matches": 174,
+    "shared_head_matches": 176,
     "charge_conjugation_packaging_matches": 8,
-    "operator_content_matches_including_cc": 182,
+    "operator_content_matches_including_cc": 184,
     "shared_head_count_matches": 90,
     "shared_head_count_mismatches": 92,
     "shared_head_count_benign_expansions": 9,
@@ -48,7 +48,7 @@
       "TWO_FERMION": 131
     },
     "benign_head_count_delta_heads": 15,
-    "unexplained_head_count_delta_heads": 297,
+    "unexplained_head_count_delta_heads": 295,
     "head_count_status_counts": {
       "COUNT_BENIGN_EXPANSION": 9,
       "COUNT_MATCH": 90,
@@ -59,8 +59,7 @@
       "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER": 8,
       "MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING": 2,
       "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH": 6,
-      "SHARED_HEADS_MATCH": 174,
-      "SHARED_LOCAL_PP_EXTRA": 2
+      "SHARED_HEADS_MATCH": 176
     },
     "comparison_basis": {
       "reference_ltot": "EFT-only FeynRules Ltot",
@@ -5414,7 +5413,6 @@
         "alphaOHl3",
         "alphaRHl1p",
         "alphaRHl3p",
-        "alphaRHl3pp",
         "g1"
       ],
       "reference_head_counts": {
@@ -5429,8 +5427,7 @@
         "alphaOHl3": 2,
         "alphaRHl1p": 2,
         "alphaRHl3p": 2,
-        "alphaRHl3pp": 1,
-        "g1": 8
+        "g1": 7
       },
       "head_count_delta": {
         "alphaOHl3": {
@@ -5445,13 +5442,9 @@
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHl3pp": {
-          "reference": 0,
-          "feynpy": 1
-        },
         "g1": {
           "reference": 4,
-          "feynpy": 8
+          "feynpy": 7
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -5468,13 +5461,9 @@
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHl3pp": {
-          "reference": 0,
-          "feynpy": 1
-        },
         "g1": {
           "reference": 4,
-          "feynpy": 8
+          "feynpy": 7
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -5485,9 +5474,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaRHl3pp"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
         "Phi",
@@ -5506,8 +5493,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_PP_EXTRA",
-      "reason": "Local translation has extra pp-coefficient heads not present in the FeynRules reference for this signature."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 146,
@@ -5546,7 +5533,6 @@
         "alphaOHq3",
         "alphaRHq1p",
         "alphaRHq3p",
-        "alphaRHq3pp",
         "g1"
       ],
       "reference_head_counts": {
@@ -5561,8 +5547,7 @@
         "alphaOHq3": 2,
         "alphaRHq1p": 2,
         "alphaRHq3p": 2,
-        "alphaRHq3pp": 1,
-        "g1": 8
+        "g1": 7
       },
       "head_count_delta": {
         "alphaOHq3": {
@@ -5577,13 +5562,9 @@
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHq3pp": {
-          "reference": 0,
-          "feynpy": 1
-        },
         "g1": {
           "reference": 4,
-          "feynpy": 8
+          "feynpy": 7
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -5600,13 +5581,9 @@
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHq3pp": {
-          "reference": 0,
-          "feynpy": 1
-        },
         "g1": {
           "reference": 4,
-          "feynpy": 8
+          "feynpy": 7
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -5617,9 +5594,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaRHq3pp"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "Phibar",
         "Phi",
@@ -5638,8 +5613,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_PP_EXTRA",
-      "reason": "Local translation has extra pp-coefficient heads not present in the FeynRules reference for this signature."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 165,
@@ -13857,17 +13832,17 @@
         "alphaOHl3": 2,
         "alphaRHl1p": 2,
         "alphaRHl3p": 2,
-        "alphaRHl3pp": 1,
-        "g2": 8
+        "alphaRHl3pp": 2,
+        "g2": 9
       },
       "head_count_delta": {
         "alphaRHl1p": {
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHl3pp": {
-          "reference": 2,
-          "feynpy": 1
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -13876,9 +13851,9 @@
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHl3pp": {
-          "reference": 2,
-          "feynpy": 1
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -13965,17 +13940,17 @@
         "alphaOHq3": 2,
         "alphaRHq1p": 2,
         "alphaRHq3p": 2,
-        "alphaRHq3pp": 1,
-        "g2": 8
+        "alphaRHq3pp": 2,
+        "g2": 9
       },
       "head_count_delta": {
         "alphaRHq1p": {
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHq3pp": {
-          "reference": 2,
-          "feynpy": 1
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
         }
       },
       "benign_head_count_delta_reasons": {},
@@ -13984,9 +13959,9 @@
           "reference": 1,
           "feynpy": 2
         },
-        "alphaRHq3pp": {
-          "reference": 2,
-          "feynpy": 1
+        "g2": {
+          "reference": 8,
+          "feynpy": 9
         }
       },
       "head_count_status": "COUNT_MISMATCH",
@@ -14317,7 +14292,7 @@
         "LL.bar",
         "LL"
       ],
-      "local_term_count": 9,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
@@ -14402,7 +14377,7 @@
         "QL.bar",
         "QL"
       ],
-      "local_term_count": 9,
+      "local_term_count": 10,
       "sectors": [
         "matter"
       ],
