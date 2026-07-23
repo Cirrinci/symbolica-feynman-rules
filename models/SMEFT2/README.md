@@ -73,6 +73,11 @@ sigma-matrix chain. A direct `DC(...)` rewrite compiles for simpler Higgs
 operators, but this block still needs local-lowering support for preserving
 the sigma-chain fermion pairing through generic covariant branches.
 
+`LF2DH2` also keeps the Higgs-derivative `pp` structures in their expanded
+`PartialD(...)` form for now. Rewriting the first `Phibar` derivative in the
+triplet `alphaRHq3pp` / `alphaRHl3pp` terms to compact `DC(...)` regresses the
+current two-fermion comparison and test baselines.
+
 ## Comparison
 
 The reproducible comparison entry point is:
