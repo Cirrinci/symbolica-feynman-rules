@@ -36,7 +36,7 @@ def test_smeft2_supported_subset_builds_and_compiles():
     lagrangian = bundle.model.lagrangian()
     signatures = {signature.names for signature in lagrangian.vertex_signatures()}
 
-    assert len(lagrangian.terms) == 2541
+    assert len(lagrangian.terms) == 2545
     assert ("QL.bar", "QL", "B") in signatures
     assert ("Phi.bar", "QL.bar", "UR", "G") in signatures
     assert ("LL.bar", "LR", "DR.bar", "QL") in signatures
@@ -58,8 +58,8 @@ def test_smeft2_ltot_is_eft_only_and_lfull_keeps_sm_core():
     )
 
     assert bundle.model.lagrangian_decl is bundle.lagrangians["Ltot"]
-    assert len(bundle.model.lagrangian().terms) == 2541
-    assert len(full_model.lagrangian().terms) == 2595
+    assert len(bundle.model.lagrangian().terms) == 2545
+    assert len(full_model.lagrangian().terms) == 2599
 
 
 def test_smeft2_has_no_omitted_sectors():
@@ -103,9 +103,9 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["feynpy_only_unexplained_signatures"] == 0
     assert report["summary"]["feynpy_only_zero_signatures"] == 2
     # Operator-content matching (coefficient-head set), incl. charge conjugation.
-    assert report["summary"]["shared_head_matches"] == 174
+    assert report["summary"]["shared_head_matches"] == 176
     assert report["summary"]["charge_conjugation_packaging_matches"] == 8
-    assert report["summary"]["operator_content_matches_including_cc"] == 182
+    assert report["summary"]["operator_content_matches_including_cc"] == 184
     assert report["summary"]["shared_head_count_matches"] == 90
     assert report["summary"]["shared_head_count_mismatches"] == 92
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
@@ -123,7 +123,7 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 93
     assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 0
     assert report["summary"]["benign_head_count_delta_heads"] == 15
-    assert report["summary"]["unexplained_head_count_delta_heads"] == 297
+    assert report["summary"]["unexplained_head_count_delta_heads"] == 295
     assert all(
         "head_count_status" in row
         and "reference_head_counts" in row
@@ -184,10 +184,15 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
         for row in report["feynpy_only_zero_signatures"]
     )
 
-    # The only genuine remaining operator-content residual is the redundant
-    # Green-basis pp operators that FeynRules folds away via IBP/EOM.
-    assert rows_by_key["B|Phi|Phibar|lL|lLbar"]["status"] == "SHARED_LOCAL_PP_EXTRA"
-    assert rows_by_key["B|Phi|Phibar|qL|qLbar"]["status"] == "SHARED_LOCAL_PP_EXTRA"
+    # The triplet pp Higgs-derivative heads no longer survive as unmatched B
+    # vertices once both Higgs covariant derivatives keep their explicit weak
+    # labels in the model source.
+    assert rows_by_key["B|Phi|Phibar|lL|lLbar"]["status"] == "SHARED_HEADS_MATCH"
+    assert rows_by_key["B|Phi|Phibar|qL|qLbar"]["status"] == "SHARED_HEADS_MATCH"
+    assert rows_by_key["B|Phi|Phibar|lL|lLbar"]["feynpy_extra_heads"] == []
+    assert rows_by_key["B|Phi|Phibar|qL|qLbar"]["feynpy_extra_heads"] == []
+    assert rows_by_key["Phi|Phibar|Wi|lL|lLbar"]["feynpy_head_counts"]["alphaRHl3pp"] == 2
+    assert rows_by_key["Phi|Phibar|Wi|qL|qLbar"]["feynpy_head_counts"]["alphaRHq3pp"] == 2
 
     assert rows_by_key["B|Phi|qL|uRbar"]["benign_head_count_delta_reasons"] == {
         "alphaEuB": "DUAL_FS_ANTISYMMETRY"
