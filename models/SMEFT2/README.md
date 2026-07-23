@@ -73,10 +73,12 @@ sigma-matrix chain. A direct `DC(...)` rewrite compiles for simpler Higgs
 operators, but this block still needs local-lowering support for preserving
 the sigma-chain fermion pairing through generic covariant branches.
 
-`LF2DH2` also keeps the Higgs-derivative `pp` structures in their expanded
-`PartialD(...)` form for now. Rewriting the first `Phibar` derivative in the
-triplet `alphaRHq3pp` / `alphaRHl3pp` terms to compact `DC(...)` regresses the
-current two-fermion comparison and test baselines.
+`LF2DH2` still needs care around compact Higgs covariant derivatives. The
+triplet `alphaRHq3pp` / `alphaRHl3pp` terms now use the compact form on both
+Higgs factors, but only with their explicit weak labels kept as
+`DC(Phi.bar(w1), mu)` and `DC(Phi(w2), mu)`. Leaving the `Phi` derivative
+unlabeled reintroduces the spurious two-fermion `B`-vertex head mismatch in the
+comparison.
 
 ## Comparison
 

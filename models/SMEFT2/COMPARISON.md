@@ -16,9 +16,9 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | — of which charge-conjugation partners | 8 |
 | — of which unexplained | 0 |
 | FeynPy-only zero-signature artifacts (dropped) | 2 |
-| Shared coefficient-head matches | 174 |
+| Shared coefficient-head matches | 176 |
 | Charge-conjugation packaging matches (modulo CC) | 8 |
-| Operator-content matches (incl. charge conjugation) | 182 |
+| Operator-content matches (incl. charge conjugation) | 184 |
 | Shared raw head-count matches | 90 |
 | Shared raw head-count mismatches | 92 |
 | Shared raw head-count benign expansions | 9 |
@@ -37,7 +37,7 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Canonical-map FeynPy canonical monomials | 3779 |
 | Canonical-map FeynPy redundant monomials (raw - canonical) | 6693 |
 | Explained benign head-count deltas | 15 |
-| Unexplained head-count deltas | 297 |
+| Unexplained head-count deltas | 295 |
 
 ## Basis
 
@@ -54,8 +54,7 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | `FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER` | 8 |
 | `MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING` | 2 |
 | `SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH` | 6 |
-| `SHARED_HEADS_MATCH` | 174 |
-| `SHARED_LOCAL_PP_EXTRA` | 2 |
+| `SHARED_HEADS_MATCH` | 176 |
 
 ## Exact Symbolic Comparison
 
@@ -144,8 +143,6 @@ This comparison is currently enabled for pure nonabelian gauge vertices (`G^n` a
 
 | Head | Count |
 | --- | ---: |
-| `alphaRHl3pp` | 1 |
-| `alphaRHq3pp` | 1 |
 
 ## Explained Benign Raw Head-Count Deltas
 
@@ -175,7 +172,7 @@ These exclude the explicit benign expansions listed above. The large pure-gauge 
 
 | Head | Total absolute delta |
 | --- | ---: |
-| `g2` | 2258 |
+| `g2` | 2260 |
 | `g3` | 2218 |
 | `alphaR2G` | 786 |
 | `alphaR2W` | 786 |
@@ -183,7 +180,7 @@ These exclude the explicit benign expansions listed above. The large pure-gauge 
 | `alphaO3Wt` | 729 |
 | `alphaO3G` | 582 |
 | `alphaO3W` | 582 |
-| `g1` | 198 |
+| `g1` | 196 |
 | `alphaRqD` | 72 |
 | `alphaRDH` | 52 |
 | `alphaOHGt` | 33 |
