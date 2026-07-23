@@ -1,6 +1,6 @@
 # SMEFT2 FeynRules/FeynPy Comparison
 
-Generated on `2026-07-22` by `models/SMEFT2/comparison.py`.
+Generated on `2026-07-23` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
@@ -10,10 +10,15 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | --- | ---: |
 | Reference vertices | 184 |
 | FeynPy 3-6 point signatures | 192 |
-| Shared signatures | 182 |
-| Reference-only signatures | 2 |
-| FeynPy-only signatures | 10 |
-| Shared coefficient-head matches | 168 |
+| Shared signatures (exact field multiset) | 182 |
+| Reference-only signatures (exact field multiset) | 2 |
+| FeynPy-only signatures (exact field multiset) | 8 |
+| — of which charge-conjugation partners | 8 |
+| — of which unexplained | 0 |
+| FeynPy-only zero-signature artifacts (dropped) | 2 |
+| Shared coefficient-head matches | 174 |
+| Charge-conjugation packaging matches (modulo CC) | 8 |
+| Operator-content matches (incl. charge conjugation) | 182 |
 | Shared raw head-count matches | 90 |
 | Shared raw head-count mismatches | 92 |
 | Shared raw head-count benign expansions | 9 |
@@ -28,6 +33,9 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Canonical tensor-map error vertices | 0 |
 | Canonical tensor-map equal coefficient sectors | 93 |
 | Canonical tensor-map unequal coefficient sectors | 0 |
+| Canonical-map FeynPy raw monomials | 10472 |
+| Canonical-map FeynPy canonical monomials | 3779 |
+| Canonical-map FeynPy redundant monomials (raw - canonical) | 6693 |
 | Explained benign head-count deltas | 15 |
 | Unexplained head-count deltas | 297 |
 
@@ -42,12 +50,11 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 
 | Status | Count |
 | --- | ---: |
-| `FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING` | 8 |
-| `FEYNPY_ONLY_WEINBERG_PACKAGING` | 2 |
-| `MISSING_SIGNATURE_WEINBERG_PACKAGING` | 2 |
-| `SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH` | 6 |
-| `SHARED_HEADS_MATCH` | 168 |
-| `SHARED_LOCAL_EXTRA_HEADS` | 6 |
+| `FEYNPY_ONLY_ALGEBRAICALLY_ZERO` | 2 |
+| `FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER` | 8 |
+| `MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING` | 2 |
+| `SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH` | 6 |
+| `SHARED_HEADS_MATCH` | 174 |
 | `SHARED_LOCAL_PP_EXTRA` | 2 |
 
 ## Exact Symbolic Comparison
@@ -132,21 +139,11 @@ This comparison is currently enabled for pure nonabelian gauge vertices (`G^n` a
 
 | Head | Count |
 | --- | ---: |
-| `alphaWeinberg` | 2 |
-| `alphaEcqedl` | 2 |
-| `alphaEcqedlthree` | 2 |
-| `alphaEcudqq` | 2 |
-| `alphaEcudqqtwo` | 2 |
-| `alphaEcuelq` | 2 |
-| `alphaEcuelqtwo` | 2 |
 
 ## Largest Local Extra Heads
 
 | Head | Count |
 | --- | ---: |
-| `alphaEdH` | 2 |
-| `alphaEeH` | 2 |
-| `alphaEuH` | 2 |
 | `alphaRHl3pp` | 1 |
 | `alphaRHq3pp` | 1 |
 
