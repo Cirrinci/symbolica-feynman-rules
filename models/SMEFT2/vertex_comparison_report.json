@@ -1,5 +1,5 @@
 {
-  "generated_on": "2026-07-22",
+  "generated_on": "2026-07-23",
   "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
   "local_model": "models/SMEFT2/SMEFT2.py",
   "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for supported bosonic rows and canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.",
@@ -8,8 +8,13 @@
     "feynpy_signature_count_3_to_6": 192,
     "shared_signatures": 182,
     "reference_only_signatures": 2,
-    "feynpy_only_signatures": 10,
-    "shared_head_matches": 168,
+    "feynpy_only_signatures": 8,
+    "feynpy_only_zero_signatures": 2,
+    "feynpy_only_charge_conjugation_partners": 8,
+    "feynpy_only_unexplained_signatures": 0,
+    "shared_head_matches": 174,
+    "charge_conjugation_packaging_matches": 8,
+    "operator_content_matches_including_cc": 182,
     "shared_head_count_matches": 90,
     "shared_head_count_mismatches": 92,
     "shared_head_count_benign_expansions": 9,
@@ -21,6 +26,9 @@
     "canonical_map_error_vertices": 0,
     "canonical_map_supported_coefficient_sectors": 93,
     "canonical_map_equal_coefficient_sectors": 93,
+    "canonical_map_feynpy_raw_terms": 10472,
+    "canonical_map_feynpy_canonical_terms": 3779,
+    "canonical_map_feynpy_redundant_terms": 6693,
     "canonical_map_unequal_coefficient_sectors": 0,
     "canonical_map_status_counts": {
       "CANONICAL_MAP_MATCH": 32
@@ -47,12 +55,11 @@
       "COUNT_MISMATCH": 83
     },
     "status_counts": {
-      "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING": 8,
-      "FEYNPY_ONLY_WEINBERG_PACKAGING": 2,
-      "MISSING_SIGNATURE_WEINBERG_PACKAGING": 2,
-      "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH": 6,
-      "SHARED_HEADS_MATCH": 168,
-      "SHARED_LOCAL_EXTRA_HEADS": 6,
+      "FEYNPY_ONLY_ALGEBRAICALLY_ZERO": 2,
+      "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER": 8,
+      "MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING": 2,
+      "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH": 6,
+      "SHARED_HEADS_MATCH": 174,
       "SHARED_LOCAL_PP_EXTRA": 2
     },
     "comparison_basis": {
@@ -977,7 +984,6 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaEdH",
         "alphaRdHD1",
         "alphaRdHD3",
         "alphaRdHD4",
@@ -1025,9 +1031,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaEdH"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "dRbar",
         "qL",
@@ -1046,8 +1050,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_EXTRA_HEADS",
-      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 23,
@@ -1081,7 +1085,6 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaEeH",
         "alphaReHD1",
         "alphaReHD3",
         "alphaReHD4",
@@ -1129,9 +1132,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaEeH"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "eRbar",
         "lL",
@@ -1150,8 +1151,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_EXTRA_HEADS",
-      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 48,
@@ -1185,7 +1186,6 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaEuH",
         "alphaRuHD1",
         "alphaRuHD3",
         "alphaRuHD4",
@@ -1233,9 +1233,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaEuH"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "qLbar",
         "uR",
@@ -1254,8 +1252,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_EXTRA_HEADS",
-      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 2,
@@ -1775,7 +1773,6 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaEdH",
         "alphaRdHD1",
         "alphaRdHD3",
         "alphaRdHD4",
@@ -1823,9 +1820,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaEdH"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "qLbar",
         "dR",
@@ -1844,8 +1839,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_EXTRA_HEADS",
-      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 35,
@@ -1879,7 +1874,6 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaEeH",
         "alphaReHD1",
         "alphaReHD3",
         "alphaReHD4",
@@ -1927,9 +1921,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaEeH"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "lLbar",
         "eR",
@@ -1948,8 +1940,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_EXTRA_HEADS",
-      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 27,
@@ -1983,7 +1975,6 @@
         "g1"
       ],
       "feynpy_heads": [
-        "alphaEuH",
         "alphaRuHD1",
         "alphaRuHD3",
         "alphaRuHD4",
@@ -2031,9 +2022,7 @@
       "exact_symbolic_status": "EXACT_UNSUPPORTED",
       "exact_symbolic_detail": "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion rows; they still rely on signature and coefficient-head diagnostics.",
       "feynrules_extra_heads": [],
-      "feynpy_extra_heads": [
-        "alphaEuH"
-      ],
+      "feynpy_extra_heads": [],
       "local_names": [
         "uRbar",
         "qL",
@@ -2052,8 +2041,8 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_LOCAL_EXTRA_HEADS",
-      "reason": "Shared field multiset, but local FeynPy has coefficient heads absent from FeynRules."
+      "status": "SHARED_HEADS_MATCH",
+      "reason": "Shared field multiset and identical coefficient-head set at the operator-content comparison level."
     },
     {
       "id": 119,
@@ -11977,8 +11966,13 @@
       "feynpy_names": [],
       "local_term_count": 0,
       "sectors": [],
-      "status": "MISSING_SIGNATURE_WEINBERG_PACKAGING",
-      "reason": "Reference has same-chirality Weinberg signatures while the local model packages that operator with mixed bar/conjugation signatures."
+      "status": "MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING",
+      "reason": "Reference Weinberg signature is matched by the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) packaging.",
+      "charge_conjugation_partner": "Phibar|Phibar|lL|lLbar",
+      "charge_conjugation_matched_heads": [
+        "alphaWeinberg"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 102,
@@ -15363,8 +15357,13 @@
       "feynpy_names": [],
       "local_term_count": 0,
       "sectors": [],
-      "status": "MISSING_SIGNATURE_WEINBERG_PACKAGING",
-      "reason": "Reference has same-chirality Weinberg signatures while the local model packages that operator with mixed bar/conjugation signatures."
+      "status": "MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING",
+      "reason": "Reference Weinberg signature is matched by the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) packaging.",
+      "charge_conjugation_partner": "Phi|Phi|lL|lLbar",
+      "charge_conjugation_matched_heads": [
+        "alphaWeinberg"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 101,
@@ -17732,8 +17731,14 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH",
-      "reason": "Difference is concentrated in charge-conjugated operator packaging."
+      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH",
+      "reason": "Operator content matches once the reference's charge-conjugated four-fermion head is credited to the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) bilinear packaging.",
+      "charge_conjugation_partner": "dRbar|eR|lL|qLbar",
+      "charge_conjugation_matched_heads": [
+        "alphaEcqedl",
+        "alphaEcqedlthree"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 31,
@@ -17834,8 +17839,14 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH",
-      "reason": "Difference is concentrated in charge-conjugated operator packaging."
+      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH",
+      "reason": "Operator content matches once the reference's charge-conjugated four-fermion head is credited to the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) bilinear packaging.",
+      "charge_conjugation_partner": "dRbar|qL|qLbar|uR",
+      "charge_conjugation_matched_heads": [
+        "alphaEcudqq",
+        "alphaEcudqqtwo"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 60,
@@ -18409,8 +18420,14 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH",
-      "reason": "Difference is concentrated in charge-conjugated operator packaging."
+      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH",
+      "reason": "Operator content matches once the reference's charge-conjugated four-fermion head is credited to the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) bilinear packaging.",
+      "charge_conjugation_partner": "dR|eRbar|lLbar|qL",
+      "charge_conjugation_matched_heads": [
+        "alphaEcqedl",
+        "alphaEcqedlthree"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 51,
@@ -18511,8 +18528,14 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH",
-      "reason": "Difference is concentrated in charge-conjugated operator packaging."
+      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH",
+      "reason": "Operator content matches once the reference's charge-conjugated four-fermion head is credited to the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) bilinear packaging.",
+      "charge_conjugation_partner": "dR|qL|qLbar|uRbar",
+      "charge_conjugation_matched_heads": [
+        "alphaEcudqq",
+        "alphaEcudqqtwo"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 32,
@@ -18613,8 +18636,14 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH",
-      "reason": "Difference is concentrated in charge-conjugated operator packaging."
+      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH",
+      "reason": "Operator content matches once the reference's charge-conjugated four-fermion head is credited to the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) bilinear packaging.",
+      "charge_conjugation_partner": "eRbar|lL|qLbar|uR",
+      "charge_conjugation_matched_heads": [
+        "alphaEcuelq",
+        "alphaEcuelqtwo"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 38,
@@ -19047,8 +19076,14 @@
       "sectors": [
         "matter"
       ],
-      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH",
-      "reason": "Difference is concentrated in charge-conjugated operator packaging."
+      "status": "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH",
+      "reason": "Operator content matches once the reference's charge-conjugated four-fermion head is credited to the FeynPy vertex that carries the same operator under the charge-conjugate (bar-flipped) bilinear packaging.",
+      "charge_conjugation_partner": "eR|lLbar|qL|uRbar",
+      "charge_conjugation_matched_heads": [
+        "alphaEcuelq",
+        "alphaEcuelqtwo"
+      ],
+      "operator_content_resolved_via_charge_conjugation": true
     },
     {
       "id": 42,
@@ -19665,8 +19700,9 @@
       "feynpy_head_counts": {
         "alphaWeinberg": 2
       },
-      "status": "FEYNPY_ONLY_WEINBERG_PACKAGING",
-      "reason": "Local model emits a Weinberg bar/conjugation signature not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "Phibar|Phibar|lLbar|lLbar"
     },
     {
       "key": "Phi|Phi|lL|lLbar",
@@ -19699,8 +19735,9 @@
       "feynpy_head_counts": {
         "alphaWeinberg": 2
       },
-      "status": "FEYNPY_ONLY_WEINBERG_PACKAGING",
-      "reason": "Local model emits a Weinberg bar/conjugation signature not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "Phi|Phi|lL|lL"
     },
     {
       "key": "dRbar|eR|lL|qLbar",
@@ -19735,8 +19772,9 @@
         "alphaEcqedl": 1,
         "alphaEcqedlthree": 1
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "dRbar|eR|lLbar|qL"
     },
     {
       "key": "dRbar|qL|qLbar|uR",
@@ -19771,8 +19809,9 @@
         "alphaEcudqq": 1,
         "alphaEcudqqtwo": 1
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "dRbar|qL|qL|uRbar"
     },
     {
       "key": "dR|eRbar|lLbar|qL",
@@ -19807,8 +19846,9 @@
         "alphaEcqedl": 1,
         "alphaEcqedlthree": 1
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "dR|eRbar|lL|qLbar"
     },
     {
       "key": "dR|qL|qLbar|uRbar",
@@ -19843,8 +19883,9 @@
         "alphaEcudqq": 1,
         "alphaEcudqqtwo": 1
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "dR|qLbar|qLbar|uR"
     },
     {
       "key": "eRbar|lL|qLbar|uR",
@@ -19879,8 +19920,9 @@
         "alphaEcuelq": 1,
         "alphaEcuelqtwo": 1
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "eRbar|lL|qL|uRbar"
     },
     {
       "key": "eR|lLbar|qL|uRbar",
@@ -19915,9 +19957,12 @@
         "alphaEcuelq": 1,
         "alphaEcuelqtwo": 1
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
-    },
+      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER",
+      "reason": "FeynPy-only signature that is the charge-conjugate (bar-flipped) packaging of a FeynRules reference operator; it is cross-linked to that reference row and is not an unexplained residual.",
+      "charge_conjugation_partner": "eR|lLbar|qLbar|uR"
+    }
+  ],
+  "feynpy_only_zero_signatures": [
     {
       "key": "B|Phibar|Phibar|dRbar|uR",
       "signature": [
@@ -19946,16 +19991,13 @@
       "sectors": [
         "matter"
       ],
-      "feynpy_heads": [
-        "alphaOHud",
-        "g1"
-      ],
+      "feynpy_heads": [],
       "feynpy_head_counts": {
         "alphaOHud": 2,
         "g1": 2
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_ALGEBRAICALLY_ZERO",
+      "reason": "FeynPy-only signature whose canonical coefficient-head set is empty: the rule cancels to zero under canonical tensor identities, so it is a zero-signature artifact rather than residual operator content."
     },
     {
       "key": "B|Phi|Phi|dR|uRbar",
@@ -19985,16 +20027,13 @@
       "sectors": [
         "matter"
       ],
-      "feynpy_heads": [
-        "alphaOHud",
-        "g1"
-      ],
+      "feynpy_heads": [],
       "feynpy_head_counts": {
         "alphaOHud": 2,
         "g1": 2
       },
-      "status": "FEYNPY_ONLY_CHARGE_CONJUGATION_OR_BAR_PACKAGING",
-      "reason": "Local model emits a bar/charge-conjugation packaging not present as a separate FeynRules signature."
+      "status": "FEYNPY_ONLY_ALGEBRAICALLY_ZERO",
+      "reason": "FeynPy-only signature whose canonical coefficient-head set is empty: the rule cancels to zero under canonical tensor identities, so it is a zero-signature artifact rather than residual operator content."
     }
   ]
 }
