@@ -33,7 +33,10 @@ from feynrules.comparison import (
     load_feynrules_json,
 )
 from models.SMEFT2 import build_smeft_green_bpreserving
-from symbolic.tensor_canonicalization import canonical_external_index_set
+from symbolic.tensor_canonicalization import (
+    canonical_external_index_set,
+    canonical_tensor_monomial_map,
+)
 from symbolica import S
 
 
@@ -242,6 +245,79 @@ def _parameter_head_counts_from_text(
 
 def _parameter_heads_from_text(text: str, parameter_names: Iterable[str]) -> tuple[str, ...]:
     return tuple(_parameter_head_counts_from_text(text, parameter_names))
+
+
+# Field metadata index kinds map onto the canonical index groups. Generation
+# (flavor) indices are carried on the ``cof(3)`` representation just like color
+# fundamentals, so they are kept fixed in the ``color_fund`` group; their labels
+# (``f1``, ``f2``, ...) never collide with the color labels (``c1``, ...).
+_EXTERNAL_INDEX_GROUP_BY_KIND = {
+    "lorentz": "lorentz",
+    "color_adj": "color_adjoint",
+    "color_fund": "color_fund",
+    "spinor": "spinor",
+    "weak_fund": "weak_fund",
+    "weak_adj": "weak_adjoint",
+    "generation": "color_fund",
+}
+
+
+def _external_index_set_from_fields(fields):
+    """Return the canonical external-index set from field metadata.
+
+    The external (leg) indices are fixed by the field content and their leg
+    position: leg ``k`` contributes ``prefix{k}`` for each of its indices, which
+    matches the labelling that :meth:`feynman_rule` emits for the same field
+    order. Using metadata (rather than guessing free indices from a single term)
+    is robust to term ordering, so canonical collection never accidentally
+    renames a genuine external index and over-cancels distinct terms.
+    """
+
+    groups: dict[str, list] = {}
+    for slot, field in enumerate(fields, start=1):
+        base = field.field if hasattr(field, "field") else field
+        for index in getattr(base, "indices", ()):
+            kind = getattr(index, "kind", None)
+            prefix = getattr(index, "prefix", None)
+            group = _EXTERNAL_INDEX_GROUP_BY_KIND.get(kind)
+            if group is None or not prefix:
+                return None
+            groups.setdefault(group, []).append(S(f"{prefix}{slot}"))
+    return canonical_external_index_set(
+        lorentz=tuple(groups.get("lorentz", ())),
+        color_adjoint=tuple(groups.get("color_adjoint", ())),
+        color_fund=tuple(groups.get("color_fund", ())),
+        spinor=tuple(groups.get("spinor", ())),
+        weak_fund=tuple(groups.get("weak_fund", ())),
+        weak_adjoint=tuple(groups.get("weak_adjoint", ())),
+    )
+
+
+def _canonical_head_counts_from_rule(
+    rule,
+    parameter_names: Iterable[str],
+    external_indices,
+) -> dict[str, int]:
+    """Coefficient-head multiplicity after canonical (algebraic) collection.
+
+    The raw FeynPy rule keeps terms that only vanish once tensor identities are
+    applied (e.g. ``epsilon^{mu nu rho sigma} B_rho B_sigma = 0`` from a double
+    covariant-derivative expansion). Counting heads from the raw text therefore
+    reports spurious coefficient heads (``alphaEuH``/``alphaEdH``/``alphaEeH``)
+    that carry an identically-zero coefficient. Canonicalizing the rule
+    term-by-term and collecting like terms drops those zero coefficients, so the
+    surviving heads reflect the genuine algebraic operator content.
+    """
+
+    expression = rule.cancel().expand()
+    monomial_map = canonical_tensor_monomial_map(
+        expression,
+        external_indices=external_indices,
+    )
+    canonical_text = " ".join(
+        coefficient.to_canonical_string() for coefficient in monomial_map.values()
+    )
+    return _parameter_head_counts_from_text(canonical_text, parameter_names)
 
 
 def _reference_heads(
@@ -460,7 +536,22 @@ def _local_vertices(parameter_names: Iterable[str]) -> tuple[LocalVertex, ...]:
             continue
         rule = lagrangian.feynman_rule(*signature.fields, simplify=True)
         rule_text = rule.cancel().expand().to_canonical_string()
-        head_counts = _parameter_head_counts_from_text(rule_text, parameter_names)
+        # Raw-text multiplicities feed the (apples-to-apples) raw head-count
+        # diagnostic against the FeynRules reference text.
+        raw_head_counts = _parameter_head_counts_from_text(rule_text, parameter_names)
+        # The coefficient-head *set* (which drives the operator-content match)
+        # is taken after canonical collection so that heads whose coefficient is
+        # only zero by a tensor identity are not counted as genuine content.
+        external_indices = _external_index_set_from_fields(signature.fields)
+        if external_indices is None:
+            canonical_head_counts = raw_head_counts
+        else:
+            try:
+                canonical_head_counts = _canonical_head_counts_from_rule(
+                    rule, parameter_names, external_indices
+                )
+            except Exception:
+                canonical_head_counts = raw_head_counts
         local_names = tuple(_normalize_local_name(name) for name in signature.names)
         normalized_signature = tuple(sorted(local_names))
         rows.append(
@@ -472,8 +563,8 @@ def _local_vertices(parameter_names: Iterable[str]) -> tuple[LocalVertex, ...]:
                 arity=signature.arity,
                 term_count=signature.term_count,
                 sectors=signature.sectors,
-                heads=tuple(head_counts),
-                head_counts=tuple(head_counts.items()),
+                heads=tuple(canonical_head_counts),
+                head_counts=tuple(raw_head_counts.items()),
                 rule=rule_text,
             )
         )
@@ -510,6 +601,17 @@ def _reason_for_status(status: str) -> str:
         "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH": (
             "Difference is concentrated in charge-conjugated operator packaging."
         ),
+        "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH": (
+            "Operator content matches once the reference's charge-conjugated "
+            "four-fermion head is credited to the FeynPy vertex that carries the "
+            "same operator under the charge-conjugate (bar-flipped) bilinear "
+            "packaging."
+        ),
+        "MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING": (
+            "Reference Weinberg signature is matched by the FeynPy vertex that "
+            "carries the same operator under the charge-conjugate (bar-flipped) "
+            "packaging."
+        ),
         "SHARED_MIXED_OPERATOR_CONTENT": (
             "Shared field multiset, but both sides contain coefficient heads absent "
             "from the other."
@@ -531,6 +633,16 @@ def _reason_for_status(status: str) -> str:
             "as a separate FeynRules signature."
         ),
         "FEYNPY_ONLY_SIGNATURE": "Local signature is absent from the FeynRules reference.",
+        "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER": (
+            "FeynPy-only signature that is the charge-conjugate (bar-flipped) "
+            "packaging of a FeynRules reference operator; it is cross-linked to "
+            "that reference row and is not an unexplained residual."
+        ),
+        "FEYNPY_ONLY_ALGEBRAICALLY_ZERO": (
+            "FeynPy-only signature whose canonical coefficient-head set is empty: "
+            "the rule cancels to zero under canonical tensor identities, so it is "
+            "a zero-signature artifact rather than residual operator content."
+        ),
     }[status]
 
 
@@ -611,7 +723,18 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             sectors: tuple[str, ...] = ()
             term_count = 0
         else:
-            local_heads = set(local.heads)
+            # ``local.heads`` is the coefficient-head set after canonical
+            # collection (spurious heads whose coefficient is only zero by a
+            # tensor identity are removed). That collection is reliable for
+            # dropping genuinely feynpy-only heads (e.g. the ``epsilon B B = 0``
+            # heads from the double covariant-derivative expansion), but the
+            # open-spinor canonicalization can be field-order dependent for
+            # sigma-dipole rows, so we never let it drop a head that FeynRules
+            # also carries. Shared heads are therefore always retained from the
+            # raw multiplicity map, which protects against false
+            # "reference-extra" verdicts.
+            raw_local_heads = set(dict(local.head_counts))
+            local_heads = set(local.heads) | (raw_local_heads & reference_heads)
             local_head_counts = dict(local.head_counts)
             status = _shared_status(reference_heads, local_heads)
             local_names = local.local_names
@@ -685,29 +808,136 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             }
         )
 
+    # A FeynPy-only signature whose *canonical* coefficient-head set is empty is
+    # algebraically zero: every raw monomial cancels under dummy relabeling and
+    # intrinsic tensor symmetries (e.g. the U(1) piece of the ``O_Hud`` covariant
+    # derivative in ``B|Phi|Phi|dR|uRbar``). These are not residual unmatched
+    # operator content -- FeynRules correctly omits them -- so they are recorded
+    # separately as zero-signature artifacts rather than counted as FeynPy-only
+    # residuals.
     feynpy_only_rows = []
+    feynpy_only_zero_rows = []
     for local in local_vertices:
         if local.key in reference_keys:
             continue
-        status = _feynpy_only_status(set(local.heads))
-        status_counts[status] += 1
-        feynpy_only_rows.append(
-            {
-                "key": local.key,
-                "signature": list(local.signature),
-                "local_names": list(local.local_names),
-                "feynpy_names": list(local.feynpy_names),
-                "arity": local.arity,
-                "term_count": local.term_count,
-                "sectors": list(local.sectors),
-                "feynpy_heads": list(local.heads),
-                "feynpy_head_counts": dict(local.head_counts),
-                "status": status,
-                "reason": _reason_for_status(status),
-            }
+        row = {
+            "key": local.key,
+            "signature": list(local.signature),
+            "local_names": list(local.local_names),
+            "feynpy_names": list(local.feynpy_names),
+            "arity": local.arity,
+            "term_count": local.term_count,
+            "sectors": list(local.sectors),
+            "feynpy_heads": list(local.heads),
+            "feynpy_head_counts": dict(local.head_counts),
+        }
+        if not local.heads:
+            row["status"] = "FEYNPY_ONLY_ALGEBRAICALLY_ZERO"
+            row["reason"] = _reason_for_status(row["status"])
+            feynpy_only_zero_rows.append(row)
+            continue
+        row["status"] = _feynpy_only_status(set(local.heads))
+        row["reason"] = _reason_for_status(row["status"])
+        feynpy_only_rows.append(row)
+
+    # ------------------------------------------------------------------
+    # Charge-conjugation packaging reconciliation.
+    #
+    # FeynRules and FeynPy sometimes assign the bar (particle vs antiparticle
+    # leg) differently for the *same* operator. FeynRules keeps the Weinberg
+    # operator as ``Phi Phi lL lL`` and the four-fermion ``Ec`` operators with a
+    # given bilinear bar assignment, whereas FeynPy packages the same operators
+    # with the charge-conjugate bilinear (both members' bars flipped), e.g.
+    # ``Phi Phi lL lLbar``. Such a pair carries the *same* operator head and a
+    # bar-insensitive field content, and is the same vertex related by charge
+    # conjugation ``psi1bar Gamma psi2 = psi2bar Gamma' psi1^C``. We pair each
+    # such reference row with the FeynPy-only vertex that carries the matching
+    # head under the charge-conjugate field content, so the operator is credited
+    # as an algebraic match rather than a spurious reference-extra + FeynPy-only
+    # split. This is applied only as a fallback for the charge-conjugation and
+    # Weinberg mismatch buckets; it never touches already-matched rows.
+    # ------------------------------------------------------------------
+    # This pass is deliberately an *annotation overlay*: it records that a
+    # reference operator is present in FeynPy under the charge-conjugate
+    # packaging, but it does NOT alter the literal signature-coverage metrics
+    # (``shared_signatures`` / ``reference_only_signatures`` /
+    # ``feynpy_only_signatures``), which stay defined by exact field-multiset
+    # overlap. The Weinberg reference rows still have no exact local signature
+    # and remain reference-only; their FeynPy charge-conjugate partners still
+    # have no exact reference signature and remain FeynPy-only. The overlay adds
+    # a ``charge_conjugation_partner`` cross-link on both sides and a separate
+    # ``charge_conjugation_packaging_matches`` metric for operator-content
+    # matching modulo charge conjugation.
+    def _cc_field_key(fields: Iterable[str]) -> tuple[str, ...]:
+        return tuple(
+            sorted(name[:-3] if name.endswith("bar") else name for name in fields)
         )
 
-    shared = sum(1 for row in reference_rows if row["feynpy_heads"])
+    cc_local_index: dict[tuple[str, ...], list[dict[str, object]]] = {}
+    for row in feynpy_only_rows:
+        cc_local_index.setdefault(_cc_field_key(row["signature"]), []).append(row)
+
+    consumed_feynpy_only_ids: set[int] = set()
+    for row in reference_rows:
+        if row["status"] not in (
+            "SHARED_CHARGE_CONJUGATION_PACKAGING_MISMATCH",
+            "MISSING_SIGNATURE_WEINBERG_PACKAGING",
+        ):
+            continue
+        cc_extra = {
+            head
+            for head in row["feynrules_extra_heads"]
+            if head.startswith("alphaEc") or head == "alphaWeinberg"
+        }
+        if not cc_extra:
+            continue
+        cc_key = _cc_field_key(row["fields"])
+        partner = None
+        for candidate in cc_local_index.get(cc_key, ()):
+            if id(candidate) in consumed_feynpy_only_ids:
+                continue
+            if cc_extra <= set(candidate["feynpy_head_counts"]):
+                partner = candidate
+                break
+        if partner is None:
+            continue
+        consumed_feynpy_only_ids.add(id(partner))
+        # Cross-link both sides; keep the literal per-row head sets untouched.
+        row["charge_conjugation_partner"] = partner["key"]
+        row["charge_conjugation_matched_heads"] = sorted(cc_extra)
+        row["operator_content_resolved_via_charge_conjugation"] = True
+        row["status"] = (
+            "MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING"
+            if row["status"] == "MISSING_SIGNATURE_WEINBERG_PACKAGING"
+            else "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH"
+        )
+        row["reason"] = _reason_for_status(row["status"])
+        partner["charge_conjugation_partner"] = row["key"]
+        partner["status"] = "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER"
+        partner["reason"] = _reason_for_status(partner["status"])
+
+    # Status tallies over the final annotated rows (reference rows plus the
+    # literal FeynPy-only rows and the separate zero-signature artifacts).
+    status_counts = Counter(row["status"] for row in reference_rows)
+    for row in feynpy_only_rows:
+        status_counts[row["status"]] += 1
+    for row in feynpy_only_zero_rows:
+        status_counts[row["status"]] += 1
+
+    charge_conjugation_matches = (
+        status_counts["SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH"]
+        + status_counts["MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING"]
+    )
+
+    # Literal signature coverage: a reference row is "shared" iff FeynPy emits an
+    # exact same-field-multiset signature for it (``local is not None``, i.e. its
+    # head-count status is not ``NO_LOCAL_SIGNATURE``). This is independent of the
+    # charge-conjugation overlay above.
+    shared = sum(
+        1
+        for row in reference_rows
+        if row["head_count_status"] != "NO_LOCAL_SIGNATURE"
+    )
     head_count_matches = sum(
         1
         for row in reference_rows
@@ -738,6 +968,22 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             if coefficient["matches"]
         )
         for row in canonical_map_rows
+    )
+    # Raw-output redundancy diagnostic: how many raw FeynPy monomials collapse
+    # once dummy indices are canonically relabeled and intrinsic tensor
+    # symmetries applied. This quantifies the "long output" problem on the
+    # sectors where an exact canonical monomial count is available. The gap
+    # (raw minus canonical) is entirely redundant surface form that FeynRules
+    # already writes collected; it is not extra physics.
+    canonical_map_feynpy_raw_terms = sum(
+        coefficient["feynpy_raw_terms"]
+        for row in canonical_map_rows
+        for coefficient in row["canonical_map_coefficients"].values()
+    )
+    canonical_map_feynpy_canonical_terms = sum(
+        coefficient["feynpy_canonical_terms"]
+        for row in canonical_map_rows
+        for coefficient in row["canonical_map_coefficients"].values()
     )
     exact_symbolic_rows = [
         row
@@ -776,10 +1022,25 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         "summary": {
             "reference_vertex_count": len(references),
             "feynpy_signature_count_3_to_6": len(local_vertices),
+            # Literal exact field-multiset signature coverage.
             "shared_signatures": shared,
             "reference_only_signatures": len(references) - shared,
             "feynpy_only_signatures": len(feynpy_only_rows),
+            "feynpy_only_zero_signatures": len(feynpy_only_zero_rows),
+            "feynpy_only_charge_conjugation_partners": sum(
+                1
+                for row in feynpy_only_rows
+                if row["status"] == "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER"
+            ),
+            "feynpy_only_unexplained_signatures": sum(
+                1
+                for row in feynpy_only_rows
+                if row["status"] != "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER"
+            ),
+            # Operator-content matching (coefficient-head set).
             "shared_head_matches": matched,
+            "charge_conjugation_packaging_matches": charge_conjugation_matches,
+            "operator_content_matches_including_cc": matched + charge_conjugation_matches,
             "shared_head_count_matches": head_count_matches,
             "shared_head_count_mismatches": shared - head_count_matches,
             "shared_head_count_benign_expansions": head_count_status_counts[
@@ -804,6 +1065,11 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             ],
             "canonical_map_supported_coefficient_sectors": canonical_map_sector_count,
             "canonical_map_equal_coefficient_sectors": canonical_map_equal_sector_count,
+            "canonical_map_feynpy_raw_terms": canonical_map_feynpy_raw_terms,
+            "canonical_map_feynpy_canonical_terms": canonical_map_feynpy_canonical_terms,
+            "canonical_map_feynpy_redundant_terms": (
+                canonical_map_feynpy_raw_terms - canonical_map_feynpy_canonical_terms
+            ),
             "canonical_map_unequal_coefficient_sectors": (
                 canonical_map_sector_count - canonical_map_equal_sector_count
             ),
@@ -842,6 +1108,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         },
         "reference_vertices": reference_rows,
         "feynpy_only_signatures": feynpy_only_rows,
+        "feynpy_only_zero_signatures": feynpy_only_zero_rows,
     }
     return report, local_vertices
 
@@ -901,10 +1168,20 @@ def _markdown_report(report: dict[str, object]) -> str:
         "| --- | ---: |",
         f"| Reference vertices | {summary['reference_vertex_count']} |",
         f"| FeynPy 3-6 point signatures | {summary['feynpy_signature_count_3_to_6']} |",
-        f"| Shared signatures | {summary['shared_signatures']} |",
-        f"| Reference-only signatures | {summary['reference_only_signatures']} |",
-        f"| FeynPy-only signatures | {summary['feynpy_only_signatures']} |",
+        f"| Shared signatures (exact field multiset) | {summary['shared_signatures']} |",
+        f"| Reference-only signatures (exact field multiset) | {summary['reference_only_signatures']} |",
+        f"| FeynPy-only signatures (exact field multiset) | {summary['feynpy_only_signatures']} |",
+        "| — of which charge-conjugation partners | "
+        f"{summary['feynpy_only_charge_conjugation_partners']} |",
+        "| — of which unexplained | "
+        f"{summary['feynpy_only_unexplained_signatures']} |",
+        "| FeynPy-only zero-signature artifacts (dropped) | "
+        f"{summary['feynpy_only_zero_signatures']} |",
         f"| Shared coefficient-head matches | {summary['shared_head_matches']} |",
+        "| Charge-conjugation packaging matches (modulo CC) | "
+        f"{summary['charge_conjugation_packaging_matches']} |",
+        "| Operator-content matches (incl. charge conjugation) | "
+        f"{summary['operator_content_matches_including_cc']} |",
         f"| Shared raw head-count matches | {summary['shared_head_count_matches']} |",
         f"| Shared raw head-count mismatches | {summary['shared_head_count_mismatches']} |",
         f"| Shared raw head-count benign expansions | {summary['shared_head_count_benign_expansions']} |",
@@ -922,6 +1199,12 @@ def _markdown_report(report: dict[str, object]) -> str:
         f"{summary['canonical_map_equal_coefficient_sectors']} |",
         "| Canonical tensor-map unequal coefficient sectors | "
         f"{summary['canonical_map_unequal_coefficient_sectors']} |",
+        "| Canonical-map FeynPy raw monomials | "
+        f"{summary['canonical_map_feynpy_raw_terms']} |",
+        "| Canonical-map FeynPy canonical monomials | "
+        f"{summary['canonical_map_feynpy_canonical_terms']} |",
+        "| Canonical-map FeynPy redundant monomials (raw - canonical) | "
+        f"{summary['canonical_map_feynpy_redundant_terms']} |",
         f"| Explained benign head-count deltas | {summary['benign_head_count_delta_heads']} |",
         f"| Unexplained head-count deltas | {summary['unexplained_head_count_delta_heads']} |",
         "",
@@ -1010,7 +1293,14 @@ def _markdown_report(report: dict[str, object]) -> str:
     unexplained_head_count_deltas = Counter()
     benign_head_count_deltas = []
     for row in report["reference_vertices"]:
-        missing_heads.update(row["feynrules_extra_heads"])
+        # Heads resolved via the charge-conjugation overlay are genuine content
+        # (present in FeynPy under the charge-conjugate signature), so they are
+        # excluded from the "reference-side head gap" aggregate, which is meant
+        # to surface only unexplained missing operator content.
+        cc_matched = set(row.get("charge_conjugation_matched_heads", ()))
+        missing_heads.update(
+            head for head in row["feynrules_extra_heads"] if head not in cc_matched
+        )
         local_extra_heads.update(row["feynpy_extra_heads"])
         if row["head_count_status"] == "NO_LOCAL_SIGNATURE":
             continue
@@ -1140,8 +1430,12 @@ def main(argv: list[str] | None = None) -> int:
     summary = report["summary"]
     print(
         "SMEFT2 comparison: "
-        f"{summary['shared_head_matches']}/{summary['reference_vertex_count']} "
-        "reference vertices match at coefficient-head set level; "
+        f"{summary['operator_content_matches_including_cc']}/"
+        f"{summary['reference_vertex_count']} "
+        "reference vertices match at operator-content level "
+        f"({summary['shared_head_matches']} direct + "
+        f"{summary['charge_conjugation_packaging_matches']} via charge-conjugation "
+        "packaging); "
         "exact symbolic matches="
         f"{summary['exact_symbolic_equal_vertices']}/"
         f"{summary['exact_symbolic_supported_vertices']} supported vertices; "
