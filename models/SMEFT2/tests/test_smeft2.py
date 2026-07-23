@@ -94,7 +94,18 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["comparison_basis"]["local_ltot"] == "EFT-only FeynPy Ltot"
     assert report["summary"]["reference_vertex_count"] == 184
     assert report["summary"]["feynpy_signature_count_3_to_6"] == 192
-    assert report["summary"]["shared_head_matches"] == 168
+    # Literal exact-field-multiset signature coverage (independent of the
+    # charge-conjugation overlay).
+    assert report["summary"]["shared_signatures"] == 182
+    assert report["summary"]["reference_only_signatures"] == 2
+    assert report["summary"]["feynpy_only_signatures"] == 8
+    assert report["summary"]["feynpy_only_charge_conjugation_partners"] == 8
+    assert report["summary"]["feynpy_only_unexplained_signatures"] == 0
+    assert report["summary"]["feynpy_only_zero_signatures"] == 2
+    # Operator-content matching (coefficient-head set), incl. charge conjugation.
+    assert report["summary"]["shared_head_matches"] == 174
+    assert report["summary"]["charge_conjugation_packaging_matches"] == 8
+    assert report["summary"]["operator_content_matches_including_cc"] == 182
     assert report["summary"]["shared_head_count_matches"] == 90
     assert report["summary"]["shared_head_count_mismatches"] == 92
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
@@ -130,6 +141,54 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     )
 
     rows_by_key = {row["key"]: row for row in report["reference_vertices"]}
+
+    # Charge-conjugation packaging overlay: FeynRules keeps the Weinberg and
+    # four-fermion "Ec" operators in one bilinear bar assignment while FeynPy
+    # emits the charge-conjugate packaging under a bar-flipped signature. These
+    # are the same operator and are credited as operator-content matches modulo
+    # charge conjugation. The overlay is an annotation only: it does NOT change
+    # the literal signature-coverage metrics, so the Weinberg reference row stays
+    # reference-only (no exact local signature) and keeps its own empty
+    # feynpy_heads; the matched head is recorded in charge_conjugation_matched_heads.
+    weinberg = rows_by_key["Phi|Phi|lL|lL"]
+    assert weinberg["status"] == "MATCHED_VIA_CHARGE_CONJUGATION_PACKAGING"
+    assert weinberg["charge_conjugation_partner"] == "Phi|Phi|lL|lLbar"
+    assert weinberg["charge_conjugation_matched_heads"] == ["alphaWeinberg"]
+    assert weinberg["feynpy_heads"] == []  # literal per-row head set untouched
+    assert weinberg["head_count_status"] == "NO_LOCAL_SIGNATURE"
+    ec = rows_by_key["dRbar|eR|lLbar|qL"]
+    assert ec["status"] == "SHARED_CHARGE_CONJUGATION_PACKAGING_MATCH"
+    assert ec["charge_conjugation_partner"] == "dRbar|eR|lL|qLbar"
+
+    # The FeynPy-only signatures are exactly the eight charge-conjugate partners
+    # of reference operators; each is cross-linked back and none is unexplained.
+    feynpy_only = {row["key"]: row for row in report["feynpy_only_signatures"]}
+    assert len(feynpy_only) == 8
+    assert all(
+        row["status"] == "FEYNPY_ONLY_CHARGE_CONJUGATION_PARTNER"
+        and "charge_conjugation_partner" in row
+        for row in feynpy_only.values()
+    )
+    assert "Phi|Phi|lL|lLbar" in feynpy_only
+    assert "dRbar|eR|lL|qLbar" in feynpy_only
+
+    # The two B-boson O_Hud vertices are algebraically zero (their canonical
+    # coefficient-head set is empty): the U(1) piece of the O_Hud covariant
+    # derivative cancels under canonical tensor identities, so FeynRules
+    # correctly omits them. They are recorded as zero-signature artifacts, not
+    # residual unmatched operator content.
+    zero_keys = {row["key"] for row in report["feynpy_only_zero_signatures"]}
+    assert zero_keys == {"B|Phi|Phi|dR|uRbar", "B|Phibar|Phibar|dRbar|uR"}
+    assert all(
+        row["status"] == "FEYNPY_ONLY_ALGEBRAICALLY_ZERO" and row["feynpy_heads"] == []
+        for row in report["feynpy_only_zero_signatures"]
+    )
+
+    # The only genuine remaining operator-content residual is the redundant
+    # Green-basis pp operators that FeynRules folds away via IBP/EOM.
+    assert rows_by_key["B|Phi|Phibar|lL|lLbar"]["status"] == "SHARED_LOCAL_PP_EXTRA"
+    assert rows_by_key["B|Phi|Phibar|qL|qLbar"]["status"] == "SHARED_LOCAL_PP_EXTRA"
+
     assert rows_by_key["B|Phi|qL|uRbar"]["benign_head_count_delta_reasons"] == {
         "alphaEuB": "DUAL_FS_ANTISYMMETRY"
     }
