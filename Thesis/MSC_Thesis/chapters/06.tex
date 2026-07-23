@@ -145,11 +145,19 @@ To summarize: \py{DeclaredLagrangian} is the source-level Lagrangian, \py{Compil
 \label{sec:internals-lowering}
 % --------------------------------------------------------------
 
-The lowering layer (\texttt{feynpy.lowering}, with model-agnostic helpers in \texttt{lagrangian.lowering}) is the bridge between declarative syntax and the compiler. For each source term it answers three questions: what kind of term is this, are its indices well-formed, and --- if the term is already local --- what is its canonical interaction form?
+The word \emph{lowering} is easy to confuse with compilation, so it is worth being precise: in the code it is not a third Lagrangian container sitting between \py{DeclaredLagrangian} and \py{CompiledLagrangian}. The declared Lagrangian is still the user-written source syntax, while the compiled Lagrangian is already a tuple of local \py{InteractionTerm}s. Lowering is the intermediate \emph{pass} that reads each declared source term, makes its implicit structure explicit, validates its index labels, and decides whether the term is already local or still needs a model-dependent expansion.
+
+For example, consider again the declared quark kinetic term
+\begin{minted}{python}
+I * Quark.bar * Gamma(mu) * DC(Quark, mu)
+\end{minted}
+At declaration time this is only a source-level product of wrapper objects. Lowering reads it as ``barred quark, gamma matrix, covariant derivative acting on a quark'', checks that \py{mu} is used consistently as a Lorentz index and that the implied spinor and colour structure is well-formed, and classifies the term as a \py{covariant_core}. This still is not a final local interaction term, because \py{DC} must first be expanded using the model's gauge data. The compiler then performs that expansion, producing ordinary local monomials such as the kinetic piece and the quark--gauge-boson vertex, and those local monomials are what finally become compiled \py{InteractionTerm}s. By contrast, a source term that is already local, such as \py{lam * phi**4}, is lowered directly into its canonical interaction form with no further expansion.
+
+So the lowering layer (\texttt{feynpy.lowering}, with model-agnostic helpers in \texttt{lagrangian.lowering}) is the bridge between declarative syntax and the compiler. For each source term it answers three questions: what kind of term is this, are its indices well-formed, and --- if the term is already local --- what is its canonical interaction form?
 
 \subsection{Classifying each source term}
 
-The single entry point is \py{_analyze_declared_source_term(...)}, which returns an \py{AnalyzedSourceTerm}. This record is the model layer's source of truth: the compiler consumes it and never re-derives the classification. The categories are summarised in Table~\ref{tab:analyzed-categories}.
+The single entry point is \py{_analyze_declared_source_term(...)}, which returns an \py{AnalyzedSourceTerm}. This object is not just a tag: it is the model layer's source of truth for routing one source term. If the term is already local, it already contains the final \py{InteractionTerm}; otherwise it stores the structured object that the compiler must expand. The compiler consumes this analysed record directly and never re-derives the classification from the raw declaration. The categories are summarised in Table~\ref{tab:analyzed-categories}.
 
 \begin{table}[htbp]
 \centering
@@ -159,29 +167,33 @@ The single entry point is \py{_analyze_declared_source_term(...)}, which returns
 \midrule
 \texttt{interaction} & already a local \py{InteractionTerm}; no compilation & \py{lam * phi**4} \\
 \texttt{covariant\_core} & canonical kinetic $\bar\psi\, i\gamma^\mu D_\mu \psi$ or $(D_\mu\Phi)^\dagger(D^\mu\Phi)$ & quark kinetic term \\
-\texttt{field\_strength\_monomial} & a product of \py{FS(...)} factors & $-\tfrac14 F^a F^a$ \\
-\texttt{generic\_covariant\_monomial} & any other monomial containing \py{DC} & current$\,\times\,$current \\
+\texttt{generic\_covariant\_monomial} & any other monomial that still contains \py{DC} or another covariant operator needing expansion & current$\,\times\,$current \\
 \texttt{gauge\_fixing} & a gauge-fixing declaration & \py{GaugeFixing(SU3, xi)} \\
 \texttt{ghost} & a ghost declaration & \py{GhostLagrangian(SU3)} \\
+\texttt{field\_strength\_monomial} & a monomial built from \py{FS(...)} factors & $-\tfrac14 F^a F^a$ \\
 \bottomrule
 \end{tabular}
 \caption{The classification produced by \texttt{\_analyze\_declared\_source\_term}. Classification is priority-ordered (top to bottom), and every category except \texttt{interaction} has \texttt{needs\_compilation = True}.}
 \label{tab:analyzed-categories}
 \end{table}
 
-Classification is priority-ordered: the analyser tries ``already local'' first, then the canonical covariant kinetic shapes, then field strengths, then gauge fixing, then ghosts, and finally the general covariant-monomial catch-all.
+The order matters. The analyser first asks whether the term is already local; if not, it next checks the two special covariant kinetic shapes; only then does it fall back to the generic covariant-operator path, the gauge-fixing and ghost declarations, and finally pure field-strength monomials. This avoids misrouting a canonical kinetic term, which syntactically also contains \py{DC(...)}, into the generic catch-all.
 
 \subsection{Resolving the indices}
 
-This is where ``expanding the indices'' actually happens, and it received a disproportionate share of the design effort because it is where silent errors are most dangerous.
+This is the part where the term's implicit index structure is made explicit. No sum over index \emph{values} is performed here; rather, lowering decides which symbolic labels belong to which field slots and which contractions the user intended. It received a disproportionate share of the design effort because this is where silent mistakes are most dangerous.
 
-\paragraph{Monomial-wide label validation.} In the compact notation the user writes plain labels such as \py{mu}, \py{a}, \py{c}, \py{f}. On paper these are unambiguous because a human reads the whole term at once; the code must reproduce that global reading. Before anything else, the analyser builds one registry mapping every label \emph{name} used anywhere in a monomial --- on field slots, on declared factors like \py{PartialD}, \py{Gamma}, \py{T}, $f^{abc}$, \py{FS}, and even on raw Spenso tensors in the coefficient --- to exactly one \py{IndexType}. If a name is used for two incompatible index kinds (say a colour label reused as a generation label), the term is rejected with an explicit error. This closes a real hole: earlier the labels were validated only slot-locally, so an inconsistent term like \py{q.bar(f, c) * q(c, f) * Phi} could compile into a wrong contraction.
+\paragraph{Monomial-wide label validation.} In the compact notation the user writes plain labels such as \py{mu}, \py{a}, \py{c}, \py{f}. On paper their meaning is clear because a human reads the whole monomial at once; the code must reproduce that same global reading. So before any lowering happens, the analyser builds one registry for every label \emph{name} appearing anywhere in the monomial --- on field slots, on declared factors such as \py{PartialD}, \py{Gamma}, \py{T}, $f^{abc}$ and \py{FS}, and even on raw Spenso tensors in the coefficient --- and requires that each name correspond to exactly one \py{IndexType}. If the same name is used for two incompatible kinds, for example once as a colour label and once as a generation label, the term is rejected with an explicit error. This closes a real failure mode: earlier the labels were checked only slot by slot, so an inconsistent term like \py{q.bar(f, c) * q(c, f) * Phi} could pass through and produce the wrong contraction.
 
-\paragraph{Slot binding and inference.} Once labels are typed, local monomials pass through a small state machine that, in a fixed order: (1)~seeds any explicit labels the user wrote; (2)~applies chain factors (\py{Gamma}, \py{T}) between adjacent fields, connecting spinor and colour endpoints; (3)~binds remaining typed labels to open field slots \emph{by kind}, requiring a one-to-one match and raising an ambiguity error otherwise; (4)~shares fresh labels across natural pairs (an adjacent $\bar\psi/\psi$, a unique open bar/field pair); and (5)~invents fresh dummy labels, using the index-type prefix, for whatever remains. The result is that a physicist can write very little and still obtain a fully and unambiguously indexed term --- or a clear error when what they wrote cannot be resolved uniquely.
+\paragraph{Slot binding and inference.} Once the labels have been typed, local monomials pass through a fixed sequence. First, lowering keeps any labels that were written explicitly on the field slots themselves. Next, chain factors such as \py{Gamma} and \py{T} are attached between neighbouring fields, which determines their spinor or representation endpoints and inserts the corresponding tensor into the coupling. After that, any remaining explicit typed labels coming from declared factors or coefficient tensors are bound to open field slots \emph{by kind}; this match must be one-to-one, otherwise lowering raises an ambiguity error instead of guessing. Only when those explicit cues have been exhausted does the pass use structural defaults: it shares fresh labels across obvious pairs such as an adjacent $\bar\psi/\psi$, then across a unique remaining compatible pair, and finally invents fresh dummy labels for any slots still left open. The result is that a physicist can write a compact monomial and still obtain a fully explicit and unambiguous indexed interaction --- or a clear error when the notation is genuinely ambiguous.
+
+After the slot labels are fixed, derivative labels are normalised as well. In particular, when a derivative index was written to contract with a field Lorentz slot, lowering rewrites that relation into an explicit metric contraction, so the compiled term no longer relies on reusing one source-level symbol in two different roles.
 
 \subsection{Remembering fermion pairings}
 
-When a term is already local, lowering builds an \py{InteractionTerm} directly (Section~\ref{sec:internals-ir}) and, during the same step, records which fermion occurrences form closed Dirac bilinears --- the \py{closed_dirac_bilinears} metadata: a list of $(\bar\psi\text{-slot},\,\psi\text{-slot})$ pairs, inferred from gamma-matrix chains, from repeated spinor labels, or from the spinor graph of the coefficient. It records the physicist's intent (which current pairs with which) so the contraction engine can later apply the correct fermion sign. Its importance is discussed in Section~\ref{sec:internals-difficulty}.
+When a term is already local, lowering builds an \py{InteractionTerm} directly (Section~\ref{sec:internals-ir}) and, in the same step, records which fermion occurrences form closed Dirac bilinears. This is the \py{closed_dirac_bilinears} metadata: a list of $(\bar\psi\text{-slot},\,\psi\text{-slot})$ pairs inferred from three sources --- gamma-matrix chains, resolved repeated spinor labels, and the spinor-connectivity graph already present in the coefficient tensor.
+
+The pass is intentionally conservative here. It accepts this metadata only when the fermion slots can be decomposed into disjoint, ordered closed bilinears; otherwise it rejects the local monomial rather than guessing a pairing. When the decomposition exists, the metadata records the physicist's intent --- which current pairs with which --- so the contraction engine can later apply the correct fermion-sign convention. Its importance is discussed in Section~\ref{sec:internals-difficulty}.
 
 % --------------------------------------------------------------
 \section{Compilation: turning gauge structure into ordinary interactions}
