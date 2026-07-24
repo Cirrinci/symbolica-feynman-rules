@@ -545,7 +545,16 @@ Note that nothing here depends on a particular index kind. An index is only a \p
 \subsection{Fermion signs and the closed-bilinear exception}
 \label{sec:internals-contraction-fermions}
 
-Fermion signs is a delicate piece of physics in the engine that needed some care. From the beginning of the pipeline we needed to record the order of the fields all to arrive at this deepest point of the code knowing how to handle the final sign. The generic rule is the flat Grassmann sign of the fermion permutation. But there exists a case where it is not so simple. In fact this procedure would  give the \emph{wrong relative sign} for a product of closed Dirac bilinears: for identical-fermion current--current operators the flat rule produces $\text{direct} - \text{crossed}$, whereas the reference gives $\text{direct} + \text{crossed}$. The resolution is metadata-driven and narrow: when --- and only when --- every Dirac fermion slot is covered exactly once by the disjoint \py{closed_dirac_bilinears} pairs carried down from lowering, the engine suppresses the flat permutation sign and uses the all-plus bilinear convention. Generic open multi-fermion tensors keep the flat Grassmann sign. This is exactly the right boundary: it adopts the convention where the term genuinely is a product of closed currents, and nowhere else.
+Getting fermion signs right was one of the trickier parts of the engine. The pipeline records the order of the fields from the very start, so that even this final layer still knows which sign to apply.
+
+The default rule is simple: use the flat Grassmann sign of the fermion permutation. This works in general, but it fails for a product of closed Dirac bilinears. A concrete example is the identical-fermion current--current operator
+\begin{equation}
+    (\bar\psi\,\gamma^\mu\psi)\,(\bar\psi\,\gamma_\mu\psi).
+\end{equation}
+This operator has two Wick contractions: a \emph{direct} one, where each current stays intact, and a \emph{crossed} one, where the two currents exchange a fermion. The flat Grassmann rule predicts a relative sign of $\text{direct} - \text{crossed}$ between the two, but the correct sign, following the FeynRules convention, is $\text{direct} + \text{crossed}$.
+
+
+The fix uses the fermion-pairing information recorded during lowering (Section~\ref{sec:internals-lowering}). If that information shows that every Dirac fermion slot belongs to exactly one closed bilinear, the engine drops the flat permutation sign and treats every pairing with a plus. In every other case (for example a generic open multi-fermion tensor) the flat Grassmann sign still applies.
 
 \subsection{Output policy and universal factors}
 

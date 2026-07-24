@@ -121,6 +121,12 @@ def _match_covariant_monomial(
     if len(gamma_factors) == 1 and len(covd_factors) == 1:
         gamma_factor = gamma_factors[0]
         covd_factor = covd_factors[0]
+        if any(factor.labels for factor in (*field_factors, covd_factor)):
+            # Labelled Dirac monomials may carry open flavor/gauge labels tied to
+            # indexed coefficients. The compact kinetic-core path regenerates
+            # identity labels and would disconnect those coefficient slots from
+            # the fields, so preserve them through the generic CovD lowering.
+            return None
         for core_slot, field_factor in enumerate(field_factors):
             if field_factor.field.kind != "fermion" or covd_factor.field.kind != "fermion":
                 continue
@@ -2285,6 +2291,8 @@ def _is_generic_covariant_monomial_candidate(term: _DeclaredMonomial) -> bool:
         and len(gamma_factors) == 1
         and len(field_factors) == 1
     ):
+        if any(factor.labels for factor in (*field_factors, covd_factors)):
+            return True
         return False
     if (
         not differentiated_covd_factors

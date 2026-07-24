@@ -649,12 +649,19 @@ def build_smeft_green_bpreserving(
         S("sigma"),
     )
     w1, w2, w3, w4 = S("w1"), S("w2"), S("w3"), S("w4")
+    w_ev_hd2 = S("w_ev_hd2")
+    w_f2xh = S("w_f2xh")
+    w_ru_hd = S("w_ru_hd")
+    w_xd_l, w_xd_r = S("w_xd_l"), S("w_xd_r")
+    w_dh_phi_l, w_dh_phi_r = S("w_dh_phi_l"), S("w_dh_phi_r")
+    w_dh_ferm_l, w_dh_ferm_r = S("w_dh_ferm_l"), S("w_dh_ferm_r")
     w_h2xd2_1, w_h2xd2_2 = S("w_h2xd2_1"), S("w_h2xd2_2")
     w_h4d2_1, w_h4d2_2 = S("w_h4d2_1"), S("w_h4d2_2")
     aW, aW1, aW2, aW3 = S("aW"), S("aW1"), S("aW2"), S("aW3")
     aC, aC1, aC2, aC3 = S("aC"), S("aC1"), S("aC2"), S("aC3")
     f1, f2, f3, f4 = S("f1"), S("f2"), S("f3"), S("f4")
     c1, c2, c3, c4 = S("c1"), S("c2"), S("c3"), S("c4")
+    c_xd_l, c_xd_r = S("c_xd_l"), S("c_xd_r")
     sp1, sp2, sp3, sp4, sp5, sp6, sp7, sp8, sp9, sp10, sp11, sp12 = (
         S("sp1"),
         S("sp2"),
@@ -999,8 +1006,8 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaOuW"](f1, f2)
             * FS(g["SU2L"], mu, nu, aW1)
-            * weak_t(aW1, w1, w2)
-            * phitilde(w2, w3),
+            * weak_t(aW1, w1, w_f2xh)
+            * phitilde(w_f2xh, w3),
             ql(w=w1, f=f1, c=c1, bar=True),
             ur(f=f2, c=c1),
             mu,
@@ -1062,7 +1069,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaOuG"](f1, f2).conj()
             * FS(g["SU3C"], mu, nu, aC1)
-            * gauge_generator(aC1, c1, c2)
+            * gauge_generator(aC1, c2, c1)
             * phitildebar(w1, w2),
             ur(f=f2, c=c2, bar=True),
             ql(w=w1, f=f1, c=c1),
@@ -1072,8 +1079,8 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaOuW"](f1, f2).conj()
             * FS(g["SU2L"], mu, nu, aW1)
-            * weak_t(aW1, w1, w2)
-            * phitildebar(w2, w3),
+            * weak_t(aW1, w_f2xh, w1)
+            * phitildebar(w_f2xh, w3),
             ur(f=f2, c=c1, bar=True),
             ql(w=w1, f=f1, c=c1),
             mu,
@@ -1091,7 +1098,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaOdG"](f1, f2).conj()
             * FS(g["SU3C"], mu, nu, aC1)
-            * gauge_generator(aC1, c1, c2)
+            * gauge_generator(aC1, c2, c1)
             * Phi.bar(w1),
             dr(f=f2, c=c2, bar=True),
             ql(w=w1, f=f1, c=c1),
@@ -1101,7 +1108,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaOdW"](f1, f2).conj()
             * FS(g["SU2L"], mu, nu, aW1)
-            * weak_t(aW1, w1, w2)
+            * weak_t(aW1, w2, w1)
             * Phi.bar(w2),
             dr(f=f2, c=c1, bar=True),
             ql(w=w1, f=f1, c=c1),
@@ -1118,7 +1125,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaOeW"](f1, f2).conj()
             * FS(g["SU2L"], mu, nu, aW1)
-            * weak_t(aW1, w1, w2)
+            * weak_t(aW1, w2, w1)
             * Phi.bar(w2),
             lr(f=f2, bar=True),
             ll(w=w1, f=f1),
@@ -1201,12 +1208,13 @@ def build_smeft_green_bpreserving(
         p["alphaRuHD1"](f1, f2)
         * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
         * ur(sp=sp1, f=f2, c=c1)
-        * weak_eps2(w1, w2)
-        * DC(DC(Phi.bar(w2), mu), mu)
+        * weak_eps2(w1, w_ru_hd)
+        * DC(DC(Phi.bar(w_ru_hd), mu), mu)
         + sigma_term(
-            p["alphaRuHD2"](f1, f2)
-            * weak_eps2(w1, w2)
-            * DC(Phi.bar(w2), nu),
+            I
+            * p["alphaRuHD2"](f1, f2)
+            * weak_eps2(w1, w_ru_hd)
+            * DC(Phi.bar(w_ru_hd), nu),
             ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
             DC(ur(sp=sp2, f=f2, c=c1), mu),
             mu,
@@ -1215,19 +1223,19 @@ def build_smeft_green_bpreserving(
         + p["alphaRuHD3"](f1, f2)
         * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
         * DC(DC(ur(sp=sp1, f=f2, c=c1), mu), mu)
-        * weak_eps2(w1, w2)
-        * Phi.bar(w2)
+        * weak_eps2(w1, w_ru_hd)
+        * Phi.bar(w_ru_hd)
         + p["alphaRuHD4"](f1, f2)
         * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
         * DC(ur(sp=sp1, f=f2, c=c1), mu)
-        * weak_eps2(w1, w2)
-        * DC(Phi.bar(w2), mu)
+        * weak_eps2(w1, w_ru_hd)
+        * DC(Phi.bar(w_ru_hd), mu)
         + p["alphaRdHD1"](f1, f2)
         * ql(sp=sp1, w=w1, f=f1, c=c1, bar=True)
         * dr(sp=sp1, f=f2, c=c1)
         * DC(DC(Phi(w1), mu), mu)
         + sigma_term(
-            p["alphaRdHD2"](f1, f2) * DC(Phi(w1), nu),
+            I * p["alphaRdHD2"](f1, f2) * DC(Phi(w1), nu),
             ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
             DC(dr(sp=sp2, f=f2, c=c1), mu),
             mu,
@@ -1246,7 +1254,7 @@ def build_smeft_green_bpreserving(
         * lr(sp=sp1, f=f2)
         * DC(DC(Phi(w1), mu), mu)
         + sigma_term(
-            p["alphaReHD2"](f1, f2) * DC(Phi(w1), nu),
+            I * p["alphaReHD2"](f1, f2) * DC(Phi(w1), nu),
             ll(sp=sp1, w=w1, f=f1, bar=True),
             DC(lr(sp=sp2, f=f2), mu),
             mu,
@@ -1263,12 +1271,13 @@ def build_smeft_green_bpreserving(
         + p["alphaRuHD1"](f1, f2).conj()
         * ur(sp=sp1, f=f2, c=c1, bar=True)
         * ql(sp=sp1, w=w1, f=f1, c=c1)
-        * weak_eps2(w1, w2)
-        * DC(DC(Phi(w2), mu), mu)
+        * weak_eps2(w1, w_ru_hd)
+        * DC(DC(Phi(w_ru_hd), mu), mu)
         + sigma_term(
-            p["alphaRuHD2"](f1, f2).conj()
-            * weak_eps2(w1, w2)
-            * DC(Phi(w2), nu),
+            -I
+            * p["alphaRuHD2"](f1, f2).conj()
+            * weak_eps2(w1, w_ru_hd)
+            * DC(Phi(w_ru_hd), nu),
             DC(ur(sp=sp1, f=f2, c=c1, bar=True), mu),
             ql(sp=sp2, w=w1, f=f1, c=c1),
             mu,
@@ -1277,19 +1286,19 @@ def build_smeft_green_bpreserving(
         + p["alphaRuHD3"](f1, f2).conj()
         * DC(DC(ur(sp=sp1, f=f2, c=c1, bar=True), mu), mu)
         * ql(sp=sp1, w=w1, f=f1, c=c1)
-        * weak_eps2(w1, w2)
-        * Phi(w2)
+        * weak_eps2(w1, w_ru_hd)
+        * Phi(w_ru_hd)
         + p["alphaRuHD4"](f1, f2).conj()
         * DC(ur(sp=sp1, f=f2, c=c1, bar=True), mu)
         * ql(sp=sp1, w=w1, f=f1, c=c1)
-        * weak_eps2(w1, w2)
-        * DC(Phi(w2), mu)
+        * weak_eps2(w1, w_ru_hd)
+        * DC(Phi(w_ru_hd), mu)
         + p["alphaRdHD1"](f1, f2).conj()
         * dr(sp=sp1, f=f2, c=c1, bar=True)
         * ql(sp=sp1, w=w1, f=f1, c=c1)
         * DC(DC(Phi.bar(w1), mu), mu)
         + sigma_term(
-            p["alphaRdHD2"](f1, f2).conj() * DC(Phi.bar(w1), nu),
+            -I * p["alphaRdHD2"](f1, f2).conj() * DC(Phi.bar(w1), nu),
             DC(dr(sp=sp1, f=f2, c=c1, bar=True), mu),
             ql(sp=sp2, w=w1, f=f1, c=c1),
             mu,
@@ -1308,7 +1317,7 @@ def build_smeft_green_bpreserving(
         * ll(sp=sp1, w=w1, f=f1)
         * DC(DC(Phi.bar(w1), mu), mu)
         + sigma_term(
-            p["alphaReHD2"](f1, f2).conj() * DC(Phi.bar(w1), nu),
+            -I * p["alphaReHD2"](f1, f2).conj() * DC(Phi.bar(w1), nu),
             DC(lr(sp=sp1, f=f2, bar=True), mu),
             ll(sp=sp2, w=w1, f=f1),
             mu,
@@ -1347,6 +1356,46 @@ def build_smeft_green_bpreserving(
             * fs_factor
         )
 
+    def f2xd_color_derivative_current(coeff, left_at, right_at, fs_factor):
+        return (
+            I
+            * HALF
+            * coeff
+            * gauge_generator(aC1, c1, c_xd_r)
+            * left_at(c1)
+            * Gamma(mu)
+            * DC(right_at(c_xd_r), nu)
+            * fs_factor
+            - I
+            * HALF
+            * coeff
+            * gauge_generator(aC1, c_xd_l, c2)
+            * DC(left_at(c_xd_l), nu)
+            * Gamma(mu)
+            * right_at(c2)
+            * fs_factor
+        )
+
+    def f2xd_weak_derivative_current(coeff, left_at, right_at, fs_factor):
+        return (
+            I
+            * HALF
+            * coeff
+            * weak_t(aW1, w1, w_xd_r)
+            * left_at(w1)
+            * Gamma(mu)
+            * DC(right_at(w_xd_r), nu)
+            * fs_factor
+            - I
+            * HALF
+            * coeff
+            * weak_t(aW1, w_xd_l, w2)
+            * DC(left_at(w_xd_l), nu)
+            * Gamma(mu)
+            * right_at(w2)
+            * fs_factor
+        )
+
     LF2XD = (
         f2xd_fs_current(
             p["alphaRGq"](f1, f2),
@@ -1355,18 +1404,16 @@ def build_smeft_green_bpreserving(
             ql(sp=sp2, w=w1, f=f2, c=c2),
             _covd_fs(g["SU3C"], mu, nu, nu, aC1),
         )
-        + f2xd_derivative_current(
+        + f2xd_color_derivative_current(
             p["alphaRGqp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp2, w=w1, f=f2, c=c2),
+            lambda color: ql(sp=sp1, w=w1, f=f1, c=color, bar=True),
+            lambda color: ql(sp=sp2, w=w1, f=f2, c=color),
             FS(g["SU3C"], mu, nu, aC1),
         )
-        + f2xd_derivative_current(
+        + f2xd_color_derivative_current(
             p["alphaRGqtp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp2, w=w1, f=f2, c=c2),
+            lambda color: ql(sp=sp1, w=w1, f=f1, c=color, bar=True),
+            lambda color: ql(sp=sp2, w=w1, f=f2, c=color),
             _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1),
         )
         + f2xd_fs_current(
@@ -1376,18 +1423,16 @@ def build_smeft_green_bpreserving(
             ql(sp=sp2, w=w2, f=f2, c=c1),
             _covd_fs(g["SU2L"], mu, nu, nu, aW1),
         )
-        + f2xd_derivative_current(
+        + f2xd_weak_derivative_current(
             p["alphaRWqp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp2, w=w2, f=f2, c=c1),
+            lambda weak: ql(sp=sp1, w=weak, f=f1, c=c1, bar=True),
+            lambda weak: ql(sp=sp2, w=weak, f=f2, c=c1),
             FS(g["SU2L"], mu, nu, aW1),
         )
-        + f2xd_derivative_current(
+        + f2xd_weak_derivative_current(
             p["alphaRWqtp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp2, w=w2, f=f2, c=c1),
+            lambda weak: ql(sp=sp1, w=weak, f=f1, c=c1, bar=True),
+            lambda weak: ql(sp=sp2, w=weak, f=f2, c=c1),
             _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1),
         )
         + f2xd_fs_current(
@@ -1418,18 +1463,16 @@ def build_smeft_green_bpreserving(
             ur(sp=sp2, f=f2, c=c2),
             _covd_fs(g["SU3C"], mu, nu, nu, aC1),
         )
-        + f2xd_derivative_current(
+        + f2xd_color_derivative_current(
             p["alphaRGup"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ur(sp=sp1, f=f1, c=c1, bar=True),
-            ur(sp=sp2, f=f2, c=c2),
+            lambda color: ur(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: ur(sp=sp2, f=f2, c=color),
             FS(g["SU3C"], mu, nu, aC1),
         )
-        + f2xd_derivative_current(
+        + f2xd_color_derivative_current(
             p["alphaRGutp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ur(sp=sp1, f=f1, c=c1, bar=True),
-            ur(sp=sp2, f=f2, c=c2),
+            lambda color: ur(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: ur(sp=sp2, f=f2, c=color),
             _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1),
         )
         + f2xd_fs_current(
@@ -1460,18 +1503,16 @@ def build_smeft_green_bpreserving(
             dr(sp=sp2, f=f2, c=c2),
             _covd_fs(g["SU3C"], mu, nu, nu, aC1),
         )
-        + f2xd_derivative_current(
+        + f2xd_color_derivative_current(
             p["alphaRGdp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            dr(sp=sp1, f=f1, c=c1, bar=True),
-            dr(sp=sp2, f=f2, c=c2),
+            lambda color: dr(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: dr(sp=sp2, f=f2, c=color),
             FS(g["SU3C"], mu, nu, aC1),
         )
-        + f2xd_derivative_current(
+        + f2xd_color_derivative_current(
             p["alphaRGdtp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            dr(sp=sp1, f=f1, c=c1, bar=True),
-            dr(sp=sp2, f=f2, c=c2),
+            lambda color: dr(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: dr(sp=sp2, f=f2, c=color),
             _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1),
         )
         + f2xd_fs_current(
@@ -1502,18 +1543,16 @@ def build_smeft_green_bpreserving(
             ll(sp=sp2, w=w2, f=f2),
             _covd_fs(g["SU2L"], mu, nu, nu, aW1),
         )
-        + f2xd_derivative_current(
+        + f2xd_weak_derivative_current(
             p["alphaRWlp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ll(sp=sp1, w=w1, f=f1, bar=True),
-            ll(sp=sp2, w=w2, f=f2),
+            lambda weak: ll(sp=sp1, w=weak, f=f1, bar=True),
+            lambda weak: ll(sp=sp2, w=weak, f=f2),
             FS(g["SU2L"], mu, nu, aW1),
         )
-        + f2xd_derivative_current(
+        + f2xd_weak_derivative_current(
             p["alphaRWltp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ll(sp=sp1, w=w1, f=f1, bar=True),
-            ll(sp=sp2, w=w2, f=f2),
+            lambda weak: ll(sp=sp1, w=weak, f=f1, bar=True),
+            lambda weak: ll(sp=sp2, w=weak, f=f2),
             _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1),
         )
         + f2xd_fs_current(
@@ -1564,13 +1603,13 @@ def build_smeft_green_bpreserving(
         I
         * p["alphaOHq1"](f1, f2)
         * Phi.bar(w1)
-        * DC(Phi, mu)
+        * DC(Phi(w1), mu)
         * ql(w=w2, f=f1, c=c1, bar=True)
         * Gamma(mu)
         * ql(w=w2, f=f2, c=c1)
         - I
         * p["alphaOHq1"](f1, f2)
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * Phi(w1)
         * ql(w=w2, f=f1, c=c1, bar=True)
         * Gamma(mu)
@@ -1604,65 +1643,65 @@ def build_smeft_green_bpreserving(
         + I
         * p["alphaOHq3"](f1, f2)
         * Phi.bar(w1)
-        * weak_t(aW1, w1, w2)
-        * DC(Phi, mu)
+        * weak_t(aW1, w1, w_dh_phi_r)
+        * DC(Phi(w_dh_phi_r), mu)
         * ql(w=w3, f=f1, c=c1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ql(w=w2, f=f2, c=c1)
+        * ql(w=w4, f=f2, c=c1)
         - I
         * p["alphaOHq3"](f1, f2)
-        * DC(Phi.bar, mu)
-        * weak_t(aW1, w1, w2)
+        * DC(Phi.bar(w_dh_phi_l), mu)
+        * weak_t(aW1, w_dh_phi_l, w2)
         * Phi(w2)
         * ql(w=w3, f=f1, c=c1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ql(w=w2, f=f2, c=c1)
+        * ql(w=w4, f=f2, c=c1)
         + I
         * p["alphaRHq3p"](f1, f2)
         * Phi.bar(w1)
         * weak_t(aW1, w1, w2)
         * Phi(w2)
         * ql(w=w3, f=f1, c=c1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w_dh_ferm_r)
         * Gamma(mu)
-        * DC(ql(w=w2, f=f2, c=c1), mu)
+        * DC(ql(w=w_dh_ferm_r, f=f2, c=c1), mu)
         - I
         * p["alphaRHq3p"](f1, f2)
         * Phi.bar(w1)
         * weak_t(aW1, w1, w2)
         * Phi(w2)
-        * DC(ql(w=w3, f=f1, c=c1, bar=True), mu)
-        * weak_t(aW1, w3, w2)
+        * DC(ql(w=w_dh_ferm_l, f=f1, c=c1, bar=True), mu)
+        * weak_t(aW1, w_dh_ferm_l, w4)
         * Gamma(mu)
-        * ql(w=w2, f=f2, c=c1)
+        * ql(w=w4, f=f2, c=c1)
         + p["alphaRHq3pp"](f1, f2)
-        * DC(Phi.bar(w1), mu)
-        * weak_t(aW1, w1, w2)
+        * DC(Phi.bar(w_dh_phi_l), mu)
+        * weak_t(aW1, w_dh_phi_l, w2)
         * Phi(w2)
         * ql(w=w3, f=f1, c=c1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ql(w=w2, f=f2, c=c1)
+        * ql(w=w4, f=f2, c=c1)
         + p["alphaRHq3pp"](f1, f2)
         * Phi.bar(w1)
-        * weak_t(aW1, w1, w2)
-        * DC(Phi(w2), mu)
+        * weak_t(aW1, w1, w_dh_phi_r)
+        * DC(Phi(w_dh_phi_r), mu)
         * ql(w=w3, f=f1, c=c1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ql(w=w2, f=f2, c=c1)
+        * ql(w=w4, f=f2, c=c1)
         + I
         * p["alphaOHu"](f1, f2)
         * Phi.bar(w1)
-        * DC(Phi, mu)
+        * DC(Phi(w1), mu)
         * ur(f=f1, c=c1, bar=True)
         * Gamma(mu)
         * ur(f=f2, c=c1)
         - I
         * p["alphaOHu"](f1, f2)
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * Phi(w1)
         * ur(f=f1, c=c1, bar=True)
         * Gamma(mu)
@@ -1696,13 +1735,13 @@ def build_smeft_green_bpreserving(
         + I
         * p["alphaOHd"](f1, f2)
         * Phi.bar(w1)
-        * DC(Phi, mu)
+        * DC(Phi(w1), mu)
         * dr(f=f1, c=c1, bar=True)
         * Gamma(mu)
         * dr(f=f2, c=c1)
         - I
         * p["alphaOHd"](f1, f2)
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * Phi(w1)
         * dr(f=f1, c=c1, bar=True)
         * Gamma(mu)
@@ -1736,13 +1775,13 @@ def build_smeft_green_bpreserving(
         + I
         * p["alphaOHl1"](f1, f2)
         * Phi.bar(w1)
-        * DC(Phi, mu)
+        * DC(Phi(w1), mu)
         * ll(w=w2, f=f1, bar=True)
         * Gamma(mu)
         * ll(w=w2, f=f2)
         - I
         * p["alphaOHl1"](f1, f2)
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * Phi(w1)
         * ll(w=w2, f=f1, bar=True)
         * Gamma(mu)
@@ -1776,65 +1815,65 @@ def build_smeft_green_bpreserving(
         + I
         * p["alphaOHl3"](f1, f2)
         * Phi.bar(w1)
-        * weak_t(aW1, w1, w2)
-        * DC(Phi, mu)
+        * weak_t(aW1, w1, w_dh_phi_r)
+        * DC(Phi(w_dh_phi_r), mu)
         * ll(w=w3, f=f1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ll(w=w2, f=f2)
+        * ll(w=w4, f=f2)
         - I
         * p["alphaOHl3"](f1, f2)
-        * DC(Phi.bar, mu)
-        * weak_t(aW1, w1, w2)
+        * DC(Phi.bar(w_dh_phi_l), mu)
+        * weak_t(aW1, w_dh_phi_l, w2)
         * Phi(w2)
         * ll(w=w3, f=f1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ll(w=w2, f=f2)
+        * ll(w=w4, f=f2)
         + I
         * p["alphaRHl3p"](f1, f2)
         * Phi.bar(w1)
         * weak_t(aW1, w1, w2)
         * Phi(w2)
         * ll(w=w3, f=f1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w_dh_ferm_r)
         * Gamma(mu)
-        * DC(ll(w=w2, f=f2), mu)
+        * DC(ll(w=w_dh_ferm_r, f=f2), mu)
         - I
         * p["alphaRHl3p"](f1, f2)
         * Phi.bar(w1)
         * weak_t(aW1, w1, w2)
         * Phi(w2)
-        * DC(ll(w=w3, f=f1, bar=True), mu)
-        * weak_t(aW1, w3, w2)
+        * DC(ll(w=w_dh_ferm_l, f=f1, bar=True), mu)
+        * weak_t(aW1, w_dh_ferm_l, w4)
         * Gamma(mu)
-        * ll(w=w2, f=f2)
+        * ll(w=w4, f=f2)
         + p["alphaRHl3pp"](f1, f2)
-        * DC(Phi.bar(w1), mu)
-        * weak_t(aW1, w1, w2)
+        * DC(Phi.bar(w_dh_phi_l), mu)
+        * weak_t(aW1, w_dh_phi_l, w2)
         * Phi(w2)
         * ll(w=w3, f=f1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ll(w=w2, f=f2)
+        * ll(w=w4, f=f2)
         + p["alphaRHl3pp"](f1, f2)
         * Phi.bar(w1)
-        * weak_t(aW1, w1, w2)
-        * DC(Phi(w2), mu)
+        * weak_t(aW1, w1, w_dh_phi_r)
+        * DC(Phi(w_dh_phi_r), mu)
         * ll(w=w3, f=f1, bar=True)
-        * weak_t(aW1, w3, w2)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ll(w=w2, f=f2)
+        * ll(w=w4, f=f2)
         + I
         * p["alphaOHe"](f1, f2)
         * Phi.bar(w1)
-        * DC(Phi, mu)
+        * DC(Phi(w1), mu)
         * lr(f=f1, bar=True)
         * Gamma(mu)
         * lr(f=f2)
         - I
         * p["alphaOHe"](f1, f2)
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * Phi(w1)
         * lr(f=f1, bar=True)
         * Gamma(mu)
@@ -1868,13 +1907,13 @@ def build_smeft_green_bpreserving(
         + I
         * p["alphaOHud"](f1, f2)
         * phitildebar(w1, w2)
-        * DC(Phi, mu)
+        * DC(Phi(w1), mu)
         * ur(f=f1, c=c1, bar=True)
         * Gamma(mu)
         * dr(f=f2, c=c1)
         - I
         * p["alphaOHud"](f1, f2).conj()
-        * DC(Phi.bar, mu)
+        * DC(Phi.bar(w1), mu)
         * phitilde(w1, w2)
         * dr(f=f2, c=c1, bar=True)
         * Gamma(mu)
@@ -1934,9 +1973,9 @@ def build_smeft_green_bpreserving(
         * Gamma(mu)
         * ql(w=w2, f=f2, c=c1)
         * ql(w=w3, f=f3, c=c2, bar=True)
-        * weak_t(aW1, w3, w1)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ql(w=w1, f=f4, c=c2)
+        * ql(w=w4, f=f4, c=c2)
         + p["alphaOuu"](f1, f2, f3, f4)
         * ur(f=f1, c=c1, bar=True)
         * Gamma(mu)
@@ -2025,8 +2064,8 @@ def build_smeft_green_bpreserving(
         * dr(sp=sp2, f=f4, c=c4, bar=True)
         * ql(sp=sp2, w=w2, f=f3, c=c3)
         * weak_eps2(w1, w2)
-        * gauge_generator(aC1, c1, c2)
-        * gauge_generator(aC1, c3, c4)
+        * gauge_generator(aC1, c2, c1)
+        * gauge_generator(aC1, c4, c3)
     )
 
     L4l = (
@@ -2067,9 +2106,9 @@ def build_smeft_green_bpreserving(
         * Gamma(mu)
         * ll(w=w2, f=f2)
         * ql(w=w3, f=f3, c=c1, bar=True)
-        * weak_t(aW1, w3, w1)
+        * weak_t(aW1, w3, w4)
         * Gamma(mu)
-        * ql(w=w1, f=f4, c=c1)
+        * ql(w=w4, f=f4, c=c1)
         + p["alphaOeu"](f1, f2, f3, f4)
         * lr(f=f1, bar=True)
         * Gamma(mu)
@@ -2143,8 +2182,8 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaEuW"](f1, f2)
             * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
-            * weak_t(aW1, w1, w2)
-            * phitilde(w2, w3),
+            * weak_t(aW1, w1, w_f2xh)
+            * phitilde(w_f2xh, w3),
             ql(w=w1, f=f1, c=c1, bar=True),
             ur(f=f2, c=c1),
             mu,
@@ -2206,7 +2245,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaEuG"](f1, f2).conj()
             * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
-            * gauge_generator(aC1, c1, c2)
+            * gauge_generator(aC1, c2, c1)
             * phitildebar(w1, w2),
             ur(f=f2, c=c2, bar=True),
             ql(w=w1, f=f1, c=c1),
@@ -2216,8 +2255,8 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaEuW"](f1, f2).conj()
             * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
-            * weak_t(aW1, w1, w2)
-            * phitildebar(w2, w3),
+            * weak_t(aW1, w_f2xh, w1)
+            * phitildebar(w_f2xh, w3),
             ur(f=f2, c=c1, bar=True),
             ql(w=w1, f=f1, c=c1),
             mu,
@@ -2235,7 +2274,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaEdG"](f1, f2).conj()
             * _dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)
-            * gauge_generator(aC1, c1, c2)
+            * gauge_generator(aC1, c2, c1)
             * Phi.bar(w1),
             dr(f=f2, c=c2, bar=True),
             ql(w=w1, f=f1, c=c1),
@@ -2245,7 +2284,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaEdW"](f1, f2).conj()
             * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
-            * weak_t(aW1, w1, w2)
+            * weak_t(aW1, w2, w1)
             * Phi.bar(w2),
             dr(f=f2, c=c1, bar=True),
             ql(w=w1, f=f1, c=c1),
@@ -2264,7 +2303,7 @@ def build_smeft_green_bpreserving(
         + sigma_term(
             p["alphaEeW"](f1, f2).conj()
             * _dual_fs(g["SU2L"], mu, nu, rho, sigma, aW1)
-            * weak_t(aW1, w1, w2)
+            * weak_t(aW1, w2, w1)
             * Phi.bar(w2),
             lr(f=f2, bar=True),
             ll(w=w1, f=f1),
@@ -2294,20 +2333,20 @@ def build_smeft_green_bpreserving(
         * Phi.bar(w2),
         I
         * p["g2"]
-        * weak_eps2(w1, w2)
         * Wi(sigma, aW1)
-        * Phi.bar(w3)
-        * weak_t(aW1, w3, w2),
+        * weak_gauge_generator(aW1, w1, w_ev_hd2)
+        * Phi.bar(w2)
+        * weak_eps2(w2, w_ev_hd2),
     )
     dphitilde_sigma_terms = (
         weak_eps2(w1, w2) * PartialD(Phi(w2), sigma),
         -I * HALF * p["g1"] * weak_eps2(w1, w2) * B(sigma) * Phi(w2),
         -I
         * p["g2"]
-        * weak_eps2(w1, w2)
         * Wi(sigma, aW1)
-        * weak_t(aW1, w2, w3)
-        * Phi(w3),
+        * weak_gauge_generator(aW1, w_ev_hd2, w1)
+        * weak_eps2(w2, w_ev_hd2)
+        * Phi(w2),
     )
     dur_rho_terms = (
         PartialD(ur(sp=sp2, f=f2, c=c1), rho),
@@ -2315,7 +2354,7 @@ def build_smeft_green_bpreserving(
         -I
         * p["g3"]
         * G(rho, aC1)
-        * gauge_generator(aC1, c2, c1)
+        * gauge_generator(aC1, c1, c2)
         * ur(sp=sp2, f=f2, c=c2),
     )
     durbar_rho_terms = (
@@ -2325,17 +2364,25 @@ def build_smeft_green_bpreserving(
         * p["g3"]
         * G(rho, aC1)
         * ur(sp=sp1, f=f2, c=c2, bar=True)
-        * gauge_generator(aC1, c1, c2),
+        * gauge_generator(aC1, c2, c1),
     )
     dphi_sigma_terms = (
         PartialD(Phi(w1), sigma),
         -I * HALF * p["g1"] * B(sigma) * Phi(w1),
-        -I * p["g2"] * Wi(sigma, aW1) * weak_t(aW1, w1, w2) * Phi(w2),
+        -I
+        * p["g2"]
+        * Wi(sigma, aW1)
+        * weak_gauge_generator(aW1, w1, w2)
+        * Phi(w2),
     )
     dphibar_sigma_terms = (
         PartialD(Phi.bar(w1), sigma),
         I * HALF * p["g1"] * B(sigma) * Phi.bar(w1),
-        I * p["g2"] * Wi(sigma, aW1) * Phi.bar(w2) * weak_t(aW1, w2, w1),
+        I
+        * p["g2"]
+        * Wi(sigma, aW1)
+        * Phi.bar(w2)
+        * weak_gauge_generator(aW1, w2, w1),
     )
     ddr_rho_terms = (
         PartialD(dr(sp=sp2, f=f2, c=c1), rho),
@@ -2343,7 +2390,7 @@ def build_smeft_green_bpreserving(
         -I
         * p["g3"]
         * G(rho, aC1)
-        * gauge_generator(aC1, c2, c1)
+        * gauge_generator(aC1, c1, c2)
         * dr(sp=sp2, f=f2, c=c2),
     )
     ddrbar_rho_terms = (
@@ -2353,7 +2400,7 @@ def build_smeft_green_bpreserving(
         * p["g3"]
         * G(rho, aC1)
         * dr(sp=sp1, f=f2, c=c2, bar=True)
-        * gauge_generator(aC1, c1, c2),
+        * gauge_generator(aC1, c2, c1),
     )
     dlr_rho_terms = (
         PartialD(lr(sp=sp2, f=f2), rho),
@@ -2457,6 +2504,42 @@ def build_smeft_green_bpreserving(
             * fs_factor
         )
 
+    def ev_f2xd_color_derivative_current(coeff, left_at, right_at, fs_factor):
+        return (
+            I
+            * coeff
+            * gauge_generator(aC1, c1, c_xd_r)
+            * left_at(c1)
+            * sigma_gamma_left
+            * DC(right_at(c_xd_r), rho)
+            * fs_factor
+            - I
+            * coeff
+            * gauge_generator(aC1, c_xd_l, c2)
+            * DC(left_at(c_xd_l), rho)
+            * gamma_sigma_right
+            * right_at(c2)
+            * fs_factor
+        )
+
+    def ev_f2xd_weak_derivative_current(coeff, left_at, right_at, fs_factor):
+        return (
+            I
+            * coeff
+            * weak_t(aW1, w1, w_xd_r)
+            * left_at(w1)
+            * sigma_gamma_left
+            * DC(right_at(w_xd_r), rho)
+            * fs_factor
+            - I
+            * coeff
+            * weak_t(aW1, w_xd_l, w2)
+            * DC(left_at(w_xd_l), rho)
+            * gamma_sigma_right
+            * right_at(w2)
+            * fs_factor
+        )
+
     LEvF2XD = (
         ev_f2xd_fs_current(
             p["alphaEGq"](f1, f2),
@@ -2465,18 +2548,16 @@ def build_smeft_green_bpreserving(
             ql(sp=sp3, w=w1, f=f2, c=c2),
             _dual_covd_fs(g["SU3C"], mu, nu, rho, rho2, sigma, aC1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_color_derivative_current(
             p["alphaEGqp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp3, w=w1, f=f2, c=c2),
+            lambda color: ql(sp=sp1, w=w1, f=f1, c=color, bar=True),
+            lambda color: ql(sp=sp3, w=w1, f=f2, c=color),
             FS(g["SU3C"], mu, nu, aC1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_color_derivative_current(
             p["alphaEGqtp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp3, w=w1, f=f2, c=c2),
+            lambda color: ql(sp=sp1, w=w1, f=f1, c=color, bar=True),
+            lambda color: ql(sp=sp3, w=w1, f=f2, c=color),
             _dual_fs(g["SU3C"], mu, nu, rho2, sigma, aC1),
         )
         + ev_f2xd_fs_current(
@@ -2486,18 +2567,16 @@ def build_smeft_green_bpreserving(
             ql(sp=sp3, w=w2, f=f2, c=c1),
             _dual_covd_fs(g["SU2L"], mu, nu, rho, rho2, sigma, aW1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_weak_derivative_current(
             p["alphaEWqp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp3, w=w2, f=f2, c=c1),
+            lambda weak: ql(sp=sp1, w=weak, f=f1, c=c1, bar=True),
+            lambda weak: ql(sp=sp3, w=weak, f=f2, c=c1),
             FS(g["SU2L"], mu, nu, aW1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_weak_derivative_current(
             p["alphaEWqtp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ql(sp=sp1, w=w1, f=f1, c=c1, bar=True),
-            ql(sp=sp3, w=w2, f=f2, c=c1),
+            lambda weak: ql(sp=sp1, w=weak, f=f1, c=c1, bar=True),
+            lambda weak: ql(sp=sp3, w=weak, f=f2, c=c1),
             _dual_fs(g["SU2L"], mu, nu, rho2, sigma, aW1),
         )
         + ev_f2xd_fs_current(
@@ -2528,18 +2607,16 @@ def build_smeft_green_bpreserving(
             ur(sp=sp3, f=f2, c=c2),
             _dual_covd_fs(g["SU3C"], mu, nu, rho, rho2, sigma, aC1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_color_derivative_current(
             p["alphaEGup"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ur(sp=sp1, f=f1, c=c1, bar=True),
-            ur(sp=sp3, f=f2, c=c2),
+            lambda color: ur(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: ur(sp=sp3, f=f2, c=color),
             FS(g["SU3C"], mu, nu, aC1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_color_derivative_current(
             p["alphaEGutp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            ur(sp=sp1, f=f1, c=c1, bar=True),
-            ur(sp=sp3, f=f2, c=c2),
+            lambda color: ur(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: ur(sp=sp3, f=f2, c=color),
             _dual_fs(g["SU3C"], mu, nu, rho2, sigma, aC1),
         )
         + ev_f2xd_fs_current(
@@ -2570,18 +2647,16 @@ def build_smeft_green_bpreserving(
             dr(sp=sp3, f=f2, c=c2),
             _dual_covd_fs(g["SU3C"], mu, nu, rho, rho2, sigma, aC1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_color_derivative_current(
             p["alphaEGdp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            dr(sp=sp1, f=f1, c=c1, bar=True),
-            dr(sp=sp3, f=f2, c=c2),
+            lambda color: dr(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: dr(sp=sp3, f=f2, c=color),
             FS(g["SU3C"], mu, nu, aC1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_color_derivative_current(
             p["alphaEGdtp"](f1, f2),
-            gauge_generator(aC1, c1, c2),
-            dr(sp=sp1, f=f1, c=c1, bar=True),
-            dr(sp=sp3, f=f2, c=c2),
+            lambda color: dr(sp=sp1, f=f1, c=color, bar=True),
+            lambda color: dr(sp=sp3, f=f2, c=color),
             _dual_fs(g["SU3C"], mu, nu, rho2, sigma, aC1),
         )
         + ev_f2xd_fs_current(
@@ -2612,18 +2687,16 @@ def build_smeft_green_bpreserving(
             ll(sp=sp3, w=w2, f=f2),
             _dual_covd_fs(g["SU2L"], mu, nu, rho, rho2, sigma, aW1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_weak_derivative_current(
             p["alphaEWlp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ll(sp=sp1, w=w1, f=f1, bar=True),
-            ll(sp=sp3, w=w2, f=f2),
+            lambda weak: ll(sp=sp1, w=weak, f=f1, bar=True),
+            lambda weak: ll(sp=sp3, w=weak, f=f2),
             FS(g["SU2L"], mu, nu, aW1),
         )
-        + ev_f2xd_derivative_current(
+        + ev_f2xd_weak_derivative_current(
             p["alphaEWltp"](f1, f2),
-            weak_t(aW1, w1, w2),
-            ll(sp=sp1, w=w1, f=f1, bar=True),
-            ll(sp=sp3, w=w2, f=f2),
+            lambda weak: ll(sp=sp1, w=weak, f=f1, bar=True),
+            lambda weak: ll(sp=sp3, w=weak, f=f2),
             _dual_fs(g["SU2L"], mu, nu, rho2, sigma, aW1),
         )
         + ev_f2xd_fs_current(
@@ -2947,8 +3020,8 @@ def build_smeft_green_bpreserving(
         * gamma2(sp2, sp1, mu, nu, sp5)
         * gamma2(sp4, sp3, mu, nu, sp6)
         * weak_eps2(w1, w2)
-        * gauge_generator(aC1, c1, c2)
-        * gauge_generator(aC1, c3, c4)
+        * gauge_generator(aC1, c2, c1)
+        * gauge_generator(aC1, c4, c3)
     )
 
     LEv4l = (

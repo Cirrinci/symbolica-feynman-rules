@@ -2,7 +2,7 @@
   "generated_on": "2026-07-24",
   "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
   "local_model": "models/SMEFT2/SMEFT2.py",
-  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all bosonic rows, shared two-/four-fermion rows, and the two Weinberg charge-conjugation packaging rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. The separate canonical tensor-map diagnostic is still the gauge-sector per-coefficient map for supported bosonic coefficient sectors.",
+  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Charge-conjugation packaged rows are accepted only when the controlled packaging transform reduces to identical canonical coefficient-sector maps. The separate canonical tensor-map diagnostic remains the gauge-sector per-coefficient map for supported bosonic coefficient sectors.",
   "summary": {
     "reference_vertex_count": 184,
     "feynpy_signature_count_3_to_6": 192,
@@ -15,11 +15,11 @@
     "shared_head_matches": 176,
     "charge_conjugation_packaging_matches": 8,
     "operator_content_matches_including_cc": 184,
-    "shared_head_count_matches": 90,
-    "shared_head_count_mismatches": 92,
+    "shared_head_count_matches": 100,
+    "shared_head_count_mismatches": 82,
     "shared_head_count_benign_expansions": 9,
     "shared_head_count_mixed_benign_unexplained": 0,
-    "shared_head_count_unexplained_mismatches": 83,
+    "shared_head_count_unexplained_mismatches": 73,
     "canonical_map_supported_vertices": 32,
     "canonical_map_equal_vertices": 32,
     "canonical_map_unequal_vertices": 0,
@@ -34,13 +34,12 @@
       "CANONICAL_MAP_MATCH": 32
     },
     "exact_symbolic_supported_vertices": 184,
-    "exact_symbolic_equal_vertices": 78,
-    "exact_symbolic_unequal_vertices": 106,
+    "exact_symbolic_equal_vertices": 184,
+    "exact_symbolic_unequal_vertices": 0,
     "exact_symbolic_missing_local_vertices": 0,
     "exact_symbolic_error_vertices": 0,
     "exact_symbolic_status_counts": {
-      "EXACT_MATCH": 78,
-      "EXACT_MISMATCH": 106
+      "EXACT_MATCH": 184
     },
     "exact_symbolic_family_counts": {
       "BOSONIC": 32,
@@ -48,11 +47,11 @@
       "TWO_FERMION": 131
     },
     "benign_head_count_delta_heads": 15,
-    "unexplained_head_count_delta_heads": 295,
+    "unexplained_head_count_delta_heads": 270,
     "head_count_status_counts": {
       "COUNT_BENIGN_EXPANSION": 9,
-      "COUNT_MATCH": 90,
-      "COUNT_MISMATCH": 83
+      "COUNT_MATCH": 100,
+      "COUNT_MISMATCH": 73
     },
     "status_counts": {
       "FEYNPY_ONLY_ALGEBRAICALLY_ZERO": 2,
@@ -2891,7 +2890,7 @@
         "G",
         "G"
       ],
-      "local_term_count": 10,
+      "local_term_count": 14,
       "sectors": [
         "matter"
       ],
@@ -3035,7 +3034,7 @@
         "G",
         "G"
       ],
-      "local_term_count": 10,
+      "local_term_count": 14,
       "sectors": [
         "matter"
       ],
@@ -3179,7 +3178,7 @@
         "G",
         "G"
       ],
-      "local_term_count": 10,
+      "local_term_count": 14,
       "sectors": [
         "matter"
       ],
@@ -3251,8 +3250,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3341,8 +3340,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3431,8 +3430,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3521,8 +3520,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3728,8 +3727,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGdtp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 9 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3744,7 +3743,7 @@
         "B",
         "G"
       ],
-      "local_term_count": 45,
+      "local_term_count": 53,
       "sectors": [
         "matter"
       ],
@@ -3851,8 +3850,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGqtp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 9 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3867,7 +3866,7 @@
         "B",
         "G"
       ],
-      "local_term_count": 45,
+      "local_term_count": 53,
       "sectors": [
         "matter"
       ],
@@ -3974,8 +3973,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGutp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 9 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -3990,7 +3989,7 @@
         "B",
         "G"
       ],
-      "local_term_count": 45,
+      "local_term_count": 53,
       "sectors": [
         "matter"
       ],
@@ -4062,8 +4061,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4152,8 +4151,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEeH, alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4242,8 +4241,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD1, alphaRuHD2, alphaRuHD4",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4344,8 +4343,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4444,8 +4443,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -4544,8 +4543,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5226,37 +5225,19 @@
       },
       "feynpy_head_counts": {
         "alphaOHd": 1,
-        "alphaRHdp": 2,
-        "g1": 3
+        "alphaRHdp": 1,
+        "g1": 2
       },
-      "head_count_delta": {
-        "alphaRHdp": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 2,
-          "feynpy": 3
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHdp": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 2,
-          "feynpy": 3
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHd, alphaRHdp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 2 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5273,7 +5254,7 @@
         "DR",
         "B"
       ],
-      "local_term_count": 4,
+      "local_term_count": 1,
       "sectors": [
         "matter"
       ],
@@ -5322,37 +5303,19 @@
       },
       "feynpy_head_counts": {
         "alphaOHe": 1,
-        "alphaRHep": 2,
-        "g1": 3
+        "alphaRHep": 1,
+        "g1": 2
       },
-      "head_count_delta": {
-        "alphaRHep": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 2,
-          "feynpy": 3
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHep": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 2,
-          "feynpy": 3
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHe, alphaRHep",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 2 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5369,7 +5332,7 @@
         "LR",
         "B"
       ],
-      "local_term_count": 4,
+      "local_term_count": 1,
       "sectors": [
         "matter"
       ],
@@ -5424,55 +5387,21 @@
       },
       "feynpy_head_counts": {
         "alphaOHl1": 1,
-        "alphaOHl3": 2,
-        "alphaRHl1p": 2,
-        "alphaRHl3p": 2,
-        "g1": 7
+        "alphaOHl3": 1,
+        "alphaRHl1p": 1,
+        "alphaRHl3p": 1,
+        "g1": 4
       },
-      "head_count_delta": {
-        "alphaOHl3": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHl1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHl3p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 4,
-          "feynpy": 7
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaOHl3": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHl1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHl3p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 4,
-          "feynpy": 7
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHl1, alphaOHl3, alphaRHl1p, alphaRHl3p",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5489,7 +5418,7 @@
         "LL",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
@@ -5544,55 +5473,21 @@
       },
       "feynpy_head_counts": {
         "alphaOHq1": 1,
-        "alphaOHq3": 2,
-        "alphaRHq1p": 2,
-        "alphaRHq3p": 2,
-        "g1": 7
+        "alphaOHq3": 1,
+        "alphaRHq1p": 1,
+        "alphaRHq3p": 1,
+        "g1": 4
       },
-      "head_count_delta": {
-        "alphaOHq3": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHq1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHq3p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 4,
-          "feynpy": 7
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaOHq3": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHq1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHq3p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 4,
-          "feynpy": 7
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHq1, alphaOHq3, alphaRHq1p, alphaRHq3p",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5609,7 +5504,7 @@
         "QL",
         "B"
       ],
-      "local_term_count": 6,
+      "local_term_count": 5,
       "sectors": [
         "matter"
       ],
@@ -5658,37 +5553,19 @@
       },
       "feynpy_head_counts": {
         "alphaOHu": 1,
-        "alphaRHup": 2,
-        "g1": 3
+        "alphaRHup": 1,
+        "g1": 2
       },
-      "head_count_delta": {
-        "alphaRHup": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 2,
-          "feynpy": 3
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHup": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g1": {
-          "reference": 2,
-          "feynpy": 3
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHu, alphaRHup",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 2 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -5705,7 +5582,7 @@
         "UR",
         "B"
       ],
-      "local_term_count": 4,
+      "local_term_count": 1,
       "sectors": [
         "matter"
       ],
@@ -6013,8 +5890,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6103,8 +5980,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEeH, alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6193,8 +6070,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD1, alphaRuHD2, alphaRuHD4",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6295,8 +6172,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6395,8 +6272,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6495,8 +6372,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6655,7 +6532,7 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 10,
+      "local_term_count": 14,
       "sectors": [
         "matter"
       ],
@@ -6799,7 +6676,7 @@
         "Wi",
         "Wi"
       ],
-      "local_term_count": 10,
+      "local_term_count": 14,
       "sectors": [
         "matter"
       ],
@@ -6906,8 +6783,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEWltp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 9 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -6922,7 +6799,7 @@
         "B",
         "Wi"
       ],
-      "local_term_count": 45,
+      "local_term_count": 53,
       "sectors": [
         "matter"
       ],
@@ -7029,8 +6906,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEWqtp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 9 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7045,7 +6922,7 @@
         "B",
         "Wi"
       ],
-      "local_term_count": 45,
+      "local_term_count": 53,
       "sectors": [
         "matter"
       ],
@@ -7165,8 +7042,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKd",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7299,8 +7176,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKe",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7433,8 +7310,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKl",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7552,8 +7429,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKq",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -7686,8 +7563,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKu",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8737,8 +8614,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGd, alphaEGdp, alphaEGdtp, alphaRGdp, alphaRGdtp, alphaRdD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -8885,8 +8762,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGq, alphaEGqp, alphaEGqtp, alphaRGqp, alphaRGqtp, alphaRqD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9033,8 +8910,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGu, alphaEGup, alphaEGutp, alphaRGup, alphaRGutp, alphaRuD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9141,8 +9018,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdG, alphaOdG",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9561,8 +9438,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuG, alphaOuG",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -9858,8 +9735,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGdp, alphaEGdtp, alphaRGdp, alphaRGdtp, alphaRdD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10009,8 +9886,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGqp, alphaEGqtp, alphaRGqp, alphaRGqtp, alphaRqD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10160,8 +10037,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGup, alphaEGutp, alphaRGup, alphaRGutp, alphaRuD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10244,8 +10121,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10330,8 +10207,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD2, alphaRuHD4",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10421,8 +10298,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdG, alphaEdH, alphaOdG, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10510,8 +10387,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10571,52 +10448,34 @@
         "g3": 1
       },
       "feynpy_head_counts": {
-        "alphaRHdp": 2,
-        "g3": 2
+        "alphaRHdp": 1,
+        "g3": 1
       },
-      "head_count_delta": {
-        "alphaRHdp": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g3": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHdp": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g3": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRHdp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 1 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
+        "Phibar",
+        "Phi",
         "dRbar",
         "dR",
-        "G",
-        "Phibar",
-        "Phi"
+        "G"
       ],
       "feynpy_names": [
+        "Phi.bar",
+        "Phi",
         "DR.bar",
         "DR",
-        "G",
-        "Phi.bar",
-        "Phi"
+        "G"
       ],
       "local_term_count": 2,
       "sectors": [
@@ -10666,63 +10525,37 @@
         "g3": 2
       },
       "feynpy_head_counts": {
-        "alphaRHq1p": 2,
-        "alphaRHq3p": 2,
-        "g3": 4
+        "alphaRHq1p": 1,
+        "alphaRHq3p": 1,
+        "g3": 2
       },
-      "head_count_delta": {
-        "alphaRHq1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHq3p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g3": {
-          "reference": 2,
-          "feynpy": 4
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHq1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "alphaRHq3p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g3": {
-          "reference": 2,
-          "feynpy": 4
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRHq1p, alphaRHq3p",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 2 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
+        "Phibar",
+        "Phi",
         "qLbar",
         "qL",
-        "G",
-        "Phibar",
-        "Phi"
+        "G"
       ],
       "feynpy_names": [
+        "Phi.bar",
+        "Phi",
         "QL.bar",
         "QL",
-        "G",
-        "Phi.bar",
-        "Phi"
+        "G"
       ],
-      "local_term_count": 3,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
@@ -10767,52 +10600,34 @@
         "g3": 1
       },
       "feynpy_head_counts": {
-        "alphaRHup": 2,
-        "g3": 2
+        "alphaRHup": 1,
+        "g3": 1
       },
-      "head_count_delta": {
-        "alphaRHup": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g3": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHup": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g3": {
-          "reference": 1,
-          "feynpy": 2
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRHup",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 1 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
+        "Phibar",
+        "Phi",
         "uRbar",
         "uR",
-        "G",
-        "Phibar",
-        "Phi"
+        "G"
       ],
       "feynpy_names": [
+        "Phi.bar",
+        "Phi",
         "UR.bar",
         "UR",
-        "G",
-        "Phi.bar",
-        "Phi"
+        "G"
       ],
       "local_term_count": 2,
       "sectors": [
@@ -10882,8 +10697,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -10968,8 +10783,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD2, alphaRuHD4",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11059,8 +10874,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11148,8 +10963,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuG, alphaEuH, alphaOuG, alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11397,8 +11212,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEGqtp, alphaEWqtp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 9 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11509,8 +11324,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKd",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11613,8 +11428,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKq",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11723,8 +11538,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKu",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -11793,8 +11608,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHud",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 1 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12032,8 +11847,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdW, alphaOdW",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12140,8 +11955,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEeW, alphaOeW",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12248,8 +12063,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRuHD1",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12339,8 +12154,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaEdW, alphaOdW, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12428,8 +12243,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEeH, alphaEeW, alphaOeW, alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12517,8 +12332,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaRuHD1, alphaRuHD2, alphaRuHD4",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12599,8 +12414,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12679,8 +12494,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -12759,8 +12574,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13830,39 +13645,21 @@
       "feynpy_head_counts": {
         "alphaOHl1": 1,
         "alphaOHl3": 2,
-        "alphaRHl1p": 2,
+        "alphaRHl1p": 1,
         "alphaRHl3p": 2,
         "alphaRHl3pp": 2,
-        "g2": 9
+        "g2": 8
       },
-      "head_count_delta": {
-        "alphaRHl1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHl1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHl3, alphaRHl1p, alphaRHl3p, alphaRHl3pp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 5 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13879,7 +13676,7 @@
         "LL",
         "Wi"
       ],
-      "local_term_count": 7,
+      "local_term_count": 8,
       "sectors": [
         "matter"
       ],
@@ -13938,39 +13735,21 @@
       "feynpy_head_counts": {
         "alphaOHq1": 1,
         "alphaOHq3": 2,
-        "alphaRHq1p": 2,
+        "alphaRHq1p": 1,
         "alphaRHq3p": 2,
         "alphaRHq3pp": 2,
-        "g2": 9
+        "g2": 8
       },
-      "head_count_delta": {
-        "alphaRHq1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
-        }
-      },
+      "head_count_delta": {},
       "benign_head_count_delta_reasons": {},
-      "unexplained_head_count_delta": {
-        "alphaRHq1p": {
-          "reference": 1,
-          "feynpy": 2
-        },
-        "g2": {
-          "reference": 8,
-          "feynpy": 9
-        }
-      },
-      "head_count_status": "COUNT_MISMATCH",
+      "unexplained_head_count_delta": {},
+      "head_count_status": "COUNT_MATCH",
       "canonical_map_status": "CANONICAL_MAP_UNSUPPORTED",
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHq3, alphaRHq1p, alphaRHq3p, alphaRHq3pp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 5 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -13987,7 +13766,7 @@
         "QL",
         "Wi"
       ],
-      "local_term_count": 7,
+      "local_term_count": 8,
       "sectors": [
         "matter"
       ],
@@ -14118,8 +13897,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHd, alphaRHdp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14134,7 +13913,7 @@
         "DR.bar",
         "DR"
       ],
-      "local_term_count": 6,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
@@ -14191,8 +13970,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHe, alphaRHep",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14207,7 +13986,7 @@
         "LR.bar",
         "LR"
       ],
-      "local_term_count": 6,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
@@ -14276,8 +14055,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHl1, alphaOHl3, alphaRHl1p, alphaRHl3p, alphaRHl3pp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14292,7 +14071,7 @@
         "LL.bar",
         "LL"
       ],
-      "local_term_count": 10,
+      "local_term_count": 8,
       "sectors": [
         "matter"
       ],
@@ -14361,8 +14140,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHq1, alphaOHq3, alphaRHq1p, alphaRHq3p, alphaRHq3pp",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14377,7 +14156,7 @@
         "QL.bar",
         "QL"
       ],
-      "local_term_count": 10,
+      "local_term_count": 8,
       "sectors": [
         "matter"
       ],
@@ -14434,8 +14213,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHu, alphaRHup",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -14450,7 +14229,7 @@
         "UR.bar",
         "UR"
       ],
-      "local_term_count": 6,
+      "local_term_count": 4,
       "sectors": [
         "matter"
       ],
@@ -15184,8 +14963,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaOHud",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 1 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15639,8 +15418,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuW, alphaOuW, alphaRuHD1",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 3 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15730,8 +15509,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEdH, alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15819,8 +15598,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEeH, alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15908,8 +15687,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEuH, alphaEuW, alphaOuW, alphaRuHD1, alphaRuHD2, alphaRuHD4",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -15990,8 +15769,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRdHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16070,8 +15849,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaReHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16150,8 +15929,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaRuHD2",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16926,8 +16705,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEWl, alphaEWlp, alphaEWltp, alphaRWlp, alphaRWltp, alphaRlD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17066,8 +16845,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEWq, alphaEWqp, alphaEWqtp, alphaRWqp, alphaRWqtp, alphaRqD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17219,8 +16998,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEWlp, alphaEWltp, alphaRWlp, alphaRWltp, alphaRlD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17370,8 +17149,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEWqp, alphaEWqtp, alphaRWqp, alphaRWqtp, alphaRqD",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 7 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17482,8 +17261,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKl",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17586,8 +17365,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "TWO_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaKq",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 8 coefficient sector(s); raw head-count status was COUNT_BENIGN_EXPANSION.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17683,8 +17462,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcqedl, alphaEcqedlthree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MISMATCH. Ec partner sectors: alphaEcqedl matched via charge-conjugation partner `dRbar|eR|lL|qLbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum. alphaEcqedlthree matched via charge-conjugation partner `dRbar|eR|lL|qLbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum.",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -17791,8 +17570,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcudqq, alphaEcudqqtwo, alphaEquqdtwo8, alphaOquqd8",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MISMATCH. Ec partner sectors: alphaEcudqq matched via charge-conjugation partner `dRbar|qL|qLbar|uR` using direct CC packaging, phase +1, and antisymmetric duplicate-leg sum. alphaEcudqqtwo matched via charge-conjugation partner `dRbar|qL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum.",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -17885,8 +17664,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEced, alphaEcedtwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17970,8 +17749,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcld, alphaEcldthree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18079,8 +17858,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcqd, alphaEcqdp, alphaEcqdpthree, alphaEcqdthree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18188,8 +17967,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcud, alphaEcudp, alphaEcudptwo, alphaEcudtwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18273,8 +18052,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcdd, alphaEcddtwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18372,8 +18151,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcqedl, alphaEcqedlthree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MISMATCH. Ec partner sectors: alphaEcqedl matched via charge-conjugation partner `dR|eRbar|lLbar|qL` using direct CC packaging, phase -1, and symmetric duplicate-leg sum. alphaEcqedlthree matched via charge-conjugation partner `dR|eRbar|lLbar|qL` using direct CC packaging, phase -1, and symmetric duplicate-leg sum.",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -18480,8 +18259,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcudqq, alphaEcudqqtwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MISMATCH. Ec partner sectors: alphaEcudqq matched via charge-conjugation partner `dR|qL|qLbar|uRbar` using direct CC packaging, phase +1, and antisymmetric duplicate-leg sum. alphaEcudqqtwo matched via charge-conjugation partner `dR|qL|qLbar|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum.",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -18588,8 +18367,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcuelq, alphaEcuelqtwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MISMATCH. Ec partner sectors: alphaEcuelq matched via charge-conjugation partner `eRbar|lL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum. alphaEcuelqtwo matched via charge-conjugation partner `eRbar|lL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum.",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -18682,8 +18461,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcle, alphaEclethree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18767,8 +18546,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcqe, alphaEcqethree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18852,8 +18631,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEceu, alphaEceutwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18929,8 +18708,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcee, alphaEceetwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -19028,8 +18807,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcuelq, alphaEcuelqtwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MISMATCH. Ec partner sectors: alphaEcuelq matched via charge-conjugation partner `eR|lLbar|qL|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum. alphaEcuelqtwo matched via charge-conjugation partner `eR|lLbar|qL|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum.",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -19146,8 +18925,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcql, alphaEcqlp, alphaEcqlptwo, alphaEcqltwo, alphaOlq3",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -19231,8 +19010,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEclu, alphaEcluthree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -19316,8 +19095,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcll, alphaEclltwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -19425,8 +19204,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcqu, alphaEcqup, alphaEcqupthree, alphaEcquthree",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -19534,8 +19313,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcqq, alphaEcqqp, alphaEcqqptwo, alphaEcqqtwo, alphaOqq3",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -19619,8 +19398,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "EXACT_MISMATCH",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps differ for coefficient sector(s): alphaEcuu, alphaEcuutwo",
+      "exact_symbolic_status": "EXACT_MATCH",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s); raw head-count status was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [

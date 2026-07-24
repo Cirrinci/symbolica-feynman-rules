@@ -14,7 +14,7 @@ import argparse
 import json
 import re
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -35,6 +35,8 @@ from feynrules.comparison import (
 )
 from models.SMEFT2 import build_smeft_green_bpreserving
 from symbolic.tensor_canonicalization import (
+    CanonicalMonomialReport,
+    CanonicalTensorMonomial,
     canonical_external_index_set,
     canonical_tensor_monomial_report,
     canonical_tensor_monomial_map,
@@ -57,7 +59,7 @@ from symbolic.spenso_structures import (
     weak_gauge_generator,
     weak_structure_constant,
 )
-from symbolic.vertex_engine import pcomp
+from symbolic.vertex_engine import I, pcomp
 
 
 MODEL_DIR = Path(__file__).resolve().parent
@@ -161,6 +163,12 @@ FEYNRULES_GREEK_ASCII = {
     "β": "beta",
     "γ": "gamma",
     "δ": "delta",
+    "ε": "epsilon",
+    "ζ": "zeta",
+    "η": "eta",
+    "θ": "theta",
+    "ι": "iota",
+    "κ": "kappa",
     "μ": "mu",
     "ν": "nu",
     "ρ": "rho",
@@ -391,6 +399,846 @@ def _filter_terms_by_coefficient_head(
     return total.cancel().expand()
 
 
+_WEAK_T_FACTOR_SIGNATURE = ("weak_adj", "weak_fund", "weak_fund")
+_WEAK_EPS2_FACTOR_SIGNATURE = ("weak_fund", "weak_fund")
+_COLOR_T_FACTOR_SIGNATURE = ("color_adj", "color_fund", "color_fund")
+_GENERATOR_T_FACTOR_SIGNATURES = {
+    _COLOR_T_FACTOR_SIGNATURE,
+    _WEAK_T_FACTOR_SIGNATURE,
+}
+_ADJOINT_F_SIGNATURE_BY_T_SIGNATURE = {
+    _COLOR_T_FACTOR_SIGNATURE: ("color_adj", "color_adj", "color_adj"),
+    _WEAK_T_FACTOR_SIGNATURE: ("weak_adj", "weak_adj", "weak_adj"),
+}
+_ADJOINT_F_SIGNATURES = frozenset(_ADJOINT_F_SIGNATURE_BY_T_SIGNATURE.values())
+_DUMMY_FUND_PREFIX_BY_T_SIGNATURE = {
+    _COLOR_T_FACTOR_SIGNATURE: "D:C:",
+    _WEAK_T_FACTOR_SIGNATURE: "D:W:",
+}
+_DUMMY_ADJOINT_PREFIX_BY_T_SIGNATURE = {
+    _COLOR_T_FACTOR_SIGNATURE: "D:A:",
+    _WEAK_T_FACTOR_SIGNATURE: "D:AW:",
+}
+_DUMMY_ADJOINT_PREFIX_BY_F_SIGNATURE = {
+    f_signature: _DUMMY_ADJOINT_PREFIX_BY_T_SIGNATURE[t_signature]
+    for t_signature, f_signature in _ADJOINT_F_SIGNATURE_BY_T_SIGNATURE.items()
+}
+
+
+def _is_dummy_weak_label(label: object) -> bool:
+    return isinstance(label, str) and label.startswith("D:W:")
+
+
+def _is_weak_t_factor(factor: object) -> bool:
+    return (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and factor[0] == "t"
+        and factor[1] == _WEAK_T_FACTOR_SIGNATURE
+        and isinstance(factor[2], tuple)
+        and len(factor[2]) == 3
+    )
+
+
+def _is_weak_eps2_factor(factor: object) -> bool:
+    return (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and factor[0] == "weak_eps2"
+        and factor[1] == _WEAK_EPS2_FACTOR_SIGNATURE
+        and isinstance(factor[2], tuple)
+        and len(factor[2]) == 2
+    )
+
+
+def _is_generator_t_factor(factor: object) -> bool:
+    return (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and factor[0] == "t"
+        and factor[1] in _GENERATOR_T_FACTOR_SIGNATURES
+        and isinstance(factor[2], tuple)
+        and len(factor[2]) == 3
+    )
+
+
+def _is_structure_constant_factor(factor: object) -> bool:
+    return (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and factor[0] == "f"
+        and factor[1] in _ADJOINT_F_SIGNATURES
+        and isinstance(factor[2], tuple)
+        and len(factor[2]) == 3
+    )
+
+
+def _factor_labels(factor: object) -> tuple[object, ...]:
+    if isinstance(factor, tuple) and len(factor) == 3 and isinstance(factor[2], tuple):
+        return factor[2]
+    return ()
+
+
+def _label_occurrences(factors: Iterable[object], label: object) -> int:
+    return sum(1 for factor in factors for item in _factor_labels(factor) if item == label)
+
+
+def _fresh_dummy_adjoint_label(
+    factors: Iterable[object],
+    signature: tuple[str, str, str],
+) -> str:
+    prefix = _DUMMY_ADJOINT_PREFIX_BY_T_SIGNATURE[signature]
+    used = {item for factor in factors for item in _factor_labels(factor)}
+    candidate = 1
+    while f"{prefix}{candidate}" in used:
+        candidate += 1
+    return f"{prefix}{candidate}"
+
+
+def _generator_chain_from_pair(
+    factors: list[object],
+    first_index: int,
+    second_index: int,
+) -> tuple[
+    tuple[str, str, str],
+    object,
+    object,
+    object,
+    object,
+    object,
+] | None:
+    first = factors[first_index]
+    second = factors[second_index]
+    if not _is_generator_t_factor(first) or not _is_generator_t_factor(second):
+        return None
+    signature = first[1]
+    if second[1] != signature:
+        return None
+
+    first_adj, first_left, first_right = first[2]
+    second_adj, second_left, second_right = second[2]
+    dummy_prefix = _DUMMY_FUND_PREFIX_BY_T_SIGNATURE[signature]
+    candidates = []
+    if (
+        first_right == second_left
+        and isinstance(first_right, str)
+        and first_right.startswith(dummy_prefix)
+    ):
+        candidates.append(
+            (signature, first_left, first_right, second_right, first_adj, second_adj)
+        )
+    if (
+        second_right == first_left
+        and isinstance(second_right, str)
+        and second_right.startswith(dummy_prefix)
+    ):
+        candidates.append(
+            (signature, second_left, second_right, first_right, second_adj, first_adj)
+        )
+    if len(candidates) != 1:
+        return None
+    signature, open_left, shared, open_right, left_adj, right_adj = candidates[0]
+    if _label_occurrences(factors, shared) != 2:
+        return None
+    return signature, open_left, shared, open_right, left_adj, right_adj
+
+
+def _canonical_key_with_commuting_factors(
+    key: CanonicalTensorMonomial,
+    factors: Iterable[object],
+) -> CanonicalTensorMonomial:
+    return CanonicalTensorMonomial(
+        commuting_factors=tuple(sorted(factors, key=repr)),
+        ordered_factors=key.ordered_factors,
+    )
+
+
+def _permutation_sign(current: tuple[object, ...], target: tuple[object, ...]) -> int:
+    working = list(current)
+    sign = 1
+    for slot, desired in enumerate(target):
+        current_slot = working.index(desired, slot)
+        while current_slot > slot:
+            working[current_slot], working[current_slot - 1] = (
+                working[current_slot - 1],
+                working[current_slot],
+            )
+            sign *= -1
+            current_slot -= 1
+    return sign
+
+
+def _antisymmetric_factor_with_sorted_labels(
+    head: str,
+    signature: tuple[str, ...],
+    labels: tuple[object, ...],
+) -> tuple[int, object]:
+    if len(set(labels)) != len(labels):
+        return 0, None
+    ordered = tuple(sorted(labels, key=repr))
+    return _permutation_sign(labels, ordered), (head, signature, ordered)
+
+
+def _expand_one_generator_product_ordering(
+    key: CanonicalTensorMonomial,
+) -> tuple[bool, list[tuple[Expression, CanonicalTensorMonomial]]]:
+    """Sort one adjacent generator chain and emit the commutator term.
+
+    FeynPy's covariant-derivative expansion may leave ``T^b T^a`` while
+    FeynRules rewrites it as ``T^a T^b - i f^{abc} T^c``.  Applying that
+    identity to both sides gives a strict common Lie-algebra basis.
+    """
+
+    factors = list(key.commuting_factors)
+    for first_index, first in enumerate(factors):
+        if not _is_generator_t_factor(first):
+            continue
+        for second_index in range(first_index + 1, len(factors)):
+            chain = _generator_chain_from_pair(factors, first_index, second_index)
+            if chain is None:
+                continue
+            signature, open_left, shared, open_right, left_adj, right_adj = chain
+            if repr(left_adj) <= repr(right_adj):
+                continue
+
+            sorted_left_adj, sorted_right_adj = right_adj, left_adj
+            rest = [
+                factor
+                for index, factor in enumerate(factors)
+                if index not in {first_index, second_index}
+            ]
+            product_factors = [
+                *rest,
+                ("t", signature, (sorted_left_adj, open_left, shared)),
+                ("t", signature, (sorted_right_adj, shared, open_right)),
+            ]
+            dummy_adj = _fresh_dummy_adjoint_label(rest, signature)
+            adjoint_signature = _ADJOINT_F_SIGNATURE_BY_T_SIGNATURE[signature]
+            commutator_factors = [
+                *rest,
+                ("f", adjoint_signature, (dummy_adj, sorted_left_adj, sorted_right_adj)),
+                ("t", signature, (dummy_adj, open_left, open_right)),
+            ]
+            return True, [
+                (
+                    Expression.num(1),
+                    _canonical_key_with_commuting_factors(key, product_factors),
+                ),
+                (
+                    -I,
+                    _canonical_key_with_commuting_factors(key, commutator_factors),
+                ),
+            ]
+    return False, [(Expression.num(1), key)]
+
+
+def _normalize_generator_product_order_key(
+    key: CanonicalTensorMonomial,
+) -> list[tuple[Expression, CanonicalTensorMonomial]]:
+    terms = [(Expression.num(1), key)]
+    for _ in range(12):
+        changed = False
+        next_terms = []
+        for coefficient, term_key in terms:
+            term_changed, expansions = _expand_one_generator_product_ordering(term_key)
+            changed = changed or term_changed
+            for factor, expanded_key in expansions:
+                next_terms.append(((coefficient * factor).cancel().expand(), expanded_key))
+        terms = next_terms
+        if not changed:
+            return terms
+    raise RuntimeError("generator-product normalization did not converge")
+
+
+def _normalize_generator_product_order_report(
+    report: CanonicalMonomialReport,
+) -> CanonicalMonomialReport:
+    normalized: dict[CanonicalTensorMonomial, Expression] = {}
+    for key, coefficient in report.map.items():
+        for multiplier, normalized_key in _normalize_generator_product_order_key(key):
+            normalized_coefficient = (
+                coefficient * multiplier
+            ).cancel().expand()
+            normalized[normalized_key] = (
+                normalized.get(normalized_key, Expression.num(0))
+                + normalized_coefficient
+            ).cancel().expand()
+
+    normalized = {
+        key: coefficient
+        for key, coefficient in sorted(normalized.items(), key=lambda item: repr(item[0]))
+        if coefficient.cancel().expand().to_canonical_string() != "0"
+    }
+    return CanonicalMonomialReport(
+        raw_terms=report.raw_terms,
+        canonical_terms=len(normalized),
+        map=normalized,
+    )
+
+
+def _canonical_structure_constant_pair_factors(
+    signature: tuple[str, ...],
+    left_labels: tuple[object, object, object],
+    right_labels: tuple[object, object, object],
+) -> tuple[int, tuple[object, object]] | None:
+    left_sign, left_factor = _antisymmetric_factor_with_sorted_labels(
+        "f",
+        signature,
+        left_labels,
+    )
+    right_sign, right_factor = _antisymmetric_factor_with_sorted_labels(
+        "f",
+        signature,
+        right_labels,
+    )
+    if left_sign == 0 or right_sign == 0:
+        return None
+    return left_sign * right_sign, (left_factor, right_factor)
+
+
+def _structure_constant_jacobi_basis(
+    signature: tuple[str, ...],
+    free_labels: tuple[object, object, object, object],
+    shared_label: object,
+    basis_name: str,
+) -> tuple[int, tuple[object, object]] | None:
+    a_label, b_label, c_label, d_label = free_labels
+    basis_labels = {
+        "p12": ((a_label, b_label, shared_label), (c_label, d_label, shared_label)),
+        "p14": ((a_label, d_label, shared_label), (b_label, c_label, shared_label)),
+    }
+    left_labels, right_labels = basis_labels[basis_name]
+    return _canonical_structure_constant_pair_factors(
+        signature,
+        left_labels,
+        right_labels,
+    )
+
+
+def _structure_constant_jacobi_pair(
+    factors: list[object],
+    left_index: int,
+    right_index: int,
+) -> tuple[tuple[str, ...], object, tuple[object, object, object, object], str, int] | None:
+    left = factors[left_index]
+    right = factors[right_index]
+    if not _is_structure_constant_factor(left) or not _is_structure_constant_factor(
+        right
+    ):
+        return None
+    signature = left[1]
+    if right[1] != signature:
+        return None
+
+    left_labels = left[2]
+    right_labels = right[2]
+    shared = tuple(label for label in left_labels if label in right_labels)
+    if len(shared) != 1:
+        return None
+    shared_label = shared[0]
+    dummy_prefix = _DUMMY_ADJOINT_PREFIX_BY_F_SIGNATURE[signature]
+    if not (isinstance(shared_label, str) and shared_label.startswith(dummy_prefix)):
+        return None
+    if _label_occurrences(factors, shared_label) != 2:
+        return None
+
+    left_free = tuple(label for label in left_labels if label != shared_label)
+    right_free = tuple(label for label in right_labels if label != shared_label)
+    free_labels = tuple(sorted(left_free + right_free, key=repr))
+    if len(set(free_labels)) != 4:
+        return None
+
+    a_label, b_label, c_label, d_label = free_labels
+    targets = {
+        "p12": ((a_label, b_label, shared_label), (c_label, d_label, shared_label)),
+        "p13": ((a_label, c_label, shared_label), (b_label, d_label, shared_label)),
+        "p14": ((a_label, d_label, shared_label), (b_label, c_label, shared_label)),
+    }
+    actual_pair_sets = [
+        frozenset(left_free),
+        frozenset(right_free),
+    ]
+    for name, (target_left, target_right) in targets.items():
+        left_pair = frozenset(target_left[:2])
+        right_pair = frozenset(target_right[:2])
+        if actual_pair_sets == [left_pair, right_pair]:
+            sign = _permutation_sign(left_labels, target_left) * _permutation_sign(
+                right_labels,
+                target_right,
+            )
+            return signature, shared_label, free_labels, name, sign
+        if actual_pair_sets == [right_pair, left_pair]:
+            sign = _permutation_sign(left_labels, target_right) * _permutation_sign(
+                right_labels,
+                target_left,
+            )
+            return signature, shared_label, free_labels, name, sign
+    return None
+
+
+def _expand_one_structure_constant_jacobi_pair(
+    key: CanonicalTensorMonomial,
+) -> tuple[bool, list[tuple[Expression, CanonicalTensorMonomial]]]:
+    """Reduce one ``f*f`` product to the deterministic Jacobi basis.
+
+    The only identity applied is
+
+        ``f(a,b,e) f(c,d,e) - f(a,c,e) f(b,d,e)
+        + f(a,d,e) f(b,c,e) = 0``.
+
+    The middle pairing is replaced by the fixed ``p12`` and ``p14`` pairings.
+    This is narrower than a general color simplification: all external labels
+    and every non-``f`` factor remain untouched, and the shared adjoint label
+    must be a genuine dummy occurring only in the selected ``f*f`` pair.
+    """
+
+    factors = list(key.commuting_factors)
+    for left_index, left in enumerate(factors):
+        if not _is_structure_constant_factor(left):
+            continue
+        for right_index in range(left_index + 1, len(factors)):
+            pair = _structure_constant_jacobi_pair(factors, left_index, right_index)
+            if pair is None:
+                continue
+            signature, shared_label, free_labels, kind, source_sign = pair
+            rest = [
+                factor
+                for index, factor in enumerate(factors)
+                if index not in {left_index, right_index}
+            ]
+
+            target_basis = ("p12", "p14") if kind == "p13" else (kind,)
+            expanded = []
+            for basis_name in target_basis:
+                target = _structure_constant_jacobi_basis(
+                    signature,
+                    free_labels,
+                    shared_label,
+                    basis_name,
+                )
+                if target is None:
+                    continue
+                target_sign, target_factors = target
+                expanded.append(
+                    (
+                        Expression.num(source_sign * target_sign),
+                        _canonical_key_with_commuting_factors(
+                            key,
+                            [*rest, *target_factors],
+                        ),
+                    )
+                )
+            if expanded:
+                return kind == "p13", expanded
+    return False, [(Expression.num(1), key)]
+
+
+def _normalize_structure_constant_jacobi_key(
+    key: CanonicalTensorMonomial,
+) -> list[tuple[Expression, CanonicalTensorMonomial]]:
+    terms = [(Expression.num(1), key)]
+    for _ in range(8):
+        changed = False
+        next_terms = []
+        for coefficient, term_key in terms:
+            term_changed, expansions = _expand_one_structure_constant_jacobi_pair(
+                term_key
+            )
+            changed = changed or term_changed
+            for factor, expanded_key in expansions:
+                next_terms.append(((coefficient * factor).cancel().expand(), expanded_key))
+        terms = next_terms
+        if not changed:
+            return terms
+    raise RuntimeError("structure-constant Jacobi normalization did not converge")
+
+
+def _normalize_structure_constant_jacobi_report(
+    report: CanonicalMonomialReport,
+) -> CanonicalMonomialReport:
+    normalized: dict[CanonicalTensorMonomial, Expression] = {}
+    for key, coefficient in report.map.items():
+        for multiplier, normalized_key in _normalize_structure_constant_jacobi_key(
+            key
+        ):
+            normalized_coefficient = (coefficient * multiplier).cancel().expand()
+            normalized[normalized_key] = (
+                normalized.get(normalized_key, Expression.num(0))
+                + normalized_coefficient
+            ).cancel().expand()
+
+    normalized = {
+        key: coefficient
+        for key, coefficient in sorted(normalized.items(), key=lambda item: repr(item[0]))
+        if coefficient.cancel().expand().to_canonical_string() != "0"
+    }
+    return CanonicalMonomialReport(
+        raw_terms=report.raw_terms,
+        canonical_terms=len(normalized),
+        map=normalized,
+    )
+
+
+def _normalize_one_weak_t_epsilon_pair(
+    factors: list[object],
+) -> tuple[int, bool]:
+    """Apply the SU(2) pseudoreality identity to one canonical-map pair.
+
+    The identity is used only after the tensor canonicalizer has marked the
+    contracted weak-fundamental index as dummy.  We keep the two generator
+    endpoint orientations distinct, so this pass identifies
+    ``t(D, i) eps(D, j)`` with ``t(D, j) eps(D, i)`` and
+    ``t(i, D) eps(D, j)`` with ``t(j, D) eps(D, i)``, but it does not identify
+    those two classes with each other.
+    """
+
+    for t_index, t_factor in enumerate(factors):
+        if not _is_weak_t_factor(t_factor):
+            continue
+        t_adj, t_left, t_right = t_factor[2]
+        t_fund = (t_left, t_right)
+        for eps_index, eps_factor in enumerate(factors):
+            if t_index == eps_index or not _is_weak_eps2_factor(eps_factor):
+                continue
+            eps_left, eps_right = eps_factor[2]
+            eps_fund = (eps_left, eps_right)
+            shared = {
+                label
+                for label in t_fund
+                if label in eps_fund and _is_dummy_weak_label(label)
+            }
+            if len(shared) != 1:
+                continue
+            shared_label = next(iter(shared))
+            t_positions = [
+                position for position, label in enumerate(t_fund) if label == shared_label
+            ]
+            eps_positions = [
+                position for position, label in enumerate(eps_fund) if label == shared_label
+            ]
+            if len(t_positions) != 1 or len(eps_positions) != 1:
+                continue
+
+            t_shared_position = t_positions[0]
+            eps_shared_position = eps_positions[0]
+            t_open = t_fund[1 - t_shared_position]
+            eps_open = eps_fund[1 - eps_shared_position]
+            composite_head = (
+                "weak_t_eps_left_contract"
+                if t_shared_position == 0
+                else "weak_t_eps_right_contract"
+            )
+            sign = 1 if eps_shared_position == 0 else -1
+            open_labels = tuple(sorted((t_open, eps_open), key=repr))
+            composite_factor = (
+                composite_head,
+                _WEAK_T_FACTOR_SIGNATURE,
+                (t_adj, *open_labels),
+            )
+            factors.pop(max(t_index, eps_index))
+            factors.pop(min(t_index, eps_index))
+            factors.append(composite_factor)
+            factors.sort(key=repr)
+            return sign, True
+    return 1, False
+
+
+def _normalize_weak_t_epsilon_key(
+    key: CanonicalTensorMonomial,
+) -> tuple[int, CanonicalTensorMonomial]:
+    sign = 1
+    factors = list(key.commuting_factors)
+    while True:
+        pair_sign, changed = _normalize_one_weak_t_epsilon_pair(factors)
+        if not changed:
+            break
+        sign *= pair_sign
+    return sign, CanonicalTensorMonomial(
+        commuting_factors=tuple(factors),
+        ordered_factors=key.ordered_factors,
+    )
+
+
+def _normalize_weak_t_epsilon_report(
+    report: CanonicalMonomialReport,
+) -> CanonicalMonomialReport:
+    normalized: dict[CanonicalTensorMonomial, Expression] = {}
+    for key, coefficient in report.map.items():
+        sign, normalized_key = _normalize_weak_t_epsilon_key(key)
+        normalized_coefficient = (
+            coefficient * Expression.num(sign)
+        ).cancel().expand()
+        normalized[normalized_key] = (
+            normalized.get(normalized_key, Expression.num(0))
+            + normalized_coefficient
+        ).cancel().expand()
+
+    normalized = {
+        key: coefficient
+        for key, coefficient in sorted(normalized.items(), key=lambda item: repr(item[0]))
+        if coefficient.cancel().expand().to_canonical_string() != "0"
+    }
+    return CanonicalMonomialReport(
+        raw_terms=report.raw_terms,
+        canonical_terms=len(normalized),
+        map=normalized,
+    )
+
+
+_WEAK_T_EPS_COMPOSITE_HEADS = frozenset(
+    {"weak_t_eps_left_contract", "weak_t_eps_right_contract"}
+)
+
+
+def _is_weak_t_eps_composite_factor(factor: object) -> bool:
+    return (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and factor[0] in _WEAK_T_EPS_COMPOSITE_HEADS
+        and factor[1] == _WEAK_T_FACTOR_SIGNATURE
+        and isinstance(factor[2], tuple)
+        and len(factor[2]) == 3
+    )
+
+
+def _weak_t_eps_pair_from_factors(
+    factors: list[object],
+    t_index: int,
+    composite_index: int,
+) -> tuple[
+    str,
+    object,
+    object,
+    object,
+    object,
+    object,
+    int,
+    int,
+] | None:
+    t_factor = factors[t_index]
+    composite_factor = factors[composite_index]
+    if not _is_weak_t_factor(t_factor) or not _is_weak_t_eps_composite_factor(
+        composite_factor
+    ):
+        return None
+
+    t_adj, t_left, t_right = t_factor[2]
+    composite_adj, composite_left, composite_right = composite_factor[2]
+    t_fund = (t_left, t_right)
+    composite_fund = (composite_left, composite_right)
+    shared = [
+        label
+        for label in t_fund
+        if label in composite_fund and _is_dummy_weak_label(label)
+    ]
+    if len(shared) != 1:
+        return None
+
+    shared_label = shared[0]
+    if _label_occurrences(factors, shared_label) != 2:
+        return None
+
+    t_shared_position = t_fund.index(shared_label)
+    composite_shared_position = composite_fund.index(shared_label)
+    t_open = t_fund[1 - t_shared_position]
+    composite_open = composite_fund[1 - composite_shared_position]
+    if not (
+        isinstance(t_open, str)
+        and isinstance(composite_open, str)
+        and t_open.startswith("E:W:")
+        and composite_open.startswith("E:W:")
+    ):
+        return None
+
+    return (
+        composite_factor[0],
+        t_adj,
+        composite_adj,
+        t_open,
+        composite_open,
+        shared_label,
+        t_shared_position,
+        composite_shared_position,
+    )
+
+
+def _replace_weak_t_open_label(
+    factor: object,
+    *,
+    shared_label: object,
+    new_open: object,
+) -> object:
+    adjoint, left, right = factor[2]
+    labels = [left, right]
+    if labels[0] == shared_label:
+        labels[1] = new_open
+    elif labels[1] == shared_label:
+        labels[0] = new_open
+    else:  # pragma: no cover - guarded by the caller.
+        raise ValueError("weak generator does not contain the shared label")
+    return ("t", _WEAK_T_FACTOR_SIGNATURE, (adjoint, *labels))
+
+
+def _replace_weak_t_eps_open_label(
+    factor: object,
+    *,
+    shared_label: object,
+    new_open: object,
+) -> object:
+    adjoint, left, right = factor[2]
+    labels = [left, right]
+    if labels[0] == shared_label:
+        labels[1] = new_open
+    elif labels[1] == shared_label:
+        labels[0] = new_open
+    else:  # pragma: no cover - guarded by the caller.
+        raise ValueError("weak T-epsilon factor does not contain the shared label")
+    return (factor[0], _WEAK_T_FACTOR_SIGNATURE, (adjoint, *labels))
+
+
+def _expand_one_weak_doublet_generator_epsilon_pair(
+    key: CanonicalTensorMonomial,
+) -> tuple[bool, list[tuple[Expression, CanonicalTensorMonomial]]]:
+    """Put SU(2) ``T*T*epsilon`` products in a single pseudoreal basis.
+
+    After the one-generator ``T*epsilon`` contraction has been made explicit,
+    the two-covariant-derivative Higgs-tilde rows can still differ by which
+    external weak doublet index sits on the remaining generator.  For SU(2),
+
+        ``P(j,i) = -P(i,j) + i f(a,b,c) C(c,i,j)``
+
+    where ``P`` is the product of the remaining generator with the contracted
+    ``T*epsilon`` composite and ``C`` is the same composite with the adjoint
+    commutator index.  This is the Pauli-matrix pseudoreality relation for two
+    generators acting on ``epsilon * Phi.bar``.  The pass only fires when the
+    two factors share one dummy weak-fundamental index and the two open weak
+    indices are external.
+    """
+
+    factors = list(key.commuting_factors)
+    for t_index, t_factor in enumerate(factors):
+        if not _is_weak_t_factor(t_factor):
+            continue
+        for composite_index, composite_factor in enumerate(factors):
+            if t_index == composite_index:
+                continue
+            pair = _weak_t_eps_pair_from_factors(factors, t_index, composite_index)
+            if pair is None:
+                continue
+            (
+                composite_head,
+                t_adj,
+                composite_adj,
+                t_open,
+                composite_open,
+                shared_label,
+                _t_shared_position,
+                _composite_shared_position,
+            ) = pair
+            if repr(t_open) <= repr(composite_open):
+                continue
+
+            rest = [
+                factor
+                for index, factor in enumerate(factors)
+                if index not in {t_index, composite_index}
+            ]
+            swapped_product_factors = [
+                *rest,
+                _replace_weak_t_open_label(
+                    t_factor,
+                    shared_label=shared_label,
+                    new_open=composite_open,
+                ),
+                _replace_weak_t_eps_open_label(
+                    composite_factor,
+                    shared_label=shared_label,
+                    new_open=t_open,
+                ),
+            ]
+
+            dummy_adj = _fresh_dummy_adjoint_label(rest, _WEAK_T_FACTOR_SIGNATURE)
+            commutator_adjoint_labels = (
+                (dummy_adj, composite_adj, t_adj)
+                if composite_head == "weak_t_eps_left_contract"
+                else (dummy_adj, t_adj, composite_adj)
+            )
+            f_sign, f_factor = _antisymmetric_factor_with_sorted_labels(
+                "f",
+                _ADJOINT_F_SIGNATURE_BY_T_SIGNATURE[_WEAK_T_FACTOR_SIGNATURE],
+                commutator_adjoint_labels,
+            )
+            if f_sign == 0:
+                continue
+            composite_open_labels = tuple(sorted((composite_open, t_open), key=repr))
+            commutator_factors = [
+                *rest,
+                f_factor,
+                (
+                    composite_head,
+                    _WEAK_T_FACTOR_SIGNATURE,
+                    (dummy_adj, *composite_open_labels),
+                ),
+            ]
+            return True, [
+                (
+                    Expression.num(-1),
+                    _canonical_key_with_commuting_factors(key, swapped_product_factors),
+                ),
+                (
+                    I * Expression.num(f_sign),
+                    _canonical_key_with_commuting_factors(key, commutator_factors),
+                ),
+            ]
+    return False, [(Expression.num(1), key)]
+
+
+def _normalize_weak_doublet_generator_epsilon_key(
+    key: CanonicalTensorMonomial,
+) -> list[tuple[Expression, CanonicalTensorMonomial]]:
+    terms = [(Expression.num(1), key)]
+    for _ in range(8):
+        changed = False
+        next_terms = []
+        for coefficient, term_key in terms:
+            term_changed, expansions = (
+                _expand_one_weak_doublet_generator_epsilon_pair(term_key)
+            )
+            changed = changed or term_changed
+            for factor, expanded_key in expansions:
+                next_terms.append(((coefficient * factor).cancel().expand(), expanded_key))
+        terms = next_terms
+        if not changed:
+            return terms
+    raise RuntimeError("weak doublet generator-epsilon normalization did not converge")
+
+
+def _normalize_weak_doublet_generator_epsilon_report(
+    report: CanonicalMonomialReport,
+) -> CanonicalMonomialReport:
+    normalized: dict[CanonicalTensorMonomial, Expression] = {}
+    for key, coefficient in report.map.items():
+        for multiplier, normalized_key in _normalize_weak_doublet_generator_epsilon_key(
+            key
+        ):
+            normalized_coefficient = (coefficient * multiplier).cancel().expand()
+            normalized[normalized_key] = (
+                normalized.get(normalized_key, Expression.num(0))
+                + normalized_coefficient
+            ).cancel().expand()
+
+    normalized = {
+        key: coefficient
+        for key, coefficient in sorted(normalized.items(), key=lambda item: repr(item[0]))
+        if coefficient.cancel().expand().to_canonical_string() != "0"
+    }
+    return CanonicalMonomialReport(
+        raw_terms=report.raw_terms,
+        canonical_terms=len(normalized),
+        map=normalized,
+    )
+
+
 def _canonical_report_for_coefficient_head(
     expression: Expression,
     *,
@@ -398,11 +1246,610 @@ def _canonical_report_for_coefficient_head(
     external_indices,
     max_dummy_permutations: int,
 ):
-    return canonical_tensor_monomial_report(
+    report = canonical_tensor_monomial_report(
         _filter_terms_by_coefficient_head(expression, coefficient),
         external_indices=external_indices,
         max_dummy_permutations=max_dummy_permutations,
     )
+    report = _normalize_generator_product_order_report(report)
+    report = _normalize_weak_t_epsilon_report(report)
+    report = _normalize_weak_doublet_generator_epsilon_report(report)
+    return _normalize_structure_constant_jacobi_report(report)
+
+
+_DIRAC_C_FACTOR_SIGNATURE = ("spinor", "spinor")
+_GAMMA_FACTOR_SIGNATURE = ("spinor", "spinor", "lorentz")
+_SPINOR_METRIC_FACTOR_SIGNATURE = ("spinor", "spinor")
+
+
+@dataclass(frozen=True)
+class _ChargeConjugationArm:
+    external: object
+    lorentz_ext_to_c: tuple[object, ...]
+    used_gamma_indices: frozenset[int]
+    c_outgoing: bool | None
+
+
+def _is_dirac_c_factor(factor: object) -> bool:
+    return (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and factor[0] == "dirac_C"
+        and factor[1] == _DIRAC_C_FACTOR_SIGNATURE
+        and isinstance(factor[2], tuple)
+        and len(factor[2]) == 2
+    )
+
+
+def _is_gamma_factor(factor: object) -> bool:
+    return (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and factor[0] == "gamma"
+        and factor[1] == _GAMMA_FACTOR_SIGNATURE
+        and isinstance(factor[2], tuple)
+        and len(factor[2]) == 3
+    )
+
+
+def _is_external_spinor_label(label: object) -> bool:
+    return isinstance(label, str) and label.startswith("E:S:")
+
+
+def _external_leg_number(label: object) -> int | None:
+    if not isinstance(label, str) or not label.startswith("E:"):
+        return None
+    match = re.search(r"(\d+)$", label)
+    return int(match.group(1)) if match is not None else None
+
+
+def _trace_charge_conjugation_arm(
+    start: object,
+    gamma_factors: list[object],
+) -> _ChargeConjugationArm | None:
+    adjacency: dict[object, list[tuple[int, object, object, object, bool]]] = defaultdict(
+        list
+    )
+    for index, factor in enumerate(gamma_factors):
+        left, right, lorentz = factor[2]
+        adjacency[left].append((index, left, right, lorentz, True))
+        adjacency[right].append((index, right, left, lorentz, False))
+
+    if _is_external_spinor_label(start) and not adjacency[start]:
+        return _ChargeConjugationArm(
+            external=start,
+            lorentz_ext_to_c=(),
+            used_gamma_indices=frozenset(),
+            c_outgoing=None,
+        )
+
+    current = start
+    previous = None
+    used: set[int] = set()
+    path: list[tuple[object, object, object]] = []
+    first_edge_outgoing = None
+    for _ in range(len(gamma_factors) + 2):
+        candidates = [
+            edge
+            for edge in adjacency[current]
+            if edge[0] not in used and edge[2] != previous
+        ]
+        if len(candidates) != 1:
+            return None
+        index, left, right, lorentz, outgoing = candidates[0]
+        if first_edge_outgoing is None:
+            first_edge_outgoing = outgoing
+        used.add(index)
+        path.append((left, right, lorentz))
+        previous = current
+        current = right
+        if _is_external_spinor_label(current):
+            return _ChargeConjugationArm(
+                external=current,
+                lorentz_ext_to_c=tuple(edge[2] for edge in reversed(path)),
+                used_gamma_indices=frozenset(used),
+                c_outgoing=first_edge_outgoing,
+            )
+    return None
+
+
+def _fresh_dummy_spinor_label(used_labels: set[object]) -> str:
+    candidate = 1
+    while True:
+        label = f"D:S:{candidate}"
+        if label not in used_labels:
+            used_labels.add(label)
+            return label
+        candidate += 1
+
+
+def _spinor_chain_factors(
+    start: object,
+    end: object,
+    lorentz_sequence: tuple[object, ...],
+    used_labels: set[object],
+) -> list[object]:
+    if not lorentz_sequence:
+        return [("g", _SPINOR_METRIC_FACTOR_SIGNATURE, (start, end))]
+
+    spinors = [start]
+    for _ in range(len(lorentz_sequence) - 1):
+        spinors.append(_fresh_dummy_spinor_label(used_labels))
+    spinors.append(end)
+    return [
+        (
+            "gamma",
+            _GAMMA_FACTOR_SIGNATURE,
+            (spinors[index], spinors[index + 1], lorentz),
+        )
+        for index, lorentz in enumerate(lorentz_sequence)
+    ]
+
+
+def _charge_conjugation_bilinear_factors(
+    first: _ChargeConjugationArm,
+    second: _ChargeConjugationArm,
+    used_labels: set[object],
+) -> list[object] | None:
+    if first.lorentz_ext_to_c and second.lorentz_ext_to_c:
+        return None
+
+    if first.lorentz_ext_to_c:
+        if first.c_outgoing:
+            start, end = second.external, first.external
+            sequence = first.lorentz_ext_to_c
+        else:
+            start, end = first.external, second.external
+            sequence = tuple(reversed(first.lorentz_ext_to_c))
+    elif second.lorentz_ext_to_c:
+        if second.c_outgoing:
+            start, end = first.external, second.external
+            sequence = second.lorentz_ext_to_c
+        else:
+            start, end = second.external, first.external
+            sequence = tuple(reversed(second.lorentz_ext_to_c))
+    else:
+        start, end = first.external, second.external
+        sequence = ()
+
+    return _spinor_chain_factors(start, end, sequence, used_labels)
+
+
+def _replace_external_nonspinor_leg_label(
+    label: object,
+    first_leg: int,
+    second_leg: int,
+) -> object:
+    if not isinstance(label, str) or not label.startswith("E:"):
+        return label
+    parts = label.split(":")
+    if len(parts) != 3 or parts[1] == "S":
+        return label
+    leg = _external_leg_number(label)
+    if leg == first_leg:
+        return re.sub(r"\d+$", str(second_leg), label)
+    if leg == second_leg:
+        return re.sub(r"\d+$", str(first_leg), label)
+    return label
+
+
+def _replace_factor_external_nonspinor_legs(
+    factor: object,
+    first_leg: int,
+    second_leg: int,
+) -> object:
+    if not (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and isinstance(factor[2], tuple)
+    ):
+        return factor
+    return (
+        factor[0],
+        factor[1],
+        tuple(
+            _replace_external_nonspinor_leg_label(label, first_leg, second_leg)
+            for label in factor[2]
+        ),
+    )
+
+
+def _ec_charge_conjugation_key(
+    key: CanonicalTensorMonomial,
+    *,
+    mode: str,
+    phase: int,
+) -> tuple[int, CanonicalTensorMonomial] | None:
+    factors = list(key.commuting_factors)
+    c_indices = [
+        index for index, factor in enumerate(factors) if _is_dirac_c_factor(factor)
+    ]
+    if len(c_indices) != 2:
+        return None
+
+    gamma_factors = [factor for factor in factors if _is_gamma_factor(factor)]
+    first_c, second_c = (factors[index] for index in c_indices)
+
+    arms: list[_ChargeConjugationArm] = []
+    used_gamma_indices: set[int] = set()
+    for label in first_c[2] + second_c[2]:
+        arm = _trace_charge_conjugation_arm(label, gamma_factors)
+        if arm is None:
+            return None
+        arms.append(arm)
+        used_gamma_indices.update(arm.used_gamma_indices)
+    if len(used_gamma_indices) != len(gamma_factors):
+        return None
+
+    first_leg = second_leg = None
+    if mode == "crossed":
+        first_leg = _external_leg_number(first_c[2][1])
+        second_leg = _external_leg_number(second_c[2][1])
+    elif mode != "direct":
+        raise ValueError(f"Unsupported Ec charge-conjugation mode {mode!r}.")
+
+    rest = []
+    for index, factor in enumerate(factors):
+        if index in c_indices or _is_gamma_factor(factor):
+            continue
+        if first_leg is not None and second_leg is not None:
+            factor = _replace_factor_external_nonspinor_legs(
+                factor,
+                first_leg,
+                second_leg,
+            )
+        rest.append(factor)
+
+    used_labels = {
+        label
+        for factor in rest
+        for label in (
+            factor[2]
+            if isinstance(factor, tuple)
+            and len(factor) == 3
+            and isinstance(factor[2], tuple)
+            else ()
+        )
+    }
+    used_labels.update(arm.external for arm in arms)
+
+    pairings = {
+        "crossed": ((arms[0], arms[3]), (arms[1], arms[2])),
+        "direct": ((arms[0], arms[1]), (arms[2], arms[3])),
+    }[mode]
+    bilinear_factors: list[object] = []
+    for first, second in pairings:
+        factors_for_pair = _charge_conjugation_bilinear_factors(
+            first,
+            second,
+            used_labels,
+        )
+        if factors_for_pair is None:
+            return None
+        bilinear_factors.extend(factors_for_pair)
+
+    return phase, _canonical_key_with_commuting_factors(
+        key,
+        [*rest, *bilinear_factors],
+    )
+
+
+def _swap_ec_coefficient_boundary_args(
+    expression: Expression,
+    coefficient: str,
+) -> Expression:
+    first, second, third, fourth = S("ec_first_", "ec_second_", "ec_third_", "ec_fourth_")
+    return expression.replace(
+        S(coefficient)(first, second, third, fourth),
+        S(coefficient)(fourth, second, third, first),
+    ).cancel().expand()
+
+
+def _symbol_from_canonical_label(label: object):
+    if not isinstance(label, str):
+        return S(str(label))
+    if label.startswith("E:"):
+        return S(label.split(":", 2)[2])
+    if label.startswith("D:"):
+        _dummy, group, name = label.split(":", 2)
+        prefix = {
+            "S": "i",
+            "L": "mu",
+            "C": "c",
+            "W": "w",
+            "A": "a",
+            "AW": "aw",
+        }[group]
+        return S(f"{prefix}_cc_dummy_{name}")
+    return S(label)
+
+
+def _expression_from_canonical_factor(factor: object) -> Expression:
+    if isinstance(factor, tuple) and len(factor) == 3 and factor[0] == "pcomp":
+        return pcomp(
+            _symbol_from_canonical_label(factor[1]),
+            _symbol_from_canonical_label(factor[2]),
+        )
+    if not (
+        isinstance(factor, tuple)
+        and len(factor) == 3
+        and isinstance(factor[2], tuple)
+    ):
+        raise ValueError(f"Unsupported canonical factor in Ec rewrite: {factor!r}")
+
+    head, signature, labels = factor
+    args = tuple(_symbol_from_canonical_label(label) for label in labels)
+    if head == "g":
+        if signature == ("lorentz", "lorentz"):
+            return lorentz_metric(*args)
+        if signature == ("spinor", "spinor"):
+            return spinor_metric(*args)
+        if signature == ("color_fund", "color_fund"):
+            return COLOR_FUND.g(*args).to_expression()
+        if signature == ("color_adj", "color_adj"):
+            return COLOR_ADJ.g(*args).to_expression()
+        if signature == ("weak_fund", "weak_fund"):
+            return WEAK_FUND.g(*args).to_expression()
+        if signature == ("weak_adj", "weak_adj"):
+            return WEAK_ADJ.g(*args).to_expression()
+    if head == "gamma":
+        return gamma_matrix(*args)
+    if head == "dirac_C":
+        return dirac_charge_conjugation(*args)
+    if head == "weak_eps2":
+        return weak_eps2(*args)
+    if head == "lor_levi_civita":
+        return lorentz_levi_civita(*args)
+    if head == "t":
+        if signature == _COLOR_T_FACTOR_SIGNATURE:
+            return gauge_generator(*args)
+        if signature == _WEAK_T_FACTOR_SIGNATURE:
+            return weak_gauge_generator(*args)
+    if head == "f":
+        if signature == ("color_adj", "color_adj", "color_adj"):
+            return structure_constant(*args)
+        if signature == ("weak_adj", "weak_adj", "weak_adj"):
+            return weak_structure_constant(*args)
+
+    raise ValueError(f"Unsupported canonical factor in Ec rewrite: {factor!r}")
+
+
+def _expression_from_canonical_map(
+    mapping: dict[CanonicalTensorMonomial, Expression],
+) -> Expression:
+    total = Expression.num(0)
+    for key, coefficient in mapping.items():
+        term = coefficient
+        for factor in key.commuting_factors:
+            term *= _expression_from_canonical_factor(factor)
+        for factor in key.ordered_factors:
+            term *= _expression_from_canonical_factor(factor)
+        total += term
+    return total.cancel().expand()
+
+
+def _normalize_ec_charge_conjugation_report(
+    report: CanonicalMonomialReport,
+    *,
+    coefficient: str,
+    external_indices,
+    max_dummy_permutations: int,
+    mode: str,
+    phase: int,
+) -> CanonicalMonomialReport:
+    transformed: dict[CanonicalTensorMonomial, Expression] = {}
+    changed = False
+    for key, coefficient_expression in report.map.items():
+        replacement = _ec_charge_conjugation_key(key, mode=mode, phase=phase)
+        if replacement is None:
+            transformed_key = key
+            transformed_coefficient = coefficient_expression
+        else:
+            multiplier, transformed_key = replacement
+            transformed_coefficient = (
+                coefficient_expression * Expression.num(multiplier)
+            ).cancel().expand()
+            if mode == "crossed":
+                transformed_coefficient = _swap_ec_coefficient_boundary_args(
+                    transformed_coefficient,
+                    coefficient,
+                )
+            changed = True
+        transformed[transformed_key] = (
+            transformed.get(transformed_key, Expression.num(0))
+            + transformed_coefficient
+        ).cancel().expand()
+
+    if not changed:
+        return report
+
+    recanonicalized = canonical_tensor_monomial_report(
+        _expression_from_canonical_map(transformed),
+        external_indices=external_indices,
+        max_dummy_permutations=max_dummy_permutations,
+    )
+    return CanonicalMonomialReport(
+        raw_terms=report.raw_terms,
+        canonical_terms=recanonicalized.canonical_terms,
+        map=recanonicalized.map,
+    )
+
+
+def _coefficient_comparison_from_reports(
+    coefficient: str,
+    feynpy_report: CanonicalMonomialReport,
+    feynrules_report: CanonicalMonomialReport,
+) -> CanonicalCoefficientComparison:
+    feynpy_keys = set(feynpy_report.map)
+    feynrules_keys = set(feynrules_report.map)
+    shared_keys = feynpy_keys & feynrules_keys
+    coefficient_mismatches = {
+        key: (feynpy_report.map[key], feynrules_report.map[key])
+        for key in shared_keys
+        if feynpy_report.map[key].cancel().expand().to_canonical_string()
+        != feynrules_report.map[key].cancel().expand().to_canonical_string()
+    }
+    return CanonicalCoefficientComparison(
+        coefficient=coefficient,
+        feynpy_raw_terms=feynpy_report.raw_terms,
+        feynrules_raw_terms=feynrules_report.raw_terms,
+        feynpy_canonical_terms=feynpy_report.canonical_terms,
+        feynrules_canonical_terms=feynrules_report.canonical_terms,
+        feynpy_only={
+            key: feynpy_report.map[key]
+            for key in sorted(feynpy_keys - feynrules_keys, key=repr)
+        },
+        feynrules_only={
+            key: feynrules_report.map[key]
+            for key in sorted(feynrules_keys - feynpy_keys, key=repr)
+        },
+        coefficient_mismatches=coefficient_mismatches,
+    )
+
+
+def _bar_insensitive_name(name: str) -> str:
+    return name[:-3] if name.endswith("bar") else name
+
+
+def _bar_insensitive_field_key(fields: Iterable[str]) -> tuple[str, ...]:
+    return tuple(sorted(_bar_insensitive_name(name) for name in fields))
+
+
+def _charge_conjugation_candidate_orders(
+    reference_fields: tuple[str, ...],
+    partner_fields: tuple[str, ...],
+) -> tuple[tuple[str, ...], ...]:
+    orders: list[tuple[str, ...]] = []
+
+    def visit(slot: int, remaining: tuple[str, ...], current: tuple[str, ...]) -> None:
+        if slot == len(reference_fields):
+            orders.append(current)
+            return
+        target_base = _bar_insensitive_name(reference_fields[slot])
+        for index, candidate in enumerate(remaining):
+            if _bar_insensitive_name(candidate) != target_base:
+                continue
+            visit(
+                slot + 1,
+                remaining[:index] + remaining[index + 1 :],
+                (*current, candidate),
+            )
+
+    visit(0, tuple(partner_fields), ())
+    return tuple(orders)
+
+
+def _duplicate_assignment_sign(
+    order: tuple[str, ...],
+    reference_fields: tuple[str, ...],
+) -> int:
+    sign = 1
+    for base in sorted({_bar_insensitive_name(name) for name in reference_fields}):
+        slots = [
+            slot
+            for slot, name in enumerate(reference_fields)
+            if _bar_insensitive_name(name) == base
+        ]
+        if len(slots) < 2:
+            continue
+        current = tuple(order[slot] for slot in slots)
+        target = tuple(sorted(current))
+        sign *= _permutation_sign(current, target)
+    return sign
+
+
+def _candidate_order_rule_sum(
+    *,
+    lagrangian,
+    field_map: dict[str, object],
+    reference_fields: tuple[str, ...],
+    candidate_orders: tuple[tuple[str, ...], ...],
+    antisymmetric_duplicates: bool,
+) -> Expression:
+    total = Expression.num(0)
+    for order in candidate_orders:
+        sign = (
+            _duplicate_assignment_sign(order, reference_fields)
+            if antisymmetric_duplicates
+            else 1
+        )
+        total += Expression.num(sign) * lagrangian.feynman_rule(
+            *(field_map[name] for name in order),
+            simplify=True,
+        )
+    return total.cancel().expand()
+
+
+def _ec_partner_coefficient_comparison(
+    *,
+    reference: FeynRulesVertex,
+    coefficient: str,
+    feynrules_report: CanonicalMonomialReport,
+    local_vertices: Iterable["LocalVertex"],
+    lagrangian,
+    field_map: dict[str, object],
+    external_indices,
+    max_dummy_permutations: int,
+) -> tuple[CanonicalCoefficientComparison, str] | None:
+    target_key = _bar_insensitive_field_key(reference.fields)
+    candidates = [
+        vertex
+        for vertex in local_vertices
+        if vertex.key != _name_key(reference.fields)
+        and _bar_insensitive_field_key(vertex.local_names) == target_key
+        and coefficient in dict(vertex.head_counts)
+    ]
+    for candidate in candidates:
+        candidate_orders = _charge_conjugation_candidate_orders(
+            reference.fields,
+            candidate.local_names,
+        )
+        if not candidate_orders:
+            continue
+        for antisymmetric_duplicates in (False, True):
+            local_rule = _candidate_order_rule_sum(
+                lagrangian=lagrangian,
+                field_map=field_map,
+                reference_fields=reference.fields,
+                candidate_orders=candidate_orders,
+                antisymmetric_duplicates=antisymmetric_duplicates,
+            )
+            local_report = _canonical_report_for_coefficient_head(
+                local_rule,
+                coefficient=coefficient,
+                external_indices=external_indices,
+                max_dummy_permutations=max_dummy_permutations,
+            )
+            for phase in (1, -1):
+                transformed_report = _normalize_ec_charge_conjugation_report(
+                    local_report,
+                    coefficient=coefficient,
+                    external_indices=external_indices,
+                    max_dummy_permutations=max_dummy_permutations,
+                    mode="direct",
+                    phase=phase,
+                )
+                comparison = _coefficient_comparison_from_reports(
+                    coefficient,
+                    transformed_report,
+                    feynrules_report,
+                )
+                if comparison.matches:
+                    duplicate_mode = (
+                        "antisymmetric duplicate-leg sum"
+                        if antisymmetric_duplicates
+                        else "symmetric duplicate-leg sum"
+                    )
+                    return (
+                        comparison,
+                        (
+                            f"{coefficient} matched via charge-conjugation "
+                            f"partner `{candidate.key}` using direct CC packaging, "
+                            f"phase {phase:+d}, and {duplicate_mode}."
+                        ),
+                    )
+    return None
+
 
 
 def _compare_smeft2_canonical_coefficient_maps(
@@ -434,36 +1881,25 @@ def _compare_smeft2_canonical_coefficient_maps(
             external_indices=external_indices,
             max_dummy_permutations=max_dummy_permutations,
         )
+        if coefficient.startswith("alphaEc"):
+            feynpy_report = _normalize_ec_charge_conjugation_report(
+                feynpy_report,
+                coefficient=coefficient,
+                external_indices=external_indices,
+                max_dummy_permutations=max_dummy_permutations,
+                mode="crossed",
+                phase=-1,
+            )
         feynrules_report = _canonical_report_for_coefficient_head(
             feynrules_expression,
             coefficient=coefficient,
             external_indices=external_indices,
             max_dummy_permutations=max_dummy_permutations,
         )
-        feynpy_keys = set(feynpy_report.map)
-        feynrules_keys = set(feynrules_report.map)
-        shared_keys = feynpy_keys & feynrules_keys
-        coefficient_mismatches = {
-            key: (feynpy_report.map[key], feynrules_report.map[key])
-            for key in shared_keys
-            if feynpy_report.map[key].cancel().expand().to_canonical_string()
-            != feynrules_report.map[key].cancel().expand().to_canonical_string()
-        }
-        comparisons[coefficient] = CanonicalCoefficientComparison(
-            coefficient=coefficient,
-            feynpy_raw_terms=feynpy_report.raw_terms,
-            feynrules_raw_terms=feynrules_report.raw_terms,
-            feynpy_canonical_terms=feynpy_report.canonical_terms,
-            feynrules_canonical_terms=feynrules_report.canonical_terms,
-            feynpy_only={
-                key: feynpy_report.map[key]
-                for key in sorted(feynpy_keys - feynrules_keys, key=repr)
-            },
-            feynrules_only={
-                key: feynrules_report.map[key]
-                for key in sorted(feynrules_keys - feynpy_keys, key=repr)
-            },
-            coefficient_mismatches=coefficient_mismatches,
+        comparisons[coefficient] = _coefficient_comparison_from_reports(
+            coefficient,
+            feynpy_report,
+            feynrules_report,
         )
     return comparisons
 
@@ -727,6 +2163,7 @@ def _fermion_exact_symbolic_row(
     *,
     reference: FeynRulesVertex,
     local: LocalVertex | None,
+    local_vertices: Iterable[LocalVertex],
     reference_heads: set[str],
     local_heads: set[str],
     head_count_status: str,
@@ -772,6 +2209,36 @@ def _fermion_exact_symbolic_row(
             external_indices=external_indices,
             max_dummy_permutations=2_000_000,
         )
+        partner_details = []
+        if any(
+            coefficient.startswith("alphaEc")
+            and not comparison.matches
+            for coefficient, comparison in comparisons.items()
+        ):
+            reference_expression = parse_smeft2_matter_rule(reference.rule)
+            for coefficient, comparison in tuple(comparisons.items()):
+                if not coefficient.startswith("alphaEc") or comparison.matches:
+                    continue
+                feynrules_report = _canonical_report_for_coefficient_head(
+                    reference_expression,
+                    coefficient=coefficient,
+                    external_indices=external_indices,
+                    max_dummy_permutations=2_000_000,
+                )
+                partner_match = _ec_partner_coefficient_comparison(
+                    reference=reference,
+                    coefficient=coefficient,
+                    feynrules_report=feynrules_report,
+                    local_vertices=local_vertices,
+                    lagrangian=lagrangian,
+                    field_map=field_map,
+                    external_indices=external_indices,
+                    max_dummy_permutations=2_000_000,
+                )
+                if partner_match is None:
+                    continue
+                comparisons[coefficient], detail = partner_match
+                partner_details.append(detail)
     except Exception as exc:  # pragma: no cover - reported in JSON/Markdown.
         return {
             "family": family,
@@ -780,13 +2247,18 @@ def _fermion_exact_symbolic_row(
         }
 
     if all(comparison.matches for comparison in comparisons.values()):
+        partner_sentence = (
+            " Ec partner sectors: " + " ".join(partner_details)
+            if partner_details
+            else ""
+        )
         return {
             "family": family,
             "status": "EXACT_MATCH",
             "detail": (
                 "Canonical tensor-monomial maps agree for all "
                 f"{len(comparisons)} coefficient sector(s); raw head-count "
-                f"status was {head_count_status}."
+                f"status was {head_count_status}.{partner_sentence}"
             ),
         }
 
@@ -1484,6 +2956,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             exact_symbolic = _fermion_exact_symbolic_row(
                 reference=reference,
                 local=local,
+                local_vertices=local_vertices,
                 reference_heads=reference_heads,
                 local_heads=local_heads,
                 head_count_status=head_count_status,
@@ -1738,14 +3211,15 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         "comparison_level": (
             "Signature coverage, coefficient-head content, and raw "
             "coefficient-head multiplicity diagnostics, plus exact symbolic "
-            "comparison for all bosonic rows, shared two-/four-fermion rows, "
-            "and the two Weinberg charge-conjugation packaging rows. Fermion "
-            "exact comparison filters by indexed Wilson-coefficient head and "
-            "keeps flavor order/conjugation in the canonical scalar "
-            "coefficient, so it cannot pass vacuously for function-valued "
-            "coefficients. The separate canonical tensor-map diagnostic is "
-            "still the gauge-sector per-coefficient map for supported bosonic "
-            "coefficient sectors."
+            "comparison for all 184 FeynRules reference rows. Fermion exact "
+            "comparison filters by indexed Wilson-coefficient head and keeps "
+            "flavor order/conjugation in the canonical scalar coefficient, so "
+            "it cannot pass vacuously for function-valued coefficients. "
+            "Charge-conjugation packaged rows are accepted only when the "
+            "controlled packaging transform reduces to identical canonical "
+            "coefficient-sector maps. The separate canonical tensor-map "
+            "diagnostic remains the gauge-sector per-coefficient map for "
+            "supported bosonic coefficient sectors."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -2141,7 +3615,7 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help=(
             "Do not write files; return nonzero if the comparison is not a "
-            "full head-level match."
+            "full operator-content and exact-symbolic match."
         ),
     )
     parser.add_argument(
