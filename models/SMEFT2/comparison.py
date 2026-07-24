@@ -37,7 +37,24 @@ from symbolic.tensor_canonicalization import (
     canonical_external_index_set,
     canonical_tensor_monomial_map,
 )
-from symbolica import S
+from symbolica import Expression, S
+
+from symbolic.spenso_structures import (
+    COLOR_ADJ,
+    COLOR_FUND,
+    WEAK_ADJ,
+    WEAK_FUND,
+    gamma_matrix,
+    gauge_generator,
+    lorentz_levi_civita,
+    lorentz_metric,
+    spinor_metric,
+    structure_constant,
+    weak_eps2,
+    weak_gauge_generator,
+    weak_structure_constant,
+)
+from symbolic.vertex_engine import pcomp
 
 
 MODEL_DIR = Path(__file__).resolve().parent
@@ -126,6 +143,338 @@ CANONICAL_EXTERNAL_INDEX_GROUP_BY_KIND = {
     "weak_adj": "weak_adjoint",
 }
 
+FEYNRULES_INDEX_PREFIX = {
+    "Lorentz": "mu",
+    "Spin": "i",
+    "Colour": "c",
+    "Gluon": "a",
+    "SU2D": "w",
+    "SU2W": "aw",
+    "Generation": "f",
+}
+
+FEYNRULES_GREEK_ASCII = {
+    "α": "alpha",
+    "β": "beta",
+    "γ": "gamma",
+    "δ": "delta",
+    "μ": "mu",
+    "ν": "nu",
+    "ρ": "rho",
+    "σ": "sigma",
+}
+
+
+def _feynrules_ascii_label(label: str) -> str:
+    result = label.strip().replace("$", "_")
+    for greek, ascii_name in FEYNRULES_GREEK_ASCII.items():
+        result = result.replace(greek, ascii_name)
+    result = re.sub(r"[^A-Za-z0-9_]+", "_", result)
+    if result and result[0].isdigit():
+        result = f"idx_{result}"
+    return result
+
+
+def _find_matching_square(text: str, open_position: int) -> int:
+    depth = 0
+    for position in range(open_position, len(text)):
+        character = text[position]
+        if character == "[":
+            depth += 1
+        elif character == "]":
+            depth -= 1
+            if depth == 0:
+                return position
+    raise ValueError(f"Unbalanced FeynRules brackets near {text[open_position:]!r}")
+
+
+def _split_top_level_commas(text: str) -> tuple[str, ...]:
+    parts = []
+    start = 0
+    depth = 0
+    for position, character in enumerate(text):
+        if character == "[":
+            depth += 1
+        elif character == "]":
+            depth -= 1
+        elif character == "," and depth == 0:
+            parts.append(text[start:position].strip())
+            start = position + 1
+    parts.append(text[start:].strip())
+    return tuple(part for part in parts if part)
+
+
+def _rewrite_feynrules_indices(text: str) -> str:
+    for kind, prefix in FEYNRULES_INDEX_PREFIX.items():
+        text = re.sub(
+            rf"Index\[{kind},\s*Ext\[(\d+)\]\]",
+            lambda match, prefix=prefix: f"{prefix}{match.group(1)}",
+            text,
+        )
+    for kind, prefix in FEYNRULES_INDEX_PREFIX.items():
+        text = re.sub(
+            rf"Index\[{kind},\s*([^\]]+)\]",
+            lambda match, prefix=prefix: (
+                f"{prefix}_feynrules_dummy_"
+                f"{_feynrules_ascii_label(match.group(1))}"
+            ),
+            text,
+        )
+    return text
+
+
+def _rewrite_feynrules_indexed_parameters(text: str) -> str:
+    parameter_call = r"\b((?:alpha[A-Za-z0-9]+|y[ldu]))\[([^\[\]]+)\]"
+    text = re.sub(
+        parameter_call,
+        lambda match: f"{match.group(1)}({match.group(2)})",
+        text,
+    )
+    text = re.sub(
+        r"Conjugate\[((?:alpha[A-Za-z0-9]+|y[ldu])\([^\[\]]+\))\]",
+        lambda match: f"conj({match.group(1)})",
+        text,
+    )
+    return text
+
+
+def _metric_for_index_delta(left: str, right: str) -> str:
+    left = left.strip()
+    right = right.strip()
+    if left.startswith("aw") and right.startswith("aw"):
+        return WEAK_ADJ.g(S(left), S(right)).to_expression().to_canonical_string()
+    if left.startswith("a") and right.startswith("a"):
+        return COLOR_ADJ.g(S(left), S(right)).to_expression().to_canonical_string()
+    if left.startswith("w") and right.startswith("w"):
+        return WEAK_FUND.g(S(left), S(right)).to_expression().to_canonical_string()
+    if left.startswith("i") and right.startswith("i"):
+        return spinor_metric(S(left), S(right)).to_canonical_string()
+    if (left.startswith("c") and right.startswith("c")) or (
+        left.startswith("f") and right.startswith("f")
+    ):
+        return COLOR_FUND.g(S(left), S(right)).to_expression().to_canonical_string()
+    raise ValueError(f"Unsupported FeynRules IndexDelta labels: {left}, {right}")
+
+
+def _replace_scalar_product(match: re.Match[str]) -> str:
+    _replace_scalar_product.counter += 1
+    dummy = S(f"mu_feynrules_dummy_sp_{_replace_scalar_product.counter}")
+    return (
+        pcomp(S(f"q{match.group(1)}"), dummy)
+        * pcomp(S(f"q{match.group(2)}"), dummy)
+    ).to_canonical_string()
+
+
+_replace_scalar_product.counter = 0
+
+
+def _spinor_chain_item_factor(
+    item: str,
+    left,
+    right,
+    *,
+    chain_id: int,
+    item_id: int,
+) -> Expression:
+    ga_match = re.fullmatch(r"Ga\[([^\[\]]+)\]", item)
+    if ga_match:
+        return gamma_matrix(left, right, S(ga_match.group(1).strip()))
+
+    slashed_match = re.fullmatch(r"SlashedP\[(\d+)\]", item)
+    if slashed_match:
+        lorentz = S(f"mu_feynrules_slash_{chain_id}_{item_id}")
+        return (
+            pcomp(S(f"q{slashed_match.group(1)}"), lorentz)
+            * gamma_matrix(left, right, lorentz)
+        )
+
+    raise ValueError(f"Unsupported FeynRules spinor-chain item: {item!r}")
+
+
+def _spinor_chain_replacement(
+    items: tuple[str, ...],
+    left: str,
+    right: str,
+    *,
+    chain_id: int,
+) -> str:
+    matrix_items = tuple(item for item in items if item not in {"ProjM", "ProjP"})
+    if not matrix_items:
+        return spinor_metric(S(left), S(right)).to_canonical_string()
+
+    result = Expression.num(1)
+    current = S(left)
+    for item_id, item in enumerate(matrix_items, start=1):
+        target = (
+            S(right)
+            if item_id == len(matrix_items)
+            else S(f"i_feynrules_chain_{chain_id}_{item_id}")
+        )
+        result *= _spinor_chain_item_factor(
+            item,
+            current,
+            target,
+            chain_id=chain_id,
+            item_id=item_id,
+        )
+        current = target
+    return result.to_canonical_string()
+
+
+def _replace_tensdot_chains(text: str) -> str:
+    output = []
+    position = 0
+    chain_id = 0
+    while True:
+        start = text.find("TensDot[", position)
+        if start == -1:
+            output.append(text[position:])
+            return "".join(output)
+
+        output.append(text[position:start])
+        inner_open = start + len("TensDot")
+        inner_close = _find_matching_square(text, inner_open)
+        if inner_close + 1 >= len(text) or text[inner_close + 1] != "[":
+            output.append(text[start : inner_close + 1])
+            position = inner_close + 1
+            continue
+
+        spin_open = inner_close + 1
+        spin_close = _find_matching_square(text, spin_open)
+        chain_id += 1
+        items = _split_top_level_commas(text[inner_open + 1 : inner_close])
+        spin_args = _split_top_level_commas(text[spin_open + 1 : spin_close])
+        if len(spin_args) != 2:
+            raise ValueError(f"Unsupported FeynRules TensDot spin args: {spin_args}")
+        output.append(
+            _spinor_chain_replacement(
+                items,
+                spin_args[0],
+                spin_args[1],
+                chain_id=chain_id,
+            )
+        )
+        position = spin_close + 1
+
+
+def parse_smeft2_matter_rule(rule: str) -> Expression:
+    """Parse SMEFT2 two-fermion FeynRules tensor syntax into native tensors.
+
+    The SMEFT2 model represents chirality in the field class itself, while the
+    FeynRules export prints explicit ``ProjM``/``ProjP`` factors. This parser
+    therefore removes those projectors from gamma chains and maps bare
+    projector bilinears to the spinor metric.
+    """
+
+    text = _rewrite_feynrules_indices(rule)
+    text = _rewrite_feynrules_indexed_parameters(text)
+    _replace_scalar_product.counter = 0
+
+    text = _replace_tensdot_chains(text)
+    text = re.sub(
+        r"Proj[MP]\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: spinor_metric(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Ga\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: gamma_matrix(
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+            S(match.group(1).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: _metric_for_index_delta(match.group(1), match.group(2)),
+        text,
+    )
+    text = re.sub(
+        r"ME\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: lorentz_metric(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"FV\[(\d+),\s*([^\[\]]+)\]",
+        lambda match: pcomp(
+            S(f"q{match.group(1)}"),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(r"SP\[(\d+),\s*(\d+)\]", _replace_scalar_product, text)
+    text = re.sub(
+        r"T\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: gauge_generator(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Ta\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: weak_gauge_generator(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"(?:f|fsu3)\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: structure_constant(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"fsu2\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: weak_structure_constant(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Eps\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: lorentz_levi_civita(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+            S(match.group(4).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Eps\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: weak_eps2(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = text.replace("Sqrt[2]", "(2)^(1/2)")
+    text = re.sub(r"\bI\b", "1𝑖", text)
+
+    if "[" in text or "]" in text:
+        raise ValueError(
+            "Unsupported SMEFT2 FeynRules matter syntax remains after parsing: "
+            f"{text}"
+        )
+
+    return Expression.parse(text).cancel().expand()
+
 
 @dataclass(frozen=True)
 class LocalVertex:
@@ -163,12 +512,14 @@ def _exact_symbolic_family(fields: Iterable[str]) -> str:
 def _unsupported_exact_symbolic_detail(family: str) -> str:
     return {
         "TWO_FERMION": (
-            "Exact symbolic comparison is not yet enabled for SMEFT2 two-fermion "
-            "rows; they still rely on signature and coefficient-head diagnostics."
+            "Exact symbolic comparison is enabled for shared SMEFT2 two-fermion "
+            "rows; this row has no literal local signature or falls outside that "
+            "shared-signature layer."
         ),
         "FOUR_FERMION": (
-            "Exact symbolic comparison is not yet enabled for SMEFT2 four-fermion "
-            "rows; they still rely on signature and coefficient-head diagnostics."
+            "Exact symbolic comparison is enabled for shared SMEFT2 four-fermion "
+            "rows; this row has no literal local signature or falls outside that "
+            "shared-signature layer."
         ),
         "UNCLASSIFIED": (
             "Exact symbolic comparison is not enabled for this field-content class."
@@ -211,6 +562,83 @@ def _bosonic_exact_symbolic_rows(
             "detail": row.detail,
         }
         for row in report.rows
+    }
+
+
+def _fermion_exact_symbolic_row(
+    *,
+    reference: FeynRulesVertex,
+    local: LocalVertex | None,
+    reference_heads: set[str],
+    head_count_status: str,
+    lagrangian,
+    field_map: dict[str, object],
+) -> dict[str, str] | None:
+    family = _exact_symbolic_family(reference.fields)
+    if family not in {"TWO_FERMION", "FOUR_FERMION"}:
+        return None
+    if local is None:
+        return None
+
+    external_indices = _external_index_set_from_fields(
+        tuple(field_map[name] for name in reference.fields)
+    )
+    if external_indices is None:
+        return {
+            "family": family,
+            "status": "EXACT_ERROR",
+            "detail": "Could not infer external indices for fermion row.",
+        }
+
+    coefficients = tuple(
+        sorted(head for head in reference_heads if head.startswith("alpha"))
+    )
+    if not coefficients:
+        return None
+
+    try:
+        local_rule = lagrangian.feynman_rule(
+            *(field_map[name] for name in reference.fields),
+            simplify=True,
+        )
+        reference_rule = parse_smeft2_matter_rule(reference.rule)
+        comparisons = compare_canonical_coefficient_maps(
+            local_rule,
+            reference_rule,
+            coefficients=coefficients,
+            external_indices=external_indices,
+            max_dummy_permutations=2_000_000,
+        )
+    except Exception as exc:  # pragma: no cover - reported in JSON/Markdown.
+        return {
+            "family": family,
+            "status": "EXACT_ERROR",
+            "detail": f"{type(exc).__name__}: {exc}",
+        }
+
+    if all(comparison.matches for comparison in comparisons.values()):
+        return {
+            "family": family,
+            "status": "EXACT_MATCH",
+            "detail": (
+                "Canonical tensor-monomial maps agree for all "
+                f"{len(comparisons)} coefficient sector(s); raw head-count "
+                f"status was {head_count_status}."
+            ),
+        }
+
+    mismatched = tuple(
+        coefficient
+        for coefficient, comparison in comparisons.items()
+        if not comparison.matches
+    )
+    return {
+        "family": family,
+        "status": "EXACT_MISMATCH",
+        "detail": (
+            "Canonical tensor-monomial maps differ for coefficient sector(s): "
+            + ", ".join(mismatched)
+        ),
     }
 
 
@@ -768,6 +1196,15 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         exact_symbolic_family = _exact_symbolic_family(reference.fields)
         exact_symbolic = exact_symbolic_by_key.get(key)
         if exact_symbolic is None:
+            exact_symbolic = _fermion_exact_symbolic_row(
+                reference=reference,
+                local=local,
+                reference_heads=reference_heads,
+                head_count_status=head_count_status,
+                lagrangian=lagrangian,
+                field_map=field_map,
+            )
+        if exact_symbolic is None:
             exact_symbolic = {
                 "family": exact_symbolic_family,
                 "status": "EXACT_UNSUPPORTED",
@@ -1015,9 +1452,10 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         "comparison_level": (
             "Signature coverage, coefficient-head content, and raw "
             "coefficient-head multiplicity diagnostics, plus exact symbolic "
-            "comparison for supported bosonic rows and canonical tensor-"
-            "monomial equality for supported pure nonabelian gauge vertices. "
-            "Full tensor-rule equality is not claimed globally."
+            "comparison for supported bosonic rows and shared two-/four-"
+            "fermion rows, plus canonical tensor-monomial equality for "
+            "supported bosonic coefficient sectors. The only exact-unsupported "
+            "reference rows are the two non-literal Weinberg packaging rows."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -1234,10 +1672,11 @@ def _markdown_report(report: dict[str, object]) -> str:
             "## Exact Symbolic Comparison",
             "",
             "This layer is currently enabled for bosonic SMEFT2 rows. It "
-            "parses the full FeynRules tensor rule into native tensors, "
-            "canonicalizes index structure, and checks whether the exact "
-            "symbolic difference is zero. Two-fermion and four-fermion rows "
-            "still fall back to the signature/head diagnostics above.",
+            "also covers all two- and four-fermion rows with a literal shared "
+            "local signature. It parses the full FeynRules tensor rule into "
+            "native tensors and canonicalizes index structure. The two "
+            "Weinberg packaging rows still fall back to the signature/head "
+            "diagnostics above.",
             "",
             "| Signature | Status |",
             "| --- | --- |",
@@ -1450,8 +1889,13 @@ def main(argv: list[str] | None = None) -> int:
         f"feynpy-only={summary['feynpy_only_signatures']}."
     )
     if args.check and (
-        summary["shared_head_matches"] != summary["reference_vertex_count"]
-        or summary["feynpy_only_signatures"]
+        summary["operator_content_matches_including_cc"]
+        != summary["reference_vertex_count"]
+        or summary["feynpy_only_unexplained_signatures"]
+        or summary["exact_symbolic_unequal_vertices"]
+        or summary["exact_symbolic_error_vertices"]
+        or summary["canonical_map_unequal_vertices"]
+        or summary["canonical_map_error_vertices"]
         or (args.strict_counts and summary["shared_head_count_mismatches"])
     ):
         return 1
