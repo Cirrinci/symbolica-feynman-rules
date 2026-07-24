@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import models.SMEFT2.comparison as smeft2_comparison
 from feynrules.comparison import compare_canonical_coefficient_maps
 from feynpy import Model
 from models.SMEFT2 import OMITTED_SECTORS, build_smeft_green_bpreserving
@@ -29,6 +30,100 @@ def _feynpy_vertex_by_key(key: str) -> dict:
         (MODEL_DIR / "feynpy_vertices.json").read_text(encoding="utf-8")
     )
     return next(vertex for vertex in vertices if vertex["key"] == key)
+
+
+def _report_row_by_key(key: str) -> dict:
+    report = json.loads(
+        (MODEL_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
+    )
+    return next(row for row in report["reference_vertices"] if row["key"] == key)
+
+
+def _assert_reference_row_exact_match(key: str):
+    reference = _reference_vertex_by_key(key)
+    report_row = _report_row_by_key(key)
+    bundle = build_smeft_green_bpreserving()
+    field_map = smeft2_comparison._comparison_field_map(bundle)
+    fields = tuple(field_map[name] for name in reference["fields"])
+    external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+    local_rule = bundle.model.lagrangian().feynman_rule(*fields, simplify=True)
+    reference_rule = smeft2_comparison.parse_smeft2_matter_rule(reference["rule"])
+    comparisons = compare_canonical_coefficient_maps(
+        local_rule,
+        reference_rule,
+        coefficients=tuple(
+            head for head in report_row["reference_heads"] if head.startswith("alpha")
+        ),
+        external_indices=external_indices,
+        max_dummy_permutations=2_000_000,
+    )
+
+    assert comparisons
+    assert all(comparison.matches for comparison in comparisons.values())
+
+
+def _check_summary(**overrides):
+    summary = {
+        "operator_content_matches_including_cc": 184,
+        "reference_vertex_count": 184,
+        "shared_head_matches": 176,
+        "charge_conjugation_packaging_matches": 8,
+        "exact_symbolic_equal_vertices": 182,
+        "exact_symbolic_supported_vertices": 182,
+        "exact_symbolic_unequal_vertices": 0,
+        "exact_symbolic_error_vertices": 0,
+        "canonical_map_equal_vertices": 32,
+        "canonical_map_supported_vertices": 32,
+        "canonical_map_equal_coefficient_sectors": 93,
+        "canonical_map_supported_coefficient_sectors": 93,
+        "canonical_map_unequal_vertices": 0,
+        "canonical_map_error_vertices": 0,
+        "shared_head_count_matches": 90,
+        "shared_signatures": 182,
+        "reference_only_signatures": 2,
+        "feynpy_only_signatures": 8,
+        "feynpy_only_unexplained_signatures": 0,
+        "shared_head_count_mismatches": 92,
+    }
+    summary.update(overrides)
+    return summary
+
+
+def test_smeft2_check_accepts_charge_conjugation_packaging(monkeypatch):
+    def fake_compare(_reference):
+        return {"summary": _check_summary()}, ()
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+
+    assert smeft2_comparison.main(["--check"]) == 0
+
+
+def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch):
+    def fake_compare(_reference):
+        return {
+            "summary": _check_summary(feynpy_only_unexplained_signatures=1)
+        }, ()
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    assert smeft2_comparison.main(["--check"]) == 1
+
+    def fake_compare_with_raw_count_gap(_reference):
+        return {"summary": _check_summary()}, ()
+
+    monkeypatch.setattr(
+        smeft2_comparison,
+        "compare",
+        fake_compare_with_raw_count_gap,
+    )
+    assert smeft2_comparison.main(["--check", "--strict-counts"]) == 1
+
+
+def test_smeft2_two_fermion_raw_count_gap_matches_exactly():
+    _assert_reference_row_exact_match("B|qL|qLbar")
+
+
+def test_smeft2_four_fermion_ec_packaging_row_matches_exactly():
+    _assert_reference_row_exact_match("dRbar|eR|lLbar|qL")
 
 
 def test_smeft2_supported_subset_builds_and_compiles():
@@ -110,8 +205,8 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_count_mismatches"] == 92
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
     assert report["summary"]["shared_head_count_unexplained_mismatches"] == 83
-    assert report["summary"]["exact_symbolic_supported_vertices"] == 32
-    assert report["summary"]["exact_symbolic_equal_vertices"] == 32
+    assert report["summary"]["exact_symbolic_supported_vertices"] == 182
+    assert report["summary"]["exact_symbolic_equal_vertices"] == 182
     assert report["summary"]["exact_symbolic_unequal_vertices"] == 0
     assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
     assert report["summary"]["exact_symbolic_error_vertices"] == 0
@@ -206,6 +301,9 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
         "g2": "DUMMY_LORENTZ_MERGE",
     }
     assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"
+    assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["dRbar|eR|lLbar|qL"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["Phi|Phi|lL|lL"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
     assert rows_by_key["B|B|B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|B|Phi|Phibar"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
@@ -236,7 +334,6 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert rows_by_key["Phi|Phi|Phibar|Phibar|Wi|Wi"]["canonical_map_coefficients"][
         "alphaRHDp"
     ]["matches"] is True
-    assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
     assert rows_by_key["G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G|G|G"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
     assert rows_by_key["G|G|G"]["canonical_map_coefficients"]["alphaR2G"][
