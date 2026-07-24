@@ -434,7 +434,7 @@ Note that a product of $n$ non-abelian field strengths produces $3^n$ raw branch
 
 \subsection{Gauge fixing and ghosts}
 
-The current gauge-fixing helper implements the linear covariant gauge term
+There is a declaritive helper for the gauge fixing term which cna be accessed by \py{GaugeFixing(gauge_group, xi=...)}.This helper implements the linear covariant gauge term
 \begin{equation}
     \mathcal{L}_{\mathrm{gf}}
     =
@@ -444,9 +444,9 @@ The current gauge-fixing helper implements the linear covariant gauge term
 \end{equation}
 with the adjoint index omitted in the abelian case. It constructs the corresponding explicit local monomial, lowers it through the ordinary compilation pipeline, and tags the result as \py{gauge_fixing} so that the reporting and validation layers can recognise it. The user can naturally write the gauge fixingin manually, in which case these will be recognized and will receive the same tag.
 
-This helper describes linear covariant gauge fixing. More general $R_\xi$ gauges in spontaneously broken theories may also contain Goldstone-boson contributions to the gauge-fixing function and therefore require additional terms.
+Note that the  generic \py{GaugeFixing(...)} helper describes only linear covariant gauge fixing. More general $R_\xi$ gauges in spontaneously broken theories, for example, require additional Goldstone-dependent gauge-fixing terms, which must be written explicitly by the user.
 
-For a non-abelian gauge group, the Faddeev--Popov ghost Lagrangian can be written as
+There is also the ghost lagrangian helper \py{GhostLagrangian(gauge_group)}. For a non-abelian gauge group, the Faddeev--Popov ghost Lagrangian can be written as
 \begin{equation}
     \mathcal{L}_{\mathrm{gh}}
     =
@@ -480,19 +480,13 @@ The ghost sector therefore becomes
     A^b_\mu c^c.
 \end{equation}
 
-The compiler lowers these as two ordinary local terms: the ghost kinetic
-term and the ghost--gauge interaction. Since the ghost transforms in the
-adjoint representation, its gauge action and index contractions reuse the
-same representation machinery used for other fields. Its Grassmann
-statistics, field ordering, and ghost number nevertheless remain
-ghost-specific properties.
+The compiler turns the ghost sector into two ordinary local terms: the ghost kinetic term and the ghost gauge interaction term. Since the ghost field transforms in the adjoint representation, the code can use the same gauge-action and index-contraction machinery that it uses for other adjoint fields. What remains specific to ghosts is not the contraction structure, but their interpretation: they still carry Grassmann statistics, a fixed field ordering, and ghost number.
 
 % --------------------------------------------------------------
 \section{The pivot: the \texttt{InteractionTerm} intermediate representation}
 \label{sec:internals-ir}
 % --------------------------------------------------------------
-
-Every branch above converges on one data type, \py{InteractionTerm} (in \texttt{feynpy.interactions}). It is the waist of the hourglass: everything above it is declarative and physics-aware, everything below it is generic symbolic machinery.
+To return to the analogy used at the start of the chapter, we are now at the waist of the hourglass. Every branch of the code converges and passes through this data type: \py{InteractionTerm} (in \texttt{feynpy.interactions}). Everything above this narrow point is declarative, everything below it is generic symbolic machinery.
 
 \begin{minted}{python}
 @dataclass(frozen=True)
@@ -505,35 +499,31 @@ class InteractionTerm:
     sector: str = ""
 \end{minted}
 
-The \py{coupling} is a Symbolica expression holding the numerical and tensor prefactor (couplings, generators, structure constants, metrics); \py{fields} is an ordered tuple of \py{FieldOccurrence} objects, each a field with its slot-resolved index labels and conjugation flag; \py{derivatives} records, as \py{DerivativeAction(target, lorentz_index)}, which field each derivative hits and along which Lorentz index; and \py{closed_dirac_bilinears} carries the fermion-pairing provenance of Section~\ref{sec:internals-lowering}. A \py{CompiledLagrangian} is simply a tuple of such terms. Note what has \emph{not} happened yet: no creation operators, no permutations, no external momenta. An \py{InteractionTerm} is a purely static, index-labelled description of one monomial of the Lagrangian --- the direct code counterpart of the right-hand side $g_{\alpha_1\cdots\alpha_n}\,\partial\cdots\partial\,\phi^{\alpha_1}\cdots\phi^{\alpha_n}$ of Eq.~\eqref{eq:general-term}.
+The \py{coupling} is a Symbolica expression holding the numerical and tensor prefactor (couplings, generators, structure constants, metrics); \py{fields} is an ordered tuple of \py{FieldOccurrence} objects, each a field with its slot-resolved index labels and conjugation flag; \py{derivatives} records, as \py{DerivativeAction(target, lorentz_index)}, which field each derivative hits and along which Lorentz index; and \py{closed_dirac_bilinears} carries the fermion-pairing provenance of Section~\ref{sec:internals-lowering}. A \py{CompiledLagrangian} is simply a tuple of such terms. An \py{InteractionTerm} is a purely static, index-labelled description of one monomial of the Lagrangian --- the direct code counterpart of the right-hand side $g_{\alpha_1\cdots\alpha_n}\,\partial\cdots\partial\,\phi^{\alpha_1}\cdots\phi^{\alpha_n}$ of Eq.~\eqref{eq:general-term}.
 
-The ordering of \py{fields} is significant. Because Symbolica multiplication is commutative, the ordered tuple --- not the exported Symbolica expression --- is the authoritative record of fermion order; this is why the whole pipeline carries fermion structure as explicit metadata rather than trusting the algebra to remember it. The method \py{to_vertex_kwargs(external_legs)} performs the last model-aware step: it strips away all model-layer vocabulary and reduces one term plus a chosen set of external legs to flat, parallel lists --- species keys, momenta, field and leg roles, index labels and types, derivative indices and targets, and the bilinear metadata --- after which only Symbolica and Spenso objects remain.
+As we know the ordering of \py{fields} is relevant and since Symbolica multip;ication is commutative, we use the ordered tuple which keeps record of fermion order. 
+The method \py{to_vertex_kwargs(external_legs)} performs the last model-aware step: it strips away all model-layer vocabulary and reduces one term plus a chosen set of external legs to flat, parallel lists --- species keys, momenta, field and leg roles, index labels and types, derivative indices and targets, and the bilinear metadata --- after which only Symbolica and Spenso objects remain.
 
 \subsection*{Flavour expansion}
 
-If a field carries a flavour index (Section~\ref{sec:feynpy-flavor}), terms stay generation-generic by default: a single term $\lambda_{ij}\,\bar\ell_i \ell_j\,\phi$ implicitly sums over $i,j$. Requesting \py{flavor_expand=True} instead enumerates every member combination, substitutes the corresponding \py{Parameter} component (e.g.\ $\lambda_{e\mu}$), and \emph{drops} the term when that component was declared zero, producing one fully explicit \py{InteractionTerm} per combination in the same data structure.
+When the field carries a flavour index (Section~\ref{sec:feynpy-flavor}) by default the terms remain generic. For example $\lambda_{ij}\,\bar\ell_i \ell_j\,\phi$ will keep the lepton. By requesting \py{flavor_expand=True} Feynpy enumerates every member combination, substitutes the corresponding \py{Parameter} component (e.g.\ $\lambda_{e\mu}$) producing one fully explicit \py{InteractionTerm} per combination in the same data structure.
 
-% --------------------------------------------------------------
+% -----------------------------------------------------
+---------
 \section{The inner core: Wick contraction in the vertex engine}
 \label{sec:internals-contraction}
 % --------------------------------------------------------------
 
-The vertex engine (\texttt{symbolic.vertex\_engine}) is deliberately ignorant of physics vocabulary. It sees fields, roles, index labels, momenta and a coupling tensor, and performs a combinatorial contraction that is the code-level realisation of the canonical-quantisation algorithm of Section~\ref{sec:feynrules-algorithm}.
+Now we arrive at the heart of the code, where the actual algorithm is implemented. We find the implementation of wick contraction in
+the vertex engine (\texttt{symbolic.vertex\_engine}). The only thing this engine cares about are fields, roles, index labels, momenta and a coupling tensor, and performs a combinatorial contraction that is the code-level realisation of the canonical-quantisation algorithm of Section~\ref{sec:feynrules-algorithm}.
 
 \subsection{The permutation sum}
 
-The core routine \py{contract_to_full_expression} sums over all $n!$ ways of matching the $n$ external legs to the $n$ field slots of the interaction. Each permutation \py{perm} assigns external leg \py{perm[i]} to field slot \py{i}, and the sum over all of them is the full Wick contraction. For each surviving permutation the code builds one contribution:
+The core routine is \py{contract_to_full_expression}. Given an interaction with $n$ field slots and $n$ external legs, it sums over all $n!$ ways of matching legs to slots. Each permutation \py{perm} assigns leg \py{perm[i]} to slot \py{i}; the sum of the surviving contributions is the full Wick contraction.
 
-\begin{enumerate}
-    \item \textbf{Coupling remap.} Open index labels in the coupling (those appearing exactly once across all slots) are relabelled to the labels of the external legs they now contract with --- literally \py{coupling.replace(open_label, target_label)}, using the Symbolica pattern machinery of Section~\ref{sec:cas-symbolica}.
-    \item \textbf{Compatibility pruning.} Each $(\text{slot},\text{leg})$ pairing is checked by \py{factor_leg_compatible}. The check compares stable \emph{match keys} built from field identity (name, spin, kind, statistics, index schema, conjugation), which lets aliased external species still match the right field, and then checks role compatibility. An incompatible permutation is discarded immediately, before any further work.
-    \item \textbf{Fermion sign.} For a fermionic term a Grassmann sign is applied from the permutation restricted to the fermion slots --- unless the closed-bilinear exception applies (Section~\ref{sec:internals-contraction-fermions}).
-    \item \textbf{Derivatives $\to$ momenta.} Each \py{DerivativeAction} contributes a factor $(-i)\,p^\mu$, where $p$ is the momentum of the leg matched to the derivative's target. This realises the Fourier convention $\partial_\mu \to -i p_\mu$ with all momenta incoming.
-    \item \textbf{External factors.} Each leg contributes its external wavefunction ($U$ for bosons, $UF/\overline{UF}$ for fermions) together with a species Kronecker delta, and repeated explicit indices are contracted through the appropriate Spenso representation metric.
-    \item \textbf{Plane wave.} The contribution is multiplied by $\exp(-i\,\Sigma p\!\cdot\!x)$ and added to the running total.
-\end{enumerate}
+For each permutation the code does the following things in order. First it remaps every open index in the coupling to the corresponding external-leg label, this ensures that the coupling will actually match the permutated fields. Then it checks whether the pairing is physically allowed, this is done using \py{factor_leg_compatible}. When iot happens that a slot and a leg disagree in species, spin, statistics or conjugation, the permutation is discarded at once. Surviving fermionic terms pick up a Grassmann sign from the fermion part of the permutation, unless the closed-bilinear exception of Section~\ref{sec:internals-contraction-fermions} applies. Then derivatives are turned into momenta because of the Fourier rule $\partial_\mu \to -i p_\mu$ (all momenta incoming), so each \py{DerivativeAction} contributes a factor $(-i)\,p^\mu$ with $p$ the momentum of the matched leg (meaning that it will carry the corresponding label). Finally each leg contributes its external wavefunction ($U$ for bosons, $UF/\overline{UF}$ for fermions) and a species Kronecker delta, repeated indices are contracted with the Spenso metric, and the contribution is multiplied by the plane wave $\exp(-i\,\Sigma p\!\cdot\!x)$ before being added to the total.
 
-For a purely bosonic vertex all signs are $+1$, so the sum is a permanent over compatible pairings; for fermions each term carries its sign. The essential shape of the routine is:
+Bosonic vertices carry no extra signs; fermionic ones do. The structure of the loop is:
 
 \begin{minted}{python}
 for perm in permutations(range(n)):
@@ -550,14 +540,12 @@ for perm in permutations(range(n)):
     total += term
 \end{minted}
 
-\begin{tcolorbox}[infobox, title={Why this generalises so well}]
-Nothing in \py{contract_to_full_expression} is specific to Lorentz or colour indices: an index is just a \py{(kind, label)} pair, and ``open'' versus ``internal'' is determined purely by how many times a label occurs. This is why the same engine derives QED, QCD, electroweak and ghost vertices without a single index-kind-specific branch.
-\end{tcolorbox}
+Note that nothing here depends on a particular index kind. An index is only a \py{(kind, label)} pair.
 
 \subsection{Fermion signs and the closed-bilinear exception}
 \label{sec:internals-contraction-fermions}
 
-Fermion signs were the single most delicate piece of physics in the engine. The generic rule is the flat Grassmann sign of the fermion permutation. But this gives the \emph{wrong relative sign} for a product of closed Dirac bilinears compared with the FeynRules convention: for identical-fermion current--current operators the flat rule produces $\text{direct} - \text{crossed}$, whereas the reference gives $\text{direct} + \text{crossed}$. The resolution is metadata-driven and narrow: when --- and only when --- every Dirac fermion slot is covered exactly once by the disjoint \py{closed_dirac_bilinears} pairs carried down from lowering, the engine suppresses the flat permutation sign and uses the all-plus bilinear convention. Generic open multi-fermion tensors keep the flat Grassmann sign. This is exactly the right boundary: it adopts the convention where the term genuinely is a product of closed currents, and nowhere else.
+Fermion signs is a delicate piece of physics in the engine that needed some care. From the beginning of the pipeline we needed to record the order of the fields all to arrive at this deepest point of the code knowing how to handle the final sign. The generic rule is the flat Grassmann sign of the fermion permutation. But there exists a case where it is not so simple. In fact this procedure would  give the \emph{wrong relative sign} for a product of closed Dirac bilinears: for identical-fermion current--current operators the flat rule produces $\text{direct} - \text{crossed}$, whereas the reference gives $\text{direct} + \text{crossed}$. The resolution is metadata-driven and narrow: when --- and only when --- every Dirac fermion slot is covered exactly once by the disjoint \py{closed_dirac_bilinears} pairs carried down from lowering, the engine suppresses the flat permutation sign and uses the all-plus bilinear convention. Generic open multi-fermion tensors keep the flat Grassmann sign. This is exactly the right boundary: it adopts the convention where the term genuinely is a product of closed currents, and nowhere else.
 
 \subsection{Output policy and universal factors}
 
