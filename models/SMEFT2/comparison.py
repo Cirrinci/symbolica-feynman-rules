@@ -27,6 +27,7 @@ for path in (ROOT, SRC):
         sys.path.insert(0, str(path))
 
 from feynrules.comparison import (
+    CanonicalCoefficientComparison,
     FeynRulesVertex,
     compare_feynrules_bosonic_vertices,
     compare_canonical_coefficient_maps,
@@ -35,9 +36,10 @@ from feynrules.comparison import (
 from models.SMEFT2 import build_smeft_green_bpreserving
 from symbolic.tensor_canonicalization import (
     canonical_external_index_set,
+    canonical_tensor_monomial_report,
     canonical_tensor_monomial_map,
 )
-from symbolica import Expression, S
+from symbolica import AtomType, Expression, S
 
 from symbolic.spenso_structures import (
     COLOR_ADJ,
@@ -46,6 +48,7 @@ from symbolic.spenso_structures import (
     WEAK_FUND,
     gamma_matrix,
     gauge_generator,
+    dirac_charge_conjugation,
     lorentz_levi_civita,
     lorentz_metric,
     spinor_metric,
@@ -321,6 +324,150 @@ def _spinor_chain_replacement(
     return result.to_canonical_string()
 
 
+def _bare_symbolica_name(name: str) -> str:
+    return name.rsplit("::", 1)[-1]
+
+
+def _is_zero_expression(expression: Expression) -> bool:
+    return expression.cancel().expand().to_canonical_string() == "0"
+
+
+def _terms(expression: Expression) -> tuple[Expression, ...]:
+    expression = expression.cancel().expand()
+    if _is_zero_expression(expression):
+        return ()
+    if expression.get_type() == AtomType.Add:
+        return tuple(expression)
+    return (expression,)
+
+
+def _term_factors(term: Expression) -> tuple[Expression, ...]:
+    if term.get_type() == AtomType.Mul:
+        return tuple(term)
+    return (term,)
+
+
+def _contains_coefficient_head(expression: Expression, coefficient: str) -> bool:
+    atom_type = expression.get_type()
+    if atom_type == AtomType.Var:
+        return _bare_symbolica_name(expression.get_name()) == coefficient
+    if atom_type == AtomType.Fn:
+        if _bare_symbolica_name(expression.get_name()) == coefficient:
+            return True
+        return any(
+            _contains_coefficient_head(argument, coefficient)
+            for argument in expression
+        )
+    if atom_type in (AtomType.Add, AtomType.Mul, AtomType.Pow):
+        return any(
+            _contains_coefficient_head(argument, coefficient)
+            for argument in expression
+        )
+    return False
+
+
+def _filter_terms_by_coefficient_head(
+    expression: Expression,
+    coefficient: str,
+) -> Expression:
+    """Return terms containing ``coefficient`` as a variable/function head.
+
+    Symbolica's bare ``expression.coefficient(S("alpha"))`` extraction works
+    for scalar heads such as ``alphaO3G`` but not for indexed Wilson functions
+    such as ``alphaKl(f1, f2)`` or ``conj(alphaWeinberg(f1, f2))``.  SMEFT2
+    fermion rows are dominated by indexed Wilson coefficients, so exact row
+    comparison filters terms by coefficient head and leaves the full indexed
+    coefficient factor in the scalar coefficient.  This keeps flavor order and
+    complex conjugation visible to the equality test.
+    """
+
+    total = Expression.num(0)
+    for term in _terms(expression):
+        if any(
+            _contains_coefficient_head(factor, coefficient)
+            for factor in _term_factors(term)
+        ):
+            total += term
+    return total.cancel().expand()
+
+
+def _canonical_report_for_coefficient_head(
+    expression: Expression,
+    *,
+    coefficient: str,
+    external_indices,
+    max_dummy_permutations: int,
+):
+    return canonical_tensor_monomial_report(
+        _filter_terms_by_coefficient_head(expression, coefficient),
+        external_indices=external_indices,
+        max_dummy_permutations=max_dummy_permutations,
+    )
+
+
+def _compare_smeft2_canonical_coefficient_maps(
+    feynpy_rule: Expression | str,
+    feynrules_rule: Expression | str,
+    *,
+    coefficients: Iterable[str],
+    external_indices,
+    max_dummy_permutations: int = 50_000,
+) -> dict[str, CanonicalCoefficientComparison]:
+    """Compare SMEFT2 rows by coefficient-head-filtered canonical maps."""
+
+    feynpy_expression = (
+        Expression.parse(feynpy_rule)
+        if isinstance(feynpy_rule, str)
+        else feynpy_rule
+    )
+    feynrules_expression = (
+        Expression.parse(feynrules_rule)
+        if isinstance(feynrules_rule, str)
+        else feynrules_rule
+    )
+
+    comparisons = {}
+    for coefficient in coefficients:
+        feynpy_report = _canonical_report_for_coefficient_head(
+            feynpy_expression,
+            coefficient=coefficient,
+            external_indices=external_indices,
+            max_dummy_permutations=max_dummy_permutations,
+        )
+        feynrules_report = _canonical_report_for_coefficient_head(
+            feynrules_expression,
+            coefficient=coefficient,
+            external_indices=external_indices,
+            max_dummy_permutations=max_dummy_permutations,
+        )
+        feynpy_keys = set(feynpy_report.map)
+        feynrules_keys = set(feynrules_report.map)
+        shared_keys = feynpy_keys & feynrules_keys
+        coefficient_mismatches = {
+            key: (feynpy_report.map[key], feynrules_report.map[key])
+            for key in shared_keys
+            if feynpy_report.map[key].cancel().expand().to_canonical_string()
+            != feynrules_report.map[key].cancel().expand().to_canonical_string()
+        }
+        comparisons[coefficient] = CanonicalCoefficientComparison(
+            coefficient=coefficient,
+            feynpy_raw_terms=feynpy_report.raw_terms,
+            feynrules_raw_terms=feynrules_report.raw_terms,
+            feynpy_canonical_terms=feynpy_report.canonical_terms,
+            feynrules_canonical_terms=feynrules_report.canonical_terms,
+            feynpy_only={
+                key: feynpy_report.map[key]
+                for key in sorted(feynpy_keys - feynrules_keys, key=repr)
+            },
+            feynrules_only={
+                key: feynrules_report.map[key]
+                for key in sorted(feynrules_keys - feynpy_keys, key=repr)
+            },
+            coefficient_mismatches=coefficient_mismatches,
+        )
+    return comparisons
+
+
 def _replace_tensdot_chains(text: str) -> str:
     output = []
     position = 0
@@ -357,13 +504,21 @@ def _replace_tensdot_chains(text: str) -> str:
         position = spin_close + 1
 
 
-def parse_smeft2_matter_rule(rule: str) -> Expression:
+def parse_smeft2_matter_rule(
+    rule: str,
+    *,
+    projector_as_dirac_c: bool = False,
+) -> Expression:
     """Parse SMEFT2 two-fermion FeynRules tensor syntax into native tensors.
 
     The SMEFT2 model represents chirality in the field class itself, while the
     FeynRules export prints explicit ``ProjM``/``ProjP`` factors. This parser
     therefore removes those projectors from gamma chains and maps bare
-    projector bilinears to the spinor metric.
+    projector bilinears to the spinor metric.  The Weinberg charge-conjugation
+    packaging comparison is the exception: there FeynRules' same-chirality
+    projector row is compared to FeynPy's mixed ``LLbar C LL`` packaging, so
+    bare projectors are mapped to the antisymmetric Dirac charge-conjugation
+    tensor.
     """
 
     text = _rewrite_feynrules_indices(rule)
@@ -371,9 +526,12 @@ def parse_smeft2_matter_rule(rule: str) -> Expression:
     _replace_scalar_product.counter = 0
 
     text = _replace_tensdot_chains(text)
+    projector_tensor = (
+        dirac_charge_conjugation if projector_as_dirac_c else spinor_metric
+    )
     text = re.sub(
         r"Proj[MP]\[([^,\[\]]+),\s*([^\[\]]+)\]",
-        lambda match: spinor_metric(
+        lambda match: projector_tensor(
             S(match.group(1).strip()),
             S(match.group(2).strip()),
         ).to_canonical_string(),
@@ -570,6 +728,7 @@ def _fermion_exact_symbolic_row(
     reference: FeynRulesVertex,
     local: LocalVertex | None,
     reference_heads: set[str],
+    local_heads: set[str],
     head_count_status: str,
     lagrangian,
     field_map: dict[str, object],
@@ -591,7 +750,11 @@ def _fermion_exact_symbolic_row(
         }
 
     coefficients = tuple(
-        sorted(head for head in reference_heads if head.startswith("alpha"))
+        sorted(
+            head
+            for head in reference_heads | local_heads
+            if head.startswith("alpha")
+        )
     )
     if not coefficients:
         return None
@@ -602,7 +765,7 @@ def _fermion_exact_symbolic_row(
             simplify=True,
         )
         reference_rule = parse_smeft2_matter_rule(reference.rule)
-        comparisons = compare_canonical_coefficient_maps(
+        comparisons = _compare_smeft2_canonical_coefficient_maps(
             local_rule,
             reference_rule,
             coefficients=coefficients,
@@ -638,6 +801,121 @@ def _fermion_exact_symbolic_row(
         "detail": (
             "Canonical tensor-monomial maps differ for coefficient sector(s): "
             + ", ".join(mismatched)
+        ),
+    }
+
+
+def _weinberg_packaged_field_orders(
+    reference_fields: tuple[str, ...],
+) -> tuple[tuple[str, ...], tuple[str, ...]] | None:
+    if sorted(reference_fields) == ["Phi", "Phi", "lL", "lL"]:
+        fermion_name = "lL"
+        scalar_name = "Phi"
+    elif sorted(reference_fields) == ["Phibar", "Phibar", "lLbar", "lLbar"]:
+        fermion_name = "lLbar"
+        scalar_name = "Phibar"
+    else:
+        return None
+
+    fermion_slots = [
+        slot for slot, name in enumerate(reference_fields) if name == fermion_name
+    ]
+    if len(fermion_slots) != 2:
+        return None
+    if any(
+        name != scalar_name
+        for slot, name in enumerate(reference_fields)
+        if slot not in fermion_slots
+    ):
+        return None
+
+    first_assignment = list(reference_fields)
+    first_assignment[fermion_slots[0]] = "lLbar"
+    first_assignment[fermion_slots[1]] = "lL"
+
+    second_assignment = list(reference_fields)
+    second_assignment[fermion_slots[0]] = "lL"
+    second_assignment[fermion_slots[1]] = "lLbar"
+
+    return tuple(first_assignment), tuple(second_assignment)
+
+
+def _weinberg_cc_exact_symbolic_row(
+    *,
+    reference: FeynRulesVertex,
+    reference_heads: set[str],
+    lagrangian,
+    field_map: dict[str, object],
+) -> dict[str, str] | None:
+    family = _exact_symbolic_family(reference.fields)
+    if family != "TWO_FERMION" or reference_heads != {"alphaWeinberg"}:
+        return None
+
+    packaged_orders = _weinberg_packaged_field_orders(reference.fields)
+    if packaged_orders is None:
+        return None
+
+    external_indices = _external_index_set_from_fields(
+        tuple(field_map[name] for name in reference.fields)
+    )
+    if external_indices is None:
+        return {
+            "family": family,
+            "status": "EXACT_ERROR",
+            "detail": "Could not infer external indices for Weinberg row.",
+        }
+
+    try:
+        first_rule = lagrangian.feynman_rule(
+            *(field_map[name] for name in packaged_orders[0]),
+            simplify=True,
+        )
+        second_rule = lagrangian.feynman_rule(
+            *(field_map[name] for name in packaged_orders[1]),
+            simplify=True,
+        )
+        # Swapping which external lepton is represented by the charge-conjugate
+        # FeynPy leg swaps the two C-matrix spinor slots.  Since C is
+        # antisymmetric, the same-chirality FeynRules rule corresponds to the
+        # antisymmetrized packaged local rule.
+        local_rule = (first_rule - second_rule).cancel().expand()
+        reference_rule = parse_smeft2_matter_rule(
+            reference.rule,
+            projector_as_dirac_c=True,
+        )
+        comparisons = _compare_smeft2_canonical_coefficient_maps(
+            local_rule,
+            reference_rule,
+            coefficients=("alphaWeinberg",),
+            external_indices=external_indices,
+            max_dummy_permutations=2_000_000,
+        )
+    except Exception as exc:  # pragma: no cover - reported in JSON/Markdown.
+        return {
+            "family": family,
+            "status": "EXACT_ERROR",
+            "detail": f"{type(exc).__name__}: {exc}",
+        }
+
+    comparison = comparisons["alphaWeinberg"]
+    if comparison.matches:
+        return {
+            "family": family,
+            "status": "EXACT_MATCH",
+            "detail": (
+                "Weinberg charge-conjugation packaging matches exactly: the "
+                "same-chirality FeynRules row equals the antisymmetrized "
+                "FeynPy mixed `lLbar,lL` assignment pair, with `ProjM/ProjP` "
+                "mapped to the antisymmetric Dirac charge-conjugation tensor."
+            ),
+        }
+
+    return {
+        "family": family,
+        "status": "EXACT_MISMATCH",
+        "detail": (
+            "Weinberg charge-conjugation packaging canonical maps differ for "
+            "`alphaWeinberg`."
         ),
     }
 
@@ -1196,10 +1474,18 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         exact_symbolic_family = _exact_symbolic_family(reference.fields)
         exact_symbolic = exact_symbolic_by_key.get(key)
         if exact_symbolic is None:
+            exact_symbolic = _weinberg_cc_exact_symbolic_row(
+                reference=reference,
+                reference_heads=reference_heads,
+                lagrangian=lagrangian,
+                field_map=field_map,
+            )
+        if exact_symbolic is None:
             exact_symbolic = _fermion_exact_symbolic_row(
                 reference=reference,
                 local=local,
                 reference_heads=reference_heads,
+                local_heads=local_heads,
                 head_count_status=head_count_status,
                 lagrangian=lagrangian,
                 field_map=field_map,
@@ -1452,10 +1738,14 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
         "comparison_level": (
             "Signature coverage, coefficient-head content, and raw "
             "coefficient-head multiplicity diagnostics, plus exact symbolic "
-            "comparison for supported bosonic rows and shared two-/four-"
-            "fermion rows, plus canonical tensor-monomial equality for "
-            "supported bosonic coefficient sectors. The only exact-unsupported "
-            "reference rows are the two non-literal Weinberg packaging rows."
+            "comparison for all bosonic rows, shared two-/four-fermion rows, "
+            "and the two Weinberg charge-conjugation packaging rows. Fermion "
+            "exact comparison filters by indexed Wilson-coefficient head and "
+            "keeps flavor order/conjugation in the canonical scalar "
+            "coefficient, so it cannot pass vacuously for function-valued "
+            "coefficients. The separate canonical tensor-map diagnostic is "
+            "still the gauge-sector per-coefficient map for supported bosonic "
+            "coefficient sectors."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -1671,12 +1961,14 @@ def _markdown_report(report: dict[str, object]) -> str:
             "",
             "## Exact Symbolic Comparison",
             "",
-            "This layer is currently enabled for bosonic SMEFT2 rows. It "
-            "also covers all two- and four-fermion rows with a literal shared "
-            "local signature. It parses the full FeynRules tensor rule into "
-            "native tensors and canonicalizes index structure. The two "
-            "Weinberg packaging rows still fall back to the signature/head "
-            "diagnostics above.",
+            "This layer is enabled for every FeynRules reference row. Bosonic "
+            "rows use the native bosonic comparator. Fermion rows parse the "
+            "full FeynRules tensor rule into native tensors, filter terms by "
+            "indexed Wilson-coefficient head, keep flavor order and complex "
+            "conjugation in the scalar coefficient, and compare canonical "
+            "tensor-monomial maps. The two Weinberg rows have no literal "
+            "FeynPy signature, so they are compared to the antisymmetrized "
+            "charge-conjugation packaged FeynPy partner rule.",
             "",
             "| Signature | Status |",
             "| --- | --- |",
@@ -1892,6 +2184,8 @@ def main(argv: list[str] | None = None) -> int:
         summary["operator_content_matches_including_cc"]
         != summary["reference_vertex_count"]
         or summary["feynpy_only_unexplained_signatures"]
+        or summary["exact_symbolic_supported_vertices"]
+        != summary["reference_vertex_count"]
         or summary["exact_symbolic_unequal_vertices"]
         or summary["exact_symbolic_error_vertices"]
         or summary["canonical_map_unequal_vertices"]

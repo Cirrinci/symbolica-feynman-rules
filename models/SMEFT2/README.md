@@ -91,16 +91,25 @@ The reproducible comparison entry point is:
 It regenerates:
 
 - `COMPARISON.md` — human-readable summary.
+- `COMPARISON_METHOD.md` — explanation of the comparison layers, identities,
+  charge-conjugation handling, and remaining strict mismatch classes.
 - `vertex_comparison_report.json` — per-signature comparison rows.
 - `feynpy_vertices.json` — local FeynPy 3-6 point vertex rules.
 
 The comparison checks signature coverage and coefficient-head content after
-normalizing field names to the FeynRules convention. It also proves exact
-canonical tensor-rule equality for every reference row with a literal shared
-FeynPy signature: all bosonic rows, all shared two-fermion rows, and all
-four-fermion rows. The only exact-unsupported reference rows are the two
-Weinberg signatures whose operator content is present under FEYNPy's
-charge-conjugation packaging rather than the literal FeynRules field multiset.
+normalizing field names to the FeynRules convention. It also attempts strict
+exact canonical tensor-rule equality for all 184 reference rows. The current
+strict result is 78 exact matches out of 184 attempted rows: all bosonic rows,
+the two Weinberg charge-conjugation packaging rows, and the subset of fermion
+rows whose indexed Wilson coefficients, flavor orientation, spinor chains, and
+tensor monomials already canonicalize to the FeynRules form.
+
+The two literal Weinberg reference signatures have no same-field FeynPy
+signature, but their operator content is now proven exactly against FEYNPy's
+mixed `lLbar,lL` charge-conjugation packaging by comparing the antisymmetrized
+partner-rule pair. The remaining strict exact mismatches are left visible in
+`COMPARISON.md` and `vertex_comparison_report.json`; they are no longer hidden
+behind coefficient-head-only matching.
 
 ## Check
 

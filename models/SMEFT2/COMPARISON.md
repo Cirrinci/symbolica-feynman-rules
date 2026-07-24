@@ -4,7 +4,7 @@ Generated on `2026-07-24` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
-Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for supported bosonic rows and shared two-/four-fermion rows, plus canonical tensor-monomial equality for supported bosonic coefficient sectors. The only exact-unsupported reference rows are the two non-literal Weinberg packaging rows.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all bosonic rows, shared two-/four-fermion rows, and the two Weinberg charge-conjugation packaging rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. The separate canonical tensor-map diagnostic is still the gauge-sector per-coefficient map for supported bosonic coefficient sectors.
 
 | Item | Value |
 | --- | ---: |
@@ -23,9 +23,9 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Shared raw head-count mismatches | 92 |
 | Shared raw head-count benign expansions | 9 |
 | Shared raw head-count mismatches with unexplained deltas | 83 |
-| Exact symbolic supported vertices | 182 |
-| Exact symbolic equal vertices | 182 |
-| Exact symbolic unequal vertices | 0 |
+| Exact symbolic supported vertices | 184 |
+| Exact symbolic equal vertices | 78 |
+| Exact symbolic unequal vertices | 106 |
 | Exact symbolic error vertices | 0 |
 | Canonical tensor-map supported vertices | 32 |
 | Canonical tensor-map equal vertices | 32 |
@@ -58,7 +58,7 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 
 ## Exact Symbolic Comparison
 
-This layer is currently enabled for bosonic SMEFT2 rows. It also covers all two- and four-fermion rows with a literal shared local signature. It parses the full FeynRules tensor rule into native tensors and canonicalizes index structure. The two Weinberg packaging rows still fall back to the signature/head diagnostics above.
+This layer is enabled for every FeynRules reference row. Bosonic rows use the native bosonic comparator. Fermion rows parse the full FeynRules tensor rule into native tensors, filter terms by indexed Wilson-coefficient head, keep flavor order and complex conjugation in the scalar coefficient, and compare canonical tensor-monomial maps. The two Weinberg rows have no literal FeynPy signature, so they are compared to the antisymmetrized charge-conjugation packaged FeynPy partner rule.
 
 | Signature | Status |
 | --- | --- |
@@ -93,91 +93,92 @@ This layer is currently enabled for bosonic SMEFT2 rows. It also covers all two-
 | `B|G|G|dR|dRbar` | `EXACT_MATCH` |
 | `B|G|G|qL|qLbar` | `EXACT_MATCH` |
 | `B|G|G|uR|uRbar` | `EXACT_MATCH` |
-| `B|G|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `B|G|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `B|G|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `B|G|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `B|G|Phibar|dRbar|qL` | `EXACT_MISMATCH` |
+| `B|G|Phibar|qLbar|uR` | `EXACT_MISMATCH` |
+| `B|G|Phi|dR|qLbar` | `EXACT_MISMATCH` |
+| `B|G|Phi|qL|uRbar` | `EXACT_MISMATCH` |
 | `B|G|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `B|G|dR|dRbar` | `EXACT_MATCH` |
-| `B|G|qL|qLbar` | `EXACT_MATCH` |
-| `B|G|uR|uRbar` | `EXACT_MATCH` |
-| `B|Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `B|Phibar|Wi|eRbar|lL` | `EXACT_MATCH` |
-| `B|Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `B|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `B|Phibar|eRbar|lL` | `EXACT_MATCH` |
-| `B|Phibar|qLbar|uR` | `EXACT_MATCH` |
+| `B|G|dR|dRbar` | `EXACT_MISMATCH` |
+| `B|G|qL|qLbar` | `EXACT_MISMATCH` |
+| `B|G|uR|uRbar` | `EXACT_MISMATCH` |
+| `B|Phibar|Wi|dRbar|qL` | `EXACT_MISMATCH` |
+| `B|Phibar|Wi|eRbar|lL` | `EXACT_MISMATCH` |
+| `B|Phibar|Wi|qLbar|uR` | `EXACT_MISMATCH` |
+| `B|Phibar|dRbar|qL` | `EXACT_MISMATCH` |
+| `B|Phibar|eRbar|lL` | `EXACT_MISMATCH` |
+| `B|Phibar|qLbar|uR` | `EXACT_MISMATCH` |
 | `B|Phi|Phibar` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `B|Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|eR|eRbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|lL|lLbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
+| `B|Phi|Phibar|dR|dRbar` | `EXACT_MISMATCH` |
+| `B|Phi|Phibar|eR|eRbar` | `EXACT_MISMATCH` |
+| `B|Phi|Phibar|lL|lLbar` | `EXACT_MISMATCH` |
+| `B|Phi|Phibar|qL|qLbar` | `EXACT_MISMATCH` |
+| `B|Phi|Phibar|uR|uRbar` | `EXACT_MISMATCH` |
 | `B|Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
 | `B|Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
-| `B|Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
-| `B|Phi|Wi|eR|lLbar` | `EXACT_MATCH` |
-| `B|Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `B|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `B|Phi|eR|lLbar` | `EXACT_MATCH` |
-| `B|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `B|Phi|Wi|dR|qLbar` | `EXACT_MISMATCH` |
+| `B|Phi|Wi|eR|lLbar` | `EXACT_MISMATCH` |
+| `B|Phi|Wi|qL|uRbar` | `EXACT_MISMATCH` |
+| `B|Phi|dR|qLbar` | `EXACT_MISMATCH` |
+| `B|Phi|eR|lLbar` | `EXACT_MISMATCH` |
+| `B|Phi|qL|uRbar` | `EXACT_MISMATCH` |
 | `B|Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
 | `B|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `B|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `B|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `B|dR|dRbar` | `EXACT_MATCH` |
-| `B|eR|eRbar` | `EXACT_MATCH` |
-| `B|lL|lLbar` | `EXACT_MATCH` |
-| `B|qL|qLbar` | `EXACT_MATCH` |
-| `B|uR|uRbar` | `EXACT_MATCH` |
+| `B|Wi|lL|lLbar` | `EXACT_MISMATCH` |
+| `B|Wi|qL|qLbar` | `EXACT_MISMATCH` |
+| `B|dR|dRbar` | `EXACT_MISMATCH` |
+| `B|eR|eRbar` | `EXACT_MISMATCH` |
+| `B|lL|lLbar` | `EXACT_MISMATCH` |
+| `B|qL|qLbar` | `EXACT_MISMATCH` |
+| `B|uR|uRbar` | `EXACT_MISMATCH` |
 | `G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G|Phi|Phibar` | `EXACT_MATCH` |
 | `G|G|G|Phi|Phibar` | `EXACT_MATCH` |
-| `G|G|G|dR|dRbar` | `EXACT_MATCH` |
-| `G|G|G|qL|qLbar` | `EXACT_MATCH` |
-| `G|G|G|uR|uRbar` | `EXACT_MATCH` |
-| `G|G|Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `G|G|G|dR|dRbar` | `EXACT_MISMATCH` |
+| `G|G|G|qL|qLbar` | `EXACT_MISMATCH` |
+| `G|G|G|uR|uRbar` | `EXACT_MISMATCH` |
+| `G|G|Phibar|dRbar|qL` | `EXACT_MISMATCH` |
 | `G|G|Phibar|qLbar|uR` | `EXACT_MATCH` |
 | `G|G|Phi|Phibar` | `EXACT_MATCH` |
 | `G|G|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `G|G|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `G|G|Phi|qL|uRbar` | `EXACT_MISMATCH` |
 | `G|G|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `G|G|dR|dRbar` | `EXACT_MATCH` |
-| `G|G|qL|qLbar` | `EXACT_MATCH` |
-| `G|G|uR|uRbar` | `EXACT_MATCH` |
-| `G|Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `G|Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `G|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `G|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `G|Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
-| `G|Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
-| `G|Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
-| `G|Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
-| `G|Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `G|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `G|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `G|G|dR|dRbar` | `EXACT_MISMATCH` |
+| `G|G|qL|qLbar` | `EXACT_MISMATCH` |
+| `G|G|uR|uRbar` | `EXACT_MISMATCH` |
+| `G|Phibar|Wi|dRbar|qL` | `EXACT_MISMATCH` |
+| `G|Phibar|Wi|qLbar|uR` | `EXACT_MISMATCH` |
+| `G|Phibar|dRbar|qL` | `EXACT_MISMATCH` |
+| `G|Phibar|qLbar|uR` | `EXACT_MISMATCH` |
+| `G|Phi|Phibar|dR|dRbar` | `EXACT_MISMATCH` |
+| `G|Phi|Phibar|qL|qLbar` | `EXACT_MISMATCH` |
+| `G|Phi|Phibar|uR|uRbar` | `EXACT_MISMATCH` |
+| `G|Phi|Wi|dR|qLbar` | `EXACT_MISMATCH` |
+| `G|Phi|Wi|qL|uRbar` | `EXACT_MISMATCH` |
+| `G|Phi|dR|qLbar` | `EXACT_MISMATCH` |
+| `G|Phi|qL|uRbar` | `EXACT_MISMATCH` |
 | `G|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `G|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `G|dR|dRbar` | `EXACT_MATCH` |
-| `G|qL|qLbar` | `EXACT_MATCH` |
-| `G|uR|uRbar` | `EXACT_MATCH` |
-| `Phibar|Phibar|Wi|dRbar|uR` | `EXACT_MATCH` |
+| `G|Wi|qL|qLbar` | `EXACT_MISMATCH` |
+| `G|dR|dRbar` | `EXACT_MISMATCH` |
+| `G|qL|qLbar` | `EXACT_MISMATCH` |
+| `G|uR|uRbar` | `EXACT_MISMATCH` |
+| `Phibar|Phibar|Wi|dRbar|uR` | `EXACT_MISMATCH` |
 | `Phibar|Phibar|dRbar|uR` | `EXACT_MATCH` |
-| `Phibar|Wi|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `Phibar|Wi|Wi|eRbar|lL` | `EXACT_MATCH` |
-| `Phibar|Wi|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `Phibar|Wi|eRbar|lL` | `EXACT_MATCH` |
-| `Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `Phibar|eRbar|lL` | `EXACT_MATCH` |
-| `Phibar|qLbar|uR` | `EXACT_MATCH` |
+| `Phibar|Phibar|lLbar|lLbar` | `EXACT_MATCH` |
+| `Phibar|Wi|Wi|dRbar|qL` | `EXACT_MISMATCH` |
+| `Phibar|Wi|Wi|eRbar|lL` | `EXACT_MISMATCH` |
+| `Phibar|Wi|Wi|qLbar|uR` | `EXACT_MISMATCH` |
+| `Phibar|Wi|dRbar|qL` | `EXACT_MISMATCH` |
+| `Phibar|Wi|eRbar|lL` | `EXACT_MISMATCH` |
+| `Phibar|Wi|qLbar|uR` | `EXACT_MISMATCH` |
+| `Phibar|dRbar|qL` | `EXACT_MISMATCH` |
+| `Phibar|eRbar|lL` | `EXACT_MISMATCH` |
+| `Phibar|qLbar|uR` | `EXACT_MISMATCH` |
 | `Phi|Phibar|Phibar|dRbar|qL` | `EXACT_MATCH` |
 | `Phi|Phibar|Phibar|eRbar|lL` | `EXACT_MATCH` |
 | `Phi|Phibar|Phibar|qLbar|uR` | `EXACT_MATCH` |
@@ -187,14 +188,14 @@ This layer is currently enabled for bosonic SMEFT2 rows. It also covers all two-
 | `Phi|Phibar|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Phi|Phibar|Wi|dR|dRbar` | `EXACT_MATCH` |
 | `Phi|Phibar|Wi|eR|eRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|lL|lLbar` | `EXACT_MISMATCH` |
+| `Phi|Phibar|Wi|qL|qLbar` | `EXACT_MISMATCH` |
 | `Phi|Phibar|Wi|uR|uRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|eR|eRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|lL|lLbar` | `EXACT_MATCH` |
-| `Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
-| `Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
+| `Phi|Phibar|dR|dRbar` | `EXACT_MISMATCH` |
+| `Phi|Phibar|eR|eRbar` | `EXACT_MISMATCH` |
+| `Phi|Phibar|lL|lLbar` | `EXACT_MISMATCH` |
+| `Phi|Phibar|qL|qLbar` | `EXACT_MISMATCH` |
+| `Phi|Phibar|uR|uRbar` | `EXACT_MISMATCH` |
 | `Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
 | `Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
 | `Phi|Phi|Phibar|Phibar|Wi|Wi` | `EXACT_MATCH` |
@@ -202,48 +203,49 @@ This layer is currently enabled for bosonic SMEFT2 rows. It also covers all two-
 | `Phi|Phi|Phibar|eR|lLbar` | `EXACT_MATCH` |
 | `Phi|Phi|Phibar|qL|uRbar` | `EXACT_MATCH` |
 | `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `EXACT_MATCH` |
-| `Phi|Phi|Wi|dR|uRbar` | `EXACT_MATCH` |
+| `Phi|Phi|Wi|dR|uRbar` | `EXACT_MISMATCH` |
 | `Phi|Phi|dR|uRbar` | `EXACT_MATCH` |
+| `Phi|Phi|lL|lL` | `EXACT_MATCH` |
 | `Phi|Wi|Wi|dR|qLbar` | `EXACT_MATCH` |
 | `Phi|Wi|Wi|eR|lLbar` | `EXACT_MATCH` |
-| `Phi|Wi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
-| `Phi|Wi|eR|lLbar` | `EXACT_MATCH` |
-| `Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `Phi|dR|qLbar` | `EXACT_MATCH` |
-| `Phi|eR|lLbar` | `EXACT_MATCH` |
-| `Phi|qL|uRbar` | `EXACT_MATCH` |
+| `Phi|Wi|Wi|qL|uRbar` | `EXACT_MISMATCH` |
+| `Phi|Wi|dR|qLbar` | `EXACT_MISMATCH` |
+| `Phi|Wi|eR|lLbar` | `EXACT_MISMATCH` |
+| `Phi|Wi|qL|uRbar` | `EXACT_MISMATCH` |
+| `Phi|dR|qLbar` | `EXACT_MISMATCH` |
+| `Phi|eR|lLbar` | `EXACT_MISMATCH` |
+| `Phi|qL|uRbar` | `EXACT_MISMATCH` |
 | `Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Wi|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Wi|Wi|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `Wi|Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Wi|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Wi|qL|qLbar` | `EXACT_MATCH` |
-| `dRbar|eR|lLbar|qL` | `EXACT_MATCH` |
-| `dRbar|qL|qL|uRbar` | `EXACT_MATCH` |
-| `dR|dRbar|eR|eRbar` | `EXACT_MATCH` |
-| `dR|dRbar|lL|lLbar` | `EXACT_MATCH` |
-| `dR|dRbar|qL|qLbar` | `EXACT_MATCH` |
-| `dR|dRbar|uR|uRbar` | `EXACT_MATCH` |
-| `dR|dR|dRbar|dRbar` | `EXACT_MATCH` |
-| `dR|eRbar|lL|qLbar` | `EXACT_MATCH` |
-| `dR|qLbar|qLbar|uR` | `EXACT_MATCH` |
-| `eRbar|lL|qL|uRbar` | `EXACT_MATCH` |
-| `eR|eRbar|lL|lLbar` | `EXACT_MATCH` |
-| `eR|eRbar|qL|qLbar` | `EXACT_MATCH` |
-| `eR|eRbar|uR|uRbar` | `EXACT_MATCH` |
-| `eR|eR|eRbar|eRbar` | `EXACT_MATCH` |
-| `eR|lLbar|qLbar|uR` | `EXACT_MATCH` |
-| `lL|lLbar|qL|qLbar` | `EXACT_MATCH` |
-| `lL|lLbar|uR|uRbar` | `EXACT_MATCH` |
-| `lL|lL|lLbar|lLbar` | `EXACT_MATCH` |
-| `qL|qLbar|uR|uRbar` | `EXACT_MATCH` |
-| `qL|qL|qLbar|qLbar` | `EXACT_MATCH` |
-| `uR|uR|uRbar|uRbar` | `EXACT_MATCH` |
+| `Wi|Wi|Wi|lL|lLbar` | `EXACT_MISMATCH` |
+| `Wi|Wi|Wi|qL|qLbar` | `EXACT_MISMATCH` |
+| `Wi|Wi|lL|lLbar` | `EXACT_MISMATCH` |
+| `Wi|Wi|qL|qLbar` | `EXACT_MISMATCH` |
+| `Wi|lL|lLbar` | `EXACT_MISMATCH` |
+| `Wi|qL|qLbar` | `EXACT_MISMATCH` |
+| `dRbar|eR|lLbar|qL` | `EXACT_MISMATCH` |
+| `dRbar|qL|qL|uRbar` | `EXACT_MISMATCH` |
+| `dR|dRbar|eR|eRbar` | `EXACT_MISMATCH` |
+| `dR|dRbar|lL|lLbar` | `EXACT_MISMATCH` |
+| `dR|dRbar|qL|qLbar` | `EXACT_MISMATCH` |
+| `dR|dRbar|uR|uRbar` | `EXACT_MISMATCH` |
+| `dR|dR|dRbar|dRbar` | `EXACT_MISMATCH` |
+| `dR|eRbar|lL|qLbar` | `EXACT_MISMATCH` |
+| `dR|qLbar|qLbar|uR` | `EXACT_MISMATCH` |
+| `eRbar|lL|qL|uRbar` | `EXACT_MISMATCH` |
+| `eR|eRbar|lL|lLbar` | `EXACT_MISMATCH` |
+| `eR|eRbar|qL|qLbar` | `EXACT_MISMATCH` |
+| `eR|eRbar|uR|uRbar` | `EXACT_MISMATCH` |
+| `eR|eR|eRbar|eRbar` | `EXACT_MISMATCH` |
+| `eR|lLbar|qLbar|uR` | `EXACT_MISMATCH` |
+| `lL|lLbar|qL|qLbar` | `EXACT_MISMATCH` |
+| `lL|lLbar|uR|uRbar` | `EXACT_MISMATCH` |
+| `lL|lL|lLbar|lLbar` | `EXACT_MISMATCH` |
+| `qL|qLbar|uR|uRbar` | `EXACT_MISMATCH` |
+| `qL|qL|qLbar|qLbar` | `EXACT_MISMATCH` |
+| `uR|uR|uRbar|uRbar` | `EXACT_MISMATCH` |
 
 ## Canonical Tensor-Map Gauge Comparison
 

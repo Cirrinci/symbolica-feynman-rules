@@ -6,7 +6,7 @@ from feynrules.comparison import compare_canonical_coefficient_maps
 from feynpy import Model
 from models.SMEFT2 import OMITTED_SECTORS, build_smeft_green_bpreserving
 from symbolic.tensor_canonicalization import canonical_external_index_set
-from symbolica import S
+from symbolica import Expression, S
 
 
 MODEL_DIR = Path(__file__).resolve().parents[1]
@@ -48,7 +48,7 @@ def _assert_reference_row_exact_match(key: str):
     external_indices = smeft2_comparison._external_index_set_from_fields(fields)
     local_rule = bundle.model.lagrangian().feynman_rule(*fields, simplify=True)
     reference_rule = smeft2_comparison.parse_smeft2_matter_rule(reference["rule"])
-    comparisons = compare_canonical_coefficient_maps(
+    comparisons = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
         local_rule,
         reference_rule,
         coefficients=tuple(
@@ -68,8 +68,8 @@ def _check_summary(**overrides):
         "reference_vertex_count": 184,
         "shared_head_matches": 176,
         "charge_conjugation_packaging_matches": 8,
-        "exact_symbolic_equal_vertices": 182,
-        "exact_symbolic_supported_vertices": 182,
+        "exact_symbolic_equal_vertices": 184,
+        "exact_symbolic_supported_vertices": 184,
         "exact_symbolic_unequal_vertices": 0,
         "exact_symbolic_error_vertices": 0,
         "canonical_map_equal_vertices": 32,
@@ -118,12 +118,44 @@ def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch
     assert smeft2_comparison.main(["--check", "--strict-counts"]) == 1
 
 
-def test_smeft2_two_fermion_raw_count_gap_matches_exactly():
-    _assert_reference_row_exact_match("B|qL|qLbar")
+def test_smeft2_check_rejects_strict_exact_mismatches(monkeypatch):
+    def fake_compare(_reference):
+        return {
+            "summary": _check_summary(
+                exact_symbolic_equal_vertices=183,
+                exact_symbolic_unequal_vertices=1,
+            )
+        }, ()
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    assert smeft2_comparison.main(["--check"]) == 1
 
 
-def test_smeft2_four_fermion_ec_packaging_row_matches_exactly():
-    _assert_reference_row_exact_match("dRbar|eR|lLbar|qL")
+def test_smeft2_indexed_coefficient_filter_is_not_vacuous():
+    comparisons = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
+        Expression.parse("alphaKq(f1,f2)*x"),
+        Expression.num(0),
+        coefficients=("alphaKq",),
+        external_indices=canonical_external_index_set(),
+    )
+
+    comparison = comparisons["alphaKq"]
+    assert comparison.feynpy_raw_terms == 1
+    assert comparison.feynrules_raw_terms == 0
+    assert not comparison.matches
+
+
+def test_smeft2_weinberg_packaging_rows_match_exactly():
+    assert (
+        _report_row_by_key("Phi|Phi|lL|lL")["exact_symbolic_status"]
+        == "EXACT_MATCH"
+    )
+    assert (
+        _report_row_by_key("Phibar|Phibar|lLbar|lLbar")[
+            "exact_symbolic_status"
+        ]
+        == "EXACT_MATCH"
+    )
 
 
 def test_smeft2_supported_subset_builds_and_compiles():
@@ -205,9 +237,9 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_count_mismatches"] == 92
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
     assert report["summary"]["shared_head_count_unexplained_mismatches"] == 83
-    assert report["summary"]["exact_symbolic_supported_vertices"] == 182
-    assert report["summary"]["exact_symbolic_equal_vertices"] == 182
-    assert report["summary"]["exact_symbolic_unequal_vertices"] == 0
+    assert report["summary"]["exact_symbolic_supported_vertices"] == 184
+    assert report["summary"]["exact_symbolic_equal_vertices"] == 78
+    assert report["summary"]["exact_symbolic_unequal_vertices"] == 106
     assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
     assert report["summary"]["exact_symbolic_error_vertices"] == 0
     assert report["summary"]["canonical_map_supported_vertices"] == 32
@@ -301,9 +333,12 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
         "g2": "DUMMY_LORENTZ_MERGE",
     }
     assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"
-    assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_MATCH"
-    assert rows_by_key["dRbar|eR|lLbar|qL"]["exact_symbolic_status"] == "EXACT_MATCH"
-    assert rows_by_key["Phi|Phi|lL|lL"]["exact_symbolic_status"] == "EXACT_UNSUPPORTED"
+    assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_MISMATCH"
+    assert (
+        rows_by_key["dRbar|eR|lLbar|qL"]["exact_symbolic_status"]
+        == "EXACT_MISMATCH"
+    )
+    assert rows_by_key["Phi|Phi|lL|lL"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|B|B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|B|Phi|Phibar"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
