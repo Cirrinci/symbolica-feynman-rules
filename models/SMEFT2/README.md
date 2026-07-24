@@ -20,7 +20,7 @@ the EFT-only Lagrangian. The local SM core is still available separately as
 ## What Is Implemented
 
 The file now declares the SM fields, gauge groups, and a broad parameter set,
-including the coefficients needed by the implemented and still-omitted FR
+including the coefficients needed by the FeynRules Green-basis and evanescent
 sectors.
 
 These sectors are included in the compiled `Ltot`:
@@ -94,10 +94,13 @@ It regenerates:
 - `vertex_comparison_report.json` — per-signature comparison rows.
 - `feynpy_vertices.json` — local FeynPy 3-6 point vertex rules.
 
-The comparison currently checks signature coverage and coefficient-head content
-after normalizing field names to the FeynRules convention. It does not claim
-full tensor-rule equality for SMEFT2 yet; the omitted derivative sectors remain
-the dominant gap.
+The comparison checks signature coverage and coefficient-head content after
+normalizing field names to the FeynRules convention. It also proves exact
+canonical tensor-rule equality for every reference row with a literal shared
+FeynPy signature: all bosonic rows, all shared two-fermion rows, and all
+four-fermion rows. The only exact-unsupported reference rows are the two
+Weinberg signatures whose operator content is present under FEYNPy's
+charge-conjugation packaging rather than the literal FeynRules field multiset.
 
 ## Check
 
