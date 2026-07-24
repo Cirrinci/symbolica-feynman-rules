@@ -1,10 +1,10 @@
 # SMEFT2 FeynRules/FeynPy Comparison
 
-Generated on `2026-07-23` by `models/SMEFT2/comparison.py`.
+Generated on `2026-07-24` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
-Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for supported bosonic rows and canonical tensor-monomial equality for supported pure nonabelian gauge vertices. Full tensor-rule equality is not claimed globally.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for supported bosonic rows and shared two-/four-fermion rows, plus canonical tensor-monomial equality for supported bosonic coefficient sectors. The only exact-unsupported reference rows are the two non-literal Weinberg packaging rows.
 
 | Item | Value |
 | --- | ---: |
@@ -23,8 +23,8 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Shared raw head-count mismatches | 92 |
 | Shared raw head-count benign expansions | 9 |
 | Shared raw head-count mismatches with unexplained deltas | 83 |
-| Exact symbolic supported vertices | 32 |
-| Exact symbolic equal vertices | 32 |
+| Exact symbolic supported vertices | 182 |
+| Exact symbolic equal vertices | 182 |
 | Exact symbolic unequal vertices | 0 |
 | Exact symbolic error vertices | 0 |
 | Canonical tensor-map supported vertices | 32 |
@@ -58,42 +58,192 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 
 ## Exact Symbolic Comparison
 
-This layer is currently enabled for bosonic SMEFT2 rows. It parses the full FeynRules tensor rule into native tensors, canonicalizes index structure, and checks whether the exact symbolic difference is zero. Two-fermion and four-fermion rows still fall back to the signature/head diagnostics above.
+This layer is currently enabled for bosonic SMEFT2 rows. It also covers all two- and four-fermion rows with a literal shared local signature. It parses the full FeynRules tensor rule into native tensors and canonicalizes index structure. The two Weinberg packaging rows still fall back to the signature/head diagnostics above.
 
 | Signature | Status |
 | --- | --- |
 | `B|B|B|B|Phi|Phibar` | `EXACT_MATCH` |
 | `B|B|B|Phi|Phibar` | `EXACT_MATCH` |
 | `B|B|B|Phi|Phibar|Wi` | `EXACT_MATCH` |
+| `B|B|B|dR|dRbar` | `EXACT_MATCH` |
+| `B|B|B|eR|eRbar` | `EXACT_MATCH` |
+| `B|B|B|lL|lLbar` | `EXACT_MATCH` |
+| `B|B|B|qL|qLbar` | `EXACT_MATCH` |
+| `B|B|B|uR|uRbar` | `EXACT_MATCH` |
+| `B|B|G|dR|dRbar` | `EXACT_MATCH` |
+| `B|B|G|qL|qLbar` | `EXACT_MATCH` |
+| `B|B|G|uR|uRbar` | `EXACT_MATCH` |
+| `B|B|Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `B|B|Phibar|eRbar|lL` | `EXACT_MATCH` |
+| `B|B|Phibar|qLbar|uR` | `EXACT_MATCH` |
 | `B|B|Phi|Phibar` | `EXACT_MATCH` |
 | `B|B|Phi|Phibar|Wi` | `EXACT_MATCH` |
 | `B|B|Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
 | `B|B|Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
+| `B|B|Phi|dR|qLbar` | `EXACT_MATCH` |
+| `B|B|Phi|eR|lLbar` | `EXACT_MATCH` |
+| `B|B|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `B|B|Wi|lL|lLbar` | `EXACT_MATCH` |
+| `B|B|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `B|B|dR|dRbar` | `EXACT_MATCH` |
+| `B|B|eR|eRbar` | `EXACT_MATCH` |
+| `B|B|lL|lLbar` | `EXACT_MATCH` |
+| `B|B|qL|qLbar` | `EXACT_MATCH` |
+| `B|B|uR|uRbar` | `EXACT_MATCH` |
+| `B|G|G|dR|dRbar` | `EXACT_MATCH` |
+| `B|G|G|qL|qLbar` | `EXACT_MATCH` |
+| `B|G|G|uR|uRbar` | `EXACT_MATCH` |
+| `B|G|Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `B|G|Phibar|qLbar|uR` | `EXACT_MATCH` |
+| `B|G|Phi|dR|qLbar` | `EXACT_MATCH` |
+| `B|G|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `B|G|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `B|G|dR|dRbar` | `EXACT_MATCH` |
+| `B|G|qL|qLbar` | `EXACT_MATCH` |
+| `B|G|uR|uRbar` | `EXACT_MATCH` |
+| `B|Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
+| `B|Phibar|Wi|eRbar|lL` | `EXACT_MATCH` |
+| `B|Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
+| `B|Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `B|Phibar|eRbar|lL` | `EXACT_MATCH` |
+| `B|Phibar|qLbar|uR` | `EXACT_MATCH` |
 | `B|Phi|Phibar` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
 | `B|Phi|Phibar|Wi|Wi|Wi` | `EXACT_MATCH` |
+| `B|Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
+| `B|Phi|Phibar|eR|eRbar` | `EXACT_MATCH` |
+| `B|Phi|Phibar|lL|lLbar` | `EXACT_MATCH` |
+| `B|Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
+| `B|Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
 | `B|Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
 | `B|Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
+| `B|Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
+| `B|Phi|Wi|eR|lLbar` | `EXACT_MATCH` |
+| `B|Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
+| `B|Phi|dR|qLbar` | `EXACT_MATCH` |
+| `B|Phi|eR|lLbar` | `EXACT_MATCH` |
+| `B|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `B|Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
+| `B|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `B|Wi|lL|lLbar` | `EXACT_MATCH` |
+| `B|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `B|dR|dRbar` | `EXACT_MATCH` |
+| `B|eR|eRbar` | `EXACT_MATCH` |
+| `B|lL|lLbar` | `EXACT_MATCH` |
+| `B|qL|qLbar` | `EXACT_MATCH` |
+| `B|uR|uRbar` | `EXACT_MATCH` |
 | `G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G|G|G` | `EXACT_MATCH` |
 | `G|G|G|G|Phi|Phibar` | `EXACT_MATCH` |
 | `G|G|G|Phi|Phibar` | `EXACT_MATCH` |
+| `G|G|G|dR|dRbar` | `EXACT_MATCH` |
+| `G|G|G|qL|qLbar` | `EXACT_MATCH` |
+| `G|G|G|uR|uRbar` | `EXACT_MATCH` |
+| `G|G|Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `G|G|Phibar|qLbar|uR` | `EXACT_MATCH` |
 | `G|G|Phi|Phibar` | `EXACT_MATCH` |
+| `G|G|Phi|dR|qLbar` | `EXACT_MATCH` |
+| `G|G|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `G|G|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `G|G|dR|dRbar` | `EXACT_MATCH` |
+| `G|G|qL|qLbar` | `EXACT_MATCH` |
+| `G|G|uR|uRbar` | `EXACT_MATCH` |
+| `G|Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
+| `G|Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
+| `G|Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `G|Phibar|qLbar|uR` | `EXACT_MATCH` |
+| `G|Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
+| `G|Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
+| `G|Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
+| `G|Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
+| `G|Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
+| `G|Phi|dR|qLbar` | `EXACT_MATCH` |
+| `G|Phi|qL|uRbar` | `EXACT_MATCH` |
+| `G|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `G|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `G|dR|dRbar` | `EXACT_MATCH` |
+| `G|qL|qLbar` | `EXACT_MATCH` |
+| `G|uR|uRbar` | `EXACT_MATCH` |
+| `Phibar|Phibar|Wi|dRbar|uR` | `EXACT_MATCH` |
+| `Phibar|Phibar|dRbar|uR` | `EXACT_MATCH` |
+| `Phibar|Wi|Wi|dRbar|qL` | `EXACT_MATCH` |
+| `Phibar|Wi|Wi|eRbar|lL` | `EXACT_MATCH` |
+| `Phibar|Wi|Wi|qLbar|uR` | `EXACT_MATCH` |
+| `Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
+| `Phibar|Wi|eRbar|lL` | `EXACT_MATCH` |
+| `Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
+| `Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `Phibar|eRbar|lL` | `EXACT_MATCH` |
+| `Phibar|qLbar|uR` | `EXACT_MATCH` |
+| `Phi|Phibar|Phibar|dRbar|qL` | `EXACT_MATCH` |
+| `Phi|Phibar|Phibar|eRbar|lL` | `EXACT_MATCH` |
+| `Phi|Phibar|Phibar|qLbar|uR` | `EXACT_MATCH` |
 | `Phi|Phibar|Wi` | `EXACT_MATCH` |
 | `Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
 | `Phi|Phibar|Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Phi|Phibar|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|dR|dRbar` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|eR|eRbar` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|lL|lLbar` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `Phi|Phibar|Wi|uR|uRbar` | `EXACT_MATCH` |
+| `Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
+| `Phi|Phibar|eR|eRbar` | `EXACT_MATCH` |
+| `Phi|Phibar|lL|lLbar` | `EXACT_MATCH` |
+| `Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
+| `Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
 | `Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
 | `Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
 | `Phi|Phi|Phibar|Phibar|Wi|Wi` | `EXACT_MATCH` |
+| `Phi|Phi|Phibar|dR|qLbar` | `EXACT_MATCH` |
+| `Phi|Phi|Phibar|eR|lLbar` | `EXACT_MATCH` |
+| `Phi|Phi|Phibar|qL|uRbar` | `EXACT_MATCH` |
 | `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `EXACT_MATCH` |
+| `Phi|Phi|Wi|dR|uRbar` | `EXACT_MATCH` |
+| `Phi|Phi|dR|uRbar` | `EXACT_MATCH` |
+| `Phi|Wi|Wi|dR|qLbar` | `EXACT_MATCH` |
+| `Phi|Wi|Wi|eR|lLbar` | `EXACT_MATCH` |
+| `Phi|Wi|Wi|qL|uRbar` | `EXACT_MATCH` |
+| `Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
+| `Phi|Wi|eR|lLbar` | `EXACT_MATCH` |
+| `Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
+| `Phi|dR|qLbar` | `EXACT_MATCH` |
+| `Phi|eR|lLbar` | `EXACT_MATCH` |
+| `Phi|qL|uRbar` | `EXACT_MATCH` |
 | `Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Wi|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
 | `Wi|Wi|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
+| `Wi|Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
+| `Wi|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
+| `Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
+| `Wi|lL|lLbar` | `EXACT_MATCH` |
+| `Wi|qL|qLbar` | `EXACT_MATCH` |
+| `dRbar|eR|lLbar|qL` | `EXACT_MATCH` |
+| `dRbar|qL|qL|uRbar` | `EXACT_MATCH` |
+| `dR|dRbar|eR|eRbar` | `EXACT_MATCH` |
+| `dR|dRbar|lL|lLbar` | `EXACT_MATCH` |
+| `dR|dRbar|qL|qLbar` | `EXACT_MATCH` |
+| `dR|dRbar|uR|uRbar` | `EXACT_MATCH` |
+| `dR|dR|dRbar|dRbar` | `EXACT_MATCH` |
+| `dR|eRbar|lL|qLbar` | `EXACT_MATCH` |
+| `dR|qLbar|qLbar|uR` | `EXACT_MATCH` |
+| `eRbar|lL|qL|uRbar` | `EXACT_MATCH` |
+| `eR|eRbar|lL|lLbar` | `EXACT_MATCH` |
+| `eR|eRbar|qL|qLbar` | `EXACT_MATCH` |
+| `eR|eRbar|uR|uRbar` | `EXACT_MATCH` |
+| `eR|eR|eRbar|eRbar` | `EXACT_MATCH` |
+| `eR|lLbar|qLbar|uR` | `EXACT_MATCH` |
+| `lL|lLbar|qL|qLbar` | `EXACT_MATCH` |
+| `lL|lLbar|uR|uRbar` | `EXACT_MATCH` |
+| `lL|lL|lLbar|lLbar` | `EXACT_MATCH` |
+| `qL|qLbar|uR|uRbar` | `EXACT_MATCH` |
+| `qL|qL|qLbar|qLbar` | `EXACT_MATCH` |
+| `uR|uR|uRbar|uRbar` | `EXACT_MATCH` |
 
 ## Canonical Tensor-Map Gauge Comparison
 
