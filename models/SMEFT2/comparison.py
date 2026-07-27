@@ -1780,7 +1780,7 @@ def _candidate_order_rule_sum(
     return total.cancel().expand()
 
 
-def _ec_partner_coefficient_comparison(
+def _ec_partner_existence_probe(
     *,
     reference: FeynRulesVertex,
     coefficient: str,
@@ -1790,7 +1790,18 @@ def _ec_partner_coefficient_comparison(
     field_map: dict[str, object],
     external_indices,
     max_dummy_permutations: int,
-) -> tuple[CanonicalCoefficientComparison, str] | None:
+) -> str | None:
+    """Probe whether some CC packaging of ``coefficient`` matches FeynRules.
+
+    This is deliberately an *existence* diagnostic, not a sign-pinned proof.
+    Empirically the matching phase and duplicate-leg symmetry vary by
+    coefficient (and even between conjugate sides for ``alphaEcudqqtwo``), so
+    they cannot yet be derived from the operator class. Searching over those
+    choices documents that a packaging match exists, but the row must remain
+    ``UNRESOLVED_CC_PACKAGING`` rather than ``MATCH_MODULO_CC_PACKAGING`` or
+    ``EXACT_MATCH``.
+    """
+
     target_key = _bar_insensitive_field_key(reference.fields)
     candidates = [
         vertex
@@ -1841,12 +1852,10 @@ def _ec_partner_coefficient_comparison(
                         else "symmetric duplicate-leg sum"
                     )
                     return (
-                        comparison,
-                        (
-                            f"{coefficient} matched via charge-conjugation "
-                            f"partner `{candidate.key}` using direct CC packaging, "
-                            f"phase {phase:+d}, and {duplicate_mode}."
-                        ),
+                        f"{coefficient} has an existence match via charge-"
+                        f"conjugation partner `{candidate.key}` using direct "
+                        f"CC packaging, phase {phase:+d}, and {duplicate_mode} "
+                        "(phase/symmetry searched, not derived)."
                     )
     return None
 
@@ -2209,23 +2218,25 @@ def _fermion_exact_symbolic_row(
             external_indices=external_indices,
             max_dummy_permutations=2_000_000,
         )
+        # Existence probe only: never splice a searched packaging match into
+        # ``comparisons``. Direct same-signature equality stays exact; a
+        # packaging-only existence match is graded ``UNRESOLVED_CC_PACKAGING``.
         partner_details = []
-        if any(
-            coefficient.startswith("alphaEc")
-            and not comparison.matches
+        mismatched_ec = [
+            coefficient
             for coefficient, comparison in comparisons.items()
-        ):
+            if coefficient.startswith("alphaEc") and not comparison.matches
+        ]
+        if mismatched_ec:
             reference_expression = parse_smeft2_matter_rule(reference.rule)
-            for coefficient, comparison in tuple(comparisons.items()):
-                if not coefficient.startswith("alphaEc") or comparison.matches:
-                    continue
+            for coefficient in mismatched_ec:
                 feynrules_report = _canonical_report_for_coefficient_head(
                     reference_expression,
                     coefficient=coefficient,
                     external_indices=external_indices,
                     max_dummy_permutations=2_000_000,
                 )
-                partner_match = _ec_partner_coefficient_comparison(
+                detail = _ec_partner_existence_probe(
                     reference=reference,
                     coefficient=coefficient,
                     feynrules_report=feynrules_report,
@@ -2235,10 +2246,8 @@ def _fermion_exact_symbolic_row(
                     external_indices=external_indices,
                     max_dummy_permutations=2_000_000,
                 )
-                if partner_match is None:
-                    continue
-                comparisons[coefficient], detail = partner_match
-                partner_details.append(detail)
+                if detail is not None:
+                    partner_details.append(detail)
     except Exception as exc:  # pragma: no cover - reported in JSON/Markdown.
         return {
             "family": family,
@@ -2247,18 +2256,13 @@ def _fermion_exact_symbolic_row(
         }
 
     if all(comparison.matches for comparison in comparisons.values()):
-        partner_sentence = (
-            " Ec partner sectors: " + " ".join(partner_details)
-            if partner_details
-            else ""
-        )
         return {
             "family": family,
             "status": "EXACT_MATCH",
             "detail": (
                 "Canonical tensor-monomial maps agree for all "
                 f"{len(comparisons)} coefficient sector(s); raw head-count "
-                f"status was {head_count_status}.{partner_sentence}"
+                f"status was {head_count_status}."
             ),
         }
 
@@ -2267,6 +2271,34 @@ def _fermion_exact_symbolic_row(
         for coefficient, comparison in comparisons.items()
         if not comparison.matches
     )
+    if (
+        partner_details
+        and mismatched
+        and all(coefficient.startswith("alphaEc") for coefficient in mismatched)
+        and all(
+            any(detail.startswith(f"{coefficient} ") for detail in partner_details)
+            for coefficient in mismatched
+        )
+    ):
+        # Every mismatched sector is an Ec coefficient for which a packaging
+        # existence match was found. Phase/symmetry were searched, not derived,
+        # so this is unresolved CC packaging rather than a pinned modulo-CC match.
+        return {
+            "family": family,
+            "status": "UNRESOLVED_CC_PACKAGING",
+            "detail": (
+                "Direct same-signature canonical maps disagree for "
+                f"{', '.join(mismatched)}, but each of those `Ec` sectors "
+                "has an existence match under some charge-conjugation "
+                "partner packaging after searching over phase +/- and "
+                "symmetric/antisymmetric duplicate-leg sums. The phase "
+                "and symmetry are not derived from the operator class, so "
+                "this is not a sign-pinned exact proof. "
+                + " ".join(partner_details)
+                + f" (raw head-count status was {head_count_status})."
+            ),
+        }
+
     return {
         "family": family,
         "status": "EXACT_MISMATCH",
@@ -2373,12 +2405,16 @@ def _weinberg_cc_exact_symbolic_row(
     if comparison.matches:
         return {
             "family": family,
-            "status": "EXACT_MATCH",
+            "status": "MATCH_MODULO_CC_PACKAGING",
             "detail": (
-                "Weinberg charge-conjugation packaging matches exactly: the "
+                "Weinberg charge-conjugation packaging match (sign pinned): the "
                 "same-chirality FeynRules row equals the antisymmetrized "
-                "FeynPy mixed `lLbar,lL` assignment pair, with `ProjM/ProjP` "
-                "mapped to the antisymmetric Dirac charge-conjugation tensor."
+                "FeynPy mixed `lLbar,lL` assignment pair `FeynPy(lLbar,lL) - "
+                "FeynPy(lL,lLbar)`, with `ProjM/ProjP` mapped to the "
+                "antisymmetric Dirac charge-conjugation tensor. The relative "
+                "minus sign is derived from the antisymmetry of the "
+                "charge-conjugation matrix, not searched, so the canonical-map "
+                "equality is exact modulo the explicitly tracked CC packaging."
             ),
         }
 
@@ -3215,11 +3251,17 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "comparison filters by indexed Wilson-coefficient head and keeps "
             "flavor order/conjugation in the canonical scalar coefficient, so "
             "it cannot pass vacuously for function-valued coefficients. "
-            "Charge-conjugation packaged rows are accepted only when the "
-            "controlled packaging transform reduces to identical canonical "
-            "coefficient-sector maps. The separate canonical tensor-map "
-            "diagnostic remains the gauge-sector per-coefficient map for "
-            "supported bosonic coefficient sectors."
+            "Exact-symbolic rows are graded honestly: `EXACT_MATCH` means "
+            "direct canonical-map equality with no row-specific packaging "
+            "assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after "
+            "a charge-conjugation packaging transform whose sign/symmetry is "
+            "derived (pinned), e.g. the antisymmetrized Weinberg rows; and "
+            "`UNRESOLVED_CC_PACKAGING` means a packaging match exists only "
+            "after searching over phase and duplicate-leg symmetry (the `Ec` "
+            "four-fermion rows), which is an existence match, not a sign-pinned "
+            "proof. The separate canonical tensor-map diagnostic remains the "
+            "gauge-sector per-coefficient map for supported bosonic "
+            "coefficient sectors."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -3281,6 +3323,15 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "exact_symbolic_supported_vertices": len(exact_symbolic_rows),
             "exact_symbolic_equal_vertices": exact_symbolic_status_counts[
                 "EXACT_MATCH"
+            ],
+            "exact_symbolic_direct_match_vertices": exact_symbolic_status_counts[
+                "EXACT_MATCH"
+            ],
+            "cc_packaging_pinned_match_vertices": exact_symbolic_status_counts[
+                "MATCH_MODULO_CC_PACKAGING"
+            ],
+            "cc_packaging_unresolved_vertices": exact_symbolic_status_counts[
+                "UNRESOLVED_CC_PACKAGING"
             ],
             "exact_symbolic_unequal_vertices": exact_symbolic_status_counts[
                 "EXACT_MISMATCH"
@@ -3390,9 +3441,26 @@ def _markdown_report(report: dict[str, object]) -> str:
         "| Shared raw head-count mismatches with unexplained deltas | "
         f"{summary['shared_head_count_unexplained_mismatches']} |",
         f"| Exact symbolic supported vertices | {summary['exact_symbolic_supported_vertices']} |",
-        f"| Exact symbolic equal vertices | {summary['exact_symbolic_equal_vertices']} |",
+        f"| Direct exact symbolic matches | {summary['exact_symbolic_direct_match_vertices']} |",
+        "| Exact modulo pinned CC packaging | "
+        f"{summary['cc_packaging_pinned_match_vertices']} |",
+        "| Unresolved CC packaging (existence only) | "
+        f"{summary['cc_packaging_unresolved_vertices']} |",
         f"| Exact symbolic unequal vertices | {summary['exact_symbolic_unequal_vertices']} |",
         f"| Exact symbolic error vertices | {summary['exact_symbolic_error_vertices']} |",
+        (
+            "| Headline split | "
+            f"direct exact: {summary['exact_symbolic_direct_match_vertices']}/"
+            f"{summary['exact_symbolic_supported_vertices']}; "
+            f"modulo pinned CC: {summary['cc_packaging_pinned_match_vertices']}/"
+            f"{summary['exact_symbolic_supported_vertices']}; "
+            f"unresolved CC: {summary['cc_packaging_unresolved_vertices']}/"
+            f"{summary['exact_symbolic_supported_vertices']}; "
+            f"operator content: {summary['operator_content_matches_including_cc']}/"
+            f"{summary['reference_vertex_count']} |"
+        ),
+        "| Compatibility alias `exact_symbolic_equal_vertices` (direct only) | "
+        f"{summary['exact_symbolic_equal_vertices']} |",
         f"| Canonical tensor-map supported vertices | {summary['canonical_map_supported_vertices']} |",
         f"| Canonical tensor-map equal vertices | {summary['canonical_map_equal_vertices']} |",
         f"| Canonical tensor-map unequal vertices | {summary['canonical_map_unequal_vertices']} |",
@@ -3440,9 +3508,12 @@ def _markdown_report(report: dict[str, object]) -> str:
             "full FeynRules tensor rule into native tensors, filter terms by "
             "indexed Wilson-coefficient head, keep flavor order and complex "
             "conjugation in the scalar coefficient, and compare canonical "
-            "tensor-monomial maps. The two Weinberg rows have no literal "
-            "FeynPy signature, so they are compared to the antisymmetrized "
-            "charge-conjugation packaged FeynPy partner rule.",
+            "tensor-monomial maps. Statuses are graded honestly: "
+            "`EXACT_MATCH` is direct same-signature canonical equality; "
+            "`MATCH_MODULO_CC_PACKAGING` is equality after a charge-conjugation "
+            "packaging transform whose relative sign is derived (Weinberg); "
+            "`UNRESOLVED_CC_PACKAGING` means an `Ec` packaging existence match "
+            "was found only after searching phase/symmetry.",
             "",
             "| Signature | Status |",
             "| --- | --- |",
@@ -3614,8 +3685,20 @@ def main(argv: list[str] | None = None) -> int:
         "--check",
         action="store_true",
         help=(
-            "Do not write files; return nonzero if the comparison is not a "
-            "full operator-content and exact-symbolic match."
+            "Do not write files; return nonzero unless operator-content coverage "
+            "is complete and every supported row is a direct `EXACT_MATCH` "
+            "(strict exact symbolic). Use `--allow-cc-packaging` to also accept "
+            "pinned `MATCH_MODULO_CC_PACKAGING` rows. Unresolved CC packaging "
+            "existence matches never pass `--check`."
+        ),
+    )
+    parser.add_argument(
+        "--allow-cc-packaging",
+        action="store_true",
+        help=(
+            "With --check, accept pinned `MATCH_MODULO_CC_PACKAGING` rows "
+            "(Weinberg). Does not accept `UNRESOLVED_CC_PACKAGING` existence "
+            "matches."
         ),
     )
     parser.add_argument(
@@ -3633,6 +3716,22 @@ def main(argv: list[str] | None = None) -> int:
         write_outputs(report, local_vertices)
 
     summary = report["summary"]
+    exact_supported = summary["exact_symbolic_supported_vertices"]
+    direct_exact = summary["exact_symbolic_direct_match_vertices"]
+    pinned_cc = summary["cc_packaging_pinned_match_vertices"]
+    unresolved_cc = summary["cc_packaging_unresolved_vertices"]
+    exact_unequal = summary["exact_symbolic_unequal_vertices"]
+    exact_missing = summary["exact_symbolic_missing_local_vertices"]
+    exact_error = summary["exact_symbolic_error_vertices"]
+    exact_accounted = (
+        direct_exact
+        + pinned_cc
+        + unresolved_cc
+        + exact_unequal
+        + exact_missing
+        + exact_error
+    )
+    accepted_exact = direct_exact + (pinned_cc if args.allow_cc_packaging else 0)
     print(
         "SMEFT2 comparison: "
         f"{summary['operator_content_matches_including_cc']}/"
@@ -3641,9 +3740,10 @@ def main(argv: list[str] | None = None) -> int:
         f"({summary['shared_head_matches']} direct + "
         f"{summary['charge_conjugation_packaging_matches']} via charge-conjugation "
         "packaging); "
-        "exact symbolic matches="
-        f"{summary['exact_symbolic_equal_vertices']}/"
-        f"{summary['exact_symbolic_supported_vertices']} supported vertices; "
+        "exact symbolic split="
+        f"direct {direct_exact}/{exact_supported}, "
+        f"modulo pinned CC {pinned_cc}/{exact_supported}, "
+        f"unresolved CC {unresolved_cc}/{exact_supported}; "
         f"raw-head-count matches={summary['shared_head_count_matches']}/"
         f"{summary['shared_signatures']}; "
         "canonical tensor-map matches="
@@ -3660,8 +3760,16 @@ def main(argv: list[str] | None = None) -> int:
         or summary["feynpy_only_unexplained_signatures"]
         or summary["exact_symbolic_supported_vertices"]
         != summary["reference_vertex_count"]
-        or summary["exact_symbolic_unequal_vertices"]
-        or summary["exact_symbolic_error_vertices"]
+        or exact_accounted != exact_supported
+        or accepted_exact != exact_supported
+        or exact_unequal
+        or exact_missing
+        or exact_error
+        or unresolved_cc
+        or (
+            pinned_cc
+            and not args.allow_cc_packaging
+        )
         or summary["canonical_map_unequal_vertices"]
         or summary["canonical_map_error_vertices"]
         or (args.strict_counts and summary["shared_head_count_mismatches"])
