@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from pathlib import Path
 
 import models.SMEFT2.comparison as smeft2_comparison
@@ -32,11 +33,23 @@ def _feynpy_vertex_by_key(key: str) -> dict:
     return next(vertex for vertex in vertices if vertex["key"] == key)
 
 
-def _report_row_by_key(key: str) -> dict:
-    report = json.loads(
+def _comparison_report() -> dict:
+    return json.loads(
         (MODEL_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
     )
+
+
+def _report_row_by_key(key: str) -> dict:
+    report = _comparison_report()
     return next(row for row in report["reference_vertices"] if row["key"] == key)
+
+
+def _pinned_cc_rows(report: dict) -> list[dict]:
+    return [
+        row
+        for row in report["reference_vertices"]
+        if row["exact_symbolic_status"] == "MATCH_MODULO_CC_PACKAGING"
+    ]
 
 
 def _assert_reference_row_exact_match(key: str):
@@ -60,6 +73,35 @@ def _assert_reference_row_exact_match(key: str):
 
     assert comparisons
     assert all(comparison.matches for comparison in comparisons.values())
+
+
+def _comparison_context():
+    bundle = build_smeft_green_bpreserving()
+    references_by_key = defaultdict(list)
+    for reference in smeft2_comparison.load_feynrules_json(
+        smeft2_comparison.REFERENCE
+    ):
+        key = smeft2_comparison._name_key(reference.fields)
+        references_by_key[key].append(reference)
+    return (
+        bundle.model.lagrangian(),
+        smeft2_comparison._comparison_field_map(bundle),
+        set(bundle.parameters) | smeft2_comparison.GENERIC_PARAMETER_NAMES,
+        references_by_key,
+    )
+
+
+def _reference_with_head(references_by_key, key: str, head: str, parameter_names):
+    candidates = []
+    for reference in references_by_key[key]:
+        reference_heads = smeft2_comparison._reference_heads(
+            reference,
+            parameter_names,
+        )
+        if head in reference_heads:
+            candidates.append(reference)
+    assert len(candidates) == 1
+    return candidates[0]
 
 
 def _check_summary(**overrides):
@@ -193,35 +235,145 @@ def test_smeft2_indexed_coefficient_filter_is_not_vacuous():
     assert not comparison.matches
 
 
-def test_smeft2_weinberg_rows_are_pinned_modulo_cc_packaging():
-    assert (
-        _report_row_by_key("Phi|Phi|lL|lL")["exact_symbolic_status"]
-        == "MATCH_MODULO_CC_PACKAGING"
-    )
-    assert (
-        _report_row_by_key("Phibar|Phibar|lLbar|lLbar")[
-            "exact_symbolic_status"
-        ]
-        == "MATCH_MODULO_CC_PACKAGING"
+def test_smeft2_pinned_cc_rows_are_only_proven_weinberg_or_ec_classes():
+    report = _comparison_report()
+    rows = _pinned_cc_rows(report)
+
+    assert rows
+    assert len(rows) == report["summary"]["cc_packaging_pinned_match_vertices"]
+    assert all(
+        row["reference_heads"] == ["alphaWeinberg"]
+        or any(head.startswith("alphaEc") for head in row["reference_heads"])
+        for row in rows
     )
 
 
-def test_smeft2_ec_partner_packaging_rules_are_pinned():
+def test_smeft2_weinberg_packaging_is_proven_by_antisymmetric_canonical_maps():
+    report = _comparison_report()
+    pinned_rows = _pinned_cc_rows(report)
+    weinberg_rows = [
+        row
+        for row in pinned_rows
+        if row["reference_heads"] == ["alphaWeinberg"]
+    ]
+    ec_rows = [
+        row
+        for row in pinned_rows
+        if any(head.startswith("alphaEc") for head in row["reference_heads"])
+    ]
+    assert len(weinberg_rows) + len(ec_rows) == len(pinned_rows)
+    assert weinberg_rows
+
+    lagrangian, field_map, parameter_names, references_by_key = _comparison_context()
+
+    for row in weinberg_rows:
+        reference = _reference_with_head(
+            references_by_key,
+            row["key"],
+            "alphaWeinberg",
+            parameter_names,
+        )
+        packaged_orders = smeft2_comparison._weinberg_packaged_field_orders(
+            reference.fields
+        )
+        assert packaged_orders is not None
+        assert row["charge_conjugation_partner"] in {
+            smeft2_comparison._name_key(order) for order in packaged_orders
+        }
+
+        fields = tuple(field_map[name] for name in reference.fields)
+        external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+        assert external_indices is not None
+        first_rule = lagrangian.feynman_rule(
+            *(field_map[name] for name in packaged_orders[0]),
+            simplify=True,
+        )
+        second_rule = lagrangian.feynman_rule(
+            *(field_map[name] for name in packaged_orders[1]),
+            simplify=True,
+        )
+        reference_rule = smeft2_comparison.parse_smeft2_matter_rule(
+            reference.rule,
+            projector_as_dirac_c=True,
+        )
+
+        antisymmetric = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
+            (first_rule - second_rule).cancel().expand(),
+            reference_rule,
+            coefficients=("alphaWeinberg",),
+            external_indices=external_indices,
+            max_dummy_permutations=2_000_000,
+        )["alphaWeinberg"]
+        symmetric = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
+            (first_rule + second_rule).cancel().expand(),
+            reference_rule,
+            coefficients=("alphaWeinberg",),
+            external_indices=external_indices,
+            max_dummy_permutations=2_000_000,
+        )["alphaWeinberg"]
+
+        assert antisymmetric.matches
+        assert antisymmetric.feynpy_only == {}
+        assert antisymmetric.feynrules_only == {}
+        assert antisymmetric.coefficient_mismatches == {}
+        assert not symmetric.matches
+
+
+def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():
     rules = smeft2_comparison._EC_PARTNER_PACKAGING_RULES
-    assert rules[("dRbar|eR|lLbar|qL", "alphaEcqedl")].phase == -1
-    assert not rules[
-        ("dRbar|eR|lLbar|qL", "alphaEcqedl")
-    ].antisymmetric_duplicates
-    assert rules[("dRbar|qL|qL|uRbar", "alphaEcudqq")].phase == 1
-    assert rules[("dRbar|qL|qL|uRbar", "alphaEcudqq")].antisymmetric_duplicates
-    assert rules[("dRbar|qL|qL|uRbar", "alphaEcudqqtwo")].phase == 1
-    assert not rules[
-        ("dRbar|qL|qL|uRbar", "alphaEcudqqtwo")
-    ].antisymmetric_duplicates
-    assert rules[("dR|qLbar|qLbar|uR", "alphaEcudqqtwo")].phase == -1
-    assert not rules[
-        ("dR|qLbar|qLbar|uR", "alphaEcudqqtwo")
-    ].antisymmetric_duplicates
+    report = _comparison_report()
+    ec_rows = [
+        row
+        for row in _pinned_cc_rows(report)
+        if any(head.startswith("alphaEc") for head in row["reference_heads"])
+    ]
+    expected_rule_keys = {
+        (row["key"], head)
+        for row in ec_rows
+        for head in row["reference_heads"]
+        if head.startswith("alphaEc")
+    }
+    assert expected_rule_keys
+    assert set(rules) == expected_rule_keys
+
+    lagrangian, field_map, parameter_names, references_by_key = _comparison_context()
+    local_vertices = smeft2_comparison._local_vertices(parameter_names)
+
+    for reference_key, coefficient in sorted(rules):
+        reference = _reference_with_head(
+            references_by_key,
+            reference_key,
+            coefficient,
+            parameter_names,
+        )
+        fields = tuple(field_map[name] for name in reference.fields)
+        external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+        assert external_indices is not None
+
+        feynrules_report = smeft2_comparison._canonical_report_for_coefficient_head(
+            smeft2_comparison.parse_smeft2_matter_rule(reference.rule),
+            coefficient=coefficient,
+            external_indices=external_indices,
+            max_dummy_permutations=2_000_000,
+        )
+        result = smeft2_comparison._ec_partner_packaging_comparison(
+            reference=reference,
+            coefficient=coefficient,
+            feynrules_report=feynrules_report,
+            local_vertices=local_vertices,
+            lagrangian=lagrangian,
+            field_map=field_map,
+            external_indices=external_indices,
+            max_dummy_permutations=2_000_000,
+        )
+
+        assert result is not None
+        comparison, detail = result
+        assert comparison.matches
+        assert comparison.feynpy_only == {}
+        assert comparison.feynrules_only == {}
+        assert comparison.coefficient_mismatches == {}
+        assert rules[(reference_key, coefficient)].partner_key in detail
 
 
 def test_smeft2_supported_subset_builds_and_compiles():
