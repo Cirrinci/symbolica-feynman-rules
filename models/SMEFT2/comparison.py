@@ -107,6 +107,8 @@ REFERENCE_FERMION_NAMES = frozenset(
 
 DUAL_FS_ANTISYMMETRY = "DUAL_FS_ANTISYMMETRY"
 DUMMY_LORENTZ_MERGE = "DUMMY_LORENTZ_MERGE"
+EXACT_SYMBOLIC_CANONICAL_EQUIVALENCE = "EXACT_SYMBOLIC_CANONICAL_EQUIVALENCE"
+PINNED_CC_CANONICAL_EQUIVALENCE = "PINNED_CC_CANONICAL_EQUIVALENCE"
 
 BENIGN_HEAD_COUNT_REASON_TEXT = {
     DUAL_FS_ANTISYMMETRY: (
@@ -118,6 +120,16 @@ BENIGN_HEAD_COUNT_REASON_TEXT = {
         "FeynPy leaves the two `alphaRqD` derivative-order branches as "
         "separate dummy-Lorentz contractions; FeynRules merges the identical "
         "contraction into one term with a doubled coefficient."
+    ),
+    EXACT_SYMBOLIC_CANONICAL_EQUIVALENCE: (
+        "The direct exact symbolic comparison proves canonical tensor-map "
+        "equality for this row; the raw occurrence-count difference is a "
+        "printer/expansion multiplicity, not an operator-content mismatch."
+    ),
+    PINNED_CC_CANONICAL_EQUIVALENCE: (
+        "The pinned charge-conjugation packaging comparison proves canonical "
+        "tensor-map equality for this row; the literal-signature raw count "
+        "differs because the same operator is packaged under the CC partner."
     ),
 }
 
@@ -2388,7 +2400,8 @@ def _fermion_exact_symbolic_row(
                     "acceptance time: each transform came from the explicit "
                     "Ec packaging rule table. "
                     + " ".join(pinned_partner_details)
-                    + f" Raw head-count status was {head_count_status}."
+                    + " Raw head-count status before exact-proof "
+                    f"classification was {head_count_status}."
                 ),
             }
         return {
@@ -2397,7 +2410,8 @@ def _fermion_exact_symbolic_row(
             "detail": (
                 "Canonical tensor-monomial maps agree for all "
                 f"{len(comparisons)} coefficient sector(s); raw head-count "
-                f"status was {head_count_status}."
+                "status before exact-proof classification was "
+                f"{head_count_status}."
             ),
         }
 
@@ -2420,7 +2434,8 @@ def _fermion_exact_symbolic_row(
                 "pinned Ec partner-packaging rule for "
                 f"{', '.join(unresolved_ec)}, so the row remains unresolved "
                 "rather than being accepted through a searched phase/symmetry "
-                f"choice. Raw head-count status was {head_count_status}."
+                "choice. Raw head-count status before exact-proof "
+                f"classification was {head_count_status}."
             ),
         }
 
@@ -2702,6 +2717,25 @@ def _benign_head_count_delta_reasons(
             continue
         reasons[head] = reason
     return reasons
+
+
+def _exact_symbolic_head_count_delta_reasons(
+    *,
+    exact_symbolic_status: str,
+    head_count_delta: dict[str, dict[str, int]],
+    existing_reasons: dict[str, str],
+) -> dict[str, str]:
+    reason = {
+        "EXACT_MATCH": EXACT_SYMBOLIC_CANONICAL_EQUIVALENCE,
+        "MATCH_MODULO_CC_PACKAGING": PINNED_CC_CANONICAL_EQUIVALENCE,
+    }.get(exact_symbolic_status)
+    if reason is None:
+        return {}
+    return {
+        head: reason
+        for head in head_count_delta
+        if head not in existing_reasons
+    }
 
 
 def _head_count_status(
@@ -3086,12 +3120,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             key,
             head_count_delta,
         )
-        unexplained_head_count_delta = {
-            head: counts
-            for head, counts in head_count_delta.items()
-            if head not in benign_head_count_delta_reasons
-        }
-        head_count_status = _head_count_status(
+        pre_exact_head_count_status = _head_count_status(
             has_local_signature=local is not None,
             head_count_delta=head_count_delta,
             benign_reasons=benign_head_count_delta_reasons,
@@ -3120,7 +3149,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
                 local_vertices=local_vertices,
                 reference_heads=reference_heads,
                 local_heads=local_heads,
-                head_count_status=head_count_status,
+                head_count_status=pre_exact_head_count_status,
                 lagrangian=lagrangian,
                 field_map=field_map,
             )
@@ -3130,6 +3159,23 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
                 "status": "EXACT_UNSUPPORTED",
                 "detail": _unsupported_exact_symbolic_detail(exact_symbolic_family),
             }
+        benign_head_count_delta_reasons.update(
+            _exact_symbolic_head_count_delta_reasons(
+                exact_symbolic_status=exact_symbolic["status"],
+                head_count_delta=head_count_delta,
+                existing_reasons=benign_head_count_delta_reasons,
+            )
+        )
+        unexplained_head_count_delta = {
+            head: counts
+            for head, counts in head_count_delta.items()
+            if head not in benign_head_count_delta_reasons
+        }
+        head_count_status = _head_count_status(
+            has_local_signature=local is not None,
+            head_count_delta=head_count_delta,
+            benign_reasons=benign_head_count_delta_reasons,
+        )
 
         status_counts[status] += 1
         reference_rows.append(

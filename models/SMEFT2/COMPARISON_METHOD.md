@@ -76,7 +76,10 @@ The comparison has four layers.
 3. Raw head-count diagnostics. This counts textual occurrences of each Wilson
    head. It catches suspicious over-expansion, but it is not an equality proof.
    Dual field-strength expansion and derivative-order expansion can change the
-   raw count while leaving the canonical tensor rule unchanged.
+   raw count while leaving the canonical tensor rule unchanged. A raw-count
+   delta is considered explained only when it has either a specific local reason
+   (for example dual-field-strength antisymmetry or dummy-Lorentz merging) or an
+   exact/pinned-CC canonical tensor-map proof for the row.
 
 4. Exact symbolic comparison. Both sides are converted to native tensor
    expressions, filtered by indexed Wilson-coefficient head, canonicalized into

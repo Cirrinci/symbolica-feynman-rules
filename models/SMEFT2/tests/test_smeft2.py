@@ -453,8 +453,8 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["operator_content_matches_including_cc"] == 184
     assert report["summary"]["shared_head_count_matches"] == 100
     assert report["summary"]["shared_head_count_mismatches"] == 82
-    assert report["summary"]["shared_head_count_benign_expansions"] == 9
-    assert report["summary"]["shared_head_count_unexplained_mismatches"] == 73
+    assert report["summary"]["shared_head_count_benign_expansions"] == 82
+    assert report["summary"]["shared_head_count_unexplained_mismatches"] == 0
     assert report["summary"]["exact_symbolic_supported_vertices"] == 184
     assert report["summary"]["exact_symbolic_direct_match_vertices"] == 176
     assert report["summary"]["exact_symbolic_equal_vertices"] == 176
@@ -470,8 +470,8 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["canonical_map_supported_coefficient_sectors"] == 93
     assert report["summary"]["canonical_map_equal_coefficient_sectors"] == 93
     assert report["summary"]["canonical_map_unequal_coefficient_sectors"] == 0
-    assert report["summary"]["benign_head_count_delta_heads"] == 15
-    assert report["summary"]["unexplained_head_count_delta_heads"] == 270
+    assert report["summary"]["benign_head_count_delta_heads"] == 285
+    assert report["summary"]["unexplained_head_count_delta_heads"] == 0
     assert all(
         "head_count_status" in row
         and "reference_head_counts" in row
@@ -555,10 +555,16 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     }
     assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"
     assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert rows_by_key["G|G|G"]["benign_head_count_delta_reasons"]["alphaO3G"] == (
+        "EXACT_SYMBOLIC_CANONICAL_EQUIVALENCE"
+    )
     assert (
         rows_by_key["dRbar|eR|lLbar|qL"]["exact_symbolic_status"]
         == "MATCH_MODULO_CC_PACKAGING"
     )
+    assert rows_by_key["dRbar|eR|lLbar|qL"]["benign_head_count_delta_reasons"][
+        "alphaEcqedl"
+    ] == "PINNED_CC_CANONICAL_EQUIVALENCE"
     assert "pinned charge-conjugation partner" in rows_by_key["dRbar|eR|lLbar|qL"][
         "exact_symbolic_detail"
     ]
