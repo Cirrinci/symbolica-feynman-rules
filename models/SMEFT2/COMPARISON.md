@@ -1,10 +1,10 @@
 # SMEFT2 FeynRules/FeynPy Comparison
 
-Generated on `2026-07-24` by `models/SMEFT2/comparison.py`.
+Generated on `2026-07-27` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
-Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Charge-conjugation packaged rows are accepted only when the controlled packaging transform reduces to identical canonical coefficient-sector maps. The separate canonical tensor-map diagnostic remains the gauge-sector per-coefficient map for supported bosonic coefficient sectors.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no row-specific packaging assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after a charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means a packaging match exists only after searching over phase and duplicate-leg symmetry (the `Ec` four-fermion rows), which is an existence match, not a sign-pinned proof. The separate canonical tensor-map diagnostic remains the gauge-sector per-coefficient map for supported bosonic coefficient sectors.
 
 | Item | Value |
 | --- | ---: |
@@ -24,9 +24,13 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Shared raw head-count benign expansions | 9 |
 | Shared raw head-count mismatches with unexplained deltas | 73 |
 | Exact symbolic supported vertices | 184 |
-| Exact symbolic equal vertices | 184 |
+| Direct exact symbolic matches | 176 |
+| Exact modulo pinned CC packaging | 2 |
+| Unresolved CC packaging (existence only) | 6 |
 | Exact symbolic unequal vertices | 0 |
 | Exact symbolic error vertices | 0 |
+| Headline split | direct exact: 176/184; modulo pinned CC: 2/184; unresolved CC: 6/184; operator content: 184/184 |
+| Compatibility alias `exact_symbolic_equal_vertices` (direct only) | 176 |
 | Canonical tensor-map supported vertices | 32 |
 | Canonical tensor-map equal vertices | 32 |
 | Canonical tensor-map unequal vertices | 0 |
@@ -58,7 +62,7 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 
 ## Exact Symbolic Comparison
 
-This layer is enabled for every FeynRules reference row. Bosonic rows use the native bosonic comparator. Fermion rows parse the full FeynRules tensor rule into native tensors, filter terms by indexed Wilson-coefficient head, keep flavor order and complex conjugation in the scalar coefficient, and compare canonical tensor-monomial maps. The two Weinberg rows have no literal FeynPy signature, so they are compared to the antisymmetrized charge-conjugation packaged FeynPy partner rule.
+This layer is enabled for every FeynRules reference row. Bosonic rows use the native bosonic comparator. Fermion rows parse the full FeynRules tensor rule into native tensors, filter terms by indexed Wilson-coefficient head, keep flavor order and complex conjugation in the scalar coefficient, and compare canonical tensor-monomial maps. Statuses are graded honestly: `EXACT_MATCH` is direct same-signature canonical equality; `MATCH_MODULO_CC_PACKAGING` is equality after a charge-conjugation packaging transform whose relative sign is derived (Weinberg); `UNRESOLVED_CC_PACKAGING` means an `Ec` packaging existence match was found only after searching phase/symmetry.
 
 | Signature | Status |
 | --- | --- |
@@ -169,7 +173,7 @@ This layer is enabled for every FeynRules reference row. Bosonic rows use the na
 | `G|uR|uRbar` | `EXACT_MATCH` |
 | `Phibar|Phibar|Wi|dRbar|uR` | `EXACT_MATCH` |
 | `Phibar|Phibar|dRbar|uR` | `EXACT_MATCH` |
-| `Phibar|Phibar|lLbar|lLbar` | `EXACT_MATCH` |
+| `Phibar|Phibar|lLbar|lLbar` | `MATCH_MODULO_CC_PACKAGING` |
 | `Phibar|Wi|Wi|dRbar|qL` | `EXACT_MATCH` |
 | `Phibar|Wi|Wi|eRbar|lL` | `EXACT_MATCH` |
 | `Phibar|Wi|Wi|qLbar|uR` | `EXACT_MATCH` |
@@ -205,7 +209,7 @@ This layer is enabled for every FeynRules reference row. Bosonic rows use the na
 | `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `EXACT_MATCH` |
 | `Phi|Phi|Wi|dR|uRbar` | `EXACT_MATCH` |
 | `Phi|Phi|dR|uRbar` | `EXACT_MATCH` |
-| `Phi|Phi|lL|lL` | `EXACT_MATCH` |
+| `Phi|Phi|lL|lL` | `MATCH_MODULO_CC_PACKAGING` |
 | `Phi|Wi|Wi|dR|qLbar` | `EXACT_MATCH` |
 | `Phi|Wi|Wi|eR|lLbar` | `EXACT_MATCH` |
 | `Phi|Wi|Wi|qL|uRbar` | `EXACT_MATCH` |
@@ -225,21 +229,21 @@ This layer is enabled for every FeynRules reference row. Bosonic rows use the na
 | `Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
 | `Wi|lL|lLbar` | `EXACT_MATCH` |
 | `Wi|qL|qLbar` | `EXACT_MATCH` |
-| `dRbar|eR|lLbar|qL` | `EXACT_MATCH` |
-| `dRbar|qL|qL|uRbar` | `EXACT_MATCH` |
+| `dRbar|eR|lLbar|qL` | `UNRESOLVED_CC_PACKAGING` |
+| `dRbar|qL|qL|uRbar` | `UNRESOLVED_CC_PACKAGING` |
 | `dR|dRbar|eR|eRbar` | `EXACT_MATCH` |
 | `dR|dRbar|lL|lLbar` | `EXACT_MATCH` |
 | `dR|dRbar|qL|qLbar` | `EXACT_MATCH` |
 | `dR|dRbar|uR|uRbar` | `EXACT_MATCH` |
 | `dR|dR|dRbar|dRbar` | `EXACT_MATCH` |
-| `dR|eRbar|lL|qLbar` | `EXACT_MATCH` |
-| `dR|qLbar|qLbar|uR` | `EXACT_MATCH` |
-| `eRbar|lL|qL|uRbar` | `EXACT_MATCH` |
+| `dR|eRbar|lL|qLbar` | `UNRESOLVED_CC_PACKAGING` |
+| `dR|qLbar|qLbar|uR` | `UNRESOLVED_CC_PACKAGING` |
+| `eRbar|lL|qL|uRbar` | `UNRESOLVED_CC_PACKAGING` |
 | `eR|eRbar|lL|lLbar` | `EXACT_MATCH` |
 | `eR|eRbar|qL|qLbar` | `EXACT_MATCH` |
 | `eR|eRbar|uR|uRbar` | `EXACT_MATCH` |
 | `eR|eR|eRbar|eRbar` | `EXACT_MATCH` |
-| `eR|lLbar|qLbar|uR` | `EXACT_MATCH` |
+| `eR|lLbar|qLbar|uR` | `UNRESOLVED_CC_PACKAGING` |
 | `lL|lLbar|qL|qLbar` | `EXACT_MATCH` |
 | `lL|lLbar|uR|uRbar` | `EXACT_MATCH` |
 | `lL|lL|lLbar|lLbar` | `EXACT_MATCH` |

@@ -99,26 +99,27 @@ The maintained method report is
 canonicalization identities, and the charge-conjugation packaging checks.
 
 The comparison checks signature coverage and coefficient-head content after
-normalizing field names to the FeynRules convention. It also attempts strict
-exact canonical tensor-rule equality for all 184 reference rows. The current
-strict result is 184 exact matches out of 184 supported reference rows:
-32 bosonic rows, 131 two-fermion rows, and 21 four-fermion rows.
+normalizing field names to the FeynRules convention. Exact symbolic comparison
+is graded honestly across all 184 reference rows:
 
-The two literal Weinberg reference signatures have no same-field FeynPy
-signature, but their operator content is now proven exactly against FEYNPy's
-mixed `lLbar,lL` charge-conjugation packaging by comparing the antisymmetrized
-partner-rule pair. The `alphaEc*` four-fermion charge-conjugation rows are
-also proven at exact tensor-map level by controlled packaging transforms that
-must reduce to identical canonical coefficient-sector maps. Raw head-count
-deltas remain visible in `COMPARISON.md` and `vertex_comparison_report.json`,
-but they are diagnostics for expansion form, not acceptance criteria.
+- `176/184` direct `EXACT_MATCH` (same-signature canonical tensor maps)
+- `2/184` `MATCH_MODULO_CC_PACKAGING` (Weinberg; relative minus sign derived
+  from the antisymmetry of the charge-conjugation matrix)
+- `6/184` `UNRESOLVED_CC_PACKAGING` (`alphaEc*` four-fermion rows; a packaging
+  existence match can be found, but phase/symmetry are still searched rather
+  than derived from the operator class)
 
-The strict gate now passes:
+Operator-content coverage remains `184/184` including the charge-conjugation
+overlay. Raw head-count deltas remain visible diagnostics for expansion form.
+
+The default gate requires direct exact matches only:
 
 ```bash
 .venv/bin/python models/SMEFT2/comparison.py --check
 ```
 
+Pinned Weinberg CC packaging can be accepted explicitly with
+`--allow-cc-packaging`. Unresolved `Ec` existence matches never pass `--check`.
 ## Check
 
 ```bash

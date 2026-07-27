@@ -1,24 +1,32 @@
 # SMEFT2 Comparison Method Report
 
-Updated for the SMEFT2 FeynRules/FeynPy comparison on 2026-07-24.
+Updated for the SMEFT2 FeynRules/FeynPy comparison on 2026-07-27.
 
 ## Current Result
 
-The strict comparison is complete.
+Exact symbolic comparison is graded in three tiers:
 
 - Reference vertices: `184`
 - Operator-content matches: `184/184`
-- Exact symbolic supported vertices: `184/184`
-- Exact symbolic equal vertices: `184/184`
+- Direct exact symbolic matches (`EXACT_MATCH`): `176/184`
+- Exact modulo pinned CC packaging (`MATCH_MODULO_CC_PACKAGING`): `2/184`
+  (Weinberg; relative minus sign derived from `C` antisymmetry)
+- Unresolved CC packaging (`UNRESOLVED_CC_PACKAGING`): `6/184`
+  (`alphaEc*` four-fermion existence matches; phase/symmetry still searched)
 - Exact symbolic unequal vertices: `0`
 - Exact symbolic error vertices: `0`
 - Sector split: `32` bosonic, `131` two-fermion, `21` four-fermion
 
-The direct signature accounting is still useful but it is not the final
-criterion. There are `182` exact field-multiset signatures shared literally,
-`2` FeynRules-only Weinberg signatures, and `8` FeynPy-only
-charge-conjugation partner signatures. Those nonliteral rows are now resolved
-by exact tensor-level packaging comparisons.
+Headline form:
+
+```text
+direct exact: 176/184; modulo pinned CC: 2/184; unresolved CC: 6/184; operator content: 184/184
+```
+
+The direct signature accounting remains useful but is not the final criterion.
+There are `182` exact field-multiset signatures shared literally, `2`
+FeynRules-only Weinberg signatures, and `8` FeynPy-only charge-conjugation
+partner signatures.
 
 The raw coefficient-head occurrence count remains a diagnostic:
 `100/182` shared rows have identical raw counts, while the other shared rows
@@ -33,8 +41,9 @@ The normal gate is:
 .venv/bin/python models/SMEFT2/comparison.py --check
 ```
 
-It now passes without relaxing the check. The change was to resolve the
-mismatch classes at the symbolic layer.
+It requires every supported row to be a direct `EXACT_MATCH`. Pinned Weinberg
+CC packaging can be accepted with `--allow-cc-packaging`. Unresolved `Ec`
+existence matches never pass `--check`.
 
 ## Basis
 
@@ -132,7 +141,8 @@ look different even though the canonical maps are equal.
 
 ## Two-Fermion Sector
 
-Result: `131/131` exact symbolic matches.
+Result: `129/131` direct `EXACT_MATCH`, plus `2/131`
+`MATCH_MODULO_CC_PACKAGING` (Weinberg).
 
 The first reliable target was the set of two-fermion rows whose raw
 coefficient-head counts already matched. Those rows established that the
@@ -173,15 +183,15 @@ The comparison layer also needed controlled tensor identities:
 - generator ordering and the narrow Jacobi reducer resolve the triple
   nonabelian derivative/dual classes.
 
-The two Weinberg rows are exact matches even though they have no literal local
-same-chirality signature:
+The two Weinberg rows are `MATCH_MODULO_CC_PACKAGING` (sign pinned) even though
+they have no literal local same-chirality signature:
 
 - `Phi|Phi|lL|lL`
 - `Phibar|Phibar|lLbar|lLbar`
 
 FeynRules emits these through `CC[...]` same-chirality packaging. FeynPy stores
 the same operator as a mixed `lLbar,lL` bilinear with explicit `dirac_C`. The
-exact comparison parses the FeynRules projectors as `dirac_C` and compares the
+comparison parses the FeynRules projectors as `dirac_C` and compares the
 reference row against the antisymmetrized local pair:
 
 ```text
@@ -191,11 +201,13 @@ FeynPy(lLbar, lL, H, H) - FeynPy(lL, lLbar, H, H)
 The minus sign is fixed by the antisymmetry of the charge-conjugation tensor
 when the two spinor slots are exchanged. The canonical scalar coefficient keeps
 both `alphaWeinberg(f1,f2)` and the transposed flavor structure, so the flavor
-transpose is checked explicitly.
+transpose is checked explicitly. This is equality modulo an explicitly tracked
+CC packaging transform, not a direct same-signature `EXACT_MATCH`.
 
 ## Four-Fermion Sector
 
-Result: `21/21` exact symbolic matches.
+Result: `15/21` direct `EXACT_MATCH`, and `6/21`
+`UNRESOLVED_CC_PACKAGING` (`alphaEc*` partner rows).
 
 The non-`Ec` four-fermion rows needed ordinary source corrections, not relaxed
 comparison rules. The weak-triplet currents in `alphaOqq3` and `alphaOlq3`
@@ -204,66 +216,51 @@ for `alphaOquqd8` and `alphaEquqdtwo8` now reverse both color-generator matrix
 orientations. These were real orientation mismatches; the comparison now
 matches them directly after canonicalization.
 
-The `Ec` rows were different. Their mismatch was a packaging problem:
-FeynPy keeps explicit `dirac_C` tensors in closed bilinears, while FeynRules
-exports the same charge-conjugated structures through its `CC[...]`
-processing. The comparison therefore formalizes that packaging equivalence
-instead of merely annotating it.
+The `Ec` rows are different. Their mismatch is a packaging problem: FeynPy
+keeps explicit `dirac_C` tensors in closed bilinears, while FeynRules exports
+the same charge-conjugated structures through its `CC[...]` processing.
 
-There are two exact `Ec` modes.
+Same-signature `Ec` sectors may use a crossed charge-conjugation transform
+with a fixed crossing phase. Partner-signature `Ec` rows, however, currently
+only have an *existence* probe: the comparison can find some partner order,
+phase `+/-`, and symmetric/antisymmetric duplicate-leg sum that makes the
+canonical maps agree. Empirically those choices vary by coefficient head (and
+even between conjugate sides for `alphaEcudqqtwo`), so they are not yet
+derived from the operator class. Those six rows are therefore graded
+`UNRESOLVED_CC_PACKAGING`, not `EXACT_MATCH` and not
+`MATCH_MODULO_CC_PACKAGING`.
 
-Same-signature `Ec` rows use a crossed charge-conjugation transform. The
-comparison traces each `dirac_C` arm, replaces the two explicit `C` factors by
-the FeynRules bilinear packaging, swaps the non-spinor external labels at the
-two charge-conjugation boundary endpoints, swaps the first and fourth
-arguments of the `alphaEc*` coefficient head, applies the fixed crossing phase,
-reconstructs the tensor expression, and recanonicalizes it. The row is accepted
-only if the resulting coefficient-sector map is exactly identical to the
-FeynRules map.
-
-Partner-signature `Ec` rows use a direct charge-conjugation transform. The
-comparison constructs candidate FeynPy-only partner orders in the reference
-leg order by bar-insensitive field matching. If two identical fields can be
-assigned in more than one way, both symmetric and antisymmetric duplicate-leg
-sums are tested as appropriate. The possible overall phases are tested, but a
-phase is accepted only when the final canonical map is exactly equal.
-
-The resolved partner classes are:
-
-| Reference packaging | Coefficient heads | Partner handling |
+| Reference packaging | Coefficient heads | Current grade |
 | --- | --- | --- |
-| `dRbar|eR|lLbar|qL` | `alphaEcqedl`, `alphaEcqedlthree` | direct partner, phase `-1`, symmetric duplicate sum |
-| `dR|eRbar|lL|qLbar` | `alphaEcqedl`, `alphaEcqedlthree` | direct partner, phase `-1`, symmetric duplicate sum |
-| `eRbar|lL|qL|uRbar` | `alphaEcuelq`, `alphaEcuelqtwo` | direct partner, phase `+1` |
-| `eR|lLbar|qLbar|uR` | `alphaEcuelq`, `alphaEcuelqtwo` | direct partner, phase `-1` |
-| `dRbar|qL|qL|uRbar` | `alphaEcudqq`, `alphaEcudqqtwo` | duplicate-leg sums, symmetric or antisymmetric by head |
-| `dR|qLbar|qLbar|uR` | `alphaEcudqq`, `alphaEcudqqtwo` | duplicate-leg sums, symmetric or antisymmetric by head |
+| `dRbar|eR|lLbar|qL` | `alphaEcqedl`, `alphaEcqedlthree` | unresolved existence |
+| `dR|eRbar|lL|qLbar` | `alphaEcqedl`, `alphaEcqedlthree` | unresolved existence |
+| `eRbar|lL|qL|uRbar` | `alphaEcuelq`, `alphaEcuelqtwo` | unresolved existence |
+| `eR|lLbar|qLbar|uR` | `alphaEcuelq`, `alphaEcuelqtwo` | unresolved existence |
+| `dRbar|qL|qL|uRbar` | `alphaEcudqq`, `alphaEcudqqtwo` | unresolved existence |
+| `dR|qLbar|qLbar|uR` | `alphaEcudqq`, `alphaEcudqqtwo` | unresolved existence |
 
-The key safety property is that the charge-conjugation machinery is not a
-general row matcher. It is restricted to `alphaEc*` coefficient sectors, it
-must find the appropriate charge-conjugation arms, and it must end in exact
-canonical tensor-map equality.
+The next step for these rows is to derive phase and duplicate-leg symmetry from
+the operator class, then verify a single pinned transform. Until that is done,
+they must not share the same headline as direct exact equality.
 
 ## Charge Conjugation Usage
 
-Charge conjugation is used in three places.
+Charge conjugation is used in three places, with different strength.
 
 First, operator-content accounting uses it to explain why the two Weinberg
 reference-only signatures and the eight FeynPy-only `Ec` partner signatures are
 not missing physics. This accounting explains coverage, but it is not by itself
-the strict proof.
+a tensor-level proof.
 
-Second, the Weinberg rows use charge conjugation at exact level by comparing
-the same-chirality FeynRules row against the antisymmetrized mixed FeynPy
-packaging. This checks the full tensor map, including flavor transposition.
+Second, the Weinberg rows use charge conjugation at pinned packaging level by
+comparing the same-chirality FeynRules row against the antisymmetrized mixed
+FeynPy packaging. The relative minus sign is derived from `C` antisymmetry.
+These rows are `MATCH_MODULO_CC_PACKAGING`.
 
-Third, the `Ec` four-fermion rows use the crossed or direct packaging
-transforms described above. These transforms formalize the closed-bilinear sign
-and field-order conventions already present in the engine, but the comparison
-layer now makes them explicit and machine-checkable.
-
-No row passes because it merely has the right coefficient head. It must also
-pass the exact canonical tensor-map comparison.
+Third, the `Ec` four-fermion partner rows currently have only an existence
+probe over phase and duplicate-leg symmetry. That is useful diagnostics, but
+until phase/symmetry are derived from the operator class those rows remain
+`UNRESOLVED_CC_PACKAGING`.
 
 ## Meaning of `--check`
 
@@ -273,11 +270,15 @@ pass the exact canonical tensor-map comparison.
 - any FeynPy-only signature remains unexplained;
 - exact symbolic support does not cover all reference vertices;
 - any exact symbolic row is unequal or errors;
+- any row is `UNRESOLVED_CC_PACKAGING`;
+- any row is `MATCH_MODULO_CC_PACKAGING` unless `--allow-cc-packaging` is set;
 - any supported canonical gauge-sector map is unequal or errors.
 
 Raw coefficient-head count mismatches are not part of the normal gate because
 they are expansion diagnostics. They become part of the gate only with
 `--strict-counts`.
 
-The current state passes the normal strict gate because all `184` supported
-reference vertices are exact symbolic matches.
+The current state fails the default `--check` gate because of the two pinned
+Weinberg CC rows and the six unresolved `Ec` existence matches. With
+`--allow-cc-packaging`, Weinberg is accepted but the unresolved `Ec` rows still
+fail.
