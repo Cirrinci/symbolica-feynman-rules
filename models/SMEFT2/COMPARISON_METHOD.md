@@ -248,6 +248,85 @@ equality. The accepted rule is not chosen by trying alternatives.
 | `alphaEcudqq` | `LEvCCRRLL`; the two external `qL` assignments are exchanged under the partner map | `+1` for direct and HC rows | antisymmetric duplicate-leg sum from exchanging the two identical fermion assignments |
 | `alphaEcudqqtwo` | `LEvCCRRLL`; same duplicate `qL` content but with the `gamma2` chain fixing the opposite exchange parity | `+1` direct, `-1` HC | symmetric duplicate-leg sum |
 
+### Worked Example: `alphaEcqedl`
+
+One of the eight pinned rows is the FeynRules reference signature
+`dRbar|eR|lLbar|qL`. In the FeynRules source this comes from
+
+```text
+alphaEcqedl[f1,f2,f3,f4]
+  (CC[QLbar[s1,i,f1,c]] Gamma^mu[s1,s2] eR[s2,f2])
+  (dRbar[s3,f3,c] Gamma_mu[s3,s4] CC[LL[s4,i,f4]])
+```
+
+At the external-leg level, `CC[QLbar]` is packaged as `qL`, and `CC[LL]` is
+packaged as `lLbar`, so this row is reported under `dRbar|eR|lLbar|qL`.
+
+FeynPy writes the same source operator with explicit charge-conjugation tensors:
+
+```text
+alphaEcqedl(f1,f2,f3,f4)
+  qLbar[s1,i,f1,c] C[s1,s5] Gamma^mu[s5,s2] eR[s2,f2]
+  dRbar[s3,f3,c] Gamma_mu[s3,s6] C[s6,s4] lL[s4,i,f4]
+```
+
+That is the same bilinear content, but before the comparison overlay it lives in
+the FeynPy partner signature `dRbar|eR|lL|qLbar`, not in the literal
+FeynRules signature. The pinned mathematical statement for this row is
+
+```text
+O_FR(dRbar,eR,lLbar,qL; alphaEcqedl)
+  = - CC_direct[ O_FP(dRbar,eR,lL,qLbar; alphaEcqedl) ].
+```
+
+The minus sign is not fitted. It is the fixed sign from the single required
+`C`-arm transposition in this `LEvCCLRRL` packaging, using `C^T = -C`. There
+are no identical external fields in this example, so the duplicate-leg rule is
+the symmetric sum with one effective assignment.
+
+The exact pinned rule in `comparison.py` is:
+
+```python
+(
+    "dRbar|eR|lLbar|qL",
+    "alphaEcqedl",
+): _EcPartnerPackagingRule(
+    partner_key="dRbar|eR|lL|qLbar",
+    phase=-1,
+    antisymmetric_duplicates=False,
+    source="LEvCCLRRL alphaEcqedl + HC; one C-arm transposition",
+)
+```
+
+The comparison code then applies only that rule:
+
+```python
+rule = _EC_PARTNER_PACKAGING_RULES.get((reference_key, coefficient))
+...
+local_rule = _candidate_order_rule_sum(..., antisymmetric_duplicates=rule.antisymmetric_duplicates)
+local_report = _canonical_report_for_coefficient_head(local_rule, coefficient=coefficient, ...)
+transformed_report = _normalize_ec_charge_conjugation_report(
+    local_report,
+    coefficient=coefficient,
+    mode="direct",
+    phase=rule.phase,
+    ...
+)
+comparison = _coefficient_comparison_from_reports(
+    coefficient,
+    transformed_report,
+    feynrules_report,
+)
+if not comparison.matches:
+    return None
+```
+
+So the row is accepted only if the fixed `-1` direct CC-packaging transform of
+the FeynPy partner canonical tensor map is exactly equal to the FeynRules
+canonical tensor map for `alphaEcqedl`. If the transform fails, the row remains
+unmatched; the code does not try the opposite sign or a different duplicate-leg
+symmetry.
+
 If a listed pinned transform fails canonical-map equality, the row is not
 accepted. If no pinned rule exists for a future `Ec` mismatch, it is reported as
 `UNRESOLVED_CC_PACKAGING`.
