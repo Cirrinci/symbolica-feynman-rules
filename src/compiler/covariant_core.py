@@ -22,11 +22,33 @@ from feynpy.lagrangian import ComplexScalarKineticTerm, DiracKineticTerm
 from feynpy.metadata import unique_spinor_slot
 
 
+def _source_slot_labels(field: Field, labels) -> dict[int, object]:
+    if not labels:
+        return {}
+    return {
+        slot: label
+        for slot, label in field.unpack_slot_labels(labels).items()
+        if label is not None
+    }
+
+
+def _dirac_source_slot_labels(
+    fermion: Field,
+    core: DiracKineticTerm,
+) -> tuple[dict[int, object], dict[int, object]]:
+    return (
+        _source_slot_labels(fermion, getattr(core, "left_labels", None)),
+        _source_slot_labels(fermion, getattr(core, "right_labels", None)),
+    )
+
+
 def _compile_dirac_partial_term(
     fermion: Field,
     *,
     coefficient=1,
     label: str = "",
+    left_source_labels=None,
+    right_source_labels=None,
     symbol: Callable,
 ) -> InteractionTerm:
     mu = symbol("mu")
@@ -38,12 +60,17 @@ def _compile_dirac_partial_term(
     )
     bar_slot_labels = {fermion_spinor_slot: i_bar}
     psi_slot_labels = {fermion_spinor_slot: i_psi}
+    left_source_labels = left_source_labels or {}
+    right_source_labels = right_source_labels or {}
+    explicit_slots = set(left_source_labels) | set(right_source_labels)
     core_factor, core_bar_slots, core_psi_slots = _spectator_identity_factor(
         fermion,
-        exclude_slots={fermion_spinor_slot},
+        exclude_slots={fermion_spinor_slot, *explicit_slots},
     )
     bar_slot_labels.update(core_bar_slots)
     psi_slot_labels.update(core_psi_slots)
+    bar_slot_labels.update(left_source_labels)
+    psi_slot_labels.update(right_source_labels)
     bar_labels = fermion.pack_slot_labels(bar_slot_labels)
     psi_labels = fermion.pack_slot_labels(psi_slot_labels)
     return InteractionTerm(
@@ -143,10 +170,16 @@ def _compile_covariant_core(
                 spectator_occurrences=spectator_occurrences,
                 spectator_bilinears=spectator_bilinears,
             )
+        left_source_labels, right_source_labels = _dirac_source_slot_labels(
+            fermion,
+            core,
+        )
         partial_term = _compile_dirac_partial_term(
             fermion,
             coefficient=core.coefficient,
             label=core.label or f"i {fermion.name}bar gamma^mu D_mu {fermion.name} partial",
+            left_source_labels=left_source_labels,
+            right_source_labels=right_source_labels,
             symbol=symbol,
         )
         return _assemble_full_covariant_operator(

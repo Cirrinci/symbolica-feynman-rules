@@ -1044,6 +1044,8 @@ class DiracKineticTerm:
     gauge_group: object = None
     coefficient: object = 1
     label: str = ""
+    left_labels: object = None
+    right_labels: object = None
 
     def __add__(self, other):
         terms = _declared_source_terms_from_item(other)

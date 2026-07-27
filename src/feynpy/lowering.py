@@ -121,15 +121,20 @@ def _match_covariant_monomial(
     if len(gamma_factors) == 1 and len(covd_factors) == 1:
         gamma_factor = gamma_factors[0]
         covd_factor = covd_factors[0]
-        if any(factor.labels for factor in (*field_factors, covd_factor)):
-            # Labelled Dirac monomials may carry open flavor/gauge labels tied to
-            # indexed coefficients. The compact kinetic-core path regenerates
-            # identity labels and would disconnect those coefficient slots from
-            # the fields, so preserve them through the generic CovD lowering.
+        labelled_core = any(factor.labels for factor in (*field_factors, covd_factor))
+        if labelled_core and len(field_factors) != 1:
+            # Labelled spectator-decorated Dirac monomials still need the
+            # generic CovD path; compact spectator materialization cannot yet
+            # preserve arbitrary source-level spectator contractions.
             return None
         for core_slot, field_factor in enumerate(field_factors):
             if field_factor.field.kind != "fermion" or covd_factor.field.kind != "fermion":
                 continue
+            if labelled_core and not _labelled_dirac_core_can_use_compact_path(
+                field_factor,
+                covd_factor,
+            ):
+                return None
             core = _lower_dirac_monomial_impl(
                 _DeclaredMonomial(
                     coefficient=term.coefficient,
@@ -143,6 +148,12 @@ def _match_covariant_monomial(
             )
             if core is None:
                 continue
+            if labelled_core:
+                core = replace(
+                    core,
+                    left_labels=field_factor.labels,
+                    right_labels=covd_factor.labels,
+                )
             spectators = tuple(
                 (factor.field, factor.conjugated)
                 for idx, factor in enumerate(field_factors)
@@ -175,6 +186,49 @@ def _match_covariant_monomial(
             return core, spectators
 
     return None
+
+
+def _labelled_dirac_core_can_use_compact_path(
+    field_factor: _FieldFactor,
+    covd_factor: CovariantDerivativeFactor,
+) -> bool:
+    """Whether a labelled Dirac core can preserve labels without generic CovD.
+
+    The compact path can safely preserve simple flavor-only open labels when
+    they cover the whole matter source. It still refuses explicit
+    spinor/Lorentz labels, one-sided matter labels, mixed labelled/unlabelled
+    matter slots, and non-flavor representation labels; those cases need the
+    generic local binder to avoid inventing a contraction or moving a
+    non-abelian generator relative to user-written labels.
+    """
+    if field_factor.field is not covd_factor.field:
+        return False
+    field = field_factor.field
+    left_slots = field.unpack_slot_labels(field_factor.labels)
+    right_slots = field.unpack_slot_labels(covd_factor.labels)
+    labelled_slots = {
+        slot
+        for slot in set(left_slots) | set(right_slots)
+        if left_slots.get(slot) is not None or right_slots.get(slot) is not None
+    }
+    if not labelled_slots:
+        return True
+    blocked_slots = set(spinor_slots_for(field)) | set(lorentz_slots_for(field))
+    if labelled_slots & blocked_slots:
+        return False
+    matter_slots = {
+        slot
+        for slot, _index in enumerate(field.indices)
+        if slot not in blocked_slots
+    }
+    if labelled_slots != matter_slots:
+        return False
+    if any(not field.indices[slot].is_flavor for slot in labelled_slots):
+        return False
+    return all(
+        left_slots.get(slot) is not None and right_slots.get(slot) is not None
+        for slot in labelled_slots
+    )
 
 
 @dataclass(frozen=True)

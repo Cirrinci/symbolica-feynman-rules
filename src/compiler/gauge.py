@@ -2166,11 +2166,27 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
         fermion,
         purpose="Dirac kinetic compilation",
     )
+    left_source_labels, right_source_labels = _dirac_source_slot_labels(
+        fermion,
+        term,
+    )
+    source_label_slots = set(left_source_labels) | set(right_source_labels)
 
     interactions: list[InteractionTerm] = []
     for piece in expanded.gauge_current_pieces:
         gauge_group = piece.metadata.gauge_group
         i_bar, i_psi = _default_spinor_labels(fermion, gauge_group)
+        left_slot_overrides = dict(left_source_labels)
+        right_slot_overrides = dict(right_source_labels)
+        if piece.active_slot is not None:
+            left_slot_overrides.pop(piece.active_slot, None)
+            right_slot_overrides.pop(piece.active_slot, None)
+        matter_labels = _source_matter_labels_for_active_slot(
+            fermion=fermion,
+            active_slot=piece.active_slot,
+            left_source_labels=left_source_labels,
+            right_source_labels=right_source_labels,
+        )
         interactions.append(
             _build_fermion_current_interaction(
                 fermion=fermion,
@@ -2183,7 +2199,10 @@ def compile_dirac_kinetic_term(model: Model, term: DiracKineticTerm) -> tuple[In
                 prefactor=term.coefficient,
                 label=label,
                 lorentz_label=mu,
-                spectator_exclude_slots={fermion_spinor_slot},
+                matter_labels=matter_labels,
+                spectator_exclude_slots={fermion_spinor_slot, *source_label_slots},
+                left_slot_overrides=left_slot_overrides,
+                right_slot_overrides=right_slot_overrides,
             )
         )
 
@@ -2287,6 +2306,47 @@ def _compile_declared_covariant_core(
         compile_complex_scalar_kinetic_term=compile_complex_scalar_kinetic_term,
         symbol=_symbol,
     )
+
+
+def _source_slot_labels(field: Field, labels) -> dict[int, object]:
+    if not labels:
+        return {}
+    return {
+        slot: label
+        for slot, label in field.unpack_slot_labels(labels).items()
+        if label is not None
+    }
+
+
+def _dirac_source_slot_labels(
+    fermion: Field,
+    term: DiracKineticTerm,
+) -> tuple[dict[int, object], dict[int, object]]:
+    return (
+        _source_slot_labels(fermion, getattr(term, "left_labels", None)),
+        _source_slot_labels(fermion, getattr(term, "right_labels", None)),
+    )
+
+
+def _source_matter_labels_for_active_slot(
+    *,
+    fermion: Field,
+    active_slot: Optional[int],
+    left_source_labels: dict[int, object],
+    right_source_labels: dict[int, object],
+) -> Optional[tuple[object, object]]:
+    if active_slot is None:
+        return None
+    if not fermion.indices[active_slot].is_flavor:
+        return None
+    if active_slot not in left_source_labels and active_slot not in right_source_labels:
+        return None
+    if active_slot not in left_source_labels or active_slot not in right_source_labels:
+        raise ValueError(
+            "Labelled Dirac kinetic compact lowering requires both bar and "
+            "field labels for the active gauge-representation slot."
+        )
+    return left_source_labels[active_slot], right_source_labels[active_slot]
 
 
 def _compile_declared_lagrangian_terms(model: Model) -> tuple[InteractionTerm, ...]:

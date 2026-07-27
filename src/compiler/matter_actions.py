@@ -129,6 +129,8 @@ def _build_fermion_current_interaction(
     matter_labels=None,
     adjoint_label=None,
     spectator_exclude_slots=(),
+    left_slot_overrides=None,
+    right_slot_overrides=None,
 ) -> InteractionTerm:
     action = _build_bilinear_gauge_action_data(
         fermion,
@@ -139,13 +141,17 @@ def _build_fermion_current_interaction(
         adjoint_label=adjoint_label,
         spectator_exclude_slots=spectator_exclude_slots,
     )
+    left_slot_overrides = left_slot_overrides or {}
+    right_slot_overrides = right_slot_overrides or {}
     bar_labels = fermion.pack_slot_labels({
         spinor_slot: i_bar,
         **action.left_slot_labels,
+        **left_slot_overrides,
     })
     psi_labels = fermion.pack_slot_labels({
         spinor_slot: i_psi,
         **action.right_slot_labels,
+        **right_slot_overrides,
     })
 
     rep = piece.metadata.representation
