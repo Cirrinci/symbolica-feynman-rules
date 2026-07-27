@@ -69,33 +69,80 @@ def _check_summary(**overrides):
         "shared_head_matches": 176,
         "charge_conjugation_packaging_matches": 8,
         "exact_symbolic_equal_vertices": 184,
+        "exact_symbolic_direct_match_vertices": 184,
         "exact_symbolic_supported_vertices": 184,
         "exact_symbolic_unequal_vertices": 0,
+        "exact_symbolic_missing_local_vertices": 0,
         "exact_symbolic_error_vertices": 0,
+        "cc_packaging_pinned_match_vertices": 0,
+        "cc_packaging_unresolved_vertices": 0,
         "canonical_map_equal_vertices": 32,
         "canonical_map_supported_vertices": 32,
         "canonical_map_equal_coefficient_sectors": 93,
         "canonical_map_supported_coefficient_sectors": 93,
         "canonical_map_unequal_vertices": 0,
         "canonical_map_error_vertices": 0,
-        "shared_head_count_matches": 90,
+        "shared_head_count_matches": 100,
         "shared_signatures": 182,
         "reference_only_signatures": 2,
         "feynpy_only_signatures": 8,
         "feynpy_only_unexplained_signatures": 0,
-        "shared_head_count_mismatches": 92,
+        "shared_head_count_mismatches": 82,
     }
     summary.update(overrides)
     return summary
 
 
-def test_smeft2_check_accepts_charge_conjugation_packaging(monkeypatch):
+def test_smeft2_check_requires_direct_exact_by_default(monkeypatch):
     def fake_compare(_reference):
         return {"summary": _check_summary()}, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
-
     assert smeft2_comparison.main(["--check"]) == 0
+
+
+def test_smeft2_check_rejects_pinned_cc_without_flag(monkeypatch):
+    def fake_compare(_reference):
+        return {
+            "summary": _check_summary(
+                exact_symbolic_equal_vertices=182,
+                exact_symbolic_direct_match_vertices=182,
+                cc_packaging_pinned_match_vertices=2,
+            )
+        }, ()
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
+
+
+def test_smeft2_check_rejects_unresolved_cc_even_with_allow_flag(monkeypatch):
+    def fake_compare(_reference):
+        return {
+            "summary": _check_summary(
+                exact_symbolic_equal_vertices=176,
+                exact_symbolic_direct_match_vertices=176,
+                cc_packaging_pinned_match_vertices=2,
+                cc_packaging_unresolved_vertices=6,
+            )
+        }, ()
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 1
+
+
+def test_smeft2_check_rejects_incomplete_exact_status_accounting(monkeypatch):
+    def fake_compare(_reference):
+        return {
+            "summary": _check_summary(
+                exact_symbolic_equal_vertices=176,
+                exact_symbolic_direct_match_vertices=176,
+            )
+        }, ()
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    assert smeft2_comparison.main(["--check"]) == 1
 
 
 def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch):
@@ -122,7 +169,8 @@ def test_smeft2_check_rejects_strict_exact_mismatches(monkeypatch):
     def fake_compare(_reference):
         return {
             "summary": _check_summary(
-                exact_symbolic_equal_vertices=183,
+                exact_symbolic_equal_vertices=175,
+                exact_symbolic_direct_match_vertices=175,
                 exact_symbolic_unequal_vertices=1,
             )
         }, ()
@@ -145,16 +193,16 @@ def test_smeft2_indexed_coefficient_filter_is_not_vacuous():
     assert not comparison.matches
 
 
-def test_smeft2_weinberg_packaging_rows_match_exactly():
+def test_smeft2_weinberg_rows_are_pinned_modulo_cc_packaging():
     assert (
         _report_row_by_key("Phi|Phi|lL|lL")["exact_symbolic_status"]
-        == "EXACT_MATCH"
+        == "MATCH_MODULO_CC_PACKAGING"
     )
     assert (
         _report_row_by_key("Phibar|Phibar|lLbar|lLbar")[
             "exact_symbolic_status"
         ]
-        == "EXACT_MATCH"
+        == "MATCH_MODULO_CC_PACKAGING"
     )
 
 
@@ -238,7 +286,10 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_count_benign_expansions"] == 9
     assert report["summary"]["shared_head_count_unexplained_mismatches"] == 73
     assert report["summary"]["exact_symbolic_supported_vertices"] == 184
-    assert report["summary"]["exact_symbolic_equal_vertices"] == 184
+    assert report["summary"]["exact_symbolic_direct_match_vertices"] == 176
+    assert report["summary"]["exact_symbolic_equal_vertices"] == 176
+    assert report["summary"]["cc_packaging_pinned_match_vertices"] == 2
+    assert report["summary"]["cc_packaging_unresolved_vertices"] == 6
     assert report["summary"]["exact_symbolic_unequal_vertices"] == 0
     assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
     assert report["summary"]["exact_symbolic_error_vertices"] == 0
@@ -334,11 +385,17 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     }
     assert rows_by_key["B|qL|qLbar"]["head_count_status"] == "COUNT_BENIGN_EXPANSION"
     assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_MATCH"
-    assert rows_by_key["dRbar|eR|lLbar|qL"]["exact_symbolic_status"] == "EXACT_MATCH"
-    assert "direct CC packaging" in rows_by_key["dRbar|eR|lLbar|qL"][
+    assert (
+        rows_by_key["dRbar|eR|lLbar|qL"]["exact_symbolic_status"]
+        == "UNRESOLVED_CC_PACKAGING"
+    )
+    assert "existence match" in rows_by_key["dRbar|eR|lLbar|qL"][
         "exact_symbolic_detail"
     ]
-    assert rows_by_key["Phi|Phi|lL|lL"]["exact_symbolic_status"] == "EXACT_MATCH"
+    assert (
+        rows_by_key["Phi|Phi|lL|lL"]["exact_symbolic_status"]
+        == "MATCH_MODULO_CC_PACKAGING"
+    )
     assert rows_by_key["B|B|B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|B|Phi|Phibar"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert rows_by_key["B|B|Phi|Phibar"]["canonical_map_status"] == "CANONICAL_MAP_MATCH"
