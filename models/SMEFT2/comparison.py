@@ -1270,6 +1270,126 @@ class _ChargeConjugationArm:
     c_outgoing: bool | None
 
 
+@dataclass(frozen=True)
+class _EcPartnerPackagingRule:
+    partner_key: str
+    phase: int
+    antisymmetric_duplicates: bool
+    source: str
+
+
+_EC_PARTNER_PACKAGING_RULES: dict[tuple[str, str], _EcPartnerPackagingRule] = {
+    (
+        "dRbar|eR|lLbar|qL",
+        "alphaEcqedl",
+    ): _EcPartnerPackagingRule(
+        partner_key="dRbar|eR|lL|qLbar",
+        phase=-1,
+        antisymmetric_duplicates=False,
+        source="LEvCCLRRL alphaEcqedl + HC; one C-arm transposition",
+    ),
+    (
+        "dRbar|eR|lLbar|qL",
+        "alphaEcqedlthree",
+    ): _EcPartnerPackagingRule(
+        partner_key="dRbar|eR|lL|qLbar",
+        phase=-1,
+        antisymmetric_duplicates=False,
+        source="LEvCCLRRL alphaEcqedlthree + HC; one C-arm transposition",
+    ),
+    (
+        "dR|eRbar|lL|qLbar",
+        "alphaEcqedl",
+    ): _EcPartnerPackagingRule(
+        partner_key="dR|eRbar|lLbar|qL",
+        phase=-1,
+        antisymmetric_duplicates=False,
+        source="Hermitian conjugate of LEvCCLRRL alphaEcqedl",
+    ),
+    (
+        "dR|eRbar|lL|qLbar",
+        "alphaEcqedlthree",
+    ): _EcPartnerPackagingRule(
+        partner_key="dR|eRbar|lLbar|qL",
+        phase=-1,
+        antisymmetric_duplicates=False,
+        source="Hermitian conjugate of LEvCCLRRL alphaEcqedlthree",
+    ),
+    (
+        "eRbar|lL|qL|uRbar",
+        "alphaEcuelq",
+    ): _EcPartnerPackagingRule(
+        partner_key="eRbar|lL|qLbar|uR",
+        phase=1,
+        antisymmetric_duplicates=False,
+        source="LEvCCRRLL alphaEcuelq direct packaging",
+    ),
+    (
+        "eRbar|lL|qL|uRbar",
+        "alphaEcuelqtwo",
+    ): _EcPartnerPackagingRule(
+        partner_key="eRbar|lL|qLbar|uR",
+        phase=1,
+        antisymmetric_duplicates=False,
+        source="LEvCCRRLL alphaEcuelqtwo direct packaging",
+    ),
+    (
+        "eR|lLbar|qLbar|uR",
+        "alphaEcuelq",
+    ): _EcPartnerPackagingRule(
+        partner_key="eR|lLbar|qL|uRbar",
+        phase=-1,
+        antisymmetric_duplicates=False,
+        source="Hermitian conjugate of LEvCCRRLL alphaEcuelq",
+    ),
+    (
+        "eR|lLbar|qLbar|uR",
+        "alphaEcuelqtwo",
+    ): _EcPartnerPackagingRule(
+        partner_key="eR|lLbar|qL|uRbar",
+        phase=-1,
+        antisymmetric_duplicates=False,
+        source="Hermitian conjugate of LEvCCRRLL alphaEcuelqtwo",
+    ),
+    (
+        "dRbar|qL|qL|uRbar",
+        "alphaEcudqq",
+    ): _EcPartnerPackagingRule(
+        partner_key="dRbar|qL|qLbar|uR",
+        phase=1,
+        antisymmetric_duplicates=True,
+        source="LEvCCRRLL alphaEcudqq; duplicate qL assignments antisymmetrized",
+    ),
+    (
+        "dRbar|qL|qL|uRbar",
+        "alphaEcudqqtwo",
+    ): _EcPartnerPackagingRule(
+        partner_key="dRbar|qL|qLbar|uR",
+        phase=1,
+        antisymmetric_duplicates=False,
+        source="LEvCCRRLL alphaEcudqqtwo; gamma2 structure fixes symmetric duplicate sum",
+    ),
+    (
+        "dR|qLbar|qLbar|uR",
+        "alphaEcudqq",
+    ): _EcPartnerPackagingRule(
+        partner_key="dR|qL|qLbar|uRbar",
+        phase=1,
+        antisymmetric_duplicates=True,
+        source="Hermitian conjugate of LEvCCRRLL alphaEcudqq",
+    ),
+    (
+        "dR|qLbar|qLbar|uR",
+        "alphaEcudqqtwo",
+    ): _EcPartnerPackagingRule(
+        partner_key="dR|qL|qLbar|uRbar",
+        phase=-1,
+        antisymmetric_duplicates=False,
+        source="Hermitian conjugate of LEvCCRRLL alphaEcudqqtwo",
+    ),
+}
+
+
 def _is_dirac_c_factor(factor: object) -> bool:
     return (
         isinstance(factor, tuple)
@@ -1780,7 +1900,7 @@ def _candidate_order_rule_sum(
     return total.cancel().expand()
 
 
-def _ec_partner_existence_probe(
+def _ec_partner_packaging_comparison(
     *,
     reference: FeynRulesVertex,
     coefficient: str,
@@ -1790,74 +1910,73 @@ def _ec_partner_existence_probe(
     field_map: dict[str, object],
     external_indices,
     max_dummy_permutations: int,
-) -> str | None:
-    """Probe whether some CC packaging of ``coefficient`` matches FeynRules.
+) -> tuple[CanonicalCoefficientComparison, str] | None:
+    """Apply a pinned Ec partner-packaging rule for one coefficient sector."""
 
-    This is deliberately an *existence* diagnostic, not a sign-pinned proof.
-    Empirically the matching phase and duplicate-leg symmetry vary by
-    coefficient (and even between conjugate sides for ``alphaEcudqqtwo``), so
-    they cannot yet be derived from the operator class. Searching over those
-    choices documents that a packaging match exists, but the row must remain
-    ``UNRESOLVED_CC_PACKAGING`` rather than ``MATCH_MODULO_CC_PACKAGING`` or
-    ``EXACT_MATCH``.
-    """
+    reference_key = _name_key(reference.fields)
+    rule = _EC_PARTNER_PACKAGING_RULES.get((reference_key, coefficient))
+    if rule is None:
+        return None
 
-    target_key = _bar_insensitive_field_key(reference.fields)
     candidates = [
         vertex
         for vertex in local_vertices
-        if vertex.key != _name_key(reference.fields)
-        and _bar_insensitive_field_key(vertex.local_names) == target_key
+        if vertex.key == rule.partner_key
         and coefficient in dict(vertex.head_counts)
     ]
-    for candidate in candidates:
-        candidate_orders = _charge_conjugation_candidate_orders(
-            reference.fields,
-            candidate.local_names,
-        )
-        if not candidate_orders:
-            continue
-        for antisymmetric_duplicates in (False, True):
-            local_rule = _candidate_order_rule_sum(
-                lagrangian=lagrangian,
-                field_map=field_map,
-                reference_fields=reference.fields,
-                candidate_orders=candidate_orders,
-                antisymmetric_duplicates=antisymmetric_duplicates,
-            )
-            local_report = _canonical_report_for_coefficient_head(
-                local_rule,
-                coefficient=coefficient,
-                external_indices=external_indices,
-                max_dummy_permutations=max_dummy_permutations,
-            )
-            for phase in (1, -1):
-                transformed_report = _normalize_ec_charge_conjugation_report(
-                    local_report,
-                    coefficient=coefficient,
-                    external_indices=external_indices,
-                    max_dummy_permutations=max_dummy_permutations,
-                    mode="direct",
-                    phase=phase,
-                )
-                comparison = _coefficient_comparison_from_reports(
-                    coefficient,
-                    transformed_report,
-                    feynrules_report,
-                )
-                if comparison.matches:
-                    duplicate_mode = (
-                        "antisymmetric duplicate-leg sum"
-                        if antisymmetric_duplicates
-                        else "symmetric duplicate-leg sum"
-                    )
-                    return (
-                        f"{coefficient} has an existence match via charge-"
-                        f"conjugation partner `{candidate.key}` using direct "
-                        f"CC packaging, phase {phase:+d}, and {duplicate_mode} "
-                        "(phase/symmetry searched, not derived)."
-                    )
-    return None
+    if len(candidates) != 1:
+        return None
+
+    candidate = candidates[0]
+    candidate_orders = _charge_conjugation_candidate_orders(
+        reference.fields,
+        candidate.local_names,
+    )
+    if not candidate_orders:
+        return None
+
+    local_rule = _candidate_order_rule_sum(
+        lagrangian=lagrangian,
+        field_map=field_map,
+        reference_fields=reference.fields,
+        candidate_orders=candidate_orders,
+        antisymmetric_duplicates=rule.antisymmetric_duplicates,
+    )
+    local_report = _canonical_report_for_coefficient_head(
+        local_rule,
+        coefficient=coefficient,
+        external_indices=external_indices,
+        max_dummy_permutations=max_dummy_permutations,
+    )
+    transformed_report = _normalize_ec_charge_conjugation_report(
+        local_report,
+        coefficient=coefficient,
+        external_indices=external_indices,
+        max_dummy_permutations=max_dummy_permutations,
+        mode="direct",
+        phase=rule.phase,
+    )
+    comparison = _coefficient_comparison_from_reports(
+        coefficient,
+        transformed_report,
+        feynrules_report,
+    )
+    if not comparison.matches:
+        return None
+
+    duplicate_mode = (
+        "antisymmetric duplicate-leg sum"
+        if rule.antisymmetric_duplicates
+        else "symmetric duplicate-leg sum"
+    )
+    return (
+        comparison,
+        (
+            f"{coefficient} matched via pinned charge-conjugation partner "
+            f"`{candidate.key}` using direct CC packaging, phase {rule.phase:+d}, "
+            f"and {duplicate_mode} ({rule.source})."
+        ),
+    )
 
 
 
@@ -2218,10 +2337,8 @@ def _fermion_exact_symbolic_row(
             external_indices=external_indices,
             max_dummy_permutations=2_000_000,
         )
-        # Existence probe only: never splice a searched packaging match into
-        # ``comparisons``. Direct same-signature equality stays exact; a
-        # packaging-only existence match is graded ``UNRESOLVED_CC_PACKAGING``.
-        partner_details = []
+        pinned_partner_details = []
+        unresolved_ec = []
         mismatched_ec = [
             coefficient
             for coefficient, comparison in comparisons.items()
@@ -2236,7 +2353,7 @@ def _fermion_exact_symbolic_row(
                     external_indices=external_indices,
                     max_dummy_permutations=2_000_000,
                 )
-                detail = _ec_partner_existence_probe(
+                partner_match = _ec_partner_packaging_comparison(
                     reference=reference,
                     coefficient=coefficient,
                     feynrules_report=feynrules_report,
@@ -2246,8 +2363,11 @@ def _fermion_exact_symbolic_row(
                     external_indices=external_indices,
                     max_dummy_permutations=2_000_000,
                 )
-                if detail is not None:
-                    partner_details.append(detail)
+                if partner_match is None:
+                    unresolved_ec.append(coefficient)
+                    continue
+                comparisons[coefficient], detail = partner_match
+                pinned_partner_details.append(detail)
     except Exception as exc:  # pragma: no cover - reported in JSON/Markdown.
         return {
             "family": family,
@@ -2256,6 +2376,21 @@ def _fermion_exact_symbolic_row(
         }
 
     if all(comparison.matches for comparison in comparisons.values()):
+        if pinned_partner_details:
+            return {
+                "family": family,
+                "status": "MATCH_MODULO_CC_PACKAGING",
+                "detail": (
+                    "Canonical tensor-monomial maps agree after pinned Ec "
+                    "charge-conjugation partner packaging for "
+                    f"{len(pinned_partner_details)} coefficient sector(s). "
+                    "No phase or duplicate-leg symmetry was searched at "
+                    "acceptance time: each transform came from the explicit "
+                    "Ec packaging rule table. "
+                    + " ".join(pinned_partner_details)
+                    + f" Raw head-count status was {head_count_status}."
+                ),
+            }
         return {
             "family": family,
             "status": "EXACT_MATCH",
@@ -2272,30 +2407,20 @@ def _fermion_exact_symbolic_row(
         if not comparison.matches
     )
     if (
-        partner_details
+        unresolved_ec
         and mismatched
         and all(coefficient.startswith("alphaEc") for coefficient in mismatched)
-        and all(
-            any(detail.startswith(f"{coefficient} ") for detail in partner_details)
-            for coefficient in mismatched
-        )
     ):
-        # Every mismatched sector is an Ec coefficient for which a packaging
-        # existence match was found. Phase/symmetry were searched, not derived,
-        # so this is unresolved CC packaging rather than a pinned modulo-CC match.
         return {
             "family": family,
             "status": "UNRESOLVED_CC_PACKAGING",
             "detail": (
                 "Direct same-signature canonical maps disagree for "
-                f"{', '.join(mismatched)}, but each of those `Ec` sectors "
-                "has an existence match under some charge-conjugation "
-                "partner packaging after searching over phase +/- and "
-                "symmetric/antisymmetric duplicate-leg sums. The phase "
-                "and symmetry are not derived from the operator class, so "
-                "this is not a sign-pinned exact proof. "
-                + " ".join(partner_details)
-                + f" (raw head-count status was {head_count_status})."
+                f"{', '.join(mismatched)}. The comparison has no successful "
+                "pinned Ec partner-packaging rule for "
+                f"{', '.join(unresolved_ec)}, so the row remains unresolved "
+                "rather than being accepted through a searched phase/symmetry "
+                f"choice. Raw head-count status was {head_count_status}."
             ),
         }
 
@@ -3256,12 +3381,10 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after "
             "a charge-conjugation packaging transform whose sign/symmetry is "
             "derived (pinned), e.g. the antisymmetrized Weinberg rows; and "
-            "`UNRESOLVED_CC_PACKAGING` means a packaging match exists only "
-            "after searching over phase and duplicate-leg symmetry (the `Ec` "
-            "four-fermion rows), which is an existence match, not a sign-pinned "
-            "proof. The separate canonical tensor-map diagnostic remains the "
-            "gauge-sector per-coefficient map for supported bosonic "
-            "coefficient sectors."
+            "`UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known "
+            "or the pinned transform failed. The separate canonical tensor-map "
+            "diagnostic remains the gauge-sector per-coefficient map for "
+            "supported bosonic coefficient sectors."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -3510,10 +3633,10 @@ def _markdown_report(report: dict[str, object]) -> str:
             "conjugation in the scalar coefficient, and compare canonical "
             "tensor-monomial maps. Statuses are graded honestly: "
             "`EXACT_MATCH` is direct same-signature canonical equality; "
-            "`MATCH_MODULO_CC_PACKAGING` is equality after a charge-conjugation "
-            "packaging transform whose relative sign is derived (Weinberg); "
-            "`UNRESOLVED_CC_PACKAGING` means an `Ec` packaging existence match "
-            "was found only after searching phase/symmetry.",
+            "`MATCH_MODULO_CC_PACKAGING` is equality after a pinned "
+            "charge-conjugation packaging transform (Weinberg or Ec partner "
+            "rows); `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule "
+            "is known or the pinned transform failed.",
             "",
             "| Signature | Status |",
             "| --- | --- |",
@@ -3689,7 +3812,7 @@ def main(argv: list[str] | None = None) -> int:
             "is complete and every supported row is a direct `EXACT_MATCH` "
             "(strict exact symbolic). Use `--allow-cc-packaging` to also accept "
             "pinned `MATCH_MODULO_CC_PACKAGING` rows. Unresolved CC packaging "
-            "existence matches never pass `--check`."
+            "rows never pass `--check`."
         ),
     )
     parser.add_argument(
@@ -3697,8 +3820,8 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help=(
             "With --check, accept pinned `MATCH_MODULO_CC_PACKAGING` rows "
-            "(Weinberg). Does not accept `UNRESOLVED_CC_PACKAGING` existence "
-            "matches."
+            "(Weinberg and pinned Ec partner rows). Does not accept "
+            "`UNRESOLVED_CC_PACKAGING` rows."
         ),
     )
     parser.add_argument(

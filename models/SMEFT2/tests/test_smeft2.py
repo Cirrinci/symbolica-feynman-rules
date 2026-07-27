@@ -206,6 +206,24 @@ def test_smeft2_weinberg_rows_are_pinned_modulo_cc_packaging():
     )
 
 
+def test_smeft2_ec_partner_packaging_rules_are_pinned():
+    rules = smeft2_comparison._EC_PARTNER_PACKAGING_RULES
+    assert rules[("dRbar|eR|lLbar|qL", "alphaEcqedl")].phase == -1
+    assert not rules[
+        ("dRbar|eR|lLbar|qL", "alphaEcqedl")
+    ].antisymmetric_duplicates
+    assert rules[("dRbar|qL|qL|uRbar", "alphaEcudqq")].phase == 1
+    assert rules[("dRbar|qL|qL|uRbar", "alphaEcudqq")].antisymmetric_duplicates
+    assert rules[("dRbar|qL|qL|uRbar", "alphaEcudqqtwo")].phase == 1
+    assert not rules[
+        ("dRbar|qL|qL|uRbar", "alphaEcudqqtwo")
+    ].antisymmetric_duplicates
+    assert rules[("dR|qLbar|qLbar|uR", "alphaEcudqqtwo")].phase == -1
+    assert not rules[
+        ("dR|qLbar|qLbar|uR", "alphaEcudqqtwo")
+    ].antisymmetric_duplicates
+
+
 def test_smeft2_supported_subset_builds_and_compiles():
     bundle = build_smeft_green_bpreserving()
     lagrangian = bundle.model.lagrangian()
@@ -288,8 +306,8 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["exact_symbolic_supported_vertices"] == 184
     assert report["summary"]["exact_symbolic_direct_match_vertices"] == 176
     assert report["summary"]["exact_symbolic_equal_vertices"] == 176
-    assert report["summary"]["cc_packaging_pinned_match_vertices"] == 2
-    assert report["summary"]["cc_packaging_unresolved_vertices"] == 6
+    assert report["summary"]["cc_packaging_pinned_match_vertices"] == 8
+    assert report["summary"]["cc_packaging_unresolved_vertices"] == 0
     assert report["summary"]["exact_symbolic_unequal_vertices"] == 0
     assert report["summary"]["exact_symbolic_missing_local_vertices"] == 0
     assert report["summary"]["exact_symbolic_error_vertices"] == 0
@@ -387,9 +405,9 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert rows_by_key["B|qL|qLbar"]["exact_symbolic_status"] == "EXACT_MATCH"
     assert (
         rows_by_key["dRbar|eR|lLbar|qL"]["exact_symbolic_status"]
-        == "UNRESOLVED_CC_PACKAGING"
+        == "MATCH_MODULO_CC_PACKAGING"
     )
-    assert "existence match" in rows_by_key["dRbar|eR|lLbar|qL"][
+    assert "pinned charge-conjugation partner" in rows_by_key["dRbar|eR|lLbar|qL"][
         "exact_symbolic_detail"
     ]
     assert (

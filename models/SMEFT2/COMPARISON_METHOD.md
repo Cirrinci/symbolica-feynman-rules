@@ -9,10 +9,9 @@ Exact symbolic comparison is graded in three tiers:
 - Reference vertices: `184`
 - Operator-content matches: `184/184`
 - Direct exact symbolic matches (`EXACT_MATCH`): `176/184`
-- Exact modulo pinned CC packaging (`MATCH_MODULO_CC_PACKAGING`): `2/184`
-  (Weinberg; relative minus sign derived from `C` antisymmetry)
-- Unresolved CC packaging (`UNRESOLVED_CC_PACKAGING`): `6/184`
-  (`alphaEc*` four-fermion existence matches; phase/symmetry still searched)
+- Exact modulo pinned CC packaging (`MATCH_MODULO_CC_PACKAGING`): `8/184`
+  (two Weinberg rows plus six pinned `alphaEc*` partner rows)
+- Unresolved CC packaging (`UNRESOLVED_CC_PACKAGING`): `0/184`
 - Exact symbolic unequal vertices: `0`
 - Exact symbolic error vertices: `0`
 - Sector split: `32` bosonic, `131` two-fermion, `21` four-fermion
@@ -20,7 +19,7 @@ Exact symbolic comparison is graded in three tiers:
 Headline form:
 
 ```text
-direct exact: 176/184; modulo pinned CC: 2/184; unresolved CC: 6/184; operator content: 184/184
+direct exact: 176/184; modulo pinned CC: 8/184; unresolved CC: 0/184; operator content: 184/184
 ```
 
 The direct signature accounting remains useful but is not the final criterion.
@@ -41,9 +40,9 @@ The normal gate is:
 .venv/bin/python models/SMEFT2/comparison.py --check
 ```
 
-It requires every supported row to be a direct `EXACT_MATCH`. Pinned Weinberg
-CC packaging can be accepted with `--allow-cc-packaging`. Unresolved `Ec`
-existence matches never pass `--check`.
+It requires every supported row to be a direct `EXACT_MATCH`. Pinned CC
+packaging can be accepted with `--allow-cc-packaging`. Unresolved CC packaging
+rows never pass `--check`.
 
 ## Basis
 
@@ -206,8 +205,8 @@ CC packaging transform, not a direct same-signature `EXACT_MATCH`.
 
 ## Four-Fermion Sector
 
-Result: `15/21` direct `EXACT_MATCH`, and `6/21`
-`UNRESOLVED_CC_PACKAGING` (`alphaEc*` partner rows).
+Result: `15/21` direct `EXACT_MATCH`, plus `6/21`
+`MATCH_MODULO_CC_PACKAGING` (`alphaEc*` partner rows with pinned rules).
 
 The non-`Ec` four-fermion rows needed ordinary source corrections, not relaxed
 comparison rules. The weak-triplet currents in `alphaOqq3` and `alphaOlq3`
@@ -221,27 +220,24 @@ keeps explicit `dirac_C` tensors in closed bilinears, while FeynRules exports
 the same charge-conjugated structures through its `CC[...]` processing.
 
 Same-signature `Ec` sectors may use a crossed charge-conjugation transform
-with a fixed crossing phase. Partner-signature `Ec` rows, however, currently
-only have an *existence* probe: the comparison can find some partner order,
-phase `+/-`, and symmetric/antisymmetric duplicate-leg sum that makes the
-canonical maps agree. Empirically those choices vary by coefficient head (and
-even between conjugate sides for `alphaEcudqqtwo`), so they are not yet
-derived from the operator class. Those six rows are therefore graded
-`UNRESOLVED_CC_PACKAGING`, not `EXACT_MATCH` and not
-`MATCH_MODULO_CC_PACKAGING`.
+with a fixed crossing phase. Partner-signature `Ec` rows use a pinned rule
+table keyed by reference signature and coefficient head. Each rule specifies
+exactly one FeynPy partner signature, one phase, and one duplicate-leg symmetry
+mode. The comparison no longer searches over phase or over symmetric versus
+antisymmetric duplicate-leg sums at acceptance time.
 
 | Reference packaging | Coefficient heads | Current grade |
 | --- | --- | --- |
-| `dRbar|eR|lLbar|qL` | `alphaEcqedl`, `alphaEcqedlthree` | unresolved existence |
-| `dR|eRbar|lL|qLbar` | `alphaEcqedl`, `alphaEcqedlthree` | unresolved existence |
-| `eRbar|lL|qL|uRbar` | `alphaEcuelq`, `alphaEcuelqtwo` | unresolved existence |
-| `eR|lLbar|qLbar|uR` | `alphaEcuelq`, `alphaEcuelqtwo` | unresolved existence |
-| `dRbar|qL|qL|uRbar` | `alphaEcudqq`, `alphaEcudqqtwo` | unresolved existence |
-| `dR|qLbar|qLbar|uR` | `alphaEcudqq`, `alphaEcudqqtwo` | unresolved existence |
+| `dRbar|eR|lLbar|qL` | `alphaEcqedl`, `alphaEcqedlthree` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
+| `dR|eRbar|lL|qLbar` | `alphaEcqedl`, `alphaEcqedlthree` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
+| `eRbar|lL|qL|uRbar` | `alphaEcuelq`, `alphaEcuelqtwo` | pinned modulo CC, phase `+1`, symmetric duplicate sum |
+| `eR|lLbar|qLbar|uR` | `alphaEcuelq`, `alphaEcuelqtwo` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
+| `dRbar|qL|qL|uRbar` | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
+| `dR|qLbar|qLbar|uR` | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
 
-The next step for these rows is to derive phase and duplicate-leg symmetry from
-the operator class, then verify a single pinned transform. Until that is done,
-they must not share the same headline as direct exact equality.
+If a listed pinned transform fails canonical-map equality, the row is not
+accepted. If no pinned rule exists for a future `Ec` mismatch, it is reported as
+`UNRESOLVED_CC_PACKAGING`.
 
 ## Charge Conjugation Usage
 
@@ -257,10 +253,10 @@ comparing the same-chirality FeynRules row against the antisymmetrized mixed
 FeynPy packaging. The relative minus sign is derived from `C` antisymmetry.
 These rows are `MATCH_MODULO_CC_PACKAGING`.
 
-Third, the `Ec` four-fermion partner rows currently have only an existence
-probe over phase and duplicate-leg symmetry. That is useful diagnostics, but
-until phase/symmetry are derived from the operator class those rows remain
-`UNRESOLVED_CC_PACKAGING`.
+Third, the `Ec` four-fermion partner rows use the pinned rule table described
+above. The table makes the partner signature, phase, and duplicate-leg
+symmetry explicit; the row passes only if that single transform gives exact
+canonical-map equality.
 
 ## Meaning of `--check`
 
@@ -278,7 +274,6 @@ Raw coefficient-head count mismatches are not part of the normal gate because
 they are expansion diagnostics. They become part of the gate only with
 `--strict-counts`.
 
-The current state fails the default `--check` gate because of the two pinned
-Weinberg CC rows and the six unresolved `Ec` existence matches. With
-`--allow-cc-packaging`, Weinberg is accepted but the unresolved `Ec` rows still
-fail.
+The current state fails the default `--check` gate because eight rows are
+modulo pinned CC packaging rather than direct `EXACT_MATCH`. With
+`--allow-cc-packaging`, those pinned packaging rows are accepted.

@@ -2,7 +2,7 @@
   "generated_on": "2026-07-27",
   "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
   "local_model": "models/SMEFT2/SMEFT2.py",
-  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no row-specific packaging assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after a charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means a packaging match exists only after searching over phase and duplicate-leg symmetry (the `Ec` four-fermion rows), which is an existence match, not a sign-pinned proof. The separate canonical tensor-map diagnostic remains the gauge-sector per-coefficient map for supported bosonic coefficient sectors.",
+  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no row-specific packaging assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after a charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed. The separate canonical tensor-map diagnostic remains the gauge-sector per-coefficient map for supported bosonic coefficient sectors.",
   "summary": {
     "reference_vertex_count": 184,
     "feynpy_signature_count_3_to_6": 192,
@@ -36,15 +36,14 @@
     "exact_symbolic_supported_vertices": 184,
     "exact_symbolic_equal_vertices": 176,
     "exact_symbolic_direct_match_vertices": 176,
-    "cc_packaging_pinned_match_vertices": 2,
-    "cc_packaging_unresolved_vertices": 6,
+    "cc_packaging_pinned_match_vertices": 8,
+    "cc_packaging_unresolved_vertices": 0,
     "exact_symbolic_unequal_vertices": 0,
     "exact_symbolic_missing_local_vertices": 0,
     "exact_symbolic_error_vertices": 0,
     "exact_symbolic_status_counts": {
       "EXACT_MATCH": 176,
-      "MATCH_MODULO_CC_PACKAGING": 2,
-      "UNRESOLVED_CC_PACKAGING": 6
+      "MATCH_MODULO_CC_PACKAGING": 8
     },
     "exact_symbolic_family_counts": {
       "BOSONIC": 32,
@@ -17467,8 +17466,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "UNRESOLVED_CC_PACKAGING",
-      "exact_symbolic_detail": "Direct same-signature canonical maps disagree for alphaEcqedl, alphaEcqedlthree, but each of those `Ec` sectors has an existence match under some charge-conjugation partner packaging after searching over phase +/- and symmetric/antisymmetric duplicate-leg sums. The phase and symmetry are not derived from the operator class, so this is not a sign-pinned exact proof. alphaEcqedl has an existence match via charge-conjugation partner `dRbar|eR|lL|qLbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). alphaEcqedlthree has an existence match via charge-conjugation partner `dRbar|eR|lL|qLbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). (raw head-count status was COUNT_MISMATCH).",
+      "exact_symbolic_status": "MATCH_MODULO_CC_PACKAGING",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree after pinned Ec charge-conjugation partner packaging for 2 coefficient sector(s). No phase or duplicate-leg symmetry was searched at acceptance time: each transform came from the explicit Ec packaging rule table. alphaEcqedl matched via pinned charge-conjugation partner `dRbar|eR|lL|qLbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (LEvCCLRRL alphaEcqedl + HC; one C-arm transposition). alphaEcqedlthree matched via pinned charge-conjugation partner `dRbar|eR|lL|qLbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (LEvCCLRRL alphaEcqedlthree + HC; one C-arm transposition). Raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -17575,8 +17574,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "UNRESOLVED_CC_PACKAGING",
-      "exact_symbolic_detail": "Direct same-signature canonical maps disagree for alphaEcudqq, alphaEcudqqtwo, but each of those `Ec` sectors has an existence match under some charge-conjugation partner packaging after searching over phase +/- and symmetric/antisymmetric duplicate-leg sums. The phase and symmetry are not derived from the operator class, so this is not a sign-pinned exact proof. alphaEcudqq has an existence match via charge-conjugation partner `dRbar|qL|qLbar|uR` using direct CC packaging, phase +1, and antisymmetric duplicate-leg sum (phase/symmetry searched, not derived). alphaEcudqqtwo has an existence match via charge-conjugation partner `dRbar|qL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). (raw head-count status was COUNT_MISMATCH).",
+      "exact_symbolic_status": "MATCH_MODULO_CC_PACKAGING",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree after pinned Ec charge-conjugation partner packaging for 2 coefficient sector(s). No phase or duplicate-leg symmetry was searched at acceptance time: each transform came from the explicit Ec packaging rule table. alphaEcudqq matched via pinned charge-conjugation partner `dRbar|qL|qLbar|uR` using direct CC packaging, phase +1, and antisymmetric duplicate-leg sum (LEvCCRRLL alphaEcudqq; duplicate qL assignments antisymmetrized). alphaEcudqqtwo matched via pinned charge-conjugation partner `dRbar|qL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum (LEvCCRRLL alphaEcudqqtwo; gamma2 structure fixes symmetric duplicate sum). Raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -18156,8 +18155,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "UNRESOLVED_CC_PACKAGING",
-      "exact_symbolic_detail": "Direct same-signature canonical maps disagree for alphaEcqedl, alphaEcqedlthree, but each of those `Ec` sectors has an existence match under some charge-conjugation partner packaging after searching over phase +/- and symmetric/antisymmetric duplicate-leg sums. The phase and symmetry are not derived from the operator class, so this is not a sign-pinned exact proof. alphaEcqedl has an existence match via charge-conjugation partner `dR|eRbar|lLbar|qL` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). alphaEcqedlthree has an existence match via charge-conjugation partner `dR|eRbar|lLbar|qL` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). (raw head-count status was COUNT_MISMATCH).",
+      "exact_symbolic_status": "MATCH_MODULO_CC_PACKAGING",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree after pinned Ec charge-conjugation partner packaging for 2 coefficient sector(s). No phase or duplicate-leg symmetry was searched at acceptance time: each transform came from the explicit Ec packaging rule table. alphaEcqedl matched via pinned charge-conjugation partner `dR|eRbar|lLbar|qL` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (Hermitian conjugate of LEvCCLRRL alphaEcqedl). alphaEcqedlthree matched via pinned charge-conjugation partner `dR|eRbar|lLbar|qL` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (Hermitian conjugate of LEvCCLRRL alphaEcqedlthree). Raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [
         "alphaEcqedl",
         "alphaEcqedlthree"
@@ -18264,8 +18263,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "UNRESOLVED_CC_PACKAGING",
-      "exact_symbolic_detail": "Direct same-signature canonical maps disagree for alphaEcudqq, alphaEcudqqtwo, but each of those `Ec` sectors has an existence match under some charge-conjugation partner packaging after searching over phase +/- and symmetric/antisymmetric duplicate-leg sums. The phase and symmetry are not derived from the operator class, so this is not a sign-pinned exact proof. alphaEcudqq has an existence match via charge-conjugation partner `dR|qL|qLbar|uRbar` using direct CC packaging, phase +1, and antisymmetric duplicate-leg sum (phase/symmetry searched, not derived). alphaEcudqqtwo has an existence match via charge-conjugation partner `dR|qL|qLbar|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). (raw head-count status was COUNT_MISMATCH).",
+      "exact_symbolic_status": "MATCH_MODULO_CC_PACKAGING",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree after pinned Ec charge-conjugation partner packaging for 2 coefficient sector(s). No phase or duplicate-leg symmetry was searched at acceptance time: each transform came from the explicit Ec packaging rule table. alphaEcudqq matched via pinned charge-conjugation partner `dR|qL|qLbar|uRbar` using direct CC packaging, phase +1, and antisymmetric duplicate-leg sum (Hermitian conjugate of LEvCCRRLL alphaEcudqq). alphaEcudqqtwo matched via pinned charge-conjugation partner `dR|qL|qLbar|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (Hermitian conjugate of LEvCCRRLL alphaEcudqqtwo). Raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [
         "alphaEcudqq",
         "alphaEcudqqtwo"
@@ -18372,8 +18371,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "UNRESOLVED_CC_PACKAGING",
-      "exact_symbolic_detail": "Direct same-signature canonical maps disagree for alphaEcuelq, alphaEcuelqtwo, but each of those `Ec` sectors has an existence match under some charge-conjugation partner packaging after searching over phase +/- and symmetric/antisymmetric duplicate-leg sums. The phase and symmetry are not derived from the operator class, so this is not a sign-pinned exact proof. alphaEcuelq has an existence match via charge-conjugation partner `eRbar|lL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). alphaEcuelqtwo has an existence match via charge-conjugation partner `eRbar|lL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). (raw head-count status was COUNT_MISMATCH).",
+      "exact_symbolic_status": "MATCH_MODULO_CC_PACKAGING",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree after pinned Ec charge-conjugation partner packaging for 2 coefficient sector(s). No phase or duplicate-leg symmetry was searched at acceptance time: each transform came from the explicit Ec packaging rule table. alphaEcuelq matched via pinned charge-conjugation partner `eRbar|lL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum (LEvCCRRLL alphaEcuelq direct packaging). alphaEcuelqtwo matched via pinned charge-conjugation partner `eRbar|lL|qLbar|uR` using direct CC packaging, phase +1, and symmetric duplicate-leg sum (LEvCCRRLL alphaEcuelqtwo direct packaging). Raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"
@@ -18812,8 +18811,8 @@
       "canonical_map_coefficients": {},
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
-      "exact_symbolic_status": "UNRESOLVED_CC_PACKAGING",
-      "exact_symbolic_detail": "Direct same-signature canonical maps disagree for alphaEcuelq, alphaEcuelqtwo, but each of those `Ec` sectors has an existence match under some charge-conjugation partner packaging after searching over phase +/- and symmetric/antisymmetric duplicate-leg sums. The phase and symmetry are not derived from the operator class, so this is not a sign-pinned exact proof. alphaEcuelq has an existence match via charge-conjugation partner `eR|lLbar|qL|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). alphaEcuelqtwo has an existence match via charge-conjugation partner `eR|lLbar|qL|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (phase/symmetry searched, not derived). (raw head-count status was COUNT_MISMATCH).",
+      "exact_symbolic_status": "MATCH_MODULO_CC_PACKAGING",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree after pinned Ec charge-conjugation partner packaging for 2 coefficient sector(s). No phase or duplicate-leg symmetry was searched at acceptance time: each transform came from the explicit Ec packaging rule table. alphaEcuelq matched via pinned charge-conjugation partner `eR|lLbar|qL|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (Hermitian conjugate of LEvCCRRLL alphaEcuelq). alphaEcuelqtwo matched via pinned charge-conjugation partner `eR|lLbar|qL|uRbar` using direct CC packaging, phase -1, and symmetric duplicate-leg sum (Hermitian conjugate of LEvCCRRLL alphaEcuelqtwo). Raw head-count status was COUNT_MISMATCH.",
       "feynrules_extra_heads": [
         "alphaEcuelq",
         "alphaEcuelqtwo"

@@ -4,7 +4,7 @@ Generated on `2026-07-27` by `models/SMEFT2/comparison.py`.
 
 ## Scope
 
-Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no row-specific packaging assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after a charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means a packaging match exists only after searching over phase and duplicate-leg symmetry (the `Ec` four-fermion rows), which is an existence match, not a sign-pinned proof. The separate canonical tensor-map diagnostic remains the gauge-sector per-coefficient map for supported bosonic coefficient sectors.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no row-specific packaging assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after a charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed. The separate canonical tensor-map diagnostic remains the gauge-sector per-coefficient map for supported bosonic coefficient sectors.
 
 | Item | Value |
 | --- | ---: |
@@ -25,11 +25,11 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Shared raw head-count mismatches with unexplained deltas | 73 |
 | Exact symbolic supported vertices | 184 |
 | Direct exact symbolic matches | 176 |
-| Exact modulo pinned CC packaging | 2 |
-| Unresolved CC packaging (existence only) | 6 |
+| Exact modulo pinned CC packaging | 8 |
+| Unresolved CC packaging (existence only) | 0 |
 | Exact symbolic unequal vertices | 0 |
 | Exact symbolic error vertices | 0 |
-| Headline split | direct exact: 176/184; modulo pinned CC: 2/184; unresolved CC: 6/184; operator content: 184/184 |
+| Headline split | direct exact: 176/184; modulo pinned CC: 8/184; unresolved CC: 0/184; operator content: 184/184 |
 | Compatibility alias `exact_symbolic_equal_vertices` (direct only) | 176 |
 | Canonical tensor-map supported vertices | 32 |
 | Canonical tensor-map equal vertices | 32 |
@@ -62,7 +62,7 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 
 ## Exact Symbolic Comparison
 
-This layer is enabled for every FeynRules reference row. Bosonic rows use the native bosonic comparator. Fermion rows parse the full FeynRules tensor rule into native tensors, filter terms by indexed Wilson-coefficient head, keep flavor order and complex conjugation in the scalar coefficient, and compare canonical tensor-monomial maps. Statuses are graded honestly: `EXACT_MATCH` is direct same-signature canonical equality; `MATCH_MODULO_CC_PACKAGING` is equality after a charge-conjugation packaging transform whose relative sign is derived (Weinberg); `UNRESOLVED_CC_PACKAGING` means an `Ec` packaging existence match was found only after searching phase/symmetry.
+This layer is enabled for every FeynRules reference row. Bosonic rows use the native bosonic comparator. Fermion rows parse the full FeynRules tensor rule into native tensors, filter terms by indexed Wilson-coefficient head, keep flavor order and complex conjugation in the scalar coefficient, and compare canonical tensor-monomial maps. Statuses are graded honestly: `EXACT_MATCH` is direct same-signature canonical equality; `MATCH_MODULO_CC_PACKAGING` is equality after a pinned charge-conjugation packaging transform (Weinberg or Ec partner rows); `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed.
 
 | Signature | Status |
 | --- | --- |
@@ -229,21 +229,21 @@ This layer is enabled for every FeynRules reference row. Bosonic rows use the na
 | `Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
 | `Wi|lL|lLbar` | `EXACT_MATCH` |
 | `Wi|qL|qLbar` | `EXACT_MATCH` |
-| `dRbar|eR|lLbar|qL` | `UNRESOLVED_CC_PACKAGING` |
-| `dRbar|qL|qL|uRbar` | `UNRESOLVED_CC_PACKAGING` |
+| `dRbar|eR|lLbar|qL` | `MATCH_MODULO_CC_PACKAGING` |
+| `dRbar|qL|qL|uRbar` | `MATCH_MODULO_CC_PACKAGING` |
 | `dR|dRbar|eR|eRbar` | `EXACT_MATCH` |
 | `dR|dRbar|lL|lLbar` | `EXACT_MATCH` |
 | `dR|dRbar|qL|qLbar` | `EXACT_MATCH` |
 | `dR|dRbar|uR|uRbar` | `EXACT_MATCH` |
 | `dR|dR|dRbar|dRbar` | `EXACT_MATCH` |
-| `dR|eRbar|lL|qLbar` | `UNRESOLVED_CC_PACKAGING` |
-| `dR|qLbar|qLbar|uR` | `UNRESOLVED_CC_PACKAGING` |
-| `eRbar|lL|qL|uRbar` | `UNRESOLVED_CC_PACKAGING` |
+| `dR|eRbar|lL|qLbar` | `MATCH_MODULO_CC_PACKAGING` |
+| `dR|qLbar|qLbar|uR` | `MATCH_MODULO_CC_PACKAGING` |
+| `eRbar|lL|qL|uRbar` | `MATCH_MODULO_CC_PACKAGING` |
 | `eR|eRbar|lL|lLbar` | `EXACT_MATCH` |
 | `eR|eRbar|qL|qLbar` | `EXACT_MATCH` |
 | `eR|eRbar|uR|uRbar` | `EXACT_MATCH` |
 | `eR|eR|eRbar|eRbar` | `EXACT_MATCH` |
-| `eR|lLbar|qLbar|uR` | `UNRESOLVED_CC_PACKAGING` |
+| `eR|lLbar|qLbar|uR` | `MATCH_MODULO_CC_PACKAGING` |
 | `lL|lLbar|qL|qLbar` | `EXACT_MATCH` |
 | `lL|lLbar|uR|uRbar` | `EXACT_MATCH` |
 | `lL|lL|lLbar|lLbar` | `EXACT_MATCH` |

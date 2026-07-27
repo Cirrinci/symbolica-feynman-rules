@@ -103,11 +103,9 @@ normalizing field names to the FeynRules convention. Exact symbolic comparison
 is graded honestly across all 184 reference rows:
 
 - `176/184` direct `EXACT_MATCH` (same-signature canonical tensor maps)
-- `2/184` `MATCH_MODULO_CC_PACKAGING` (Weinberg; relative minus sign derived
-  from the antisymmetry of the charge-conjugation matrix)
-- `6/184` `UNRESOLVED_CC_PACKAGING` (`alphaEc*` four-fermion rows; a packaging
-  existence match can be found, but phase/symmetry are still searched rather
-  than derived from the operator class)
+- `8/184` `MATCH_MODULO_CC_PACKAGING` (two Weinberg rows plus six pinned
+  `alphaEc*` four-fermion partner rows)
+- `0/184` `UNRESOLVED_CC_PACKAGING`
 
 Operator-content coverage remains `184/184` including the charge-conjugation
 overlay. Raw head-count deltas remain visible diagnostics for expansion form.
@@ -118,8 +116,9 @@ The default gate requires direct exact matches only:
 .venv/bin/python models/SMEFT2/comparison.py --check
 ```
 
-Pinned Weinberg CC packaging can be accepted explicitly with
-`--allow-cc-packaging`. Unresolved `Ec` existence matches never pass `--check`.
+Pinned CC packaging can be accepted explicitly with `--allow-cc-packaging`.
+Unresolved CC packaging rows never pass `--check`.
+
 ## Check
 
 ```bash
