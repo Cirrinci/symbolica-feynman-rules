@@ -1,17 +1,11 @@
-"""Core regression tests for labelled covariant-derivative lowering.
-
-The compact Dirac kinetic-core path regenerates identity labels. When a
-monomial already carries explicit flavor (or other representation) labels that
-are tied to an indexed coefficient, that path would disconnect the coefficient
-from the fields. Labelled Dirac CovD monomials must therefore take the generic
-CovD lowering path so the user-written labels survive compilation.
-"""
+"""Core regression tests for labelled covariant-derivative lowering."""
 
 from fractions import Fraction
 
 from symbolica import S
 
 from feynpy import (
+    COLOR_FUND_INDEX,
     LORENTZ_INDEX,
     SPINOR_INDEX,
     CovD,
@@ -21,6 +15,7 @@ from feynpy import (
     Model,
     flavor_index,
 )
+from feynpy.lowering import _analyze_declared_source_term
 from symbolic.vertex_engine import I
 
 
@@ -56,16 +51,24 @@ def test_labelled_dirac_covd_preserves_distinct_generation_labels():
         symbol=S("A"),
         indices=(LORENTZ_INDEX,),
     )
+    declaration = (
+        I
+        * alpha(f1, f2)
+        * fermion.bar(index_labels={generation.kind: f1})
+        * Gamma(mu)
+        * CovD(fermion(index_labels={generation.kind: f2}), mu)
+    )
+    analyzed = _analyze_declared_source_term(declaration)
+    assert analyzed is not None
+    assert analyzed.covariant_core is not None
+    assert analyzed.generic_covariant_monomial is None
+    assert analyzed.covariant_core.left_labels == {generation.kind: f1}
+    assert analyzed.covariant_core.right_labels == {generation.kind: f2}
+
     model = Model(
         gauge_groups=(_u1_model(fermion=fermion, photon=photon),),
         fields=(fermion, photon),
-        lagrangian_decl=(
-            I
-            * alpha(f1, f2)
-            * fermion.bar(index_labels={generation.kind: f1})
-            * Gamma(mu)
-            * CovD(fermion(index_labels={generation.kind: f2}), mu)
-        ),
+        lagrangian_decl=declaration,
     )
 
     terms = model.lagrangian().terms
@@ -80,6 +83,93 @@ def test_labelled_dirac_covd_preserves_distinct_generation_labels():
         coupling_text = str(term.coupling)
         assert "alphaK" in coupling_text
         assert "f1" in coupling_text and "f2" in coupling_text
+
+
+def test_one_sided_labelled_dirac_covd_stays_on_generic_path():
+    generation = flavor_index("Generation", 3, prefix="f")
+    f1, mu = S("f1"), S("mu")
+    alpha = S("alphaK")
+
+    fermion = Field(
+        "psi",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("psi"),
+        conjugate_symbol=S("psibar"),
+        indices=(SPINOR_INDEX, generation),
+        quantum_numbers={"Q": S("qPsi")},
+    )
+    declaration = (
+        I
+        * alpha(f1)
+        * fermion.bar(index_labels={generation.kind: f1})
+        * Gamma(mu)
+        * CovD(fermion, mu)
+    )
+
+    analyzed = _analyze_declared_source_term(declaration)
+    assert analyzed is not None
+    assert analyzed.covariant_core is None
+    assert analyzed.generic_covariant_monomial is declaration
+
+
+def test_partly_labelled_dirac_covd_with_unlabelled_matter_slot_stays_generic():
+    generation = flavor_index("Generation", 3, prefix="f")
+    f1, f2, mu = S("f1"), S("f2"), S("mu")
+    alpha = S("alphaK")
+
+    fermion = Field(
+        "q",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, generation),
+        quantum_numbers={"Q": S("qPsi")},
+    )
+    declaration = (
+        I
+        * alpha(f1, f2)
+        * fermion.bar(index_labels={generation.kind: f1})
+        * Gamma(mu)
+        * CovD(fermion(index_labels={generation.kind: f2}), mu)
+    )
+
+    analyzed = _analyze_declared_source_term(declaration)
+    assert analyzed is not None
+    assert analyzed.covariant_core is None
+    assert analyzed.generic_covariant_monomial is declaration
+
+
+def test_labelled_dirac_covd_with_explicit_nonflavor_slot_stays_generic():
+    generation = flavor_index("Generation", 3, prefix="f")
+    f1, f2, c1, mu = S("f1"), S("f2"), S("c1"), S("mu")
+    alpha = S("alphaK")
+
+    fermion = Field(
+        "q",
+        spin=Fraction(1, 2),
+        self_conjugate=False,
+        symbol=S("q"),
+        conjugate_symbol=S("qbar"),
+        indices=(SPINOR_INDEX, COLOR_FUND_INDEX, generation),
+        quantum_numbers={"Q": S("qPsi")},
+    )
+    declaration = (
+        I
+        * alpha(f1, f2)
+        * fermion.bar(index_labels={COLOR_FUND_INDEX.kind: c1, generation.kind: f1})
+        * Gamma(mu)
+        * CovD(
+            fermion(index_labels={COLOR_FUND_INDEX.kind: c1, generation.kind: f2}),
+            mu,
+        )
+    )
+
+    analyzed = _analyze_declared_source_term(declaration)
+    assert analyzed is not None
+    assert analyzed.covariant_core is None
+    assert analyzed.generic_covariant_monomial is declaration
 
 
 def test_unlabelled_dirac_covd_still_compiles_via_compact_core():
