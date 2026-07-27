@@ -235,6 +235,19 @@ antisymmetric duplicate-leg sums at acceptance time.
 | `dRbar|qL|qL|uRbar` | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
 | `dR|qLbar|qLbar|uR` | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
 
+The pinned rule table follows directly from the source operators in
+`LEvCCLRRL` and `LEvCCRRLL`. In each case the comparison takes the FeynPy-only
+bar-flipped partner, rewrites the two explicit `dirac_C` arms into the
+FeynRules `CC[...]` bilinear packaging, and then checks exact canonical-map
+equality. The accepted rule is not chosen by trying alternatives.
+
+| Coefficient class | Source structure | Pinned phase | Duplicate-leg rule |
+| --- | --- | ---: | --- |
+| `alphaEcqedl`, `alphaEcqedlthree` | `LEvCCLRRL`; one external lepton/quark arm is moved from FeynPy's explicit `C` packaging to FeynRules `CC[...]` packaging | `-1` for both direct and HC rows | no identical open field assignment; symmetric sum is the unique direct partner sum |
+| `alphaEcuelq`, `alphaEcuelqtwo` | `LEvCCRRLL`; direct row follows the source ordering, HC row reverses the charge-conjugated packaging orientation | `+1` for direct rows, `-1` for HC rows | no identical open field assignment; symmetric sum is the unique direct partner sum |
+| `alphaEcudqq` | `LEvCCRRLL`; the two external `qL` assignments are exchanged under the partner map | `+1` for direct and HC rows | antisymmetric duplicate-leg sum from exchanging the two identical fermion assignments |
+| `alphaEcudqqtwo` | `LEvCCRRLL`; same duplicate `qL` content but with the `gamma2` chain fixing the opposite exchange parity | `+1` direct, `-1` HC | symmetric duplicate-leg sum |
+
 If a listed pinned transform fails canonical-map equality, the row is not
 accepted. If no pinned rule exists for a future `Ec` mismatch, it is reported as
 `UNRESOLVED_CC_PACKAGING`.
