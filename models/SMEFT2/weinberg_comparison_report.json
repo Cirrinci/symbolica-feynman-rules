@@ -1,0 +1,75 @@
+{
+  "generated_on": "2026-07-28",
+  "comparison_level": "Weinberg-only sidecar comparison. FeynPy mixed charge-conjugation orders are reconstructed as first - second in the common same-chirality external-leg order, then compared directly to the FeynRules lL lL Phi Phi and lLbar lLbar Phibar Phibar rows in a compact PL/PR fermion-flow basis.",
+  "summary": {
+    "reference_vertices": 2,
+    "direct_matches": 2,
+    "wrong_sign_matches": 0,
+    "coefficient_checks": 4,
+    "coefficient_matches": 4
+  },
+  "vertices": [
+    {
+      "key": "Phi|Phi|lL|lL",
+      "fields": [
+        "lL",
+        "lL",
+        "Phi",
+        "Phi"
+      ],
+      "matches": true,
+      "wrong_sign_matches": false,
+      "coefficient_checks": [
+        {
+          "coefficient": "alphaWeinberg(f1,f2)",
+          "matches": true,
+          "feynpy_coefficient": "1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynrules_coefficient": "1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "difference": "0"
+        },
+        {
+          "coefficient": "alphaWeinberg(f2,f1)",
+          "matches": true,
+          "feynpy_coefficient": "1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynrules_coefficient": "1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "difference": "0"
+        }
+      ],
+      "difference": "0",
+      "wrong_sign_difference": "-2\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+-2\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "feynpy_rule": "1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f1,python::{}::f2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f1,python::{}::f2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "feynrules_rule": "1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f1,python::{}::f2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f1,python::{}::f2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+    },
+    {
+      "key": "Phibar|Phibar|lLbar|lLbar",
+      "fields": [
+        "lLbar",
+        "lLbar",
+        "Phibar",
+        "Phibar"
+      ],
+      "matches": true,
+      "wrong_sign_matches": false,
+      "coefficient_checks": [
+        {
+          "coefficient": "conj(alphaWeinberg(f1,f2))",
+          "matches": true,
+          "feynpy_coefficient": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynrules_coefficient": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "difference": "0"
+        },
+        {
+          "coefficient": "conj(alphaWeinberg(f2,f1))",
+          "matches": true,
+          "feynpy_coefficient": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynrules_coefficient": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "difference": "0"
+        }
+      ],
+      "difference": "0",
+      "wrong_sign_difference": "-2\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+-2\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "feynpy_rule": "1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f2,python::{}::f1))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f2,python::{}::f1))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "feynrules_rule": "1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f2,python::{}::f1))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f2,python::{}::f1))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+    }
+  ]
+}

@@ -33,10 +33,27 @@ def _feynpy_vertex_by_key(key: str) -> dict:
     return next(vertex for vertex in vertices if vertex["key"] == key)
 
 
+def _weinberg_vertex_by_key(key: str) -> dict:
+    vertices = json.loads(
+        (MODEL_DIR / "weinberg_vertices.json").read_text(encoding="utf-8")
+    )
+    return next(vertex for vertex in vertices if vertex["key"] == key)
+
+
 def _comparison_report() -> dict:
     return json.loads(
         (MODEL_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
     )
+
+
+def _weinberg_comparison_report() -> dict:
+    return json.loads(
+        (MODEL_DIR / "weinberg_comparison_report.json").read_text(encoding="utf-8")
+    )
+
+
+def _compact_rule_text(rule: str) -> str:
+    return rule.replace("python::{}::", "").replace("python::{real}::", "")
 
 
 def _report_row_by_key(key: str) -> dict:
@@ -135,11 +152,31 @@ def _check_summary(**overrides):
     return summary
 
 
+def _patch_passing_weinberg_comparison(monkeypatch):
+    monkeypatch.setattr(
+        smeft2_comparison,
+        "compare_reconstructed_weinberg",
+        lambda _reference=smeft2_comparison.REFERENCE: (
+            {
+                "summary": {
+                    "reference_vertices": 2,
+                    "direct_matches": 2,
+                    "wrong_sign_matches": 0,
+                    "coefficient_checks": 4,
+                    "coefficient_matches": 4,
+                }
+            },
+            [],
+        ),
+    )
+
+
 def test_smeft2_check_requires_direct_exact_by_default(monkeypatch):
     def fake_compare(_reference):
         return {"summary": _check_summary()}, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 0
 
 
@@ -154,6 +191,7 @@ def test_smeft2_check_rejects_pinned_cc_without_flag(monkeypatch):
         }, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
     assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
 
@@ -170,6 +208,7 @@ def test_smeft2_check_rejects_unresolved_cc_even_with_allow_flag(monkeypatch):
         }, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
     assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 1
 
@@ -184,6 +223,7 @@ def test_smeft2_check_rejects_incomplete_exact_status_accounting(monkeypatch):
         }, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
 
 
@@ -194,6 +234,7 @@ def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch
         }, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
 
     def fake_compare_with_raw_count_gap(_reference):
@@ -204,6 +245,7 @@ def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch
         "compare",
         fake_compare_with_raw_count_gap,
     )
+    _patch_passing_weinberg_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check", "--strict-counts"]) == 1
 
 
@@ -218,6 +260,32 @@ def test_smeft2_check_rejects_strict_exact_mismatches(monkeypatch):
         }, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
+    assert smeft2_comparison.main(["--check"]) == 1
+
+
+def test_smeft2_check_rejects_weinberg_sidecar_mismatch(monkeypatch):
+    def fake_compare(_reference):
+        return {"summary": _check_summary()}, ()
+
+    def fake_weinberg_compare(_reference):
+        return {
+            "summary": {
+                "reference_vertices": 2,
+                "direct_matches": 1,
+                "wrong_sign_matches": 0,
+                "coefficient_checks": 4,
+                "coefficient_matches": 4,
+            }
+        }, []
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(
+        smeft2_comparison,
+        "compare_reconstructed_weinberg",
+        fake_weinberg_compare,
+    )
+
     assert smeft2_comparison.main(["--check"]) == 1
 
 
@@ -317,6 +385,131 @@ def test_smeft2_weinberg_packaging_is_proven_by_antisymmetric_canonical_maps():
         assert antisymmetric.feynrules_only == {}
         assert antisymmetric.coefficient_mismatches == {}
         assert not symmetric.matches
+
+
+def test_smeft2_reconstructed_weinberg_sidecar_export_shape():
+    vertex_keys = {
+        vertex["key"]
+        for vertex in json.loads(
+            (MODEL_DIR / "weinberg_vertices.json").read_text(encoding="utf-8")
+        )
+    }
+    assert vertex_keys == {
+        "Phi|Phi|lL|lL",
+        "Phibar|Phibar|lLbar|lLbar",
+    }
+
+    weinberg = _weinberg_vertex_by_key("Phi|Phi|lL|lL")
+    assert weinberg["fields"] == ["lL", "lL", "Phi", "Phi"]
+    assert weinberg["source_orders"] == {
+        "first": ["lLbar", "lL", "Phi", "Phi"],
+        "second": ["lL", "lLbar", "Phi", "Phi"],
+        "combination": "first - second",
+    }
+    assert weinberg["spinor_representation"] == "PL"
+    assert weinberg["flavor_structures"] == [
+        "alphaWeinberg(f1,f2)",
+        "alphaWeinberg(f2,f1)",
+    ]
+    weinberg_rule = _compact_rule_text(weinberg["rule"])
+    assert "alphaWeinberg(f1,f2)" in weinberg_rule
+    assert "alphaWeinberg(f2,f1)" in weinberg_rule
+    assert "PL(" in weinberg_rule
+
+    weinberg_hc = _weinberg_vertex_by_key("Phibar|Phibar|lLbar|lLbar")
+    assert weinberg_hc["fields"] == ["lLbar", "lLbar", "Phibar", "Phibar"]
+    assert weinberg_hc["source_orders"] == {
+        "first": ["lLbar", "lL", "Phibar", "Phibar"],
+        "second": ["lL", "lLbar", "Phibar", "Phibar"],
+        "combination": "first - second",
+    }
+    assert weinberg_hc["spinor_representation"] == "PR"
+    assert weinberg_hc["flavor_structures"] == [
+        "conj(alphaWeinberg(f1,f2))",
+        "conj(alphaWeinberg(f2,f1))",
+    ]
+    weinberg_hc_rule = _compact_rule_text(weinberg_hc["rule"])
+    assert "conj(alphaWeinberg(f1,f2))" in weinberg_hc_rule
+    assert "conj(alphaWeinberg(f2,f1))" in weinberg_hc_rule
+    assert "PR(" in weinberg_hc_rule
+
+    report = _weinberg_comparison_report()
+    assert report["summary"]["reference_vertices"] == 2
+    assert report["summary"]["direct_matches"] == 2
+    assert report["summary"]["wrong_sign_matches"] == 0
+    assert report["summary"]["coefficient_checks"] == 4
+    assert report["summary"]["coefficient_matches"] == 4
+
+
+def test_smeft2_reconstructed_weinberg_matches_feynrules_by_flavor_and_sign():
+    report, vertices = smeft2_comparison.compare_reconstructed_weinberg()
+    assert {vertex["key"] for vertex in vertices} == {
+        "Phi|Phi|lL|lL",
+        "Phibar|Phibar|lLbar|lLbar",
+    }
+    assert report["summary"]["reference_vertices"] == 2
+    assert report["summary"]["direct_matches"] == 2
+    assert report["summary"]["wrong_sign_matches"] == 0
+    assert report["summary"]["coefficient_checks"] == 4
+    assert report["summary"]["coefficient_matches"] == 4
+
+    expected_coefficients = {
+        "Phi|Phi|lL|lL": {
+            "alphaWeinberg(f1,f2)",
+            "alphaWeinberg(f2,f1)",
+        },
+        "Phibar|Phibar|lLbar|lLbar": {
+            "conj(alphaWeinberg(f1,f2))",
+            "conj(alphaWeinberg(f2,f1))",
+        },
+    }
+    for row in report["vertices"]:
+        assert row["matches"]
+        assert not row["wrong_sign_matches"]
+        checks = row["coefficient_checks"]
+        assert {check["coefficient"] for check in checks} == expected_coefficients[
+            row["key"]
+        ]
+        assert all(check["matches"] for check in checks)
+        assert all(check["feynpy_coefficient"] != "0" for check in checks)
+        assert all(check["feynrules_coefficient"] != "0" for check in checks)
+
+    lagrangian, field_map, parameter_names, references_by_key = _comparison_context()
+    for key in expected_coefficients:
+        reference = _reference_with_head(
+            references_by_key,
+            key,
+            "alphaWeinberg",
+            parameter_names,
+        )
+        external_indices = smeft2_comparison._weinberg_external_indices(
+            reference,
+            field_map,
+        )
+        feynrules_rule = smeft2_comparison._parse_weinberg_fermion_flow_rule(
+            reference.rule
+        )
+        first_minus_second = smeft2_comparison._reconstructed_weinberg_flow_rule(
+            reference=reference,
+            lagrangian=lagrangian,
+            field_map=field_map,
+            sign=-1,
+        )
+        first_plus_second = smeft2_comparison._reconstructed_weinberg_flow_rule(
+            reference=reference,
+            lagrangian=lagrangian,
+            field_map=field_map,
+            sign=1,
+        )
+
+        assert smeft2_comparison._weinberg_canonical_zero(
+            (first_minus_second - feynrules_rule).cancel().expand(),
+            external_indices=external_indices,
+        )
+        assert not smeft2_comparison._weinberg_canonical_zero(
+            (first_plus_second - feynrules_rule).cancel().expand(),
+            external_indices=external_indices,
+        )
 
 
 def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():

@@ -67,6 +67,8 @@ REFERENCE = MODEL_DIR / "reference" / "Ltot_SMEFT_FeynRules.json"
 FEYNPY_VERTICES = MODEL_DIR / "feynpy_vertices.json"
 COMPARISON_JSON = MODEL_DIR / "vertex_comparison_report.json"
 COMPARISON_MD = MODEL_DIR / "COMPARISON.md"
+WEINBERG_VERTICES = MODEL_DIR / "weinberg_vertices.json"
+WEINBERG_COMPARISON_JSON = MODEL_DIR / "weinberg_comparison_report.json"
 
 FIELD_NAME_MAP = {
     "LL": "lL",
@@ -2568,6 +2570,312 @@ def _weinberg_cc_exact_symbolic_row(
     }
 
 
+def _parse_weinberg_fermion_flow_rule(rule: str) -> Expression:
+    """Parse a Weinberg FeynRules row into the sidecar fermion-flow basis."""
+
+    text = _rewrite_feynrules_indices(rule)
+    text = _rewrite_feynrules_indexed_parameters(text)
+    text = re.sub(
+        r"ProjM\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: S("PL")(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"ProjP\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: S("PR")(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Eps\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: weak_eps2(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(r"\bI\b", "1𝑖", text)
+
+    if "[" in text or "]" in text:
+        raise ValueError(
+            "Unsupported Weinberg FeynRules syntax remains after parsing: "
+            f"{text}"
+        )
+    return Expression.parse(text).cancel().expand()
+
+
+def _weinberg_projector_head(reference_fields: tuple[str, ...]) -> str:
+    if sorted(reference_fields) == ["Phi", "Phi", "lL", "lL"]:
+        return "PL"
+    if sorted(reference_fields) == ["Phibar", "Phibar", "lLbar", "lLbar"]:
+        return "PR"
+    raise ValueError(f"Unsupported Weinberg reference fields: {reference_fields!r}")
+
+
+def _replace_dirac_c_with_weinberg_flow(
+    expression: Expression,
+    *,
+    projector_head: str,
+) -> Expression:
+    left, right = S("weinberg_spin_left_", "weinberg_spin_right_")
+    return expression.replace(
+        dirac_charge_conjugation(left, right),
+        S(projector_head)(left, right),
+    ).cancel().expand()
+
+
+def _weinberg_external_indices(reference: FeynRulesVertex, field_map: dict[str, object]):
+    external_indices = _external_index_set_from_fields(
+        tuple(field_map[name] for name in reference.fields)
+    )
+    if external_indices is None:
+        raise ValueError(f"Could not infer external indices for {reference.fields!r}.")
+    return external_indices
+
+
+def _reconstructed_weinberg_flow_rule(
+    *,
+    reference: FeynRulesVertex,
+    lagrangian,
+    field_map: dict[str, object],
+    sign: int = -1,
+) -> Expression:
+    """Return the Weinberg sidecar rule in the common same-chirality order.
+
+    ``sign=-1`` gives the charge-conjugation antisymmetric combination
+    ``first - second``. ``sign=+1`` is kept for regression tests; it must not
+    match the same-chirality FeynRules row.
+    """
+
+    packaged_orders = _weinberg_packaged_field_orders(reference.fields)
+    if packaged_orders is None:
+        raise ValueError(f"Unsupported Weinberg fields: {reference.fields!r}")
+    if sign not in {-1, 1}:
+        raise ValueError(f"Unsupported Weinberg reconstruction sign {sign!r}.")
+
+    first_rule = lagrangian.feynman_rule(
+        *(field_map[name] for name in packaged_orders[0]),
+        simplify=True,
+    )
+    second_rule = lagrangian.feynman_rule(
+        *(field_map[name] for name in packaged_orders[1]),
+        simplify=True,
+    )
+    combined = (first_rule + Expression.num(sign) * second_rule).cancel().expand()
+
+    # Canonicalize while the spinor pair is still the antisymmetric C tensor.
+    # This maps the second mixed ordering into the same external spinor order
+    # and produces the transposed flavor coefficient without assuming symmetry.
+    canonical_c_report = _canonical_report_for_coefficient_head(
+        combined,
+        coefficient="alphaWeinberg",
+        external_indices=_weinberg_external_indices(reference, field_map),
+        max_dummy_permutations=2_000_000,
+    )
+    canonical_c_rule = _expression_from_canonical_map(canonical_c_report.map)
+    return _replace_dirac_c_with_weinberg_flow(
+        canonical_c_rule,
+        projector_head=_weinberg_projector_head(reference.fields),
+    )
+
+
+def _weinberg_canonical_report(
+    expression: Expression,
+    *,
+    external_indices,
+) -> CanonicalMonomialReport:
+    return canonical_tensor_monomial_report(
+        expression.cancel().expand(),
+        external_indices=external_indices,
+        max_dummy_permutations=2_000_000,
+    )
+
+
+def _weinberg_canonical_zero(
+    expression: Expression,
+    *,
+    external_indices,
+) -> bool:
+    return not _weinberg_canonical_report(
+        expression,
+        external_indices=external_indices,
+    ).map
+
+
+def _weinberg_coefficient_expression(text: str) -> Expression:
+    if text.startswith("conj(") and text.endswith(")"):
+        inner = text[len("conj(") : -1]
+        return S("conj")(Expression.parse(inner))
+    return Expression.parse(text)
+
+
+def _weinberg_coefficient_checks(
+    *,
+    feynpy_rule: Expression,
+    feynrules_rule: Expression,
+    coefficient_texts: tuple[str, ...],
+    external_indices,
+) -> list[dict[str, object]]:
+    checks = []
+    for coefficient_text in coefficient_texts:
+        coefficient = _weinberg_coefficient_expression(coefficient_text)
+        feynpy_coefficient = feynpy_rule.coefficient(coefficient).cancel().expand()
+        feynrules_coefficient = (
+            feynrules_rule.coefficient(coefficient).cancel().expand()
+        )
+        difference = (feynpy_coefficient - feynrules_coefficient).cancel().expand()
+        checks.append(
+            {
+                "coefficient": coefficient_text,
+                "matches": _weinberg_canonical_zero(
+                    difference,
+                    external_indices=external_indices,
+                ),
+                "feynpy_coefficient": feynpy_coefficient.to_canonical_string(),
+                "feynrules_coefficient": feynrules_coefficient.to_canonical_string(),
+                "difference": difference.to_canonical_string(),
+            }
+        )
+    return checks
+
+
+def _weinberg_reference_vertices(
+    reference_path: Path = REFERENCE,
+) -> tuple[FeynRulesVertex, FeynRulesVertex]:
+    references_by_key = {
+        _name_key(reference.fields): reference
+        for reference in load_feynrules_json(reference_path)
+    }
+    return (
+        references_by_key["Phi|Phi|lL|lL"],
+        references_by_key["Phibar|Phibar|lLbar|lLbar"],
+    )
+
+
+def compare_reconstructed_weinberg(
+    reference_path: Path = REFERENCE,
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    """Build and directly compare the Weinberg sidecar export.
+
+    This is deliberately separate from the existing SMEFT2 aggregate comparison.
+    It only reconstructs the two same-chirality Weinberg rows from the two
+    ordered mixed FeynPy calls and compares them to the corresponding
+    FeynRules rows in a compact fermion-flow basis.
+    """
+
+    bundle = build_smeft_green_bpreserving()
+    lagrangian = bundle.model.lagrangian()
+    field_map = _comparison_field_map(bundle)
+
+    vertices = []
+    comparison_rows = []
+    for reference in _weinberg_reference_vertices(reference_path):
+        key = _name_key(reference.fields)
+        external_indices = _weinberg_external_indices(reference, field_map)
+        feynpy_rule = _reconstructed_weinberg_flow_rule(
+            reference=reference,
+            lagrangian=lagrangian,
+            field_map=field_map,
+            sign=-1,
+        )
+        wrong_sign_rule = _reconstructed_weinberg_flow_rule(
+            reference=reference,
+            lagrangian=lagrangian,
+            field_map=field_map,
+            sign=1,
+        )
+        feynrules_rule = _parse_weinberg_fermion_flow_rule(reference.rule)
+        difference = (feynpy_rule - feynrules_rule).cancel().expand()
+        wrong_sign_difference = (wrong_sign_rule - feynrules_rule).cancel().expand()
+        coefficient_texts = (
+            (
+                "alphaWeinberg(f1,f2)",
+                "alphaWeinberg(f2,f1)",
+            )
+            if key == "Phi|Phi|lL|lL"
+            else (
+                "conj(alphaWeinberg(f1,f2))",
+                "conj(alphaWeinberg(f2,f1))",
+            )
+        )
+        coefficient_checks = _weinberg_coefficient_checks(
+            feynpy_rule=feynpy_rule,
+            feynrules_rule=feynrules_rule,
+            coefficient_texts=coefficient_texts,
+            external_indices=external_indices,
+        )
+        matches = _weinberg_canonical_zero(
+            difference,
+            external_indices=external_indices,
+        )
+        wrong_sign_matches = _weinberg_canonical_zero(
+            wrong_sign_difference,
+            external_indices=external_indices,
+        )
+        packaged_orders = _weinberg_packaged_field_orders(reference.fields)
+        vertices.append(
+            {
+                "key": key,
+                "fields": list(reference.fields),
+                "source_orders": {
+                    "first": list(packaged_orders[0]),
+                    "second": list(packaged_orders[1]),
+                    "combination": "first - second",
+                },
+                "spinor_representation": _weinberg_projector_head(
+                    reference.fields
+                ),
+                "flavor_structures": list(coefficient_texts),
+                "rule": feynpy_rule.to_canonical_string(),
+            }
+        )
+        comparison_rows.append(
+            {
+                "key": key,
+                "fields": list(reference.fields),
+                "matches": matches,
+                "wrong_sign_matches": wrong_sign_matches,
+                "coefficient_checks": coefficient_checks,
+                "difference": difference.to_canonical_string(),
+                "wrong_sign_difference": wrong_sign_difference.to_canonical_string(),
+                "feynpy_rule": feynpy_rule.to_canonical_string(),
+                "feynrules_rule": feynrules_rule.to_canonical_string(),
+            }
+        )
+
+    report = {
+        "generated_on": date.today().isoformat(),
+        "comparison_level": (
+            "Weinberg-only sidecar comparison. FeynPy mixed charge-conjugation "
+            "orders are reconstructed as first - second in the common "
+            "same-chirality external-leg order, then compared directly to the "
+            "FeynRules lL lL Phi Phi and lLbar lLbar Phibar Phibar rows in a "
+            "compact PL/PR fermion-flow basis."
+        ),
+        "summary": {
+            "reference_vertices": len(comparison_rows),
+            "direct_matches": sum(row["matches"] for row in comparison_rows),
+            "wrong_sign_matches": sum(
+                row["wrong_sign_matches"] for row in comparison_rows
+            ),
+            "coefficient_checks": sum(
+                len(row["coefficient_checks"]) for row in comparison_rows
+            ),
+            "coefficient_matches": sum(
+                sum(check["matches"] for check in row["coefficient_checks"])
+                for row in comparison_rows
+            ),
+        },
+        "vertices": comparison_rows,
+    }
+    return report, vertices
+
+
 def _name_key(names: Iterable[str]) -> str:
     return "|".join(sorted(names))
 
@@ -3572,6 +3880,23 @@ def write_outputs(
     comparison_md.write_text(_markdown_report(report), encoding="utf-8")
 
 
+def write_weinberg_outputs(
+    report: dict[str, object],
+    vertices: list[dict[str, object]],
+    *,
+    comparison_json: Path = WEINBERG_COMPARISON_JSON,
+    feynpy_vertices: Path = WEINBERG_VERTICES,
+) -> None:
+    comparison_json.write_text(
+        json.dumps(report, indent=2, sort_keys=False) + "\n",
+        encoding="utf-8",
+    )
+    feynpy_vertices.write_text(
+        json.dumps(vertices, indent=2, sort_keys=False) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _markdown_report(report: dict[str, object]) -> str:
     summary = report["summary"]
     counts = summary["status_counts"]
@@ -3881,10 +4206,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     report, local_vertices = compare(args.reference)
+    weinberg_report, weinberg_vertices = compare_reconstructed_weinberg(
+        args.reference
+    )
     if not args.check:
         write_outputs(report, local_vertices)
+        write_weinberg_outputs(weinberg_report, weinberg_vertices)
 
     summary = report["summary"]
+    weinberg_summary = weinberg_report["summary"]
     exact_supported = summary["exact_symbolic_supported_vertices"]
     direct_exact = summary["exact_symbolic_direct_match_vertices"]
     pinned_cc = summary["cc_packaging_pinned_match_vertices"]
@@ -3901,6 +4231,18 @@ def main(argv: list[str] | None = None) -> int:
         + exact_error
     )
     accepted_exact = direct_exact + (pinned_cc if args.allow_cc_packaging else 0)
+    weinberg_check_failed = (
+        weinberg_summary["reference_vertices"] != 2
+        or (
+            weinberg_summary["direct_matches"]
+            != weinberg_summary["reference_vertices"]
+        )
+        or (
+            weinberg_summary["coefficient_matches"]
+            != weinberg_summary["coefficient_checks"]
+        )
+        or weinberg_summary["wrong_sign_matches"]
+    )
     print(
         "SMEFT2 comparison: "
         f"{summary['operator_content_matches_including_cc']}/"
@@ -3920,6 +4262,12 @@ def main(argv: list[str] | None = None) -> int:
         f"{summary['canonical_map_supported_vertices']} supported vertices "
         f"({summary['canonical_map_equal_coefficient_sectors']}/"
         f"{summary['canonical_map_supported_coefficient_sectors']} sectors); "
+        "Weinberg reconstructed sidecar="
+        f"{weinberg_summary['direct_matches']}/"
+        f"{weinberg_summary['reference_vertices']} direct, "
+        f"{weinberg_summary['coefficient_matches']}/"
+        f"{weinberg_summary['coefficient_checks']} coefficient checks, "
+        f"wrong-sign matches={weinberg_summary['wrong_sign_matches']}; "
         f"reference-only={summary['reference_only_signatures']}; "
         f"feynpy-only={summary['feynpy_only_signatures']}."
     )
@@ -3942,6 +4290,7 @@ def main(argv: list[str] | None = None) -> int:
         or summary["canonical_map_unequal_vertices"]
         or summary["canonical_map_error_vertices"]
         or (args.strict_counts and summary["shared_head_count_mismatches"])
+        or weinberg_check_failed
     ):
         return 1
     return 0

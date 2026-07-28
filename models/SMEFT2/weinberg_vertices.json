@@ -1,0 +1,62 @@
+[
+  {
+    "key": "Phi|Phi|lL|lL",
+    "fields": [
+      "lL",
+      "lL",
+      "Phi",
+      "Phi"
+    ],
+    "source_orders": {
+      "first": [
+        "lLbar",
+        "lL",
+        "Phi",
+        "Phi"
+      ],
+      "second": [
+        "lL",
+        "lLbar",
+        "Phi",
+        "Phi"
+      ],
+      "combination": "first - second"
+    },
+    "spinor_representation": "PL",
+    "flavor_structures": [
+      "alphaWeinberg(f1,f2)",
+      "alphaWeinberg(f2,f1)"
+    ],
+    "rule": "1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f1,python::{}::f2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f1,python::{}::f2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*python::{real}::PL(python::{}::i1,python::{}::i2)*python::{}::alphaWeinberg(python::{}::f2,python::{}::f1)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+  },
+  {
+    "key": "Phibar|Phibar|lLbar|lLbar",
+    "fields": [
+      "lLbar",
+      "lLbar",
+      "Phibar",
+      "Phibar"
+    ],
+    "source_orders": {
+      "first": [
+        "lLbar",
+        "lL",
+        "Phibar",
+        "Phibar"
+      ],
+      "second": [
+        "lL",
+        "lLbar",
+        "Phibar",
+        "Phibar"
+      ],
+      "combination": "first - second"
+    },
+    "spinor_representation": "PR",
+    "flavor_structures": [
+      "conj(alphaWeinberg(f1,f2))",
+      "conj(alphaWeinberg(f2,f1))"
+    ],
+    "rule": "1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f1,python::{}::f2))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f2,python::{}::f1))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaWeinberg(python::{}::f2,python::{}::f1))*python::{real}::PR(python::{}::i1,python::{}::i2)*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+  }
+]
