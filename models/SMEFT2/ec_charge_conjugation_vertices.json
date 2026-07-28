@@ -1,0 +1,322 @@
+[
+  {
+    "key": "dRbar|qL|qL|uRbar",
+    "fields": [
+      "dRbar",
+      "qL",
+      "uRbar",
+      "qL"
+    ],
+    "coefficient": "alphaEcudqq",
+    "source_orders": {
+      "first": [
+        "dRbar",
+        "qL",
+        "uR",
+        "qLbar"
+      ],
+      "second": [
+        "dRbar",
+        "qLbar",
+        "uR",
+        "qL"
+      ],
+      "combination": "first + second",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcudqq"
+    ],
+    "rule": "-1\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))"
+  },
+  {
+    "key": "dRbar|qL|qL|uRbar",
+    "fields": [
+      "dRbar",
+      "qL",
+      "uRbar",
+      "qL"
+    ],
+    "coefficient": "alphaEcudqqtwo",
+    "source_orders": {
+      "first": [
+        "dRbar",
+        "qL",
+        "uR",
+        "qLbar"
+      ],
+      "second": [
+        "dRbar",
+        "qLbar",
+        "uR",
+        "qL"
+      ],
+      "combination": "first + second",
+      "phase": 1
+    },
+    "heads": [
+      "alphaEcudqqtwo"
+    ],
+    "rule": "-1\ud835\udc56*conj(python::{}::alphaEcudqqtwo(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaEcudqqtwo(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))"
+  },
+  {
+    "key": "eRbar|lL|qL|uRbar",
+    "fields": [
+      "eRbar",
+      "lL",
+      "uRbar",
+      "qL"
+    ],
+    "coefficient": "alphaEcuelq",
+    "source_orders": {
+      "first": [
+        "eRbar",
+        "lL",
+        "uR",
+        "qLbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcuelq"
+    ],
+    "rule": "1\ud835\udc56*conj(python::{}::alphaEcuelq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))"
+  },
+  {
+    "key": "eRbar|lL|qL|uRbar",
+    "fields": [
+      "eRbar",
+      "lL",
+      "uRbar",
+      "qL"
+    ],
+    "coefficient": "alphaEcuelqtwo",
+    "source_orders": {
+      "first": [
+        "eRbar",
+        "lL",
+        "uR",
+        "qLbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": 1
+    },
+    "heads": [
+      "alphaEcuelqtwo"
+    ],
+    "rule": "1\ud835\udc56*conj(python::{}::alphaEcuelqtwo(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))"
+  },
+  {
+    "key": "dRbar|eR|lLbar|qL",
+    "fields": [
+      "dRbar",
+      "eR",
+      "lLbar",
+      "qL"
+    ],
+    "coefficient": "alphaEcqedl",
+    "source_orders": {
+      "first": [
+        "dRbar",
+        "eR",
+        "lL",
+        "qLbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcqedl"
+    ],
+    "rule": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedl(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))"
+  },
+  {
+    "key": "dRbar|eR|lLbar|qL",
+    "fields": [
+      "dRbar",
+      "eR",
+      "lLbar",
+      "qL"
+    ],
+    "coefficient": "alphaEcqedlthree",
+    "source_orders": {
+      "first": [
+        "dRbar",
+        "eR",
+        "lL",
+        "qLbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcqedlthree"
+    ],
+    "rule": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedlthree(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))"
+  },
+  {
+    "key": "dR|qLbar|qLbar|uR",
+    "fields": [
+      "qLbar",
+      "dR",
+      "qLbar",
+      "uR"
+    ],
+    "coefficient": "alphaEcudqq",
+    "source_orders": {
+      "first": [
+        "qL",
+        "dR",
+        "qLbar",
+        "uRbar"
+      ],
+      "second": [
+        "qLbar",
+        "dR",
+        "qL",
+        "uRbar"
+      ],
+      "combination": "first + second",
+      "phase": 1
+    },
+    "heads": [
+      "alphaEcudqq"
+    ],
+    "rule": "-1\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+  },
+  {
+    "key": "dR|qLbar|qLbar|uR",
+    "fields": [
+      "qLbar",
+      "dR",
+      "qLbar",
+      "uR"
+    ],
+    "coefficient": "alphaEcudqqtwo",
+    "source_orders": {
+      "first": [
+        "qL",
+        "dR",
+        "qLbar",
+        "uRbar"
+      ],
+      "second": [
+        "qLbar",
+        "dR",
+        "qL",
+        "uRbar"
+      ],
+      "combination": "first + second",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcudqqtwo"
+    ],
+    "rule": "-1\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqqtwo(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+  },
+  {
+    "key": "eR|lLbar|qLbar|uR",
+    "fields": [
+      "lLbar",
+      "eR",
+      "qLbar",
+      "uR"
+    ],
+    "coefficient": "alphaEcuelq",
+    "source_orders": {
+      "first": [
+        "lLbar",
+        "eR",
+        "qL",
+        "uRbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": 1
+    },
+    "heads": [
+      "alphaEcuelq"
+    ],
+    "rule": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+  },
+  {
+    "key": "eR|lLbar|qLbar|uR",
+    "fields": [
+      "lLbar",
+      "eR",
+      "qLbar",
+      "uR"
+    ],
+    "coefficient": "alphaEcuelqtwo",
+    "source_orders": {
+      "first": [
+        "lLbar",
+        "eR",
+        "qL",
+        "uRbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcuelqtwo"
+    ],
+    "rule": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))"
+  },
+  {
+    "key": "dR|eRbar|lL|qLbar",
+    "fields": [
+      "eRbar",
+      "dR",
+      "qLbar",
+      "lL"
+    ],
+    "coefficient": "alphaEcqedl",
+    "source_orders": {
+      "first": [
+        "eRbar",
+        "dR",
+        "qL",
+        "lLbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcqedl"
+    ],
+    "rule": "1\ud835\udc56*conj(python::{}::alphaEcqedl(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))"
+  },
+  {
+    "key": "dR|eRbar|lL|qLbar",
+    "fields": [
+      "eRbar",
+      "dR",
+      "qLbar",
+      "lL"
+    ],
+    "coefficient": "alphaEcqedlthree",
+    "source_orders": {
+      "first": [
+        "eRbar",
+        "dR",
+        "qL",
+        "lLbar"
+      ],
+      "second": null,
+      "combination": "first",
+      "phase": -1
+    },
+    "heads": [
+      "alphaEcqedlthree"
+    ],
+    "rule": "1\ud835\udc56*conj(python::{}::alphaEcqedlthree(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))"
+  }
+]

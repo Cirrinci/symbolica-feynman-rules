@@ -69,6 +69,8 @@ COMPARISON_JSON = MODEL_DIR / "vertex_comparison_report.json"
 COMPARISON_MD = MODEL_DIR / "COMPARISON.md"
 WEINBERG_VERTICES = MODEL_DIR / "weinberg_vertices.json"
 WEINBERG_COMPARISON_JSON = MODEL_DIR / "weinberg_comparison_report.json"
+EC_CC_VERTICES = MODEL_DIR / "ec_charge_conjugation_vertices.json"
+EC_CC_COMPARISON_JSON = MODEL_DIR / "ec_charge_conjugation_comparison_report.json"
 
 FIELD_NAME_MAP = {
     "LL": "lL",
@@ -344,6 +346,38 @@ def _spinor_chain_replacement(
         )
         current = target
     return result.to_canonical_string()
+
+
+def _spinor_chain_replacement_with_projector_label(
+    items: tuple[str, ...],
+    left: str,
+    right: str,
+    *,
+    chain_id: int,
+) -> str:
+    """Parse a FeynRules spinor chain and retain chirality as PL/PR."""
+
+    projector_items = tuple(item for item in items if item in {"ProjM", "ProjP"})
+    matrix_items = tuple(item for item in items if item not in {"ProjM", "ProjP"})
+    if len(projector_items) != 1:
+        raise ValueError(f"Unsupported FeynRules projector chain: {items!r}")
+
+    projector_head = "PL" if projector_items[0] == "ProjM" else "PR"
+    chain = (
+        Expression.num(1)
+        if not matrix_items
+        else Expression.parse(
+            _spinor_chain_replacement(
+                matrix_items,
+                left,
+                right,
+                chain_id=chain_id,
+            )
+        )
+    )
+    return (
+        chain * S(projector_head)(S(left), S(right))
+    ).cancel().expand().to_canonical_string()
 
 
 def _bare_symbolica_name(name: str) -> str:
@@ -1274,6 +1308,16 @@ def _canonical_report_for_coefficient_head(
 _DIRAC_C_FACTOR_SIGNATURE = ("spinor", "spinor")
 _GAMMA_FACTOR_SIGNATURE = ("spinor", "spinor", "lorentz")
 _SPINOR_METRIC_FACTOR_SIGNATURE = ("spinor", "spinor")
+_EC_CC_COEFFICIENTS = frozenset(
+    {
+        "alphaEcqedl",
+        "alphaEcqedlthree",
+        "alphaEcudqq",
+        "alphaEcudqqtwo",
+        "alphaEcuelq",
+        "alphaEcuelqtwo",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -1549,6 +1593,62 @@ def _charge_conjugation_bilinear_factors(
     return _spinor_chain_factors(start, end, sequence, used_labels)
 
 
+def _spinor_flow_chain_factors(
+    start: object,
+    end: object,
+    lorentz_sequence: tuple[object, ...],
+    used_labels: set[object],
+    *,
+    projector_head: str,
+) -> list[object]:
+    factors = (
+        []
+        if not lorentz_sequence
+        else _spinor_chain_factors(start, end, lorentz_sequence, used_labels)
+    )
+    return [
+        *factors,
+        (projector_head, _SPINOR_METRIC_FACTOR_SIGNATURE, (start, end)),
+    ]
+
+
+def _charge_conjugation_flow_bilinear_factors(
+    first: _ChargeConjugationArm,
+    second: _ChargeConjugationArm,
+    used_labels: set[object],
+    *,
+    projector_head: str,
+) -> list[object] | None:
+    if first.lorentz_ext_to_c and second.lorentz_ext_to_c:
+        return None
+
+    if first.lorentz_ext_to_c:
+        if first.c_outgoing:
+            start, end = second.external, first.external
+            sequence = first.lorentz_ext_to_c
+        else:
+            start, end = first.external, second.external
+            sequence = tuple(reversed(first.lorentz_ext_to_c))
+    elif second.lorentz_ext_to_c:
+        if second.c_outgoing:
+            start, end = first.external, second.external
+            sequence = second.lorentz_ext_to_c
+        else:
+            start, end = second.external, first.external
+            sequence = tuple(reversed(second.lorentz_ext_to_c))
+    else:
+        start, end = first.external, second.external
+        sequence = ()
+
+    return _spinor_flow_chain_factors(
+        start,
+        end,
+        sequence,
+        used_labels,
+        projector_head=projector_head,
+    )
+
+
 def _replace_external_nonspinor_leg_label(
     label: object,
     first_leg: int,
@@ -1668,6 +1768,88 @@ def _ec_charge_conjugation_key(
     )
 
 
+def _ec_charge_conjugation_flow_key(
+    key: CanonicalTensorMonomial,
+    *,
+    mode: str,
+    phase: int,
+    projector_head: str,
+) -> tuple[int, CanonicalTensorMonomial] | None:
+    factors = list(key.commuting_factors)
+    c_indices = [
+        index for index, factor in enumerate(factors) if _is_dirac_c_factor(factor)
+    ]
+    if len(c_indices) != 2:
+        return None
+
+    gamma_factors = [factor for factor in factors if _is_gamma_factor(factor)]
+    first_c, second_c = (factors[index] for index in c_indices)
+
+    arms: list[_ChargeConjugationArm] = []
+    used_gamma_indices: set[int] = set()
+    for label in first_c[2] + second_c[2]:
+        arm = _trace_charge_conjugation_arm(label, gamma_factors)
+        if arm is None:
+            return None
+        arms.append(arm)
+        used_gamma_indices.update(arm.used_gamma_indices)
+    if len(used_gamma_indices) != len(gamma_factors):
+        return None
+
+    first_leg = second_leg = None
+    if mode == "crossed":
+        first_leg = _external_leg_number(first_c[2][1])
+        second_leg = _external_leg_number(second_c[2][1])
+    elif mode != "direct":
+        raise ValueError(f"Unsupported Ec charge-conjugation mode {mode!r}.")
+
+    rest = []
+    for index, factor in enumerate(factors):
+        if index in c_indices or _is_gamma_factor(factor):
+            continue
+        if first_leg is not None and second_leg is not None:
+            factor = _replace_factor_external_nonspinor_legs(
+                factor,
+                first_leg,
+                second_leg,
+            )
+        rest.append(factor)
+
+    used_labels = {
+        label
+        for factor in rest
+        for label in (
+            factor[2]
+            if isinstance(factor, tuple)
+            and len(factor) == 3
+            and isinstance(factor[2], tuple)
+            else ()
+        )
+    }
+    used_labels.update(arm.external for arm in arms)
+
+    pairings = {
+        "crossed": ((arms[0], arms[3]), (arms[1], arms[2])),
+        "direct": ((arms[0], arms[1]), (arms[2], arms[3])),
+    }[mode]
+    bilinear_factors: list[object] = []
+    for first, second in pairings:
+        factors_for_pair = _charge_conjugation_flow_bilinear_factors(
+            first,
+            second,
+            used_labels,
+            projector_head=projector_head,
+        )
+        if factors_for_pair is None:
+            return None
+        bilinear_factors.extend(factors_for_pair)
+
+    return phase, _canonical_key_with_commuting_factors(
+        key,
+        [*rest, *bilinear_factors],
+    )
+
+
 def _swap_ec_coefficient_boundary_args(
     expression: Expression,
     coefficient: str,
@@ -1730,6 +1912,8 @@ def _expression_from_canonical_factor(factor: object) -> Expression:
         return gamma_matrix(*args)
     if head == "dirac_C":
         return dirac_charge_conjugation(*args)
+    if head in {"PL", "PR"}:
+        return S(head)(*args)
     if head == "weak_eps2":
         return weak_eps2(*args)
     if head == "lor_levi_civita":
@@ -1775,6 +1959,59 @@ def _normalize_ec_charge_conjugation_report(
     changed = False
     for key, coefficient_expression in report.map.items():
         replacement = _ec_charge_conjugation_key(key, mode=mode, phase=phase)
+        if replacement is None:
+            transformed_key = key
+            transformed_coefficient = coefficient_expression
+        else:
+            multiplier, transformed_key = replacement
+            transformed_coefficient = (
+                coefficient_expression * Expression.num(multiplier)
+            ).cancel().expand()
+            if mode == "crossed":
+                transformed_coefficient = _swap_ec_coefficient_boundary_args(
+                    transformed_coefficient,
+                    coefficient,
+                )
+            changed = True
+        transformed[transformed_key] = (
+            transformed.get(transformed_key, Expression.num(0))
+            + transformed_coefficient
+        ).cancel().expand()
+
+    if not changed:
+        return report
+
+    recanonicalized = canonical_tensor_monomial_report(
+        _expression_from_canonical_map(transformed),
+        external_indices=external_indices,
+        max_dummy_permutations=max_dummy_permutations,
+    )
+    return CanonicalMonomialReport(
+        raw_terms=report.raw_terms,
+        canonical_terms=recanonicalized.canonical_terms,
+        map=recanonicalized.map,
+    )
+
+
+def _normalize_ec_charge_conjugation_flow_report(
+    report: CanonicalMonomialReport,
+    *,
+    coefficient: str,
+    external_indices,
+    max_dummy_permutations: int,
+    mode: str,
+    phase: int,
+    projector_head: str,
+) -> CanonicalMonomialReport:
+    transformed: dict[CanonicalTensorMonomial, Expression] = {}
+    changed = False
+    for key, coefficient_expression in report.map.items():
+        replacement = _ec_charge_conjugation_flow_key(
+            key,
+            mode=mode,
+            phase=phase,
+            projector_head=projector_head,
+        )
         if replacement is None:
             transformed_key = key
             transformed_coefficient = coefficient_expression
@@ -2044,6 +2281,167 @@ def _compare_smeft2_canonical_coefficient_maps(
             feynrules_report,
         )
     return comparisons
+
+
+def _replace_tensdot_chains_with_projector_labels(text: str) -> str:
+    output = []
+    position = 0
+    chain_id = 0
+    while True:
+        start = text.find("TensDot[", position)
+        if start == -1:
+            output.append(text[position:])
+            return "".join(output)
+
+        output.append(text[position:start])
+        inner_open = start + len("TensDot")
+        inner_close = _find_matching_square(text, inner_open)
+        if inner_close + 1 >= len(text) or text[inner_close + 1] != "[":
+            output.append(text[start : inner_close + 1])
+            position = inner_close + 1
+            continue
+
+        spin_open = inner_close + 1
+        spin_close = _find_matching_square(text, spin_open)
+        chain_id += 1
+        items = _split_top_level_commas(text[inner_open + 1 : inner_close])
+        spin_args = _split_top_level_commas(text[spin_open + 1 : spin_close])
+        if len(spin_args) != 2:
+            raise ValueError(f"Unsupported FeynRules TensDot spin args: {spin_args}")
+        output.append(
+            _spinor_chain_replacement_with_projector_label(
+                items,
+                spin_args[0],
+                spin_args[1],
+                chain_id=chain_id,
+            )
+        )
+        position = spin_close + 1
+
+
+def parse_smeft2_matter_rule_with_projector_labels(rule: str) -> Expression:
+    """Parse SMEFT2 matter syntax while retaining explicit PL/PR labels.
+
+    This parser is used only by the EC charge-conjugation sidecar.  The normal
+    comparison parser intentionally remains unchanged.
+    """
+
+    text = _rewrite_feynrules_indices(rule)
+    text = _rewrite_feynrules_indexed_parameters(text)
+    _replace_scalar_product.counter = 0
+
+    text = _replace_tensdot_chains_with_projector_labels(text)
+    text = re.sub(
+        r"ProjM\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: S("PL")(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"ProjP\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: S("PR")(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Ga\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: gamma_matrix(
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+            S(match.group(1).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"IndexDelta\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: _metric_for_index_delta(match.group(1), match.group(2)),
+        text,
+    )
+    text = re.sub(
+        r"ME\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: lorentz_metric(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"FV\[(\d+),\s*([^\[\]]+)\]",
+        lambda match: pcomp(
+            S(f"q{match.group(1)}"),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(r"SP\[(\d+),\s*(\d+)\]", _replace_scalar_product, text)
+    text = re.sub(
+        r"T\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: gauge_generator(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Ta\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: weak_gauge_generator(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"(?:f|fsu3)\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: structure_constant(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"fsu2\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: weak_structure_constant(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Eps\[([^,\[\]]+),\s*([^,\[\]]+),\s*([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: lorentz_levi_civita(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+            S(match.group(3).strip()),
+            S(match.group(4).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = re.sub(
+        r"Eps\[([^,\[\]]+),\s*([^\[\]]+)\]",
+        lambda match: weak_eps2(
+            S(match.group(1).strip()),
+            S(match.group(2).strip()),
+        ).to_canonical_string(),
+        text,
+    )
+    text = text.replace("Sqrt[2]", "(2)^(1/2)")
+    text = re.sub(r"\bI\b", "1𝑖", text)
+
+    if "[" in text or "]" in text:
+        raise ValueError(
+            "Unsupported SMEFT2 FeynRules matter syntax remains after "
+            f"projector-label parsing: {text}"
+        )
+
+    return Expression.parse(text).cancel().expand()
 
 
 def _replace_tensdot_chains(text: str) -> str:
@@ -2872,6 +3270,415 @@ def compare_reconstructed_weinberg(
             ),
         },
         "vertices": comparison_rows,
+    }
+    return report, vertices
+
+
+def _canonical_difference_expression(
+    feynpy_report: CanonicalMonomialReport,
+    feynrules_report: CanonicalMonomialReport,
+) -> Expression:
+    difference: dict[CanonicalTensorMonomial, Expression] = {}
+    for key, coefficient in feynpy_report.map.items():
+        difference[key] = (
+            difference.get(key, Expression.num(0)) + coefficient
+        ).cancel().expand()
+    for key, coefficient in feynrules_report.map.items():
+        difference[key] = (
+            difference.get(key, Expression.num(0)) - coefficient
+        ).cancel().expand()
+    return _expression_from_canonical_map(
+        {
+            key: coefficient
+            for key, coefficient in difference.items()
+            if coefficient.cancel().expand().to_canonical_string() != "0"
+        }
+    )
+
+
+def _alpha_heads_in_expression(expression: Expression) -> tuple[str, ...]:
+    return tuple(
+        sorted(
+            set(
+                re.findall(
+                    r"(?:^|::)(alpha[A-Za-z0-9]+)\(",
+                    expression.cancel().expand().to_canonical_string(),
+                )
+            )
+        )
+    )
+
+
+def _ec_flow_canonical_report(
+    expression: Expression,
+    *,
+    coefficient: str,
+    external_indices,
+) -> CanonicalMonomialReport:
+    report = canonical_tensor_monomial_report(
+        _filter_terms_by_coefficient_head(expression, coefficient),
+        external_indices=external_indices,
+        max_dummy_permutations=2_000_000,
+    )
+    report = _normalize_generator_product_order_report(report)
+    report = _normalize_weak_t_epsilon_report(report)
+    report = _normalize_weak_doublet_generator_epsilon_report(report)
+    return _normalize_structure_constant_jacobi_report(report)
+
+
+def _ec_projector_head(filtered_feynrules_rule: Expression) -> str:
+    compact_text = (
+        filtered_feynrules_rule.cancel()
+        .expand()
+        .to_canonical_string()
+        .replace("python::{real}::", "")
+        .replace("python::{}::", "")
+    )
+    heads = set(re.findall(r"\b(P[LR])\(", compact_text))
+    if len(heads) != 1:
+        raise ValueError(
+            "Expected one EC projector head in filtered FeynRules rule, got "
+            f"{sorted(heads)!r}."
+        )
+    return next(iter(heads))
+
+
+def _ec_reference_vertices_by_key(
+    reference_path: Path,
+) -> dict[str, FeynRulesVertex]:
+    return {
+        _name_key(reference.fields): reference
+        for reference in load_feynrules_json(reference_path)
+    }
+
+
+def _ec_order_pair(
+    *,
+    reference_fields: tuple[str, ...],
+    candidate_orders: tuple[tuple[str, ...], ...],
+    antisymmetric_duplicates: bool,
+) -> tuple[tuple[str, ...], tuple[str, ...] | None]:
+    if len(candidate_orders) == 1:
+        return candidate_orders[0], None
+    if len(candidate_orders) != 2:
+        raise ValueError(
+            "Expected one or two EC candidate orders, got "
+            f"{candidate_orders!r}."
+        )
+    if not antisymmetric_duplicates:
+        return candidate_orders[0], candidate_orders[1]
+
+    orders_by_sign = {
+        _duplicate_assignment_sign(order, reference_fields): order
+        for order in candidate_orders
+    }
+    if set(orders_by_sign) != {-1, 1}:
+        raise ValueError(
+            "Could not identify antisymmetric duplicate-leg EC order pair: "
+            f"{candidate_orders!r}."
+        )
+    return orders_by_sign[1], orders_by_sign[-1]
+
+
+def _ec_ordered_rule(lagrangian, field_map: dict[str, object], order: tuple[str, ...]):
+    return lagrangian.feynman_rule(
+        *(field_map[name] for name in order),
+        simplify=True,
+    )
+
+
+def _ec_candidate_raw_rules(
+    *,
+    lagrangian,
+    field_map: dict[str, object],
+    first_order: tuple[str, ...],
+    second_order: tuple[str, ...] | None,
+) -> dict[str, Expression]:
+    first_rule = _ec_ordered_rule(lagrangian, field_map, first_order)
+    if second_order is None:
+        return {"first": first_rule}
+
+    second_rule = _ec_ordered_rule(lagrangian, field_map, second_order)
+    return {
+        "first - second": (first_rule - second_rule).cancel().expand(),
+        "first + second": (first_rule + second_rule).cancel().expand(),
+    }
+
+
+def _ec_raw_projector_flow_heads() -> frozenset[str]:
+    return frozenset({"alphaEcudqq", "alphaEcuelq"})
+
+
+def _replace_dirac_c_with_projector_label(
+    expression: Expression,
+    *,
+    projector_head: str,
+) -> Expression:
+    left, right = S("ec_raw_c_left_", "ec_raw_c_right_")
+    return expression.replace(
+        dirac_charge_conjugation(left, right),
+        S(projector_head)(left, right),
+    ).cancel().expand()
+
+
+def _ec_flow_report_for_local_candidate(
+    *,
+    raw_rule: Expression,
+    coefficient: str,
+    external_indices,
+    phase: int,
+    projector_head: str,
+) -> CanonicalMonomialReport:
+    local_report = _canonical_report_for_coefficient_head(
+        raw_rule,
+        coefficient=coefficient,
+        external_indices=external_indices,
+        max_dummy_permutations=2_000_000,
+    )
+    return _normalize_ec_charge_conjugation_flow_report(
+        local_report,
+        coefficient=coefficient,
+        external_indices=external_indices,
+        max_dummy_permutations=2_000_000,
+        mode="direct",
+        phase=phase,
+        projector_head=projector_head,
+    )
+
+
+def _ec_flow_report_for_raw_projector_candidate(
+    *,
+    raw_rule: Expression,
+    coefficient: str,
+    external_indices,
+    phase: int,
+    projector_head: str,
+) -> CanonicalMonomialReport:
+    flow_rule = _replace_dirac_c_with_projector_label(
+        raw_rule,
+        projector_head=projector_head,
+    )
+    flow_rule = (Expression.num(phase) * flow_rule).cancel().expand()
+    return _ec_flow_canonical_report(
+        flow_rule,
+        coefficient=coefficient,
+        external_indices=external_indices,
+    )
+
+
+def _ec_comparison_row(
+    *,
+    reference: FeynRulesVertex,
+    coefficient: str,
+    lagrangian,
+    field_map: dict[str, object],
+) -> tuple[dict[str, object], dict[str, object]]:
+    reference_key = _name_key(reference.fields)
+    rule = _EC_PARTNER_PACKAGING_RULES[(reference_key, coefficient)]
+    external_indices = _weinberg_external_indices(reference, field_map)
+
+    parsed_feynrules = parse_smeft2_matter_rule_with_projector_labels(reference.rule)
+    filtered_feynrules = _filter_terms_by_coefficient_head(
+        parsed_feynrules,
+        coefficient,
+    )
+    feynrules_report = _ec_flow_canonical_report(
+        filtered_feynrules,
+        coefficient=coefficient,
+        external_indices=external_indices,
+    )
+    projector_head = _ec_projector_head(filtered_feynrules)
+
+    partner_fields = tuple(rule.partner_key.split("|"))
+    candidate_orders = _charge_conjugation_candidate_orders(
+        reference.fields,
+        partner_fields,
+    )
+    first_order, second_order = _ec_order_pair(
+        reference_fields=reference.fields,
+        candidate_orders=candidate_orders,
+        antisymmetric_duplicates=rule.antisymmetric_duplicates,
+    )
+    candidates = _ec_candidate_raw_rules(
+        lagrangian=lagrangian,
+        field_map=field_map,
+        first_order=first_order,
+        second_order=second_order,
+    )
+
+    tested_combinations = {}
+    matching_combinations = []
+    candidate_reports = {}
+    use_raw_projector_flow = coefficient in _ec_raw_projector_flow_heads()
+    phases = (1, -1) if use_raw_projector_flow or second_order is None else (rule.phase,)
+    for combination, raw_rule in candidates.items():
+        for phase in phases:
+            tested_name = f"{combination}; phase {phase:+d}"
+            if use_raw_projector_flow:
+                feynpy_report = _ec_flow_report_for_raw_projector_candidate(
+                    raw_rule=raw_rule,
+                    coefficient=coefficient,
+                    external_indices=external_indices,
+                    phase=phase,
+                    projector_head=projector_head,
+                )
+            else:
+                feynpy_report = _ec_flow_report_for_local_candidate(
+                    raw_rule=raw_rule,
+                    coefficient=coefficient,
+                    external_indices=external_indices,
+                    phase=phase,
+                    projector_head=projector_head,
+                )
+            candidate_reports[tested_name] = feynpy_report
+            comparison = _coefficient_comparison_from_reports(
+                coefficient,
+                feynpy_report,
+                feynrules_report,
+            )
+            difference = _canonical_difference_expression(
+                feynpy_report,
+                feynrules_report,
+            )
+            tested_combinations[tested_name] = {
+                "combination": combination,
+                "phase": phase,
+                "matches": comparison.matches,
+                "canonical_difference": difference.to_canonical_string(),
+                "feynpy_canonical_terms": comparison.feynpy_canonical_terms,
+                "feynrules_canonical_terms": comparison.feynrules_canonical_terms,
+            }
+            if comparison.matches:
+                matching_combinations.append(tested_name)
+
+    status = "exact_match" if len(matching_combinations) == 1 else "mismatch"
+    chosen_candidate = matching_combinations[0] if status == "exact_match" else None
+    chosen_combination = (
+        tested_combinations[chosen_candidate]["combination"]
+        if chosen_candidate is not None
+        else None
+    )
+    chosen_phase = (
+        tested_combinations[chosen_candidate]["phase"]
+        if chosen_candidate is not None
+        else None
+    )
+    chosen_report = (
+        candidate_reports[chosen_candidate]
+        if chosen_candidate is not None
+        else next(iter(candidate_reports.values()))
+    )
+    canonical_difference = _canonical_difference_expression(
+        chosen_report,
+        feynrules_report,
+    )
+    feynpy_expression = _expression_from_canonical_map(chosen_report.map)
+    feynrules_expression = _expression_from_canonical_map(feynrules_report.map)
+    second_order_payload = list(second_order) if second_order is not None else None
+    tested_identical_leg_mappings = (
+        [list(order) for order in candidate_orders]
+        if len(candidate_orders) == 2
+        else []
+    )
+
+    vertex = {
+        "key": reference_key,
+        "fields": list(reference.fields),
+        "coefficient": coefficient,
+        "source_orders": {
+            "first": list(first_order),
+            "second": second_order_payload,
+            "combination": chosen_combination,
+            "phase": chosen_phase,
+        },
+        "heads": [coefficient],
+        "rule": feynpy_expression.to_canonical_string(),
+    }
+    row = {
+        "feynrules_key": reference_key,
+        "feynrules_id": reference.identifier,
+        "fields": list(reference.fields),
+        "coefficient": coefficient,
+        "feynpy_partner_key": rule.partner_key,
+        "feynpy_source_orders": [
+            list(order)
+            for order in (first_order, second_order)
+            if order is not None
+        ],
+        "tested_identical_leg_mappings": tested_identical_leg_mappings,
+        "chosen_combination": chosen_combination,
+        "chosen_candidate": chosen_candidate,
+        "charge_conjugation_phase": rule.phase,
+        "chosen_phase": chosen_phase,
+        "projector_head": projector_head,
+        "canonical_difference": canonical_difference.to_canonical_string(),
+        "status": status,
+        "filtered_feynrules_heads": list(_alpha_heads_in_expression(filtered_feynrules)),
+        "reconstructed_feynpy_heads": list(_alpha_heads_in_expression(feynpy_expression)),
+        "feynpy_expression": feynpy_expression.to_canonical_string(),
+        "filtered_feynrules_expression": feynrules_expression.to_canonical_string(),
+        "tested_ordered_combinations": tested_combinations,
+    }
+    if status != "exact_match":
+        row["canonical_nonzero_difference"] = canonical_difference.to_canonical_string()
+    return row, vertex
+
+
+def compare_ec_charge_conjugation_reconstruction(
+    reference_path: Path = REFERENCE,
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    bundle = build_smeft_green_bpreserving()
+    lagrangian = bundle.model.lagrangian()
+    field_map = _comparison_field_map(bundle)
+    references_by_key = _ec_reference_vertices_by_key(reference_path)
+
+    rows = []
+    vertices = []
+    for reference_key, coefficient in sorted(
+        _EC_PARTNER_PACKAGING_RULES,
+        key=lambda item: (
+            references_by_key[item[0]].identifier or 0,
+            item[1],
+        ),
+    ):
+        if coefficient not in _EC_CC_COEFFICIENTS:
+            continue
+        row, vertex = _ec_comparison_row(
+            reference=references_by_key[reference_key],
+            coefficient=coefficient,
+            lagrangian=lagrangian,
+            field_map=field_map,
+        )
+        rows.append(row)
+        vertices.append(vertex)
+
+    report = {
+        "generated_on": date.today().isoformat(),
+        "comparison_level": (
+            "EC charge-conjugation four-fermion sidecar comparison. The six "
+            "problematic FeynRules rows are split by alphaEc coefficient head, "
+            "the FeynPy charge-conjugation partner is reconstructed in the "
+            "FeynRules external-field order, and each coefficient sector is "
+            "compared independently in a compact PL/PR fermion-flow basis."
+        ),
+        "summary": {
+            "coefficient_sectors": len(rows),
+            "exact_matches": sum(row["status"] == "exact_match" for row in rows),
+            "wrong_combination_matches": sum(
+                sum(
+                    payload["matches"]
+                    for candidate, payload in row[
+                        "tested_ordered_combinations"
+                    ].items()
+                    if candidate != row["chosen_candidate"]
+                )
+                for row in rows
+            ),
+            "duplicate_leg_assignment_sectors": sum(
+                bool(row["tested_identical_leg_mappings"]) for row in rows
+            ),
+        },
+        "vertices": rows,
     }
     return report, vertices
 
@@ -3897,6 +4704,23 @@ def write_weinberg_outputs(
     )
 
 
+def write_ec_charge_conjugation_outputs(
+    report: dict[str, object],
+    vertices: list[dict[str, object]],
+    *,
+    comparison_json: Path = EC_CC_COMPARISON_JSON,
+    feynpy_vertices: Path = EC_CC_VERTICES,
+) -> None:
+    comparison_json.write_text(
+        json.dumps(report, indent=2, sort_keys=False) + "\n",
+        encoding="utf-8",
+    )
+    feynpy_vertices.write_text(
+        json.dumps(vertices, indent=2, sort_keys=False) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _markdown_report(report: dict[str, object]) -> str:
     summary = report["summary"]
     counts = summary["status_counts"]
@@ -4209,12 +5033,17 @@ def main(argv: list[str] | None = None) -> int:
     weinberg_report, weinberg_vertices = compare_reconstructed_weinberg(
         args.reference
     )
+    ec_cc_report, ec_cc_vertices = compare_ec_charge_conjugation_reconstruction(
+        args.reference
+    )
     if not args.check:
         write_outputs(report, local_vertices)
         write_weinberg_outputs(weinberg_report, weinberg_vertices)
+        write_ec_charge_conjugation_outputs(ec_cc_report, ec_cc_vertices)
 
     summary = report["summary"]
     weinberg_summary = weinberg_report["summary"]
+    ec_cc_summary = ec_cc_report["summary"]
     exact_supported = summary["exact_symbolic_supported_vertices"]
     direct_exact = summary["exact_symbolic_direct_match_vertices"]
     pinned_cc = summary["cc_packaging_pinned_match_vertices"]
@@ -4243,6 +5072,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         or weinberg_summary["wrong_sign_matches"]
     )
+    ec_cc_check_failed = (
+        ec_cc_summary["coefficient_sectors"] != len(_EC_PARTNER_PACKAGING_RULES)
+        or ec_cc_summary["exact_matches"] != ec_cc_summary["coefficient_sectors"]
+        or ec_cc_summary["wrong_combination_matches"]
+    )
     print(
         "SMEFT2 comparison: "
         f"{summary['operator_content_matches_including_cc']}/"
@@ -4268,6 +5102,10 @@ def main(argv: list[str] | None = None) -> int:
         f"{weinberg_summary['coefficient_matches']}/"
         f"{weinberg_summary['coefficient_checks']} coefficient checks, "
         f"wrong-sign matches={weinberg_summary['wrong_sign_matches']}; "
+        "EC CC sidecar="
+        f"{ec_cc_summary['exact_matches']}/"
+        f"{ec_cc_summary['coefficient_sectors']} coefficient sectors, "
+        f"wrong-combination matches={ec_cc_summary['wrong_combination_matches']}; "
         f"reference-only={summary['reference_only_signatures']}; "
         f"feynpy-only={summary['feynpy_only_signatures']}."
     )
@@ -4291,6 +5129,7 @@ def main(argv: list[str] | None = None) -> int:
         or summary["canonical_map_error_vertices"]
         or (args.strict_counts and summary["shared_head_count_mismatches"])
         or weinberg_check_failed
+        or ec_cc_check_failed
     ):
         return 1
     return 0

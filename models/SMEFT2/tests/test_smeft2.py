@@ -52,6 +52,22 @@ def _weinberg_comparison_report() -> dict:
     )
 
 
+def _ec_cc_comparison_report() -> dict:
+    return json.loads(
+        (MODEL_DIR / "ec_charge_conjugation_comparison_report.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+
+def _ec_cc_vertices() -> list[dict]:
+    return json.loads(
+        (MODEL_DIR / "ec_charge_conjugation_vertices.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+
 def _compact_rule_text(rule: str) -> str:
     return rule.replace("python::{}::", "").replace("python::{real}::", "")
 
@@ -171,12 +187,31 @@ def _patch_passing_weinberg_comparison(monkeypatch):
     )
 
 
+def _patch_passing_ec_cc_comparison(monkeypatch):
+    monkeypatch.setattr(
+        smeft2_comparison,
+        "compare_ec_charge_conjugation_reconstruction",
+        lambda _reference=smeft2_comparison.REFERENCE: (
+            {
+                "summary": {
+                    "coefficient_sectors": 12,
+                    "exact_matches": 12,
+                    "wrong_combination_matches": 0,
+                    "duplicate_leg_assignment_sectors": 4,
+                }
+            },
+            [],
+        ),
+    )
+
+
 def test_smeft2_check_requires_direct_exact_by_default(monkeypatch):
     def fake_compare(_reference):
         return {"summary": _check_summary()}, ()
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 0
 
 
@@ -192,6 +227,7 @@ def test_smeft2_check_rejects_pinned_cc_without_flag(monkeypatch):
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
     assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
 
@@ -209,6 +245,7 @@ def test_smeft2_check_rejects_unresolved_cc_even_with_allow_flag(monkeypatch):
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
     assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 1
 
@@ -224,6 +261,7 @@ def test_smeft2_check_rejects_incomplete_exact_status_accounting(monkeypatch):
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
 
 
@@ -235,6 +273,7 @@ def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
 
     def fake_compare_with_raw_count_gap(_reference):
@@ -246,6 +285,7 @@ def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch
         fake_compare_with_raw_count_gap,
     )
     _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check", "--strict-counts"]) == 1
 
 
@@ -261,6 +301,7 @@ def test_smeft2_check_rejects_strict_exact_mismatches(monkeypatch):
 
     monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
 
 
@@ -284,6 +325,32 @@ def test_smeft2_check_rejects_weinberg_sidecar_mismatch(monkeypatch):
         smeft2_comparison,
         "compare_reconstructed_weinberg",
         fake_weinberg_compare,
+    )
+    _patch_passing_ec_cc_comparison(monkeypatch)
+
+    assert smeft2_comparison.main(["--check"]) == 1
+
+
+def test_smeft2_check_rejects_ec_cc_sidecar_mismatch(monkeypatch):
+    def fake_compare(_reference):
+        return {"summary": _check_summary()}, ()
+
+    def fake_ec_compare(_reference):
+        return {
+            "summary": {
+                "coefficient_sectors": 12,
+                "exact_matches": 11,
+                "wrong_combination_matches": 0,
+                "duplicate_leg_assignment_sectors": 4,
+            }
+        }, []
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
+    monkeypatch.setattr(
+        smeft2_comparison,
+        "compare_ec_charge_conjugation_reconstruction",
+        fake_ec_compare,
     )
 
     assert smeft2_comparison.main(["--check"]) == 1
@@ -510,6 +577,109 @@ def test_smeft2_reconstructed_weinberg_matches_feynrules_by_flavor_and_sign():
             (first_plus_second - feynrules_rule).cancel().expand(),
             external_indices=external_indices,
         )
+
+
+def test_smeft2_ec_cc_sidecar_export_shape():
+    report = _ec_cc_comparison_report()
+    vertices = _ec_cc_vertices()
+
+    assert report["summary"]["coefficient_sectors"] == 12
+    assert report["summary"]["exact_matches"] == 12
+    assert report["summary"]["wrong_combination_matches"] == 0
+    assert report["summary"]["duplicate_leg_assignment_sectors"] == 4
+    assert len(vertices) == 12
+
+    expected_keys = {
+        "dRbar|eR|lLbar|qL",
+        "dR|eRbar|lL|qLbar",
+        "dRbar|qL|qL|uRbar",
+        "dR|qLbar|qLbar|uR",
+        "eRbar|lL|qL|uRbar",
+        "eR|lLbar|qLbar|uR",
+    }
+    expected_coefficients = {
+        "alphaEcqedl",
+        "alphaEcqedlthree",
+        "alphaEcudqq",
+        "alphaEcudqqtwo",
+        "alphaEcuelq",
+        "alphaEcuelqtwo",
+    }
+    assert {vertex["key"] for vertex in vertices} == expected_keys
+    assert {vertex["coefficient"] for vertex in vertices} == expected_coefficients
+    assert all(vertex["heads"] == [vertex["coefficient"]] for vertex in vertices)
+    assert all(vertex["source_orders"]["combination"] for vertex in vertices)
+    assert all(vertex["rule"] != "0" for vertex in vertices)
+
+    duplicate_rows = [
+        row
+        for row in report["vertices"]
+        if row["feynrules_key"]
+        in {"dRbar|qL|qL|uRbar", "dR|qLbar|qLbar|uR"}
+    ]
+    assert len(duplicate_rows) == 4
+    assert all(len(row["tested_identical_leg_mappings"]) == 2 for row in duplicate_rows)
+    assert {
+        tuple(tuple(order) for order in row["tested_identical_leg_mappings"])
+        for row in duplicate_rows
+        if row["feynrules_key"] == "dRbar|qL|qL|uRbar"
+    } == {
+        (
+            ("dRbar", "qL", "uR", "qLbar"),
+            ("dRbar", "qLbar", "uR", "qL"),
+        )
+    }
+    assert {
+        tuple(tuple(order) for order in row["tested_identical_leg_mappings"])
+        for row in duplicate_rows
+        if row["feynrules_key"] == "dR|qLbar|qLbar|uR"
+    } == {
+        (
+            ("qL", "dR", "qLbar", "uRbar"),
+            ("qLbar", "dR", "qL", "uRbar"),
+        )
+    }
+
+
+def test_smeft2_ec_cc_reconstruction_matches_feynrules_per_coefficient():
+    report, vertices = smeft2_comparison.compare_ec_charge_conjugation_reconstruction()
+
+    assert report["summary"]["coefficient_sectors"] == 12
+    assert report["summary"]["exact_matches"] == 12
+    assert report["summary"]["wrong_combination_matches"] == 0
+    assert len(vertices) == 12
+
+    for row in report["vertices"]:
+        assert row["status"] == "exact_match"
+        assert row["canonical_difference"] == "0"
+        assert row["filtered_feynrules_heads"] == [row["coefficient"]]
+        assert row["reconstructed_feynpy_heads"] == [row["coefficient"]]
+        assert row["feynpy_expression"] != "0"
+        assert row["filtered_feynrules_expression"] != "0"
+
+        tested = row["tested_ordered_combinations"]
+        matches = [
+            name
+            for name, payload in tested.items()
+            if payload["matches"]
+        ]
+        assert matches == [row["chosen_candidate"]]
+        assert all(
+            not payload["matches"]
+            for name, payload in tested.items()
+            if name != row["chosen_candidate"]
+        )
+
+    duplicated = {
+        row["feynrules_key"]: row["tested_identical_leg_mappings"]
+        for row in report["vertices"]
+        if row["tested_identical_leg_mappings"]
+    }
+    assert set(duplicated) == {
+        "dRbar|qL|qL|uRbar",
+        "dR|qLbar|qLbar|uR",
+    }
+    assert all(len(mappings) == 2 for mappings in duplicated.values())
 
 
 def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():

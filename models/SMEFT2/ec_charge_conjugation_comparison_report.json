@@ -1,0 +1,768 @@
+{
+  "generated_on": "2026-07-28",
+  "comparison_level": "EC charge-conjugation four-fermion sidecar comparison. The six problematic FeynRules rows are split by alphaEc coefficient head, the FeynPy charge-conjugation partner is reconstructed in the FeynRules external-field order, and each coefficient sector is compared independently in a compact PL/PR fermion-flow basis.",
+  "summary": {
+    "coefficient_sectors": 12,
+    "exact_matches": 12,
+    "wrong_combination_matches": 0,
+    "duplicate_leg_assignment_sectors": 4
+  },
+  "vertices": [
+    {
+      "feynrules_key": "dRbar|qL|qL|uRbar",
+      "feynrules_id": 31,
+      "fields": [
+        "dRbar",
+        "qL",
+        "uRbar",
+        "qL"
+      ],
+      "coefficient": "alphaEcudqq",
+      "feynpy_partner_key": "dRbar|qL|qLbar|uR",
+      "feynpy_source_orders": [
+        [
+          "dRbar",
+          "qL",
+          "uR",
+          "qLbar"
+        ],
+        [
+          "dRbar",
+          "qLbar",
+          "uR",
+          "qL"
+        ]
+      ],
+      "tested_identical_leg_mappings": [
+        [
+          "dRbar",
+          "qL",
+          "uR",
+          "qLbar"
+        ],
+        [
+          "dRbar",
+          "qLbar",
+          "uR",
+          "qL"
+        ]
+      ],
+      "chosen_combination": "first + second",
+      "chosen_candidate": "first + second; phase -1",
+      "charge_conjugation_phase": 1,
+      "chosen_phase": -1,
+      "projector_head": "PL",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcudqq"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcudqq"
+      ],
+      "feynpy_expression": "-1\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "filtered_feynrules_expression": "-1\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "tested_ordered_combinations": {
+        "first - second; phase +1": {
+          "combination": "first - second",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first - second; phase -1": {
+          "combination": "first - second",
+          "phase": -1,
+          "matches": false,
+          "canonical_difference": "2\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first + second; phase +1": {
+          "combination": "first + second",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+2\ud835\udc56*conj(python::{}::alphaEcudqq(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first + second; phase -1": {
+          "combination": "first + second",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        }
+      }
+    },
+    {
+      "feynrules_key": "dRbar|qL|qL|uRbar",
+      "feynrules_id": 31,
+      "fields": [
+        "dRbar",
+        "qL",
+        "uRbar",
+        "qL"
+      ],
+      "coefficient": "alphaEcudqqtwo",
+      "feynpy_partner_key": "dRbar|qL|qLbar|uR",
+      "feynpy_source_orders": [
+        [
+          "dRbar",
+          "qL",
+          "uR",
+          "qLbar"
+        ],
+        [
+          "dRbar",
+          "qLbar",
+          "uR",
+          "qL"
+        ]
+      ],
+      "tested_identical_leg_mappings": [
+        [
+          "dRbar",
+          "qL",
+          "uR",
+          "qLbar"
+        ],
+        [
+          "dRbar",
+          "qLbar",
+          "uR",
+          "qL"
+        ]
+      ],
+      "chosen_combination": "first + second",
+      "chosen_candidate": "first + second; phase +1",
+      "charge_conjugation_phase": 1,
+      "chosen_phase": 1,
+      "projector_head": "PL",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcudqqtwo"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcudqqtwo"
+      ],
+      "feynpy_expression": "-1\ud835\udc56*conj(python::{}::alphaEcudqqtwo(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaEcudqqtwo(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "filtered_feynrules_expression": "-1\ud835\udc56*conj(python::{}::alphaEcudqqtwo(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))+1\ud835\udc56*conj(python::{}::alphaEcudqqtwo(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "tested_ordered_combinations": {
+        "first - second; phase +1": {
+          "combination": "first - second",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "2\ud835\udc56*conj(python::{}::alphaEcudqqtwo(python::{}::f3,python::{}::f1,python::{}::f4,python::{}::f2))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i2,python::{}::i4)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first + second; phase +1": {
+          "combination": "first + second",
+          "phase": 1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        }
+      }
+    },
+    {
+      "feynrules_key": "eRbar|lL|qL|uRbar",
+      "feynrules_id": 32,
+      "fields": [
+        "eRbar",
+        "lL",
+        "uRbar",
+        "qL"
+      ],
+      "coefficient": "alphaEcuelq",
+      "feynpy_partner_key": "eRbar|lL|qLbar|uR",
+      "feynpy_source_orders": [
+        [
+          "eRbar",
+          "lL",
+          "uR",
+          "qLbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase -1",
+      "charge_conjugation_phase": 1,
+      "chosen_phase": -1,
+      "projector_head": "PL",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcuelq"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcuelq"
+      ],
+      "feynpy_expression": "1\ud835\udc56*conj(python::{}::alphaEcuelq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "filtered_feynrules_expression": "1\ud835\udc56*conj(python::{}::alphaEcuelq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*conj(python::{}::alphaEcuelq(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    },
+    {
+      "feynrules_key": "eRbar|lL|qL|uRbar",
+      "feynrules_id": 32,
+      "fields": [
+        "eRbar",
+        "lL",
+        "uRbar",
+        "qL"
+      ],
+      "coefficient": "alphaEcuelqtwo",
+      "feynpy_partner_key": "eRbar|lL|qLbar|uR",
+      "feynpy_source_orders": [
+        [
+          "eRbar",
+          "lL",
+          "uR",
+          "qLbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase +1",
+      "charge_conjugation_phase": 1,
+      "chosen_phase": 1,
+      "projector_head": "PL",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcuelqtwo"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcuelqtwo"
+      ],
+      "feynpy_expression": "1\ud835\udc56*conj(python::{}::alphaEcuelqtwo(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "filtered_feynrules_expression": "1\ud835\udc56*conj(python::{}::alphaEcuelqtwo(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*conj(python::{}::alphaEcuelqtwo(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PL(python::{}::i1,python::{}::i3)*python::{real}::PL(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w2),spenso::{spenso::upper}::cof(2,python::{}::w4))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    },
+    {
+      "feynrules_key": "dRbar|eR|lLbar|qL",
+      "feynrules_id": 37,
+      "fields": [
+        "dRbar",
+        "eR",
+        "lLbar",
+        "qL"
+      ],
+      "coefficient": "alphaEcqedl",
+      "feynpy_partner_key": "dRbar|eR|lL|qLbar",
+      "feynpy_source_orders": [
+        [
+          "dRbar",
+          "eR",
+          "lL",
+          "qLbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase -1",
+      "charge_conjugation_phase": -1,
+      "chosen_phase": -1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcqedl"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcqedl"
+      ],
+      "feynpy_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedl(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))",
+      "filtered_feynrules_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedl(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedl(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    },
+    {
+      "feynrules_key": "dRbar|eR|lLbar|qL",
+      "feynrules_id": 37,
+      "fields": [
+        "dRbar",
+        "eR",
+        "lLbar",
+        "qL"
+      ],
+      "coefficient": "alphaEcqedlthree",
+      "feynpy_partner_key": "dRbar|eR|lL|qLbar",
+      "feynpy_source_orders": [
+        [
+          "dRbar",
+          "eR",
+          "lL",
+          "qLbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase -1",
+      "charge_conjugation_phase": -1,
+      "chosen_phase": -1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcqedlthree"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcqedlthree"
+      ],
+      "feynpy_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedlthree(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))",
+      "filtered_feynrules_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedlthree(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcqedlthree(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    },
+    {
+      "feynrules_key": "dR|qLbar|qLbar|uR",
+      "feynrules_id": 51,
+      "fields": [
+        "qLbar",
+        "dR",
+        "qLbar",
+        "uR"
+      ],
+      "coefficient": "alphaEcudqq",
+      "feynpy_partner_key": "dR|qL|qLbar|uRbar",
+      "feynpy_source_orders": [
+        [
+          "qL",
+          "dR",
+          "qLbar",
+          "uRbar"
+        ],
+        [
+          "qLbar",
+          "dR",
+          "qL",
+          "uRbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [
+        [
+          "qL",
+          "dR",
+          "qLbar",
+          "uRbar"
+        ],
+        [
+          "qLbar",
+          "dR",
+          "qL",
+          "uRbar"
+        ]
+      ],
+      "chosen_combination": "first + second",
+      "chosen_candidate": "first + second; phase +1",
+      "charge_conjugation_phase": 1,
+      "chosen_phase": 1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcudqq"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcudqq"
+      ],
+      "feynpy_expression": "-1\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "filtered_feynrules_expression": "-1\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "tested_ordered_combinations": {
+        "first - second; phase +1": {
+          "combination": "first - second",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first - second; phase -1": {
+          "combination": "first - second",
+          "phase": -1,
+          "matches": false,
+          "canonical_difference": "2\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first + second; phase +1": {
+          "combination": "first + second",
+          "phase": 1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first + second; phase -1": {
+          "combination": "first + second",
+          "phase": -1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))+2\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqq(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        }
+      }
+    },
+    {
+      "feynrules_key": "dR|qLbar|qLbar|uR",
+      "feynrules_id": 51,
+      "fields": [
+        "qLbar",
+        "dR",
+        "qLbar",
+        "uR"
+      ],
+      "coefficient": "alphaEcudqqtwo",
+      "feynpy_partner_key": "dR|qL|qLbar|uRbar",
+      "feynpy_source_orders": [
+        [
+          "qL",
+          "dR",
+          "qLbar",
+          "uRbar"
+        ],
+        [
+          "qLbar",
+          "dR",
+          "qL",
+          "uRbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [
+        [
+          "qL",
+          "dR",
+          "qLbar",
+          "uRbar"
+        ],
+        [
+          "qLbar",
+          "dR",
+          "qL",
+          "uRbar"
+        ]
+      ],
+      "chosen_combination": "first + second",
+      "chosen_candidate": "first + second; phase -1",
+      "charge_conjugation_phase": -1,
+      "chosen_phase": -1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcudqqtwo"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcudqqtwo"
+      ],
+      "feynpy_expression": "-1\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqqtwo(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "filtered_feynrules_expression": "-1\ud835\udc56*python::{real}::PR(python::{}::i3,python::{}::i1)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqqtwo(python::{}::f4,python::{}::f2,python::{}::f3,python::{}::f1)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))+1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "tested_ordered_combinations": {
+        "first - second; phase -1": {
+          "combination": "first - second",
+          "phase": -1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcudqqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c1),spenso::{spenso::upper}::cof(3,python::{}::c2))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        },
+        "first + second; phase -1": {
+          "combination": "first + second",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 2,
+          "feynrules_canonical_terms": 2
+        }
+      }
+    },
+    {
+      "feynrules_key": "eR|lLbar|qLbar|uR",
+      "feynrules_id": 52,
+      "fields": [
+        "lLbar",
+        "eR",
+        "qLbar",
+        "uR"
+      ],
+      "coefficient": "alphaEcuelq",
+      "feynpy_partner_key": "eR|lLbar|qL|uRbar",
+      "feynpy_source_orders": [
+        [
+          "lLbar",
+          "eR",
+          "qL",
+          "uRbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase +1",
+      "charge_conjugation_phase": -1,
+      "chosen_phase": 1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcuelq"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcuelq"
+      ],
+      "feynpy_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "filtered_feynrules_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelq(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    },
+    {
+      "feynrules_key": "eR|lLbar|qLbar|uR",
+      "feynrules_id": 52,
+      "fields": [
+        "lLbar",
+        "eR",
+        "qLbar",
+        "uR"
+      ],
+      "coefficient": "alphaEcuelqtwo",
+      "feynpy_partner_key": "eR|lLbar|qL|uRbar",
+      "feynpy_source_orders": [
+        [
+          "lLbar",
+          "eR",
+          "qL",
+          "uRbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase -1",
+      "charge_conjugation_phase": -1,
+      "chosen_phase": -1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcuelqtwo"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcuelqtwo"
+      ],
+      "feynpy_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "filtered_feynrules_expression": "1\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*python::{}::alphaEcuelqtwo(python::{}::f4,python::{}::f2,python::{}::f1,python::{}::f3)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c3),spenso::{spenso::upper}::cof(3,python::{}::c4))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso_python::{}::weak_eps2(spenso::{spenso::upper}::cof(2,python::{}::w1),spenso::{spenso::upper}::cof(2,python::{}::w3))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    },
+    {
+      "feynrules_key": "dR|eRbar|lL|qLbar",
+      "feynrules_id": 58,
+      "fields": [
+        "eRbar",
+        "dR",
+        "qLbar",
+        "lL"
+      ],
+      "coefficient": "alphaEcqedl",
+      "feynpy_partner_key": "dR|eRbar|lLbar|qL",
+      "feynpy_source_orders": [
+        [
+          "eRbar",
+          "dR",
+          "qL",
+          "lLbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase -1",
+      "charge_conjugation_phase": -1,
+      "chosen_phase": -1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcqedl"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcqedl"
+      ],
+      "feynpy_expression": "1\ud835\udc56*conj(python::{}::alphaEcqedl(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))",
+      "filtered_feynrules_expression": "1\ud835\udc56*conj(python::{}::alphaEcqedl(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*conj(python::{}::alphaEcqedl(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    },
+    {
+      "feynrules_key": "dR|eRbar|lL|qLbar",
+      "feynrules_id": 58,
+      "fields": [
+        "eRbar",
+        "dR",
+        "qLbar",
+        "lL"
+      ],
+      "coefficient": "alphaEcqedlthree",
+      "feynpy_partner_key": "dR|eRbar|lLbar|qL",
+      "feynpy_source_orders": [
+        [
+          "eRbar",
+          "dR",
+          "qL",
+          "lLbar"
+        ]
+      ],
+      "tested_identical_leg_mappings": [],
+      "chosen_combination": "first",
+      "chosen_candidate": "first; phase -1",
+      "charge_conjugation_phase": -1,
+      "chosen_phase": -1,
+      "projector_head": "PR",
+      "canonical_difference": "0",
+      "status": "exact_match",
+      "filtered_feynrules_heads": [
+        "alphaEcqedlthree"
+      ],
+      "reconstructed_feynpy_heads": [
+        "alphaEcqedlthree"
+      ],
+      "feynpy_expression": "1\ud835\udc56*conj(python::{}::alphaEcqedlthree(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))",
+      "filtered_feynrules_expression": "1\ud835\udc56*conj(python::{}::alphaEcqedlthree(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))",
+      "tested_ordered_combinations": {
+        "first; phase +1": {
+          "combination": "first",
+          "phase": 1,
+          "matches": false,
+          "canonical_difference": "-2\ud835\udc56*conj(python::{}::alphaEcqedlthree(python::{}::f3,python::{}::f1,python::{}::f2,python::{}::f4))*python::{real}::PR(python::{}::i1,python::{}::i3)*python::{real}::PR(python::{}::i4,python::{}::i2)*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(2,python::{}::w3),spenso::{spenso::upper}::cof(2,python::{}::w4))*spenso::{symmetric,real}::g(spenso::{spenso::upper}::cof(3,python::{}::c2),spenso::{spenso::upper}::cof(3,python::{}::c3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i4),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_3))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_1),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_2),spenso::{spenso::upper}::bis(4,python::{}::i2),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_3),spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_1))*spenso::{}::gamma(spenso::{spenso::upper}::bis(4,python::{}::i_cc_dummy_4),spenso::{spenso::upper}::bis(4,python::{}::i3),spenso::{spenso::upper}::mink(4,python::{}::mu_cc_dummy_2))",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        },
+        "first; phase -1": {
+          "combination": "first",
+          "phase": -1,
+          "matches": true,
+          "canonical_difference": "0",
+          "feynpy_canonical_terms": 1,
+          "feynrules_canonical_terms": 1
+        }
+      }
+    }
+  ]
+}
