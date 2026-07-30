@@ -29,7 +29,6 @@ packages = [
     "models",
     "models.SM",
     "models.UnbrokenSM_BFM",
-    "models.SMEFT",
     "models.SMEFT2",
 ]
 
@@ -42,7 +41,6 @@ feynrules = "src/feynrules"
 models = "models"
 "models.SM" = "models/SM"
 "models.UnbrokenSM_BFM" = "models/UnbrokenSM_BFM"
-"models.SMEFT" = "models/SMEFT"
 "models.SMEFT2" = "models/SMEFT2"
 
 [tool.setuptools.package-data]
@@ -70,6 +68,5 @@ testpaths = [
     "tests",
     "models/SM/tests",
     "models/UnbrokenSM_BFM/tests",
-    "models/SMEFT/tests",
     "models/SMEFT2/tests",
 ]
