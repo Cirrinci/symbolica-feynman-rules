@@ -37,17 +37,21 @@ from models.SMEFT2 import build_smeft_green_bpreserving
 from symbolic.tensor_canonicalization import (
     CanonicalMonomialReport,
     CanonicalTensorMonomial,
+    SPENSO_TENSOR_HEAD_SPECS,
+    TensorHeadSpec,
     canonical_external_index_set,
     canonical_tensor_monomial_report,
     canonical_tensor_monomial_map,
 )
 from symbolica import AtomType, Expression, S
+from symbolica.community.spenso import TensorName
 
 from symbolic.spenso_structures import (
     COLOR_ADJ,
     COLOR_FUND,
     WEAK_ADJ,
     WEAK_FUND,
+    bispinor_index,
     gamma_matrix,
     gauge_generator,
     dirac_charge_conjugation,
@@ -358,26 +362,30 @@ def _spinor_chain_replacement_with_projector_label(
     """Parse a FeynRules spinor chain and retain chirality as PL/PR."""
 
     projector_items = tuple(item for item in items if item in {"ProjM", "ProjP"})
-    matrix_items = tuple(item for item in items if item not in {"ProjM", "ProjP"})
     if len(projector_items) != 1:
         raise ValueError(f"Unsupported FeynRules projector chain: {items!r}")
 
     projector_head = "PL" if projector_items[0] == "ProjM" else "PR"
-    chain = (
-        Expression.num(1)
-        if not matrix_items
-        else Expression.parse(
-            _spinor_chain_replacement(
-                matrix_items,
-                left,
-                right,
-                chain_id=chain_id,
-            )
+    result = Expression.num(1)
+    current = S(left)
+    for item_id, item in enumerate(items, start=1):
+        target = (
+            S(right)
+            if item_id == len(items)
+            else S(f"i_feynrules_chain_{chain_id}_{item_id}")
         )
-    )
-    return (
-        chain * S(projector_head)(S(left), S(right))
-    ).cancel().expand().to_canonical_string()
+        if item == "ProjM" or item == "ProjP":
+            result *= _ec_typed_projector(projector_head, current, target)
+        else:
+            result *= _spinor_chain_item_factor(
+                item,
+                current,
+                target,
+                chain_id=chain_id,
+                item_id=item_id,
+            )
+        current = target
+    return result.cancel().expand().to_canonical_string()
 
 
 def _bare_symbolica_name(name: str) -> str:
@@ -1308,6 +1316,23 @@ def _canonical_report_for_coefficient_head(
 _DIRAC_C_FACTOR_SIGNATURE = ("spinor", "spinor")
 _GAMMA_FACTOR_SIGNATURE = ("spinor", "spinor", "lorentz")
 _SPINOR_METRIC_FACTOR_SIGNATURE = ("spinor", "spinor")
+_EC_CC_PL = TensorName("PL")
+_EC_CC_PR = TensorName("PR")
+_EC_CC_TENSOR_HEAD_SPECS = (
+    *SPENSO_TENSOR_HEAD_SPECS,
+    TensorHeadSpec(
+        raw_name="spenso_python::PL",
+        canonical_name="canon::PL",
+        arity=2,
+        head_kwargs={},
+    ),
+    TensorHeadSpec(
+        raw_name="spenso_python::PR",
+        canonical_name="canon::PR",
+        arity=2,
+        head_kwargs={},
+    ),
+)
 _EC_CC_COEFFICIENTS = frozenset(
     {
         "alphaEcqedl",
@@ -1318,6 +1343,19 @@ _EC_CC_COEFFICIENTS = frozenset(
         "alphaEcuelqtwo",
     }
 )
+
+
+def _ec_typed_projector(projector_head: str, left_spinor, right_spinor) -> Expression:
+    if projector_head == "PL":
+        tensor = _EC_CC_PL
+    elif projector_head == "PR":
+        tensor = _EC_CC_PR
+    else:
+        raise ValueError(f"Unsupported EC projector head {projector_head!r}.")
+    return tensor(
+        bispinor_index(left_spinor),
+        bispinor_index(right_spinor),
+    ).to_expression()
 
 
 @dataclass(frozen=True)
@@ -1601,15 +1639,17 @@ def _spinor_flow_chain_factors(
     *,
     projector_head: str,
 ) -> list[object]:
-    factors = (
-        []
-        if not lorentz_sequence
-        else _spinor_chain_factors(start, end, lorentz_sequence, used_labels)
-    )
-    return [
-        *factors,
-        (projector_head, _SPINOR_METRIC_FACTOR_SIGNATURE, (start, end)),
-    ]
+    if not lorentz_sequence:
+        return [(projector_head, _SPINOR_METRIC_FACTOR_SIGNATURE, (start, end))]
+
+    factors = []
+    current = start
+    for lorentz in lorentz_sequence:
+        target = _fresh_dummy_spinor_label(used_labels)
+        factors.append(("gamma", _GAMMA_FACTOR_SIGNATURE, (current, target, lorentz)))
+        current = target
+    factors.append((projector_head, _SPINOR_METRIC_FACTOR_SIGNATURE, (current, end)))
+    return factors
 
 
 def _charge_conjugation_flow_bilinear_factors(
@@ -1913,7 +1953,7 @@ def _expression_from_canonical_factor(factor: object) -> Expression:
     if head == "dirac_C":
         return dirac_charge_conjugation(*args)
     if head in {"PL", "PR"}:
-        return S(head)(*args)
+        return _ec_typed_projector(head, *args)
     if head == "weak_eps2":
         return weak_eps2(*args)
     if head == "lor_levi_civita":
@@ -1984,6 +2024,7 @@ def _normalize_ec_charge_conjugation_report(
     recanonicalized = canonical_tensor_monomial_report(
         _expression_from_canonical_map(transformed),
         external_indices=external_indices,
+        tensor_head_specs=_EC_CC_TENSOR_HEAD_SPECS,
         max_dummy_permutations=max_dummy_permutations,
     )
     return CanonicalMonomialReport(
@@ -2037,6 +2078,7 @@ def _normalize_ec_charge_conjugation_flow_report(
     recanonicalized = canonical_tensor_monomial_report(
         _expression_from_canonical_map(transformed),
         external_indices=external_indices,
+        tensor_head_specs=_EC_CC_TENSOR_HEAD_SPECS,
         max_dummy_permutations=max_dummy_permutations,
     )
     return CanonicalMonomialReport(
@@ -2333,7 +2375,8 @@ def parse_smeft2_matter_rule_with_projector_labels(rule: str) -> Expression:
     text = _replace_tensdot_chains_with_projector_labels(text)
     text = re.sub(
         r"ProjM\[([^,\[\]]+),\s*([^\[\]]+)\]",
-        lambda match: S("PL")(
+        lambda match: _ec_typed_projector(
+            "PL",
             S(match.group(1).strip()),
             S(match.group(2).strip()),
         ).to_canonical_string(),
@@ -2341,7 +2384,8 @@ def parse_smeft2_matter_rule_with_projector_labels(rule: str) -> Expression:
     )
     text = re.sub(
         r"ProjP\[([^,\[\]]+),\s*([^\[\]]+)\]",
-        lambda match: S("PR")(
+        lambda match: _ec_typed_projector(
+            "PR",
             S(match.group(1).strip()),
             S(match.group(2).strip()),
         ).to_canonical_string(),
@@ -3318,6 +3362,7 @@ def _ec_flow_canonical_report(
     report = canonical_tensor_monomial_report(
         _filter_terms_by_coefficient_head(expression, coefficient),
         external_indices=external_indices,
+        tensor_head_specs=_EC_CC_TENSOR_HEAD_SPECS,
         max_dummy_permutations=2_000_000,
     )
     report = _normalize_generator_product_order_report(report)
@@ -3327,14 +3372,8 @@ def _ec_flow_canonical_report(
 
 
 def _ec_projector_head(filtered_feynrules_rule: Expression) -> str:
-    compact_text = (
-        filtered_feynrules_rule.cancel()
-        .expand()
-        .to_canonical_string()
-        .replace("python::{real}::", "")
-        .replace("python::{}::", "")
-    )
-    heads = set(re.findall(r"\b(P[LR])\(", compact_text))
+    compact_text = filtered_feynrules_rule.cancel().expand().to_canonical_string()
+    heads = set(re.findall(r"(?:^|::)(P[LR])\(", compact_text))
     if len(heads) != 1:
         raise ValueError(
             "Expected one EC projector head in filtered FeynRules rule, got "
@@ -3405,6 +3444,40 @@ def _ec_candidate_raw_rules(
     }
 
 
+def _ec_source_contributions(
+    *,
+    first_order: tuple[str, ...],
+    second_order: tuple[str, ...] | None,
+    combination: str | None,
+    phase: int | None,
+) -> list[dict[str, object]]:
+    if combination is None or phase is None:
+        return []
+
+    combination_signs = {
+        "first": (("first", 1),),
+        "first - second": (("first", 1), ("second", -1)),
+        "first + second": (("first", 1), ("second", 1)),
+    }
+    if combination not in combination_signs:
+        raise ValueError(f"Unsupported EC source combination {combination!r}.")
+
+    orders = {"first": first_order, "second": second_order}
+    contributions = []
+    for label, sign in combination_signs[combination]:
+        order = orders[label]
+        if order is None:
+            continue
+        contributions.append(
+            {
+                "label": label,
+                "order": list(order),
+                "weight": phase * sign,
+            }
+        )
+    return contributions
+
+
 def _ec_raw_projector_flow_heads() -> frozenset[str]:
     return frozenset({"alphaEcudqq", "alphaEcuelq"})
 
@@ -3417,7 +3490,7 @@ def _replace_dirac_c_with_projector_label(
     left, right = S("ec_raw_c_left_", "ec_raw_c_right_")
     return expression.replace(
         dirac_charge_conjugation(left, right),
-        S(projector_head)(left, right),
+        _ec_typed_projector(projector_head, left, right),
     ).cancel().expand()
 
 
@@ -3580,6 +3653,12 @@ def _ec_comparison_row(
         if len(candidate_orders) == 2
         else []
     )
+    source_contributions = _ec_source_contributions(
+        first_order=first_order,
+        second_order=second_order,
+        combination=chosen_combination,
+        phase=chosen_phase,
+    )
 
     vertex = {
         "key": reference_key,
@@ -3589,8 +3668,9 @@ def _ec_comparison_row(
             "first": list(first_order),
             "second": second_order_payload,
             "combination": chosen_combination,
-            "phase": chosen_phase,
+            "contributions": source_contributions,
         },
+        "source_contributions": source_contributions,
         "heads": [coefficient],
         "rule": feynpy_expression.to_canonical_string(),
     }
@@ -3606,10 +3686,9 @@ def _ec_comparison_row(
             if order is not None
         ],
         "tested_identical_leg_mappings": tested_identical_leg_mappings,
+        "feynpy_source_contributions": source_contributions,
         "chosen_combination": chosen_combination,
         "chosen_candidate": chosen_candidate,
-        "charge_conjugation_phase": rule.phase,
-        "chosen_phase": chosen_phase,
         "projector_head": projector_head,
         "canonical_difference": canonical_difference.to_canonical_string(),
         "status": status,

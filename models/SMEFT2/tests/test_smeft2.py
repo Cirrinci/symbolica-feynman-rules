@@ -72,6 +72,12 @@ def _compact_rule_text(rule: str) -> str:
     return rule.replace("python::{}::", "").replace("python::{real}::", "")
 
 
+def _terminal_gamma_right_spinors(factors) -> set:
+    gamma_factors = [factor for factor in factors if factor[0] == "gamma"]
+    gamma_lefts = {factor[2][0] for factor in gamma_factors}
+    return {factor[2][1] for factor in gamma_factors if factor[2][1] not in gamma_lefts}
+
+
 def _report_row_by_key(key: str) -> dict:
     report = _comparison_report()
     return next(row for row in report["reference_vertices"] if row["key"] == key)
@@ -609,6 +615,17 @@ def test_smeft2_ec_cc_sidecar_export_shape():
     assert {vertex["coefficient"] for vertex in vertices} == expected_coefficients
     assert all(vertex["heads"] == [vertex["coefficient"]] for vertex in vertices)
     assert all(vertex["source_orders"]["combination"] for vertex in vertices)
+    assert all("phase" not in vertex["source_orders"] for vertex in vertices)
+    assert all(
+        vertex["source_orders"]["contributions"] == vertex["source_contributions"]
+        for vertex in vertices
+    )
+    assert all(vertex["source_contributions"] for vertex in vertices)
+    assert all(
+        contribution["weight"] in {-1, 1}
+        for vertex in vertices
+        for contribution in vertex["source_contributions"]
+    )
     assert all(vertex["rule"] != "0" for vertex in vertices)
 
     duplicate_rows = [
@@ -654,6 +671,13 @@ def test_smeft2_ec_cc_reconstruction_matches_feynrules_per_coefficient():
         assert row["canonical_difference"] == "0"
         assert row["filtered_feynrules_heads"] == [row["coefficient"]]
         assert row["reconstructed_feynpy_heads"] == [row["coefficient"]]
+        assert "charge_conjugation_phase" not in row
+        assert "chosen_phase" not in row
+        assert row["feynpy_source_contributions"]
+        assert all(
+            contribution["weight"] in {-1, 1}
+            for contribution in row["feynpy_source_contributions"]
+        )
         assert row["feynpy_expression"] != "0"
         assert row["filtered_feynrules_expression"] != "0"
 
@@ -680,6 +704,46 @@ def test_smeft2_ec_cc_reconstruction_matches_feynrules_per_coefficient():
         "dR|qLbar|qLbar|uR",
     }
     assert all(len(mappings) == 2 for mappings in duplicated.values())
+
+
+def test_smeft2_ec_cc_projectors_are_connected_spinor_tensors():
+    report, _vertices = smeft2_comparison.compare_ec_charge_conjugation_reconstruction()
+    _lagrangian, field_map, _parameter_names, _references_by_key = _comparison_context()
+
+    for row in report["vertices"]:
+        fields = tuple(field_map[name] for name in row["fields"])
+        external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+        assert external_indices is not None
+
+        for expression_key in (
+            "feynpy_expression",
+            "filtered_feynrules_expression",
+        ):
+            canonical = smeft2_comparison._ec_flow_canonical_report(
+                Expression.parse(row[expression_key]),
+                coefficient=row["coefficient"],
+                external_indices=external_indices,
+            )
+            assert canonical.map
+            for monomial in canonical.map:
+                factors = monomial.commuting_factors
+                projectors = [
+                    factor
+                    for factor in factors
+                    if factor[0] in {"PL", "PR"}
+                ]
+                assert projectors
+                assert all(
+                    projector[1] == ("spinor", "spinor")
+                    for projector in projectors
+                )
+
+                terminal_gamma_spinors = _terminal_gamma_right_spinors(factors)
+                if terminal_gamma_spinors:
+                    projector_left_spinors = {
+                        projector[2][0] for projector in projectors
+                    }
+                    assert terminal_gamma_spinors <= projector_left_spinors
 
 
 def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():
