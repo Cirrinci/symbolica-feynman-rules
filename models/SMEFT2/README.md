@@ -58,7 +58,7 @@ These sectors are included in the compiled `Ltot`:
 - `LEvCCLRRL`
 - `LEvCCRRLL`
 
-## What Is Still Omitted
+## Remaining Caveats
 
 No Green-basis sectors are currently omitted from the compiled `Ltot`.
 
@@ -66,6 +66,11 @@ The nested derivative API supports the core structures these blocks need,
 including `DC(FS(...))`, `PartialD(FS(...))`, `DC(DC(field, ...), ...)`,
 `PartialD(DC(...), ...)`, and mixed monomials containing both matter
 `DC(...)` factors and raw `FS(...)` factors.
+
+The remaining non-direct comparison rows are charge-conjugation packaging
+differences, not unresolved coefficient or tensor mismatches. The strict
+same-signature gate intentionally reports those rows as not direct; the
+accepted physics gate is `--check --allow-cc-packaging`.
 
 `LEvF2HD2` is now implemented by expanding every first covariant derivative
 term-by-term into `PartialD(...)` and gauge-field pieces before building the
@@ -85,14 +90,14 @@ comparison.
 The reproducible comparison entry point is:
 
 ```bash
-.venv/bin/python models/SMEFT2/comparison.py
+.venv/bin/python -m models.SMEFT2.comparison
 ```
 
 It regenerates:
 
 - `COMPARISON.md` — human-readable summary.
-- `vertex_comparison_report.json` — per-signature comparison rows.
-- `feynpy_vertices.json` — local FeynPy 3-6 point vertex rules.
+- `comparison/artifacts/vertex_comparison_report.json` — per-signature comparison rows.
+- `comparison/artifacts/feynpy_vertices.json` — local FeynPy 3-6 point vertex rules.
 
 The maintained method report is
 `COMPARISON_METHOD.md`: it explains the comparison layers, the exact
@@ -113,7 +118,7 @@ overlay. Raw head-count deltas remain visible diagnostics for expansion form.
 The default gate requires direct exact matches only:
 
 ```bash
-.venv/bin/python models/SMEFT2/comparison.py --check
+.venv/bin/python -m models.SMEFT2.comparison --check
 ```
 
 Pinned CC packaging can be accepted explicitly with `--allow-cc-packaging`.

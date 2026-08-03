@@ -1,5 +1,5 @@
 {
-  "generated_on": "2026-07-30",
+  "generated_on": "2026-08-03",
   "comparison_level": "Weinberg-only sidecar comparison. FeynPy mixed charge-conjugation orders are reconstructed as first - second in the common same-chirality external-leg order, then compared directly to the FeynRules lL lL Phi Phi and lLbar lLbar Phibar Phibar rows in a compact PL/PR fermion-flow basis.",
   "summary": {
     "reference_vertices": 2,

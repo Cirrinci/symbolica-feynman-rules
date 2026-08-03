@@ -30,14 +30,14 @@ partner signatures.
 The raw coefficient-head occurrence count remains a diagnostic:
 `100/182` shared rows have identical raw counts, while the other shared rows
 still show expansion-form differences. These raw deltas are visible in
-`COMPARISON.md` and `vertex_comparison_report.json`, but they are not accepted
+`COMPARISON.md` and `comparison/artifacts/vertex_comparison_report.json`, but they are not accepted
 or rejected by the normal `--check` gate. `--strict-counts` can still be used
 when the diagnostic count itself is the target.
 
 The normal gate is:
 
 ```bash
-.venv/bin/python models/SMEFT2/comparison.py --check
+.venv/bin/python -m models.SMEFT2.comparison --check
 ```
 
 It requires every supported row to be a direct `EXACT_MATCH`. Pinned CC
@@ -287,7 +287,7 @@ The minus sign is not fitted. It is the fixed sign from the single required
 are no identical external fields in this example, so the duplicate-leg rule is
 the symmetric sum with one effective assignment.
 
-The exact pinned rule in `comparison.py` is:
+The exact pinned rule in `comparison/charge_conjugation.py` is:
 
 ```python
 (
@@ -355,7 +355,7 @@ canonical-map equality.
 
 ## Meaning of `--check`
 
-`models/SMEFT2/comparison.py --check` returns nonzero if any of these are true:
+`python -m models.SMEFT2.comparison --check` returns nonzero if any of these are true:
 
 - operator-content coverage is not `184/184`;
 - any FeynPy-only signature remains unexplained;

@@ -1,6 +1,6 @@
 # SMEFT2 FeynRules/FeynPy Comparison
 
-Generated on `2026-07-30` by `models/SMEFT2/comparison.py`.
+Generated on `2026-08-03` by `models.SMEFT2.comparison`.
 
 ## Scope
 
@@ -601,6 +601,6 @@ These exclude the explicit benign expansions listed above. The large pure-gauge 
 
 ## Files
 
-- `vertex_comparison_report.json` contains every reference row and FeynPy-only signature.
-- `feynpy_vertices.json` contains the regenerated local FeynPy rules and coefficient heads.
+- `comparison/artifacts/vertex_comparison_report.json` contains every reference row and FeynPy-only signature.
+- `comparison/artifacts/feynpy_vertices.json` contains the regenerated local FeynPy rules and coefficient heads.
 - `reference/Ltot_SMEFT_FeynRules.json` is the FeynRules oracle used for the comparison.

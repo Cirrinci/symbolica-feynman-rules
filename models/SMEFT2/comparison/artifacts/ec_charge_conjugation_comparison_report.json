@@ -1,5 +1,5 @@
 {
-  "generated_on": "2026-07-30",
+  "generated_on": "2026-08-03",
   "comparison_level": "EC charge-conjugation four-fermion sidecar comparison. The six problematic FeynRules rows are split by alphaEc coefficient head, the FeynPy charge-conjugation partner is reconstructed in the FeynRules external-field order, and each coefficient sector is compared independently in a compact PL/PR fermion-flow basis.",
   "summary": {
     "coefficient_sectors": 12,

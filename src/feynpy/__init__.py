@@ -14,8 +14,8 @@ The public surface is intentionally small. The recommended workflow is:
    ``model.vertex_signatures(...)``.
 
 Concrete theories are intentionally not part of this toolkit package. They
-live in the sibling ``theories`` package, which plays the role that model
-files play in FeynRules.
+live in the sibling ``models`` package, which plays the role that model files
+play in FeynRules.
 
 Declarative ``lagrangian_decl`` factors live in ``declared.py``:
 ``DC``, ``PartialD``, ``Gamma``, ``Gamma5``, ``Metric``, ``T``,

@@ -1,6 +1,6 @@
 """Generate the SMEFT2 FeynPy Feynman rules and report runtime.
 
-This script is intentionally separate from ``comparison.py``.  It imports the
+This script is intentionally separate from the comparison package. It imports the
 SMEFT2 model, computes FeynPy rules directly, writes the complete printout to a
 JSON file by default, and prints timing information.
 """
@@ -22,7 +22,8 @@ from models.SMEFT2 import build_smeft_green_bpreserving
 
 
 MODEL_DIR = Path(__file__).resolve().parent
-DEFAULT_OUTPUT = MODEL_DIR / "feynpy_rules_printout.json"
+ARTIFACT_DIR = MODEL_DIR / "comparison" / "artifacts"
+DEFAULT_OUTPUT = ARTIFACT_DIR / "feynpy_rules_printout.json"
 
 
 def _rule_payload(signature, rule_text: str) -> dict[str, object]:

@@ -11,6 +11,7 @@ from symbolica import Expression, S
 
 
 MODEL_DIR = Path(__file__).resolve().parents[1]
+ARTIFACT_DIR = MODEL_DIR / "comparison" / "artifacts"
 
 
 def _reference_vertex_by_key(key: str) -> dict:
@@ -28,33 +29,33 @@ def _reference_vertex_by_key(key: str) -> dict:
 
 def _feynpy_vertex_by_key(key: str) -> dict:
     vertices = json.loads(
-        (MODEL_DIR / "feynpy_vertices.json").read_text(encoding="utf-8")
+        (ARTIFACT_DIR / "feynpy_vertices.json").read_text(encoding="utf-8")
     )
     return next(vertex for vertex in vertices if vertex["key"] == key)
 
 
 def _weinberg_vertex_by_key(key: str) -> dict:
     vertices = json.loads(
-        (MODEL_DIR / "weinberg_vertices.json").read_text(encoding="utf-8")
+        (ARTIFACT_DIR / "weinberg_vertices.json").read_text(encoding="utf-8")
     )
     return next(vertex for vertex in vertices if vertex["key"] == key)
 
 
 def _comparison_report() -> dict:
     return json.loads(
-        (MODEL_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
+        (ARTIFACT_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
     )
 
 
 def _weinberg_comparison_report() -> dict:
     return json.loads(
-        (MODEL_DIR / "weinberg_comparison_report.json").read_text(encoding="utf-8")
+        (ARTIFACT_DIR / "weinberg_comparison_report.json").read_text(encoding="utf-8")
     )
 
 
 def _ec_cc_comparison_report() -> dict:
     return json.loads(
-        (MODEL_DIR / "ec_charge_conjugation_comparison_report.json").read_text(
+        (ARTIFACT_DIR / "ec_charge_conjugation_comparison_report.json").read_text(
             encoding="utf-8"
         )
     )
@@ -62,7 +63,7 @@ def _ec_cc_comparison_report() -> dict:
 
 def _ec_cc_vertices() -> list[dict]:
     return json.loads(
-        (MODEL_DIR / "ec_charge_conjugation_vertices.json").read_text(
+        (ARTIFACT_DIR / "ec_charge_conjugation_vertices.json").read_text(
             encoding="utf-8"
         )
     )
@@ -464,7 +465,7 @@ def test_smeft2_reconstructed_weinberg_sidecar_export_shape():
     vertex_keys = {
         vertex["key"]
         for vertex in json.loads(
-            (MODEL_DIR / "weinberg_vertices.json").read_text(encoding="utf-8")
+            (ARTIFACT_DIR / "weinberg_vertices.json").read_text(encoding="utf-8")
         )
     }
     assert vertex_keys == {
@@ -859,7 +860,7 @@ def test_smeft2_omitted_sectors_are_named_empty_lagrangians():
 
 def test_smeft2_comparison_report_uses_eft_only_basis():
     report = json.loads(
-        (MODEL_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
+        (ARTIFACT_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
     )
 
     assert report["summary"]["comparison_basis"]["reference_ltot"] == "EFT-only FeynRules Ltot"
