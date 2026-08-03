@@ -85,6 +85,28 @@ Model resources:
 - [`SM_FR_COMPARISON_REVIEW.md`](models/SM/docs/SM_FR_COMPARISON_REVIEW.md) —
   precise scope, method, evidence and limitations.
 
+## SMEFT2
+
+The SMEFT2 Green-basis implementation lives in [`models/SMEFT2`](models/SMEFT2/).
+Its default `Ltot` matches the FeynRules convention: EFT-only, with the local
+SM-plus-EFT combination available separately as `Lfull`.
+
+The accepted comparison against the bundled FeynRules EFT-only `Ltot` export is
+**184/184 operator-content matches**, split into **176/184 direct exact
+symbolic matches** plus **8/184 pinned charge-conjugation packaging matches**.
+There are **0 unresolved** packaging rows and **0 exact symbolic unequal/error**
+rows.
+
+Run the final SMEFT2 acceptance gate with:
+
+```bash
+.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+```
+
+The generated report and JSON artifacts are kept under
+[`models/SMEFT2`](models/SMEFT2/) and
+[`models/SMEFT2/comparison/artifacts`](models/SMEFT2/comparison/artifacts/).
+
 ## Supported capabilities
 
 - scalar, fermion, gauge and ghost declarations;
@@ -149,6 +171,18 @@ Run the complete suite with:
 .venv/bin/python -m pytest -q
 ```
 
+Run the final SMEFT2 acceptance gate with:
+
+```bash
+.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+```
+
+The expected terminal summary starts with:
+
+```text
+SMEFT2 comparison: 184/184 reference vertices match at operator-content level (176 direct + 8 via charge-conjugation packaging)
+```
+
 Run the Standard Model playground with:
 
 ```bash
@@ -157,3 +191,5 @@ Run the Standard Model playground with:
 
 The chronological development record is
 [`docs/notes/RESEARCH_LOG.md`](docs/notes/RESEARCH_LOG.md).
+The final validation and reproducibility checklist is
+[`docs/notes/FINAL_REPRODUCIBILITY.md`](docs/notes/FINAL_REPRODUCIBILITY.md).

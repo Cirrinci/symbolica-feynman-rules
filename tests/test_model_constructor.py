@@ -31,6 +31,21 @@ def test_engine_and_concrete_model_packages_are_separate():
     assert hasattr(sm_pkg, "build_standard_model")
 
 
+def test_public_api_does_not_export_private_helpers():
+    private_names = {
+        "_DeclaredMonomial",
+        "_expand_field_strengths_in_monomial",
+        "_match_covariant_monomial",
+    }
+
+    assert private_names.isdisjoint(feynpy_pkg.__all__)
+    assert all(not hasattr(feynpy_pkg, name) for name in private_names)
+
+    namespace: dict[str, object] = {}
+    exec("from feynpy import *", namespace)
+    assert private_names.isdisjoint(namespace)
+
+
 def test_model_accepts_positional_declared_term_with_name_and_metadata_keywords():
     sm = build_standard_model(include_ghosts=False)
     xiB = S("xiB")

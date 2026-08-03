@@ -680,6 +680,29 @@ def build_smeft_green_bpreserving(
     p = parameters
     g = gauge_groups
 
+    # LF2DH2 triplet terms need labelled compact Higgs derivatives.
+    def labelled_higgs_covd(label, derivative, *, bar=False):
+        if label is None:
+            raise ValueError(
+                "Compact Higgs covariant derivatives must be weak-labelled."
+            )
+        target = Phi.bar if bar else Phi
+        return DC(target(label), derivative)
+
+    def dh2_triplet_left_derivative(adjoint, derivative):
+        return (
+            labelled_higgs_covd(w_dh_phi_l, derivative, bar=True)
+            * weak_t(adjoint, w_dh_phi_l, w2)
+            * Phi(w2)
+        )
+
+    def dh2_triplet_right_derivative(adjoint, derivative):
+        return (
+            Phi.bar(w1)
+            * weak_t(adjoint, w1, w_dh_phi_r)
+            * labelled_higgs_covd(w_dh_phi_r, derivative)
+        )
+
     LGauge = (
         -(ONE / FOUR) * FS(g["U1Y"], mu, nu) * FS(g["U1Y"], mu, nu)
         - (ONE / FOUR) * FS(g["SU2L"], mu, nu, aW) * FS(g["SU2L"], mu, nu, aW)
@@ -1642,18 +1665,14 @@ def build_smeft_green_bpreserving(
         * ql(w=w2, f=f2, c=c1)
         + I
         * p["alphaOHq3"](f1, f2)
-        * Phi.bar(w1)
-        * weak_t(aW1, w1, w_dh_phi_r)
-        * DC(Phi(w_dh_phi_r), mu)
+        * dh2_triplet_right_derivative(aW1, mu)
         * ql(w=w3, f=f1, c=c1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)
         * ql(w=w4, f=f2, c=c1)
         - I
         * p["alphaOHq3"](f1, f2)
-        * DC(Phi.bar(w_dh_phi_l), mu)
-        * weak_t(aW1, w_dh_phi_l, w2)
-        * Phi(w2)
+        * dh2_triplet_left_derivative(aW1, mu)
         * ql(w=w3, f=f1, c=c1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)
@@ -1677,17 +1696,13 @@ def build_smeft_green_bpreserving(
         * Gamma(mu)
         * ql(w=w4, f=f2, c=c1)
         + p["alphaRHq3pp"](f1, f2)
-        * DC(Phi.bar(w_dh_phi_l), mu)
-        * weak_t(aW1, w_dh_phi_l, w2)
-        * Phi(w2)
+        * dh2_triplet_left_derivative(aW1, mu)
         * ql(w=w3, f=f1, c=c1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)
         * ql(w=w4, f=f2, c=c1)
         + p["alphaRHq3pp"](f1, f2)
-        * Phi.bar(w1)
-        * weak_t(aW1, w1, w_dh_phi_r)
-        * DC(Phi(w_dh_phi_r), mu)
+        * dh2_triplet_right_derivative(aW1, mu)
         * ql(w=w3, f=f1, c=c1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)
@@ -1814,18 +1829,14 @@ def build_smeft_green_bpreserving(
         * ll(w=w2, f=f2)
         + I
         * p["alphaOHl3"](f1, f2)
-        * Phi.bar(w1)
-        * weak_t(aW1, w1, w_dh_phi_r)
-        * DC(Phi(w_dh_phi_r), mu)
+        * dh2_triplet_right_derivative(aW1, mu)
         * ll(w=w3, f=f1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)
         * ll(w=w4, f=f2)
         - I
         * p["alphaOHl3"](f1, f2)
-        * DC(Phi.bar(w_dh_phi_l), mu)
-        * weak_t(aW1, w_dh_phi_l, w2)
-        * Phi(w2)
+        * dh2_triplet_left_derivative(aW1, mu)
         * ll(w=w3, f=f1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)
@@ -1849,17 +1860,13 @@ def build_smeft_green_bpreserving(
         * Gamma(mu)
         * ll(w=w4, f=f2)
         + p["alphaRHl3pp"](f1, f2)
-        * DC(Phi.bar(w_dh_phi_l), mu)
-        * weak_t(aW1, w_dh_phi_l, w2)
-        * Phi(w2)
+        * dh2_triplet_left_derivative(aW1, mu)
         * ll(w=w3, f=f1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)
         * ll(w=w4, f=f2)
         + p["alphaRHl3pp"](f1, f2)
-        * Phi.bar(w1)
-        * weak_t(aW1, w1, w_dh_phi_r)
-        * DC(Phi(w_dh_phi_r), mu)
+        * dh2_triplet_right_derivative(aW1, mu)
         * ll(w=w3, f=f1, bar=True)
         * weak_t(aW1, w3, w4)
         * Gamma(mu)

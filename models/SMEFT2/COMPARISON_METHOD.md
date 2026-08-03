@@ -1,6 +1,6 @@
 # SMEFT2 Comparison Method Report
 
-Updated for the SMEFT2 FeynRules/FeynPy comparison on 2026-07-27.
+Updated for the SMEFT2 FeynRules/FeynPy comparison on 2026-08-03.
 
 ## Current Result
 
@@ -34,7 +34,7 @@ still show expansion-form differences. These raw deltas are visible in
 or rejected by the normal `--check` gate. `--strict-counts` can still be used
 when the diagnostic count itself is the target.
 
-The normal gate is:
+The direct-only audit gate is:
 
 ```bash
 .venv/bin/python -m models.SMEFT2.comparison --check
@@ -43,6 +43,12 @@ The normal gate is:
 It requires every supported row to be a direct `EXACT_MATCH`. Pinned CC
 packaging can be accepted with `--allow-cc-packaging`. Unresolved CC packaging
 rows never pass `--check`.
+
+The final thesis acceptance gate is therefore:
+
+```bash
+.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+```
 
 ## Basis
 
@@ -172,8 +178,8 @@ Several mismatch classes required source-side fixes in the FeynPy model:
   orientations were fixed;
 - `LF2XD` derivative-current terms were expanded through explicit color and
   weak derivative-current helpers;
-- compact Higgs derivative labels were kept where dropping the label changed a
-  two-fermion `B` vertex head.
+- compact `LF2DH2` triplet Higgs derivatives now go through local model-source
+  helpers that force explicit weak labels on the differentiated Higgs fields.
 
 The comparison layer also needed controlled tensor identities:
 
@@ -369,6 +375,7 @@ Raw coefficient-head count mismatches are not part of the normal gate because
 they are expansion diagnostics. They become part of the gate only with
 `--strict-counts`.
 
-The current state fails the default `--check` gate because eight rows are
+The current state fails the direct-only `--check` audit because eight rows are
 modulo pinned CC packaging rather than direct `EXACT_MATCH`. With
-`--allow-cc-packaging`, those pinned packaging rows are accepted.
+`--allow-cc-packaging`, those pinned packaging rows are accepted and the final
+SMEFT2 gate passes.

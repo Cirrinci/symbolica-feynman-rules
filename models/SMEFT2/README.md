@@ -78,12 +78,12 @@ sigma-matrix chain. A direct `DC(...)` rewrite compiles for simpler Higgs
 operators, but this block still needs local-lowering support for preserving
 the sigma-chain fermion pairing through generic covariant branches.
 
-`LF2DH2` still needs care around compact Higgs covariant derivatives. The
-triplet `alphaRHq3pp` / `alphaRHl3pp` terms now use the compact form on both
-Higgs factors, but only with their explicit weak labels kept as
-`DC(Phi.bar(w1), mu)` and `DC(Phi(w2), mu)`. Leaving the `Phi` derivative
-unlabeled reintroduces the spurious two-fermion `B`-vertex head mismatch in the
-comparison.
+`LF2DH2` centralizes the compact triplet Higgs-derivative convention in local
+helpers inside `SMEFT2.py`. The `alphaRHq3pp` / `alphaRHl3pp` terms still use
+compact covariant derivatives, but the helpers force explicit weak labels on
+the differentiated Higgs fields. This avoids the former fragile source pattern
+where writing an unlabeled `DC(Phi, mu)` branch could reintroduce a spurious
+two-fermion `B`-vertex head mismatch.
 
 ## Comparison
 
@@ -124,8 +124,27 @@ The default gate requires direct exact matches only:
 Pinned CC packaging can be accepted explicitly with `--allow-cc-packaging`.
 Unresolved CC packaging rows never pass `--check`.
 
+## Final Acceptance
+
+The thesis acceptance gate is the explicit charge-conjugation packaging gate:
+
+```bash
+.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+```
+
+Expected terminal summary:
+
+```text
+SMEFT2 comparison: 184/184 reference vertices match at operator-content level (176 direct + 8 via charge-conjugation packaging); exact symbolic split=direct 176/184, modulo pinned CC 8/184, unresolved CC 0/184; raw-head-count matches=100/182; canonical tensor-map matches=32/32 supported vertices (93/93 sectors); Weinberg reconstructed sidecar=2/2 direct, 4/4 coefficient checks, wrong-sign matches=0; EC CC sidecar=12/12 coefficient sectors, wrong-combination matches=0; reference-only=2; feynpy-only=8.
+```
+
+This accepts only the pinned Weinberg and `alphaEc*` packaging rows described
+in `COMPARISON_METHOD.md`. It still fails on any unresolved packaging row,
+operator-content miss, exact symbolic inequality, exact symbolic error, or
+unexplained FeynPy-only signature.
+
 ## Check
 
 ```bash
-.venv/bin/python -m pytest models/SMEFT2/tests/test_smeft2.py
+.venv/bin/python -m pytest -q models/SMEFT2/tests/test_smeft2.py
 ```

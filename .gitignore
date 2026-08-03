@@ -18,7 +18,8 @@ archive/
 sandbox/
 viz/outputs/
 
-# Keep only the research log published from docs/notes.
+# Keep only published notes from docs/notes.
 docs/notes/*
 !docs/notes/
 !docs/notes/RESEARCH_LOG.md
+!docs/notes/FINAL_REPRODUCIBILITY.md
