@@ -1,0 +1,169 @@
+% ============================================================
+%  07_validation.tex -- Validation and final comparison
+% ============================================================
+
+\chapter{Validation and Final Comparison}
+\label{ch:validation}
+
+The previous chapter described the internal pipeline: declaration, lowering,
+compilation, contraction and canonicalisation. This chapter records how that
+pipeline was checked against independent references. The validation is not
+treated as an informal visual inspection of printed rules. It is expressed as
+repeatable comparisons against FeynRules exports and as regression tests that
+exercise the internal compiler and symbolic engine.
+
+The main result is that the packaged Standard Model reproduces the supplied
+FeynRules Standard Model reference exactly on the tested interaction set, and
+the SMEFT2 Green-basis implementation reproduces the FeynRules EFT-only
+\texttt{Ltot} reference on all tested operator-content rows. The only
+non-direct SMEFT2 rows are controlled charge-conjugation packaging differences.
+Those rows are accepted only after an explicit pinned transformation, not by an
+open-ended sign or field-reordering search.
+
+% --------------------------------------------------------------
+\section{Validation strategy}
+\label{sec:validation-strategy}
+% --------------------------------------------------------------
+
+The tests are organised in three layers.
+
+First, ordinary unit and regression tests cover the reusable engine. These
+tests check the local declaration API, index validation, covariant expansion,
+field-strength expansion, field transformations, fermion signs, tensor
+canonicalisation and selected benchmark Feynman rules.
+
+Second, model-level comparisons check that a complete model implemented in
+FeynPy gives the same exported vertices as FeynRules. These comparisons live
+beside the concrete model packages under \path{models/}, rather than inside the
+generic contraction engine. This separation is important: the engine computes
+rules, while each model package owns the conventions and external-reference
+adapter needed to compare those rules.
+
+Third, the SMEFT2 comparison has a stricter symbolic layer. It parses the
+FeynRules tensor rule, groups terms by Wilson-coefficient head, canonicalises
+the tensor monomials and compares the canonical maps. Raw occurrence counts are
+kept as diagnostics, but they are not the final equality criterion because two
+equivalent expanded forms can have different raw counts before
+canonicalisation.
+
+% --------------------------------------------------------------
+\section{Standard Model benchmark}
+\label{sec:validation-sm}
+% --------------------------------------------------------------
+
+The Standard Model package in \path{models/SM/} is the first complete vertical
+slice of the project. It starts from a gauge-basis declaration, applies the
+field transformations to the physical basis and compares the generated
+three-point and four-point interaction vertices against the bundled FeynRules
+\texttt{SM.fr} export.
+
+On the current reference set, the result is
+\[
+    163/163
+\]
+exact symbolic matches for the exported nonzero flavour-expanded tree-level
+interaction vertices. This validates the tested gauge, matter, Yukawa, Higgs,
+Goldstone, ghost and gauge-fixing sectors of the packaged Standard Model. It
+does not claim validation of parameter-card semantics, loop-level output,
+restriction files or external formats such as UFO.
+
+% --------------------------------------------------------------
+\section{SMEFT2 Green-basis comparison}
+\label{sec:validation-smeft2}
+% --------------------------------------------------------------
+
+The main final validation target is the SMEFT2 Green-basis model in
+\path{models/SMEFT2/SMEFT2.py}. The comparison basis is the EFT-only
+FeynRules \texttt{Ltot} export stored at
+\path{models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json}. The local FeynPy
+\texttt{Ltot} follows the same convention: it is the EFT contribution only,
+while the SM-plus-EFT combination remains available separately as
+\texttt{Lfull}.
+
+All Green-basis and evanescent sectors used by the bundled reference are now
+included in the compiled FeynPy \texttt{Ltot}. The final comparison result is:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Quantity & Result \\
+\midrule
+FeynRules reference rows & 184 \\
+Operator-content matches & $184/184$ \\
+Direct exact symbolic matches & $176/184$ \\
+Pinned charge-conjugation packaging matches & $8/184$ \\
+Unresolved charge-conjugation packaging rows & $0/184$ \\
+Exact symbolic unequal rows & $0$ \\
+Exact symbolic error rows & $0$ \\
+Canonical bosonic tensor-map matches & $32/32$ \\
+\bottomrule
+\end{tabular}
+\caption{Final SMEFT2 comparison summary for the EFT-only Green-basis reference.}
+\label{tab:smeft2-final-comparison}
+\end{table}
+
+The split between direct and pinned matches is meaningful. A direct exact match
+means that the FeynRules row and the FeynPy row have the same external-field
+signature and the same canonical tensor map. A pinned charge-conjugation match
+means that the external fields are packaged differently, but the row is
+accepted after one explicitly listed charge-conjugation transformation. The
+comparison code fixes the partner signature, phase and duplicate-leg symmetry
+before comparing; it does not search over arbitrary signs or alternative
+packagings.
+
+The eight pinned rows have a simple origin. Two are Weinberg-operator rows:
+FeynRules packages them as same-chirality charge-conjugated lepton structures,
+whereas FeynPy stores the mixed \texttt{lLbar}/\texttt{lL} form with the
+charge-conjugation tensor explicit. The remaining six rows are evanescent
+\texttt{alphaEc*} four-fermion partner rows with the same kind of packaging
+difference. Dedicated sidecar checks confirm the Weinberg comparison at
+$2/2$ and the evanescent charge-conjugation checks at $12/12$.
+
+Therefore the accepted thesis result is:
+\[
+    \text{operator content } 184/184
+    \quad
+    \text{with }
+    176 \text{ direct exact rows and }
+    8 \text{ pinned charge-conjugation rows.}
+\]
+There are no unresolved coefficient, tensor, sign or packaging mismatches in
+the current comparison.
+
+% --------------------------------------------------------------
+\section{Reproducibility}
+\label{sec:validation-reproducibility}
+% --------------------------------------------------------------
+
+From the repository root, the full regression suite is run with
+\begin{minted}{bash}
+.venv/bin/python -m pytest -q
+\end{minted}
+
+The accepted SMEFT2 gate is
+\begin{minted}{bash}
+.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+\end{minted}
+
+The command without \texttt{--allow-cc-packaging} is kept as a stricter audit
+that requires every row to be a direct same-signature exact match. It is useful
+for detecting whether the remaining packaging rows have changed, but it is not
+the acceptance criterion used here.
+
+The human-readable report is regenerated with
+\begin{minted}{bash}
+.venv/bin/python -m models.SMEFT2.comparison
+\end{minted}
+
+The main reproducibility artifacts are:
+\begin{itemize}
+    \item \path{models/SMEFT2/COMPARISON.md}, the generated human-readable summary;
+    \item \path{models/SMEFT2/COMPARISON_METHOD.md}, the maintained method report;
+    \item \path{models/SMEFT2/comparison/artifacts/vertex_comparison_report.json}, the per-signature comparison rows;
+    \item \path{models/SMEFT2/comparison/artifacts/feynpy_vertices.json}, the regenerated local FeynPy vertex rules.
+\end{itemize}
+
+On the final checked state, the complete test suite passed with 503 tests, and
+the SMEFT2 acceptance gate reported full operator-content coverage with the
+$176+8$ split shown in Table~\ref{tab:smeft2-final-comparison}.

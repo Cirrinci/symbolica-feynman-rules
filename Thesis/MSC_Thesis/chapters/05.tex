@@ -6,17 +6,20 @@
 \chapter{Computer-Algebra Foundations: Symbolica and Spenso}
 \label{ch:cas}
 % ==============================================================
+Why has it become feasible to attempt an implementation of FeynRules within the Python ecosystem at this particular moment? In the past, Python was not a natural choice for the automatic computation of Feynman rules because it lacked a symbolic algebra engine capable of efficiently handling the large tensor expressions involved. This is where \textsc{Symbolica} comes into play: it enables high-performance symbolic manipulation while retaining the flexibility of the Python ecosystem.
 
-Before describing how the toolkit turns a declared model into a Feynman rule (Chapter~\ref{ch:internals}), it is worth spending a chapter on the two libraries the whole project is built on. Every symbolic object the toolkit manipulates --- a coupling, a momentum, a $\gamma$ matrix, an entire vertex --- is ultimately an object provided by \textsc{Symbolica}, and every \emph{index} carried by those objects is given meaning by \textsc{Spenso}. The clean division of labour between the two is precisely what makes the pipeline of the next chapter feasible: \textbf{Symbolica manipulates expressions, Spenso tells Symbolica what the indices inside those expressions mean, and a small companion layer, idenso, knows the physics-specific identities those typed indices satisfy.} This chapter explains what each library is, how it works, and why it was chosen.
+Before describing how the toolkit transforms a declared model into Feynman rules in Chapter~\ref{ch:internals}, it is therefore useful to introduce the libraries on which the entire project is based. Every symbolic object manipulated by the toolkit—such as a coupling, a momentum, a $\gamma$ matrix, or an entire vertex—is represented using \textsc{Symbolica}. As should be clear from the previous chapter, indices also play an essential role, and their meaning is provided by the \textsc{Spenso} library. Thus, \textsc{Symbolica} manipulates the expressions, while \textsc{Spenso} describes the meaning of their indices, and a small complementary layer, \textsc{idenso}, implements the physical identities associated with these typed indices. This chapter introduces each library, its role in the project, and the reasons for its selection.
+
 
 % --------------------------------------------------------------
 \section{Symbolica: a modern computer-algebra core}
 \label{sec:cas-symbolica}
 % --------------------------------------------------------------
 
-\textsc{Symbolica}~\cite{symbolica} is a high-performance computer-algebra system (CAS): a Rust engine exposed through native Python, Rust and C++ bindings, developed by Ben Ruijl and used in high-energy-physics research at, among others, CERN. It grew directly out of the practical needs of collider physics, where symbolic computations routinely generate expressions with billions of terms that can occupy terabytes of memory, and where the established tools (the \textsc{Form} lineage, and general-purpose systems such as \textsc{Mathematica}) are either hard to maintain or not built for that scale~\cite{symbolica,ruijl_symbolica_talk}. Symbolica is source-available on GitHub and free for hobbyist and non-commercial single-core use, with a license required for professional or institutional work.
+\textsc{Symbolica}~\cite{symbolica} is a high-performance computer algebra system (CAS) developed by Ben Ruijl. Its core is written in Rust, and it can be used through interfaces for Python, Rust, and C++. It is used in high-energy-physics research, including at CERN. It arose from the practical needs of collider physics, where symbolic computations can generate expressions containing billions of terms and requiring terabytes of memory. Established tools, such as the \textsc{Form} family and general-purpose systems like \textsc{Mathematica}, can be difficult to maintain or are not designed for computations at this scale~\cite{symbolica,ruijl_symbolica_talk}.
 
-For the purposes of this thesis, four properties of Symbolica are directly responsible for design choices made throughout the toolkit.
+Four properties of \textsc{Symbolica} are particularly relevant to this thesis and have influenced the design of the toolkit. They are introduced in the following sections.
+
 
 \subsection*{Native embedding, no glue code}
 
