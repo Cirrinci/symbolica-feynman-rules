@@ -16,13 +16,17 @@ Before describing how the toolkit transforms a declared model into Feynman rules
 \label{sec:cas-symbolica}
 % --------------------------------------------------------------
 
-\textsc{Symbolica}~\cite{symbolica} is a high-performance computer algebra system (CAS) developed by Ben Ruijl. Its core is written in Rust, and it can be used through interfaces for Python, Rust, and C++. It is used in high-energy-physics research, including at CERN. It arose from the practical needs of collider physics, where symbolic computations can generate expressions containing billions of terms and requiring terabytes of memory. More general-purpose symbolic systems are often not designed for computations at this scale~\cite{symbolica,ruijl_symbolica_talk}.
+\textsc{Symbolica}~\cite{symbolica} is a high-performance computer algebra system (CAS) developed by Ben Ruijl. Its core is written in Rust, and it can be used through interfaces for Python, Rust, and C++. It is used in high-energy-physics research, including at CERN. It arose from the practical needs of collider physics, where symbolic computations can generate expressions containing billions of terms and requiring terabytes of memory.  Established tools, such as the \textsc{Form} family and general-purpose systems like \textsc{Mathematica}, can be difficult to maintain or are not designed for computations at this scale~\cite{symbolica,ruijl_symbolica_talk}.
 
 Three properties of \textsc{Symbolica} are particularly relevant to this thesis and have influenced the design of the toolkit. They are introduced in the following sections.
 
 \subsection*{Expressions, symbols, and pattern matching}
 
-From Python, a Symbolica \py{Expression} is an ordinary in-process object rather than a serialised string. It can therefore be stored directly in a dataclass field (as in \py{InteractionTerm.coupling}), compared, hashed and passed through the pipeline like any other Python value. The user-facing surface is correspondingly small and regular: symbols are created with \py{S("name")} (and mathematical expressions can also be parsed from strings with \py{E("...")}); ordinary Python arithmetic operators then build up expressions:
+\subsection*{Expressions, symbols, and pattern matching}
+
+Expressions are the central objects in \textsc{Symbolica}: they are parsed, constructed, transformed, matched, differentiated, evaluated, and printed throughout the computation. A \py{Expression} is an ordinary in-process object that can be stored directly in Python data structures, compared, hashed, and passed through the toolkit without serialisation. Expressions are built from exact or approximate numbers, symbols, functions, sums, products, and powers, and are automatically normalised when created. Symbols can be created with \py{S("name")}, while complete expressions can be parsed with \py{E("...")}:
+
+
 
 \begin{minted}{python}
 from symbolica import S, E, Expression
@@ -30,7 +34,7 @@ x, y, f = S("x", "y", "f")
 e = f((1 + x)**2)          # a function application, f of (1+x)^2
 \end{minted}
 
-The single most important capability for this project is \emph{pattern matching with wildcards}. Any symbol whose name ends in an underscore is treated as a wildcard in \py{match}/\py{replace} operations, so algebraic rewriting reads almost like a regular expression for mathematics:
+One of the most used capability for this project is \emph{pattern matching with wildcards}. Any symbol whose name ends in an underscore is treated as a wildcard in \py{match}/\py{replace} operations, so algebraic rewriting reads almost like a regular expression for mathematics:
 
 \begin{minted}{python}
 x_, n_ = S("x_", "n_")
@@ -42,7 +46,9 @@ The toolkit leans on this pervasively. As we will see in Chapter~\ref{ch:interna
 
 \subsection*{Polynomial algebra: the source of the speed}
 
-Underneath the expression layer sits a world-class implementation of multivariate polynomial arithmetic --- greatest common divisors, factorisation, and interpolation over the rationals~\cite{symbolica}. This is the ``beating heart'' of Symbolica's performance, and the gap over general-purpose systems is not marginal: on Symbolica's own multivariate-GCD benchmark, a computation that takes about $89\,\mathrm{s}$ in \textsc{Mathematica} and over an hour in \textsc{SymPy} completes in roughly $4\,\mathrm{s}$~\cite{symbolica}. This matters here because the contraction engine of Chapter~\ref{ch:internals} generates one term per permutation of the external legs and then relies on Symbolica's \py{.expand()}/\py{.collect()} to bring the resulting, often large, sums back to a compact polynomial-in-momenta form; the cost of that repeated normalisation is exactly where a fast polynomial core pays off.
+What makes \textsc{Symbolica} so useful are the highly efficient algorithms it offers for multivariate polynomial operations. These operations include the greatest common divisor, factorisation and interpolation on rational numbers~\cite{symbolica}. This polynomial engine is one of the main sources of its performance. For example, in Symbolica’s multivariate GCD benchmark, a calculation that takes approximately (89,\mathrm{s}) in \textsc{Mathematica} and more than an hour in \textsc{SymPy} is completed in approximately (4,\mathrm{s})~\cite{symbolica}.
+
+This is important for the toolkit developed in this thesis and is one of the reasons why it is so efficient, as we shall see in the chapter on the implementation of other models. Internally, Feynpy has a contraction engine, which is described in Chapter~\ref{ch:internals}, that generates terms for different permutations of the outer branches. It therefore uses Symbolica’s \py{.expand()} and \py{.collect()} methods to simplify the resulting sums and rewrite them in a compact polynomial form in a matter of moments. Since this normalisation is performed repeatedly on potentially large expressions, the efficiency of Symbolica’s polynomial engine has a direct effect on overall performance.
 
 \subsection*{Tensor and graph canonicalisation}
 
