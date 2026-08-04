@@ -16,18 +16,13 @@ Before describing how the toolkit transforms a declared model into Feynman rules
 \label{sec:cas-symbolica}
 % --------------------------------------------------------------
 
-\textsc{Symbolica}~\cite{symbolica} is a high-performance computer algebra system (CAS) developed by Ben Ruijl. Its core is written in Rust, and it can be used through interfaces for Python, Rust, and C++. It is used in high-energy-physics research, including at CERN. It arose from the practical needs of collider physics, where symbolic computations can generate expressions containing billions of terms and requiring terabytes of memory. Established tools, such as the \textsc{Form} family and general-purpose systems like \textsc{Mathematica}, can be difficult to maintain or are not designed for computations at this scale~\cite{symbolica,ruijl_symbolica_talk}.
+\textsc{Symbolica}~\cite{symbolica} is a high-performance computer algebra system (CAS) developed by Ben Ruijl. Its core is written in Rust, and it can be used through interfaces for Python, Rust, and C++. It is used in high-energy-physics research, including at CERN. It arose from the practical needs of collider physics, where symbolic computations can generate expressions containing billions of terms and requiring terabytes of memory. More general-purpose symbolic systems are often not designed for computations at this scale~\cite{symbolica,ruijl_symbolica_talk}.
 
-Four properties of \textsc{Symbolica} are particularly relevant to this thesis and have influenced the design of the toolkit. They are introduced in the following sections.
-
-
-\subsection*{Native embedding, no glue code}
-
-Symbolica is linked directly into the running Python process; it is not an external program driven through temporary files or a text pipe, as one would drive \textsc{Form} or a \textsc{Mathematica} kernel. There is therefore no string round-tripping and no serialisation boundary: a Symbolica \py{Expression} is a first-class Python value that can be stored on a dataclass field (as the toolkit does with \py{InteractionTerm.coupling}), compared, hashed, put in a set, and passed between functions like any other object. This is what allows the toolkit to treat ``a piece of a Lagrangian'' and ``a partially built Feynman rule'' as ordinary Python data structures rather than as opaque strings.
+Three properties of \textsc{Symbolica} are particularly relevant to this thesis and have influenced the design of the toolkit. They are introduced in the following sections.
 
 \subsection*{Expressions, symbols, and pattern matching}
 
-The user-facing surface of Symbolica is small and regular. Symbols are created with \py{S("name")} (and mathematical expressions can also be parsed from strings with \py{E("...")}); ordinary Python arithmetic operators then build up expressions:
+From Python, a Symbolica \py{Expression} is an ordinary in-process object rather than a serialised string. It can therefore be stored directly in a dataclass field (as in \py{InteractionTerm.coupling}), compared, hashed and passed through the pipeline like any other Python value. The user-facing surface is correspondingly small and regular: symbols are created with \py{S("name")} (and mathematical expressions can also be parsed from strings with \py{E("...")}); ordinary Python arithmetic operators then build up expressions:
 
 \begin{minted}{python}
 from symbolica import S, E, Expression
