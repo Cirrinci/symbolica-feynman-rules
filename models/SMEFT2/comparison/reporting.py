@@ -3,6 +3,17 @@
 from .sidecars import *
 
 
+def _markdown_code_cell(value: object) -> str:
+    text = str(value)
+    text = (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("|", "&#124;")
+    )
+    return f"<code>{text}</code>"
+
+
 def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[LocalVertex, ...]]:
     references = load_feynrules_json(reference_path)
     bundle = build_smeft_green_bpreserving()
@@ -718,7 +729,8 @@ def _markdown_report(report: dict[str, object]) -> str:
     )
     for row in exact_rows:
         lines.append(
-            f"| `{row['key']}` | `{row['exact_symbolic_status']}` |"
+            f"| {_markdown_code_cell(row['key'])} | "
+            f"{_markdown_code_cell(row['exact_symbolic_status'])} |"
         )
 
     canonical_rows = [
@@ -759,7 +771,8 @@ def _markdown_report(report: dict[str, object]) -> str:
                 f"{diagnostic['feynrules_canonical_terms']}"
             )
         lines.append(
-            f"| `{row['key']}` | `{row['canonical_map_status']}` | "
+            f"| {_markdown_code_cell(row['key'])} | "
+            f"{_markdown_code_cell(row['canonical_map_status'])} | "
             f"{'; '.join(sector_summaries)} |"
         )
 
@@ -835,7 +848,8 @@ def _markdown_report(report: dict[str, object]) -> str:
     )
     for key, head, reference_count, feynpy_count, reason in sorted(benign_head_count_deltas):
         lines.append(
-            f"| `{key}` | `{head}` | {reference_count} | {feynpy_count} | "
+            f"| {_markdown_code_cell(key)} | {_markdown_code_cell(head)} | "
+            f"{reference_count} | {feynpy_count} | "
             f"{BENIGN_HEAD_COUNT_REASON_TEXT[reason]} |"
         )
 

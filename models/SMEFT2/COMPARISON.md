@@ -79,190 +79,190 @@ This table explains what the comparison did to put each sector in the same mathe
 
 | Signature | Status |
 | --- | --- |
-| `B|B|B|B|Phi|Phibar` | `EXACT_MATCH` |
-| `B|B|B|Phi|Phibar` | `EXACT_MATCH` |
-| `B|B|B|Phi|Phibar|Wi` | `EXACT_MATCH` |
-| `B|B|B|dR|dRbar` | `EXACT_MATCH` |
-| `B|B|B|eR|eRbar` | `EXACT_MATCH` |
-| `B|B|B|lL|lLbar` | `EXACT_MATCH` |
-| `B|B|B|qL|qLbar` | `EXACT_MATCH` |
-| `B|B|B|uR|uRbar` | `EXACT_MATCH` |
-| `B|B|G|dR|dRbar` | `EXACT_MATCH` |
-| `B|B|G|qL|qLbar` | `EXACT_MATCH` |
-| `B|B|G|uR|uRbar` | `EXACT_MATCH` |
-| `B|B|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `B|B|Phibar|eRbar|lL` | `EXACT_MATCH` |
-| `B|B|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `B|B|Phi|Phibar` | `EXACT_MATCH` |
-| `B|B|Phi|Phibar|Wi` | `EXACT_MATCH` |
-| `B|B|Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
-| `B|B|Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
-| `B|B|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `B|B|Phi|eR|lLbar` | `EXACT_MATCH` |
-| `B|B|Phi|qL|uRbar` | `EXACT_MATCH` |
-| `B|B|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `B|B|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `B|B|dR|dRbar` | `EXACT_MATCH` |
-| `B|B|eR|eRbar` | `EXACT_MATCH` |
-| `B|B|lL|lLbar` | `EXACT_MATCH` |
-| `B|B|qL|qLbar` | `EXACT_MATCH` |
-| `B|B|uR|uRbar` | `EXACT_MATCH` |
-| `B|G|G|dR|dRbar` | `EXACT_MATCH` |
-| `B|G|G|qL|qLbar` | `EXACT_MATCH` |
-| `B|G|G|uR|uRbar` | `EXACT_MATCH` |
-| `B|G|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `B|G|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `B|G|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `B|G|Phi|qL|uRbar` | `EXACT_MATCH` |
-| `B|G|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `B|G|dR|dRbar` | `EXACT_MATCH` |
-| `B|G|qL|qLbar` | `EXACT_MATCH` |
-| `B|G|uR|uRbar` | `EXACT_MATCH` |
-| `B|Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `B|Phibar|Wi|eRbar|lL` | `EXACT_MATCH` |
-| `B|Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `B|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `B|Phibar|eRbar|lL` | `EXACT_MATCH` |
-| `B|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `B|Phi|Phibar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|Wi` | `EXACT_MATCH` |
-| `B|Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
-| `B|Phi|Phibar|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `B|Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|eR|eRbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|lL|lLbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
-| `B|Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
-| `B|Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
-| `B|Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
-| `B|Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
-| `B|Phi|Wi|eR|lLbar` | `EXACT_MATCH` |
-| `B|Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `B|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `B|Phi|eR|lLbar` | `EXACT_MATCH` |
-| `B|Phi|qL|uRbar` | `EXACT_MATCH` |
-| `B|Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `B|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `B|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `B|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `B|dR|dRbar` | `EXACT_MATCH` |
-| `B|eR|eRbar` | `EXACT_MATCH` |
-| `B|lL|lLbar` | `EXACT_MATCH` |
-| `B|qL|qLbar` | `EXACT_MATCH` |
-| `B|uR|uRbar` | `EXACT_MATCH` |
-| `G|G|G` | `EXACT_MATCH` |
-| `G|G|G|G` | `EXACT_MATCH` |
-| `G|G|G|G|G` | `EXACT_MATCH` |
-| `G|G|G|G|G|G` | `EXACT_MATCH` |
-| `G|G|G|G|Phi|Phibar` | `EXACT_MATCH` |
-| `G|G|G|Phi|Phibar` | `EXACT_MATCH` |
-| `G|G|G|dR|dRbar` | `EXACT_MATCH` |
-| `G|G|G|qL|qLbar` | `EXACT_MATCH` |
-| `G|G|G|uR|uRbar` | `EXACT_MATCH` |
-| `G|G|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `G|G|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `G|G|Phi|Phibar` | `EXACT_MATCH` |
-| `G|G|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `G|G|Phi|qL|uRbar` | `EXACT_MATCH` |
-| `G|G|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `G|G|dR|dRbar` | `EXACT_MATCH` |
-| `G|G|qL|qLbar` | `EXACT_MATCH` |
-| `G|G|uR|uRbar` | `EXACT_MATCH` |
-| `G|Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `G|Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `G|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `G|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `G|Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
-| `G|Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
-| `G|Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
-| `G|Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
-| `G|Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `G|Phi|dR|qLbar` | `EXACT_MATCH` |
-| `G|Phi|qL|uRbar` | `EXACT_MATCH` |
-| `G|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `G|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `G|dR|dRbar` | `EXACT_MATCH` |
-| `G|qL|qLbar` | `EXACT_MATCH` |
-| `G|uR|uRbar` | `EXACT_MATCH` |
-| `Phibar|Phibar|Wi|dRbar|uR` | `EXACT_MATCH` |
-| `Phibar|Phibar|dRbar|uR` | `EXACT_MATCH` |
-| `Phibar|Phibar|lLbar|lLbar` | `MATCH_MODULO_CC_PACKAGING` |
-| `Phibar|Wi|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `Phibar|Wi|Wi|eRbar|lL` | `EXACT_MATCH` |
-| `Phibar|Wi|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `Phibar|Wi|dRbar|qL` | `EXACT_MATCH` |
-| `Phibar|Wi|eRbar|lL` | `EXACT_MATCH` |
-| `Phibar|Wi|qLbar|uR` | `EXACT_MATCH` |
-| `Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `Phibar|eRbar|lL` | `EXACT_MATCH` |
-| `Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `Phi|Phibar|Phibar|dRbar|qL` | `EXACT_MATCH` |
-| `Phi|Phibar|Phibar|eRbar|lL` | `EXACT_MATCH` |
-| `Phi|Phibar|Phibar|qLbar|uR` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|Wi` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|dR|dRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|eR|eRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `Phi|Phibar|Wi|uR|uRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|dR|dRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|eR|eRbar` | `EXACT_MATCH` |
-| `Phi|Phibar|lL|lLbar` | `EXACT_MATCH` |
-| `Phi|Phibar|qL|qLbar` | `EXACT_MATCH` |
-| `Phi|Phibar|uR|uRbar` | `EXACT_MATCH` |
-| `Phi|Phi|Phibar|Phibar` | `EXACT_MATCH` |
-| `Phi|Phi|Phibar|Phibar|Wi` | `EXACT_MATCH` |
-| `Phi|Phi|Phibar|Phibar|Wi|Wi` | `EXACT_MATCH` |
-| `Phi|Phi|Phibar|dR|qLbar` | `EXACT_MATCH` |
-| `Phi|Phi|Phibar|eR|lLbar` | `EXACT_MATCH` |
-| `Phi|Phi|Phibar|qL|uRbar` | `EXACT_MATCH` |
-| `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `EXACT_MATCH` |
-| `Phi|Phi|Wi|dR|uRbar` | `EXACT_MATCH` |
-| `Phi|Phi|dR|uRbar` | `EXACT_MATCH` |
-| `Phi|Phi|lL|lL` | `MATCH_MODULO_CC_PACKAGING` |
-| `Phi|Wi|Wi|dR|qLbar` | `EXACT_MATCH` |
-| `Phi|Wi|Wi|eR|lLbar` | `EXACT_MATCH` |
-| `Phi|Wi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `Phi|Wi|dR|qLbar` | `EXACT_MATCH` |
-| `Phi|Wi|eR|lLbar` | `EXACT_MATCH` |
-| `Phi|Wi|qL|uRbar` | `EXACT_MATCH` |
-| `Phi|dR|qLbar` | `EXACT_MATCH` |
-| `Phi|eR|lLbar` | `EXACT_MATCH` |
-| `Phi|qL|uRbar` | `EXACT_MATCH` |
-| `Wi|Wi|Wi` | `EXACT_MATCH` |
-| `Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `Wi|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `Wi|Wi|Wi|Wi|Wi|Wi` | `EXACT_MATCH` |
-| `Wi|Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Wi|Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `Wi|Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Wi|Wi|qL|qLbar` | `EXACT_MATCH` |
-| `Wi|lL|lLbar` | `EXACT_MATCH` |
-| `Wi|qL|qLbar` | `EXACT_MATCH` |
-| `dRbar|eR|lLbar|qL` | `MATCH_MODULO_CC_PACKAGING` |
-| `dRbar|qL|qL|uRbar` | `MATCH_MODULO_CC_PACKAGING` |
-| `dR|dRbar|eR|eRbar` | `EXACT_MATCH` |
-| `dR|dRbar|lL|lLbar` | `EXACT_MATCH` |
-| `dR|dRbar|qL|qLbar` | `EXACT_MATCH` |
-| `dR|dRbar|uR|uRbar` | `EXACT_MATCH` |
-| `dR|dR|dRbar|dRbar` | `EXACT_MATCH` |
-| `dR|eRbar|lL|qLbar` | `MATCH_MODULO_CC_PACKAGING` |
-| `dR|qLbar|qLbar|uR` | `MATCH_MODULO_CC_PACKAGING` |
-| `eRbar|lL|qL|uRbar` | `MATCH_MODULO_CC_PACKAGING` |
-| `eR|eRbar|lL|lLbar` | `EXACT_MATCH` |
-| `eR|eRbar|qL|qLbar` | `EXACT_MATCH` |
-| `eR|eRbar|uR|uRbar` | `EXACT_MATCH` |
-| `eR|eR|eRbar|eRbar` | `EXACT_MATCH` |
-| `eR|lLbar|qLbar|uR` | `MATCH_MODULO_CC_PACKAGING` |
-| `lL|lLbar|qL|qLbar` | `EXACT_MATCH` |
-| `lL|lLbar|uR|uRbar` | `EXACT_MATCH` |
-| `lL|lL|lLbar|lLbar` | `EXACT_MATCH` |
-| `qL|qLbar|uR|uRbar` | `EXACT_MATCH` |
-| `qL|qL|qLbar|qLbar` | `EXACT_MATCH` |
-| `uR|uR|uRbar|uRbar` | `EXACT_MATCH` |
+| <code>B&#124;B&#124;B&#124;B&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;B&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;B&#124;Phi&#124;Phibar&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;B&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;B&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;B&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;B&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;B&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;G&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;G&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;G&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phibar&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phibar&#124;eRbar&#124;lL</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phibar&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phi&#124;Phibar&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phi&#124;eR&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Phi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Wi&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;B&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;Phibar&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;Phibar&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;Phi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;Phi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;G&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phibar&#124;Wi&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phibar&#124;Wi&#124;eRbar&#124;lL</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phibar&#124;Wi&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phibar&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phibar&#124;eRbar&#124;lL</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phibar&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phibar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Wi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Wi&#124;eR&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;Wi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;eR&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Phi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Wi&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>B&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;G</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;G&#124;G</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;G&#124;G&#124;G</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;Phibar&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;Phibar&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;Phi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;Phi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phibar&#124;Wi&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phibar&#124;Wi&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phibar&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phibar&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phi&#124;Phibar&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phi&#124;Phibar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phi&#124;Phibar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phi&#124;Wi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phi&#124;Wi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Phi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>G&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Phibar&#124;Wi&#124;dRbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Phibar&#124;dRbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Phibar&#124;lLbar&#124;lLbar</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>Phibar&#124;Wi&#124;Wi&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Wi&#124;Wi&#124;eRbar&#124;lL</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Wi&#124;Wi&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Wi&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Wi&#124;eRbar&#124;lL</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;Wi&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;eRbar&#124;lL</code> | <code>EXACT_MATCH</code> |
+| <code>Phibar&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Phibar&#124;dRbar&#124;qL</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Phibar&#124;eRbar&#124;lL</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Phibar&#124;qLbar&#124;uR</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;Wi&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;dR&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phibar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Phibar&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Phibar&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Phibar&#124;eR&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Phibar&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Phibar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;Wi&#124;dR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;dR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Phi&#124;lL&#124;lL</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>Phi&#124;Wi&#124;Wi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Wi&#124;Wi&#124;eR&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Wi&#124;Wi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Wi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Wi&#124;eR&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;Wi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;dR&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;eR&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Phi&#124;qL&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>dRbar&#124;eR&#124;lLbar&#124;qL</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>dRbar&#124;qL&#124;qL&#124;uRbar</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>dR&#124;dRbar&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>dR&#124;dRbar&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>dR&#124;dRbar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>dR&#124;dRbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>dR&#124;dR&#124;dRbar&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>dR&#124;eRbar&#124;lL&#124;qLbar</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>dR&#124;qLbar&#124;qLbar&#124;uR</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>eRbar&#124;lL&#124;qL&#124;uRbar</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>eR&#124;eRbar&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>eR&#124;eRbar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>eR&#124;eRbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>eR&#124;eR&#124;eRbar&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>eR&#124;lLbar&#124;qLbar&#124;uR</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
+| <code>lL&#124;lLbar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>lL&#124;lLbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>lL&#124;lL&#124;lLbar&#124;lLbar</code> | <code>EXACT_MATCH</code> |
+| <code>qL&#124;qLbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>qL&#124;qL&#124;qLbar&#124;qLbar</code> | <code>EXACT_MATCH</code> |
+| <code>uR&#124;uR&#124;uRbar&#124;uRbar</code> | <code>EXACT_MATCH</code> |
 
 ## Canonical Tensor-Map Gauge Comparison
 
@@ -270,38 +270,38 @@ This diagnostic is enabled for supported bosonic rows. It parses FeynRules `ME`,
 
 | Signature | Status | Coefficient sectors |
 | --- | --- | --- |
-| `B|B|B|B|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaRDH` match: raw 3/3 -> canonical 3/3 |
-| `B|B|B|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaRDH` match: raw 6/6 -> canonical 6/6 |
-| `B|B|B|Phi|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaRDH` match: raw 3/3 -> canonical 3/3 |
-| `B|B|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 1/1 -> canonical 1/1; `alphaOHB` match: raw 2/2 -> canonical 2/2; `alphaOHBt` match: raw 8/2 -> canonical 1/1; `alphaRBDH` match: raw 4/4 -> canonical 4/4; `alphaRDH` match: raw 9/9 -> canonical 9/9 |
-| `B|B|Phi|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaRDH` match: raw 6/6 -> canonical 6/6 |
-| `B|B|Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaRDH` match: raw 14/6 -> canonical 6/6 |
-| `B|B|Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 2/2 -> canonical 2/2; `alphaRHDp` match: raw 2/2 -> canonical 2/2 |
-| `B|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaRBDH` match: raw 4/4 -> canonical 4/4; `alphaRDH` match: raw 4/4 -> canonical 4/4 |
-| `B|Phi|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 1/1 -> canonical 1/1; `alphaOHWB` match: raw 2/2 -> canonical 2/2; `alphaOHWBt` match: raw 4/4 -> canonical 1/1; `alphaRBDH` match: raw 2/2 -> canonical 2/2; `alphaRDH` match: raw 9/9 -> canonical 9/9; `alphaRWDH` match: raw 2/2 -> canonical 2/2 |
-| `B|Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHWB` match: raw 4/2 -> canonical 2/2; `alphaOHWBt` match: raw 4/2 -> canonical 1/1; `alphaRDH` match: raw 24/12 -> canonical 12/12; `alphaRWDH` match: raw 8/6 -> canonical 6/6 |
-| `B|Phi|Phibar|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaRDH` match: raw 24/12 -> canonical 12/12; `alphaRWDH` match: raw 6/6 -> canonical 6/6 |
-| `B|Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` match: raw 10/10 -> canonical 10/10 |
-| `B|Phi|Phi|Phibar|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaRHDp` match: raw 4/4 -> canonical 4/4 |
-| `G|G|G` | `CANONICAL_MAP_MATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 14/8 -> canonical 8/8; `alphaO3Gt` match: raw 21/42 -> canonical 12/12; `alphaR2G` match: raw 54/36 -> canonical 36/36 |
-| `G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 144/48 -> canonical 48/48; `alphaO3Gt` match: raw 138/186 -> canonical 72/72; `alphaR2G` match: raw 204/156 -> canonical 156/156 |
-| `G|G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaO3G` match: raw 720/240 -> canonical 120/120; `alphaO3Gt` match: raw 720/420 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
-| `G|G|G|G|G|G` | `CANONICAL_MAP_MATCH` | `alphaO3G` match: raw 720/720 -> canonical 120/120; `alphaO3Gt` match: raw 720/360 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
-| `G|G|G|G|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHG` match: raw 12/6 -> canonical 6/6; `alphaOHGt` match: raw 24/3 -> canonical 3/3 |
-| `G|G|G|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHG` match: raw 12/6 -> canonical 6/6; `alphaOHGt` match: raw 24/12 -> canonical 3/3 |
-| `G|G|Phi|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHG` match: raw 2/2 -> canonical 2/2; `alphaOHGt` match: raw 8/8 -> canonical 1/1 |
-| `Phi|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaRDH` match: raw 4/4 -> canonical 4/4; `alphaRWDH` match: raw 4/4 -> canonical 4/4 |
-| `Phi|Phibar|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaOHW` match: raw 2/2 -> canonical 2/2; `alphaOHWt` match: raw 8/8 -> canonical 1/1; `alphaRDH` match: raw 20/12 -> canonical 12/12; `alphaRWDH` match: raw 24/20 -> canonical 20/20 |
-| `Phi|Phibar|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/12 -> canonical 3/3; `alphaRDH` match: raw 36/24 -> canonical 24/24; `alphaRWDH` match: raw 60/48 -> canonical 48/48 |
-| `Phi|Phibar|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/3 -> canonical 3/3; `alphaRDH` match: raw 24/24 -> canonical 24/24; `alphaRWDH` match: raw 48/48 -> canonical 48/48 |
-| `Phi|Phi|Phibar|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOHBox` match: raw 12/12 -> canonical 12/12; `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaOlambda` match: raw 2/2 -> canonical 2/2; `alphaRHDp` match: raw 4/4 -> canonical 4/4; `alphaRHDpp` match: raw 8/8 -> canonical 8/8 |
-| `Phi|Phi|Phibar|Phibar|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` match: raw 12/12 -> canonical 12/12 |
-| `Phi|Phi|Phibar|Phibar|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaRHDp` match: raw 8/8 -> canonical 8/8 |
-| `Phi|Phi|Phi|Phibar|Phibar|Phibar` | `CANONICAL_MAP_MATCH` | `alphaOH` match: raw 6/6 -> canonical 6/6 |
-| `Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 14/8 -> canonical 8/8; `alphaO3Wt` match: raw 21/42 -> canonical 12/12; `alphaR2W` match: raw 54/36 -> canonical 36/36 |
-| `Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 144/48 -> canonical 48/48; `alphaO3Wt` match: raw 138/186 -> canonical 72/72; `alphaR2W` match: raw 204/156 -> canonical 156/156 |
-| `Wi|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaO3W` match: raw 720/240 -> canonical 120/120; `alphaO3Wt` match: raw 720/420 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
-| `Wi|Wi|Wi|Wi|Wi|Wi` | `CANONICAL_MAP_MATCH` | `alphaO3W` match: raw 720/720 -> canonical 120/120; `alphaO3Wt` match: raw 720/360 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
+| <code>B&#124;B&#124;B&#124;B&#124;Phi&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaRDH` match: raw 3/3 -> canonical 3/3 |
+| <code>B&#124;B&#124;B&#124;Phi&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaRDH` match: raw 6/6 -> canonical 6/6 |
+| <code>B&#124;B&#124;B&#124;Phi&#124;Phibar&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaRDH` match: raw 3/3 -> canonical 3/3 |
+| <code>B&#124;B&#124;Phi&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKH` match: raw 1/1 -> canonical 1/1; `alphaOHB` match: raw 2/2 -> canonical 2/2; `alphaOHBt` match: raw 8/2 -> canonical 1/1; `alphaRBDH` match: raw 4/4 -> canonical 4/4; `alphaRDH` match: raw 9/9 -> canonical 9/9 |
+| <code>B&#124;B&#124;Phi&#124;Phibar&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaRDH` match: raw 6/6 -> canonical 6/6 |
+| <code>B&#124;B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaRDH` match: raw 14/6 -> canonical 6/6 |
+| <code>B&#124;B&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHD` match: raw 2/2 -> canonical 2/2; `alphaRHDp` match: raw 2/2 -> canonical 2/2 |
+| <code>B&#124;Phi&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaRBDH` match: raw 4/4 -> canonical 4/4; `alphaRDH` match: raw 4/4 -> canonical 4/4 |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKH` match: raw 1/1 -> canonical 1/1; `alphaOHWB` match: raw 2/2 -> canonical 2/2; `alphaOHWBt` match: raw 4/4 -> canonical 1/1; `alphaRBDH` match: raw 2/2 -> canonical 2/2; `alphaRDH` match: raw 9/9 -> canonical 9/9; `alphaRWDH` match: raw 2/2 -> canonical 2/2 |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHWB` match: raw 4/2 -> canonical 2/2; `alphaOHWBt` match: raw 4/2 -> canonical 1/1; `alphaRDH` match: raw 24/12 -> canonical 12/12; `alphaRWDH` match: raw 8/6 -> canonical 6/6 |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaRDH` match: raw 24/12 -> canonical 12/12; `alphaRWDH` match: raw 6/6 -> canonical 6/6 |
+| <code>B&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHD` match: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` match: raw 10/10 -> canonical 10/10 |
+| <code>B&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaRHDp` match: raw 4/4 -> canonical 4/4 |
+| <code>G&#124;G&#124;G</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 14/8 -> canonical 8/8; `alphaO3Gt` match: raw 21/42 -> canonical 12/12; `alphaR2G` match: raw 54/36 -> canonical 36/36 |
+| <code>G&#124;G&#124;G&#124;G</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKG` match: raw 6/6 -> canonical 6/6; `alphaO3G` match: raw 144/48 -> canonical 48/48; `alphaO3Gt` match: raw 138/186 -> canonical 72/72; `alphaR2G` match: raw 204/156 -> canonical 156/156 |
+| <code>G&#124;G&#124;G&#124;G&#124;G</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaO3G` match: raw 720/240 -> canonical 120/120; `alphaO3Gt` match: raw 720/420 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
+| <code>G&#124;G&#124;G&#124;G&#124;G&#124;G</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaO3G` match: raw 720/720 -> canonical 120/120; `alphaO3Gt` match: raw 720/360 -> canonical 180/180; `alphaR2G` match: raw 720/360 -> canonical 360/360 |
+| <code>G&#124;G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHG` match: raw 12/6 -> canonical 6/6; `alphaOHGt` match: raw 24/3 -> canonical 3/3 |
+| <code>G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHG` match: raw 12/6 -> canonical 6/6; `alphaOHGt` match: raw 24/12 -> canonical 3/3 |
+| <code>G&#124;G&#124;Phi&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHG` match: raw 2/2 -> canonical 2/2; `alphaOHGt` match: raw 8/8 -> canonical 1/1 |
+| <code>Phi&#124;Phibar&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaRDH` match: raw 4/4 -> canonical 4/4; `alphaRWDH` match: raw 4/4 -> canonical 4/4 |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKH` match: raw 2/2 -> canonical 2/2; `alphaOHW` match: raw 2/2 -> canonical 2/2; `alphaOHWt` match: raw 8/8 -> canonical 1/1; `alphaRDH` match: raw 20/12 -> canonical 12/12; `alphaRWDH` match: raw 24/20 -> canonical 20/20 |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/12 -> canonical 3/3; `alphaRDH` match: raw 36/24 -> canonical 24/24; `alphaRWDH` match: raw 60/48 -> canonical 48/48 |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHW` match: raw 12/6 -> canonical 6/6; `alphaOHWt` match: raw 24/3 -> canonical 3/3; `alphaRDH` match: raw 24/24 -> canonical 24/24; `alphaRWDH` match: raw 48/48 -> canonical 48/48 |
+| <code>Phi&#124;Phi&#124;Phibar&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHBox` match: raw 12/12 -> canonical 12/12; `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaOlambda` match: raw 2/2 -> canonical 2/2; `alphaRHDp` match: raw 4/4 -> canonical 4/4; `alphaRHDpp` match: raw 8/8 -> canonical 8/8 |
+| <code>Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHD` match: raw 8/8 -> canonical 8/8; `alphaRHDp` match: raw 8/8 -> canonical 8/8; `alphaRHDpp` match: raw 12/12 -> canonical 12/12 |
+| <code>Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOHD` match: raw 4/4 -> canonical 4/4; `alphaRHDp` match: raw 8/8 -> canonical 8/8 |
+| <code>Phi&#124;Phi&#124;Phi&#124;Phibar&#124;Phibar&#124;Phibar</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaOH` match: raw 6/6 -> canonical 6/6 |
+| <code>Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 14/8 -> canonical 8/8; `alphaO3Wt` match: raw 21/42 -> canonical 12/12; `alphaR2W` match: raw 54/36 -> canonical 36/36 |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaKW` match: raw 6/6 -> canonical 6/6; `alphaO3W` match: raw 144/48 -> canonical 48/48; `alphaO3Wt` match: raw 138/186 -> canonical 72/72; `alphaR2W` match: raw 204/156 -> canonical 156/156 |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaO3W` match: raw 720/240 -> canonical 120/120; `alphaO3Wt` match: raw 720/420 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaO3W` match: raw 720/720 -> canonical 120/120; `alphaO3Wt` match: raw 720/360 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
 
 ## Largest Reference-Side Head Gaps
 
@@ -319,291 +319,291 @@ These are raw coefficient-head occurrence-count diagnostics. They catch some mis
 
 | Signature | Head | Reference | FeynPy | Reason |
 | --- | --- | ---: | ---: | --- |
-| `B|B|Phibar|dRbar|qL` | `alphaEdH` | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phibar|dRbar|qL` | `g1` | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phibar|eRbar|lL` | `alphaEeH` | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phibar|eRbar|lL` | `g1` | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phibar|qLbar|uR` | `alphaEuH` | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phibar|qLbar|uR` | `g1` | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|Phibar` | `alphaOHBt` | 2 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|Phibar|Wi|Wi` | `alphaRDH` | 6 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|Phibar|Wi|Wi` | `g1` | 6 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|Phibar|Wi|Wi` | `g2` | 6 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|dR|qLbar` | `alphaEdH` | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|dR|qLbar` | `g1` | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|eR|lLbar` | `alphaEeH` | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|eR|lLbar` | `g1` | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|qL|uRbar` | `alphaEuH` | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|Phi|qL|uRbar` | `g1` | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|dR|dRbar` | `alphaEBdtp` | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|dR|dRbar` | `alphaRBdtp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|dR|dRbar` | `g1` | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|eR|eRbar` | `alphaEBetp` | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|eR|eRbar` | `alphaRBetp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|eR|eRbar` | `g1` | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|lL|lLbar` | `alphaEBltp` | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|lL|lLbar` | `alphaRBltp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|lL|lLbar` | `g1` | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|qL|qLbar` | `alphaEBqtp` | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|qL|qLbar` | `alphaRBqtp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|qL|qLbar` | `g1` | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|uR|uRbar` | `alphaEButp` | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|uR|uRbar` | `alphaRButp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|B|uR|uRbar` | `g1` | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|dR|dRbar` | `alphaEGdp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|dR|dRbar` | `alphaEGdtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|dR|dRbar` | `alphaRGdtp` | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|dR|dRbar` | `alphaRdD` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|dR|dRbar` | `g1` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|dR|dRbar` | `g3` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|qL|qLbar` | `alphaEGqp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|qL|qLbar` | `alphaEGqtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|qL|qLbar` | `alphaRGqtp` | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|qL|qLbar` | `alphaRqD` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|qL|qLbar` | `g1` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|qL|qLbar` | `g3` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|uR|uRbar` | `alphaEGup` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|uR|uRbar` | `alphaEGutp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|uR|uRbar` | `alphaRGutp` | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|uR|uRbar` | `alphaRuD` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|uR|uRbar` | `g1` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|G|uR|uRbar` | `g3` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|dR|dRbar` | `alphaEBdtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|dR|dRbar` | `g3` | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|qL|qLbar` | `alphaEBqtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|qL|qLbar` | `g3` | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|uR|uRbar` | `alphaEButp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|G|uR|uRbar` | `g3` | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phibar|dRbar|qL` | `alphaEdB` | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|Phibar|eRbar|lL` | `alphaEeB` | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|Phibar|qLbar|uR` | `alphaEuB` | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|Phi|Phibar|Wi|Wi` | `alphaOHWB` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi` | `alphaOHWBt` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi` | `alphaRDH` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi` | `alphaRWDH` | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi` | `g1` | 18 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi` | `g2` | 22 | 40 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi|Wi` | `alphaRDH` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi|Wi` | `g1` | 18 | 30 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|Phibar|Wi|Wi|Wi` | `g2` | 18 | 30 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Phi|dR|qLbar` | `alphaEdB` | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|Phi|eR|lLbar` | `alphaEeB` | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|Phi|qL|uRbar` | `alphaEuB` | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|Wi|Wi|lL|lLbar` | `alphaEWlp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|lL|lLbar` | `alphaEWltp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|lL|lLbar` | `alphaRWltp` | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|lL|lLbar` | `alphaRlD` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|lL|lLbar` | `g1` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|lL|lLbar` | `g2` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|qL|qLbar` | `alphaEWqp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|qL|qLbar` | `alphaEWqtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|qL|qLbar` | `alphaRWqtp` | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|qL|qLbar` | `alphaRqD` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|qL|qLbar` | `g1` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|Wi|qL|qLbar` | `g2` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|lL|lLbar` | `alphaEBltp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|lL|lLbar` | `g2` | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|qL|qLbar` | `alphaEBqtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|Wi|qL|qLbar` | `g2` | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|dR|dRbar` | `alphaEBd` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|dR|dRbar` | `alphaEBdtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|dR|dRbar` | `alphaRBdtp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|dR|dRbar` | `alphaRdD` | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|dR|dRbar` | `g1` | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|eR|eRbar` | `alphaEBe` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|eR|eRbar` | `alphaEBetp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|eR|eRbar` | `alphaRBetp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|eR|eRbar` | `alphaReD` | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|eR|eRbar` | `g1` | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|lL|lLbar` | `alphaEBl` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|lL|lLbar` | `alphaEBltp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|lL|lLbar` | `alphaRBltp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|lL|lLbar` | `alphaRlD` | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|lL|lLbar` | `g1` | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|qL|qLbar` | `alphaEBq` | 4 | 8 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|qL|qLbar` | `alphaEBqtp` | 4 | 8 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|qL|qLbar` | `alphaRBqtp` | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
-| `B|qL|qLbar` | `alphaRqD` | 7 | 8 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
-| `B|qL|qLbar` | `g1` | 8 | 9 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
-| `B|uR|uRbar` | `alphaEBu` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|uR|uRbar` | `alphaEButp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|uR|uRbar` | `alphaRButp` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|uR|uRbar` | `alphaRuD` | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `B|uR|uRbar` | `g1` | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G` | `alphaO3G` | 8 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G` | `alphaO3Gt` | 42 | 21 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G` | `alphaR2G` | 36 | 54 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G` | `g3` | 42 | 60 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G` | `alphaO3G` | 48 | 144 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G` | `alphaO3Gt` | 186 | 138 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G` | `alphaR2G` | 156 | 204 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G` | `g3` | 396 | 492 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|G` | `alphaO3G` | 240 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|G` | `alphaO3Gt` | 420 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|G` | `alphaR2G` | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|G` | `g3` | 1020 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|G|G` | `alphaO3Gt` | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|G|G` | `alphaR2G` | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|G|G` | `g3` | 1440 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|Phi|Phibar` | `alphaOHG` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|Phi|Phibar` | `alphaOHGt` | 3 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|G|Phi|Phibar` | `g3` | 9 | 36 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|Phi|Phibar` | `alphaOHG` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|Phi|Phibar` | `alphaOHGt` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|Phi|Phibar` | `g3` | 18 | 36 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|dR|dRbar` | `alphaEGd` | 30 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|dR|dRbar` | `alphaEGdp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|dR|dRbar` | `alphaEGdtp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|dR|dRbar` | `alphaRGdtp` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|dR|dRbar` | `alphaRdD` | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|dR|dRbar` | `g3` | 108 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|qL|qLbar` | `alphaEGq` | 30 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|qL|qLbar` | `alphaEGqp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|qL|qLbar` | `alphaEGqtp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|qL|qLbar` | `alphaRGqtp` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|qL|qLbar` | `alphaRqD` | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|qL|qLbar` | `g3` | 108 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|uR|uRbar` | `alphaEGu` | 30 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|uR|uRbar` | `alphaEGup` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|uR|uRbar` | `alphaEGutp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|uR|uRbar` | `alphaRGutp` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|uR|uRbar` | `alphaRuD` | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|G|uR|uRbar` | `g3` | 108 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phibar|dRbar|qL` | `alphaEdG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phibar|dRbar|qL` | `alphaOdG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phibar|dRbar|qL` | `g3` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phibar|qLbar|uR` | `alphaEuG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phibar|qLbar|uR` | `alphaOuG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phibar|qLbar|uR` | `g3` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phi|dR|qLbar` | `alphaEdG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phi|dR|qLbar` | `alphaOdG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phi|dR|qLbar` | `g3` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phi|qL|uRbar` | `alphaEuG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phi|qL|uRbar` | `alphaOuG` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Phi|qL|uRbar` | `g3` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Wi|qL|qLbar` | `alphaEGqp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Wi|qL|qLbar` | `alphaEGqtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Wi|qL|qLbar` | `alphaRGqtp` | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Wi|qL|qLbar` | `alphaRqD` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Wi|qL|qLbar` | `g2` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|Wi|qL|qLbar` | `g3` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|dR|dRbar` | `alphaEGd` | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|dR|dRbar` | `alphaEGdp` | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|dR|dRbar` | `alphaEGdtp` | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|dR|dRbar` | `alphaRGd` | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|dR|dRbar` | `alphaRGdtp` | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|dR|dRbar` | `alphaRdD` | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|dR|dRbar` | `g3` | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|qL|qLbar` | `alphaEGq` | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|qL|qLbar` | `alphaEGqp` | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|qL|qLbar` | `alphaEGqtp` | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|qL|qLbar` | `alphaRGq` | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|qL|qLbar` | `alphaRGqtp` | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|qL|qLbar` | `alphaRqD` | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|qL|qLbar` | `g3` | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|uR|uRbar` | `alphaEGu` | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|uR|uRbar` | `alphaEGup` | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|uR|uRbar` | `alphaEGutp` | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|uR|uRbar` | `alphaRGu` | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|uR|uRbar` | `alphaRGutp` | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|uR|uRbar` | `alphaRuD` | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|G|uR|uRbar` | `g3` | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|Wi|Wi|qL|qLbar` | `alphaEWqp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|Wi|Wi|qL|qLbar` | `alphaEWqtp` | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|Wi|Wi|qL|qLbar` | `alphaRWqtp` | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|Wi|Wi|qL|qLbar` | `alphaRqD` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|Wi|Wi|qL|qLbar` | `g2` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|Wi|Wi|qL|qLbar` | `g3` | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|dR|dRbar` | `alphaRdD` | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|dR|dRbar` | `g3` | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|qL|qLbar` | `alphaRqD` | 7 | 8 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
-| `G|qL|qLbar` | `g3` | 8 | 9 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
-| `G|uR|uRbar` | `alphaRuD` | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `G|uR|uRbar` | `g3` | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|dRbar|qL` | `alphaEdW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|dRbar|qL` | `alphaOdW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|dRbar|qL` | `g2` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|eRbar|lL` | `alphaEeW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|eRbar|lL` | `alphaOeW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|eRbar|lL` | `g2` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|qLbar|uR` | `alphaEuW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|qLbar|uR` | `alphaOuW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phibar|Wi|Wi|qLbar|uR` | `g2` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi` | `alphaRDH` | 12 | 20 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi` | `alphaRWDH` | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi` | `g2` | 34 | 46 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi` | `alphaOHW` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi` | `alphaOHWt` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi` | `alphaRDH` | 24 | 36 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi` | `alphaRWDH` | 48 | 60 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi` | `g2` | 90 | 132 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi|Wi` | `alphaOHW` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi|Wi` | `alphaOHWt` | 3 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Phibar|Wi|Wi|Wi|Wi` | `g2` | 81 | 108 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|dR|qLbar` | `alphaEdW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|dR|qLbar` | `alphaOdW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|dR|qLbar` | `g2` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|eR|lLbar` | `alphaEeW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|eR|lLbar` | `alphaOeW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|eR|lLbar` | `g2` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|qL|uRbar` | `alphaEuW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|qL|uRbar` | `alphaOuW` | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Phi|Wi|Wi|qL|uRbar` | `g2` | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi` | `alphaO3W` | 8 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi` | `alphaO3Wt` | 42 | 21 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi` | `alphaR2W` | 36 | 54 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi` | `g2` | 42 | 60 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi` | `alphaO3W` | 48 | 144 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi` | `alphaO3Wt` | 186 | 138 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi` | `alphaR2W` | 156 | 204 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi` | `g2` | 396 | 492 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi|Wi` | `alphaO3W` | 240 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi|Wi` | `alphaO3Wt` | 420 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi|Wi` | `alphaR2W` | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi|Wi` | `g2` | 1020 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi|Wi|Wi` | `alphaO3Wt` | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi|Wi|Wi` | `alphaR2W` | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|Wi|Wi|Wi` | `g2` | 1440 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|lL|lLbar` | `alphaEWlp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|lL|lLbar` | `alphaEWltp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|lL|lLbar` | `alphaRWltp` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|lL|lLbar` | `alphaRlD` | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|lL|lLbar` | `g2` | 102 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|qL|qLbar` | `alphaEWqp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|qL|qLbar` | `alphaEWqtp` | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|qL|qLbar` | `alphaRWqtp` | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|qL|qLbar` | `alphaRqD` | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|Wi|qL|qLbar` | `g2` | 102 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|lL|lLbar` | `alphaEWl` | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|lL|lLbar` | `alphaEWlp` | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|lL|lLbar` | `alphaEWltp` | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|lL|lLbar` | `alphaRWl` | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|lL|lLbar` | `alphaRWltp` | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|lL|lLbar` | `alphaRlD` | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|lL|lLbar` | `g2` | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|qL|qLbar` | `alphaEWq` | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|qL|qLbar` | `alphaEWqp` | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|qL|qLbar` | `alphaEWqtp` | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|qL|qLbar` | `alphaRWq` | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|qL|qLbar` | `alphaRWqtp` | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|qL|qLbar` | `alphaRqD` | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|Wi|qL|qLbar` | `g2` | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|lL|lLbar` | `alphaRlD` | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|lL|lLbar` | `g2` | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
-| `Wi|qL|qLbar` | `alphaRqD` | 7 | 8 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
-| `Wi|qL|qLbar` | `g2` | 8 | 9 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
-| `dRbar|eR|lLbar|qL` | `alphaEcqedl` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `dRbar|eR|lLbar|qL` | `alphaEcqedlthree` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `dRbar|qL|qL|uRbar` | `alphaEcudqq` | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `dRbar|qL|qL|uRbar` | `alphaEcudqqtwo` | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `dR|eRbar|lL|qLbar` | `alphaEcqedl` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `dR|eRbar|lL|qLbar` | `alphaEcqedlthree` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `dR|qLbar|qLbar|uR` | `alphaEcudqq` | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `dR|qLbar|qLbar|uR` | `alphaEcudqqtwo` | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `eRbar|lL|qL|uRbar` | `alphaEcuelq` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `eRbar|lL|qL|uRbar` | `alphaEcuelqtwo` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `eR|lLbar|qLbar|uR` | `alphaEcuelq` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
-| `eR|lLbar|qLbar|uR` | `alphaEcuelqtwo` | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>B&#124;B&#124;Phibar&#124;dRbar&#124;qL</code> | <code>alphaEdH</code> | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phibar&#124;dRbar&#124;qL</code> | <code>g1</code> | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phibar&#124;eRbar&#124;lL</code> | <code>alphaEeH</code> | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phibar&#124;eRbar&#124;lL</code> | <code>g1</code> | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phibar&#124;qLbar&#124;uR</code> | <code>alphaEuH</code> | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phibar&#124;qLbar&#124;uR</code> | <code>g1</code> | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;Phibar</code> | <code>alphaOHBt</code> | 2 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>alphaRDH</code> | 6 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>g1</code> | 6 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>g2</code> | 6 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;dR&#124;qLbar</code> | <code>alphaEdH</code> | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;dR&#124;qLbar</code> | <code>g1</code> | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;eR&#124;lLbar</code> | <code>alphaEeH</code> | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;eR&#124;lLbar</code> | <code>g1</code> | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;qL&#124;uRbar</code> | <code>alphaEuH</code> | 0 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;Phi&#124;qL&#124;uRbar</code> | <code>g1</code> | 3 | 7 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;dR&#124;dRbar</code> | <code>alphaEBdtp</code> | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;dR&#124;dRbar</code> | <code>alphaRBdtp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;dR&#124;dRbar</code> | <code>g1</code> | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;eR&#124;eRbar</code> | <code>alphaEBetp</code> | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;eR&#124;eRbar</code> | <code>alphaRBetp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;eR&#124;eRbar</code> | <code>g1</code> | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;lL&#124;lLbar</code> | <code>alphaEBltp</code> | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;lL&#124;lLbar</code> | <code>alphaRBltp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;lL&#124;lLbar</code> | <code>g1</code> | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;qL&#124;qLbar</code> | <code>alphaEBqtp</code> | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;qL&#124;qLbar</code> | <code>alphaRBqtp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;qL&#124;qLbar</code> | <code>g1</code> | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;uR&#124;uRbar</code> | <code>alphaEButp</code> | 8 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;uR&#124;uRbar</code> | <code>alphaRButp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;B&#124;uR&#124;uRbar</code> | <code>g1</code> | 31 | 41 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGdp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGdtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaRGdtp</code> | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaRdD</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>g1</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>g3</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGqp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGqtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaRGqtp</code> | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>g1</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>g3</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGup</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGutp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaRGutp</code> | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaRuD</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>g1</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>g3</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEBdtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;dR&#124;dRbar</code> | <code>g3</code> | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEBqtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;qL&#124;qLbar</code> | <code>g3</code> | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEButp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;G&#124;uR&#124;uRbar</code> | <code>g3</code> | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phibar&#124;dRbar&#124;qL</code> | <code>alphaEdB</code> | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;Phibar&#124;eRbar&#124;lL</code> | <code>alphaEeB</code> | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;Phibar&#124;qLbar&#124;uR</code> | <code>alphaEuB</code> | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>alphaOHWB</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>alphaOHWBt</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>alphaRDH</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>alphaRWDH</code> | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>g1</code> | 18 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>g2</code> | 22 | 40 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaRDH</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>g1</code> | 18 | 30 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>g2</code> | 18 | 30 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Phi&#124;dR&#124;qLbar</code> | <code>alphaEdB</code> | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;Phi&#124;eR&#124;lLbar</code> | <code>alphaEeB</code> | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;Phi&#124;qL&#124;uRbar</code> | <code>alphaEuB</code> | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEWlp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEWltp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaRWltp</code> | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaRlD</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>g1</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>g2</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRWqtp</code> | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>g1</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>g2</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEBltp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;lL&#124;lLbar</code> | <code>g2</code> | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEBqtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;Wi&#124;qL&#124;qLbar</code> | <code>g2</code> | 21 | 25 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;dR&#124;dRbar</code> | <code>alphaEBd</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;dR&#124;dRbar</code> | <code>alphaEBdtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;dR&#124;dRbar</code> | <code>alphaRBdtp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;dR&#124;dRbar</code> | <code>alphaRdD</code> | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;dR&#124;dRbar</code> | <code>g1</code> | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;eR&#124;eRbar</code> | <code>alphaEBe</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;eR&#124;eRbar</code> | <code>alphaEBetp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;eR&#124;eRbar</code> | <code>alphaRBetp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;eR&#124;eRbar</code> | <code>alphaReD</code> | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;eR&#124;eRbar</code> | <code>g1</code> | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;lL&#124;lLbar</code> | <code>alphaEBl</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;lL&#124;lLbar</code> | <code>alphaEBltp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;lL&#124;lLbar</code> | <code>alphaRBltp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;lL&#124;lLbar</code> | <code>alphaRlD</code> | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;lL&#124;lLbar</code> | <code>g1</code> | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;qL&#124;qLbar</code> | <code>alphaEBq</code> | 4 | 8 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;qL&#124;qLbar</code> | <code>alphaEBqtp</code> | 4 | 8 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;qL&#124;qLbar</code> | <code>alphaRBqtp</code> | 2 | 4 | FeynPy prints the two antisymmetric branches from `Dual[FS] = 1/2 epsilon.FS` separately; FeynRules has already collapsed them with epsilon antisymmetry. |
+| <code>B&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 7 | 8 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
+| <code>B&#124;qL&#124;qLbar</code> | <code>g1</code> | 8 | 9 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
+| <code>B&#124;uR&#124;uRbar</code> | <code>alphaEBu</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;uR&#124;uRbar</code> | <code>alphaEButp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;uR&#124;uRbar</code> | <code>alphaRButp</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;uR&#124;uRbar</code> | <code>alphaRuD</code> | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>B&#124;uR&#124;uRbar</code> | <code>g1</code> | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G</code> | <code>alphaO3G</code> | 8 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G</code> | <code>alphaO3Gt</code> | 42 | 21 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G</code> | <code>alphaR2G</code> | 36 | 54 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G</code> | <code>g3</code> | 42 | 60 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G</code> | <code>alphaO3G</code> | 48 | 144 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G</code> | <code>alphaO3Gt</code> | 186 | 138 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G</code> | <code>alphaR2G</code> | 156 | 204 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G</code> | <code>g3</code> | 396 | 492 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;G</code> | <code>alphaO3G</code> | 240 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;G</code> | <code>alphaO3Gt</code> | 420 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;G</code> | <code>alphaR2G</code> | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;G</code> | <code>g3</code> | 1020 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;G&#124;G</code> | <code>alphaO3Gt</code> | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;G&#124;G</code> | <code>alphaR2G</code> | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;G&#124;G</code> | <code>g3</code> | 1440 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>alphaOHG</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>alphaOHGt</code> | 3 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>g3</code> | 9 | 36 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>alphaOHG</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>alphaOHGt</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;Phi&#124;Phibar</code> | <code>g3</code> | 18 | 36 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGd</code> | 30 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGdp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGdtp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaRGdtp</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaRdD</code> | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;dR&#124;dRbar</code> | <code>g3</code> | 108 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGq</code> | 30 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGqp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGqtp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaRGqtp</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;qL&#124;qLbar</code> | <code>g3</code> | 108 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGu</code> | 30 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGup</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGutp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaRGutp</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaRuD</code> | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;G&#124;uR&#124;uRbar</code> | <code>g3</code> | 108 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phibar&#124;dRbar&#124;qL</code> | <code>alphaEdG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phibar&#124;dRbar&#124;qL</code> | <code>alphaOdG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phibar&#124;dRbar&#124;qL</code> | <code>g3</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phibar&#124;qLbar&#124;uR</code> | <code>alphaEuG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phibar&#124;qLbar&#124;uR</code> | <code>alphaOuG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phibar&#124;qLbar&#124;uR</code> | <code>g3</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phi&#124;dR&#124;qLbar</code> | <code>alphaEdG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phi&#124;dR&#124;qLbar</code> | <code>alphaOdG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phi&#124;dR&#124;qLbar</code> | <code>g3</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phi&#124;qL&#124;uRbar</code> | <code>alphaEuG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phi&#124;qL&#124;uRbar</code> | <code>alphaOuG</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Phi&#124;qL&#124;uRbar</code> | <code>g3</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEGqp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEGqtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRGqtp</code> | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>g2</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;Wi&#124;qL&#124;qLbar</code> | <code>g3</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGd</code> | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGdp</code> | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaEGdtp</code> | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaRGd</code> | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaRGdtp</code> | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>alphaRdD</code> | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;dR&#124;dRbar</code> | <code>g3</code> | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGq</code> | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGqp</code> | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaEGqtp</code> | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaRGq</code> | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaRGqtp</code> | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;qL&#124;qLbar</code> | <code>g3</code> | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGu</code> | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGup</code> | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaEGutp</code> | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaRGu</code> | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaRGutp</code> | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>alphaRuD</code> | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;G&#124;uR&#124;uRbar</code> | <code>g3</code> | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqtp</code> | 4 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRWqtp</code> | 1 | 2 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>g2</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>g3</code> | 17 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;dR&#124;dRbar</code> | <code>alphaRdD</code> | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;dR&#124;dRbar</code> | <code>g3</code> | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 7 | 8 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
+| <code>G&#124;qL&#124;qLbar</code> | <code>g3</code> | 8 | 9 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
+| <code>G&#124;uR&#124;uRbar</code> | <code>alphaRuD</code> | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>G&#124;uR&#124;uRbar</code> | <code>g3</code> | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;dRbar&#124;qL</code> | <code>alphaEdW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;dRbar&#124;qL</code> | <code>alphaOdW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;dRbar&#124;qL</code> | <code>g2</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;eRbar&#124;lL</code> | <code>alphaEeW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;eRbar&#124;lL</code> | <code>alphaOeW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;eRbar&#124;lL</code> | <code>g2</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;qLbar&#124;uR</code> | <code>alphaEuW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;qLbar&#124;uR</code> | <code>alphaOuW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phibar&#124;Wi&#124;Wi&#124;qLbar&#124;uR</code> | <code>g2</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>alphaRDH</code> | 12 | 20 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>alphaRWDH</code> | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi</code> | <code>g2</code> | 34 | 46 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaOHW</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaOHWt</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaRDH</code> | 24 | 36 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaRWDH</code> | 48 | 60 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi</code> | <code>g2</code> | 90 | 132 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaOHW</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaOHWt</code> | 3 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Phibar&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>g2</code> | 81 | 108 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;dR&#124;qLbar</code> | <code>alphaEdW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;dR&#124;qLbar</code> | <code>alphaOdW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;dR&#124;qLbar</code> | <code>g2</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;eR&#124;lLbar</code> | <code>alphaEeW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;eR&#124;lLbar</code> | <code>alphaOeW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;eR&#124;lLbar</code> | <code>g2</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;qL&#124;uRbar</code> | <code>alphaEuW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;qL&#124;uRbar</code> | <code>alphaOuW</code> | 2 | 4 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Phi&#124;Wi&#124;Wi&#124;qL&#124;uRbar</code> | <code>g2</code> | 6 | 10 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi</code> | <code>alphaO3W</code> | 8 | 14 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi</code> | <code>alphaO3Wt</code> | 42 | 21 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi</code> | <code>alphaR2W</code> | 36 | 54 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi</code> | <code>g2</code> | 42 | 60 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaO3W</code> | 48 | 144 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaO3Wt</code> | 186 | 138 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaR2W</code> | 156 | 204 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>g2</code> | 396 | 492 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaO3W</code> | 240 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaO3Wt</code> | 420 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaR2W</code> | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>g2</code> | 1020 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaO3Wt</code> | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>alphaR2W</code> | 360 | 720 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>g2</code> | 1440 | 2160 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEWlp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEWltp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaRWltp</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaRlD</code> | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>g2</code> | 102 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqtp</code> | 12 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRWqtp</code> | 6 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 30 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>g2</code> | 102 | 114 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEWl</code> | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEWlp</code> | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaEWltp</code> | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaRWl</code> | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaRWltp</code> | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>alphaRlD</code> | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;lL&#124;lLbar</code> | <code>g2</code> | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWq</code> | 26 | 32 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqp</code> | 12 | 16 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaEWqtp</code> | 20 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRWq</code> | 6 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRWqtp</code> | 10 | 12 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 18 | 24 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;Wi&#124;qL&#124;qLbar</code> | <code>g2</code> | 104 | 128 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;lL&#124;lLbar</code> | <code>alphaRlD</code> | 7 | 8 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;lL&#124;lLbar</code> | <code>g2</code> | 8 | 9 | The direct exact symbolic comparison proves canonical tensor-map equality for this row; the raw occurrence-count difference is a printer/expansion multiplicity, not an operator-content mismatch. |
+| <code>Wi&#124;qL&#124;qLbar</code> | <code>alphaRqD</code> | 7 | 8 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
+| <code>Wi&#124;qL&#124;qLbar</code> | <code>g2</code> | 8 | 9 | FeynPy leaves the two `alphaRqD` derivative-order branches as separate dummy-Lorentz contractions; FeynRules merges the identical contraction into one term with a doubled coefficient. |
+| <code>dRbar&#124;eR&#124;lLbar&#124;qL</code> | <code>alphaEcqedl</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>dRbar&#124;eR&#124;lLbar&#124;qL</code> | <code>alphaEcqedlthree</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>dRbar&#124;qL&#124;qL&#124;uRbar</code> | <code>alphaEcudqq</code> | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>dRbar&#124;qL&#124;qL&#124;uRbar</code> | <code>alphaEcudqqtwo</code> | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>dR&#124;eRbar&#124;lL&#124;qLbar</code> | <code>alphaEcqedl</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>dR&#124;eRbar&#124;lL&#124;qLbar</code> | <code>alphaEcqedlthree</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>dR&#124;qLbar&#124;qLbar&#124;uR</code> | <code>alphaEcudqq</code> | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>dR&#124;qLbar&#124;qLbar&#124;uR</code> | <code>alphaEcudqqtwo</code> | 2 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>eRbar&#124;lL&#124;qL&#124;uRbar</code> | <code>alphaEcuelq</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>eRbar&#124;lL&#124;qL&#124;uRbar</code> | <code>alphaEcuelqtwo</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>eR&#124;lLbar&#124;qLbar&#124;uR</code> | <code>alphaEcuelq</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+| <code>eR&#124;lLbar&#124;qLbar&#124;uR</code> | <code>alphaEcuelqtwo</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
 
 ## Largest Unexplained Raw Head-Count Deltas
 

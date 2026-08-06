@@ -313,12 +313,12 @@ antisymmetric duplicate-leg sums at acceptance time.
 
 | Reference packaging | Coefficient heads | Current grade |
 | --- | --- | --- |
-| `dRbar|eR|lLbar|qL` | `alphaEcqedl`, `alphaEcqedlthree` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
-| `dR|eRbar|lL|qLbar` | `alphaEcqedl`, `alphaEcqedlthree` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
-| `eRbar|lL|qL|uRbar` | `alphaEcuelq`, `alphaEcuelqtwo` | pinned modulo CC, phase `+1`, symmetric duplicate sum |
-| `eR|lLbar|qLbar|uR` | `alphaEcuelq`, `alphaEcuelqtwo` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
-| `dRbar|qL|qL|uRbar` | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
-| `dR|qLbar|qLbar|uR` | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
+| <code>dRbar&#124;eR&#124;lLbar&#124;qL</code> | `alphaEcqedl`, `alphaEcqedlthree` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
+| <code>dR&#124;eRbar&#124;lL&#124;qLbar</code> | `alphaEcqedl`, `alphaEcqedlthree` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
+| <code>eRbar&#124;lL&#124;qL&#124;uRbar</code> | `alphaEcuelq`, `alphaEcuelqtwo` | pinned modulo CC, phase `+1`, symmetric duplicate sum |
+| <code>eR&#124;lLbar&#124;qLbar&#124;uR</code> | `alphaEcuelq`, `alphaEcuelqtwo` | pinned modulo CC, phase `-1`, symmetric duplicate sum |
+| <code>dRbar&#124;qL&#124;qL&#124;uRbar</code> | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
+| <code>dR&#124;qLbar&#124;qLbar&#124;uR</code> | `alphaEcudqq`, `alphaEcudqqtwo` | pinned modulo CC; `alphaEcudqq` antisymmetric, `alphaEcudqqtwo` symmetric |
 
 The pinned rule table follows directly from the source operators in
 `LEvCCLRRL` and `LEvCCRRLL`. In each case the comparison takes the FeynPy-only
