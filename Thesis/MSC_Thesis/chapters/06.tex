@@ -6,19 +6,19 @@
 \chapter{Implementation: From \texttt{Model} to Feynman Rule}
 \label{ch:internals}
 % ==============================================================
-\cleanup{from here started}
+
 Chapter~\ref{ch:feynpy} served as a user guide, whilst Chapter~\ref{ch:cas} outlined the libraries on which FEYNPY is based. Now that we know how to use the toolkit and understand its language which, although it is Python, may not be familiar to everyone, we can move on to understanding how it works internally. How do we get from the declarative Python objects that the user writes to the Symbolica expression that emerges as a Feynman rule? 
 
 We physicists, in understanding the origin and physical meaning of a theory, make use of many conventions and simplifications (which, moreover, differ from physicist to physicist), and the code must recognise these conventions. When considering the Standard Model, for example, nobody would want to write every index, every generator and every tensor component explicitly. This would be a pointless and tedious task, and if not done with care and focus, it could even lead to unintentional errors. The toolkit is therefore intended to take a compact input and expand it according to the conventions and declarations encoded in the model.
 
-Internally, the code will have to carry out a great deal of bookkeeping. In other words, it must be capable of expanding terms such as the covariant derivative according to the correct rules dictated by the symmetry groups that each Model possesses. It must be able to keep track of the order of the fields and their different indices. To do this a sequence of small rewriting steps, each of which makes the expression slightly more explicit is applied. One can visualise the structure as an hourglass: the user-facing interface allows several compact ways of declaring a Lagrangian, but these different inputs are progressively rewritten until they meet at the central object, the InteractionTerm. From this point on, the code can perform Wick contractions, canonicalisation and simplification of the resulting expression.
+Internally, the code will have to carry out a great deal of bookkeeping. In other words, it must be capable of expanding terms such as the covariant derivative according to the correct rules dictated by the symmetry groups that each Model possesses. It must be able to keep track of the order of the fields and their different indices. To do this, a sequence of small rewriting steps, each of which makes the expression slightly more explicit, is applied. One can visualise the structure as an hourglass: the user-facing interface allows several compact ways of declaring a Lagrangian, but these different inputs are progressively rewritten until they meet at the central object, the InteractionTerm. From this point on, the code can perform Wick contractions, canonicalisation and simplification of the resulting expression.
 
-We want to proceed having an example in mind. Let's consider the quark kinetic term of QCD,
+We want to proceed with an example in mind. Let's consider the quark kinetic term of QCD,
 \begin{equation}
     i\,\bar q\,\gamma^\mu D_\mu q \;\supset\; g_s\,\bar q_{i}\,\gamma^\mu\,t^a_{ij}\,q_{j}\,G^a_\mu ,
     \label{eq:qcd-current}
 \end{equation}
-is, by the end of the pipeline, turned into the quark--gluon vertex $-i g_s\,\gamma^\mu\,t^a_{ij}$. The full gauge-fixed QCD Lagrangian,
+is, by the end of the pipeline, turned into the quark--gluon vertex $+i g_s\,\gamma^\mu\,t^a_{ij}$ in the conventions used here. The full gauge-fixed QCD Lagrangian,
 \begin{equation}
 \mathcal{L}_{\mathrm{QCD}}
 = i\,\bar q\,\gamma^\mu D_\mu q
@@ -34,8 +34,8 @@ is a good stress test because it exercises every branch of the compiler at once:
 \label{sec:internals-overview}
 % --------------------------------------------------------------
 
-Let's start to look at the internal having a general overview which is illustrated in 
-Figure~\ref{fig:pipeline-overview}. This shows the stages that lead from a declared \py{Model} to a Feynman-rule \py{Expression}. We can summerize it in four layers, see (Table~\ref{tab:internals-layers}).
+Let's start to look at the internals with a general overview, which is illustrated in 
+Figure~\ref{fig:pipeline-overview}. This shows the stages that lead from a declared \py{Model} to a Feynman-rule \py{Expression}. We can summarise it in four layers, see (Table~\ref{tab:internals-layers}).
 
 \begin{figure}[htbp]
 \centering
@@ -105,7 +105,7 @@ The remaining sections walk the layers from the outside in: declaration (Section
 
 \subsection{Inert metadata}
 
-In the chapter \ref{ch:feynpy} we have see all the building blocks of FEYNPY that will enable us to define the Model. This building blocks are the declarative \emph{metadata} stored in \texttt{feynpy.metadata}, these are frozen dataclasses that hold physics data and carry no algorithmic logic. Let's summerize them here:
+In the chapter \ref{ch:feynpy} we have seen all the building blocks of FEYNPY that will enable us to define the Model. These building blocks are the declarative \emph{metadata} stored in \texttt{feynpy.metadata}; these are frozen dataclasses that hold physics data and carry no algorithmic logic. Let's summarise them here:
 \begin{itemize}
     \item \py{IndexType} pairs a Spenso representation with a ``kind'' string and a label prefix (more in Section~\ref{sec:cas-indextype}); 
     \item \py{Field} stores a name, spin, self-conjugacy, its tuple of \py{indices}, its Symbolica symbol and conjugate symbol, quantum numbers, and optional flavour-class data, inferring its \py{kind} (scalar/fermion/vector) and \py{statistics} from the spin; 
@@ -118,9 +118,9 @@ The deliberate point is that metadata is inert: a faithful, machine-readable cop
 
 \subsection{The declarative DSL as wrapper objects}
 
-Now that we have defined the building blocks of the theory, we can put them together into the Lagrangian itself. This is done with a small domain-specific language (DSL) defined in \texttt{feynpy.declared}:\footnote{A domain-specific language is a small language designed for a particular task. Here it is a restricted set of Python objects and functions that lets the user write Lagrangian terms in a notation close to standard physics notation.} \py{DC} (covariant derivative), \py{FS} (field strength), \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}. I want to emphasize that these constructors do not immediately build a Symbolica tensor expression. They build small immutable wrapper objects that will later be analysed and lowered into compiled interaction terms. 
+Now that we have defined the building blocks of the theory, we can put them together into the Lagrangian itself. This is done with a small domain-specific language (DSL) defined in \texttt{feynpy.declared}:\footnote{A domain-specific language is a small language designed for a particular task. Here it is a restricted set of Python objects and functions that lets the user write Lagrangian terms in a notation close to standard physics notation.} \py{DC} (covariant derivative), \py{FS} (field strength), \py{Gamma}, \py{PartialD}, \py{Metric}, \py{T}, \py{StructureConstant}, \py{GaugeFixing}, \py{GhostLagrangian}. I want to emphasise that these constructors do not immediately build a Symbolica tensor expression. They build small immutable wrapper objects that will later be analysed and lowered into compiled interaction terms. 
 
-To understand how the code reads the Lagrangian let' consider as an example the equation \ref{eq:qcd-full}. When the user writes the equation \ref{eq:qcd-full} the first term looks like this
+To understand how the code reads the Lagrangian let's consider as an example the equation \ref{eq:qcd-full}. When the user writes the equation \ref{eq:qcd-full} the first term looks like this
 \begin{minted}{python}
 I * Quark.bar * Gamma(mu) * DC(Quark, mu)
 \end{minted}
@@ -133,30 +133,30 @@ A useful subtlety is that a few helpers are \emph{dual}. \py{Gamma(mu)} and \py{
 
 Once individual source terms have been written, the full source Lagrangian is stored in the container \py{DeclaredLagrangian}. This is a very simple object: essentially it is just an ordered tuple \py{source_terms}. In the most common case these source terms are \py{_DeclaredMonomial}s, but they can also be special declarations such as \py{GaugeFixing(...)} or \py{GhostLagrangian(...)}. So \py{DeclaredLagrangian} is nothing but the source-level Lagrangian, still written in the declarative language.
 
-Everything is putted together in the \py{Model} (in \texttt{feynpy.core}), this is the larger object that owns this declared Lagrangian together with the rest of the model data: \py{fields}, \py{parameters} and \py{gauge_groups}. Now the input is converted into a \py{DeclaredLagrangian}. 
+Everything is put together in the \py{Model} (in \texttt{feynpy.core}); this is the larger object that owns this declared Lagrangian together with the rest of the model data: \py{fields}, \py{parameters} and \py{gauge_groups}. Now the input is converted into a \py{DeclaredLagrangian}. 
 
 Actual compilation happens only when \py{model.lagrangian()} is called. At that point the declared source terms are turned into a \py{CompiledLagrangian}. This is where terms containing \py{DC(...)} or \py{FS(...)} are expanded using the metadata stored in the model, while terms that are already local are lowered directly. The result is no longer source syntax: it is a tuple of compiled \py{InteractionTerm}s. This compilation is lazy and cached, so it is only done the first time it is needed.
 
-To summarize: \py{DeclaredLagrangian} is the source-level Lagrangian, \py{CompiledLagrangian} is the compiled one, and \py{Model} is the full object that stores the declared Lagrangian together with the extra information needed to validate and compile it.
+To summarise: \py{DeclaredLagrangian} is the source-level Lagrangian, \py{CompiledLagrangian} is the compiled one, and \py{Model} is the full object that stores the declared Lagrangian together with the extra information needed to validate and compile it.
 
 % --------------------------------------------------------------
 \section{Analysis and lowering: reading the Lagrangian and resolving indices}
 \label{sec:internals-lowering}
 % --------------------------------------------------------------
 
- Between \py{DeclaredLagrangian} and \py{CompiledLagrangian} there is an intermediate step. The declared Lagrangian is the user-written Lagrangian, while the compiled Lagrangian is a tuple of local \py{InteractionTerm}s. Therefore we first need to make every implicit structure explicit, validate its index labels, and decide wheter this term needs a model-dependent expansion. This process is what we call lowering.
+Between \py{DeclaredLagrangian} and \py{CompiledLagrangian} there is an intermediate step. The declared Lagrangian is the user-written Lagrangian, while the compiled Lagrangian is a tuple of local \py{InteractionTerm}s. Therefore we first need to make every implicit structure explicit, validate its index labels, and decide whether this term needs a model-dependent expansion. This process is what we call lowering.
 
 For example, consider again the declared quark kinetic term
 \begin{minted}{python}
 I * Quark.bar * Gamma(mu) * DC(Quark, mu)
 \end{minted}
-Lowering  checks that \py{mu} is used consistently as a Lorentz index and that the implied spinor and colour structure is well-formed, and classifies the term as a \py{covariant_core}. This still is not a final local interaction term, because \py{DC} must first be expanded using the model's gauge data. The compiler then performs that expansion, producing ordinary local monomials such as the kinetic piece and the quark--gauge-boson vertex, and those local monomials are what finally become compiled \py{InteractionTerm}s. By contrast, a source term that is already local, such as \py{lam * phi**4}, is lowered directly into its canonical interaction form with no further expansion.
+Lowering checks that \py{mu} is used consistently as a Lorentz index and that the implied spinor and colour structure is well-formed, and classifies the term as a \py{covariant_core}. This still is not a final local interaction term, because \py{DC} must first be expanded using the model's gauge data. The compiler then performs that expansion, producing ordinary local monomials such as the kinetic piece and the quark--gauge-boson vertex, and those local monomials are what finally become compiled \py{InteractionTerm}s. By contrast, a source term that is already local, such as \py{lam * phi**4}, is lowered directly into its canonical interaction form with no further expansion.
 
-So the lowering layer (\texttt{feynpy.lowering} is the bridge between declarative syntax and the compiler. For each source term it answers three questions: what kind of term is this, are its indices well-formed, and (if the term is already local) what is its canonical interaction form?
+So the lowering layer (\texttt{feynpy.lowering}) is the bridge between declarative syntax and the compiler. For each source term it answers three questions: what kind of term is this, are its indices well-formed, and (if the term is already local) what is its canonical interaction form?
 
 \subsection{Classifying each source term}
 
-In order to know what needs to be expanded and how by the compiler we want to analyze the terms. The single entry point is \py{_analyze_declared_source_term(...)}, which returns an \py{AnalyzedSourceTerm}. This object has the role of routing correctly every monomials through the compilation. If the term is already local, it already contains the final \py{InteractionTerm}; otherwise it stores the structured object that the compiler must expand. The compiler then consumes this analysed object expanding it accordingly to the gauge structure. The categories are summarised in Table~\ref{tab:analyzed-categories}.
+In order to know what needs to be expanded, and how, by the compiler we want to analyse the terms. The single entry point is \py{_analyze_declared_source_term(...)}, which returns an \py{AnalyzedSourceTerm}. This object has the role of routing correctly every monomial through the compilation. If the term is already local, it already contains the final \py{InteractionTerm}; otherwise it stores the structured object that the compiler must expand. The compiler then consumes this analysed object, expanding it according to the gauge structure. The categories are summarised in Table~\ref{tab:analyzed-categories}.
 
 \begin{table}[htbp]
 \centering
@@ -176,33 +176,32 @@ In order to know what needs to be expanded and how by the compiler we want to an
 \label{tab:analyzed-categories}
 \end{table}
 
-So the analyser asks whether the term is already local; if not it proceeds with the classification. Checks if it is one of the two covariant kinetic shapes, afterwards if it is a generic covariant-operator, which is a mixed of covariant derivative and fieldstrength and fiels. There is also a dedicated classification for the gauge-fixing and ghost declarations (used in the declarative helper), and finally pure field-strength monomials. 
+So the analyser asks whether the term is already local; if not it proceeds with the classification. It checks if it is one of the two covariant kinetic shapes, afterwards if it is a generic covariant operator, which is a mix of covariant derivative, field strength and fields. There is also a dedicated classification for the gauge-fixing and ghost declarations (used in the declarative helper), and finally pure field-strength monomials. 
 
 \subsection{Resolving the indices}
 
 As explained earlier, we do not want the user to have to write out every index in the Lagrangians, as many are implicit and obvious to a physicist. In this ‘lowering’ stage, terms with implicit index structure are made explicit. The lowering process determines which symbolic labels belong to which field slots and which contractions the user intended to apply. A large amount of the design effort has been devoted to this stage, as it is precisely here that silent errors are most dangerous.
 
 
-\paragraph{Monomial-wide label validation.} A first validation before lowering is done. The analyser builds one registry for every label \emph{name} appearing anywhere in the monomial (on field slots, on \py{PartialD}, \py{Gamma}, \py{T}, $f^{abc}$ and \py{FS}, and even on raw Spenso tensors in the coefficient) and requires that each name correspond to exactly one \py{IndexType}. Meaning that if the analyser encounters a \py{f} on it was a flavour index it cannot appear on another field in the monomial as an adjoint index for example. So if the same name is used for two incompatible kinds the term is rejected with an explicit error.
+\paragraph{Monomial-wide label validation.} A first validation before lowering is done. The analyser builds one registry for every label \emph{name} appearing anywhere in the monomial (on field slots, on \py{PartialD}, \py{Gamma}, \py{T}, $f^{abc}$ and \py{FS}, and even on raw Spenso tensors in the coefficient) and requires that each name correspond to exactly one \py{IndexType}. Meaning that if the analyser encounters a label \py{f} as a flavour index it cannot appear on another field in the monomial as an adjoint index for example. So if the same name is used for two incompatible kinds the term is rejected with an explicit error.
 
 
-\paragraph{Slot binding and inference.} Once each symbolic label has been assigned an index type (for example Lorentz, spinor, colour or flavour) the local monomial is resolved in a predefined order. Firstly, all labels that the user has entered directly into the fields are retained. Next, factors such as \py{Gamma} and \py{T}, which sit between two neighbouring fields, are resolved by identifying which field slots they connect to, to understand how to contract. Lowering replaces them by the corresponding explicit Spenso tensor, represented as a Symbolica expression, and multiplies that tensor into the coupling. Next, any other explicit labels — such as those from declared factors or tensors already present in the coefficient — are matched to the remaining free field slots of the same type. This matching must be one-to-one; if multiple assignments are possible, the lowering process generates an ambiguity error. After all explicit information has been used, the process proceed to defaults assignment: it assigns new labels to obvious pairs, such as an adjacent $\bar\psi/\psi$, then to the sole remaining compatible pair, and finally introduces new dummy labels for any slots still left open. The result is that a compact source monomial is transformed into a fully explicit indexed interaction term, or rejected with a clear error if the notation is genuinely ambiguous.
+\paragraph{Slot binding and inference.} Once each symbolic label has been assigned an index type (for example Lorentz, spinor, colour or flavour) the local monomial is resolved in a predefined order. Firstly, all labels that the user has entered directly into the fields are retained. Next, factors such as \py{Gamma} and \py{T}, which sit between two neighbouring fields, are resolved by identifying which field slots they connect to, to understand how to contract. Lowering replaces them by the corresponding explicit Spenso tensor, represented as a Symbolica expression, and multiplies that tensor into the coupling. Next, any other explicit labels — such as those from declared factors or tensors already present in the coefficient — are matched to the remaining free field slots of the same type. This matching must be one-to-one; if multiple assignments are possible, the lowering process generates an ambiguity error. After all explicit information has been used, the process proceeds to default assignment: it assigns new labels to obvious pairs, such as an adjacent $\bar\psi/\psi$, then to the sole remaining compatible pair, and finally introduces new dummy labels for any slots still left open. The result is that a compact source monomial is transformed into a fully explicit indexed interaction term, or rejected with a clear error if the notation is genuinely ambiguous.
 
 
 
 \subsection{Remembering fermion pairings}
 
-During lowering, the code records one further information: how the fermion factors are paired into closed Dirac bilinears. This information is stored in the \py{closed_dirac_bilinears} metadata, a list of $(\bar\psi\text{-slot},\,\psi\text{-slot})$ pairs. The code determines these pairings automatically from the local spinor structure of the term.
+During lowering, the code records one further piece of information: how the fermion factors are paired into closed Dirac bilinears. This information is stored in the \py{closed_dirac_bilinears} metadata, a list of $(\bar\psi\text{-slot},\,\psi\text{-slot})$ pairs. The code determines these pairings automatically from the local spinor structure of the term.
 
 This step is deliberately conservative. Lowering keeps this metadata only when the fermion slots can be partitioned unambiguously into disjoint, ordered closed bilinears. If no unique pairing is found, the monomial is rejected rather than guessed. When the pairing is unambiguous, the metadata preserves which \(\bar\psi\) is paired with which \(\psi\), so that the contraction engine can later apply the correct fermion-sign convention. Its importance is discussed in Section~\ref{sec:internals-difficulty}.
 
-\cleanup{till here}
 % --------------------------------------------------------------
 \section{Compilation: turning gauge structure into ordinary interactions}
 \label{sec:internals-compiler}
 % --------------------------------------------------------------
 
-Now the phase of full expansion of every operator of the lagrangian is done. The compiler stage is the first stage that needs all the information stored in the model concerning the gauge symmetries. Throught the loweing stage we analyzed the terms and now with the compilation we turn the remaining unexpanded object into a local interaction term. The main dispatch lives in \texttt{src/compiler/gauge.py}: \py{_compile_declared_lagrangian_terms(model)} walks the analysed source terms and sends each one to a specialised handler (Figure~\ref{fig:compiler-dispatch}). Throughout this stage the conventions are
+Now the phase of full expansion of every operator of the Lagrangian is done. The compiler stage is the first stage that needs all the information stored in the model concerning the gauge symmetries. Through the lowering stage we analysed the terms and now with the compilation we turn the remaining unexpanded object into a local interaction term. The main dispatch lives in \texttt{src/compiler/gauge.py}: \py{_compile_declared_lagrangian_terms(model)} walks the analysed source terms and sends each one to a specialised handler (Figure~\ref{fig:compiler-dispatch}). Throughout this stage the conventions are
 \begin{equation}
     D_\mu = \partial_\mu - i g\, A_\mu^a T_a,
     \qquad
@@ -252,13 +251,13 @@ For the usual \(\mathrm{SU}(N)\) basis one may simply read \(c^{a}{}_{bc}\) as t
 \label{fig:compiler-dispatch}
 \end{figure}
 
-\subsection{Expansion and Intercation Term building}
+\subsection{Expansion and Interaction Term building}
 
 The compiler essentially performs two operations. Firstly, it expands each structured gauge operator to yield simple local monomials. Secondly, only after carrying out the complete expansion does it feed these monomials back into the normal lowering process, generating a \py{InteractionTerm} (Section~\ref{sec:internals-lowering}).
 
-This is a deliberate design choice: it prioritises generality and a single, uniform compilation pipeline over efficiency. For example a dedicated routines could be written for $F^2$, $F^3$, $F^4$ and for each covariant structure separately, which would make it faster and more importantly in the canonical form we already know from textbooks. Here, however, there is no separate, hard-coded compiler for $F^2$, $F^3$, $F^4$ or for every possible power of a covariant derivative. The combinations are generated automatically via the standard distribution followed by a well-established lowering phase.
+This is a deliberate design choice: it prioritises generality and a single, uniform compilation pipeline over efficiency. For example dedicated routines could be written for $F^2$, $F^3$, $F^4$ and for each covariant structure separately, which would make it faster and more importantly closer to the canonical form we already know from textbooks. Here, however, there is no separate, hard-coded compiler for $F^2$, $F^3$, $F^4$ or for every possible power of a covariant derivative. The combinations are generated automatically via the standard distribution followed by a well-established lowering phase.
 
-The cost is that the intermediate output is much more verbose than textbook notation. A non-abelian $F^2$ expands into nine local monomials before canonicalisation combines equivalent terms again (Section~\ref{sec:internals-postprocessing}). For higher operators this growth is rapid; for pure non-abelian $F^n$ it gives $3^n$ branches. Much of the effort has been to canonicalisation process.
+The cost is that the intermediate output is much more verbose than textbook notation. A non-abelian $F^2$ expands into nine local monomials before canonicalisation combines equivalent terms again (Section~\ref{sec:internals-postprocessing}). For higher operators this growth is rapid; for pure non-abelian $F^n$ it gives $3^n$ branches. Much of the effort has therefore gone into the canonicalisation process.
 
 \subsection{Covariant derivatives}
 \label{sec:internals-covd}
@@ -318,9 +317,9 @@ Let's take as an example a field that carries representation indices associated 
     \phi_{i\beta}.
 \end{equation}
 
-The routine \py{expand_cov_der} implements Eq.~\eqref{eq:covd-general} literally. It always emits one partial-derivative piece. It then resolves which gauge groups act on the field and emits one gauge piece for each of them; if the user did not name a group, it uses all compatible groups. For a conjugated occurrence $(D_\mu\phi)^\dagger$, the sign of the gauge piece flips obviously.
+The routine \py{expand_cov_der} implements Eq.~\eqref{eq:covd-general} literally. It always emits one partial-derivative piece. It then resolves which gauge groups act on the field and emits one gauge piece for each of them; if the user did not name a group, it uses all compatible groups. For a conjugated occurrence $(D_\mu\phi)^\dagger$, the sign of the gauge piece flips.
 
-\paragraph{More slots in the same representation.} The user might want to play with multiple slots in many representations that could be the same, in which case the generator may be able to act on more than one place. The code handles these cases. The default policy fro this situation is conservative and rejects it as ambiguous.
+\paragraph{More slots in the same representation.} The user might want to play with multiple slots in many representations that could be the same, in which case the generator may be able to act on more than one place. The code handles these cases. The default policy for this situation is conservative and rejects it as ambiguous.
  A representation can instead opt into \py{slot_policy='sum'}, in which case the compiler sums over the possible active slots.
 
 \paragraph{Several gauge groups at once.} A standard example is the left-handed quark doublet $Q_L$, which transforms under $\mathrm{SU}(3)_c\times\mathrm{SU}(2)_L\times\mathrm{U}(1)_Y$. In that case
@@ -332,7 +331,7 @@ The routine \py{expand_cov_der} implements Eq.~\eqref{eq:covd-general} literally
     \;-\; i g'\, Y_{Q}\, B_\mu\, Q_L ,
     \label{eq:covd-multigroup}
 \end{equation}
-where we have  $t^a_{(3)}$ the colour generators, $t^I_{(2)}$ the weak generators and $Y_Q$ the hypercharge. So \py{DC(Q_L, mu)} expands to four pieces: the ordinary derivative plus one gauge current for each of the three groups. Naming one group, for example \py{DC(Q_L, mu, gauge_group=SU3C)}, keeps only that group's current together with the partial derivative.
+where we have $t^a_{(3)}$ as the colour generators, $t^I_{(2)}$ as the weak generators and $Y_Q$ as the hypercharge. So \py{DC(Q_L, mu)} expands to four pieces: the ordinary derivative plus one gauge current for each of the three groups. Naming one group, for example \py{DC(Q_L, mu, gauge_group=SU3C)}, keeps only that group's current together with the partial derivative.
 
 
 
@@ -434,7 +433,7 @@ Note that a product of $n$ non-abelian field strengths produces $3^n$ raw branch
 
 \subsection{Gauge fixing and ghosts}
 
-There is a declaritive helper for the gauge fixing term which cna be accessed by \py{GaugeFixing(gauge_group, xi=...)}.This helper implements the linear covariant gauge term
+There is a declarative helper for the gauge fixing term which can be accessed by \py{GaugeFixing(gauge_group, xi=...)}. This helper implements the linear covariant gauge term
 \begin{equation}
     \mathcal{L}_{\mathrm{gf}}
     =
@@ -442,11 +441,11 @@ There is a declaritive helper for the gauge fixing term which cna be accessed by
     \left(\partial^\mu A^a_\mu\right)
     \left(\partial^\nu A^a_\nu\right),
 \end{equation}
-with the adjoint index omitted in the abelian case. It constructs the corresponding explicit local monomial, lowers it through the ordinary compilation pipeline, and tags the result as \py{gauge_fixing} so that the reporting and validation layers can recognise it. The user can naturally write the gauge fixingin manually, in which case these will be recognized and will receive the same tag.
+with the adjoint index omitted in the abelian case. It constructs the corresponding explicit local monomial, lowers it through the ordinary compilation pipeline, and tags the result as \py{gauge_fixing} so that the reporting and validation layers can recognise it. The user can naturally write the gauge fixing manually, in which case it is recognised and receives the same tag.
 
-Note that the  generic \py{GaugeFixing(...)} helper describes only linear covariant gauge fixing. More general $R_\xi$ gauges in spontaneously broken theories, for example, require additional Goldstone-dependent gauge-fixing terms, which must be written explicitly by the user.
+Note that the generic \py{GaugeFixing(...)} helper describes only linear covariant gauge fixing. More general $R_\xi$ gauges in spontaneously broken theories, for example, require additional Goldstone-dependent gauge-fixing terms, which must be written explicitly by the user.
 
-There is also the ghost lagrangian helper \py{GhostLagrangian(gauge_group)}. For a non-abelian gauge group, the Faddeev--Popov ghost Lagrangian can be written as
+There is also the ghost Lagrangian helper \py{GhostLagrangian(gauge_group)}. For a non-abelian gauge group, the Faddeev--Popov ghost Lagrangian can be written as
 \begin{equation}
     \mathcal{L}_{\mathrm{gh}}
     =
@@ -501,27 +500,26 @@ class InteractionTerm:
 
 The \py{coupling} is a Symbolica expression holding the numerical and tensor prefactor (couplings, generators, structure constants, metrics); \py{fields} is an ordered tuple of \py{FieldOccurrence} objects, each a field with its slot-resolved index labels and conjugation flag; \py{derivatives} records, as \py{DerivativeAction(target, lorentz_index)}, which field each derivative hits and along which Lorentz index; and \py{closed_dirac_bilinears} carries the fermion-pairing provenance of Section~\ref{sec:internals-lowering}. A \py{CompiledLagrangian} is simply a tuple of such terms. An \py{InteractionTerm} is a purely static, index-labelled description of one monomial of the Lagrangian --- the direct code counterpart of the right-hand side $g_{\alpha_1\cdots\alpha_n}\,\partial\cdots\partial\,\phi^{\alpha_1}\cdots\phi^{\alpha_n}$ of Eq.~\eqref{eq:general-term}.
 
-As we know the ordering of \py{fields} is relevant and since Symbolica multip;ication is commutative, we use the ordered tuple which keeps record of fermion order. 
+As we know the ordering of \py{fields} is relevant and since Symbolica multiplication is commutative, we use the ordered tuple which keeps record of fermion order. 
 The method \py{to_vertex_kwargs(external_legs)} performs the last model-aware step: it strips away all model-layer vocabulary and reduces one term plus a chosen set of external legs to flat, parallel lists --- species keys, momenta, field and leg roles, index labels and types, derivative indices and targets, and the bilinear metadata --- after which only Symbolica and Spenso objects remain.
 
 \subsection*{Flavour expansion}
 
-When the field carries a flavour index (Section~\ref{sec:feynpy-flavor}) by default the terms remain generic. For example $\lambda_{ij}\,\bar\ell_i \ell_j\,\phi$ will keep the lepton. By requesting \py{flavor_expand=True} Feynpy enumerates every member combination, substitutes the corresponding \py{Parameter} component (e.g.\ $\lambda_{e\mu}$) producing one fully explicit \py{InteractionTerm} per combination in the same data structure.
+When the field carries a flavour index (Section~\ref{sec:feynpy-flavor}) by default the terms remain generic. For example $\lambda_{ij}\,\bar\ell_i \ell_j\,\phi$ will keep the lepton. By requesting \py{flavor_expand=True} FEYNPY enumerates every member combination, substitutes the corresponding \py{Parameter} component (e.g.\ $\lambda_{e\mu}$) producing one fully explicit \py{InteractionTerm} per combination in the same data structure.
 
 % -----------------------------------------------------
----------
 \section{The inner core: Wick contraction in the vertex engine}
 \label{sec:internals-contraction}
 % --------------------------------------------------------------
 
-Now we arrive at the heart of the code, where the actual algorithm is implemented. We find the implementation of wick contraction in
+Now we arrive at the heart of the code, where the actual algorithm is implemented. We find the implementation of Wick contraction in
 the vertex engine (\texttt{symbolic.vertex\_engine}). The only thing this engine cares about are fields, roles, index labels, momenta and a coupling tensor, and performs a combinatorial contraction that is the code-level realisation of the canonical-quantisation algorithm of Section~\ref{sec:feynrules-algorithm}.
 
 \subsection{The permutation sum}
 
 The core routine is \py{contract_to_full_expression}. Given an interaction with $n$ field slots and $n$ external legs, it sums over all $n!$ ways of matching legs to slots. Each permutation \py{perm} assigns leg \py{perm[i]} to slot \py{i}; the sum of the surviving contributions is the full Wick contraction.
 
-For each permutation the code does the following things in order. First it remaps every open index in the coupling to the corresponding external-leg label, this ensures that the coupling will actually match the permutated fields. Then it checks whether the pairing is physically allowed, this is done using \py{factor_leg_compatible}. When iot happens that a slot and a leg disagree in species, spin, statistics or conjugation, the permutation is discarded at once. Surviving fermionic terms pick up a Grassmann sign from the fermion part of the permutation, unless the closed-bilinear exception of Section~\ref{sec:internals-contraction-fermions} applies. Then derivatives are turned into momenta because of the Fourier rule $\partial_\mu \to -i p_\mu$ (all momenta incoming), so each \py{DerivativeAction} contributes a factor $(-i)\,p^\mu$ with $p$ the momentum of the matched leg (meaning that it will carry the corresponding label). Finally each leg contributes its external wavefunction ($U$ for bosons, $UF/\overline{UF}$ for fermions) and a species Kronecker delta, repeated indices are contracted with the Spenso metric, and the contribution is multiplied by the plane wave $\exp(-i\,\Sigma p\!\cdot\!x)$ before being added to the total.
+For each permutation the code does the following things in order. First it remaps every open index in the coupling to the corresponding external-leg label, this ensures that the coupling will actually match the permuted fields. Then it checks whether the pairing is physically allowed, this is done using \py{factor_leg_compatible}. When it happens that a slot and a leg disagree in species, spin, statistics or conjugation, the permutation is discarded at once. Surviving fermionic terms pick up a Grassmann sign from the fermion part of the permutation, unless the closed-bilinear exception of Section~\ref{sec:internals-contraction-fermions} applies. Then derivatives are turned into momenta because of the Fourier rule $\partial_\mu \to -i p_\mu$ (all momenta incoming), so each \py{DerivativeAction} contributes a factor $(-i)\,p^\mu$ with $p$ the momentum of the matched leg (meaning that it will carry the corresponding label). Finally each leg contributes its external wavefunction ($U$ for bosons, $UF/\overline{UF}$ for fermions) and a species Kronecker delta, repeated indices are contracted with the Spenso metric, and the contribution is multiplied by the plane wave $\exp(-i\,\Sigma p\!\cdot\!x)$ before being added to the total.
 
 Bosonic vertices carry no extra signs; fermionic ones do. The structure of the loop is:
 
@@ -558,7 +556,7 @@ The fix uses the fermion-pairing information recorded during lowering (Section~\
 
 \subsection{Output policy and universal factors}
 
-There is a function, namly \py{vertex_factor}, that has the role of running the contraction and then applies a few presentation choices. By default it amputates the external wavefunctions $U$, $UF$ and $\overline{UF}$, so the user sees the bare vertex. Optionally, the user can choose to write \py{include_delta=True}, which gives the momentum-conservation factor $(2\pi)^d\,\delta(\Sigma p)$. In every case the result is finally multiplied by the overall $+i$ that every Feynman rule carries. These choices only decide how the answer is shown.
+There is a function, namely \py{vertex_factor}, that has the role of running the contraction and then applies a few presentation choices. By default it amputates the external wavefunctions $U$, $UF$ and $\overline{UF}$, so the user sees the bare vertex. Optionally, the user can choose to write \py{include_delta=True}, which gives the momentum-conservation factor $(2\pi)^d\,\delta(\Sigma p)$. In every case the result is finally multiplied by the overall $+i$ that every Feynman rule carries. These choices only decide how the answer is shown.
 
 % --------------------------------------------------------------
 \section{Making the answer canonical}
@@ -567,7 +565,7 @@ There is a function, namly \py{vertex_factor}, that has the role of running the 
 
 The raw contracted expression is correct, but not unique. The same vertex can appear with different dummy-index names, different orderings of antisymmetric tensors, or still expanded into many field-strength pieces. In the next paragraph some choices of the postprocessing of the final output are presented.
 
-The first pass, in \texttt{symbolic.vertex\_postprocessing}, does the physics-facing clean-up. As the output comes out of the contraction engine it has the full range of Kronecker deltas of the permutation. The first step is therefore to contracts species Kronecker deltas, collapses repeated bispinor indices with the Spenso metric, and, on request, simplifies closed gamma chains with idenso (Section~\ref{sec:cas-idenso}).
+The first pass, in \texttt{symbolic.vertex\_postprocessing}, does the physics-facing clean-up. As the output comes out of the contraction engine it has the full range of Kronecker deltas of the permutation. The first step is therefore to contract species Kronecker deltas, collapse repeated bispinor indices with the Spenso metric, and, on request, simplify closed gamma chains with idenso (Section~\ref{sec:cas-idenso}).
 
 The second pass, in \texttt{symbolic.tensor\_canonicalization}, puts the surviving expression into a unique tensor form using Symbolica's \py{canonize_tensors} (Section~\ref{sec:cas-symbolica}). That routine only understands symmetry flags on plain symbols, not on Spenso tensor heads. So the code temporarily replaces every Spenso tensor --- metrics, generators, structure constants, $\gamma$ matrices, and the project's custom invariants --- by a plain symbol with the right symmetry, runs the canonicalisation, and swaps the Spenso tensors back. Dummy indices of different kinds (Lorentz, colour, spinor, weak) are kept in separate groups, so a Lorentz dummy is never confused with a colour one.
 
