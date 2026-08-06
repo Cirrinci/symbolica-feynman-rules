@@ -1,6 +1,6 @@
 # SMEFT2 Comparison Method Report
 
-Updated for the SMEFT2 FeynRules/FeynPy comparison on 2026-08-03.
+Updated for the SMEFT2 FeynRules/FeynPy comparison on 2026-08-06.
 
 ## Current Result
 
@@ -92,6 +92,26 @@ The comparison has four layers.
    tensor-monomial maps, and compared coefficient-sector by coefficient-sector.
    This is the strict proof used by `--check`.
 
+## Sector-by-Sector Reduction Map
+
+The table below is the quickest way to explain what was done to bring each
+sector to the same mathematical form before comparing. "Direct exact" means
+same-signature canonical tensor-map equality. "Pinned CC" means equality only
+after one explicitly listed charge-conjugation packaging transform.
+
+| Sector family | FeynRules rows | Result | Main normalization work |
+| --- | ---: | --- | --- |
+| Bosonic and Higgs/gauge (`X^3`, `X^2D^2`, `X^2H^2`, `H^2XD^2`, `H^2D^4`, `H^4D^2`, `H^6`) | 32 | 32 direct exact | Parse `ME`, `FV`, `SP`, `Eps`, `fsu2`, `fsu3`; expand dual field strengths; canonicalize metric and epsilon signs; relabel dummy Lorentz/weak/color indices; normalize generator products and selected `f*f` Jacobi forms. |
+| Two-fermion currents and dipoles (`F2D3`, `F2HD2`, `F2XH`, `F2XD`, `F2DH2`, `F2H3`, plus evanescent two-fermion blocks) | 129 non-Weinberg rows | 129 direct exact | Parse gamma chains, slashed momenta, projectors, generators, deltas, epsilons, and indexed Wilson functions; preserve flavor order and conjugation; canonicalize open spinor, weak, color, and Lorentz tensors; use narrow SU(2) pseudoreality identities where Higgs-tilde structures move epsilon through weak generators. |
+| Weinberg (`LWeinberg`) | 2 | 2 pinned CC | FeynRules prints same-chirality `Phi Phi lL lL` and `Phibar Phibar lLbar lLbar`; FeynPy stores the same source with explicit `dirac_C` and mixed `lLbar,lL` packaging. The comparison uses the antisymmetrized local pair `FeynPy(lLbar,lL) - FeynPy(lL,lLbar)` with the sign fixed by `C^T = -C`. |
+| Ordinary four-fermion (`L4q`, `L4l`, `L4lq`, non-CC evanescent four-fermion rows) | 15 | 15 direct exact | Compare each Wilson head as a full tensor map; preserve four flavor slots; canonicalize identical-fermion dummy labels, color singlet/octet contractions, weak triplet currents, gamma chains, and Hermitian-conjugate generator orientations. |
+| Charge-conjugated evanescent four-fermion (`LEvCC*`, accepted `alphaEc*` partner rows) | 6 rows, 12 coefficient sectors | 6 pinned CC | Use the pinned rule table in `comparison/charge_conjugation.py`: each row has exactly one partner signature, phase, and duplicate-leg symmetry. The code rewrites two explicit `dirac_C` arms into the FeynRules `CC[...]` bilinear packaging and then demands exact canonical-map equality. |
+| FeynPy-only zero-signature artifacts | 2 local signatures | dropped from residuals | Canonical coefficient-head collection proves the apparent `alphaOHud` `B Phi Phi dR uRbar` and HC signatures cancel to zero. They are retained as diagnostics but not counted as unmatched physics. |
+
+This sector split is the current artifact split: 32 bosonic rows, 131
+two-fermion rows, and 21 four-fermion rows. The exact status split is 176
+direct exact rows plus 8 pinned charge-conjugation-packaging rows.
+
 ## Exact Tensor-Map Comparison
 
 The exact layer does not compare printed strings. It compares canonical tensor
@@ -119,11 +139,67 @@ Canonicalization uses:
 - exact scalar coefficient collection;
 - narrow gauge identities explicitly encoded in the comparison layer.
 
+The narrow gauge identities are deliberately visible in code:
+
+- Generator ordering: when a chain contains `T^b T^a`, the comparator rewrites
+  it into the ordered basis using `[T^a, T^b] = i f^{abc} T^c`. In code this is
+  `_normalize_generator_product_order_report`.
+- Structure-constant pair reduction: products of two nonabelian structure
+  constants with one shared dummy adjoint index are reduced only with
+  `f(a,b,e) f(c,d,e) - f(a,c,e) f(b,d,e) + f(a,d,e) f(b,c,e) = 0`. In code this
+  is `_normalize_structure_constant_jacobi_report`.
+- SU(2) pseudoreality: contractions of a weak generator with `epsilon_ij` are
+  put in a common basis, and the two-generator version emits the required
+  commutator term. In code these are
+  `_normalize_weak_t_epsilon_report` and
+  `_normalize_weak_doublet_generator_epsilon_report`.
+- Charge-conjugation packaging: explicit `dirac_C` bilinears are converted to
+  the FeynRules `CC[...]` flow only for the pinned rows. In code this is
+  `_normalize_ec_charge_conjugation_report`.
+
 The comparison does not use equations of motion, integration by parts,
 momentum conservation, Schouten identities, Fierz identities, or broad
 gamma-matrix reductions. If a row is marked `EXACT_MATCH`, the two
 coefficient-sector tensor maps are identical after only the canonicalizations
 and identities described here.
+
+## Safety Interpretation
+
+The result is strong for the checked basis, but it has a precise scope.
+
+What is proved:
+
+- Every one of the 184 FeynRules EFT-only `Ltot` reference rows is accounted
+  for at operator-content level.
+- Every row has an exact symbolic tensor-map comparison result.
+- The direct rows match without row-specific packaging assumptions.
+- The 8 non-direct rows pass only through explicit charge-conjugation packaging
+  transforms whose partner signature, sign, and duplicate-leg symmetry are
+  pinned before comparison.
+- No row is accepted with unresolved charge-conjugation packaging, symbolic
+  inequality, missing local rule, exact-symbolic parser error, unexplained
+  FeynPy-only signature, or unexplained raw head-count delta.
+
+What is not claimed:
+
+- This is not an all-bases SMEFT proof. It checks the bundled unbroken
+  Green-basis FeynRules export against the bundled FeynPy implementation.
+- It does not prove equivalence modulo EOM, IBP, Fierz, Schouten, momentum
+  conservation, or dimension-specific gamma reductions, because those identities
+  are intentionally not used by the acceptance gate.
+- It does not prove physics beyond the exported 3- to 6-point reference rows.
+  It proves agreement on the generated vertex rules in that scope.
+
+The safest command for a thesis result is:
+
+```bash
+.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+```
+
+Use plain `--check` only when you want to demand direct same-signature equality
+and intentionally fail on the known pinned CC packaging rows. Use
+`--strict-counts` only when raw printer multiplicities themselves are under
+study; it is not the physics equality criterion.
 
 ## Bosonic Sector
 
@@ -369,7 +445,7 @@ canonical-map equality.
 - any exact symbolic row is unequal or errors;
 - any row is `UNRESOLVED_CC_PACKAGING`;
 - any row is `MATCH_MODULO_CC_PACKAGING` unless `--allow-cc-packaging` is set;
-- any supported canonical gauge-sector map is unequal or errors.
+- any supported canonical bosonic-sector map is unequal or errors.
 
 Raw coefficient-head count mismatches are not part of the normal gate because
 they are expansion diagnostics. They become part of the gate only with

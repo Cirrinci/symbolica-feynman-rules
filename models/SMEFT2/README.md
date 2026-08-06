@@ -23,6 +23,61 @@ The file now declares the SM fields, gauge groups, and a broad parameter set,
 including the coefficients needed by the FeynRules Green-basis and evanescent
 sectors.
 
+## Implementation Architecture
+
+The SMEFT2 model is implemented as a direct declarative translation, not as a
+separate code generator. The main entry point is:
+
+```python
+from models.SMEFT2 import build_smeft_green_bpreserving
+
+bundle = build_smeft_green_bpreserving()
+model = bundle.model
+```
+
+The returned `SMEFT2Bundle` exposes:
+
+- `model`: the default FeynPy model, with EFT-only `Ltot` as its active
+  Lagrangian.
+- `fields`: the unbroken-basis fields `B`, `Wi`, `G`, `LL`, `LR`, `QL`, `UR`,
+  `DR`, and `Phi`.
+- `parameters`: SM parameters and all supported Wilson coefficients. Flavor
+  coefficients are declared as indexed complex parameters, so expressions such
+  as `alphaKq(f1, f2)` and `conj(alphaWeinberg(f2, f1))` remain visible in
+  Feynman rules and in the comparison.
+- `gauge_groups`: `U1Y`, `SU2L`, and `SU3C`, including couplings,
+  representations, generators, and structure constants.
+- `lagrangians`: each named source block plus `LSM`, EFT-only `Ltot`, and
+  `Lfull = LSM + Ltot`.
+
+The fields and gauge groups follow the unbroken FeynRules convention:
+
+- `B` is the hypercharge gauge field.
+- `Wi` is the weak-adjoint gauge field.
+- `G` is the color-adjoint gauge field.
+- `LL`, `LR`, `QL`, `UR`, and `DR` are the lepton and quark multiplets. The
+  comparison normalizes these local names to the FeynRules print names
+  `lL`, `eR`, `qL`, `uR`, and `dR`.
+- `Phi` is the Higgs doublet, with `Phi.bar` printed as `Phibar`.
+
+Gauge covariance is handled by the shared FeynPy DSL:
+
+- `DC(field, mu)` inserts the covariant derivative appropriate to the field's
+  hypercharge and nonabelian representations.
+- `FS(group, mu, nu, adjoint)` inserts an explicit field-strength tensor.
+- Nested objects such as `DC(DC(field, mu), nu)`,
+  `DC(FS(SU3C, mu, nu, a), rho)`, and `PartialD(FS(U1Y, mu, nu), rho)` are
+  lowered by the general compiler.
+- Helper tensors from `symbolic.spenso_structures` provide the Lorentz epsilon,
+  weak epsilon, charge-conjugation matrix, SU(2)/SU(3) generators, and
+  structure constants.
+
+The implementation deliberately keeps source blocks close to the FeynRules
+Green-basis blocks. For example, `LX3` contains the cubic field-strength
+operators, `LF2XH` contains dipoles with the explicit sigma chain, `LF2DH2`
+contains Higgs-current times fermion-current operators, and the `LEv*` blocks
+carry the evanescent sectors.
+
 These sectors are included in the compiled `Ltot`:
 
 - `L2Higgs`
@@ -57,6 +112,173 @@ These sectors are included in the compiled `Ltot`:
 - `LEvCCRRRR`
 - `LEvCCLRRL`
 - `LEvCCRRLL`
+
+## Working with Lagrangians and Feynman Rules
+
+Use `bundle.lagrangians` when you want a specific block, and construct a
+temporary `Model` when you want that block to be the active Lagrangian:
+
+```python
+from feynpy import Model
+from models.SMEFT2 import build_smeft_green_bpreserving
+
+bundle = build_smeft_green_bpreserving()
+
+lf2xh_model = Model(
+    name="SMEFT2_LF2XH",
+    gauge_groups=tuple(bundle.gauge_groups.values()),
+    fields=tuple(bundle.fields.values()),
+    parameters=tuple(bundle.parameters.values()),
+    lagrangian_decl=bundle.lagrangians["LF2XH"],
+)
+lf2xh = lf2xh_model.lagrangian()
+```
+
+List available vertices before extracting a rule:
+
+```python
+for signature in bundle.model.vertex_signatures(arity=3):
+    print(signature.names, signature.term_count, signature.sectors)
+```
+
+Extract a specific Feynman rule by passing fields in the desired external-leg
+order:
+
+```python
+fields = bundle.fields
+rule = bundle.model.feynman_rule(
+    fields["B"],
+    fields["QL"],
+    fields["QL"].bar,
+    simplify=True,
+)
+print(rule.cancel().expand().to_canonical_string())
+```
+
+The same method works on a block model:
+
+```python
+rule = lf2xh_model.feynman_rule(
+    bundle.fields["B"],
+    bundle.fields["Phi"],
+    bundle.fields["UR"].bar,
+    bundle.fields["QL"],
+    simplify=True,
+)
+```
+
+Useful inspection patterns:
+
+```python
+# all four-point rules, keyed by readable field names
+rules4 = bundle.model.feynman_rule(arity=4)
+
+# signatures containing a Higgs doublet
+for sig in bundle.model.vertex_signatures(contains_fields=(fields["Phi"],)):
+    print(sig.names)
+
+# full compiled Lagrangian as one Symbolica expression
+expr = bundle.model.to_symbolica()
+
+# expand explicit flavor components when needed
+rules_flavor = bundle.model.feynman_rule(arity=3, flavor_expand=True)
+```
+
+For bulk export, use:
+
+```bash
+.venv/bin/python models/SMEFT2/generate_feynpy_rules.py --min-arity 3 --max-arity 6
+```
+
+## Choices and Questions
+
+- Field helpers: `dr(...)`, `ql(...)`, `ll(...)`, `ur(...)`,`lr(...)`
+
+  ```python
+  dr(sp=sp1, f=f2, c=c1, bar=True)
+  ```
+
+  This returns `DR.bar` with spinor label `sp1`, generation label `f2`, and
+  color label `c1`.
+
+- `phitilde(target, source)` is the FeynPy shorthand for the conjugated Higgs
+  doublet used in the up-type Yukawa structures:
+
+  ```python
+  def phitilde(target, source):
+      return weak_eps2(target, source) * Phi.bar(source)
+  ```
+
+  It represents `epsilon[target, source] Phibar[source]`. These helpers appear in
+  `L4Yukawa`, `LF2XH`, and related Hermitian-conjugate dipole/Yukawa blocks.
+
+- In `LF2HD2`, the up-type `alphaRuHD*` terms show `weak_eps2(...)`
+  explicitly because FeynRules hides the same tensor inside `Phitilde`.
+  The FeynRules support model defines `Phitilde[i] :> Eps[i,j] Phibar[j]`,
+  while FeynPy writes this as
+  `weak_eps2(w1, w_ru_hd) * Phi.bar(w_ru_hd)` or its covariant derivatives.
+
+- The `LF2XD` helpers `f2xd_fs_current`,
+  `f2xd_derivative_current`, `f2xd_color_derivative_current`, and
+  `f2xd_weak_derivative_current` are local source-code builders for repeated
+  `Psi^2 X D` patterns. They encode FeynRules structures such as
+  `fermionbar gamma_mu fermion D_nu X_{mu nu}` and the antisymmetric current
+  `(i/2) (fermionbar gamma_mu D_nu fermion - D_nu fermionbar gamma_mu fermion)
+  X_{mu nu}`, with optional SU(3) or SU(2) generators. They are correct but
+  make the source less transparent; a planned cleanup is to change this API so
+  the `LF2XD` block can be written closer to the mathematical/FeynRules form.
+
+- The helper `weak_t(adjoint, left, right)` includes the factor of two used by
+  FeynRules when it writes `2 Ta[aa, ii, jj]`. In Python,
+  `weak_gauge_generator(...)` corresponds to `Ta[...]`, while
+  `weak_t(...) = 2 * weak_gauge_generator(...)`. note `LH2XD2`
+  `alphaRWDH` term has the same SU(2) normalization as the FeynRules line,
+  even though the factor `2` is not written at the call site.
+
+- In `LH4D2`, FeynRules writes compact derivatives of products, for example
+  `del[del[Phibar[jj] Phi[jj], mu], mu]`. FeynPy currently writes the
+  Leibniz-expanded form explicitly:
+  `(del del Phibar) Phi + 2 (del Phibar)(del Phi) + Phibar (del del Phi)`.
+  A useful next API improvement is to allow
+  derivatives to act directly on composite products.
+
+- FeynRules charge conjugation, written as `CC[...]`, is represented explicitly
+  in FeynPy with the charge-conjugation tensor. In `LWeinberg` FeynRules writes
+  the same-chirality lepton contraction using `CC[LLbar].LL`. FeynPy writes:
+
+  ```python
+  ll(sp=sp1, w=w1, f=f1, bar=True)
+  * dirac_charge_conjugation(sp1, sp2)
+  * ll(sp=sp2, w=w2, f=f2)
+  ```
+
+  This is the explicit tensor contraction `LLbar(sp1) C(sp1, sp2) LL(sp2)`.
+  The same charge-conjugation packaging also matters in the evanescent
+  `LEvCC*` four-fermion sectors.
+
+- The matrix `C` is implemented as a symbolic Spenso tensor named `dirac_C`,
+  created by `dirac_charge_conjugation(i, j)`. Its slots are typed as Dirac
+  bispinor indices, and the canonicalization layer registers it as
+  antisymmetric:
+
+  ```text
+  C(i, j) = -C(j, i)
+  ```
+
+  We do not choose a concrete numeric gamma-matrix basis for `C` in the SMEFT2
+  comparison. The property needed for the Weinberg and `LEvCC*` packaging
+  checks is the antisymmetry of `C`, plus the pinned charge-conjugation
+  packaging rules described in `COMPARISON_METHOD.md`.
+
+- `_dual_fs(group, mu, nu, rho, sigma, adjoint)` is the explicit dual field
+  strength convention:
+
+  ```python
+  1/2 * lorentz_levi_civita(mu, nu, rho, sigma) * FS(group, rho, sigma, adjoint)
+  ```
+
+  For example `_dual_fs(g["SU3C"], mu, nu, rho, sigma, aC1)` is
+  `Gtilde^a_{mu nu} = 1/2 epsilon_{mu nu rho sigma} G^a_{rho sigma}`. 
 
 ## Remaining Caveats
 

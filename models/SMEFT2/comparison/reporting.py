@@ -367,7 +367,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "derived (pinned), e.g. the antisymmetrized Weinberg rows; and "
             "`UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known "
             "or the pinned transform failed. The separate canonical tensor-map "
-            "diagnostic remains the gauge-sector per-coefficient map for "
+            "diagnostic remains the bosonic-sector per-coefficient map for "
             "supported bosonic coefficient sectors."
         ),
         "summary": {
@@ -555,6 +555,7 @@ def _markdown_report(report: dict[str, object]) -> str:
     summary = report["summary"]
     counts = summary["status_counts"]
     basis = summary["comparison_basis"]
+    family_counts = summary["exact_symbolic_family_counts"]
     omitted_sectors = ", ".join(basis["omitted_sectors"]) or "none"
     lines = [
         "# SMEFT2 FeynRules/FeynPy Comparison",
@@ -663,6 +664,54 @@ def _markdown_report(report: dict[str, object]) -> str:
             "rows); `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule "
             "is known or the pinned transform failed.",
             "",
+            "## Sector-by-Sector Reading Guide",
+            "",
+            "This table explains what the comparison did to put each sector "
+            "in the same mathematical form before equality was tested. Direct "
+            "exact rows compare the same external-field signature. Pinned CC "
+            "rows compare an explicitly listed charge-conjugation partner with "
+            "a fixed phase and duplicate-leg symmetry.",
+            "",
+            "| Sector family | Rows | Result | Normalization/canonicalization used |",
+            "| --- | ---: | --- | --- |",
+            "| Bosonic and Higgs/gauge | "
+            f"{family_counts.get('BOSONIC', 0)} | "
+            f"{family_counts.get('BOSONIC', 0)} direct exact | "
+            "Parse FeynRules `ME`, `FV`, `SP`, `Eps`, `fsu2`, `fsu3`; "
+            "expand dual field strengths; use metric symmetry, epsilon "
+            "antisymmetry, structure-constant antisymmetry, dummy-index "
+            "relabeling, generator-product ordering, and the narrow `f*f` "
+            "Jacobi reducer. |",
+            "| Two-fermion non-Weinberg | 129 | 129 direct exact | "
+            "Parse gamma chains, slashed momenta, projectors, generators, "
+            "index deltas, epsilons, and indexed Wilson functions; keep flavor "
+            "order/conjugation in the scalar coefficient; canonicalize open "
+            "spinor, Lorentz, color, and weak tensors; apply narrow SU(2) "
+            "pseudoreality identities for Higgs-tilde/generator products. |",
+            "| Weinberg | 2 | 2 pinned CC | "
+            "FeynRules emits same-chirality `Phi Phi lL lL` and HC rows; "
+            "FeynPy stores mixed `lLbar,lL` rows with explicit `dirac_C`. "
+            "The accepted transform is the antisymmetrized local pair "
+            "`FeynPy(lLbar,lL) - FeynPy(lL,lLbar)`, with the sign fixed by "
+            "`C^T = -C`. |",
+            "| Ordinary four-fermion | 15 | 15 direct exact | "
+            "Preserve all four Wilson flavor slots; canonicalize color "
+            "singlet/octet contractions, weak triplet currents, identical "
+            "fermion dummy labels, gamma chains, and Hermitian-conjugate "
+            "generator orientations. |",
+            "| Charge-conjugated evanescent four-fermion | 6 rows / 12 coefficient sectors | "
+            "6 pinned CC | Use the pinned `alphaEc*` rule table: exactly one "
+            "partner signature, one phase, and one symmetric or antisymmetric "
+            "duplicate-leg rule per coefficient sector; rewrite explicit "
+            "`dirac_C` arms into FeynRules `CC[...]` flow and then demand "
+            "canonical-map equality. |",
+            "| FeynPy-only zero-signature artifacts | "
+            f"{summary['feynpy_only_zero_signatures']} local signatures | "
+            "dropped from residuals | Canonical coefficient-head collection "
+            "proves the apparent signatures cancel to zero under tensor "
+            "symmetries, so they are diagnostics rather than unmatched "
+            "operator content. |",
+            "",
             "| Signature | Status |",
             "| --- | --- |",
         ]
@@ -682,13 +731,15 @@ def _markdown_report(report: dict[str, object]) -> str:
             "",
             "## Canonical Tensor-Map Gauge Comparison",
             "",
-            "This comparison is currently enabled for pure nonabelian gauge "
-            "vertices (`G^n` and `Wi^n`). It parses FeynRules `ME`, `FV`, "
-            "`SP`, `Eps`, `fsu3`, and `fsu2` into native tensors, then "
-            "compares canonical monomial maps per Wilson coefficient. It uses "
-            "intrinsic tensor symmetries, dummy-index relabeling, commuting "
-            "factor ordering, and exact coefficient collection; it does not "
-            "use Jacobi, momentum conservation, EOM, IBP, or 4D reductions.",
+            "This diagnostic is enabled for supported bosonic rows. It parses "
+            "FeynRules `ME`, `FV`, `SP`, `Eps`, `fsu3`, and `fsu2` into "
+            "native tensors, then compares canonical monomial maps per Wilson "
+            "coefficient. It uses intrinsic tensor symmetries, dummy-index "
+            "relabeling, commuting factor ordering, exact coefficient "
+            "collection, generator-product ordering, SU(2) pseudoreality "
+            "normalization, and the narrow `f*f` Jacobi reducer. It does not "
+            "use momentum conservation, EOM, IBP, Schouten/Fierz identities, "
+            "or broad 4D gamma reductions.",
             "",
             "| Signature | Status | Coefficient sectors |",
             "| --- | --- | --- |",
