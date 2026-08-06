@@ -77,6 +77,9 @@ This table explains what the comparison did to put each sector in the same mathe
 | Charge-conjugated evanescent four-fermion | 6 rows / 12 coefficient sectors | 6 pinned CC | Use the pinned `alphaEc*` rule table: exactly one partner signature, one phase, and one symmetric or antisymmetric duplicate-leg rule per coefficient sector; rewrite explicit `dirac_C` arms into FeynRules `CC[...]` flow and then demand canonical-map equality. |
 | FeynPy-only zero-signature artifacts | 2 local signatures | dropped from residuals | Canonical coefficient-head collection proves the apparent signatures cancel to zero under tensor symmetries, so they are diagnostics rather than unmatched operator content. |
 
+<details>
+<summary>Show exact symbolic status table (184 rows)</summary>
+
 | Signature | Status |
 | --- | --- |
 | <code>B&#124;B&#124;B&#124;B&#124;Phi&#124;Phibar</code> | <code>EXACT_MATCH</code> |
@@ -264,9 +267,14 @@ This table explains what the comparison did to put each sector in the same mathe
 | <code>qL&#124;qL&#124;qLbar&#124;qLbar</code> | <code>EXACT_MATCH</code> |
 | <code>uR&#124;uR&#124;uRbar&#124;uRbar</code> | <code>EXACT_MATCH</code> |
 
+</details>
+
 ## Canonical Tensor-Map Gauge Comparison
 
 This diagnostic is enabled for supported bosonic rows. It parses FeynRules `ME`, `FV`, `SP`, `Eps`, `fsu3`, and `fsu2` into native tensors, then compares canonical monomial maps per Wilson coefficient. It uses intrinsic tensor symmetries, dummy-index relabeling, commuting factor ordering, exact coefficient collection, generator-product ordering, SU(2) pseudoreality normalization, and the narrow `f*f` Jacobi reducer. It does not use momentum conservation, EOM, IBP, Schouten/Fierz identities, or broad 4D gamma reductions.
+
+<details>
+<summary>Show canonical tensor-map table (32 rows)</summary>
 
 | Signature | Status | Coefficient sectors |
 | --- | --- | --- |
@@ -303,6 +311,8 @@ This diagnostic is enabled for supported bosonic rows. It parses FeynRules `ME`,
 | <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaO3W` match: raw 720/240 -> canonical 120/120; `alphaO3Wt` match: raw 720/420 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
 | <code>Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi&#124;Wi</code> | <code>CANONICAL_MAP_MATCH</code> | `alphaO3W` match: raw 720/720 -> canonical 120/120; `alphaO3Wt` match: raw 720/360 -> canonical 180/180; `alphaR2W` match: raw 720/360 -> canonical 360/360 |
 
+</details>
+
 ## Largest Reference-Side Head Gaps
 
 | Head | Count |
@@ -316,6 +326,9 @@ This diagnostic is enabled for supported bosonic rows. It parses FeynRules `ME`,
 ## Explained Benign Raw Head-Count Deltas
 
 These are raw coefficient-head occurrence-count diagnostics. They catch some missing or duplicated content, but they are not tensor-rule equality proofs because equivalent algebra can be printed with different occurrence counts.
+
+<details>
+<summary>Show explained raw head-count delta table (285 rows)</summary>
 
 | Signature | Head | Reference | FeynPy | Reason |
 | --- | --- | ---: | ---: | --- |
@@ -604,6 +617,8 @@ These are raw coefficient-head occurrence-count diagnostics. They catch some mis
 | <code>eRbar&#124;lL&#124;qL&#124;uRbar</code> | <code>alphaEcuelqtwo</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
 | <code>eR&#124;lLbar&#124;qLbar&#124;uR</code> | <code>alphaEcuelq</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
 | <code>eR&#124;lLbar&#124;qLbar&#124;uR</code> | <code>alphaEcuelqtwo</code> | 1 | 0 | The pinned charge-conjugation packaging comparison proves canonical tensor-map equality for this row; the literal-signature raw count differs because the same operator is packaged under the CC partner. |
+
+</details>
 
 ## Largest Unexplained Raw Head-Count Deltas
 

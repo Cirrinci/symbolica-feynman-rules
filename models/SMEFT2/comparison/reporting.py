@@ -14,6 +14,14 @@ def _markdown_code_cell(value: object) -> str:
     return f"<code>{text}</code>"
 
 
+def _open_markdown_details(lines: list[str], summary: str) -> None:
+    lines.extend(["", "<details>", f"<summary>{summary}</summary>", ""])
+
+
+def _close_markdown_details(lines: list[str]) -> None:
+    lines.extend(["", "</details>"])
+
+
 def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[LocalVertex, ...]]:
     references = load_feynrules_json(reference_path)
     bundle = build_smeft_green_bpreserving()
@@ -722,7 +730,14 @@ def _markdown_report(report: dict[str, object]) -> str:
             "proves the apparent signatures cancel to zero under tensor "
             "symmetries, so they are diagnostics rather than unmatched "
             "operator content. |",
-            "",
+        ]
+    )
+    _open_markdown_details(
+        lines,
+        f"Show exact symbolic status table ({len(exact_rows)} rows)",
+    )
+    lines.extend(
+        [
             "| Signature | Status |",
             "| --- | --- |",
         ]
@@ -732,6 +747,7 @@ def _markdown_report(report: dict[str, object]) -> str:
             f"| {_markdown_code_cell(row['key'])} | "
             f"{_markdown_code_cell(row['exact_symbolic_status'])} |"
         )
+    _close_markdown_details(lines)
 
     canonical_rows = [
         row
@@ -752,7 +768,14 @@ def _markdown_report(report: dict[str, object]) -> str:
             "normalization, and the narrow `f*f` Jacobi reducer. It does not "
             "use momentum conservation, EOM, IBP, Schouten/Fierz identities, "
             "or broad 4D gamma reductions.",
-            "",
+        ]
+    )
+    _open_markdown_details(
+        lines,
+        f"Show canonical tensor-map table ({len(canonical_rows)} rows)",
+    )
+    lines.extend(
+        [
             "| Signature | Status | Coefficient sectors |",
             "| --- | --- | --- |",
         ]
@@ -775,6 +798,7 @@ def _markdown_report(report: dict[str, object]) -> str:
             f"{_markdown_code_cell(row['canonical_map_status'])} | "
             f"{'; '.join(sector_summaries)} |"
         )
+    _close_markdown_details(lines)
 
     missing_heads = Counter()
     local_extra_heads = Counter()
@@ -841,7 +865,14 @@ def _markdown_report(report: dict[str, object]) -> str:
             "some missing or duplicated content, but they are not tensor-rule equality "
             "proofs because equivalent algebra can be printed with different occurrence "
             "counts.",
-            "",
+        ]
+    )
+    _open_markdown_details(
+        lines,
+        f"Show explained raw head-count delta table ({len(benign_head_count_deltas)} rows)",
+    )
+    lines.extend(
+        [
             "| Signature | Head | Reference | FeynPy | Reason |",
             "| --- | --- | ---: | ---: | --- |",
         ]
@@ -852,6 +883,7 @@ def _markdown_report(report: dict[str, object]) -> str:
             f"{reference_count} | {feynpy_count} | "
             f"{BENIGN_HEAD_COUNT_REASON_TEXT[reason]} |"
         )
+    _close_markdown_details(lines)
 
     lines.extend(
         [
