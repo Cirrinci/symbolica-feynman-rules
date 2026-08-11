@@ -29,9 +29,9 @@ reference exactly ($67/67$), and the SMEFT2 Green-basis implementation
 reproduces the FeynRules EFT-only \texttt{Ltot} reference on all $184$ exported
 rows. Of those $184$ SMEFT2 rows, $161$ agree with no packaging assumption
 whatsoever, $15$ agree after one globally fixed charge-conjugation packaging
-convention, and $8$ agree after an additional explicitly tabulated
-row-specific transformation. No row is accepted through a search over signs or
-field orderings, and no row is left unresolved.
+convention, and $8$ agree after an explicitly tabulated row-specific
+transformation. No row is accepted through a search over signs or field
+orderings, and no row is left unresolved.
 
 % --------------------------------------------------------------
 \section{Validation strategy}
@@ -196,7 +196,11 @@ with the SM-plus-EFT combination available separately as \texttt{Lfull}.
 Before any vertex is compared, the transcription itself was audited. All $32$
 EFT Lagrangian blocks of \texttt{SMEFT\_Green\_Bpreserving.fr} are implemented,
 and \texttt{Ltot} is composed from exactly the same $32$ blocks in the same
-order. All $295$ active Wilson coefficients are declared and used. Two
+order. All $298$ active Wilson coefficients of the FeynRules source are
+declared in the FeynPy model and used in at least one operator. This is a
+statement about transcription, not about validation coverage: of those $298$,
+the comparison of \Cref{sec:validation-smeft2} reaches $295$, for the reasons
+set out in \Cref{sec:validation-coverage}. Two further
 coefficients appear in the FeynRules file but not in the FeynPy source,
 \texttt{alphaEcdlq} and \texttt{alphaEcqeu}; both are commented out in
 FeynRules and appear in no FeynRules operator, so omitting them is correct
@@ -277,10 +281,11 @@ external-field signature and the same canonical tensor map, with no packaging
 assumption of any kind. A match \emph{modulo the global \texttt{Ec}
 convention} means the row agrees only after the single globally fixed
 charge-conjugation packaging transform derived in \Cref{sec:validation-ec}. A
-match \emph{modulo pinned packaging} means the row additionally requires one
-explicitly tabulated, row-specific transformation, in which the partner
-signature, phase and duplicate-leg symmetry are all fixed in advance of the
-comparison.
+match \emph{modulo pinned packaging} means the row requires one explicitly
+tabulated, row-specific transformation, in which the partner signature, phase
+and duplicate-leg symmetry are all fixed in advance of the comparison. The
+pinned group is itself of two kinds, only one of which sits on top of the
+global convention; \Cref{sec:validation-ec-pinned} separates them.
 
 It is worth being explicit about why this split is presented at all. An earlier
 state of the comparison reported $176$ direct matches, because the rows that
@@ -374,9 +379,12 @@ direct  & $+1$ & 2 \\
 \bottomrule
 \end{tabular}
 \caption{Only one of the four possible conventions reproduces the FeynRules
-reference. The $15$ rows in the accepted row are completed by the pinned
-transforms of \Cref{sec:validation-ec-pinned}; the small counts in the
-rejected rows are rows on which the transform does not apply at all.}
+reference. Under the accepted convention (crossed, phase $-1$) the transform
+alone settles $15$ of the $21$ four-fermion \texttt{Ec} rows; the other $6$
+additionally need the pinned partner transforms of
+\Cref{sec:validation-ec-pinned}. The small counts in the three rejected
+conventions are rows on which the transform does not apply at all, not partial
+successes.}
 \label{tab:validation-ec-overdetermination}
 \end{table}
 
@@ -392,10 +400,14 @@ must therefore be stated rather than left implicit.
 \label{sec:validation-ec-pinned}
 % --------------------------------------------------------------
 
-Eight rows require a further, row-specific charge-conjugation transform on top
-of the global convention.
+Eight rows in total require a row-specific charge-conjugation transform. They
+divide into two groups with different relationships to the global convention of
+the previous subsection, and it is worth keeping them apart.
 
-Two are Weinberg-operator rows. FeynRules packages them as same-chirality
+Two are Weinberg-operator rows, and these have nothing to do with the global
+\texttt{Ec} convention: they carry the Weinberg coefficient rather than an
+\texttt{alphaEc} head, so the crossed-arm transform never applies to them.
+FeynRules packages them as same-chirality
 charge-conjugated lepton structures, whereas FeynPy stores the mixed
 $\bar{l}_L / l_L$ form with the charge-conjugation tensor explicit. The
 accepted transform compares the FeynRules row against the antisymmetrised local
@@ -403,11 +415,14 @@ pair $\mathrm{FeynPy}(\bar{l}_L, l_L) - \mathrm{FeynPy}(l_L, \bar{l}_L)$, and
 the relative minus sign is derived from \Cref{eq:validation-c-antisymmetry}
 rather than searched.
 
-The remaining six rows, covering $12$ coefficient sectors, are evanescent
-\texttt{alphaEc*} partner rows. These use an explicit rule table in which each
-entry fixes exactly one partner signature, one phase, one duplicate-leg
-symmetry mode, and a provenance string naming the source operator. Nothing is
-searched at acceptance time. Dedicated sidecar checks confirm the Weinberg
+The remaining six rows are the evanescent \texttt{alphaEc*} partner rows, and
+these \emph{are} additional to the global convention: they are the six of the
+$21$ four-fermion \texttt{Ec} rows that the crossed-arm transform alone does not
+settle. They use an explicit rule table of $12$ entries, one per coefficient
+sector, in which each entry fixes exactly one partner signature, one phase, one
+duplicate-leg symmetry mode, and a provenance string naming the source
+operator. Nothing is searched at acceptance time. Dedicated sidecar checks
+confirm the Weinberg
 comparison at $2/2$ and the evanescent charge-conjugation checks at $12/12$,
 and both sidecars also verify that the \emph{wrong} sign or the wrong
 combination does \emph{not} match, which is what makes them evidence rather
@@ -491,20 +506,23 @@ tables are small and enumerated rather than open-ended. The raw head-count
 deltas are explained by only four reason categories
 (\texttt{DUAL\_FS\_ANTISYMMETRY}, \texttt{DUMMY\_LORENTZ\_MERGE},
 \texttt{EXACT\_SYMBOLIC\_CANONICAL\_EQUIVALENCE} and
-\texttt{PINNED\_CC\_CANONICAL\_EQUIVALENCE}), and the packaging exceptions
-consist of exactly $12$ pinned rules, each carrying a recorded provenance
-string naming its source operator.
+\texttt{PINNED\_CC\_CANONICAL\_EQUIVALENCE}), and the pinned \texttt{Ec}
+partner packaging is governed by exactly $12$ coefficient-sector rules, each
+carrying a recorded provenance string naming its source operator.
 
 % --------------------------------------------------------------
 \section{Coverage and limits}
 \label{sec:validation-coverage}
 % --------------------------------------------------------------
 
-Of the $303$ parameters declared in the SMEFT2 model, $295$ appear in at least
-one validated reference vertex. The eight that do not divide into two groups.
+The SMEFT2 model declares $303$ parameters: $5$ Standard Model parameters and
+$298$ Wilson coefficients. Of these, $295$ appear in at least one validated
+reference vertex, and all $295$ are Wilson coefficients. The eight that do not
+divide into two groups.
 
-Five are Standard Model parameters, $\lambda$, $\mu_H$ and the three Yukawa
-matrices, which are correctly absent from an EFT-only \texttt{Ltot}.
+Five are the Standard Model parameters themselves, $\lambda$, $\mu_H$ and the
+three Yukawa matrices, which are correctly absent from an EFT-only
+\texttt{Ltot}.
 
 The remaining three are genuine EFT coefficients that the comparison does not
 reach: \texttt{alphaKB}, \texttt{alphaR2B} and \texttt{alphaOmuH2}. The reason
@@ -635,17 +653,21 @@ The main reproducibility artifacts are:
 
 \paragraph{Established.} The FeynPy SMEFT2 Feynman rules agree with FeynRules
 as tensor expressions, sector by sector in the Wilson coefficients, for all
-$184$ exported vertices of arity three to six, covering $295$ of $303$ model
-parameters. Agreement is proved by exact rational equality of canonical
+$184$ exported vertices of arity three to six, covering $295$ of the model's
+$298$ Wilson coefficients. Agreement is proved by exact rational equality of canonical
 tensor-monomial maps, is demonstrably sensitive to injected errors, and rests
 on no unenumerated exceptions. The Standard Model and unbroken background-field
 benchmarks match at $163/163$ and $67/67$.
 
-\paragraph{Assumed, and documented.} One global charge-conjugation packaging
-convention relating the FeynRules \texttt{CC[...]} flow to the explicit $C$
-factors of the FeynPy source, plus $12$ pinned row-specific packaging rules.
-These affect $23$ of $184$ rows and are reported under distinct statuses rather
-than folded into the direct-match count.
+\paragraph{Assumed, and documented.} Charge-conjugation packaging assumptions
+affect $23$ of the $184$ rows, in three disjoint groups: $15$ rows settled by
+the single global convention relating the FeynRules \texttt{CC[...]} flow to
+the explicit $C$ factors of the FeynPy source; $2$ Weinberg rows using the
+antisymmetric $C$ packaging, which are independent of that convention; and $6$
+evanescent partner rows which need both the global convention and a pinned
+transform, drawn from a table of $12$ coefficient-sector rules. All three
+groups are reported under distinct statuses rather than folded into the
+direct-match count.
 
 \paragraph{Outside scope.} The two-point sector, hence \texttt{alphaKB},
 \texttt{alphaR2B} and \texttt{alphaOmuH2}; the Standard Model gauge-fixing
