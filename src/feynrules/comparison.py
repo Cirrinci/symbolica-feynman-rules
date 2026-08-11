@@ -154,6 +154,209 @@ def load_feynrules_json(path: str | Path) -> tuple[FeynRulesVertex, ...]:
     return tuple(vertices)
 
 
+def find_matching_square(text: str, open_position: int) -> int:
+    """Return the index of the ``]`` closing the ``[`` at ``open_position``."""
+
+    depth = 0
+    for position in range(open_position, len(text)):
+        character = text[position]
+        if character == "[":
+            depth += 1
+        elif character == "]":
+            depth -= 1
+            if depth == 0:
+                return position
+    raise ValueError(f"Unbalanced FeynRules brackets near {text[open_position:]!r}")
+
+
+def split_top_level_commas(text: str) -> tuple[str, ...]:
+    """Split on commas that are not nested inside square brackets."""
+
+    parts = []
+    start = 0
+    depth = 0
+    for position, character in enumerate(text):
+        if character == "[":
+            depth += 1
+        elif character == "]":
+            depth -= 1
+        elif character == "," and depth == 0:
+            parts.append(text[start:position].strip())
+            start = position + 1
+    parts.append(text[start:].strip())
+    return tuple(part for part in parts if part)
+
+
+_find_matching_square = find_matching_square
+_split_top_level_commas = split_top_level_commas
+
+
+class ChiralityMismatch(ValueError):
+    """A FeynRules projector disagrees with the chirality of its fields."""
+
+
+_OPPOSITE_CHIRALITY = {"L": "R", "R": "L"}
+
+_SPIN_EXT_PATTERN = re.compile(r"Index\[Spin,\s*Ext\[(\d+)\]\]")
+
+_BARE_PROJECTOR_BILINEAR_PATTERN = re.compile(
+    r"(ProjM|ProjP)\["
+    r"(Index\[Spin,\s*Ext\[\d+\]\]),\s*"
+    r"(Index\[Spin,\s*Ext\[\d+\]\])"
+    r"\]"
+)
+
+
+def _spin_external_leg(text: str) -> int | None:
+    match = _SPIN_EXT_PATTERN.fullmatch(text.strip())
+    return int(match.group(1)) if match else None
+
+
+def _projector_carrying_chains(rule: str):
+    """Yield ``(items, left leg, right leg)`` for projector-carrying chains."""
+
+    position = 0
+    while True:
+        start = rule.find("TensDot[", position)
+        if start == -1:
+            break
+        inner_open = start + len("TensDot")
+        inner_close = _find_matching_square(rule, inner_open)
+        if inner_close + 1 >= len(rule) or rule[inner_close + 1] != "[":
+            position = inner_close + 1
+            continue
+        spin_open = inner_close + 1
+        spin_close = _find_matching_square(rule, spin_open)
+        items = _split_top_level_commas(rule[inner_open + 1 : inner_close])
+        spin_args = _split_top_level_commas(rule[spin_open + 1 : spin_close])
+        if len(spin_args) == 2 and any(
+            item in {"ProjM", "ProjP"} for item in items
+        ):
+            yield (
+                items,
+                _spin_external_leg(spin_args[0]),
+                _spin_external_leg(spin_args[1]),
+            )
+        position = spin_close + 1
+
+    for match in _BARE_PROJECTOR_BILINEAR_PATTERN.finditer(rule):
+        yield (
+            (match.group(1),),
+            _spin_external_leg(match.group(2)),
+            _spin_external_leg(match.group(3)),
+        )
+
+
+def expected_chain_projector(
+    *,
+    left_chirality: str,
+    left_barred: bool,
+    right_chirality: str,
+    right_barred: bool,
+    gamma_count: int,
+) -> tuple[str, bool]:
+    """Return ``(projector head, chirality is consistent)`` for one chain.
+
+    For an ordinary bilinear ``psibar_X Gamma psi_Y`` carrying ``n`` gamma
+    matrices, each gamma commutes a chiral projector into its opposite, so
+
+        psibar_X Gamma psi_Y = psibar Gamma P_{Xbar if n even else X} P_Y psi
+
+    The chain therefore survives only when ``Y != X`` for even ``n`` and
+    ``Y == X`` for odd ``n``, and the single surviving projector is ``P_Y``.
+
+    A chain whose endpoints have the same "barredness" runs through a
+    charge-conjugation matrix. That flips the surviving parity condition, and
+    for a barred/barred chain it also flips which chirality is left standing.
+    """
+
+    conjugated = left_barred == right_barred
+    chirality = right_chirality
+    if left_barred and right_barred:
+        chirality = _OPPOSITE_CHIRALITY[chirality]
+    head = "ProjM" if chirality == "L" else "ProjP"
+
+    same_required = (
+        gamma_count % 2 == 0 if conjugated else gamma_count % 2 == 1
+    )
+    consistent = (left_chirality == right_chirality) == same_required
+    return head, consistent
+
+
+def validate_feynrules_projector_chirality(
+    rule: str,
+    fields: Iterable[str],
+    chirality_map: Mapping[str, str],
+) -> int:
+    """Check every FeynRules projector against the chirality of its fields.
+
+    A parser that represents chirality in the field class (rather than as an
+    explicit projector) may drop ``ProjM``/``ProjP`` from the FeynRules export,
+    but only because the projector is redundant with the field. That is sound
+    only when the projector actually agrees with the fields it sits between, so
+    this verifies the agreement instead of assuming it.
+
+    ``chirality_map`` maps unbarred field names to ``"L"`` or ``"R"``; a
+    trailing ``bar`` marks the barred field. Legs absent from the map (scalars,
+    vectors, Dirac fields) are ignored. Returns the number of projectors
+    checked.
+
+    Raises:
+        ChiralityMismatch: if a projector contradicts the field chirality, or
+            if the chain vanishes identically for chirality reasons.
+    """
+
+    legs: dict[int, tuple[str, bool]] = {}
+    for position, name in enumerate(fields, start=1):
+        barred = name.endswith("bar")
+        base = name[:-3] if barred else name
+        chirality = chirality_map.get(base)
+        if chirality is not None:
+            legs[position] = (chirality, barred)
+    if not legs:
+        return 0
+
+    field_list = tuple(fields)
+    checked = 0
+    for items, left_leg, right_leg in _projector_carrying_chains(rule):
+        if left_leg not in legs or right_leg not in legs:
+            continue
+        projector = next(item for item in items if item in {"ProjM", "ProjP"})
+        gamma_count = sum(
+            1
+            for item in items
+            if item.startswith("Ga[") or item.startswith("SlashedP[")
+        )
+        left_chirality, left_barred = legs[left_leg]
+        right_chirality, right_barred = legs[right_leg]
+        expected, consistent = expected_chain_projector(
+            left_chirality=left_chirality,
+            left_barred=left_barred,
+            right_chirality=right_chirality,
+            right_barred=right_barred,
+            gamma_count=gamma_count,
+        )
+        if projector != expected:
+            raise ChiralityMismatch(
+                f"FeynRules projector {projector} on legs {left_leg}->"
+                f"{right_leg} of {'|'.join(field_list)} contradicts the field "
+                f"chirality: leg {left_leg} is {left_chirality}"
+                f"{'bar' if left_barred else ''} and leg {right_leg} is "
+                f"{right_chirality}{'bar' if right_barred else ''} across "
+                f"{gamma_count} gamma matrices, which requires {expected}."
+            )
+        if not consistent:
+            raise ChiralityMismatch(
+                f"FeynRules chain on legs {left_leg}->{right_leg} of "
+                f"{'|'.join(field_list)} is chirally forbidden: "
+                f"{left_chirality}{'bar' if left_barred else ''} to "
+                f"{right_chirality}{'bar' if right_barred else ''} across "
+                f"{gamma_count} gamma matrices vanishes identically."
+            )
+        checked += 1
+    return checked
+
+
 def _as_expression(value) -> Expression:
     if isinstance(value, Expression):
         return value
@@ -169,6 +372,12 @@ _FEYNRULES_GREEK_ASCII = {
     "β": "beta",
     "γ": "gamma",
     "δ": "delta",
+    "ε": "epsilon",
+    "ζ": "zeta",
+    "η": "eta",
+    "θ": "theta",
+    "ι": "iota",
+    "κ": "kappa",
     "μ": "mu",
     "ν": "nu",
     "ρ": "rho",
@@ -176,7 +385,9 @@ _FEYNRULES_GREEK_ASCII = {
 }
 
 
-def _feynrules_ascii_label(label: str) -> str:
+def feynrules_ascii_label(label: str) -> str:
+    """Normalize a FeynRules index label into a Symbolica-safe identifier."""
+
     result = label.strip().replace("$", "_")
     for greek, ascii_name in _FEYNRULES_GREEK_ASCII.items():
         result = result.replace(greek, ascii_name)
@@ -184,6 +395,9 @@ def _feynrules_ascii_label(label: str) -> str:
     if result and result[0].isdigit():
         result = f"idx_{result}"
     return result
+
+
+_feynrules_ascii_label = feynrules_ascii_label
 
 
 def parse_feynrules_gauge_rule(
@@ -1775,6 +1989,7 @@ def compare_feynrules_yukawa_vertices(
 
 __all__ = (
     "CanonicalCoefficientComparison",
+    "ChiralityMismatch",
     "FeynRulesVertex",
     "VertexComparison",
     "VertexComparisonReport",
@@ -1786,10 +2001,15 @@ __all__ = (
     "compare_feynrules_gauge_vertices",
     "compare_feynrules_matter_vertices",
     "compare_feynrules_yukawa_vertices",
+    "expected_chain_projector",
+    "feynrules_ascii_label",
+    "find_matching_square",
     "load_feynrules_json",
+    "split_top_level_commas",
     "parse_feynrules_gauge_rule",
     "parse_feynrules_matter_rule",
     "parse_feynrules_yukawa_rule",
     "reduce_fermion_currents",
     "reduce_yukawa_bilinears",
+    "validate_feynrules_projector_chirality",
 )

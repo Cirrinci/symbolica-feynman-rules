@@ -28,10 +28,15 @@ for path in (ROOT, SRC):
 
 from feynrules.comparison import (
     CanonicalCoefficientComparison,
+    ChiralityMismatch,
     FeynRulesVertex,
     compare_feynrules_bosonic_vertices,
     compare_canonical_coefficient_maps,
+    feynrules_ascii_label as _feynrules_ascii_label,
+    find_matching_square as _find_matching_square,
     load_feynrules_json,
+    split_top_level_commas as _split_top_level_commas,
+    validate_feynrules_projector_chirality,
 )
 from models.SMEFT2 import build_smeft_green_bpreserving
 from symbolic.tensor_canonicalization import (
@@ -185,62 +190,6 @@ FEYNRULES_INDEX_PREFIX = {
     "Generation": "f",
 }
 
-FEYNRULES_GREEK_ASCII = {
-    "α": "alpha",
-    "β": "beta",
-    "γ": "gamma",
-    "δ": "delta",
-    "ε": "epsilon",
-    "ζ": "zeta",
-    "η": "eta",
-    "θ": "theta",
-    "ι": "iota",
-    "κ": "kappa",
-    "μ": "mu",
-    "ν": "nu",
-    "ρ": "rho",
-    "σ": "sigma",
-}
-
-def _feynrules_ascii_label(label: str) -> str:
-    result = label.strip().replace("$", "_")
-    for greek, ascii_name in FEYNRULES_GREEK_ASCII.items():
-        result = result.replace(greek, ascii_name)
-    result = re.sub(r"[^A-Za-z0-9_]+", "_", result)
-    if result and result[0].isdigit():
-        result = f"idx_{result}"
-    return result
-
-
-def _find_matching_square(text: str, open_position: int) -> int:
-    depth = 0
-    for position in range(open_position, len(text)):
-        character = text[position]
-        if character == "[":
-            depth += 1
-        elif character == "]":
-            depth -= 1
-            if depth == 0:
-                return position
-    raise ValueError(f"Unbalanced FeynRules brackets near {text[open_position:]!r}")
-
-
-def _split_top_level_commas(text: str) -> tuple[str, ...]:
-    parts = []
-    start = 0
-    depth = 0
-    for position, character in enumerate(text):
-        if character == "[":
-            depth += 1
-        elif character == "]":
-            depth -= 1
-        elif character == "," and depth == 0:
-            parts.append(text[start:position].strip())
-            start = position + 1
-    parts.append(text[start:].strip())
-    return tuple(part for part in parts if part)
-
-
 def _rewrite_feynrules_indices(text: str) -> str:
     for kind, prefix in FEYNRULES_INDEX_PREFIX.items():
         text = re.sub(
@@ -328,6 +277,35 @@ def _spinor_chain_item_factor(
     raise ValueError(f"Unsupported FeynRules spinor-chain item: {item!r}")
 
 
+# Chirality of the unbroken-basis matter fields. A trailing ``bar`` marks the
+# barred field, so only the unbarred names are listed.
+SMEFT2_FERMION_CHIRALITY = {
+    "lL": "L",
+    "qL": "L",
+    "eR": "R",
+    "uR": "R",
+    "dR": "R",
+}
+
+
+def validate_smeft2_projector_chirality(rule: str, fields: Iterable[str]) -> int:
+    """Verify every FeynRules projector against SMEFT2 field chirality.
+
+    The SMEFT2 parser drops ``ProjM``/``ProjP`` because chirality lives in the
+    FeynPy field class, which makes the projector redundant in the unbroken
+    basis. That is only sound when the projector actually agrees with the
+    fields it sits between, so the agreement is verified rather than assumed.
+    The rule itself is model independent and lives in the shared FeynRules
+    comparison layer.
+    """
+
+    return validate_feynrules_projector_chirality(
+        rule,
+        fields,
+        SMEFT2_FERMION_CHIRALITY,
+    )
+
+
 def _spinor_chain_replacement(
     items: tuple[str, ...],
     left: str,
@@ -335,6 +313,9 @@ def _spinor_chain_replacement(
     *,
     chain_id: int,
 ) -> str:
+    # Chirality is not lost silently here: the caller validates every
+    # projector against the field chirality via
+    # ``validate_feynrules_projector_chirality`` before this drop happens.
     matrix_items = tuple(item for item in items if item not in {"ProjM", "ProjP"})
     if not matrix_items:
         return spinor_metric(S(left), S(right)).to_canonical_string()

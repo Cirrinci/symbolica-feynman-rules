@@ -80,7 +80,10 @@ def _fermion_exact_symbolic_row(
             *(field_map[name] for name in reference.fields),
             simplify=True,
         )
-        reference_rule = parse_smeft2_matter_rule(reference.rule)
+        reference_rule = parse_smeft2_matter_rule(
+            reference.rule,
+            fields=reference.fields,
+        )
         ec_convention_log: set[str] = set()
         comparisons = _compare_smeft2_canonical_coefficient_maps(
             local_rule,
@@ -98,7 +101,10 @@ def _fermion_exact_symbolic_row(
             if coefficient.startswith("alphaEc") and not comparison.matches
         ]
         if mismatched_ec:
-            reference_expression = parse_smeft2_matter_rule(reference.rule)
+            reference_expression = parse_smeft2_matter_rule(
+                reference.rule,
+                fields=reference.fields,
+            )
             for coefficient in mismatched_ec:
                 feynrules_report = _canonical_report_for_coefficient_head(
                     reference_expression,
@@ -291,6 +297,7 @@ def _weinberg_cc_exact_symbolic_row(
         reference_rule = parse_smeft2_matter_rule(
             reference.rule,
             projector_as_dirac_c=True,
+            fields=reference.fields,
         )
         comparisons = _compare_smeft2_canonical_coefficient_maps(
             local_rule,

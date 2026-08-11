@@ -257,6 +257,37 @@ def test_smeft2_check_rejects_ec_cc_convention_without_flag(monkeypatch):
     assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
 
 
+def test_smeft2_unvalidated_coefficients_are_exactly_the_two_point_sector():
+    """Pin the coverage gap so it cannot widen unnoticed.
+
+    The FeynRules reference exports 3- to 6-point vertices only, so any Wilson
+    coefficient whose operator produces no vertex with three or more legs is
+    unreachable by the comparison. Those coefficients must be stated as
+    unvalidated rather than silently counted as covered.
+    """
+
+    references = smeft2_comparison.load_feynrules_json(smeft2_comparison.REFERENCE)
+    bundle = build_smeft_green_bpreserving()
+    parameter_names = set(bundle.parameters) | smeft2_comparison.GENERIC_PARAMETER_NAMES
+
+    covered = set()
+    for reference in references:
+        covered |= set(smeft2_comparison._reference_heads(reference, parameter_names))
+
+    uncovered = set(bundle.parameters) - covered
+    standard_model_parameters = {"lam", "muH", "yd", "yl", "yu"}
+
+    # The only EFT coefficients outside the reference are the ones whose
+    # operators are purely two-point: the abelian field-strength terms and the
+    # Higgs mass term.
+    assert uncovered - standard_model_parameters == {
+        "alphaKB",
+        "alphaR2B",
+        "alphaOmuH2",
+    }
+    assert standard_model_parameters <= uncovered
+
+
 def test_smeft2_ec_cc_convention_is_a_single_global_constant():
     """The Ec packaging convention must be global, not fitted per row.
 

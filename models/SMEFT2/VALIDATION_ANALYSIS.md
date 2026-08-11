@@ -114,9 +114,13 @@ Three independent lines of evidence:
 
 - **No operator is excused.** The set of coefficient heads exempted from
   comparison (`OMITTED_COEFFICIENT_HEADS`) is empty.
-- **Mutation testing.** Perturbing the reference makes passing rows fail:
-  doubling a Wilson coefficient turns `EXACT_MATCH` into a mismatch, and
-  corrupting a gamma structure raises an error rather than passing.
+- **Mutation testing.** `models/SMEFT2/tests/test_smeft2_comparison_sensitivity.py`
+  corrupts the reference in physically meaningful ways — rescaled Wilson
+  coefficients in both the two- and four-fermion sectors, a global sign flip,
+  chirality flips in both directions, transposed flavour slots, and a removed
+  imaginary unit — and asserts that none is reported as agreement. The suite
+  also asserts that the unmutated rows *are* accepted, so it cannot pass
+  vacuously by failing everything.
 - **Sensitivity suite on the shared core.** The same machinery under
   `models/SM` carries six deliberate-corruption tests (chirality flip, wrong
   CKM conjugation, reversed colour generator, removed imaginary unit, wrong
@@ -254,17 +258,35 @@ vertices, where gauge invariance ties the 2-point normalisation to the
 higher-point ones. Three unvalidated coefficients out of 298 EFT coefficients
 should be stated explicitly in the thesis, but they do not undermine the result.
 
-### 5.3 A known blind spot
+### 5.3 Chirality: why dropping projectors is sound here
 
-The SMEFT2-local parser discards `ProjM`/`ProjP` chirality projectors, on the
-grounds that in the unbroken basis every fermion field (`lL`, `eR`, `qL`, `uR`,
-`dR`) is already chiral and the projector is therefore redundant. This is
-correct for this model, but the code does not verify that a projector agrees
-with the chirality of the field it acts on, so a hypothetical chirality
-disagreement between the two sides would pass unnoticed. The shared parser in
-`src/feynrules/comparison.py` does translate projectors faithfully and is
-demonstrably chirality-sensitive; migrating the SMEFT2 parser onto it would
-close this gap.
+The SMEFT2 parser discards `ProjM`/`ProjP` chirality projectors, on the grounds
+that in the unbroken basis every fermion field (`lL`, `eR`, `qL`, `uR`, `dR`)
+is already chiral and the projector is therefore redundant. Redundancy is not
+assumed, it is checked: every projector in the export is verified against the
+chirality of the fields it sits between before it is dropped.
+
+For an ordinary bilinear \(\bar\psi_X \Gamma \psi_Y\) carrying \(n\) gamma
+matrices, each gamma commutes a projector into its opposite, so
+
+\[
+\bar\psi_X \Gamma \psi_Y
+  = \bar\psi\, \Gamma\, P_{\bar X \text{ or } X}\, P_Y\, \psi ,
+\]
+
+which is non-vanishing only when \(Y \neq X\) for even \(n\) and \(Y = X\) for
+odd \(n\), and the single surviving projector is always \(P_Y\). A chain whose
+two endpoints have the same "barredness" runs through a charge-conjugation
+matrix; that flips the parity condition, and for a barred/barred chain it also
+flips which chirality survives.
+
+This rule predicts **all 2998** projectors in the reference export with zero
+exceptions, across both the 2806 ordinary chains and the 192 charge-conjugation
+chains. Any projector contradicting it, or any chain that vanishes identically
+for chirality reasons, raises `ChiralityMismatch` and the row is reported as an
+error rather than a match. The rule is model independent and lives in the
+shared layer as `validate_feynrules_projector_chirality`, so other models can
+reuse it.
 
 ---
 
@@ -287,6 +309,14 @@ coefficient-head filtering. The machinery is therefore general in substance but
 not plug-and-play; the Standard Model is the reference integration and is by far
 the smallest.
 
+SMEFT2 keeps its own parser because the export uses syntax the Standard Model
+sector parsers do not cover: indexed Wilson coefficients, `SlashedP` inside
+spinor chains, two-index weak `Eps`, and generic `IndexDelta` resolved by index
+prefix. Everything genuinely model independent is shared rather than forked —
+bracket and comma scanning, FeynRules label normalisation, the bosonic
+comparator, the canonical coefficient maps, and the chirality validator of
+§5.3 all live in `src/feynrules/comparison.py`.
+
 ---
 
 ## 7. Summary of what the validation establishes
@@ -304,7 +334,9 @@ affect 23 of 184 rows and are reported under distinct statuses rather than being
 folded into the direct-match count.
 
 **Outside scope.** The 2-point sector, hence `alphaKB`, `alphaR2B` and
-`alphaOmuH2`; and chirality consistency in the SMEFT2 parser (§5.3).
+`alphaOmuH2`, which generate no vertex with three or more legs and are
+therefore unreachable by a 3- to 6-point reference. This is the complete
+coverage gap and is pinned by a test so it cannot widen unnoticed.
 
 ---
 
@@ -323,4 +355,7 @@ folded into the direct-match count.
 # Test suites
 .venv/bin/python -m pytest models/SMEFT2/tests -q
 .venv/bin/python -m pytest models/SM/tests models/UnbrokenSM_BFM/tests tests -q
+
+# Mutation sensitivity only (proves the comparison is not a tautology)
+.venv/bin/python -m pytest models/SMEFT2/tests/test_smeft2_comparison_sensitivity.py -q
 ```

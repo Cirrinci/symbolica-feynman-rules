@@ -1272,6 +1272,7 @@ def parse_smeft2_matter_rule(
     rule: str,
     *,
     projector_as_dirac_c: bool = False,
+    fields: Iterable[str] | None = None,
 ) -> Expression:
     """Parse SMEFT2 two-fermion FeynRules tensor syntax into native tensors.
 
@@ -1283,7 +1284,15 @@ def parse_smeft2_matter_rule(
     projector row is compared to FeynPy's mixed ``LLbar C LL`` packaging, so
     bare projectors are mapped to the antisymmetric Dirac charge-conjugation
     tensor.
+
+    Dropping a projector is only sound when it agrees with the chirality of the
+    fields it sits between. Pass ``fields`` (the reference vertex field names,
+    in leg order) to have that agreement verified rather than assumed; a
+    disagreement raises :class:`ChiralityMismatch`.
     """
+
+    if fields is not None:
+        validate_smeft2_projector_chirality(rule, fields)
 
     text = _rewrite_feynrules_indices(rule)
     text = _rewrite_feynrules_indexed_parameters(text)
