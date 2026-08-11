@@ -7,44 +7,132 @@
 
 The previous chapter described the internal pipeline: declaration, lowering,
 compilation, contraction and canonicalisation. This chapter records how that
-pipeline was checked against independent references. The validation is not
-treated as an informal visual inspection of printed rules. It is expressed as
-repeatable comparisons against FeynRules exports and as regression tests that
-exercise the internal compiler and symbolic engine.
+pipeline was checked against an independent reference. The validation is not an
+informal visual inspection of printed rules. It is a set of repeatable symbolic
+comparisons against FeynRules exports, together with regression tests and
+deliberate-corruption tests that establish the comparisons are capable of
+failing.
 
-The main result is that the packaged Standard Model reproduces the supplied
-FeynRules Standard Model reference exactly on the tested interaction set, and
-the SMEFT2 Green-basis implementation reproduces the FeynRules EFT-only
-\texttt{Ltot} reference on all tested operator-content rows. The only
-non-direct SMEFT2 rows are controlled charge-conjugation packaging differences.
-Those rows are accepted only after an explicit pinned transformation, not by an
-open-ended sign or field-reordering search.
+FeynRules is treated throughout as the mathematical oracle. The aim is
+therefore not to show that FeynPy and FeynRules produce \emph{identical}
+expressions. They do not, and should not be expected to: the two frameworks
+differ in how they package charge conjugation, how far they expand covariant
+derivatives, and whether chirality is carried by an explicit projector or by
+the field class itself. The aim is to show that the two outputs are \emph{equal
+as tensors}, that is, that they differ only by index relabelling, reordering of
+commuting factors, and the application of gauge and Lorentz identities.
+
+The headline results are that the packaged Standard Model reproduces the
+supplied FeynRules export exactly on the full tested interaction set
+($163/163$), the unbroken background-field Standard Model reproduces its
+reference exactly ($67/67$), and the SMEFT2 Green-basis implementation
+reproduces the FeynRules EFT-only \texttt{Ltot} reference on all $184$ exported
+rows. Of those $184$ SMEFT2 rows, $161$ agree with no packaging assumption
+whatsoever, $15$ agree after one globally fixed charge-conjugation packaging
+convention, and $8$ agree after an additional explicitly tabulated
+row-specific transformation. No row is accepted through a search over signs or
+field orderings, and no row is left unresolved.
 
 % --------------------------------------------------------------
 \section{Validation strategy}
 \label{sec:validation-strategy}
 % --------------------------------------------------------------
 
-The tests are organised in three layers.
+The validation is organised in three layers, and it is important not to
+conflate them, because the outer two bound what the inner one can mean. A
+perfect equality score over a small subset of a model would prove very little.
 
-First, ordinary unit and regression tests cover the reusable engine. These
-tests check the local declaration API, index validation, covariant expansion,
+\paragraph{Model fidelity.} Does the FeynPy source transcribe the operators of
+the FeynRules source? This is a question about the input, not about the engine,
+and it is answered by direct block-by-block and coefficient-by-coefficient
+audit (\Cref{sec:validation-fidelity}).
+
+\paragraph{Vertex equality.} Do the Feynman rules derived from the two
+Lagrangians agree as tensor expressions? This is the substance of the
+comparison and is answered by canonical tensor-map equality
+(\Cref{sec:validation-canonical}).
+
+\paragraph{Coverage.} For how much of the model does the equality test actually
+run? A reference export covers a finite set of vertex arities, so some
+operators may be unreachable (\Cref{sec:validation-coverage}).
+
+Underneath all three sits an ordinary unit and regression suite covering the
+reusable engine: the declaration API, index validation, covariant expansion,
 field-strength expansion, field transformations, fermion signs, tensor
 canonicalisation and selected benchmark Feynman rules.
 
-Second, model-level comparisons check that a complete model implemented in
-FeynPy gives the same exported vertices as FeynRules. These comparisons live
-beside the concrete model packages under \path{models/}, rather than inside the
-generic contraction engine. This separation is important: the engine computes
-rules, while each model package owns the conventions and external-reference
-adapter needed to compare those rules.
+A deliberate architectural choice is that model-level comparisons live beside
+the concrete model packages under \path{models/}, not inside the generic
+contraction engine. The engine computes rules; each model package owns the
+conventions and the external-reference adapter needed to compare those rules.
+The format-independent comparison machinery itself is shared, and is discussed
+in \Cref{sec:validation-generality}.
 
-Third, the SMEFT2 comparison has a stricter symbolic layer. It parses the
-FeynRules tensor rule, groups terms by Wilson-coefficient head, canonicalises
-the tensor monomials and compares the canonical maps. Raw occurrence counts are
-kept as diagnostics, but they are not the final equality criterion because two
-equivalent expanded forms can have different raw counts before
-canonicalisation.
+% --------------------------------------------------------------
+\section{What ``equal'' means: the canonical form}
+\label{sec:validation-canonical}
+% --------------------------------------------------------------
+
+Equality is not decided by string comparison, nor by comparing printed
+expressions. Both sides are reduced to a canonical tensor-monomial map by
+\path{src/symbolic/tensor_canonicalization.py}, and two rules are declared
+equal precisely when those maps coincide.
+
+The reduction proceeds in four steps.
+
+\begin{enumerate}
+    \item Live tensor heads are replaced by temporary heads carrying explicit
+    symmetry metadata, so that the canonicaliser can exploit index symmetries
+    such as the symmetry of the metric or the antisymmetry of the Levi-Civita
+    tensor and the structure constants.
+    \item Symbolica's tensor canonicaliser runs with contracted dummy indices
+    grouped, which quotients out dummy-index naming and placement.
+    \item Dummy names are standardised and commuting factors are reordered into
+    a canonical sequence.
+    \item The result is read off as a map from canonical tensor monomial to an
+    \emph{exact rational} coefficient.
+\end{enumerate}
+
+Two properties of this comparison deserve emphasis, because they are what stop
+it from degenerating into a tautology.
+
+First, the comparison is performed \emph{separately for each Wilson-coefficient
+sector}: both sides are filtered to the terms carrying a given coefficient head
+before the maps are compared. A cancellation between different operators
+therefore cannot mask an error in either of them. Flavour order and complex
+conjugation are retained inside the scalar coefficient, so a row carrying
+function-valued coefficients such as $\alpha(f_1,f_2)$ cannot pass vacuously.
+
+Second, only a small and explicitly enumerated set of tensor identities is
+used. These are the generator commutator
+\begin{equation}
+    [T^a, T^b] = i f^{abc} T^c ,
+    \label{eq:validation-commutator}
+\end{equation}
+the structure-constant Jacobi identity
+\begin{equation}
+    f^{abe}f^{cde} - f^{ace}f^{bde} + f^{ade}f^{bce} = 0 ,
+    \label{eq:validation-jacobi}
+\end{equation}
+and the $SU(2)$ pseudoreality relations that move the antisymmetric
+$\epsilon$ tensor through a weak generator. These are the identities that let a
+non-identical but mathematically equal expression be recognised as equal.
+
+Just as importantly, the comparison does \emph{not} use equations of motion,
+integration by parts, momentum conservation, Schouten identities, Fierz
+identities, or any broad pattern-matching simplification. Admitting those would
+make the test far weaker, because an incorrect rule could then often be
+massaged into the reference.
+
+Raw coefficient-head occurrence counts are also recorded, but they are
+diagnostics rather than an equality criterion. Two equivalent expanded forms
+can legitimately have different raw counts before canonicalisation: for
+instance, FeynPy prints the two antisymmetric branches of
+$\mathrm{Dual}[F] = \tfrac{1}{2}\epsilon \cdot F$ separately, whereas FeynRules
+has already collapsed them using $\epsilon$ antisymmetry. On the current SMEFT2
+reference, $100$ of $182$ shared signatures have matching raw counts, and every
+one of the remaining deltas carries a recorded benign reason. None is
+unexplained.
 
 % --------------------------------------------------------------
 \section{Standard Model benchmark}
@@ -53,37 +141,108 @@ canonicalisation.
 
 The Standard Model package in \path{models/SM/} is the first complete vertical
 slice of the project. It starts from a gauge-basis declaration, applies the
-field transformations to the physical basis and compares the generated
-three-point and four-point interaction vertices against the bundled FeynRules
-\texttt{SM.fr} export.
+field transformations to the physical basis, and compares the generated
+interaction vertices against the bundled FeynRules \texttt{SM.fr} export.
 
-On the current reference set, the result is
-\[
-    163/163
-\]
-exact symbolic matches for the exported nonzero flavour-expanded tree-level
-interaction vertices. This validates the tested gauge, matter, Yukawa, Higgs,
-Goldstone, ghost and gauge-fixing sectors of the packaged Standard Model. It
-does not claim validation of parameter-card semantics, loop-level output,
-restriction files or external formats such as UFO.
+On the current reference set the result is $163/163$ exact symbolic matches for
+the exported nonzero flavour-expanded tree-level interaction vertices, split by
+sector as shown in \Cref{tab:validation-sm-sectors}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lr}
+\toprule
+Sector & Vertices \\
+\midrule
+Gauge self-interactions & 8 \\
+Matter currents & 51 \\
+Yukawa & 42 \\
+Higgs and Goldstone & 38 \\
+Ghost & 24 \\
+\midrule
+Total & 163 \\
+\bottomrule
+\end{tabular}
+\caption{Sector split of the Standard Model FeynRules comparison. Every row in
+every sector is a direct exact symbolic match.}
+\label{tab:validation-sm-sectors}
+\end{table}
+
+The scope of this claim should be stated precisely. The comparison is run with
+ghosts included and gauge fixing disabled, so it validates the gauge, matter,
+Yukawa, Higgs/Goldstone and ghost sectors, but it does \emph{not} validate the
+gauge-fixing sector. It also makes no claim about parameter-card semantics,
+loop-level output, restriction files, or external formats such as UFO.
+
+A second, independent benchmark is the unbroken background-field Standard Model
+in \path{models/UnbrokenSM_BFM/}, which reproduces its own FeynRules reference
+at $67/67$ (42 three-point and 25 four-point vertices). This matters for the
+SMEFT2 result because SMEFT2 is formulated in the same unbroken basis: it
+establishes that the basis, the field naming and the generator conventions are
+already validated independently of the EFT operators.
 
 % --------------------------------------------------------------
-\section{SMEFT2 Green-basis comparison}
+\section{SMEFT2: model fidelity}
+\label{sec:validation-fidelity}
+% --------------------------------------------------------------
+
+The main validation target is the SMEFT2 Green-basis model in
+\path{models/SMEFT2/SMEFT2.py}. The comparison basis is the EFT-only FeynRules
+\texttt{Ltot} export stored at
+\path{models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json}. The local FeynPy
+\texttt{Ltot} follows the same convention: it is the EFT contribution only,
+with the SM-plus-EFT combination available separately as \texttt{Lfull}.
+
+Before any vertex is compared, the transcription itself was audited. All $32$
+EFT Lagrangian blocks of \texttt{SMEFT\_Green\_Bpreserving.fr} are implemented,
+and \texttt{Ltot} is composed from exactly the same $32$ blocks in the same
+order. All $295$ active Wilson coefficients are declared and used. Two
+coefficients appear in the FeynRules file but not in the FeynPy source,
+\texttt{alphaEcdlq} and \texttt{alphaEcqeu}; both are commented out in
+FeynRules and appear in no FeynRules operator, so omitting them is correct
+rather than a gap. The Standard Model core is taken from
+\texttt{UnbrokenSM\_BFM.fr} minus the background-field ghost and gauge-fixing
+sectors, which are deliberately excluded because the comparison target is the
+EFT-only \texttt{Ltot}.
+
+The structural differences between the two sources are systematic conventions
+rather than per-operator adjustments, as summarised in
+\Cref{tab:validation-conventions}. This matters for interpreting
+\Cref{sec:validation-ec}: because the FeynPy Lagrangian contains no
+per-operator hand-fitting, a residual disagreement between the two sides is
+evidence of a \emph{convention} difference rather than of a transcription
+error.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lll}
+\toprule
+FeynRules & FeynPy & Nature \\
+\midrule
+\texttt{2 Ta[...]} & \texttt{weak\_t} & named constant, 62 uses \\
+\texttt{sigmamunu} & \texttt{sigma\_term} & named helper, 38 uses \\
+\texttt{Dual[FS]} & \texttt{\_dual\_fs} & named helper \\
+\texttt{lag + HC[lag]} & explicit \texttt{.conj()} terms & expansion \\
+\texttt{CC[...]} & \texttt{dirac\_charge\_conjugation} & expansion \\
+\bottomrule
+\end{tabular}
+\caption{Systematic convention differences between the FeynRules source and the
+FeynPy transcription. No comparison-tuning comments, fudge factors or
+per-operator sign corrections appear in the model file.}
+\label{tab:validation-conventions}
+\end{table}
+
+% --------------------------------------------------------------
+\section{SMEFT2: comparison result}
 \label{sec:validation-smeft2}
 % --------------------------------------------------------------
 
-The main final validation target is the SMEFT2 Green-basis model in
-\path{models/SMEFT2/SMEFT2.py}. The comparison basis is the EFT-only
-FeynRules \texttt{Ltot} export stored at
-\path{models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json}. The local FeynPy
-\texttt{Ltot} follows the same convention: it is the EFT contribution only,
-while the SM-plus-EFT combination remains available separately as
-\texttt{Lfull}.
+All Green-basis and evanescent sectors used by the bundled reference are
+included in the compiled FeynPy \texttt{Ltot}. The final comparison result is
+given in \Cref{tab:smeft2-final-comparison}, and the per-row verdicts are
+tabulated in \Cref{app:smeft2-rows}.
 
-All Green-basis and evanescent sectors used by the bundled reference are now
-included in the compiled FeynPy \texttt{Ltot}. The final comparison result is:
-
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \begin{tabular}{lr}
 \toprule
@@ -91,45 +250,327 @@ Quantity & Result \\
 \midrule
 FeynRules reference rows & 184 \\
 Operator-content matches & $184/184$ \\
-Direct exact symbolic matches & $176/184$ \\
-Pinned charge-conjugation packaging matches & $8/184$ \\
-Unresolved charge-conjugation packaging rows & $0/184$ \\
+\midrule
+Direct exact symbolic matches & $161/184$ \\
+Matches modulo the global \texttt{Ec} convention & $15/184$ \\
+Matches modulo pinned row-specific packaging & $8/184$ \\
+Unresolved packaging rows & $0/184$ \\
+\midrule
 Exact symbolic unequal rows & $0$ \\
 Exact symbolic error rows & $0$ \\
-Canonical bosonic tensor-map matches & $32/32$ \\
+Bosonic canonical tensor-map matches & $32/32$ \\
+Bosonic canonical coefficient sectors & $93/93$ \\
+Chirality-validated projectors & $2998$ \\
 \bottomrule
 \end{tabular}
-\caption{Final SMEFT2 comparison summary for the EFT-only Green-basis reference.}
+\caption{Final SMEFT2 comparison summary for the EFT-only Green-basis
+reference. The three-way split of the exact-symbolic column is the honest
+grading described in \Cref{sec:validation-ec}.}
 \label{tab:smeft2-final-comparison}
 \end{table}
 
-The split between direct and pinned matches is meaningful. A direct exact match
-means that the FeynRules row and the FeynPy row have the same external-field
-signature and the same canonical tensor map. A pinned charge-conjugation match
-means that the external fields are packaged differently, but the row is
-accepted after one explicitly listed charge-conjugation transformation. The
-comparison code fixes the partner signature, phase and duplicate-leg symmetry
-before comparing; it does not search over arbitrary signs or alternative
-packagings.
+The three-way split is the substantive part of this result, and it is reported
+deliberately rather than being collapsed into a single number.
 
-The eight pinned rows have a simple origin. Two are Weinberg-operator rows:
-FeynRules packages them as same-chirality charge-conjugated lepton structures,
-whereas FeynPy stores the mixed \texttt{lLbar}/\texttt{lL} form with the
-charge-conjugation tensor explicit. The remaining six rows are evanescent
-\texttt{alphaEc*} four-fermion partner rows with the same kind of packaging
-difference. Dedicated sidecar checks confirm the Weinberg comparison at
-$2/2$ and the evanescent charge-conjugation checks at $12/12$.
+A \emph{direct} match means the FeynRules row and the FeynPy row have the same
+external-field signature and the same canonical tensor map, with no packaging
+assumption of any kind. A match \emph{modulo the global \texttt{Ec}
+convention} means the row agrees only after the single globally fixed
+charge-conjugation packaging transform derived in \Cref{sec:validation-ec}. A
+match \emph{modulo pinned packaging} means the row additionally requires one
+explicitly tabulated, row-specific transformation, in which the partner
+signature, phase and duplicate-leg symmetry are all fixed in advance of the
+comparison.
 
-Therefore the accepted thesis result is:
-\[
-    \text{operator content } 184/184
-    \quad
-    \text{with }
-    176 \text{ direct exact rows and }
-    8 \text{ pinned charge-conjugation rows.}
-\]
-There are no unresolved coefficient, tensor, sign or packaging mismatches in
-the current comparison.
+It is worth being explicit about why this split is presented at all. An earlier
+state of the comparison reported $176$ direct matches, because the rows that
+depend on the global \texttt{Ec} convention were counted as though they needed
+nothing. That figure was not wrong about equality, but it was misleading about
+assumptions: it presented as unconditional a set of rows whose agreement rests
+on a convention. The current grading separates the two, so that the strength of
+the claim is visible in the numbers themselves.
+
+The bosonic canonical tensor-map figure of $32/32$ refers specifically to the
+bosonic sector diagnostic and should not be read as a coverage ceiling. The
+remaining $152$ fermionic rows are proved through the same canonical-map
+machinery, reported in the exact-symbolic column.
+
+% --------------------------------------------------------------
+\section{The evanescent charge-conjugation convention}
+\label{sec:validation-ec}
+% --------------------------------------------------------------
+
+The single most important assumption in the fermionic sector concerns the
+evanescent charge-conjugated four-fermion operators, that is, every coefficient
+whose name begins with \texttt{alphaEc}. It is documented here in full, because
+it is load-bearing: without it, all $21$ four-fermion \texttt{Ec} rows fail.
+
+% --------------------------------------------------------------
+\subsection{The discrepancy}
+% --------------------------------------------------------------
+
+FeynRules writes these operators through the \texttt{CC[...]} macro. Taking the
+four-lepton operator as the representative case,
+\begin{verbatim}
+alphaEcll[f1,f2,f3,f4] CC[LLbar[sp1,ii,f1]].LL[sp1,jj,f2]
+                       .LLbar[sp2,jj,f3].CC[LL[sp2,ii,f4]]
+\end{verbatim}
+The \texttt{ExpandIndices} step resolves the conjugation, so the exported
+vertex carries \emph{no residual charge-conjugation matrix}: the spinor flow
+runs from external leg $1$ to leg $4$ and from leg $2$ to leg $3$ through
+ordinary spinor-metric and gamma chains.
+
+The FeynPy source instead keeps the charge-conjugation matrices explicit and
+pairs adjacent legs,
+\begin{equation}
+    \bar{l}_L(s_1)\, C(s_1,s_2)\, l_L(s_2)\;
+    \bar{l}_L(s_3)\, C(s_3,s_4)\, l_L(s_4) ,
+    \label{eq:validation-ec-feynpy}
+\end{equation}
+that is, flow $(1,2)$ and $(3,4)$ with two explicit $C$ factors.
+
+% --------------------------------------------------------------
+\subsection{The transform}
+% --------------------------------------------------------------
+
+The two forms describe the same operator. Mapping the FeynPy packaging onto the
+FeynRules packaging eliminates both $C$ factors by re-pairing the four spinor
+arms in \emph{crossed} order, $(\text{arm } 0, \text{arm } 3)$ and
+$(\text{arm } 1, \text{arm } 2)$, and picks up a single overall sign from the
+antisymmetry of the charge-conjugation matrix,
+\begin{equation}
+    C^{T} = -C ,
+    \label{eq:validation-c-antisymmetry}
+\end{equation}
+together with the anticommutation required to reorder the fermion fields into
+the crossed pairing.
+
+Both the pairing and the sign are global constants, fixed once for every
+\texttt{alphaEc} head rather than chosen per row. In the implementation they
+appear as two named constants, \texttt{\_EC\_CC\_CONVENTION\_MODE} set to
+\texttt{crossed} and \texttt{\_EC\_CC\_CONVENTION\_PHASE} set to $-1$.
+
+% --------------------------------------------------------------
+\subsection{Why this is a derivation and not a fit}
+% --------------------------------------------------------------
+
+A reader is entitled to ask how a convention that rescues an entire sector can
+be distinguished from a parameter tuned until the answer came out right. The
+answer is that the choice is heavily overdetermined by the data. There are only
+four possible combinations of pairing mode and overall sign, and exactly one of
+them reproduces the reference, uniformly across the sector, as shown in
+\Cref{tab:validation-ec-overdetermination}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{llr}
+\toprule
+Pairing mode & Phase & Rows reproduced (of 21) \\
+\midrule
+crossed & $-1$ & 15 \\
+crossed & $+1$ & 0 \\
+direct  & $-1$ & 3 \\
+direct  & $+1$ & 2 \\
+\bottomrule
+\end{tabular}
+\caption{Only one of the four possible conventions reproduces the FeynRules
+reference. The $15$ rows in the accepted row are completed by the pinned
+transforms of \Cref{sec:validation-ec-pinned}; the small counts in the
+rejected rows are rows on which the transform does not apply at all.}
+\label{tab:validation-ec-overdetermination}
+\end{table}
+
+The contrast is stark rather than marginal: the three alternatives fail on
+essentially every row. A per-row fit would have $4^{21}$ degrees of freedom,
+whereas what is actually used is a single global choice out of four, three of
+which are excluded by the data. Removing the transform altogether causes all
+$21$ rows to fail, which is what establishes that it is doing real work and
+must therefore be stated rather than left implicit.
+
+% --------------------------------------------------------------
+\subsection{Residual row-specific packaging}
+\label{sec:validation-ec-pinned}
+% --------------------------------------------------------------
+
+Eight rows require a further, row-specific charge-conjugation transform on top
+of the global convention.
+
+Two are Weinberg-operator rows. FeynRules packages them as same-chirality
+charge-conjugated lepton structures, whereas FeynPy stores the mixed
+$\bar{l}_L / l_L$ form with the charge-conjugation tensor explicit. The
+accepted transform compares the FeynRules row against the antisymmetrised local
+pair $\mathrm{FeynPy}(\bar{l}_L, l_L) - \mathrm{FeynPy}(l_L, \bar{l}_L)$, and
+the relative minus sign is derived from \Cref{eq:validation-c-antisymmetry}
+rather than searched.
+
+The remaining six rows, covering $12$ coefficient sectors, are evanescent
+\texttt{alphaEc*} partner rows. These use an explicit rule table in which each
+entry fixes exactly one partner signature, one phase, one duplicate-leg
+symmetry mode, and a provenance string naming the source operator. Nothing is
+searched at acceptance time. Dedicated sidecar checks confirm the Weinberg
+comparison at $2/2$ and the evanescent charge-conjugation checks at $12/12$,
+and both sidecars also verify that the \emph{wrong} sign or the wrong
+combination does \emph{not} match, which is what makes them evidence rather
+than restatement.
+
+% --------------------------------------------------------------
+\section{Chirality}
+\label{sec:validation-chirality}
+% --------------------------------------------------------------
+
+The SMEFT2 parser discards the \texttt{ProjM} and \texttt{ProjP} chirality
+projectors that FeynRules prints, on the grounds that in the unbroken basis
+every matter field is already chiral and the projector is therefore redundant
+with the field itself. Redundancy of this kind is a reasonable expectation, but
+it is not something to assume silently: if a projector disagreed with the field
+it sits between, dropping it would hide a genuine discrepancy. The agreement is
+therefore verified rather than assumed.
+
+The rule that makes the projector predictable is elementary. Conjugation flips
+chirality, so a left-handed field has a right-handed conjugate,
+\begin{equation}
+    \overline{P_X \psi} = \bar\psi\, P_{\bar X} ,
+    \label{eq:validation-conjugate-chirality}
+\end{equation}
+where $\bar X$ denotes the chirality opposite to $X$. Each gamma matrix
+anticommutes with $\gamma_5$ and therefore commutes a projector into its
+opposite, $\gamma^\mu P_X = P_{\bar X} \gamma^\mu$. For a bilinear
+$\bar\psi_X \Gamma^{(n)} \psi_Y$ carrying $n$ gamma matrices, pushing the left
+projector rightwards through the chain gives
+\begin{equation}
+    \bar\psi_X \, \Gamma^{(n)} \, \psi_Y
+    = \bar\psi \, \Gamma^{(n)}
+    \begin{cases}
+        P_{\bar X} P_Y \, \psi , & n \text{ even},\\
+        P_{X} P_Y \, \psi , & n \text{ odd}.
+    \end{cases}
+    \label{eq:validation-chirality}
+\end{equation}
+Since $P_A P_B = \delta_{AB} P_B$, the chain is non-vanishing only when
+$Y \neq X$ for even $n$ and $Y = X$ for odd $n$, and whenever it survives the
+single remaining projector is $P_Y$. That is the prediction.
+
+A chain whose two endpoints have the same ``barredness'' runs through a
+charge-conjugation matrix instead of the spinor metric. Because $C$ itself
+commutes chirality, this flips the parity condition on $n$, and for a
+barred/barred chain it also flips which of the two chiralities survives. Both
+cases are handled explicitly.
+
+This rule predicts every projector in the reference export with no exceptions:
+all $2998$ of them, comprising $2806$ ordinary chains and $192$
+charge-conjugation chains. Any projector contradicting the rule, or any chain
+that vanishes identically for chirality reasons, raises an error and the row is
+reported as failed rather than matched. The check is model independent and lives
+in the shared comparison layer, so other models can reuse it.
+
+% --------------------------------------------------------------
+\section{Mutation sensitivity}
+\label{sec:validation-sensitivity}
+% --------------------------------------------------------------
+
+Every statement above concerns comparisons that \emph{succeeded}. On its own
+that is weak evidence, because a comparison that had silently degenerated into
+a tautology would also report a perfect score. The suites therefore include
+deliberate-corruption tests which inject a physically meaningful error into the
+reference and assert that the comparison notices.
+
+For SMEFT2 the injected corruptions are a rescaled Wilson coefficient in both
+the two-fermion and four-fermion sectors, a global sign flip, chirality flips
+in both directions, transposed flavour slots, and a removed imaginary unit.
+None is reported as agreement. The suite also asserts that the unmutated rows
+\emph{are} accepted, so it cannot pass vacuously by failing everything.
+
+The shared machinery carries an analogous suite under \path{models/SM/}, with
+six corruptions: a chirality flip, a wrongly conjugated CKM element, a reversed
+colour generator, a removed imaginary unit, a wrong derivative momentum, and a
+global sign flip. All six are detected.
+
+Two further structural facts support the same conclusion. No coefficient head
+is exempted from comparison: the exemption set is empty. And the exception
+tables are small and enumerated rather than open-ended. The raw head-count
+deltas are explained by only four reason categories
+(\texttt{DUAL\_FS\_ANTISYMMETRY}, \texttt{DUMMY\_LORENTZ\_MERGE},
+\texttt{EXACT\_SYMBOLIC\_CANONICAL\_EQUIVALENCE} and
+\texttt{PINNED\_CC\_CANONICAL\_EQUIVALENCE}), and the packaging exceptions
+consist of exactly $12$ pinned rules, each carrying a recorded provenance
+string naming its source operator.
+
+% --------------------------------------------------------------
+\section{Coverage and limits}
+\label{sec:validation-coverage}
+% --------------------------------------------------------------
+
+Of the $303$ parameters declared in the SMEFT2 model, $295$ appear in at least
+one validated reference vertex. The eight that do not divide into two groups.
+
+Five are Standard Model parameters, $\lambda$, $\mu_H$ and the three Yukawa
+matrices, which are correctly absent from an EFT-only \texttt{Ltot}.
+
+The remaining three are genuine EFT coefficients that the comparison does not
+reach: \texttt{alphaKB}, \texttt{alphaR2B} and \texttt{alphaOmuH2}. The reason
+is structural rather than accidental. The reference export covers vertices of
+arity three to six, whereas these three coefficients multiply operators that
+generate only two-point vertices: two are built from the abelian field
+strength, whose non-abelian self-interactions are absent, and the third is the
+Higgs mass term. They are therefore unreachable by this reference, and are
+reported as unvalidated rather than counted as covered. A regression test pins
+this list so that the gap cannot widen unnoticed.
+
+This is the complete coverage gap. Every other coefficient that contributes to
+a two-point vertex, including the gauge and Higgs kinetic normalisations and
+the fermion kinetic terms, also appears in validated vertices of three or more
+legs, where gauge invariance relates the two-point normalisation to the
+higher-point ones. Closing the remaining gap would require exporting two-point
+vertices from FeynRules, which is a straightforward extension of the reference
+rather than a change to the comparison.
+
+Two further limits should be stated plainly. The comparison is tree-level and
+concerns vertex tensor structure only; it says nothing about parameter-card
+semantics, loop-level output or external export formats. And in the Standard
+Model benchmark the gauge-fixing sector is excluded, as noted in
+\Cref{sec:validation-sm}.
+
+% --------------------------------------------------------------
+\section{Generality of the comparison machinery}
+\label{sec:validation-generality}
+% --------------------------------------------------------------
+
+The comparison is not SMEFT2-specific infrastructure. The model-agnostic core
+lives in \path{src/feynrules/comparison.py} and is shared by three models, as
+summarised in \Cref{tab:validation-generality}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{llr}
+\toprule
+Model & Result & Adapter size \\
+\midrule
+\path{models/SM} & $163/163$ & 205 lines \\
+\path{models/UnbrokenSM_BFM} & $67/67$ & 390 lines \\
+\path{models/SMEFT2} & $184/184$ & 5530 lines \\
+\bottomrule
+\end{tabular}
+\caption{The same comparison core serves three models. The Standard Model is
+the reference integration and needs only a thin adapter; SMEFT2 is far larger
+because it carries the Wilson-coefficient sector logic, the charge-conjugation
+packaging rules and the sidecar checks.}
+\label{tab:validation-generality}
+\end{table}
+
+Applying the machinery to a further model requires four things: a parser
+adapter for that model's export syntax, a field-name map, sector routing, and
+any convention substitutions such as CKM handling or diagonal Yukawa naming.
+Models with Wilson coefficients additionally need coefficient-head filtering.
+The machinery is therefore general in substance, though not plug-and-play.
+
+SMEFT2 retains its own parser because its export uses syntax the Standard Model
+sector parsers do not cover: indexed Wilson coefficients, slashed momenta
+inside spinor chains, two-index weak $\epsilon$ tensors, and generic index
+deltas resolved by index prefix. Everything genuinely model independent is
+shared rather than duplicated, including the bracket and comma scanning, the
+FeynRules label normalisation, the bosonic comparator, the canonical
+coefficient maps, and the chirality validator of
+\Cref{sec:validation-chirality}.
 
 % --------------------------------------------------------------
 \section{Reproducibility}
@@ -140,16 +581,32 @@ From the repository root, the full regression suite is run with
 \begin{minted}{bash}
 .venv/bin/python -m pytest -q
 \end{minted}
+On the final checked state this reports $519$ passing tests.
 
 The accepted SMEFT2 gate is
 \begin{minted}{bash}
 .venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
 \end{minted}
+This accepts the documented global \texttt{Ec} convention and the pinned
+packaging rows, and fails on any unresolved packaging row, operator-content
+miss, symbolic inequality, symbolic error, or unexplained FeynPy-only
+signature.
 
-The command without \texttt{--allow-cc-packaging} is kept as a stricter audit
-that requires every row to be a direct same-signature exact match. It is useful
-for detecting whether the remaining packaging rows have changed, but it is not
-the acceptance criterion used here.
+The stricter audit gate omits the flag,
+\begin{minted}{bash}
+.venv/bin/python -m models.SMEFT2.comparison --check
+\end{minted}
+and requires every row to be a direct match with no packaging assumption at
+all. It therefore fails on the current state, by construction, because $23$
+rows are documented packaging matches. Its purpose is to detect whether that
+set has changed, and it is not the acceptance criterion used here.
+
+The mutation-sensitivity suite of \Cref{sec:validation-sensitivity} is run on
+its own with
+\begin{minted}{bash}
+.venv/bin/python -m pytest \
+  models/SMEFT2/tests/test_smeft2_comparison_sensitivity.py -q
+\end{minted}
 
 The human-readable report is regenerated with
 \begin{minted}{bash}
@@ -158,12 +615,38 @@ The human-readable report is regenerated with
 
 The main reproducibility artifacts are:
 \begin{itemize}
-    \item \path{models/SMEFT2/COMPARISON.md}, the generated human-readable summary;
-    \item \path{models/SMEFT2/COMPARISON_METHOD.md}, the maintained method report;
-    \item \path{models/SMEFT2/comparison/artifacts/vertex_comparison_report.json}, the per-signature comparison rows;
-    \item \path{models/SMEFT2/comparison/artifacts/feynpy_vertices.json}, the regenerated local FeynPy vertex rules.
+    \item \path{models/SMEFT2/VALIDATION_ANALYSIS.md}, the maintained analysis
+    of what the comparison proves and where its assumptions lie;
+    \item \path{models/SMEFT2/COMPARISON.md}, the generated human-readable
+    summary;
+    \item \path{models/SMEFT2/COMPARISON_METHOD.md}, the maintained method
+    report;
+    \item \path{models/SMEFT2/comparison/artifacts/vertex_comparison_report.json},
+    the per-signature comparison rows, from which
+    \Cref{app:smeft2-rows} is generated;
+    \item \path{models/SMEFT2/comparison/artifacts/feynpy_vertices.json}, the
+    regenerated local FeynPy vertex rules.
 \end{itemize}
 
-On the final checked state, the complete test suite passed with 503 tests, and
-the SMEFT2 acceptance gate reported full operator-content coverage with the
-$176+8$ split shown in Table~\ref{tab:smeft2-final-comparison}.
+% --------------------------------------------------------------
+\section{Summary}
+\label{sec:validation-summary}
+% --------------------------------------------------------------
+
+\paragraph{Established.} The FeynPy SMEFT2 Feynman rules agree with FeynRules
+as tensor expressions, sector by sector in the Wilson coefficients, for all
+$184$ exported vertices of arity three to six, covering $295$ of $303$ model
+parameters. Agreement is proved by exact rational equality of canonical
+tensor-monomial maps, is demonstrably sensitive to injected errors, and rests
+on no unenumerated exceptions. The Standard Model and unbroken background-field
+benchmarks match at $163/163$ and $67/67$.
+
+\paragraph{Assumed, and documented.} One global charge-conjugation packaging
+convention relating the FeynRules \texttt{CC[...]} flow to the explicit $C$
+factors of the FeynPy source, plus $12$ pinned row-specific packaging rules.
+These affect $23$ of $184$ rows and are reported under distinct statuses rather
+than folded into the direct-match count.
+
+\paragraph{Outside scope.} The two-point sector, hence \texttt{alphaKB},
+\texttt{alphaR2B} and \texttt{alphaOmuH2}; the Standard Model gauge-fixing
+sector; and everything beyond tree-level vertex tensor structure.
