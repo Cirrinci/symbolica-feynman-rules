@@ -329,7 +329,11 @@ The comparison checks signature coverage and coefficient-head content after
 normalizing field names to the FeynRules convention. Exact symbolic comparison
 is graded honestly across all 184 reference rows:
 
-- `176/184` direct `EXACT_MATCH` (same-signature canonical tensor maps)
+- `161/184` direct `EXACT_MATCH` (canonical tensor maps with no packaging
+  assumption)
+- `15/184` `MATCH_MODULO_EC_CC_CONVENTION` (same-signature evanescent
+  four-fermion rows using the single global crossed-arm `CC[...]` versus
+  explicit-`C` convention)
 - `8/184` `MATCH_MODULO_CC_PACKAGING` (two Weinberg rows plus six pinned
   `alphaEc*` four-fermion partner rows)
 - `0/184` `UNRESOLVED_CC_PACKAGING`
@@ -343,8 +347,9 @@ The default gate requires direct exact matches only:
 .venv/bin/python -m models.SMEFT2.comparison --check
 ```
 
-Pinned CC packaging can be accepted explicitly with `--allow-cc-packaging`.
-Unresolved CC packaging rows never pass `--check`.
+The documented global Ec CC convention and pinned CC packaging rows can be
+accepted explicitly with `--allow-cc-packaging`. Unresolved CC packaging rows
+never pass `--check`.
 
 ## Final Acceptance
 
@@ -357,13 +362,14 @@ The thesis acceptance gate is the explicit charge-conjugation packaging gate:
 Expected terminal summary:
 
 ```text
-SMEFT2 comparison: 184/184 reference vertices match at operator-content level (176 direct + 8 via charge-conjugation packaging); exact symbolic split=direct 176/184, modulo pinned CC 8/184, unresolved CC 0/184; raw-head-count matches=100/182; canonical tensor-map matches=32/32 supported vertices (93/93 sectors); Weinberg reconstructed sidecar=2/2 direct, 4/4 coefficient checks, wrong-sign matches=0; EC CC sidecar=12/12 coefficient sectors, wrong-combination matches=0; reference-only=2; feynpy-only=8.
+SMEFT2 comparison: 184/184 reference vertices match at operator-content level (176 literal-signature head matches + 8 CC-packaging head matches); exact symbolic split=direct 161/184, modulo global Ec CC convention 15/184, modulo pinned CC 8/184, unresolved CC 0/184; raw-head-count matches=100/182; bosonic canonical tensor-map matches=32/32 supported bosonic vertices (93/93 sectors); Weinberg reconstructed sidecar=2/2 direct, 4/4 coefficient checks, wrong-sign matches=0; EC CC sidecar=12/12 coefficient sectors, wrong-combination matches=0; reference-only=2; feynpy-only=8.
 ```
 
-This accepts only the pinned Weinberg and `alphaEc*` packaging rows described
-in `COMPARISON_METHOD.md`. It still fails on any unresolved packaging row,
-operator-content miss, exact symbolic inequality, exact symbolic error, or
-unexplained FeynPy-only signature.
+This accepts only the documented global Ec CC convention plus the pinned
+Weinberg and `alphaEc*` packaging rows described in `COMPARISON_METHOD.md`. It
+still fails on any unresolved packaging row, operator-content miss, exact
+symbolic inequality, exact symbolic error, or unexplained FeynPy-only
+signature.
 
 ## Check
 

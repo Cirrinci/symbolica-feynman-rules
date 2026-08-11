@@ -1,10 +1,10 @@
 # SMEFT2 FeynRules/FeynPy Comparison
 
-Generated on `2026-08-06` by `models.SMEFT2.comparison`.
+Generated on `2026-08-11` by `models.SMEFT2.comparison`.
 
 ## Scope
 
-Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no row-specific packaging assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after a charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed. The separate canonical tensor-map diagnostic remains the bosonic-sector per-coefficient map for supported bosonic coefficient sectors.
+Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no packaging assumption at all; `MATCH_MODULO_EC_CC_CONVENTION` means equality only after the single global evanescent charge-conjugation packaging convention that relates FeynRules' resolved `CC[...]` spinor flow to SMEFT2.py's explicit `C` factors (crossed arm re-pairing with one overall sign, fixed globally rather than per row); `MATCH_MODULO_CC_PACKAGING` means equality only after a further row-specific charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed. The separate canonical tensor-map diagnostic is the *bosonic-sector* per-coefficient map and covers bosonic coefficient sectors only; fermionic rows are proved through the exact-symbolic column above.
 
 | Item | Value |
 | --- | ---: |
@@ -24,13 +24,14 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 | Shared raw head-count benign expansions | 82 |
 | Shared raw head-count mismatches with unexplained deltas | 0 |
 | Exact symbolic supported vertices | 184 |
-| Direct exact symbolic matches | 176 |
+| Direct exact symbolic matches | 161 |
+| Exact modulo global Ec CC convention | 15 |
 | Exact modulo pinned CC packaging | 8 |
 | Unresolved CC packaging (existence only) | 0 |
 | Exact symbolic unequal vertices | 0 |
 | Exact symbolic error vertices | 0 |
-| Headline split | direct exact: 176/184; modulo pinned CC: 8/184; unresolved CC: 0/184; operator content: 184/184 |
-| Compatibility alias `exact_symbolic_equal_vertices` (direct only) | 176 |
+| Headline split | direct exact: 161/184; modulo global Ec CC convention: 15/184; modulo pinned CC: 8/184; unresolved CC: 0/184; operator content: 184/184 |
+| Compatibility alias `exact_symbolic_equal_vertices` (direct only) | 161 |
 | Canonical tensor-map supported vertices | 32 |
 | Canonical tensor-map equal vertices | 32 |
 | Canonical tensor-map unequal vertices | 0 |
@@ -62,19 +63,19 @@ Signature coverage, coefficient-head content, and raw coefficient-head multiplic
 
 ## Exact Symbolic Comparison
 
-This layer is enabled for every FeynRules reference row. Bosonic rows use the native bosonic comparator. Fermion rows parse the full FeynRules tensor rule into native tensors, filter terms by indexed Wilson-coefficient head, keep flavor order and complex conjugation in the scalar coefficient, and compare canonical tensor-monomial maps. Statuses are graded honestly: `EXACT_MATCH` is direct same-signature canonical equality; `MATCH_MODULO_CC_PACKAGING` is equality after a pinned charge-conjugation packaging transform (Weinberg or Ec partner rows); `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed.
+This layer is enabled for every FeynRules reference row. Bosonic rows use the native bosonic comparator. Fermion rows parse the full FeynRules tensor rule into native tensors, filter terms by indexed Wilson-coefficient head, keep flavor order and complex conjugation in the scalar coefficient, and compare canonical tensor-monomial maps. Statuses are graded honestly: `EXACT_MATCH` is direct same-signature canonical equality; `MATCH_MODULO_EC_CC_CONVENTION` is equality after the single global evanescent charge-conjugation packaging convention (crossed spinor-arm re-pairing with one overall sign) that relates FeynRules' resolved `CC[...]` flow to SMEFT2.py's explicit `C` factors; `MATCH_MODULO_CC_PACKAGING` is equality after a further pinned, row-specific charge-conjugation packaging transform (Weinberg or Ec partner rows); `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed.
 
 ## Sector-by-Sector Reading Guide
 
-This table explains what the comparison did to put each sector in the same mathematical form before equality was tested. Direct exact rows compare the same external-field signature. Pinned CC rows compare an explicitly listed charge-conjugation partner with a fixed phase and duplicate-leg symmetry.
+This table explains what the comparison did to put each sector in the same mathematical form before equality was tested. Direct exact rows compare the same external-field signature without any charge-conjugation convention. Global Ec CC rows use one fixed crossed-arm convention for FeynRules `CC[...]` versus FeynPy explicit `C` tensors. Pinned CC rows compare an explicitly listed charge-conjugation partner with a fixed phase and duplicate-leg symmetry.
 
 | Sector family | Rows | Result | Normalization/canonicalization used |
 | --- | ---: | --- | --- |
 | Bosonic and Higgs/gauge | 32 | 32 direct exact | Parse FeynRules `ME`, `FV`, `SP`, `Eps`, `fsu2`, `fsu3`; expand dual field strengths; use metric symmetry, epsilon antisymmetry, structure-constant antisymmetry, dummy-index relabeling, generator-product ordering, and the narrow `f*f` Jacobi reducer. |
 | Two-fermion non-Weinberg | 129 | 129 direct exact | Parse gamma chains, slashed momenta, projectors, generators, index deltas, epsilons, and indexed Wilson functions; keep flavor order/conjugation in the scalar coefficient; canonicalize open spinor, Lorentz, color, and weak tensors; apply narrow SU(2) pseudoreality identities for Higgs-tilde/generator products. |
 | Weinberg | 2 | 2 pinned CC | FeynRules emits same-chirality `Phi Phi lL lL` and HC rows; FeynPy stores mixed `lLbar,lL` rows with explicit `dirac_C`. The accepted transform is the antisymmetrized local pair `FeynPy(lLbar,lL) - FeynPy(lL,lLbar)`, with the sign fixed by `C^T = -C`. |
-| Ordinary four-fermion | 15 | 15 direct exact | Preserve all four Wilson flavor slots; canonicalize color singlet/octet contractions, weak triplet currents, identical fermion dummy labels, gamma chains, and Hermitian-conjugate generator orientations. |
-| Charge-conjugated evanescent four-fermion | 6 rows / 12 coefficient sectors | 6 pinned CC | Use the pinned `alphaEc*` rule table: exactly one partner signature, one phase, and one symmetric or antisymmetric duplicate-leg rule per coefficient sector; rewrite explicit `dirac_C` arms into FeynRules `CC[...]` flow and then demand canonical-map equality. |
+| Four-fermion same-signature rows | 15 | 15 modulo global Ec CC convention | Preserve all four Wilson flavor slots; compare non-`Ec` coefficient sectors directly; canonicalize color singlet/octet contractions, weak triplet currents, identical-fermion dummy labels, gamma chains, and Hermitian-conjugate generator orientations; for `alphaEc*` sectors apply only the single crossed-arm Ec CC convention (phase `-1`). |
+| Charge-conjugated evanescent four-fermion | 6 rows / 12 coefficient sectors | 6 pinned CC on top of the global Ec convention | Use the pinned `alphaEc*` rule table: exactly one partner signature, one phase, and one symmetric or antisymmetric duplicate-leg rule per coefficient sector; rewrite explicit `dirac_C` arms into FeynRules `CC[...]` flow and then demand canonical-map equality. |
 | FeynPy-only zero-signature artifacts | 2 local signatures | dropped from residuals | Canonical coefficient-head collection proves the apparent signatures cancel to zero under tensor symmetries, so they are diagnostics rather than unmatched operator content. |
 
 <details>
@@ -247,25 +248,25 @@ This table explains what the comparison did to put each sector in the same mathe
 | <code>Wi&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
 | <code>dRbar&#124;eR&#124;lLbar&#124;qL</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
 | <code>dRbar&#124;qL&#124;qL&#124;uRbar</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
-| <code>dR&#124;dRbar&#124;eR&#124;eRbar</code> | <code>EXACT_MATCH</code> |
-| <code>dR&#124;dRbar&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
-| <code>dR&#124;dRbar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
-| <code>dR&#124;dRbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
-| <code>dR&#124;dR&#124;dRbar&#124;dRbar</code> | <code>EXACT_MATCH</code> |
+| <code>dR&#124;dRbar&#124;eR&#124;eRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>dR&#124;dRbar&#124;lL&#124;lLbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>dR&#124;dRbar&#124;qL&#124;qLbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>dR&#124;dRbar&#124;uR&#124;uRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>dR&#124;dR&#124;dRbar&#124;dRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
 | <code>dR&#124;eRbar&#124;lL&#124;qLbar</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
 | <code>dR&#124;qLbar&#124;qLbar&#124;uR</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
 | <code>eRbar&#124;lL&#124;qL&#124;uRbar</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
-| <code>eR&#124;eRbar&#124;lL&#124;lLbar</code> | <code>EXACT_MATCH</code> |
-| <code>eR&#124;eRbar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
-| <code>eR&#124;eRbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
-| <code>eR&#124;eR&#124;eRbar&#124;eRbar</code> | <code>EXACT_MATCH</code> |
+| <code>eR&#124;eRbar&#124;lL&#124;lLbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>eR&#124;eRbar&#124;qL&#124;qLbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>eR&#124;eRbar&#124;uR&#124;uRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>eR&#124;eR&#124;eRbar&#124;eRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
 | <code>eR&#124;lLbar&#124;qLbar&#124;uR</code> | <code>MATCH_MODULO_CC_PACKAGING</code> |
-| <code>lL&#124;lLbar&#124;qL&#124;qLbar</code> | <code>EXACT_MATCH</code> |
-| <code>lL&#124;lLbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
-| <code>lL&#124;lL&#124;lLbar&#124;lLbar</code> | <code>EXACT_MATCH</code> |
-| <code>qL&#124;qLbar&#124;uR&#124;uRbar</code> | <code>EXACT_MATCH</code> |
-| <code>qL&#124;qL&#124;qLbar&#124;qLbar</code> | <code>EXACT_MATCH</code> |
-| <code>uR&#124;uR&#124;uRbar&#124;uRbar</code> | <code>EXACT_MATCH</code> |
+| <code>lL&#124;lLbar&#124;qL&#124;qLbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>lL&#124;lLbar&#124;uR&#124;uRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>lL&#124;lL&#124;lLbar&#124;lLbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>qL&#124;qLbar&#124;uR&#124;uRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>qL&#124;qL&#124;qLbar&#124;qLbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
+| <code>uR&#124;uR&#124;uRbar&#124;uRbar</code> | <code>MATCH_MODULO_EC_CC_CONVENTION</code> |
 
 </details>
 
@@ -317,11 +318,13 @@ This diagnostic is enabled for supported bosonic rows. It parses FeynRules `ME`,
 
 | Head | Count |
 | --- | ---: |
+| None | 0 |
 
 ## Largest Local Extra Heads
 
 | Head | Count |
 | --- | ---: |
+| None | 0 |
 
 ## Explained Benign Raw Head-Count Deltas
 
@@ -626,6 +629,7 @@ These exclude the explicit benign expansions listed above. The large pure-gauge 
 
 | Head | Total absolute delta |
 | --- | ---: |
+| None | 0 |
 
 ## Files
 

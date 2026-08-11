@@ -380,14 +380,20 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "flavor order/conjugation in the canonical scalar coefficient, so "
             "it cannot pass vacuously for function-valued coefficients. "
             "Exact-symbolic rows are graded honestly: `EXACT_MATCH` means "
-            "direct canonical-map equality with no row-specific packaging "
-            "assumption; `MATCH_MODULO_CC_PACKAGING` means equality only after "
-            "a charge-conjugation packaging transform whose sign/symmetry is "
-            "derived (pinned), e.g. the antisymmetrized Weinberg rows; and "
-            "`UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known "
-            "or the pinned transform failed. The separate canonical tensor-map "
-            "diagnostic remains the bosonic-sector per-coefficient map for "
-            "supported bosonic coefficient sectors."
+            "direct canonical-map equality with no packaging assumption at "
+            "all; `MATCH_MODULO_EC_CC_CONVENTION` means equality only after "
+            "the single global evanescent charge-conjugation packaging "
+            "convention that relates FeynRules' resolved `CC[...]` spinor flow "
+            "to SMEFT2.py's explicit `C` factors (crossed arm re-pairing with "
+            "one overall sign, fixed globally rather than per row); "
+            "`MATCH_MODULO_CC_PACKAGING` means equality only after a further "
+            "row-specific charge-conjugation packaging transform whose "
+            "sign/symmetry is derived (pinned), e.g. the antisymmetrized "
+            "Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means no pinned "
+            "packaging rule is known or the pinned transform failed. The "
+            "separate canonical tensor-map diagnostic is the *bosonic-sector* "
+            "per-coefficient map and covers bosonic coefficient sectors only; "
+            "fermionic rows are proved through the exact-symbolic column above."
         ),
         "summary": {
             "reference_vertex_count": len(references),
@@ -455,6 +461,9 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             ],
             "cc_packaging_pinned_match_vertices": exact_symbolic_status_counts[
                 "MATCH_MODULO_CC_PACKAGING"
+            ],
+            "ec_cc_convention_match_vertices": exact_symbolic_status_counts[
+                "MATCH_MODULO_EC_CC_CONVENTION"
             ],
             "cc_packaging_unresolved_vertices": exact_symbolic_status_counts[
                 "UNRESOLVED_CC_PACKAGING"
@@ -610,6 +619,8 @@ def _markdown_report(report: dict[str, object]) -> str:
         f"{summary['shared_head_count_unexplained_mismatches']} |",
         f"| Exact symbolic supported vertices | {summary['exact_symbolic_supported_vertices']} |",
         f"| Direct exact symbolic matches | {summary['exact_symbolic_direct_match_vertices']} |",
+        "| Exact modulo global Ec CC convention | "
+        f"{summary['ec_cc_convention_match_vertices']} |",
         "| Exact modulo pinned CC packaging | "
         f"{summary['cc_packaging_pinned_match_vertices']} |",
         "| Unresolved CC packaging (existence only) | "
@@ -619,6 +630,9 @@ def _markdown_report(report: dict[str, object]) -> str:
         (
             "| Headline split | "
             f"direct exact: {summary['exact_symbolic_direct_match_vertices']}/"
+            f"{summary['exact_symbolic_supported_vertices']}; "
+            "modulo global Ec CC convention: "
+            f"{summary['ec_cc_convention_match_vertices']}/"
             f"{summary['exact_symbolic_supported_vertices']}; "
             f"modulo pinned CC: {summary['cc_packaging_pinned_match_vertices']}/"
             f"{summary['exact_symbolic_supported_vertices']}; "
@@ -678,18 +692,26 @@ def _markdown_report(report: dict[str, object]) -> str:
             "conjugation in the scalar coefficient, and compare canonical "
             "tensor-monomial maps. Statuses are graded honestly: "
             "`EXACT_MATCH` is direct same-signature canonical equality; "
-            "`MATCH_MODULO_CC_PACKAGING` is equality after a pinned "
-            "charge-conjugation packaging transform (Weinberg or Ec partner "
-            "rows); `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule "
+            "`MATCH_MODULO_EC_CC_CONVENTION` is equality after the single "
+            "global evanescent charge-conjugation packaging convention "
+            "(crossed spinor-arm re-pairing with one overall sign) that "
+            "relates FeynRules' resolved `CC[...]` flow to SMEFT2.py's "
+            "explicit `C` factors; `MATCH_MODULO_CC_PACKAGING` is equality "
+            "after a further pinned, row-specific charge-conjugation packaging "
+            "transform (Weinberg or Ec partner rows); "
+            "`UNRESOLVED_CC_PACKAGING` means no pinned packaging rule "
             "is known or the pinned transform failed.",
             "",
             "## Sector-by-Sector Reading Guide",
             "",
             "This table explains what the comparison did to put each sector "
             "in the same mathematical form before equality was tested. Direct "
-            "exact rows compare the same external-field signature. Pinned CC "
-            "rows compare an explicitly listed charge-conjugation partner with "
-            "a fixed phase and duplicate-leg symmetry.",
+            "exact rows compare the same external-field signature without any "
+            "charge-conjugation convention. Global Ec CC rows use one fixed "
+            "crossed-arm convention for FeynRules `CC[...]` versus FeynPy "
+            "explicit `C` tensors. Pinned CC rows compare an explicitly listed "
+            "charge-conjugation partner with a fixed phase and duplicate-leg "
+            "symmetry.",
             "",
             "| Sector family | Rows | Result | Normalization/canonicalization used |",
             "| --- | ---: | --- | --- |",
@@ -713,17 +735,20 @@ def _markdown_report(report: dict[str, object]) -> str:
             "The accepted transform is the antisymmetrized local pair "
             "`FeynPy(lLbar,lL) - FeynPy(lL,lLbar)`, with the sign fixed by "
             "`C^T = -C`. |",
-            "| Ordinary four-fermion | 15 | 15 direct exact | "
-            "Preserve all four Wilson flavor slots; canonicalize color "
-            "singlet/octet contractions, weak triplet currents, identical "
-            "fermion dummy labels, gamma chains, and Hermitian-conjugate "
-            "generator orientations. |",
+            "| Four-fermion same-signature rows | 15 | "
+            "15 modulo global Ec CC convention | Preserve all four Wilson "
+            "flavor slots; compare non-`Ec` coefficient sectors directly; "
+            "canonicalize color singlet/octet contractions, weak triplet "
+            "currents, identical-fermion dummy labels, gamma chains, and "
+            "Hermitian-conjugate generator orientations; for `alphaEc*` "
+            "sectors apply only the single crossed-arm Ec CC convention "
+            "(phase `-1`). |",
             "| Charge-conjugated evanescent four-fermion | 6 rows / 12 coefficient sectors | "
-            "6 pinned CC | Use the pinned `alphaEc*` rule table: exactly one "
-            "partner signature, one phase, and one symmetric or antisymmetric "
-            "duplicate-leg rule per coefficient sector; rewrite explicit "
-            "`dirac_C` arms into FeynRules `CC[...]` flow and then demand "
-            "canonical-map equality. |",
+            "6 pinned CC on top of the global Ec convention | Use the pinned "
+            "`alphaEc*` rule table: exactly one partner signature, one phase, "
+            "and one symmetric or antisymmetric duplicate-leg rule per "
+            "coefficient sector; rewrite explicit `dirac_C` arms into "
+            "FeynRules `CC[...]` flow and then demand canonical-map equality. |",
             "| FeynPy-only zero-signature artifacts | "
             f"{summary['feynpy_only_zero_signatures']} local signatures | "
             "dropped from residuals | Canonical coefficient-head collection "
@@ -841,8 +866,11 @@ def _markdown_report(report: dict[str, object]) -> str:
             "| --- | ---: |",
         ]
     )
-    for head, count in missing_heads.most_common(20):
-        lines.append(f"| `{head}` | {count} |")
+    if missing_heads:
+        for head, count in missing_heads.most_common(20):
+            lines.append(f"| `{head}` | {count} |")
+    else:
+        lines.append("| None | 0 |")
 
     lines.extend(
         [
@@ -853,8 +881,11 @@ def _markdown_report(report: dict[str, object]) -> str:
             "| --- | ---: |",
         ]
     )
-    for head, count in local_extra_heads.most_common(20):
-        lines.append(f"| `{head}` | {count} |")
+    if local_extra_heads:
+        for head, count in local_extra_heads.most_common(20):
+            lines.append(f"| `{head}` | {count} |")
+    else:
+        lines.append("| None | 0 |")
 
     lines.extend(
         [
@@ -898,8 +929,11 @@ def _markdown_report(report: dict[str, object]) -> str:
             "| --- | ---: |",
         ]
     )
-    for head, count in unexplained_head_count_deltas.most_common(20):
-        lines.append(f"| `{head}` | {count} |")
+    if unexplained_head_count_deltas:
+        for head, count in unexplained_head_count_deltas.most_common(20):
+            lines.append(f"| `{head}` | {count} |")
+    else:
+        lines.append("| None | 0 |")
 
     lines.extend(
         [

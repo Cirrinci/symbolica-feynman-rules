@@ -157,6 +157,7 @@ def _check_summary(**overrides):
         "exact_symbolic_missing_local_vertices": 0,
         "exact_symbolic_error_vertices": 0,
         "cc_packaging_pinned_match_vertices": 0,
+        "ec_cc_convention_match_vertices": 0,
         "cc_packaging_unresolved_vertices": 0,
         "canonical_map_equal_vertices": 32,
         "canonical_map_supported_vertices": 32,
@@ -237,6 +238,57 @@ def test_smeft2_check_rejects_pinned_cc_without_flag(monkeypatch):
     _patch_passing_ec_cc_comparison(monkeypatch)
     assert smeft2_comparison.main(["--check"]) == 1
     assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
+
+
+def test_smeft2_check_rejects_ec_cc_convention_without_flag(monkeypatch):
+    def fake_compare(_reference):
+        return {
+            "summary": _check_summary(
+                exact_symbolic_equal_vertices=169,
+                exact_symbolic_direct_match_vertices=169,
+                ec_cc_convention_match_vertices=15,
+            )
+        }, ()
+
+    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    _patch_passing_weinberg_comparison(monkeypatch)
+    _patch_passing_ec_cc_comparison(monkeypatch)
+    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
+
+
+def test_smeft2_ec_cc_convention_is_a_single_global_constant():
+    """The Ec packaging convention must be global, not fitted per row.
+
+    Both the arm re-pairing mode and the overall sign are fixed once for every
+    ``alphaEc`` head. Pinning them here keeps a silent change to either from
+    being absorbed as an apparent improvement in the match rate.
+    """
+
+    assert smeft2_comparison._EC_CC_CONVENTION_MODE == "crossed"
+    assert smeft2_comparison._EC_CC_CONVENTION_PHASE == -1
+
+
+def test_smeft2_ec_cc_convention_rows_are_labelled_not_silently_accepted():
+    """Rows relying on the global Ec convention must not claim EXACT_MATCH."""
+
+    report = _comparison_report()
+    rows = [
+        row
+        for row in report["reference_vertices"]
+        if row["exact_symbolic_status"] == "MATCH_MODULO_EC_CC_CONVENTION"
+    ]
+
+    assert len(rows) == report["summary"]["ec_cc_convention_match_vertices"]
+    assert rows
+    # Every such row must genuinely carry an Ec coefficient, and the detail
+    # must name the convention rather than presenting a bare equality claim.
+    for row in rows:
+        assert any(head.startswith("alphaEc") for head in row["reference_heads"])
+        assert (
+            "charge-conjugation packaging convention"
+            in row["exact_symbolic_detail"]
+        )
 
 
 def test_smeft2_check_rejects_unresolved_cc_even_with_allow_flag(monkeypatch):
@@ -884,8 +936,12 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     assert report["summary"]["shared_head_count_benign_expansions"] == 82
     assert report["summary"]["shared_head_count_unexplained_mismatches"] == 0
     assert report["summary"]["exact_symbolic_supported_vertices"] == 184
-    assert report["summary"]["exact_symbolic_direct_match_vertices"] == 176
-    assert report["summary"]["exact_symbolic_equal_vertices"] == 176
+    # 161 rows need no packaging assumption at all; 15 further rows agree only
+    # after the single global evanescent charge-conjugation packaging
+    # convention; the remaining 8 need a pinned, row-specific transform.
+    assert report["summary"]["exact_symbolic_direct_match_vertices"] == 161
+    assert report["summary"]["exact_symbolic_equal_vertices"] == 161
+    assert report["summary"]["ec_cc_convention_match_vertices"] == 15
     assert report["summary"]["cc_packaging_pinned_match_vertices"] == 8
     assert report["summary"]["cc_packaging_unresolved_vertices"] == 0
     assert report["summary"]["exact_symbolic_unequal_vertices"] == 0

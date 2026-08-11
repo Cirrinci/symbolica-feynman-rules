@@ -34,6 +34,45 @@ _EC_CC_COEFFICIENTS = frozenset(
     }
 )
 
+# Global FeynPy/FeynRules bilinear-packaging convention for the evanescent
+# charge-conjugated four-fermion operators (every ``alphaEc*`` head).
+#
+# FeynRules writes these operators through the ``CC[...]`` macro, e.g.
+#
+#     alphaEcll[f1,f2,f3,f4] CC[LLbar[sp1,ii,f1]].LL[sp1,jj,f2]
+#                            .LLbar[sp2,jj,f3].CC[LL[sp2,ii,f4]]
+#
+# so ``ExpandIndices`` resolves the conjugation and the exported vertex carries
+# no residual charge-conjugation matrix: the spinor flow runs external leg 1 to
+# leg 4 and leg 2 to leg 3 through ordinary spinor-metric/gamma chains.
+#
+# SMEFT2.py instead keeps the charge-conjugation matrices explicit and pairs the
+# adjacent legs,
+#
+#     lLbar(sp1) * C(sp1,sp2) * lL(sp2) * lLbar(sp3) * C(sp3,sp4) * lL(sp4)
+#
+# i.e. flow (1,2) and (3,4) with two ``C`` factors.
+#
+# The two forms describe the same operator. Converting FeynPy to the FeynRules
+# packaging eliminates both ``C`` factors by re-pairing the four spinor arms in
+# the *crossed* order (arm0,arm3) and (arm1,arm2), and picks up a single overall
+# sign from the antisymmetry of the charge-conjugation matrix (C^T = -C)
+# together with the anticommutation needed to reorder the fermion fields into
+# the crossed pairing.
+#
+# Both the pairing and the sign are fixed once and globally, not per row. The
+# choice is also strongly overdetermined by the data: of the four
+# (mode, phase) combinations, only ``("crossed", -1)`` reproduces the reference,
+# and it does so uniformly. The other three fail on essentially every row
+# (crossed/+1: 0/21 rows, direct/-1: 3/21, direct/+1: 2/21, where the handful of
+# passes are rows on which the transform does not apply at all).
+#
+# Rows whose agreement depends on this transform are reported as
+# ``MATCH_MODULO_EC_CC_CONVENTION`` rather than ``EXACT_MATCH`` so the
+# convention assumption stays visible in the headline numbers.
+_EC_CC_CONVENTION_MODE = "crossed"
+_EC_CC_CONVENTION_PHASE = -1
+
 
 def _ec_typed_projector(projector_head: str, left_spinor, right_spinor) -> Expression:
     if projector_head == "PL":
@@ -684,6 +723,7 @@ def _normalize_ec_charge_conjugation_report(
     max_dummy_permutations: int,
     mode: str,
     phase: int,
+    fired: list[bool] | None = None,
 ) -> CanonicalMonomialReport:
     transformed: dict[CanonicalTensorMonomial, Expression] = {}
     changed = False
@@ -708,6 +748,8 @@ def _normalize_ec_charge_conjugation_report(
             + transformed_coefficient
         ).cancel().expand()
 
+    if fired is not None:
+        fired.append(changed)
     if not changed:
         return report
 
@@ -970,8 +1012,16 @@ def _compare_smeft2_canonical_coefficient_maps(
     coefficients: Iterable[str],
     external_indices,
     max_dummy_permutations: int = 50_000,
+    convention_log: set[str] | None = None,
 ) -> dict[str, CanonicalCoefficientComparison]:
-    """Compare SMEFT2 rows by coefficient-head-filtered canonical maps."""
+    """Compare SMEFT2 rows by coefficient-head-filtered canonical maps.
+
+    ``convention_log``, when supplied, collects the coefficient heads whose
+    FeynPy side actually required the global ``alphaEc`` charge-conjugation
+    packaging convention (see ``_EC_CC_CONVENTION_MODE``). Callers use it to
+    grade such rows as ``MATCH_MODULO_EC_CC_CONVENTION`` instead of claiming a
+    direct ``EXACT_MATCH``.
+    """
 
     feynpy_expression = (
         Expression.parse(feynpy_rule)
@@ -993,14 +1043,18 @@ def _compare_smeft2_canonical_coefficient_maps(
             max_dummy_permutations=max_dummy_permutations,
         )
         if coefficient.startswith("alphaEc"):
+            fired: list[bool] = []
             feynpy_report = _normalize_ec_charge_conjugation_report(
                 feynpy_report,
                 coefficient=coefficient,
                 external_indices=external_indices,
                 max_dummy_permutations=max_dummy_permutations,
-                mode="crossed",
-                phase=-1,
+                mode=_EC_CC_CONVENTION_MODE,
+                phase=_EC_CC_CONVENTION_PHASE,
+                fired=fired,
             )
+            if convention_log is not None and any(fired):
+                convention_log.add(coefficient)
         feynrules_report = _canonical_report_for_coefficient_head(
             feynrules_expression,
             coefficient=coefficient,

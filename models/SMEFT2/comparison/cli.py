@@ -21,17 +21,19 @@ def main(argv: list[str] | None = None) -> int:
             "Do not write files; return nonzero unless operator-content coverage "
             "is complete and every supported row is a direct `EXACT_MATCH` "
             "(strict exact symbolic). Use `--allow-cc-packaging` to also accept "
-            "pinned `MATCH_MODULO_CC_PACKAGING` rows. Unresolved CC packaging "
-            "rows never pass `--check`."
+            "`MATCH_MODULO_EC_CC_CONVENTION` rows and pinned "
+            "`MATCH_MODULO_CC_PACKAGING` rows. Unresolved CC packaging rows "
+            "never pass `--check`."
         ),
     )
     parser.add_argument(
         "--allow-cc-packaging",
         action="store_true",
         help=(
-            "With --check, accept pinned `MATCH_MODULO_CC_PACKAGING` rows "
-            "(Weinberg and pinned Ec partner rows). Does not accept "
-            "`UNRESOLVED_CC_PACKAGING` rows."
+            "With --check, accept `MATCH_MODULO_EC_CC_CONVENTION` rows (the "
+            "single global evanescent charge-conjugation packaging convention) "
+            "and pinned `MATCH_MODULO_CC_PACKAGING` rows (Weinberg and pinned "
+            "Ec partner rows). Does not accept `UNRESOLVED_CC_PACKAGING` rows."
         ),
     )
     parser.add_argument(
@@ -74,6 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     ec_cc_summary = ec_cc_report["summary"]
     exact_supported = summary["exact_symbolic_supported_vertices"]
     direct_exact = summary["exact_symbolic_direct_match_vertices"]
+    ec_convention = summary["ec_cc_convention_match_vertices"]
     pinned_cc = summary["cc_packaging_pinned_match_vertices"]
     unresolved_cc = summary["cc_packaging_unresolved_vertices"]
     exact_unequal = summary["exact_symbolic_unequal_vertices"]
@@ -81,13 +84,16 @@ def main(argv: list[str] | None = None) -> int:
     exact_error = summary["exact_symbolic_error_vertices"]
     exact_accounted = (
         direct_exact
+        + ec_convention
         + pinned_cc
         + unresolved_cc
         + exact_unequal
         + exact_missing
         + exact_error
     )
-    accepted_exact = direct_exact + (pinned_cc if args.allow_cc_packaging else 0)
+    accepted_exact = direct_exact + (
+        ec_convention + pinned_cc if args.allow_cc_packaging else 0
+    )
     weinberg_check_failed = (
         weinberg_summary["reference_vertices"] != 2
         or (
@@ -110,18 +116,19 @@ def main(argv: list[str] | None = None) -> int:
         f"{summary['operator_content_matches_including_cc']}/"
         f"{summary['reference_vertex_count']} "
         "reference vertices match at operator-content level "
-        f"({summary['shared_head_matches']} direct + "
-        f"{summary['charge_conjugation_packaging_matches']} via charge-conjugation "
-        "packaging); "
+        f"({summary['shared_head_matches']} literal-signature head matches + "
+        f"{summary['charge_conjugation_packaging_matches']} CC-packaging head "
+        "matches); "
         "exact symbolic split="
         f"direct {direct_exact}/{exact_supported}, "
+        f"modulo global Ec CC convention {ec_convention}/{exact_supported}, "
         f"modulo pinned CC {pinned_cc}/{exact_supported}, "
         f"unresolved CC {unresolved_cc}/{exact_supported}; "
         f"raw-head-count matches={summary['shared_head_count_matches']}/"
         f"{summary['shared_signatures']}; "
-        "canonical tensor-map matches="
+        "bosonic canonical tensor-map matches="
         f"{summary['canonical_map_equal_vertices']}/"
-        f"{summary['canonical_map_supported_vertices']} supported vertices "
+        f"{summary['canonical_map_supported_vertices']} supported bosonic vertices "
         f"({summary['canonical_map_equal_coefficient_sectors']}/"
         f"{summary['canonical_map_supported_coefficient_sectors']} sectors); "
         "Weinberg reconstructed sidecar="
@@ -150,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
         or exact_error
         or unresolved_cc
         or (
-            pinned_cc
+            (pinned_cc or ec_convention)
             and not args.allow_cc_packaging
         )
         or summary["canonical_map_unequal_vertices"]

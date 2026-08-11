@@ -81,12 +81,14 @@ def _fermion_exact_symbolic_row(
             simplify=True,
         )
         reference_rule = parse_smeft2_matter_rule(reference.rule)
+        ec_convention_log: set[str] = set()
         comparisons = _compare_smeft2_canonical_coefficient_maps(
             local_rule,
             reference_rule,
             coefficients=coefficients,
             external_indices=external_indices,
             max_dummy_permutations=2_000_000,
+            convention_log=ec_convention_log,
         )
         pinned_partner_details = []
         unresolved_ec = []
@@ -137,9 +139,33 @@ def _fermion_exact_symbolic_row(
                     f"{len(pinned_partner_details)} coefficient sector(s). "
                     "No phase or duplicate-leg symmetry was searched at "
                     "acceptance time: each transform came from the explicit "
-                    "Ec packaging rule table. "
+                    "Ec packaging rule table. This row also sits on top of the "
+                    "global evanescent charge-conjugation packaging convention "
+                    f"(mode {_EC_CC_CONVENTION_MODE!r}, phase "
+                    f"{_EC_CC_CONVENTION_PHASE:+d}). "
                     + " ".join(pinned_partner_details)
                     + " Raw head-count status before exact-proof "
+                    f"classification was {head_count_status}."
+                ),
+            }
+        if ec_convention_log:
+            applied = ", ".join(sorted(ec_convention_log))
+            return {
+                "family": family,
+                "status": "MATCH_MODULO_EC_CC_CONVENTION",
+                "detail": (
+                    "Canonical tensor-monomial maps agree for all "
+                    f"{len(comparisons)} coefficient sector(s), but "
+                    f"{len(ec_convention_log)} of them ({applied}) required the "
+                    "global FeynPy/FeynRules evanescent charge-conjugation "
+                    "packaging convention: FeynRules resolves `CC[...]` into a "
+                    "crossed spinor flow with no residual charge-conjugation "
+                    "matrix, while SMEFT2.py keeps two explicit `C` factors "
+                    "pairing adjacent legs. The transform re-pairs the four "
+                    "spinor arms in crossed order with a single overall sign "
+                    f"({_EC_CC_CONVENTION_PHASE:+d}) from the antisymmetry of "
+                    "`C`. Mode and sign are global constants, not per-row "
+                    "fits. Raw head-count status before exact-proof "
                     f"classification was {head_count_status}."
                 ),
             }
