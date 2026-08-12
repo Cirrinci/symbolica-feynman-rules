@@ -5,108 +5,55 @@
 \chapter{Validation and Final Comparison}
 \label{ch:validation}
 
-Chapter~\ref{ch:internals} described how FeynPy turns a declared Lagrangian
-into a Feynman-rule \texttt{Expression}. This chapter checks that output
-against an independent reference: the FeynRules exports of the same models.
-FeynRules is treated as the mathematical oracle throughout.
+Chapter~\ref{ch:internals} described the internal structure of how FeynPy transforms a declared Lagrangian into an \texttt{Expression} that is it's corresponding feynman rules. 
 
-The two outputs are not expected to be \emph{identical} as printed
-expressions. FeynRules and FeynPy package charge conjugation differently,
-expand covariant derivatives to different depths, and represent chirality
-differently (an explicit projector in FeynRules, a field class in FeynPy).
-What is checked instead is that the two outputs are \emph{equal as tensors}:
-that they differ only by index relabelling, reordering of commuting factors,
-and a small, explicitly listed set of gauge and Lorentz identities. Section
-\ref{sec:validation-canonical} makes this precise and shows, with two worked
-examples, what that equality test actually does.
+Part of the work carried out in this thesis involves a comparison of the output from FeynPy and FeynRules for various models already existing in FeynRules. This has enabled us to understand the differences in efficiency and, above all, the correctness of FeynPy.
 
-The headline results: the packaged Standard Model matches its FeynRules
-export exactly ($163/163$ vertices), the unbroken background-field Standard
-Model matches its own export exactly ($67/67$), and the SMEFT2 Green-basis
-model matches all $184$ exported rows of the FeynRules EFT-only
-\texttt{Ltot}. Of those $184$ SMEFT2 rows, $161$ match with no assumption at
-all, $15$ match after one globally fixed charge-conjugation convention, and
-$8$ match after an additional, explicitly tabulated row-specific transform.
-No row is accepted by searching over signs or field orderings, and no row is
-left unresolved.
+In the comparison, it is clearly not expected that the two results will be \emph{identical}. Due to tensor identities or different expansions, the two outputs will certainly not be identical. What is verified, however, is that the two results are algebraically the same expression; this means that they differ only in the relabelling of indices, the reordering of commutative factors and a small, explicitly listed set of gauge and Lorentz identities. Section \ref{sec:validation-canonical} clarifies this point and demonstrates, with two detailed examples, what that equality test actually does. Achieving this canonicalisation and managing to bring the two expressions into the same form so as to determine whether they are equal or not was a complex and lengthy task.
+
+
+
+The main results obtained during this thesis, which were limited by time constraints, are as follows.  The packaged Standard Model corresponds exactly to its export to FeynRules; the unbroken background Standard Model corresponds exactly to its own export ($67/67$); and the Green’s function-based SMEFT2 model
+corresponds to all $184$ exported lines of FeynRules’ \texttt{Ltot}
+for EFT only. Of these $184$ SMEFT2 lines, $161$ match without any assumptions,
+$15$ match after a globally fixed charge conjugation convention, and
+$8$ match after an additional transformation, explicitly tabulated and specific to each line.
+
 
 % --------------------------------------------------------------
 \section{Validation strategy}
 \label{sec:validation-strategy}
 % --------------------------------------------------------------
+Model validation can be defined as consisting of three levels. \emph{Model fidelity} (\Cref{sec:validation-fidelity}) checks, block by block and coefficient by coefficient, that the FeynPy source transcribes the operators of the FeynRules source. \emph{Vertex Equality}
+(\Cref{sec:validation-canonical,sec:validation-smeft2,sec:validation-ec}),
+the core of the comparison, verifies whether the Feynman rules derived from the two Lagrangians match as tensor expressions. \emph{Coverage}
+(\Cref{sec:validation-coverage}) verifies how much of the model the equality test can actually reach, since the FeynRules export only covers a finite set of vertex arities.
 
-The validation has three layers, and they must not be conflated: the outer
-two bound what the inner one can mean. A perfect equality score over a small,
-cherry-picked subset of a model would prove very little.
+All three steps are crucial. Fidelity and coverage define the meaning of a positive equality result: without fidelity, it might reflect a comparison with an incomplete transcription, and without coverage, it might reflect a comparison with only a readily interpretable or carefully selected subset of vertices. Underlying all three is a reusable engine regression suite that does the following things: index validation, covariant expansion, field strength expansion, field transformations, fermion signs, tensor canonization, and selected Feynman reference rules, so that a discrepancy found at the model level can be attributed to that model rather than a shared incorrect primitive. 
 
-\paragraph{Model fidelity.} Does the FeynPy source transcribe every operator
-of the FeynRules source? A question about the \emph{input}, answered in
-\Cref{sec:validation-fidelity} by a block-by-block and
-coefficient-by-coefficient audit.
+Model comparisons are located next to the concrete model packages under the \path{models/} folder rather than within the generic contraction engine. 
 
-\paragraph{Vertex equality.} Do the Feynman rules derived from the two
-Lagrangians agree as tensor expressions? The substance of the comparison,
-answered in \Cref{sec:validation-canonical} and
-\Cref{sec:validation-smeft2,sec:validation-ec}.
+We can say that FeynPy is correct and complete is the model implemented is faithful to the source and if the vertices are algebraically equal. Therefore these layers bound each other. The reusable engine that does teh comparison is tested separately through regression tests for index validation, covariant expansion, field-strength expansion, field transformations, fermion signs and tensor canonicalisation. 
 
-\paragraph{Coverage.} How much of the model does the equality test actually
-reach? The FeynRules export covers a finite set of vertex arities, so some
-operators may be structurally unreachable; see \Cref{sec:validation-coverage}.
+Model-specific comparisons live under \path{models/}, because each model owns the conventions needed to compare its rules with its FeynRules reference.
 
-Underneath all three sits an ordinary unit and regression suite for the
-reusable engine: index validation, covariant expansion, field-strength
-expansion, field transformations, fermion signs, tensor canonicalisation, and
-selected benchmark Feynman rules.
 
-Model-level comparisons live beside the concrete model packages under
-\path{models/}, not inside the generic contraction engine: the engine
-computes rules, and each model package owns the conventions and the
-external-reference adapter needed to compare its own rules. The
-format-independent comparison machinery itself is shared across models
-(\Cref{sec:validation-generality}).
 
 % --------------------------------------------------------------
 \section{What ``equal'' means: the canonical form}
 \label{sec:validation-canonical}
 % --------------------------------------------------------------
 
-Both sides of a comparison start as text: a FeynRules row is a
-Mathematica-syntax string, such as \texttt{TensDot[Ga[mu],ProjM]}, and a
-FeynPy row is produced by \texttt{feynman\_rule(...)} as described in
-Chapter~\ref{ch:internals}. Both are parsed into Symbolica tensor
-expressions before anything else happens; index brackets become index
-symbols, \texttt{ProjM}/\texttt{ProjP} become chiral projectors, and indexed
-Wilson parameters such as \texttt{alphaEcll[f1,f2,f3,f4]} become function
-symbols \texttt{alphaEcll(f1,f2,f3,f4)}.
 
-Two pieces of terminology are used throughout the rest of this chapter. The
-\emph{signature} of a row is the ordered list of external field names, for
-example \texttt{B|dR|dRbar} for the vertex coupling the hypercharge boson to
-a right-handed down quark and its conjugate. The \emph{coefficient head} is
-the name of the Wilson parameter multiplying a term, for example
-\texttt{alphaEcll}. Comparison is always done per coefficient head within a
-matching signature, never on a full undifferentiated sum (see below).
+First of all, before starting with the comparison, a JSON file containing the output text from FeynRules Mathematica-syntax string is imported. Similarly, using Feynpy, we compute the Feynman rules and import them in a similar format. Both are parsed into Symbolica tensor expressions before anything else happens. 
 
-Equality is \emph{not} decided by comparing these parsed expressions
-directly, nor by any string comparison. Two tensor expressions describing the
-same physics can differ in ways that have nothing to do with whether the
-physics is right: they can use different names for a summed-over (dummy)
-index, write commuting factors in a different order, or leave the same
-result differently expanded. Both sides are therefore reduced to a
-\emph{canonical tensor-monomial map} --- a dictionary from canonical tensor
-term to exact rational coefficient --- by
-\path{src/symbolic/tensor_canonicalization.py}, and two rows are declared
-equal exactly when their maps are identical, entry for entry, coefficient for
-coefficient.
 
-The reduction has four steps: (1) live tensor heads (the symbol names, e.g.\
-the metric $g^{\mu\nu}$ or the Levi-Civita tensor $\epsilon^{\mu\nu\rho\sigma}$)
-are swapped for temporary heads carrying explicit symmetry metadata, so the
-canonicaliser is told which tensors are symmetric or antisymmetric under
-index exchange; (2) Symbolica's tensor canonicaliser runs with contracted
-dummy indices grouped, so their names carry no information; (3) dummy names
-are standardised and commuting factors are sorted into one fixed order; (4)
-the result is read off as the coefficient map.
+Now that we have two files to compare, we can proceed with the comparison. First of all, I’d like to clarify the terminology used. The \emph{signature} of a row is the ordered list of external field names, for example \texttt{B|dR|dRbar} for the vertex coupling the hypercharge boson to a right-handed down quark and its conjugate. The \emph{coefficient head} is the name of the Wilson parameter multiplying a term, for example \texttt{alphaEcll}. Comparison is always done per coefficient head within a matching signature, never on a full undifferentiated sum (see below).
+
+Equality is not decided by comparing these parsed expressions directly, nor by any string comparison. Two tensor expressions describing the same physics can differ in ways that have nothing to do with whether the physics is right: they can use different names for a summed-over (dummy) index, write commuting factors in a different order, or leave the same result differently expanded. Both sides are therefore reduced to a
+\emph{canonical tensor-monomial map} by \path{src/symbolic/tensor_canonicalization.py}, and two output are declared equal exactly when their maps are identical.
+
+The reduction has four steps: (1) live tensor heads (the symbol names, e.g.\ the metric $g^{\mu\nu}$ or the Levi-Civita tensor $\epsilon^{\mu\nu\rho\sigma}$) are swapped for temporary heads carrying explicit symmetry metadata, so the canonicaliser is told which tensors are symmetric or antisymmetric under index exchange; (2) Symbolica's tensor canonicaliser runs with contracted dummy indices; (3) dummy names are standardised and commuting factors are sorted into one fixed order; (4) the result is read off as the coefficient map.
 
 \paragraph{Example 1: dummy names and symmetry.} The two expressions
 \begin{equation}
@@ -115,26 +62,15 @@ the result is read off as the coefficient map.
     g^{\nu\mu}\, k_\nu p_\mu
     \label{eq:validation-metric-example}
 \end{equation}
-are the same number for every $p,k$, but as raw Symbolica expressions they
-differ in index naming ($\mu \leftrightarrow \nu$) and in the metric's index
-order. Step (1) tells the canonicaliser that $g^{\mu\nu}=g^{\nu\mu}$; step (2)
-identifies the two contracted-index pairs; only with both is the
-canonicaliser able to reduce both expressions to the same map entry. Without
-step (1), $g^{\mu\nu}$ and $g^{\nu\mu}$ would be treated as unrelated tensors
-and the two expressions would wrongly be reported as different.
+are the same number for every $p,k$, but as raw Symbolica expressions they differ in index naming ($\mu \leftrightarrow \nu$) and in the metric's index order. Step (1) tells the canonicaliser that $g^{\mu\nu}=g^{\nu\mu}$; step (2) identifies the two contracted-index pairs; only with both is the canonicaliser able to reduce both expressions to the same map entry. Without step (1), $g^{\mu\nu}$ and $g^{\nu\mu}$ would be treated as unrelated tensors and the two expressions would wrongly be reported as different.
 
-\paragraph{Example 2: generator reordering.} FeynRules and FeynPy can write
-two colour or weak generators multiplying the same current in either order,
-depending on the order in which the source Lagrangians introduced them. The
-two orders are related by
+\paragraph{Example 2: generator reordering.} FeynRules and FeynPy can write two colour or weak generators multiplying the same current in either order, depending on the order in which the source Lagrangians introduced them. The two orders are related by
 \begin{equation}
     [T^a, T^b] = i f^{abc} T^c ,
     \label{eq:validation-commutator}
 \end{equation}
-so a term proportional to $T^b T^a$ on one side and $T^a T^b$ on the other
-are equal only after adding the commutator term of
-\Cref{eq:validation-commutator}. The canonicaliser applies exactly this one
-identity when it encounters an out-of-order generator product
+so a term proportional to $T^b T^a$ on one side and $T^a T^b$ on the other are equal only after adding the commutator term of
+\Cref{eq:validation-commutator}. The canonicaliser applies exactly this one identity when it encounters an out-of-order generator product
 (\texttt{\_normalize\_generator\_product\_order\_report} in code); it does
 not search over reorderings in general. The structure-constant Jacobi
 identity,
@@ -142,32 +78,11 @@ identity,
     f^{abe}f^{cde} - f^{ace}f^{bde} + f^{ade}f^{bce} = 0 ,
     \label{eq:validation-jacobi}
 \end{equation}
-and the $SU(2)$ pseudoreality relations for $\epsilon_{ij}$ acting on a weak
-generator are used the same narrow way, only where the two sides actually
-need them.
+and the $SU(2)$ pseudoreality relations for $\epsilon_{ij}$ acting on a weak generator are used the same narrow way, only where the two sides actually need them.
 
 These four steps and three identities are the entire simplification budget.
-The comparison does \emph{not} use equations of motion, integration by parts,
-momentum conservation, Schouten identities, Fierz identities, or any
-open-ended pattern matching: admitting those would make the test far weaker,
-because an incorrect rule could then often be massaged into the reference.
 
-Two further design choices keep the comparison from degenerating into a
-tautology. First, it runs \emph{separately for each coefficient head}: both
-sides are filtered to the terms carrying a given head before the maps are
-compared, so a cancellation between two different operators cannot mask an
-error in either. Flavour order and complex conjugation stay inside the scalar
-coefficient rather than being normalised away, so a term whose flavour
-arguments have been silently transposed, e.g.\ $\alpha(f_2,f_1)$ for
-$\alpha(f_1,f_2)$, is not judged equal merely because the coefficient head
-name matches. Second, raw coefficient-head occurrence counts are recorded
-only as a diagnostic, never as the equality criterion, because two equivalent
-expanded forms can legitimately have different raw counts: FeynPy prints the
-dual field strength $\mathrm{Dual}[F] = \tfrac{1}{2}\epsilon\cdot F$ as two
-separate antisymmetric terms, where FeynRules has already used $\epsilon$
-antisymmetry to collapse them into one. On the current SMEFT2 reference,
-$100$ of $182$ shared signatures have matching raw counts, and every
-remaining delta carries a recorded, specific reason; none is unexplained.
+Two further design choices keep the comparison from degenerating into a tautology. First, it runs \emph{separately for each coefficient head}: both sides are filtered to the terms carrying a given head before the maps are compared, so a cancellation between two different operators cannot mask an error in either. Flavour order and complex conjugation stay inside the scalar coefficient rather than being normalised away, so a term whose flavour arguments have been silently transposed, e.g.\ $\alpha(f_2,f_1)$ for $\alpha(f_1,f_2)$, is not judged equal merely because the coefficient head name matches. Second, raw coefficient-head occurrence counts are recorded only as a diagnostic, never as the equality criterion, because two equivalent expanded forms can legitimately have different raw counts: FeynPy prints the dual field strength $\mathrm{Dual}[F] = \tfrac{1}{2}\epsilon\cdot F$ as two separate antisymmetric terms, where FeynRules has already used $\epsilon$ antisymmetry to collapse them into one. On the current SMEFT2 reference, $100$ of $182$ shared signatures have matching raw counts, and every remaining delta carries a recorded, specific reason; none is unexplained.
 
 % --------------------------------------------------------------
 \section{Standard Model benchmark}
