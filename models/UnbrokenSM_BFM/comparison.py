@@ -18,6 +18,7 @@ from symbolica import AtomType, Expression, S
 
 from feynrules.comparison import (
     FeynRulesVertex,
+    compare_feynrules_vertices,
     load_feynrules_json,
     reduce_fermion_currents,
     reduce_yukawa_bilinears,
@@ -97,6 +98,18 @@ def field_map(fields) -> dict[str, object]:
         }
     )
     return result
+
+
+FIELD_NAME_ALIASES = {
+    "ghWi.bar": "ghWibar",
+    "ghG.bar": "ghGbar",
+    "lL.bar": "lLbar",
+    "eR.bar": "eRbar",
+    "qL.bar": "qLbar",
+    "uR.bar": "uRbar",
+    "dR.bar": "dRbar",
+    "Phi.bar": "Phibar",
+}
 
 
 def _replace_external_indices(text: str) -> str:
@@ -292,73 +305,97 @@ def canonicalize_rule(expression: Expression, fields: tuple[object, ...]) -> Exp
 
 
 def _signature_key(names: tuple[str, ...]) -> str:
-    aliases = {
-        "ghWi.bar": "ghWibar",
-        "ghG.bar": "ghGbar",
-        "lL.bar": "lLbar",
-        "eR.bar": "eRbar",
-        "qL.bar": "qLbar",
-        "uR.bar": "uRbar",
-        "dR.bar": "dRbar",
-        "Phi.bar": "Phibar",
-    }
-    return "|".join(sorted(aliases.get(name, name) for name in names))
+    return "|".join(sorted(FIELD_NAME_ALIASES.get(name, name) for name in names))
+
+
+def _tuple_signature_key(names: tuple[str, ...]) -> str:
+    return "|".join(names)
 
 
 def compare(reference_path: Path = REFERENCE) -> tuple[ComparisonResult, list[dict[str, object]]]:
     theory = build_unbroken_sm_bfm()
     mapping = field_map(theory.fields)
     references = load_feynrules_json(reference_path)
-    feynrules_keys = {
-        "|".join(sorted(reference.fields)) for reference in references
-    }
-    feynpy_keys = {
-        _signature_key(signature.names)
-        for signature in theory.lagrangian.vertex_signatures()
-        if signature.arity in (3, 4)
-    }
+    report = compare_feynrules_vertices(
+        theory.lagrangian,
+        references,
+        field_map=mapping,
+        parse_reference_rule=lambda reference: parse_feynrules_rule(
+            reference.rule
+        ),
+        canonicalize_rule=(
+            lambda expression, _reference, ordered_fields: canonicalize_rule(
+                expression,
+                ordered_fields,
+            )
+        ),
+        feynpy_name_aliases=FIELD_NAME_ALIASES,
+        drop_zero_feynpy_rules=False,
+    )
 
     rows: list[dict[str, object]] = []
     mismatches: list[dict[str, str]] = []
-    matched = 0
-    for reference in references:
-        ordered_fields = tuple(mapping[name] for name in reference.fields)
-        raw_feynpy = theory.lagrangian.feynman_rule(
-            *ordered_fields,
-            simplify=True,
-            include_delta=False,
+    for row in report.rows:
+        reference = row.reference
+        ordered_fields = tuple(
+            mapping[name] for name in reference.fields if name in mapping
         )
-        parsed_reference = parse_feynrules_rule(reference.rule)
-        feynpy_rule = canonicalize_rule(raw_feynpy, ordered_fields)
-        feynrules_rule = canonicalize_rule(parsed_reference, ordered_fields)
-        difference = (feynpy_rule - feynrules_rule).cancel().expand()
-        status = "MATCH" if difference.to_canonical_string() == "0" else "MISMATCH"
-        matched += status == "MATCH"
+        if len(ordered_fields) == len(reference.fields):
+            raw_feynpy = theory.lagrangian.feynman_rule(
+                *ordered_fields,
+                simplify=True,
+                include_delta=False,
+            )
+            raw_rule = raw_feynpy.cancel().expand().to_canonical_string()
+        else:
+            raw_rule = ""
         rows.append(
             {
                 "id": reference.identifier,
                 "key": reference.key,
                 "fields": list(reference.fields),
-                "rule": raw_feynpy.cancel().expand().to_canonical_string(),
-                "canonical_rule": feynpy_rule.to_canonical_string(),
+                "rule": raw_rule,
+                "canonical_rule": (
+                    row.feynpy_rule.to_canonical_string()
+                    if row.feynpy_rule is not None
+                    else ""
+                ),
             }
         )
-        if status != "MATCH":
+        if not row.matches:
             mismatches.append(
                 {
                     "key": reference.key,
-                    "feynpy": feynpy_rule.to_canonical_string(),
-                    "feynrules": feynrules_rule.to_canonical_string(),
-                    "difference": difference.to_canonical_string(),
+                    "status": row.status,
+                    "detail": row.detail,
+                    "feynpy": (
+                        row.feynpy_rule.to_canonical_string()
+                        if row.feynpy_rule is not None
+                        else ""
+                    ),
+                    "feynrules": (
+                        row.feynrules_rule.to_canonical_string()
+                        if row.feynrules_rule is not None
+                        else ""
+                    ),
+                    "difference": (
+                        row.difference.to_canonical_string()
+                        if row.difference is not None
+                        else ""
+                    ),
                 }
             )
 
     result = ComparisonResult(
-        total=len(references),
-        matched=matched,
+        total=len(report.rows),
+        matched=report.matched,
         mismatches=tuple(mismatches),
-        feynrules_only=tuple(sorted(feynrules_keys - feynpy_keys)),
-        feynpy_only=tuple(sorted(feynpy_keys - feynrules_keys)),
+        feynrules_only=tuple(
+            _tuple_signature_key(signature) for signature in report.feynrules_only
+        ),
+        feynpy_only=tuple(
+            _tuple_signature_key(signature) for signature in report.feynpy_only
+        ),
     )
     return result, rows
 

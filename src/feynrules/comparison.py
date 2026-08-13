@@ -17,7 +17,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
 
 import sympy
 from symbolica import AtomType, Expression, S
@@ -1430,23 +1430,76 @@ def _canonical_external_indices_for_fields(
     )
 
 
-def compare_feynrules_gauge_vertices(
+FeynRulesRuleParser = Callable[[FeynRulesVertex], Expression]
+FeynRulesRuleCanonicalizer = Callable[
+    [Expression, FeynRulesVertex, tuple[object, ...]],
+    Expression,
+]
+FeynRulesSignatureFilter = Callable[
+    [tuple[str, ...], Mapping[str, object]],
+    bool,
+]
+FeynRulesRuleComparator = Callable[
+    [Expression, Expression, FeynRulesVertex, tuple[object, ...]],
+    tuple[str, Expression, str],
+]
+
+
+def _identity_rule_canonicalizer(
+    expression: Expression,
+    _reference: FeynRulesVertex,
+    _ordered_fields: tuple[object, ...],
+) -> Expression:
+    return expression.cancel().expand()
+
+
+def _symbolic_rule_comparator(
+    feynpy_rule: Expression,
+    feynrules_rule: Expression,
+    _reference: FeynRulesVertex,
+    _ordered_fields: tuple[object, ...],
+) -> tuple[str, Expression, str]:
+    difference = (feynpy_rule - feynrules_rule).cancel().expand()
+    status = (
+        "MATCH"
+        if difference.to_canonical_string() == "0"
+        else "MISMATCH"
+    )
+    detail = (
+        "Canonical symbolic difference is zero"
+        if status == "MATCH"
+        else "Canonical symbolic difference is non-zero"
+    )
+    return status, difference, detail
+
+
+def compare_feynrules_vertices(
     lagrangian,
     references: Sequence[FeynRulesVertex],
     *,
     field_map: Mapping[str, object],
-    parameter_substitutions: Mapping[str, object] | None = None,
+    parse_reference_rule: FeynRulesRuleParser,
+    canonicalize_rule: FeynRulesRuleCanonicalizer = _identity_rule_canonicalizer,
+    compare_rules: FeynRulesRuleComparator = _symbolic_rule_comparator,
     feynpy_name_aliases: Mapping[str, str] | None = None,
+    feynpy_substitutions: Mapping[object, object] | None = None,
+    signature_filter: FeynRulesSignatureFilter | None = None,
+    flavor_expand=False,
+    include_delta: bool = False,
+    drop_zero_feynpy_rules: bool = True,
+    missing_detail: str = "No non-zero FeynPy vertex with this field multiset",
 ) -> VertexComparisonReport:
-    """Compare a FeynPy gauge Lagrangian against aligned FeynRules vertices.
+    """Compare FeynRules reference vertices with FeynPy rules.
 
-    FeynPy rules are extracted in the exact external-leg order stored in each
-    reference vertex. Signature coverage is checked as a multiset, while the
-    rule comparison preserves leg order so momentum and open-index labels are
-    meaningful.
+    This is the model-independent comparison driver. Callers provide the
+    FeynRules parser, canonicalization basis, optional FeynPy signature filter,
+    and optional equality comparator; the shared engine handles signature
+    coverage, FeynPy rule extraction in FeynRules leg order, error reporting,
+    and report assembly.
     """
 
     aliases = dict(feynpy_name_aliases or {})
+    references = tuple(references)
     reference_by_signature: dict[tuple[str, ...], FeynRulesVertex] = {}
     for reference in references:
         if reference.signature in reference_by_signature:
@@ -1461,15 +1514,35 @@ def compare_feynrules_gauge_vertices(
         for field in reference.fields
     }
     reference_arities = {len(reference.fields) for reference in references}
-    feynpy_signatures = {
-        normalized
-        for signature in lagrangian.vertex_signatures()
-        if signature.arity in reference_arities
-        for normalized in (
-            _normalized_feynpy_signature(signature.names, aliases),
-        )
-        if all(name in reference_names for name in normalized)
-    }
+    feynpy_signatures: set[tuple[str, ...]] = set()
+    for signature in lagrangian.vertex_signatures(flavor_expand=flavor_expand):
+        if signature.arity not in reference_arities:
+            continue
+        normalized = _normalized_feynpy_signature(signature.names, aliases)
+        if not all(name in reference_names for name in normalized):
+            continue
+        if signature_filter is not None and not signature_filter(
+            normalized,
+            field_map,
+        ):
+            continue
+        # The rule extracted here cannot be reused for the comparison below,
+        # which needs it in FeynRules leg order rather than FeynPy's, so it is
+        # only worth extracting when a zero rule would exclude the signature.
+        if drop_zero_feynpy_rules:
+            rule = lagrangian.feynman_rule(
+                *signature.fields,
+                simplify=True,
+                include_delta=include_delta,
+                flavor_expand=flavor_expand,
+            )
+            rule = _apply_expression_substitutions(rule, feynpy_substitutions)
+            if rule.to_canonical_string() == "0":
+                continue
+        if normalized in feynpy_signatures:
+            raise ValueError(f"Duplicate FeynPy signature: {normalized}")
+        feynpy_signatures.add(normalized)
+
     reference_signatures = set(reference_by_signature)
     feynrules_only = tuple(sorted(reference_signatures - feynpy_signatures))
     feynpy_only = tuple(sorted(feynpy_signatures - reference_signatures))
@@ -1481,7 +1554,7 @@ def compare_feynrules_gauge_vertices(
                 VertexComparison(
                     reference=reference,
                     status="MISSING_FEYNPY",
-                    detail="No FeynPy vertex with this field multiset",
+                    detail=missing_detail,
                 )
             )
             continue
@@ -1500,349 +1573,34 @@ def compare_feynrules_gauge_vertices(
             continue
 
         try:
-            feynrules_rule = parse_feynrules_gauge_rule(
-                reference.rule,
-                parameter_substitutions=parameter_substitutions,
-            )
+            ordered_fields = tuple(field_map[name] for name in reference.fields)
+            feynrules_rule = parse_reference_rule(reference)
             feynpy_rule = lagrangian.feynman_rule(
-                *(field_map[name] for name in reference.fields),
-                simplify=True,
-                include_delta=False,
-            )
-            feynrules_rule = canonicalize_gauge_rule(feynrules_rule)
-            feynpy_rule = canonicalize_gauge_rule(feynpy_rule)
-            difference = (feynpy_rule - feynrules_rule).cancel().expand()
-            status = (
-                "MATCH"
-                if difference.to_canonical_string() == "0"
-                else "MISMATCH"
-            )
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status=status,
-                    feynpy_rule=feynpy_rule,
-                    feynrules_rule=feynrules_rule,
-                    difference=difference,
-                    detail=(
-                        "Canonical symbolic difference is zero"
-                        if status == "MATCH"
-                        else "Canonical symbolic difference is non-zero"
-                    ),
-                )
-            )
-        except Exception as error:
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status="ERROR",
-                    detail=f"{type(error).__name__}: {error}",
-                )
-            )
-
-    return VertexComparisonReport(
-        rows=tuple(rows),
-        feynrules_only=feynrules_only,
-        feynpy_only=feynpy_only,
-    )
-
-
-def compare_feynrules_matter_vertices(
-    lagrangian,
-    references: Sequence[FeynRulesVertex],
-    *,
-    field_map: Mapping[str, object],
-    parameter_substitutions: Mapping[str, object] | None = None,
-    feynpy_substitutions: Mapping[object, object] | None = None,
-    feynpy_name_aliases: Mapping[str, str] | None = None,
-) -> VertexComparisonReport:
-    """Compare flavor-expanded FeynPy matter vertices with FeynRules.
-
-    Candidate FeynPy signatures are evaluated after ``feynpy_substitutions``.
-    This is needed when a reference export fixes a flavor convention, such as
-    an identity CKM matrix, while the source model keeps a symbolic rotation.
-    Signatures whose aligned rule becomes exactly zero are excluded from the
-    FeynPy coverage set.
-    """
-
-    aliases = dict(feynpy_name_aliases or {})
-    reference_by_signature: dict[tuple[str, ...], FeynRulesVertex] = {}
-    for reference in references:
-        if reference.signature in reference_by_signature:
-            raise ValueError(
-                f"Duplicate FeynRules signature: {reference.signature}"
-            )
-        reference_by_signature[reference.signature] = reference
-
-    reference_names = {
-        field
-        for reference in references
-        for field in reference.fields
-    }
-    reference_arities = {len(reference.fields) for reference in references}
-    feynpy_rules_by_signature: dict[tuple[str, ...], Expression] = {}
-    for signature in lagrangian.vertex_signatures(flavor_expand=True):
-        if signature.arity not in reference_arities:
-            continue
-        normalized = _normalized_feynpy_signature(signature.names, aliases)
-        if not all(name in reference_names for name in normalized):
-            continue
-        if sum(
-            _field_spin(field_map[name]) == 1 / 2
-            for name in normalized
-            if name in field_map
-        ) != 2:
-            continue
-        rule = lagrangian.feynman_rule(
-            *signature.fields,
-            simplify=True,
-            include_delta=False,
-            flavor_expand=True,
-        )
-        rule = _apply_expression_substitutions(rule, feynpy_substitutions)
-        if rule.to_canonical_string() == "0":
-            continue
-        if normalized in feynpy_rules_by_signature:
-            raise ValueError(f"Duplicate FeynPy signature: {normalized}")
-        feynpy_rules_by_signature[normalized] = rule
-
-    reference_signatures = set(reference_by_signature)
-    feynpy_signatures = set(feynpy_rules_by_signature)
-    feynrules_only = tuple(sorted(reference_signatures - feynpy_signatures))
-    feynpy_only = tuple(sorted(feynpy_signatures - reference_signatures))
-
-    rows: list[VertexComparison] = []
-    for reference in references:
-        if reference.signature not in feynpy_rules_by_signature:
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status="MISSING_FEYNPY",
-                    detail="No non-zero FeynPy vertex with this field multiset",
-                )
-            )
-            continue
-
-        missing_fields = [
-            name for name in reference.fields if name not in field_map
-        ]
-        if missing_fields:
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status="MISSING_FIELD_MAP",
-                    detail=f"Missing field mapping: {missing_fields}",
-                )
-            )
-            continue
-
-        try:
-            feynrules_rule = parse_feynrules_matter_rule(
-                reference.rule,
-                parameter_substitutions=parameter_substitutions,
-            )
-            feynpy_rule = lagrangian.feynman_rule(
-                *(field_map[name] for name in reference.fields),
-                simplify=True,
-                include_delta=False,
-                flavor_expand=True,
-            )
-            feynpy_rule = _apply_expression_substitutions(
-                feynpy_rule,
-                feynpy_substitutions,
-            )
-            feynrules_rule = canonicalize_matter_rule(feynrules_rule)
-            feynpy_rule = canonicalize_matter_rule(feynpy_rule)
-            difference = (feynpy_rule - feynrules_rule).cancel().expand()
-            status = (
-                "MATCH"
-                if difference.to_canonical_string() == "0"
-                else "MISMATCH"
-            )
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status=status,
-                    feynpy_rule=feynpy_rule,
-                    feynrules_rule=feynrules_rule,
-                    difference=difference,
-                    detail=(
-                        "Canonical symbolic difference is zero"
-                        if status == "MATCH"
-                        else "Canonical symbolic difference is non-zero"
-                    ),
-                )
-            )
-        except Exception as error:
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status="ERROR",
-                    detail=f"{type(error).__name__}: {error}",
-                )
-            )
-
-    return VertexComparisonReport(
-        rows=tuple(rows),
-        feynrules_only=feynrules_only,
-        feynpy_only=feynpy_only,
-    )
-
-
-def compare_feynrules_bosonic_vertices(
-    lagrangian,
-    references: Sequence[FeynRulesVertex],
-    *,
-    field_map: Mapping[str, object],
-    parameter_substitutions: Mapping[str, object] | None = None,
-    feynpy_substitutions: Mapping[object, object] | None = None,
-    feynpy_name_aliases: Mapping[str, str] | None = None,
-    minimum_ghost_fields: int = 0,
-    minimum_scalar_fields: int = 0,
-    use_momentum_conservation: bool = False,
-    scalar_relations: Sequence[object] = (),
-    include_delta: bool = False,
-) -> VertexComparisonReport:
-    """Compare scalar/vector/ghost tensor vertices with FeynRules."""
-
-    aliases = dict(feynpy_name_aliases or {})
-    reference_by_signature = {
-        reference.signature: reference
-        for reference in references
-    }
-    if len(reference_by_signature) != len(references):
-        raise ValueError("Duplicate FeynRules bosonic signature")
-
-    reference_names = {
-        field
-        for reference in references
-        for field in reference.fields
-    }
-    reference_arities = {len(reference.fields) for reference in references}
-    feynpy_rules_by_signature: dict[tuple[str, ...], Expression] = {}
-    for signature in lagrangian.vertex_signatures():
-        if signature.arity not in reference_arities:
-            continue
-        normalized = _normalized_feynpy_signature(signature.names, aliases)
-        if not all(name in reference_names for name in normalized):
-            continue
-        if sum(
-            _field_kind(field_map[name]) == "ghost"
-            for name in normalized
-            if name in field_map
-        ) < minimum_ghost_fields:
-            continue
-        if sum(
-            _field_kind(field_map[name]) == "scalar"
-            for name in normalized
-            if name in field_map
-        ) < minimum_scalar_fields:
-            continue
-        rule = lagrangian.feynman_rule(
-            *signature.fields,
-            simplify=True,
-            include_delta=include_delta,
-        )
-        rule = _apply_expression_substitutions(rule, feynpy_substitutions)
-        if rule.to_canonical_string() == "0":
-            continue
-        if normalized in feynpy_rules_by_signature:
-            raise ValueError(f"Duplicate FeynPy signature: {normalized}")
-        feynpy_rules_by_signature[normalized] = rule
-
-    reference_signatures = set(reference_by_signature)
-    feynpy_signatures = set(feynpy_rules_by_signature)
-    feynrules_only = tuple(sorted(reference_signatures - feynpy_signatures))
-    feynpy_only = tuple(sorted(feynpy_signatures - reference_signatures))
-
-    rows: list[VertexComparison] = []
-    for reference in references:
-        if reference.signature not in feynpy_rules_by_signature:
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status="MISSING_FEYNPY",
-                    detail="No non-zero FeynPy vertex with this field multiset",
-                )
-            )
-            continue
-        try:
-            feynrules_rule = parse_feynrules_gauge_rule(
-                reference.rule,
-                parameter_substitutions=parameter_substitutions,
-            )
-            feynpy_rule = lagrangian.feynman_rule(
-                *(field_map[name] for name in reference.fields),
+                *ordered_fields,
                 simplify=True,
                 include_delta=include_delta,
+                flavor_expand=flavor_expand,
             )
             feynpy_rule = _apply_expression_substitutions(
                 feynpy_rule,
                 feynpy_substitutions,
             )
-            feynrules_rule = canonicalize_gauge_rule(feynrules_rule)
-            feynpy_rule = canonicalize_gauge_rule(feynpy_rule)
-            external_indices = None
-            if not use_momentum_conservation and not scalar_relations:
-                external_indices = _canonical_external_indices_for_fields(
-                    reference.fields,
-                    field_map,
-                )
-
-            status = "MISMATCH"
-            difference = None
-            detail = ""
-            if external_indices is not None:
-                try:
-                    feynpy_report = canonical_tensor_monomial_report(
-                        feynpy_rule,
-                        external_indices=external_indices,
-                        max_dummy_permutations=2_000_000,
-                    )
-                    feynrules_report = canonical_tensor_monomial_report(
-                        feynrules_rule,
-                        external_indices=external_indices,
-                        max_dummy_permutations=2_000_000,
-                    )
-                except TensorMonomialCanonicalizationError:
-                    feynpy_report = None
-                    feynrules_report = None
-                else:
-                    if feynpy_report.map == feynrules_report.map:
-                        status = "MATCH"
-                        difference = Expression.num(0)
-                        detail = (
-                            "Canonical tensor-monomial maps agree exactly"
-                        )
-                    else:
-                        difference = (
-                            feynpy_rule - feynrules_rule
-                        ).cancel().expand()
-                        detail = (
-                            "Canonical tensor-monomial maps differ"
-                        )
-
-            if difference is None:
-                difference = _exact_difference(
-                    feynpy_rule,
-                    feynrules_rule,
-                    momentum_arity=(
-                        len(reference.fields)
-                        if use_momentum_conservation
-                        else None
-                    ),
-                    scalar_relations=scalar_relations,
-                )
-                status = (
-                    "MATCH"
-                    if difference.to_canonical_string() == "0"
-                    else "MISMATCH"
-                )
-                detail = (
-                    "Canonical symbolic difference is zero"
-                    if status == "MATCH"
-                    else "Canonical symbolic difference is non-zero"
-                )
+            feynrules_rule = canonicalize_rule(
+                feynrules_rule,
+                reference,
+                ordered_fields,
+            )
+            feynpy_rule = canonicalize_rule(
+                feynpy_rule,
+                reference,
+                ordered_fields,
+            )
+            status, difference, detail = compare_rules(
+                feynpy_rule,
+                feynrules_rule,
+                reference,
+                ordered_fields,
+            )
             rows.append(
                 VertexComparison(
                     reference=reference,
@@ -1869,6 +1627,213 @@ def compare_feynrules_bosonic_vertices(
     )
 
 
+def compare_feynrules_gauge_vertices(
+    lagrangian,
+    references: Sequence[FeynRulesVertex],
+    *,
+    field_map: Mapping[str, object],
+    parameter_substitutions: Mapping[str, object] | None = None,
+    feynpy_name_aliases: Mapping[str, str] | None = None,
+) -> VertexComparisonReport:
+    """Compare a FeynPy gauge Lagrangian against aligned FeynRules vertices.
+
+    FeynPy rules are extracted in the exact external-leg order stored in each
+    reference vertex. Signature coverage is checked as a multiset, while the
+    rule comparison preserves leg order so momentum and open-index labels are
+    meaningful.
+    """
+
+    return compare_feynrules_vertices(
+        lagrangian,
+        references,
+        field_map=field_map,
+        parse_reference_rule=lambda reference: parse_feynrules_gauge_rule(
+            reference.rule,
+            parameter_substitutions=parameter_substitutions,
+        ),
+        canonicalize_rule=(
+            lambda expression, _reference, _fields: canonicalize_gauge_rule(
+                expression
+            )
+        ),
+        feynpy_name_aliases=feynpy_name_aliases,
+        drop_zero_feynpy_rules=False,
+        missing_detail="No FeynPy vertex with this field multiset",
+    )
+
+
+def compare_feynrules_matter_vertices(
+    lagrangian,
+    references: Sequence[FeynRulesVertex],
+    *,
+    field_map: Mapping[str, object],
+    parameter_substitutions: Mapping[str, object] | None = None,
+    feynpy_substitutions: Mapping[object, object] | None = None,
+    feynpy_name_aliases: Mapping[str, str] | None = None,
+) -> VertexComparisonReport:
+    """Compare flavor-expanded FeynPy matter vertices with FeynRules.
+
+    Candidate FeynPy signatures are evaluated after ``feynpy_substitutions``.
+    This is needed when a reference export fixes a flavor convention, such as
+    an identity CKM matrix, while the source model keeps a symbolic rotation.
+    Signatures whose aligned rule becomes exactly zero are excluded from the
+    FeynPy coverage set.
+    """
+
+    def matter_signature(
+        normalized: tuple[str, ...],
+        mapped_fields: Mapping[str, object],
+    ) -> bool:
+        return (
+            sum(
+                _field_spin(mapped_fields[name]) == 1 / 2
+                for name in normalized
+                if name in mapped_fields
+            )
+            == 2
+        )
+
+    return compare_feynrules_vertices(
+        lagrangian,
+        references,
+        field_map=field_map,
+        parse_reference_rule=lambda reference: parse_feynrules_matter_rule(
+            reference.rule,
+            parameter_substitutions=parameter_substitutions,
+        ),
+        canonicalize_rule=(
+            lambda expression, _reference, _fields: canonicalize_matter_rule(
+                expression
+            )
+        ),
+        feynpy_name_aliases=feynpy_name_aliases,
+        feynpy_substitutions=feynpy_substitutions,
+        signature_filter=matter_signature,
+        flavor_expand=True,
+    )
+
+
+def compare_feynrules_bosonic_vertices(
+    lagrangian,
+    references: Sequence[FeynRulesVertex],
+    *,
+    field_map: Mapping[str, object],
+    parameter_substitutions: Mapping[str, object] | None = None,
+    feynpy_substitutions: Mapping[object, object] | None = None,
+    feynpy_name_aliases: Mapping[str, str] | None = None,
+    minimum_ghost_fields: int = 0,
+    minimum_scalar_fields: int = 0,
+    use_momentum_conservation: bool = False,
+    scalar_relations: Sequence[object] = (),
+    include_delta: bool = False,
+) -> VertexComparisonReport:
+    """Compare scalar/vector/ghost tensor vertices with FeynRules."""
+
+    def bosonic_signature(
+        normalized: tuple[str, ...],
+        mapped_fields: Mapping[str, object],
+    ) -> bool:
+        if (
+            sum(
+                _field_kind(mapped_fields[name]) == "ghost"
+                for name in normalized
+                if name in mapped_fields
+            )
+            < minimum_ghost_fields
+        ):
+            return False
+        return (
+            sum(
+                _field_kind(mapped_fields[name]) == "scalar"
+                for name in normalized
+                if name in mapped_fields
+            )
+            >= minimum_scalar_fields
+        )
+
+    def bosonic_comparator(
+        feynpy_rule: Expression,
+        feynrules_rule: Expression,
+        reference: FeynRulesVertex,
+        _ordered_fields: tuple[object, ...],
+    ) -> tuple[str, Expression, str]:
+        external_indices = None
+        if not use_momentum_conservation and not scalar_relations:
+            external_indices = _canonical_external_indices_for_fields(
+                reference.fields,
+                field_map,
+            )
+
+        if external_indices is not None:
+            try:
+                feynpy_report = canonical_tensor_monomial_report(
+                    feynpy_rule,
+                    external_indices=external_indices,
+                    max_dummy_permutations=2_000_000,
+                )
+                feynrules_report = canonical_tensor_monomial_report(
+                    feynrules_rule,
+                    external_indices=external_indices,
+                    max_dummy_permutations=2_000_000,
+                )
+            except TensorMonomialCanonicalizationError:
+                pass
+            else:
+                if feynpy_report.map == feynrules_report.map:
+                    return (
+                        "MATCH",
+                        Expression.num(0),
+                        "Canonical tensor-monomial maps agree exactly",
+                    )
+                return (
+                    "MISMATCH",
+                    (feynpy_rule - feynrules_rule).cancel().expand(),
+                    "Canonical tensor-monomial maps differ",
+                )
+
+        difference = _exact_difference(
+            feynpy_rule,
+            feynrules_rule,
+            momentum_arity=(
+                len(reference.fields)
+                if use_momentum_conservation
+                else None
+            ),
+            scalar_relations=scalar_relations,
+        )
+        status = (
+            "MATCH"
+            if difference.to_canonical_string() == "0"
+            else "MISMATCH"
+        )
+        detail = (
+            "Canonical symbolic difference is zero"
+            if status == "MATCH"
+            else "Canonical symbolic difference is non-zero"
+        )
+        return status, difference, detail
+
+    return compare_feynrules_vertices(
+        lagrangian,
+        references,
+        field_map=field_map,
+        parse_reference_rule=lambda reference: parse_feynrules_gauge_rule(
+            reference.rule,
+            parameter_substitutions=parameter_substitutions,
+        ),
+        canonicalize_rule=(
+            lambda expression, _reference, _fields: canonicalize_gauge_rule(
+                expression
+            )
+        ),
+        compare_rules=bosonic_comparator,
+        feynpy_name_aliases=feynpy_name_aliases,
+        feynpy_substitutions=feynpy_substitutions,
+        signature_filter=bosonic_signature,
+        include_delta=include_delta,
+    )
+
+
 def compare_feynrules_yukawa_vertices(
     lagrangian,
     references: Sequence[FeynRulesVertex],
@@ -1880,110 +1845,37 @@ def compare_feynrules_yukawa_vertices(
 ) -> VertexComparisonReport:
     """Compare flavor-expanded physical Yukawa vertices with FeynRules."""
 
-    aliases = dict(feynpy_name_aliases or {})
-    reference_by_signature = {
-        reference.signature: reference
-        for reference in references
-    }
-    if len(reference_by_signature) != len(references):
-        raise ValueError("Duplicate FeynRules Yukawa signature")
-
-    reference_names = {
-        field
-        for reference in references
-        for field in reference.fields
-    }
-    feynpy_rules_by_signature: dict[tuple[str, ...], Expression] = {}
-    for signature in lagrangian.vertex_signatures(flavor_expand=True):
-        if signature.arity != 3:
-            continue
-        normalized = _normalized_feynpy_signature(signature.names, aliases)
-        if not all(name in reference_names for name in normalized):
-            continue
-        if sum(
-            _field_spin(field_map[name]) == 1 / 2
-            for name in normalized
-            if name in field_map
-        ) != 2:
-            continue
-        rule = lagrangian.feynman_rule(
-            *signature.fields,
-            simplify=True,
-            include_delta=False,
-            flavor_expand=True,
+    def yukawa_signature(
+        normalized: tuple[str, ...],
+        mapped_fields: Mapping[str, object],
+    ) -> bool:
+        return (
+            len(normalized) == 3
+            and sum(
+                _field_spin(mapped_fields[name]) == 1 / 2
+                for name in normalized
+                if name in mapped_fields
+            )
+            == 2
         )
-        rule = _apply_expression_substitutions(rule, feynpy_substitutions)
-        if rule.to_canonical_string() == "0":
-            continue
-        feynpy_rules_by_signature[normalized] = rule
 
-    reference_signatures = set(reference_by_signature)
-    feynpy_signatures = set(feynpy_rules_by_signature)
-    rows: list[VertexComparison] = []
-    for reference in references:
-        if reference.signature not in feynpy_rules_by_signature:
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status="MISSING_FEYNPY",
-                    detail="No non-zero FeynPy vertex with this field multiset",
-                )
-            )
-            continue
-        try:
-            feynrules_rule = parse_feynrules_yukawa_rule(
-                reference.rule,
-                diagonal_yukawa_names=diagonal_yukawa_names,
-            )
-            feynpy_rule = lagrangian.feynman_rule(
-                *(field_map[name] for name in reference.fields),
-                simplify=True,
-                include_delta=False,
-                flavor_expand=True,
-            )
-            feynpy_rule = _apply_expression_substitutions(
-                feynpy_rule,
-                feynpy_substitutions,
-            )
-            feynrules_rule = canonicalize_yukawa_rule(feynrules_rule)
-            feynpy_rule = canonicalize_yukawa_rule(feynpy_rule)
-            difference = (feynpy_rule - feynrules_rule).cancel().expand()
-            status = (
-                "MATCH"
-                if difference.to_canonical_string() == "0"
-                else "MISMATCH"
-            )
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status=status,
-                    feynpy_rule=feynpy_rule,
-                    feynrules_rule=feynrules_rule,
-                    difference=difference,
-                    detail=(
-                        "Canonical symbolic difference is zero"
-                        if status == "MATCH"
-                        else "Canonical symbolic difference is non-zero"
-                    ),
-                )
-            )
-        except Exception as error:
-            rows.append(
-                VertexComparison(
-                    reference=reference,
-                    status="ERROR",
-                    detail=f"{type(error).__name__}: {error}",
-                )
-            )
-
-    return VertexComparisonReport(
-        rows=tuple(rows),
-        feynrules_only=tuple(
-            sorted(reference_signatures - feynpy_signatures)
+    return compare_feynrules_vertices(
+        lagrangian,
+        references,
+        field_map=field_map,
+        parse_reference_rule=lambda reference: parse_feynrules_yukawa_rule(
+            reference.rule,
+            diagonal_yukawa_names=diagonal_yukawa_names,
         ),
-        feynpy_only=tuple(
-            sorted(feynpy_signatures - reference_signatures)
+        canonicalize_rule=(
+            lambda expression, _reference, _fields: canonicalize_yukawa_rule(
+                expression
+            )
         ),
+        feynpy_name_aliases=feynpy_name_aliases,
+        feynpy_substitutions=feynpy_substitutions,
+        signature_filter=yukawa_signature,
+        flavor_expand=True,
     )
 
 
@@ -1997,6 +1889,7 @@ __all__ = (
     "canonicalize_matter_rule",
     "canonicalize_yukawa_rule",
     "compare_canonical_coefficient_maps",
+    "compare_feynrules_vertices",
     "compare_feynrules_bosonic_vertices",
     "compare_feynrules_gauge_vertices",
     "compare_feynrules_matter_vertices",
