@@ -247,6 +247,31 @@ def _projector_carrying_chains(rule: str):
         )
 
 
+_PROJECTOR_HEADS = frozenset({"ProjM", "ProjP"})
+
+
+def require_trailing_projector(items: Sequence[str]) -> None:
+    """Reject a spinor chain whose projector is not the single final factor.
+
+    Both the chirality validator and the matter parser read a chain as a gamma
+    product followed by one projector: the validator infers the expected
+    chirality from the gamma count alone, and the parser drops the projector
+    wherever it sits. Neither reading holds for ``TensDot[ProjP, Ga[mu]]``,
+    since $P_R \\gamma^\\mu = \\gamma^\\mu P_L$ carries the opposite chirality
+    from the same two factors in the other order. The bundled exports always
+    put the projector last, so the other spellings are refused rather than
+    silently treated as order-independent.
+    """
+
+    projectors = [item for item in items if item in _PROJECTOR_HEADS]
+    if not projectors:
+        return
+    if len(projectors) > 1 or items[-1] not in _PROJECTOR_HEADS:
+        raise ValueError(
+            f"Unsupported FeynRules projector chain order: {tuple(items)!r}"
+        )
+
+
 def expected_chain_projector(
     *,
     left_chirality: str,
@@ -321,7 +346,8 @@ def validate_feynrules_projector_chirality(
     for items, left_leg, right_leg in _projector_carrying_chains(rule):
         if left_leg not in legs or right_leg not in legs:
             continue
-        projector = next(item for item in items if item in {"ProjM", "ProjP"})
+        require_trailing_projector(items)
+        projector = next(item for item in items if item in _PROJECTOR_HEADS)
         gamma_count = sum(
             1
             for item in items
@@ -1904,5 +1930,6 @@ __all__ = (
     "parse_feynrules_yukawa_rule",
     "reduce_fermion_currents",
     "reduce_yukawa_bilinears",
+    "require_trailing_projector",
     "validate_feynrules_projector_chirality",
 )

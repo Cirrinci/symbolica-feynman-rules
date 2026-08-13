@@ -35,6 +35,7 @@ from feynrules.comparison import (
     feynrules_ascii_label as _feynrules_ascii_label,
     find_matching_square as _find_matching_square,
     load_feynrules_json,
+    require_trailing_projector,
     split_top_level_commas as _split_top_level_commas,
     validate_feynrules_projector_chirality,
 )
@@ -316,6 +317,8 @@ def _spinor_chain_replacement(
     # Chirality is not lost silently here: the caller validates every
     # projector against the field chirality via
     # ``validate_feynrules_projector_chirality`` before this drop happens.
+    # Dropping the projector is only faithful if it trails the gamma product.
+    require_trailing_projector(items)
     matrix_items = tuple(item for item in items if item not in {"ProjM", "ProjP"})
     if not matrix_items:
         return spinor_metric(S(left), S(right)).to_canonical_string()
