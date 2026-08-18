@@ -5,13 +5,11 @@
 \chapter{Validation and Final Comparison}
 \label{ch:validation}
 
-Chapter~\ref{ch:internals} explained how FeynPy calculates Feynman rules based on the definition of a model and a Lagrangian. A significant portion of this project subsequently focused on verifying the correctness of FeynPy and its ability to replicate existing models in Feynrules.
+Chapter~\ref{ch:internals} explained how FeynPy calculates Feynman rules from a model definition and a Lagrangian. A significant portion of this project subsequently focused on verifying the correctness of FeynPy and its ability to reproduce existing FeynRules models.
 
-The two results are not expected to be \emph{identical}: different expansions and tensor identities imply that they do not necessarily have to match term by term. Instead, we verify whether they are the same expression from an algebraic point of view, differing only in the renaming of indices, the canonical order of tensor factors, and the set of tensor and algebraic identities. Section~\ref{sec:validation-canonical} clarifies this concept and illustrates, with the help of examples, how the resulting equality test actually works, bringing both sides into a common canonical form to establish equality was in itself one of the most complex parts of this work.
+The two results are not expected to be \emph{identical}: different expansions and tensor identities imply that they need not match term by term. Instead, we verify whether they are the same expression from an algebraic point of view, differing only in the renaming of indices, the canonical order of tensor factors, and the explicitly listed set of tensor and algebraic identities. Section~\ref{sec:validation-canonical} clarifies this concept and illustrates, with examples, how the resulting equality test works. Bringing both sides into a common canonical form to establish equality was itself one of the most complex parts of this work.
 
-
-
-The results obtained within the limited timeframe of this thesis are as follows.  The packaged Standard Model matches its FeynRules export exactly; the unbroken background Standard Model matches its own export exactly; and the Green-basis SMEFT2 model matches all $184$ exported lines of FeynRules' \texttt{Ltot} for the EFT sector at the operator-content level. Of these $184$ SMEFT2 vertices, $161$ match directly, $15$ match after one globally fixed charge-conjugation convention, and $8$ match after an additional transformation that is explicitly tabulated per line.
+The results obtained within the limited timeframe of this thesis are as follows. The packaged Standard Model matches its FeynRules export exactly; the unbroken background Standard Model matches its own export exactly; and the Green-basis SMEFT2 model matches all $184$ exported lines of FeynRules' \texttt{Ltot} for the EFT sector at the operator-content level. Of these $184$ SMEFT2 vertices, $161$ match directly, $15$ match after one globally fixed charge-conjugation convention, and $8$ match after an additional transformation that is explicitly tabulated per line.
 
 % --------------------------------------------------------------
 \section{Validation strategy}
@@ -19,16 +17,17 @@ The results obtained within the limited timeframe of this thesis are as follows.
 % --------------------------------------------------------------
 Model validation has three levels. \emph{Model fidelity} (\Cref{sec:validation-fidelity}) checks, block by block and coefficient by coefficient, that the FeynPy source transcribes the operators of the FeynRules source. \emph{Vertex equality} (\Cref{sec:validation-canonical,sec:validation-smeft2,sec:validation-ec}), the core of the comparison, verifies whether the Feynman rules derived from the two Lagrangians agree as tensor expressions. \emph{Coverage} (\Cref{sec:validation-coverage}) checks how much of the model the equality test can actually reach, since the FeynRules export only covers a finite set of vertex arities.
 
-All three levels are necessary and interdependent. In fact, without fidelity, a positive equality result might simply confirm an incomplete transcription. Or, without coverage, it might reflect an agreement on nothing more than a convenient subset of vertices.
+All three levels are necessary and interdependent. In fact, without fidelity, a positive equality result could simply confirm an incomplete transcription. Alternatively, without coverage, it might reflect a correspondence limited to a convenient subset of vertices. Together, these three levels define the validation claim: the implemented model is faithful to the source, the compared vertices coincide algebraically, and the declared coverage clarifies which parts of the model have actually been tested.
+
 
 % --------------------------------------------------------------
 \section{What ``equal'' means: the canonical form}
 \label{sec:validation-canonical}
 % --------------------------------------------------------------
 
-Before the comparison starts, the FeynRules output is loaded from the JSON export as Mathematica-syntax text, while the FeynPy side is generated by calling \texttt{feynman\_rule(...)} on the corresponding fields. Both sides are then parsed into Symbolica tensor expressions. At that point the problem is not yet solved: two equal tensor expressions can still look different because they use different dummy-index names, write commuting factors in a different order, or expand the same algebraic object in different ways.
+Before the comparison can begin, the FeynRules output is loaded from the JSON export as text in Mathematica syntax, while the FeynPy side is generated by calling \texttt{feynman\_rule(...)} on the corresponding fields. Both sides are then parsed into Symbolica tensor expressions. At this point the comparison is not yet done: two algebraically equal tensor expressions might still appear different because they use different dummy index names, list the commutative factors in a different order, or expand the same algebraic object in different ways.
 
-Two pieces of terminology are used throughout the comparison. The \emph{signature} of a row is the external-field content, written for example as \texttt{B|dR|dRbar}. The \emph{coefficient head} is the name of the Wilson parameter multiplying a term, for example \texttt{alphaEcll}. In the SMEFT2 comparison, equality is checked one coefficient head at a time inside a fixed signature: the terms proportional to \texttt{alphaEcll} are compared only against terms proportional to \texttt{alphaEcll}.
+We first clarify two pieces of terminology that are used throughout the comparison. The \emph{signature} of a row is the external-field content, written for example as \texttt{B|dR|dRbar}. The \emph{coefficient head} is the name of the Wilson parameter multiplying a term, for example \texttt{alphaEcll}. In the SMEFT2 comparison, equality is checked one coefficient head at a time inside a fixed signature: the terms proportional to \texttt{alphaEcll} are compared only against terms proportional to \texttt{alphaEcll}.
 
 For SMEFT2, the object actually compared is a \emph{canonical tensor-monomial map}. One entry of this map has the form
 \begin{equation}
@@ -43,7 +42,7 @@ This canonical form is not unique in an absolute mathematical sense. It depends 
 The canonical map is built in four stages.
 
 \begin{enumerate}
-    \item \textbf{Register tensor metadata.} Every tensor head is given the information needed to canonicalise it. For example, the metric is symmetric, while the Lorentz epsilon tensor, the structure constants $f^{abc}$, the weak epsilon tensor, and the charge-conjugation matrix $C$ are antisymmetric. Index slots are also typed, so a Lorentz dummy index can never be confused with a colour, weak, or spinor dummy index.
+    \item \textbf{Register tensor metadata.} Every tensor head has all the information needed to canonicalise it. For example, the metric is symmetric, while the Lorentz epsilon tensor, the structure constants $f^{abc}$, the weak epsilon tensor, and the charge-conjugation matrix $C$ are antisymmetric.
 
     \item \textbf{Split each term into scalar and tensor parts.} In a product such as
     \[
@@ -57,7 +56,7 @@ The canonical map is built in four stages.
     \item \textbf{Collect equal keys.} If two expanded terms reduce to the same canonical key, their scalar coefficients are added exactly. If the sum is zero, the key disappears. The final result is therefore a dictionary of nonzero canonical tensor monomials and exact coefficients.
 \end{enumerate}
 
-In the implementation, these four generic stages first build the canonical tensor-monomial report; the generator-order, $SU(2)$, and Jacobi rewrites are then applied as additional deterministic normalisations of that report before the maps are compared.
+After these generic stages, the implementation applies the generator-order, $SU(2)$, and Jacobi rewrites before comparing the maps.
 
 \paragraph{Example 1: dummy names and symmetry.} Consider
 \begin{equation}
@@ -118,16 +117,13 @@ Thus Jacobi can relate genuinely different tensor networks; in such rows canonic
 
 The same restricted machinery is also used for the weak-generator identities of $SU(2)$.
 
-For the SMEFT2 comparison, these four stages and the explicitly listed local identities are the whole simplification budget. The comparator does not attempt unrestricted simplification: it uses no equations of motion, no integration by parts, no momentum conservation, and no Schouten, Fierz, or broad gamma-matrix reductions. The Standard Model benchmark of \Cref{sec:validation-sm} enables two further relations in two of its sectors, recorded there.
 
-Two further design choices keep the comparison from degenerating into a tautology. First, as stated above, SMEFT2 runs separately for each coefficient head, so a mistake in one operator is reported in that operator's own sector. Second, raw coefficient-head occurrence counts are recorded only as diagnostics, never as the equality criterion, since equivalent expanded forms can legitimately have different raw counts: for example, FeynPy prints $\mathrm{Dual}[F]=\tfrac{1}{2}\epsilon\cdot F$ as separate antisymmetric branches, while FeynRules has already collapsed them using epsilon antisymmetry. On the current SMEFT2 reference, $100$ of $182$ literal shared signatures have matching raw counts; the denominator is $182$ rather than $184$ because two reference rows have no same-signature FeynPy row before the charge-conjugation packaging resolution. The remaining deltas carry recorded, specific reasons; the base expansion reasons are hand-curated \texttt{(signature, coefficient head)} entries assembled by inspection, while the rest are tied to the exact-proof classifications. None is unexplained.
 % --------------------------------------------------------------
 \section{Standard Model benchmark}
 \label{sec:validation-sm}
 % --------------------------------------------------------------
 
-The Standard Model package in \path{models/SM/} is the first complete
-vertical slice of the project: a gauge-basis declaration, field
+The Standard Model package in \path{models/SM/} is the first succesfull model. In it we manage to implement a gauge-basis declaration, field
 transformations to the physical basis, and a comparison of the resulting
 interaction vertices against the bundled FeynRules \texttt{SM.fr} export.
 
@@ -155,29 +151,11 @@ in every sector is a direct exact symbolic match.}
 \label{tab:validation-sm-sectors}
 \end{table}
 
-The scope should be stated precisely: the comparison runs with ghosts
-included and gauge fixing disabled, so it validates the gauge, matter,
-Yukawa, Higgs/Goldstone and ghost sectors but \emph{not} the gauge-fixing
-sector, and it makes no claim about parameter-card semantics, loop-level
-output, restriction files, or external formats such as UFO.
+The comparison runs with ghosts included and gauge fixing disabled, so it validates the gauge, matter, Yukawa, Higgs/Goldstone and ghost sectors but \emph{not} the gauge-fixing sector, and it makes no claim about parameter-card semantics, loop-level output, restriction files, or external formats such as UFO.
 
-Two sectors here use relations beyond the SMEFT2 simplification budget of
-\Cref{sec:validation-canonical}, and both are declared at the call site rather
-than searched for. The Higgs/Goldstone and ghost sectors are compared modulo
-the weak-mixing relation $c_W^2 + s_W^2 = 1$, which is unavoidable once the
-physical basis is used, because the two sources distribute it differently
-across a rule. The ghost sector additionally uses momentum conservation on its
-external legs, since a ghost rule is fixed only up to which leg momentum is
-eliminated. Neither relation is available to the SMEFT2 comparison, whose
-unbroken basis needs no weak-mixing angle and whose rows are compared with all
-external momenta independent.
+Two particular relations needed to be carefully examinated. The Higgs/Goldstone and ghost sectors are compared modulo the weak-mixing relation $c_W^2 + s_W^2 = 1$. In fact the two calculator have different result once the physical basis is used, because the two sources distribute it differently across a rule. The ghost sector additionally uses momentum conservation on its external legs, since a ghost rule is fixed only up to which leg momentum is eliminated. 
 
-A second, independent benchmark is the unbroken background-field Standard
-Model in \path{models/UnbrokenSM_BFM/}, matching its own FeynRules reference
-at $67/67$ ($42$ three-point and $25$ four-point vertices). This matters for
-SMEFT2, which is formulated in the same unbroken basis: it shows that the
-basis, field naming, and generator conventions are already validated
-independently of the EFT operators.
+A second, independent benchmark is the unbroken background-field Standard Model in \path{models/UnbrokenSM_BFM/}, matching its own FeynRules reference at $67/67$ ($42$ three-point and $25$ four-point vertices). This matters for SMEFT2, which is formulated in the same unbroken basis: it shows that the basis, field naming, and generator conventions are already validated independently of the EFT operators.
 
 % --------------------------------------------------------------
 \section{SMEFT2: model fidelity}
