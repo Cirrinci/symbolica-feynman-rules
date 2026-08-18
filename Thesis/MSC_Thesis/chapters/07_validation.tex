@@ -5,109 +5,55 @@
 \chapter{Validation and Final Comparison}
 \label{ch:validation}
 
-Chapter~\ref{ch:internals} described the internal structure of how FeynPy transforms a declared Lagrangian into an \texttt{Expression} that is it's corresponding feynman rules. 
+Chapter~\ref{ch:internals} described how FeynPy transforms a declared Lagrangian into an \texttt{Expression} for its corresponding Feynman rule. Part of this thesis compares FeynPy's output against FeynRules for several existing models, both to assess relative efficiency and, more importantly, to establish the correctness of FeynPy.
 
-Part of the work carried out in this thesis involves a comparison of the output from FeynPy and FeynRules for various models already existing in FeynRules. This has enabled us to understand the differences in efficiency and, above all, the correctness of FeynPy.
+The two outputs are not expected to be \emph{identical}: different expansions and tensor identities guarantee they will not agree term by term. What is verified instead is that they are algebraically the same expression, differing only by index relabelling, reordering of commuting factors, and a small, explicitly listed set of gauge and Lorentz identities. Section~\ref{sec:validation-canonical} makes this precise and works through worked examples of what the resulting equality test actually does; bringing both sides into a common canonical form to decide equality was itself one of the more involved parts of this thesis.
 
-In the comparison, it is clearly not expected that the two results will be \emph{identical}. Due to tensor identities or different expansions, the two outputs will certainly not be identical. What is verified, however, is that the two results are algebraically the same expression; this means that they differ only in the relabelling of indices, the reordering of commutative factors and a small, explicitly listed set of gauge and Lorentz identities. Section \ref{sec:validation-canonical} clarifies this point and demonstrates, with worked examples, what that equality test actually does. Achieving this canonicalisation and managing to bring the two expressions into the same form so as to determine whether they are equal or not was a complex and lengthy task.
-
-
-
-The main results obtained during this thesis, which were limited by time constraints, are as follows.  The packaged Standard Model corresponds exactly to its export to FeynRules; the unbroken background Standard Model corresponds exactly to its own export ($67/67$); and the Green’s function-based SMEFT2 model
-corresponds to all $184$ exported lines of FeynRules’ \texttt{Ltot}
-for EFT only. Of these $184$ SMEFT2 lines, $161$ match without any assumptions,
-$15$ match after a globally fixed charge conjugation convention, and
-$8$ match after an additional transformation, explicitly tabulated and specific to each line.
-
+The main results, within the time available for this thesis, are as follows. The packaged Standard Model matches its FeynRules export exactly; the unbroken background Standard Model matches its own export exactly ($67/67$); and the Green-basis SMEFT2 model matches all $184$ exported lines of FeynRules' \texttt{Ltot} for the EFT sector at the operator-content level. Of these $184$ SMEFT2 vertices, $161$ match directly, $15$ match after one globally fixed charge-conjugation convention, and $8$ match after an additional transformation that is explicitly tabulated per line.
 
 % --------------------------------------------------------------
 \section{Validation strategy}
 \label{sec:validation-strategy}
 % --------------------------------------------------------------
-Model validation can be defined as consisting of three levels. \emph{Model fidelity} (\Cref{sec:validation-fidelity}) checks, block by block and coefficient by coefficient, that the FeynPy source transcribes the operators of the FeynRules source. \emph{Vertex Equality}
-(\Cref{sec:validation-canonical,sec:validation-smeft2,sec:validation-ec}),
-the core of the comparison, verifies whether the Feynman rules derived from the two Lagrangians match as tensor expressions. \emph{Coverage}
-(\Cref{sec:validation-coverage}) verifies how much of the model the equality test can actually reach, since the FeynRules export only covers a finite set of vertex arities.
+Model validation has three levels. \emph{Model fidelity} (\Cref{sec:validation-fidelity}) checks, block by block and coefficient by coefficient, that the FeynPy source transcribes the operators of the FeynRules source. \emph{Vertex equality} (\Cref{sec:validation-canonical,sec:validation-smeft2,sec:validation-ec}), the core of the comparison, verifies whether the Feynman rules derived from the two Lagrangians agree as tensor expressions. \emph{Coverage} (\Cref{sec:validation-coverage}) checks how much of the model the equality test can actually reach, since the FeynRules export only covers a finite set of vertex arities.
 
-All three steps are crucial. Fidelity and coverage define the meaning of a positive equality result: without fidelity, it might reflect a comparison with an incomplete transcription, and without coverage, it might reflect a comparison with only a readily interpretable or carefully selected subset of vertices. Underlying all three is a reusable engine regression suite that does the following things: index validation, covariant expansion, field strength expansion, field transformations, fermion signs, tensor canonization, and selected Feynman reference rules, so that a discrepancy found at the model level can be attributed to that model rather than a shared incorrect primitive. 
-
-Model comparisons are located next to the concrete model packages under the \path{models/} folder rather than within the generic contraction engine. 
-
-We can say that FeynPy is correct and complete is the model implemented is faithful to the source and if the vertices are algebraically equal. Therefore these layers bound each other. The reusable engine that does teh comparison is tested separately through regression tests for index validation, covariant expansion, field-strength expansion, field transformations, fermion signs and tensor canonicalisation. 
-
-Model-specific comparisons live under \path{models/}, because each model owns the conventions needed to compare its rules with its FeynRules reference.
-
-
+All three levels are necessary and bound each other: without fidelity, a positive equality result might only confirm an incomplete transcription; without coverage, it might reflect agreement on nothing but a convenient subset of vertices. Underlying all three is a reusable engine regression suite -- covering index validation, covariant expansion, field-strength expansion, field transformations, fermion signs, tensor canonicalisation, and a set of reference Feynman rules -- so that a discrepancy found at the model level can be attributed to the model rather than to a shared primitive. Model-specific comparisons themselves live next to the concrete model packages under \path{models/} rather than inside the generic contraction engine, because each model owns the conventions needed to compare its rules against its FeynRules reference.
 
 % --------------------------------------------------------------
 \section{What ``equal'' means: the canonical form}
 \label{sec:validation-canonical}
 % --------------------------------------------------------------
 
+Before the comparison starts, the FeynRules output is loaded from the JSON export as Mathematica-syntax text, while the FeynPy side is generated by calling \texttt{feynman\_rule(...)} on the corresponding fields. Both sides are then parsed into Symbolica tensor expressions. At that point the problem is not yet solved: two equal tensor expressions can still look different because they use different dummy-index names, write commuting factors in a different order, or expand the same algebraic object in different ways.
 
-Before the comparison starts, the FeynRules output is loaded from the JSON
-export as Mathematica-syntax text, while the FeynPy side is generated by
-calling \texttt{feynman\_rule(...)} on the corresponding fields. Both sides
-are then parsed into Symbolica tensor expressions. At that point the problem is
-not yet solved: two equal tensor expressions can still look different because
-they use different dummy-index names, write commuting factors in a different
-order, or expand the same algebraic object in different ways.
+Two pieces of terminology are used throughout the comparison. The \emph{signature} of a row is the external-field content, written for example as \texttt{B|dR|dRbar}. The \emph{coefficient head} is the name of the Wilson parameter multiplying a term, for example \texttt{alphaEcll}. In the SMEFT2 comparison, equality is checked one coefficient head at a time inside a fixed signature: the terms proportional to \texttt{alphaEcll} are compared only against terms proportional to \texttt{alphaEcll}. 
 
-Two pieces of terminology are used throughout the comparison. The
-\emph{signature} of a row is the external-field content, written for example as
-\texttt{B|dR|dRbar}. The \emph{coefficient head} is the name of the Wilson
-parameter multiplying a term, for example \texttt{alphaEcll}. The comparison is
-always done one coefficient head at a time inside a fixed signature. Thus the
-terms proportional to \texttt{alphaEcll} are compared with the terms
-proportional to \texttt{alphaEcll}; they are never allowed to cancel against
-terms from another Wilson coefficient.
-
-The object actually compared is a \emph{canonical tensor-monomial map}. One
-entry of this map has the form
+For SMEFT2, the object actually compared is a \emph{canonical tensor-monomial map}. One entry of this map has the form
 \begin{equation}
     \text{canonical tensor monomial}
     \quad \longmapsto \quad
     \text{exact scalar coefficient}.
 \end{equation}
-The monomial key records the tensor factors, their typed indices, and the
-momenta. The scalar coefficient records everything with no open tensor index:
-numbers, signs, powers of couplings and the indexed Wilson coefficient,
-including its flavour order and complex conjugation. Two rows are equal only if
-these maps are identical entry by entry.
+The monomial key records the tensor factors, their typed indices, and the momenta. The scalar coefficient records everything with no open tensor index: numbers, signs, powers of couplings, and the indexed Wilson coefficient, including its flavour order and complex conjugation. Two rows are equal only if these maps are identical entry by entry.
 
 The canonical map is built in four stages.
 
 \begin{enumerate}
-    \item \textbf{Register tensor metadata.} Every tensor head is given the
-    information needed to canonicalise it. For example, the metric is
-    symmetric, while the Lorentz epsilon tensor, the structure constants
-    $f^{abc}$, the weak epsilon tensor and the charge-conjugation matrix $C$
-    are antisymmetric. Index slots are also typed, so a Lorentz dummy index can
-    never be confused with a colour, weak or spinor dummy index.
+    \item \textbf{Register tensor metadata.} Every tensor head is given the information needed to canonicalise it. For example, the metric is symmetric, while the Lorentz epsilon tensor, the structure constants $f^{abc}$, the weak epsilon tensor, and the charge-conjugation matrix $C$ are antisymmetric. Index slots are also typed, so a Lorentz dummy index can never be confused with a colour, weak, or spinor dummy index.
 
-    \item \textbf{Split each term into scalar and tensor parts.} In a product
-    such as
+    \item \textbf{Split each term into scalar and tensor parts.} In a product such as
     \[
         2\, \alpha(f_1,f_2)\, g_3^2\,
         f^{abe} f^{cde}\, p_\mu ,
     \]
-    the factor $2\,\alpha(f_1,f_2)\,g_3^2$ belongs to the scalar coefficient,
-    while $f^{abe}f^{cde}p_\mu$ belongs to the tensor monomial. This is why
-    flavour transposition is visible: $\alpha(f_1,f_2)$ and
-    $\alpha(f_2,f_1)$ are different scalar coefficients.
+    the factor $2\,\alpha(f_1,f_2)\,g_3^2$ belongs to the scalar coefficient, while $f^{abe}f^{cde}p_\mu$ belongs to the tensor monomial.
 
-    \item \textbf{Choose one representative for dummy indices and factor
-    order.} The code enumerates allowed relabellings of dummy indices within
-    each index type, applies the tensor symmetries from step 1, sorts commuting
-    tensor factors, and keeps the lexicographically smallest resulting key.
-    External indices are held fixed. This step is what makes dummy names
-    irrelevant while keeping genuine external labels meaningful.
+    \item \textbf{Choose one representative for dummy indices and factor order.} The code enumerates allowed relabellings of dummy indices within each index type, applies the tensor symmetries from step 1, sorts commuting tensor factors, and keeps the lexicographically smallest resulting key. External indices are held fixed. This step is what makes dummy names irrelevant while keeping genuine external labels meaningful.
 
-    \item \textbf{Collect equal keys.} If two expanded terms reduce to the same
-    canonical key, their scalar coefficients are added exactly. If the sum is
-    zero, the key disappears. The final result is therefore a dictionary of
-    nonzero canonical tensor monomials and exact coefficients.
+    \item \textbf{Collect equal keys.} If two expanded terms reduce to the same canonical key, their scalar coefficients are added exactly. If the sum is zero, the key disappears. The final result is therefore a dictionary of nonzero canonical tensor monomials and exact coefficients.
 \end{enumerate}
+
+The dummy relabelling in step 3 is an exact but capped enumeration. For each term the code first computes the number of candidates as the product of factorials of the number of distinct dummy labels in each index type; only then are the permutations enumerated. The SMEFT2 acceptance comparison uses the cap \texttt{max\_dummy\_permutations = 2\_000\_000}. If a term exceeded the cap, the canonical-map layer would raise a hard \texttt{TensorMonomialCanonicalizationError}; the SMEFT2 gate reports such a row as an error and does not accept it silently. An instrumented run of the accepted comparison recorded a maximum of $4320$ dummy relabellings for any term, from three Lorentz and six spinor dummy labels, well below the cap.
 
 \paragraph{Example 1: dummy names and symmetry.} Consider
 \begin{equation}
@@ -116,47 +62,27 @@ The canonical map is built in four stages.
     g^{\nu\mu}\, k_\nu p_\mu .
     \label{eq:validation-metric-example}
 \end{equation}
-As printed expressions they differ: the dummy names are exchanged, the metric
-arguments are reversed, and the momenta are written in the opposite order. The
-canonicaliser first uses the symmetry of the metric,
-$g^{\mu\nu}=g^{\nu\mu}$, then tries the allowed relabelling of the contracted
-Lorentz labels, and finally sorts the commuting factors. Both expressions
-therefore produce the same schematic map entry,
+As printed expressions they differ: the dummy names are exchanged, the metric arguments are reversed, and the momenta are written in the opposite order. The canonicaliser first uses the symmetry of the metric, $g^{\mu\nu}=g^{\nu\mu}$, then tries the allowed relabelling of the contracted Lorentz labels, and finally sorts the commuting factors. Both expressions therefore produce the same schematic map entry,
 \[
     \{g(L_1,L_2),\, p(p,L_1),\, p(k,L_2)\}
     \longmapsto 1 ,
 \]
-where $L_1,L_2$ denote canonical Lorentz dummy labels. The exact names
-$\mu,\nu$ have disappeared because they were dummy labels; the momenta $p$ and
-$k$ remain because they are physical external labels.
+where $L_1,L_2$ denote canonical Lorentz dummy labels. The exact names $\mu,\nu$ have disappeared because they were dummy labels; the momenta $p$ and $k$ remain because they are physical external labels.
 
-\paragraph{Example 2: generator ordering.} A covariant-derivative expansion can
-leave two generators in different orders on the two sides, for example
-$T^bT^a$ on one side and $T^aT^b$ on the other. The comparison does not treat
-these as freely commuting. Instead it uses the single Lie-algebra identity
+\paragraph{Example 2: generator ordering.} A covariant-derivative expansion can leave two generators in different orders on the two sides, for example $T^bT^a$ on one side and $T^aT^b$ on the other. The comparison does not treat these as freely commuting. Instead it uses the single Lie-algebra identity
 \begin{equation}
     [T^a,T^b] = i f^{abc}T^c ,
     \label{eq:validation-commutator}
 \end{equation}
-implemented by \texttt{\_normalize\_generator\_product\_order\_report}. If the
-adjoint labels are out of canonical order, the product is rewritten as the
-ordered product plus the commutator term. In schematic form,
+implemented by \texttt{\_normalize\_generator\_product\_order\_report}. If the adjoint labels are out of canonical order, the product is rewritten as the ordered product plus the commutator term:
 \[
     T^b T^a
     \quad \longrightarrow \quad
     T^a T^b - i f^{abc} T^c ,
 \]
-with the sign fixed by the commutator convention. This is not a general search
-over all possible reorderings; it is one deterministic rewrite to a fixed
-generator basis.
+with the sign fixed by the commutator convention. This is not a general search over all possible reorderings; it is one deterministic rewrite to a fixed generator basis.
 
-\paragraph{Example 3: the Jacobi identity.} The Jacobi step is similarly
-narrow. The code does not try to simplify arbitrary products of structure
-constants. It looks only for a pair of structure constants of the same adjoint
-representation sharing exactly one dummy adjoint index, with four remaining
-free labels. After antisymmetry has put each $f$ in canonical label order, the
-four free labels are sorted and called $a,b,c,d$, while the shared dummy label
-is called $e$. There are then only three pairings:
+\paragraph{Example 3: the Jacobi identity.} The Jacobi step is similarly narrow. The code does not try to simplify arbitrary products of structure constants; it looks only for a pair of structure constants of the same adjoint representation sharing exactly one dummy adjoint index, with four remaining free labels. After antisymmetry has put each $f$ in canonical label order, the four free labels are sorted and called $a,b,c,d$, while the shared dummy label is called $e$. There are then only three pairings:
 \[
     p_{12}=f^{abe}f^{cde}, \qquad
     p_{13}=f^{ace}f^{bde}, \qquad
@@ -169,36 +95,13 @@ The only Jacobi relation used is
     p_{13}=p_{12}+p_{14}.
     \label{eq:validation-jacobi}
 \end{equation}
-The canonical basis is chosen to be $p_{12}$ and $p_{14}$. Therefore an
-occurrence of the middle pairing $p_{13}$ is replaced by the sum
-$p_{12}+p_{14}$, including the signs induced by any antisymmetric permutation
-of the labels. Occurrences already in the $p_{12}$ or $p_{14}$ basis are left
-there. If a product has no such eligible pair, it is left unchanged; the row
-then has to match without this identity or it fails.
+The canonical basis is chosen to be $p_{12}$ and $p_{14}$; an occurrence of the middle pairing $p_{13}$ is replaced by the sum $p_{12}+p_{14}$, including the signs induced by any antisymmetric permutation of the labels. Occurrences already in the $p_{12}$ or $p_{14}$ basis are left alone. If a product has no such eligible pair, it is left unchanged and the row then has to match without this identity or it fails.
 
-The $SU(2)$ pseudoreality identities involving $\epsilon_{ij}$ and weak
-generators are implemented in the same spirit: they are local deterministic
-rewrites to a fixed tensor basis, not an open-ended simplification system.
+The $SU(2)$ pseudoreality identities involving $\epsilon_{ij}$ and weak generators are implemented in the same spirit: local, deterministic rewrites to a fixed tensor basis, not an open-ended simplification system. Concretely, the comparison first merges a contracted weak generator--epsilon pair, and then uses the two-generator relation $P(j,i)=-P(i,j)+i f^{abc}C_c(i,j)$, where $P$ denotes the product of the remaining generator with the contracted generator--epsilon composite and $C_c$ the corresponding commutator-channel composite. This rule is applied only in the restricted case where the two factors share one dummy weak-fundamental index and the open weak indices are external.
 
-For the SMEFT2 comparison these four stages and the local identities listed
-above are the whole simplification budget: it uses no equations of motion, no
-integration by parts, no momentum conservation, and no Schouten, Fierz or
-broad gamma-matrix reductions. The Standard Model benchmark of
-\Cref{sec:validation-sm} enables two further relations in two of its sectors,
-recorded there.
+For the SMEFT2 comparison, these four stages and the local identities listed above are the whole simplification budget: no equations of motion, no integration by parts, no momentum conservation, and no Schouten, Fierz, or broad gamma-matrix reductions. The Standard Model benchmark of \Cref{sec:validation-sm} enables two further relations in two of its sectors, recorded there.
 
-Two further design choices keep the comparison from degenerating into a
-tautology. First, as stated above, it runs separately for each coefficient
-head, so a mistake in one operator cannot be hidden by another. Second, raw
-coefficient-head occurrence counts are recorded only as diagnostics, never as
-the equality criterion. Equivalent expanded forms can legitimately have
-different raw counts: for example, FeynPy prints
-$\mathrm{Dual}[F]=\tfrac{1}{2}\epsilon\cdot F$ as separate antisymmetric
-branches, while FeynRules has already collapsed them using epsilon
-antisymmetry. On the current SMEFT2 reference, $100$ of $182$ shared signatures
-have matching raw counts, and every remaining delta carries a recorded,
-specific reason; none is unexplained.
-
+Two further design choices keep the comparison from degenerating into a tautology. First, as stated above, SMEFT2 runs separately for each coefficient head, so a mistake in one operator is reported in that operator's own sector. Second, raw coefficient-head occurrence counts are recorded only as diagnostics, never as the equality criterion, since equivalent expanded forms can legitimately have different raw counts: for example, FeynPy prints $\mathrm{Dual}[F]=\tfrac{1}{2}\epsilon\cdot F$ as separate antisymmetric branches, while FeynRules has already collapsed them using epsilon antisymmetry. On the current SMEFT2 reference, $100$ of $182$ literal shared signatures have matching raw counts; the denominator is $182$ rather than $184$ because two reference rows have no same-signature FeynPy row before the charge-conjugation packaging resolution. The remaining deltas carry recorded, specific reasons; the base expansion reasons are hand-curated \texttt{(signature, coefficient head)} entries assembled by inspection, while the rest are tied to the exact-proof classifications. None is unexplained.
 % --------------------------------------------------------------
 \section{Standard Model benchmark}
 \label{sec:validation-sm}
@@ -348,6 +251,8 @@ reference. The three-way exact-symbolic split is graded as described in
 \label{tab:smeft2-final-comparison}
 \end{table}
 
+Here an \emph{operator-content match} means that every Wilson-coefficient sector in the FeynRules row has an accepted canonical tensor-map counterpart, either directly or through one of the documented charge-conjugation packaging transforms. It does not require identical raw term counts or identical literal signature packaging.
+
 The three-way split is the substance of this result and is reported
 deliberately rather than collapsed into one number. A \emph{direct} match
 means same signature and identical canonical tensor map, no packaging
@@ -411,7 +316,7 @@ number in parentheses is the external-leg label.
 
 The two forms describe the same operator, and the fix is now visible by
 inspection: FeynPy's adjacent pairing $(1,2),(3,4)$ must be turned into
-FeynRules's pairing $(1,4),(2,3)$, which is exactly the \emph{crossed}
+the FeynRules pairing $(1,4),(2,3)$, which is exactly the \emph{crossed}
 re-pairing of the four legs. Eliminating the two $C$ factors this way picks
 up one overall sign, from the antisymmetry of the charge-conjugation matrix,
 \begin{equation}
@@ -627,13 +532,13 @@ summarised in \Cref{tab:validation-generality}.
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{llr}
+\begin{tabular}{lll}
 \toprule
-Model & Result & Adapter size \\
+Model & Result & Model-specific layer \\
 \midrule
-\path{models/SM} & $163/163$ & 205 lines \\
-\path{models/UnbrokenSM_BFM} & $67/67$ & 390 lines \\
-\path{models/SMEFT2} & $184/184$ & 5530 lines \\
+\path{models/SM} & $163/163$ & thin sector router \\
+\path{models/UnbrokenSM_BFM} & $67/67$ & custom unbroken-basis parser \\
+\path{models/SMEFT2} & $184/184$ & EFT coefficient and packaging layers \\
 \bottomrule
 \end{tabular}
 \caption{The same comparison core serves three models. The Standard Model is
