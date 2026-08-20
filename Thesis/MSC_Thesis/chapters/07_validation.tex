@@ -249,50 +249,45 @@ FeynRules decomposes \texttt{CC[...]} into its component fields, whereas FeynPy 
 \subsection{The discrepancy}
 % --------------------------------------------------------------
 
-FeynRules writes these operators through the \texttt{CC[...]} macro. Taking
-the four-lepton operator as the representative case,
+FeynRules writes these operators through the \texttt{CC[...]} macro. Taking the four-lepton operator as the representative case,
 \begin{verbatim}
 alphaEcll[f1,f2,f3,f4] CC[LLbar[sp1,ii,f1]].LL[sp1,jj,f2]
                        .LLbar[sp2,jj,f3].CC[LL[sp2,ii,f4]]
 \end{verbatim}
-\texttt{ExpandIndices} resolves the conjugation, so the exported vertex
-carries \emph{no} residual charge-conjugation matrix. In this representative
-operator, the pairing is fixed already by the source-index pattern: \texttt{ii}
-links legs $1$ and $4$, while \texttt{jj} links legs $2$ and $3$. Labelling the
-four external legs $1,2,3,4$ in the order they appear, the spinor flow then
-runs $1\!\to\!4$ and $2\!\to\!3$ through ordinary spinor-metric and gamma
-chains.
+\texttt{ExpandIndices} resolves the conjugation, so the exported vertex carries \emph{no} residual charge-conjugation matrix. In this representative operator, the pairing is fixed already by the source-index pattern: \texttt{ii} links legs $1$ and $4$, while \texttt{jj} links legs $2$ and $3$. Labelling the four external legs $1,2,3,4$ in the order they appear, the spinor flow then runs $1\!\to\!4$ and $2\!\to\!3$ through ordinary spinor-metric and gamma chains.
 
-FeynPy instead keeps the charge-conjugation matrix explicit and pairs
-\emph{adjacent} legs,
+The corresponding FeynPy implementation keeps the charge-conjugation tensors explicit:
+\begin{verbatim}
+p["alphaEcll"](f1, f2, f3, f4)
+* ll(sp=sp1, w=w1, f=f1, bar=True)
+* dirac_charge_conjugation(sp1, sp2)
+* ll(sp=sp2, w=w2, f=f2)
+* ll(sp=sp3, w=w2, f=f3, bar=True)
+* dirac_charge_conjugation(sp3, sp4)
+* ll(sp=sp4, w=w1, f=f4)
+\end{verbatim}
+At the signature level this example is deliberately subtle: both tools contain the same four external fields. FeynRules presents them in the order \texttt{lLbar|lL|lL|lLbar}, while FeynPy presents them as \texttt{lLbar|lL|lLbar|lL}; after sorting, both reduce to the same comparison key, \texttt{lL|lL|lLbar|lLbar}. The direct comparison nevertheless fails because the spinor tensor networks are different: FeynRules contracts the crossed pairs $(1,4)$ and $(2,3)$, while FeynPy contracts adjacent pairs.
+
+Explicitly, FeynPy pairs \emph{adjacent} legs,
 \begin{equation}
     \bar{l}_L(1)\, C\, l_L(2)\;
     \bar{l}_L(3)\, C\, l_L(4) ,
     \label{eq:validation-ec-feynpy}
 \end{equation}
-that is, flow $(1,2)$ and $(3,4)$ with two explicit $C$ factors, where the
-number in parentheses is the external-leg label.
+that is, flow $(1,2)$ and $(3,4)$ with two explicit $C$ factors, where the number in parentheses is the external-leg label.
 
 % --------------------------------------------------------------
 \subsection{The transform}
 % --------------------------------------------------------------
 
-The two forms describe the same operator, and the fix is now visible by
-inspection: FeynPy's adjacent pairing $(1,2),(3,4)$ must be turned into
-the FeynRules pairing $(1,4),(2,3)$, which is exactly the \emph{crossed}
-re-pairing of the four legs. Re-pairing this way picks up a single net sign,
-combining the antisymmetry of the charge-conjugation matrix,
+The two forms describe the same operator, and the fix is now visible by inspection: FeynPy's adjacent pairing $(1,2),(3,4)$ must be turned into the FeynRules pairing $(1,4),(2,3)$, which is exactly the \emph{crossed} re-pairing of the four legs. Re-pairing this way picks up a single net sign, combining the antisymmetry of the charge-conjugation matrix,
 \begin{equation}
     C^{T} = -C ,
     \label{eq:validation-c-antisymmetry}
 \end{equation}
-with the anticommutation needed to reorder the fermion fields into
-the crossed pairing.
+with the anticommutation needed to reorder the fermion fields into the crossed pairing.
 
-Both the pairing and the sign are global constants, fixed once for every
-\texttt{alphaEc} head rather than chosen per row: in code,
-\texttt{\_EC\_CC\_CONVENTION\_MODE = "crossed"} and
-\texttt{\_EC\_CC\_CONVENTION\_PHASE = -1}.
+Both the pairing and the sign are global constants, fixed once for every \texttt{alphaEc} head rather than chosen per row: in code, \texttt{\_EC\_CC\_CONVENTION\_MODE = "crossed"} and \texttt{\_EC\_CC\_CONVENTION\_PHASE = -1}.
 
 % --------------------------------------------------------------
 \subsection{Why this is a derivation and not a fit}
