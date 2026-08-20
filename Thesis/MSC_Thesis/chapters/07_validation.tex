@@ -119,11 +119,11 @@ The same restricted machinery is also used for the weak-generator identities of 
 
 
 % --------------------------------------------------------------
-\section{Standard Model benchmark}
+\section{Standard Model \& unbroken background-field benchmark}
 \label{sec:validation-sm}
 % --------------------------------------------------------------
 
-The Standard Model package in \path{models/SM/} is the first succesfull model. In it we manage to implement a gauge-basis declaration, field
+The Standard Model package in \path{models/SM/} is the first complete validation benchmark. It implements a gauge-basis declaration, field
 transformations to the physical basis, and a comparison of the resulting
 interaction vertices against the bundled FeynRules \texttt{SM.fr} export.
 
@@ -151,9 +151,9 @@ in every sector is a direct exact symbolic match.}
 \label{tab:validation-sm-sectors}
 \end{table}
 
-The comparison runs with ghosts included and gauge fixing disabled, so it validates the gauge, matter, Yukawa, Higgs/Goldstone and ghost sectors but \emph{not} the gauge-fixing sector, and it makes no claim about parameter-card semantics, loop-level output, restriction files, or external formats such as UFO.
+The comparison runs with ghosts included and gauge fixing disabled, so it validates the gauge, matter, Yukawa, Higgs/Goldstone and ghost sectors but \emph{not} the gauge-fixing sector. It also makes no claim about parameter-card semantics, loop-level output, restriction files, or external formats such as UFO.
 
-Two particular relations needed to be carefully examinated. The Higgs/Goldstone and ghost sectors are compared modulo the weak-mixing relation $c_W^2 + s_W^2 = 1$. In fact the two calculator have different result once the physical basis is used, because the two sources distribute it differently across a rule. The ghost sector additionally uses momentum conservation on its external legs, since a ghost rule is fixed only up to which leg momentum is eliminated. 
+Two particular relations needed to be handled carefully. The Higgs/Goldstone and ghost sectors are compared modulo the weak-mixing relation $c_W^2 + s_W^2 = 1$. In fact, once the physical basis is used, the two implementations can distribute this identity differently across a rule. The ghost sector additionally uses momentum conservation on its external legs, since a ghost rule is fixed only up to which leg momentum is eliminated.
 
 A second, independent benchmark is the unbroken background-field Standard Model in \path{models/UnbrokenSM_BFM/}, matching its own FeynRules reference at $67/67$ ($42$ three-point and $25$ four-point vertices). This matters for SMEFT2, which is formulated in the same unbroken basis: it shows that the basis, field naming, and generator conventions are already validated independently of the EFT operators.
 
@@ -162,28 +162,12 @@ A second, independent benchmark is the unbroken background-field Standard Model 
 \label{sec:validation-fidelity}
 % --------------------------------------------------------------
 
-The main validation target is the SMEFT2 Green-basis model in
-\path{models/SMEFT2/SMEFT2.py}, compared against the EFT-only FeynRules
-\texttt{Ltot} export at
-\path{models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json}. The local FeynPy
-\texttt{Ltot} follows the same convention, EFT contribution only, with the
-SM-plus-EFT combination available separately as \texttt{Lfull}.
+Ever since I started my thesis, we have been discussing a very ambitious goal: developing a toolkit capable of implementing SMEFT. That goal has now been achieved, and I will present the benchmark results. The SMEFT model with Green basis is implemented in \path{models/SMEFT2/SMEFT2.py}. This has been compared with the \texttt{Ltot} export from FeynRules, which comprises EFT only and is available in \path{models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json}. The FeynPy \texttt{Ltot} model follows the same convention, i.e. the EFT contribution only, whilst the
+SM plus EFT combination is available separately as \texttt{Lfull}.
 
-Before any vertex is compared, the transcription itself was audited. All
-$32$ EFT Lagrangian blocks of \texttt{SMEFT\_Green\_Bpreserving.fr} are
-implemented, and \texttt{Ltot} is composed from exactly those $32$ blocks in
-the same order. All $298$ active Wilson coefficients of the FeynRules source
-are declared in the FeynPy model and used in at least one operator; two
-further coefficients, \texttt{alphaEcdlq} and \texttt{alphaEcqeu}, appear in
-the FeynRules file but not in FeynPy, and both are commented out in
-FeynRules and used in no FeynRules operator, so omitting them is correct
-rather than a gap. (This is a statement about transcription, not about
-comparison coverage: of the $298$ declared coefficients, the vertex
-comparison of \Cref{sec:validation-smeft2} reaches $295$, for the structural
-reason given in \Cref{sec:validation-coverage}.) The Standard Model core is
-taken from \texttt{UnbrokenSM\_BFM.fr} minus its background-field ghost and
-gauge-fixing sectors, deliberately excluded because the comparison target is
-the EFT-only \texttt{Ltot}.
+
+Before comparing any vertices, the model’s transcription itself was checked to verify that FeynPy had all the capabilities required to implement the operators. All $32$ EFT Lagrangian blocks in \texttt{SMEFT\_Green\_Bpreserving.fr} have been implemented, and \texttt{Ltot} consists exactly of those $32$ blocks in the same order. All $298$ active Wilson coefficients in the FeynRules source code are declared in the FeynPy model and used in at least one operator. Two further coefficients, \texttt{alphaEcdlq} and \texttt{alphaEcqeu}, appear in the FeynRules file but not in FeynPy, and both are commented out in FeynRules and are not used in any FeynRules operator, so their omission is correct rather than a gap. (This is an observation regarding the transcription, not the coverage of the comparison: of the $298$ declared coefficients, the comparison of vertices in \Cref{sec:validation-smeft2} covers $295$, for the structural reason indicated in \Cref{sec:validation-coverage}.) The core of the Standard Model is taken from \texttt{UnbrokenSM\_BFM.fr}, minus its background-field ghost and gauge-fixing sectors, which have been deliberately excluded since the subject of the comparison is the \texttt{Ltot} based exclusively on EFT.
+
 
 The structural differences between the two sources are systematic
 conventions, not per-operator adjustments, as summarised in
@@ -248,39 +232,18 @@ reference. The three-way exact-symbolic split is graded as described in
 \label{tab:smeft2-final-comparison}
 \end{table}
 
-Here an \emph{operator-content match} means that every Wilson-coefficient sector in the FeynRules row has an accepted canonical tensor-map counterpart, either directly or, in the documented non-direct cases, through a charge-conjugation packaging transform. It does not require identical raw term counts or identical literal signature packaging.
+We define a correspondence between an operator and its content when every contribution from the Wilson coefficients generated by FeynRules can be mapped to the same canonical tensor-monomial map in FeynPy. The two raw outputs need not necessarily contain the same number of terms nor use the same field packaging.
 
-The three-way split is the substance of this result and is reported
-deliberately rather than collapsed into one number. A \emph{direct} match
-means same signature and identical canonical tensor map, no packaging
-assumption. A match \emph{modulo the global \texttt{Ec} convention} means the
-row agrees only after the one fixed charge-conjugation transform of
-\Cref{sec:validation-ec}. A match \emph{modulo pinned packaging} means the
-row additionally needs one explicitly tabulated, row-specific transform, with
-partner signature, phase and duplicate-leg symmetry all fixed in advance;
-this group has two distinct sources, separated in
-\Cref{sec:validation-ec-pinned}.
+We distinguish between three types of correspondence. A direct correspondence requires no additional conventions: the field signature is the same and the canonical tensor-monomial maps coincide. A correspondence modulo the global \texttt{Ec} convention coincides after applying the single charge-conjugation transformation defined in \Cref{sec:validation-ec}. Finally, a fixed-packaging correspondence requires an additional, row-specific mapping, established in advance, which includes the partner signature, the phase and the handling of duplicate-leg symmetry.
 
-An earlier version of this comparison reported $176$ direct matches, because
-the $15$ rows that depend on the global \texttt{Ec} convention were counted
-as needing nothing. That was not wrong about equality, but it hid an
-assumption behind an unconditional-looking number; the current grading keeps
-the assumption visible.
-
-The bosonic figure of $32/32$ is a diagnostic specific to the bosonic sector
-and is not a coverage ceiling: the remaining $152$ fermionic rows are proved
-by the same canonical-map machinery and are reported in the exact-symbolic
-column above it.
 
 % --------------------------------------------------------------
 \section{The evanescent charge-conjugation convention}
 \label{sec:validation-ec}
 % --------------------------------------------------------------
+We now focus specifically on the fermionic sector, in particular on the evanescent\footnote{The term ``evanescent'' refers here to operator structures required by the dimensional-regularisation scheme, but redundant in strictly four dimensions.} four-fermion operators with charge conjugation. These terms are accompanied by coefficients whose names begin with \texttt{alphaEc}. Charge conjugation is handled differently by FeynRules and FeynPy, and this creates an apparent discrepancy between the two outputs that must be considered carefully.
 
-The single most consequential assumption in the fermionic sector concerns
-the evanescent charge-conjugated four-fermion operators, i.e.\ every
-coefficient whose name begins with \texttt{alphaEc}. Without it, all $21$
-four-fermion \texttt{Ec} rows fail, so it is documented here in full.
+FeynRules decomposes \texttt{CC[...]} into its component fields, whereas FeynPy retains the structure as an explicit tensor $C$. Without a convention to reconcile this difference, direct comparison via the canonical map rejects all $21/21$ four-fermion \texttt{Ec} rows, not because the operator content is inconsistent, but because of this difference in representation. The following paragraphs define the translation between the two representations.
 
 % --------------------------------------------------------------
 \subsection{The discrepancy}
@@ -293,9 +256,12 @@ alphaEcll[f1,f2,f3,f4] CC[LLbar[sp1,ii,f1]].LL[sp1,jj,f2]
                        .LLbar[sp2,jj,f3].CC[LL[sp2,ii,f4]]
 \end{verbatim}
 \texttt{ExpandIndices} resolves the conjugation, so the exported vertex
-carries \emph{no} residual charge-conjugation matrix: labelling the four
-external legs $1,2,3,4$ in the order they appear, the spinor flow runs
-$1\!\to\!4$ and $2\!\to\!3$ through ordinary spinor-metric and gamma chains.
+carries \emph{no} residual charge-conjugation matrix. In this representative
+operator, the pairing is fixed already by the source-index pattern: \texttt{ii}
+links legs $1$ and $4$, while \texttt{jj} links legs $2$ and $3$. Labelling the
+four external legs $1,2,3,4$ in the order they appear, the spinor flow then
+runs $1\!\to\!4$ and $2\!\to\!3$ through ordinary spinor-metric and gamma
+chains.
 
 FeynPy instead keeps the charge-conjugation matrix explicit and pairs
 \emph{adjacent} legs,
@@ -314,13 +280,13 @@ number in parentheses is the external-leg label.
 The two forms describe the same operator, and the fix is now visible by
 inspection: FeynPy's adjacent pairing $(1,2),(3,4)$ must be turned into
 the FeynRules pairing $(1,4),(2,3)$, which is exactly the \emph{crossed}
-re-pairing of the four legs. Eliminating the two $C$ factors this way picks
-up one overall sign, from the antisymmetry of the charge-conjugation matrix,
+re-pairing of the four legs. Re-pairing this way picks up a single net sign,
+combining the antisymmetry of the charge-conjugation matrix,
 \begin{equation}
     C^{T} = -C ,
     \label{eq:validation-c-antisymmetry}
 \end{equation}
-together with the anticommutation needed to reorder the fermion fields into
+with the anticommutation needed to reorder the fermion fields into
 the crossed pairing.
 
 Both the pairing and the sign are global constants, fixed once for every
