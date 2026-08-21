@@ -1,6 +1,6 @@
-# SMEFT2 Comparison Method Report
+# SMEFT Comparison Method Report
 
-Updated for the SMEFT2 FeynRules/FeynPy comparison on 2026-08-11.
+Updated for the SMEFT FeynRules/FeynPy comparison on 2026-08-11.
 
 ## Current Result
 
@@ -39,7 +39,7 @@ when the diagnostic count itself is the target.
 The direct-only audit gate is:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison --check
+.venv/bin/python -m models.SMEFT.comparison --check
 ```
 
 It requires every supported row to be a direct `EXACT_MATCH`. The documented
@@ -49,14 +49,14 @@ global Ec CC convention and pinned CC packaging rows can be accepted with
 The final thesis acceptance gate is therefore:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+.venv/bin/python -m models.SMEFT.comparison --check --allow-cc-packaging
 ```
 
 ## Basis
 
 The reference side is `reference/Ltot_SMEFT_FeynRules.json`, exported from the
 EFT-only FeynRules `Ltot`. The local side is the EFT-only FeynPy `Ltot` from
-`SMEFT2.py`. `Lfull` still exists for SM-plus-EFT use, but it is not the
+`SMEFT.py`. `Lfull` still exists for SM-plus-EFT use, but it is not the
 comparison basis.
 
 Field names are normalized to the FeynRules convention before any matching:
@@ -101,7 +101,7 @@ sector to the same mathematical form before comparing. "Direct exact" means
 same-signature canonical tensor-map equality with no charge-conjugation
 packaging convention. "Global Ec CC" means the row matches only after the
 single crossed-arm convention that relates FeynRules' resolved `CC[...]`
-spinor flow to SMEFT2.py's explicit `C` factors. "Pinned CC" means equality
+spinor flow to SMEFT.py's explicit `C` factors. "Pinned CC" means equality
 only after one explicitly listed charge-conjugation partner transform.
 
 | Sector family | FeynRules rows | Result | Main normalization work |
@@ -202,7 +202,7 @@ What is not claimed:
 The safest command for a thesis result is:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+.venv/bin/python -m models.SMEFT.comparison --check --allow-cc-packaging
 ```
 
 Use plain `--check` only when you want to demand direct same-signature equality
@@ -455,7 +455,7 @@ canonical-map equality.
 
 ## Meaning of `--check`
 
-`python -m models.SMEFT2.comparison --check` returns nonzero if any of these are true:
+`python -m models.SMEFT.comparison --check` returns nonzero if any of these are true:
 
 - operator-content coverage is not `184/184`;
 - any FeynPy-only signature remains unexplained;
@@ -474,4 +474,4 @@ The current state fails the direct-only `--check` audit because 23 rows are
 documented charge-conjugation packaging matches rather than direct
 `EXACT_MATCH`: 15 rows use the global Ec CC convention and 8 rows use pinned CC
 packaging. With `--allow-cc-packaging`, only those documented packaging rows
-are accepted and the final SMEFT2 gate passes.
+are accepted and the final SMEFT gate passes.

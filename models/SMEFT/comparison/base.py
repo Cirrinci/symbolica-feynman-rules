@@ -1,7 +1,7 @@
-"""Regenerate the SMEFT2 FeynRules/FeynPy comparison artifacts.
+"""Regenerate the SMEFT FeynRules/FeynPy comparison artifacts.
 
 The FeynRules reference JSON is a full tensor-rule export. This script performs
-the reproducible comparison currently supported for SMEFT2: signature coverage,
+the reproducible comparison currently supported for SMEFT: signature coverage,
 coefficient-head content, and raw coefficient-head multiplicity diagnostics
 after normalizing field names to the FeynRules convention. It also exports the
 local FeynPy vertex rules so individual rows can be inspected against the
@@ -39,7 +39,7 @@ from feynrules.comparison import (
     split_top_level_commas as _split_top_level_commas,
     validate_feynrules_projector_chirality,
 )
-from models.SMEFT2 import build_smeft_green_bpreserving
+from models.SMEFT import build_smeft_green_bpreserving
 from symbolic.tensor_canonicalization import (
     CanonicalMonomialReport,
     CanonicalTensorMonomial,
@@ -280,7 +280,7 @@ def _spinor_chain_item_factor(
 
 # Chirality of the unbroken-basis matter fields. A trailing ``bar`` marks the
 # barred field, so only the unbarred names are listed.
-SMEFT2_FERMION_CHIRALITY = {
+SMEFT_FERMION_CHIRALITY = {
     "lL": "L",
     "qL": "L",
     "eR": "R",
@@ -289,10 +289,10 @@ SMEFT2_FERMION_CHIRALITY = {
 }
 
 
-def validate_smeft2_projector_chirality(rule: str, fields: Iterable[str]) -> int:
-    """Verify every FeynRules projector against SMEFT2 field chirality.
+def validate_smeft_projector_chirality(rule: str, fields: Iterable[str]) -> int:
+    """Verify every FeynRules projector against SMEFT field chirality.
 
-    The SMEFT2 parser drops ``ProjM``/``ProjP`` because chirality lives in the
+    The SMEFT parser drops ``ProjM``/``ProjP`` because chirality lives in the
     FeynPy field class, which makes the projector redundant in the unbroken
     basis. That is only sound when the projector actually agrees with the
     fields it sits between, so the agreement is verified rather than assumed.
@@ -303,7 +303,7 @@ def validate_smeft2_projector_chirality(rule: str, fields: Iterable[str]) -> int
     return validate_feynrules_projector_chirality(
         rule,
         fields,
-        SMEFT2_FERMION_CHIRALITY,
+        SMEFT_FERMION_CHIRALITY,
     )
 
 
@@ -445,7 +445,7 @@ def _filter_terms_by_coefficient_head(
 
     Symbolica's bare ``expression.coefficient(S("alpha"))`` extraction works
     for scalar heads such as ``alphaO3G`` but not for indexed Wilson functions
-    such as ``alphaKl(f1, f2)`` or ``conj(alphaWeinberg(f1, f2))``.  SMEFT2
+    such as ``alphaKl(f1, f2)`` or ``conj(alphaWeinberg(f1, f2))``.  SMEFT
     fermion rows are dominated by indexed Wilson coefficients, so exact row
     comparison filters terms by coefficient head and leaves the full indexed
     coefficient factor in the scalar coefficient.  This keeps flavor order and

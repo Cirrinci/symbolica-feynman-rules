@@ -2,10 +2,10 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-import models.SMEFT2.comparison as smeft2_comparison
+import models.SMEFT.comparison as smeft_comparison
 from feynrules.comparison import compare_canonical_coefficient_maps
 from feynpy import Model
-from models.SMEFT2 import OMITTED_SECTORS, build_smeft_green_bpreserving
+from models.SMEFT import OMITTED_SECTORS, build_smeft_green_bpreserving
 from symbolic.tensor_canonicalization import canonical_external_index_set
 from symbolica import Expression, S
 
@@ -96,12 +96,12 @@ def _assert_reference_row_exact_match(key: str):
     reference = _reference_vertex_by_key(key)
     report_row = _report_row_by_key(key)
     bundle = build_smeft_green_bpreserving()
-    field_map = smeft2_comparison._comparison_field_map(bundle)
+    field_map = smeft_comparison._comparison_field_map(bundle)
     fields = tuple(field_map[name] for name in reference["fields"])
-    external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+    external_indices = smeft_comparison._external_index_set_from_fields(fields)
     local_rule = bundle.model.lagrangian().feynman_rule(*fields, simplify=True)
-    reference_rule = smeft2_comparison.parse_smeft2_matter_rule(reference["rule"])
-    comparisons = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
+    reference_rule = smeft_comparison.parse_smeft_matter_rule(reference["rule"])
+    comparisons = smeft_comparison._compare_smeft_canonical_coefficient_maps(
         local_rule,
         reference_rule,
         coefficients=tuple(
@@ -118,15 +118,15 @@ def _assert_reference_row_exact_match(key: str):
 def _comparison_context():
     bundle = build_smeft_green_bpreserving()
     references_by_key = defaultdict(list)
-    for reference in smeft2_comparison.load_feynrules_json(
-        smeft2_comparison.REFERENCE
+    for reference in smeft_comparison.load_feynrules_json(
+        smeft_comparison.REFERENCE
     ):
-        key = smeft2_comparison._name_key(reference.fields)
+        key = smeft_comparison._name_key(reference.fields)
         references_by_key[key].append(reference)
     return (
         bundle.model.lagrangian(),
-        smeft2_comparison._comparison_field_map(bundle),
-        set(bundle.parameters) | smeft2_comparison.GENERIC_PARAMETER_NAMES,
+        smeft_comparison._comparison_field_map(bundle),
+        set(bundle.parameters) | smeft_comparison.GENERIC_PARAMETER_NAMES,
         references_by_key,
     )
 
@@ -134,7 +134,7 @@ def _comparison_context():
 def _reference_with_head(references_by_key, key: str, head: str, parameter_names):
     candidates = []
     for reference in references_by_key[key]:
-        reference_heads = smeft2_comparison._reference_heads(
+        reference_heads = smeft_comparison._reference_heads(
             reference,
             parameter_names,
         )
@@ -178,9 +178,9 @@ def _check_summary(**overrides):
 
 def _patch_passing_weinberg_comparison(monkeypatch):
     monkeypatch.setattr(
-        smeft2_comparison,
+        smeft_comparison,
         "compare_reconstructed_weinberg",
-        lambda _reference=smeft2_comparison.REFERENCE: (
+        lambda _reference=smeft_comparison.REFERENCE: (
             {
                 "summary": {
                     "reference_vertices": 2,
@@ -197,9 +197,9 @@ def _patch_passing_weinberg_comparison(monkeypatch):
 
 def _patch_passing_ec_cc_comparison(monkeypatch):
     monkeypatch.setattr(
-        smeft2_comparison,
+        smeft_comparison,
         "compare_ec_charge_conjugation_reconstruction",
-        lambda _reference=smeft2_comparison.REFERENCE: (
+        lambda _reference=smeft_comparison.REFERENCE: (
             {
                 "summary": {
                     "coefficient_sectors": 12,
@@ -213,17 +213,17 @@ def _patch_passing_ec_cc_comparison(monkeypatch):
     )
 
 
-def test_smeft2_check_requires_direct_exact_by_default(monkeypatch):
+def test_smeft_check_requires_direct_exact_by_default(monkeypatch):
     def fake_compare(_reference):
         return {"summary": _check_summary()}, ()
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check"]) == 0
+    assert smeft_comparison.main(["--check"]) == 0
 
 
-def test_smeft2_check_rejects_pinned_cc_without_flag(monkeypatch):
+def test_smeft_check_rejects_pinned_cc_without_flag(monkeypatch):
     def fake_compare(_reference):
         return {
             "summary": _check_summary(
@@ -233,14 +233,14 @@ def test_smeft2_check_rejects_pinned_cc_without_flag(monkeypatch):
             )
         }, ()
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check"]) == 1
-    assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
+    assert smeft_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check", "--allow-cc-packaging"]) == 0
 
 
-def test_smeft2_check_rejects_ec_cc_convention_without_flag(monkeypatch):
+def test_smeft_check_rejects_ec_cc_convention_without_flag(monkeypatch):
     def fake_compare(_reference):
         return {
             "summary": _check_summary(
@@ -250,14 +250,14 @@ def test_smeft2_check_rejects_ec_cc_convention_without_flag(monkeypatch):
             )
         }, ()
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check"]) == 1
-    assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 0
+    assert smeft_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check", "--allow-cc-packaging"]) == 0
 
 
-def test_smeft2_unvalidated_coefficients_are_exactly_the_two_point_sector():
+def test_smeft_unvalidated_coefficients_are_exactly_the_two_point_sector():
     """Pin the coverage gap so it cannot widen unnoticed.
 
     The FeynRules reference exports 3- to 6-point vertices only, so any Wilson
@@ -266,13 +266,13 @@ def test_smeft2_unvalidated_coefficients_are_exactly_the_two_point_sector():
     unvalidated rather than silently counted as covered.
     """
 
-    references = smeft2_comparison.load_feynrules_json(smeft2_comparison.REFERENCE)
+    references = smeft_comparison.load_feynrules_json(smeft_comparison.REFERENCE)
     bundle = build_smeft_green_bpreserving()
-    parameter_names = set(bundle.parameters) | smeft2_comparison.GENERIC_PARAMETER_NAMES
+    parameter_names = set(bundle.parameters) | smeft_comparison.GENERIC_PARAMETER_NAMES
 
     covered = set()
     for reference in references:
-        covered |= set(smeft2_comparison._reference_heads(reference, parameter_names))
+        covered |= set(smeft_comparison._reference_heads(reference, parameter_names))
 
     uncovered = set(bundle.parameters) - covered
     standard_model_parameters = {"lam", "muH", "yd", "yl", "yu"}
@@ -288,7 +288,7 @@ def test_smeft2_unvalidated_coefficients_are_exactly_the_two_point_sector():
     assert standard_model_parameters <= uncovered
 
 
-def test_smeft2_ec_cc_convention_is_a_single_global_constant():
+def test_smeft_ec_cc_convention_is_a_single_global_constant():
     """The Ec packaging convention must be global, not fitted per row.
 
     Both the arm re-pairing mode and the overall sign are fixed once for every
@@ -296,11 +296,11 @@ def test_smeft2_ec_cc_convention_is_a_single_global_constant():
     being absorbed as an apparent improvement in the match rate.
     """
 
-    assert smeft2_comparison._EC_CC_CONVENTION_MODE == "crossed"
-    assert smeft2_comparison._EC_CC_CONVENTION_PHASE == -1
+    assert smeft_comparison._EC_CC_CONVENTION_MODE == "crossed"
+    assert smeft_comparison._EC_CC_CONVENTION_PHASE == -1
 
 
-def test_smeft2_ec_cc_convention_rows_are_labelled_not_silently_accepted():
+def test_smeft_ec_cc_convention_rows_are_labelled_not_silently_accepted():
     """Rows relying on the global Ec convention must not claim EXACT_MATCH."""
 
     report = _comparison_report()
@@ -322,7 +322,7 @@ def test_smeft2_ec_cc_convention_rows_are_labelled_not_silently_accepted():
         )
 
 
-def test_smeft2_check_rejects_unresolved_cc_even_with_allow_flag(monkeypatch):
+def test_smeft_check_rejects_unresolved_cc_even_with_allow_flag(monkeypatch):
     def fake_compare(_reference):
         return {
             "summary": _check_summary(
@@ -333,14 +333,14 @@ def test_smeft2_check_rejects_unresolved_cc_even_with_allow_flag(monkeypatch):
             )
         }, ()
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check"]) == 1
-    assert smeft2_comparison.main(["--check", "--allow-cc-packaging"]) == 1
+    assert smeft_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check", "--allow-cc-packaging"]) == 1
 
 
-def test_smeft2_check_rejects_incomplete_exact_status_accounting(monkeypatch):
+def test_smeft_check_rejects_incomplete_exact_status_accounting(monkeypatch):
     def fake_compare(_reference):
         return {
             "summary": _check_summary(
@@ -349,37 +349,37 @@ def test_smeft2_check_rejects_incomplete_exact_status_accounting(monkeypatch):
             )
         }, ()
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check"]) == 1
 
 
-def test_smeft2_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch):
+def test_smeft_check_still_rejects_unexplained_or_strict_count_gaps(monkeypatch):
     def fake_compare(_reference):
         return {
             "summary": _check_summary(feynpy_only_unexplained_signatures=1)
         }, ()
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check"]) == 1
 
     def fake_compare_with_raw_count_gap(_reference):
         return {"summary": _check_summary()}, ()
 
     monkeypatch.setattr(
-        smeft2_comparison,
+        smeft_comparison,
         "compare",
         fake_compare_with_raw_count_gap,
     )
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check", "--strict-counts"]) == 1
+    assert smeft_comparison.main(["--check", "--strict-counts"]) == 1
 
 
-def test_smeft2_check_rejects_strict_exact_mismatches(monkeypatch):
+def test_smeft_check_rejects_strict_exact_mismatches(monkeypatch):
     def fake_compare(_reference):
         return {
             "summary": _check_summary(
@@ -389,13 +389,13 @@ def test_smeft2_check_rejects_strict_exact_mismatches(monkeypatch):
             )
         }, ()
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     _patch_passing_ec_cc_comparison(monkeypatch)
-    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check"]) == 1
 
 
-def test_smeft2_check_rejects_weinberg_sidecar_mismatch(monkeypatch):
+def test_smeft_check_rejects_weinberg_sidecar_mismatch(monkeypatch):
     def fake_compare(_reference):
         return {"summary": _check_summary()}, ()
 
@@ -410,18 +410,18 @@ def test_smeft2_check_rejects_weinberg_sidecar_mismatch(monkeypatch):
             }
         }, []
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     monkeypatch.setattr(
-        smeft2_comparison,
+        smeft_comparison,
         "compare_reconstructed_weinberg",
         fake_weinberg_compare,
     )
     _patch_passing_ec_cc_comparison(monkeypatch)
 
-    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check"]) == 1
 
 
-def test_smeft2_check_rejects_ec_cc_sidecar_mismatch(monkeypatch):
+def test_smeft_check_rejects_ec_cc_sidecar_mismatch(monkeypatch):
     def fake_compare(_reference):
         return {"summary": _check_summary()}, ()
 
@@ -435,19 +435,19 @@ def test_smeft2_check_rejects_ec_cc_sidecar_mismatch(monkeypatch):
             }
         }, []
 
-    monkeypatch.setattr(smeft2_comparison, "compare", fake_compare)
+    monkeypatch.setattr(smeft_comparison, "compare", fake_compare)
     _patch_passing_weinberg_comparison(monkeypatch)
     monkeypatch.setattr(
-        smeft2_comparison,
+        smeft_comparison,
         "compare_ec_charge_conjugation_reconstruction",
         fake_ec_compare,
     )
 
-    assert smeft2_comparison.main(["--check"]) == 1
+    assert smeft_comparison.main(["--check"]) == 1
 
 
-def test_smeft2_indexed_coefficient_filter_is_not_vacuous():
-    comparisons = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
+def test_smeft_indexed_coefficient_filter_is_not_vacuous():
+    comparisons = smeft_comparison._compare_smeft_canonical_coefficient_maps(
         Expression.parse("alphaKq(f1,f2)*x"),
         Expression.num(0),
         coefficients=("alphaKq",),
@@ -460,7 +460,7 @@ def test_smeft2_indexed_coefficient_filter_is_not_vacuous():
     assert not comparison.matches
 
 
-def test_smeft2_pinned_cc_rows_are_only_proven_weinberg_or_ec_classes():
+def test_smeft_pinned_cc_rows_are_only_proven_weinberg_or_ec_classes():
     report = _comparison_report()
     rows = _pinned_cc_rows(report)
 
@@ -473,7 +473,7 @@ def test_smeft2_pinned_cc_rows_are_only_proven_weinberg_or_ec_classes():
     )
 
 
-def test_smeft2_weinberg_packaging_is_proven_by_antisymmetric_canonical_maps():
+def test_smeft_weinberg_packaging_is_proven_by_antisymmetric_canonical_maps():
     report = _comparison_report()
     pinned_rows = _pinned_cc_rows(report)
     weinberg_rows = [
@@ -498,16 +498,16 @@ def test_smeft2_weinberg_packaging_is_proven_by_antisymmetric_canonical_maps():
             "alphaWeinberg",
             parameter_names,
         )
-        packaged_orders = smeft2_comparison._weinberg_packaged_field_orders(
+        packaged_orders = smeft_comparison._weinberg_packaged_field_orders(
             reference.fields
         )
         assert packaged_orders is not None
         assert row["charge_conjugation_partner"] in {
-            smeft2_comparison._name_key(order) for order in packaged_orders
+            smeft_comparison._name_key(order) for order in packaged_orders
         }
 
         fields = tuple(field_map[name] for name in reference.fields)
-        external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+        external_indices = smeft_comparison._external_index_set_from_fields(fields)
         assert external_indices is not None
         first_rule = lagrangian.feynman_rule(
             *(field_map[name] for name in packaged_orders[0]),
@@ -517,19 +517,19 @@ def test_smeft2_weinberg_packaging_is_proven_by_antisymmetric_canonical_maps():
             *(field_map[name] for name in packaged_orders[1]),
             simplify=True,
         )
-        reference_rule = smeft2_comparison.parse_smeft2_matter_rule(
+        reference_rule = smeft_comparison.parse_smeft_matter_rule(
             reference.rule,
             projector_as_dirac_c=True,
         )
 
-        antisymmetric = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
+        antisymmetric = smeft_comparison._compare_smeft_canonical_coefficient_maps(
             (first_rule - second_rule).cancel().expand(),
             reference_rule,
             coefficients=("alphaWeinberg",),
             external_indices=external_indices,
             max_dummy_permutations=2_000_000,
         )["alphaWeinberg"]
-        symmetric = smeft2_comparison._compare_smeft2_canonical_coefficient_maps(
+        symmetric = smeft_comparison._compare_smeft_canonical_coefficient_maps(
             (first_rule + second_rule).cancel().expand(),
             reference_rule,
             coefficients=("alphaWeinberg",),
@@ -544,7 +544,7 @@ def test_smeft2_weinberg_packaging_is_proven_by_antisymmetric_canonical_maps():
         assert not symmetric.matches
 
 
-def test_smeft2_reconstructed_weinberg_sidecar_export_shape():
+def test_smeft_reconstructed_weinberg_sidecar_export_shape():
     vertex_keys = {
         vertex["key"]
         for vertex in json.loads(
@@ -598,8 +598,8 @@ def test_smeft2_reconstructed_weinberg_sidecar_export_shape():
     assert report["summary"]["coefficient_matches"] == 4
 
 
-def test_smeft2_reconstructed_weinberg_matches_feynrules_by_flavor_and_sign():
-    report, vertices = smeft2_comparison.compare_reconstructed_weinberg()
+def test_smeft_reconstructed_weinberg_matches_feynrules_by_flavor_and_sign():
+    report, vertices = smeft_comparison.compare_reconstructed_weinberg()
     assert {vertex["key"] for vertex in vertices} == {
         "Phi|Phi|lL|lL",
         "Phibar|Phibar|lLbar|lLbar",
@@ -639,37 +639,37 @@ def test_smeft2_reconstructed_weinberg_matches_feynrules_by_flavor_and_sign():
             "alphaWeinberg",
             parameter_names,
         )
-        external_indices = smeft2_comparison._weinberg_external_indices(
+        external_indices = smeft_comparison._weinberg_external_indices(
             reference,
             field_map,
         )
-        feynrules_rule = smeft2_comparison._parse_weinberg_fermion_flow_rule(
+        feynrules_rule = smeft_comparison._parse_weinberg_fermion_flow_rule(
             reference.rule
         )
-        first_minus_second = smeft2_comparison._reconstructed_weinberg_flow_rule(
+        first_minus_second = smeft_comparison._reconstructed_weinberg_flow_rule(
             reference=reference,
             lagrangian=lagrangian,
             field_map=field_map,
             sign=-1,
         )
-        first_plus_second = smeft2_comparison._reconstructed_weinberg_flow_rule(
+        first_plus_second = smeft_comparison._reconstructed_weinberg_flow_rule(
             reference=reference,
             lagrangian=lagrangian,
             field_map=field_map,
             sign=1,
         )
 
-        assert smeft2_comparison._weinberg_canonical_zero(
+        assert smeft_comparison._weinberg_canonical_zero(
             (first_minus_second - feynrules_rule).cancel().expand(),
             external_indices=external_indices,
         )
-        assert not smeft2_comparison._weinberg_canonical_zero(
+        assert not smeft_comparison._weinberg_canonical_zero(
             (first_plus_second - feynrules_rule).cancel().expand(),
             external_indices=external_indices,
         )
 
 
-def test_smeft2_ec_cc_sidecar_export_shape():
+def test_smeft_ec_cc_sidecar_export_shape():
     report = _ec_cc_comparison_report()
     vertices = _ec_cc_vertices()
 
@@ -742,8 +742,8 @@ def test_smeft2_ec_cc_sidecar_export_shape():
     }
 
 
-def test_smeft2_ec_cc_reconstruction_matches_feynrules_per_coefficient():
-    report, vertices = smeft2_comparison.compare_ec_charge_conjugation_reconstruction()
+def test_smeft_ec_cc_reconstruction_matches_feynrules_per_coefficient():
+    report, vertices = smeft_comparison.compare_ec_charge_conjugation_reconstruction()
 
     assert report["summary"]["coefficient_sectors"] == 12
     assert report["summary"]["exact_matches"] == 12
@@ -790,20 +790,20 @@ def test_smeft2_ec_cc_reconstruction_matches_feynrules_per_coefficient():
     assert all(len(mappings) == 2 for mappings in duplicated.values())
 
 
-def test_smeft2_ec_cc_projectors_are_connected_spinor_tensors():
-    report, _vertices = smeft2_comparison.compare_ec_charge_conjugation_reconstruction()
+def test_smeft_ec_cc_projectors_are_connected_spinor_tensors():
+    report, _vertices = smeft_comparison.compare_ec_charge_conjugation_reconstruction()
     _lagrangian, field_map, _parameter_names, _references_by_key = _comparison_context()
 
     for row in report["vertices"]:
         fields = tuple(field_map[name] for name in row["fields"])
-        external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+        external_indices = smeft_comparison._external_index_set_from_fields(fields)
         assert external_indices is not None
 
         for expression_key in (
             "feynpy_expression",
             "filtered_feynrules_expression",
         ):
-            canonical = smeft2_comparison._ec_flow_canonical_report(
+            canonical = smeft_comparison._ec_flow_canonical_report(
                 Expression.parse(row[expression_key]),
                 coefficient=row["coefficient"],
                 external_indices=external_indices,
@@ -830,8 +830,8 @@ def test_smeft2_ec_cc_projectors_are_connected_spinor_tensors():
                     assert terminal_gamma_spinors <= projector_left_spinors
 
 
-def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():
-    rules = smeft2_comparison._EC_PARTNER_PACKAGING_RULES
+def test_smeft_ec_partner_packaging_rules_are_proven_by_canonical_maps():
+    rules = smeft_comparison._EC_PARTNER_PACKAGING_RULES
     report = _comparison_report()
     ec_rows = [
         row
@@ -848,7 +848,7 @@ def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():
     assert set(rules) == expected_rule_keys
 
     lagrangian, field_map, parameter_names, references_by_key = _comparison_context()
-    local_vertices = smeft2_comparison._local_vertices(parameter_names)
+    local_vertices = smeft_comparison._local_vertices(parameter_names)
 
     for reference_key, coefficient in sorted(rules):
         reference = _reference_with_head(
@@ -858,16 +858,16 @@ def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():
             parameter_names,
         )
         fields = tuple(field_map[name] for name in reference.fields)
-        external_indices = smeft2_comparison._external_index_set_from_fields(fields)
+        external_indices = smeft_comparison._external_index_set_from_fields(fields)
         assert external_indices is not None
 
-        feynrules_report = smeft2_comparison._canonical_report_for_coefficient_head(
-            smeft2_comparison.parse_smeft2_matter_rule(reference.rule),
+        feynrules_report = smeft_comparison._canonical_report_for_coefficient_head(
+            smeft_comparison.parse_smeft_matter_rule(reference.rule),
             coefficient=coefficient,
             external_indices=external_indices,
             max_dummy_permutations=2_000_000,
         )
-        result = smeft2_comparison._ec_partner_packaging_comparison(
+        result = smeft_comparison._ec_partner_packaging_comparison(
             reference=reference,
             coefficient=coefficient,
             feynrules_report=feynrules_report,
@@ -887,7 +887,7 @@ def test_smeft2_ec_partner_packaging_rules_are_proven_by_canonical_maps():
         assert rules[(reference_key, coefficient)].partner_key in detail
 
 
-def test_smeft2_supported_subset_builds_and_compiles():
+def test_smeft_supported_subset_builds_and_compiles():
     bundle = build_smeft_green_bpreserving()
     lagrangian = bundle.model.lagrangian()
     signatures = {signature.names for signature in lagrangian.vertex_signatures()}
@@ -903,7 +903,7 @@ def test_smeft2_supported_subset_builds_and_compiles():
     assert ("QL.bar", "QL", "G", "G") in signatures
 
 
-def test_smeft2_ltot_is_eft_only_and_lfull_keeps_sm_core():
+def test_smeft_ltot_is_eft_only_and_lfull_keeps_sm_core():
     bundle = build_smeft_green_bpreserving()
     full_model = Model(
         name="SMEFT_Green_Bpreserving_full",
@@ -918,7 +918,7 @@ def test_smeft2_ltot_is_eft_only_and_lfull_keeps_sm_core():
     assert len(full_model.lagrangian().terms) == 2599
 
 
-def test_smeft2_has_no_omitted_sectors():
+def test_smeft_has_no_omitted_sectors():
     assert "LWeinberg" not in OMITTED_SECTORS
     assert "LH4D2[alphaRHDpp]" not in OMITTED_SECTORS
     assert "LEvF2XH" not in OMITTED_SECTORS
@@ -928,7 +928,7 @@ def test_smeft2_has_no_omitted_sectors():
     assert OMITTED_SECTORS == ()
 
 
-def test_smeft2_omitted_sectors_are_named_empty_lagrangians():
+def test_smeft_omitted_sectors_are_named_empty_lagrangians():
     bundle = build_smeft_green_bpreserving()
     for sector in OMITTED_SECTORS:
         model = Model(
@@ -941,7 +941,7 @@ def test_smeft2_omitted_sectors_are_named_empty_lagrangians():
         assert len(model.lagrangian().terms) == 0
 
 
-def test_smeft2_comparison_report_uses_eft_only_basis():
+def test_smeft_comparison_report_uses_eft_only_basis():
     report = json.loads(
         (ARTIFACT_DIR / "vertex_comparison_report.json").read_text(encoding="utf-8")
     )
@@ -1124,7 +1124,7 @@ def test_smeft2_comparison_report_uses_eft_only_basis():
     ] is True
 
 
-def test_smeft2_five_gluon_canonical_map_matches_feynrules_reference():
+def test_smeft_five_gluon_canonical_map_matches_feynrules_reference():
     reference = _reference_vertex_by_key("G|G|G|G|G")
     local = _feynpy_vertex_by_key("G|G|G|G|G")
     external_indices = canonical_external_index_set(
@@ -1156,7 +1156,7 @@ def test_smeft2_five_gluon_canonical_map_matches_feynrules_reference():
     }
 
 
-def test_smeft2_bbphiphibar_canonical_map_matches_feynrules_reference_order():
+def test_smeft_bbphiphibar_canonical_map_matches_feynrules_reference_order():
     reference = _reference_vertex_by_key("B|B|Phi|Phibar")
     bundle = build_smeft_green_bpreserving()
     local_rule = bundle.model.lagrangian().feynman_rule(
@@ -1197,7 +1197,7 @@ def test_smeft2_bbphiphibar_canonical_map_matches_feynrules_reference_order():
     }
 
 
-def test_smeft2_phiphibarwi_canonical_map_matches_feynrules_reference_order():
+def test_smeft_phiphibarwi_canonical_map_matches_feynrules_reference_order():
     reference = _reference_vertex_by_key("Phi|Phibar|Wi")
     bundle = build_smeft_green_bpreserving()
     local_rule = bundle.model.lagrangian().feynman_rule(

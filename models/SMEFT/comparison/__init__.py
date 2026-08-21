@@ -1,8 +1,8 @@
-"""SMEFT2 FeynRules/FeynPy comparison package.
+"""SMEFT FeynRules/FeynPy comparison package.
 
 The package is split by comparison layer while re-exporting the prior
-`models.SMEFT2.comparison` API used by tests and notebooks. Run it with
-`python -m models.SMEFT2.comparison`.
+`models.SMEFT.comparison` API used by tests and notebooks. Run it with
+`python -m models.SMEFT.comparison`.
 """
 
 from .base import *

@@ -39,12 +39,12 @@ def _exact_symbolic_family(fields: Iterable[str]) -> str:
 def _unsupported_exact_symbolic_detail(family: str) -> str:
     return {
         "TWO_FERMION": (
-            "Exact symbolic comparison is enabled for shared SMEFT2 two-fermion "
+            "Exact symbolic comparison is enabled for shared SMEFT two-fermion "
             "rows; this row has no literal local signature or falls outside that "
             "shared-signature layer."
         ),
         "FOUR_FERMION": (
-            "Exact symbolic comparison is enabled for shared SMEFT2 four-fermion "
+            "Exact symbolic comparison is enabled for shared SMEFT four-fermion "
             "rows; this row has no literal local signature or falls outside that "
             "shared-signature layer."
         ),
@@ -437,7 +437,7 @@ def _reason_for_status(status: str) -> str:
         ),
         "MISSING_SIGNATURE_OMITTED_DERIVATIVE_SECTORS": (
             "Reference signature is driven by derivative-sector coefficient "
-            "families that are explicitly not lowered in local SMEFT2."
+            "families that are explicitly not lowered in local SMEFT."
         ),
         "MISSING_SIGNATURE_WEINBERG_PACKAGING": (
             "Reference has same-chirality Weinberg signatures while the local "

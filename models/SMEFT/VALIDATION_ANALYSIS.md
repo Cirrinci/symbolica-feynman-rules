@@ -1,6 +1,6 @@
-# Validation of the SMEFT2 Implementation Against FeynRules
+# Validation of the SMEFT Implementation Against FeynRules
 
-This document records what the SMEFT2-vs-FeynRules comparison actually proves,
+This document records what the SMEFT-vs-FeynRules comparison actually proves,
 how it proves it, where its assumptions lie, and what remains outside its reach.
 It is written to be usable directly as thesis material: every quantitative claim
 below is reproducible from the commands listed in the last section.
@@ -20,7 +20,7 @@ and Lorentz identities.
 The validation therefore has three logically distinct layers, and it is
 important not to conflate them:
 
-1. **Model fidelity.** Does `SMEFT2.py` transcribe the operators of
+1. **Model fidelity.** Does `SMEFT.py` transcribe the operators of
    `SMEFT_Green_Bpreserving.fr`?
 2. **Vertex equality.** Do the Feynman rules derived from the two Lagrangians
    agree as tensor expressions?
@@ -33,11 +33,11 @@ small subset of the model would prove very little.
 
 ## 2. Layer 1 — model fidelity
 
-`SMEFT2.py` implements all 32 EFT Lagrangian blocks of
+`SMEFT.py` implements all 32 EFT Lagrangian blocks of
 `reference/feynrules/SMEFT_Green_Bpreserving.fr`, and its `Ltot` is composed
 from exactly the same 32 blocks in the same order. All 295 active Wilson
 coefficients are declared and used. The two coefficients present in the
-FeynRules file but absent from `SMEFT2.py` (`alphaEcdlq`, `alphaEcqeu`) are
+FeynRules file but absent from `SMEFT.py` (`alphaEcdlq`, `alphaEcqeu`) are
 commented out in FeynRules and appear in no FeynRules operator, so omitting them
 is correct rather than a gap.
 
@@ -49,7 +49,7 @@ formulated in the unbroken basis and the comparison is against the EFT-only
 Structural deviations from the FeynRules source are systematic conventions
 rather than per-operator adjustments:
 
-| FeynRules | SMEFT2.py | Nature |
+| FeynRules | SMEFT.py | Nature |
 |---|---|---|
 | `2 Ta[...]` | `weak_t = 2 * weak_gauge_generator` | named constant, 62 uses |
 | `sigmamunu` | `sigma_term` / `sigma_matrix` | named helper, 38 uses |
@@ -114,7 +114,7 @@ Three independent lines of evidence:
 
 - **No operator is excused.** The set of coefficient heads exempted from
   comparison (`OMITTED_COEFFICIENT_HEADS`) is empty.
-- **Mutation testing.** `models/SMEFT2/tests/test_smeft2_comparison_sensitivity.py`
+- **Mutation testing.** `models/SMEFT/tests/test_smeft_comparison_sensitivity.py`
   corrupts the reference in physically meaningful ways — rescaled Wilson
   coefficients in both the two- and four-fermion sectors, a global sign flip,
   chirality flips in both directions, transposed flavour slots, and a removed
@@ -156,7 +156,7 @@ residual charge-conjugation matrix**: the spinor flow runs from external leg 1
 to leg 4 and from leg 2 to leg 3 through ordinary spinor-metric and gamma
 chains.
 
-`SMEFT2.py` instead keeps the charge-conjugation matrices **explicit** and pairs
+`SMEFT.py` instead keeps the charge-conjugation matrices **explicit** and pairs
 adjacent legs:
 
 ```
@@ -260,7 +260,7 @@ should be stated explicitly in the thesis, but they do not undermine the result.
 
 ### 5.3 Chirality: why dropping projectors is sound here
 
-The SMEFT2 parser discards `ProjM`/`ProjP` chirality projectors, on the grounds
+The SMEFT parser discards `ProjM`/`ProjP` chirality projectors, on the grounds
 that in the unbroken basis every fermion field (`lL`, `eR`, `qL`, `uR`, `dR`)
 is already chiral and the projector is therefore redundant. Redundancy is not
 assumed, it is checked: every projector in the export is verified against the
@@ -292,14 +292,14 @@ reuse it.
 
 ## 6. Generality of the machinery
 
-The comparison is not SMEFT2-specific infrastructure. The model-agnostic core
+The comparison is not SMEFT-specific infrastructure. The model-agnostic core
 lives in `src/feynrules/comparison.py` and is already used by three models:
 
 | model | result | integration |
 |---|---|---|
 | `models/SM` | 163/163 vertices | thin 205-line adapter over the generic sector comparators |
 | `models/UnbrokenSM_BFM` | 67/67 vertices | model-local parser reusing the JSON loader and fermion reducers |
-| `models/SMEFT2` | 184/184 vertices | model-local parser over the generic bosonic and canonical-map primitives |
+| `models/SMEFT` | 184/184 vertices | model-local parser over the generic bosonic and canonical-map primitives |
 
 Applying it to a further model requires four things: a parser adapter for that
 model's export syntax, a field-name map, sector routing, and any
@@ -309,7 +309,7 @@ coefficient-head filtering. The machinery is therefore general in substance but
 not plug-and-play; the Standard Model is the reference integration and is by far
 the smallest.
 
-SMEFT2 keeps its own parser because the export uses syntax the Standard Model
+SMEFT keeps its own parser because the export uses syntax the Standard Model
 sector parsers do not cover: indexed Wilson coefficients, `SlashedP` inside
 spinor chains, two-index weak `Eps`, and generic `IndexDelta` resolved by index
 prefix. Everything genuinely model independent is shared rather than forked —
@@ -321,14 +321,14 @@ comparator, the canonical coefficient maps, and the chirality validator of
 
 ## 7. Summary of what the validation establishes
 
-**Established.** The FeynPy SMEFT2 Feynman rules agree with FeynRules as tensor
+**Established.** The FeynPy SMEFT Feynman rules agree with FeynRules as tensor
 expressions, sector by sector in the Wilson coefficients, for all 184 exported
 vertices of arity 3 to 6, covering 295 of 303 model parameters. Agreement is
 proved by exact rational equality of canonical tensor-monomial maps, is
 sensitive to injected errors, and rests on no unenumerated exceptions.
 
 **Assumed, and now documented.** One global charge-conjugation packaging
-convention relating FeynRules' resolved `CC[...]` spinor flow to SMEFT2's
+convention relating FeynRules' resolved `CC[...]` spinor flow to SMEFT's
 explicit `C` factors (§4), plus 12 pinned row-specific packaging rules. These
 affect 23 of 184 rows and are reported under distinct statuses rather than being
 folded into the direct-match count.
@@ -344,18 +344,18 @@ coverage gap and is pinned by a test so it cannot widen unnoticed.
 
 ```bash
 # Thesis acceptance gate (accepts documented packaging, rejects unresolved)
-.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+.venv/bin/python -m models.SMEFT.comparison --check --allow-cc-packaging
 
 # Strict gate: only rows with no packaging assumption at all
-.venv/bin/python -m models.SMEFT2.comparison --check
+.venv/bin/python -m models.SMEFT.comparison --check
 
 # Regenerate the JSON/Markdown artifacts
-.venv/bin/python -m models.SMEFT2.comparison
+.venv/bin/python -m models.SMEFT.comparison
 
 # Test suites
-.venv/bin/python -m pytest models/SMEFT2/tests -q
+.venv/bin/python -m pytest models/SMEFT/tests -q
 .venv/bin/python -m pytest models/SM/tests models/UnbrokenSM_BFM/tests tests -q
 
 # Mutation sensitivity only (proves the comparison is not a tautology)
-.venv/bin/python -m pytest models/SMEFT2/tests/test_smeft2_comparison_sensitivity.py -q
+.venv/bin/python -m pytest models/SMEFT/tests/test_smeft_comparison_sensitivity.py -q
 ```

@@ -1,4 +1,4 @@
-"""Sidecar reconstructions for charge-conjugation packaged SMEFT2 rows."""
+"""Sidecar reconstructions for charge-conjugation packaged SMEFT rows."""
 
 from .exact import *
 
@@ -195,7 +195,7 @@ def compare_reconstructed_weinberg(
 ) -> tuple[dict[str, object], list[dict[str, object]]]:
     """Build and directly compare the Weinberg sidecar export.
 
-    This is deliberately separate from the existing SMEFT2 aggregate comparison.
+    This is deliberately separate from the existing SMEFT aggregate comparison.
     It only reconstructs the two same-chirality Weinberg rows from the two
     ordered mixed FeynPy calls and compares them to the corresponding
     FeynRules rows in a compact fermion-flow basis.
@@ -541,7 +541,7 @@ def _ec_comparison_row(
     rule = _EC_PARTNER_PACKAGING_RULES[(reference_key, coefficient)]
     external_indices = _weinberg_external_indices(reference, field_map)
 
-    parsed_feynrules = parse_smeft2_matter_rule_with_projector_labels(reference.rule)
+    parsed_feynrules = parse_smeft_matter_rule_with_projector_labels(reference.rule)
     filtered_feynrules = _filter_terms_by_coefficient_head(
         parsed_feynrules,
         coefficient,

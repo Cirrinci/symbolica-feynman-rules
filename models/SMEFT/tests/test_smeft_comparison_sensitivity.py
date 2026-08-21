@@ -1,4 +1,4 @@
-"""Mutation-sensitivity tests for the SMEFT2 FeynRules comparison.
+"""Mutation-sensitivity tests for the SMEFT FeynRules comparison.
 
 These mirror ``models/SM/tests/test_feynrules_comparison_sensitivity.py``: each
 test corrupts the FeynRules reference in a physically meaningful way and
@@ -16,9 +16,9 @@ from dataclasses import replace
 
 import pytest
 
-from models.SMEFT2 import build_smeft_green_bpreserving
-from models.SMEFT2 import comparison as smeft2_comparison
-from models.SMEFT2.comparison import (
+from models.SMEFT import build_smeft_green_bpreserving
+from models.SMEFT import comparison as smeft_comparison
+from models.SMEFT.comparison import (
     GENERIC_PARAMETER_NAMES,
     REFERENCE,
     ChiralityMismatch,
@@ -28,7 +28,7 @@ from models.SMEFT2.comparison import (
     _name_key,
     _reference_heads,
     load_feynrules_json,
-    validate_smeft2_projector_chirality,
+    validate_smeft_projector_chirality,
 )
 
 ACCEPTING_STATUSES = {
@@ -199,11 +199,11 @@ def test_chirality_validation_rejects_flipped_projector():
         "ProjM[Index[Spin, Ext[1]], Index[Spin, Ext[4]]]"
         "*ProjP[Index[Spin, Ext[3]], Index[Spin, Ext[2]]]"
     )
-    assert validate_smeft2_projector_chirality(good, fields) == 2
+    assert validate_smeft_projector_chirality(good, fields) == 2
 
     bad = good.replace("ProjM", "ProjP", 1)
     with pytest.raises(ChiralityMismatch):
-        validate_smeft2_projector_chirality(bad, fields)
+        validate_smeft_projector_chirality(bad, fields)
 
 
 def test_chirality_validation_rejects_forbidden_chain():
@@ -217,7 +217,7 @@ def test_chirality_validation_rejects_forbidden_chain():
         "[Index[Spin, Ext[1]], Index[Spin, Ext[2]]]"
     )
     with pytest.raises(ChiralityMismatch):
-        validate_smeft2_projector_chirality(forbidden, fields)
+        validate_smeft_projector_chirality(forbidden, fields)
 
 
 def test_every_reference_projector_passes_validation():
@@ -225,7 +225,7 @@ def test_every_reference_projector_passes_validation():
 
     references = load_feynrules_json(REFERENCE)
     checked = sum(
-        validate_smeft2_projector_chirality(reference.rule, reference.fields)
+        validate_smeft_projector_chirality(reference.rule, reference.fields)
         for reference in references
     )
     # A non-trivial number of projectors must actually have been examined,
@@ -238,7 +238,7 @@ def test_comparison_module_exposes_sensitivity_entry_points():
 
     for name in (
         "_fermion_exact_symbolic_row",
-        "validate_smeft2_projector_chirality",
+        "validate_smeft_projector_chirality",
         "ChiralityMismatch",
     ):
-        assert hasattr(smeft2_comparison, name)
+        assert hasattr(smeft_comparison, name)

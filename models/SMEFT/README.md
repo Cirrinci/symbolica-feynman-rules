@@ -1,11 +1,11 @@
-# SMEFT2 FeynPy Status
+# SMEFT FeynPy Status
 
 This folder contains the simple FeynPy translation of
 `reference/feynrules/SMEFT_Green_Bpreserving.fr`.
 
-The implementation lives in [SMEFT2.py](/Users/rems/Documents/MScThesis/models/SMEFT2/SMEFT2.py).
+The implementation lives in [SMEFT.py](/Users/rems/Documents/MScThesis/models/SMEFT/SMEFT.py).
 The bundled FR sources live in
-[reference/feynrules](/Users/rems/Documents/MScThesis/models/SMEFT2/reference/feynrules).
+[reference/feynrules](/Users/rems/Documents/MScThesis/models/SMEFT/reference/feynrules).
 The goal is to stay close to the FR file:
 
 - same field names
@@ -25,17 +25,17 @@ sectors.
 
 ## Implementation Architecture
 
-The SMEFT2 model is implemented as a direct declarative translation, not as a
+The SMEFT model is implemented as a direct declarative translation, not as a
 separate code generator. The main entry point is:
 
 ```python
-from models.SMEFT2 import build_smeft_green_bpreserving
+from models.SMEFT import build_smeft_green_bpreserving
 
 bundle = build_smeft_green_bpreserving()
 model = bundle.model
 ```
 
-The returned `SMEFT2Bundle` exposes:
+The returned `SMEFTBundle` exposes:
 
 - `model`: the default FeynPy model, with EFT-only `Ltot` as its active
   Lagrangian.
@@ -120,12 +120,12 @@ temporary `Model` when you want that block to be the active Lagrangian:
 
 ```python
 from feynpy import Model
-from models.SMEFT2 import build_smeft_green_bpreserving
+from models.SMEFT import build_smeft_green_bpreserving
 
 bundle = build_smeft_green_bpreserving()
 
 lf2xh_model = Model(
-    name="SMEFT2_LF2XH",
+    name="SMEFT_LF2XH",
     gauge_groups=tuple(bundle.gauge_groups.values()),
     fields=tuple(bundle.fields.values()),
     parameters=tuple(bundle.parameters.values()),
@@ -187,7 +187,7 @@ rules_flavor = bundle.model.feynman_rule(arity=3, flavor_expand=True)
 For bulk export, use:
 
 ```bash
-.venv/bin/python models/SMEFT2/generate_feynpy_rules.py --min-arity 3 --max-arity 6
+.venv/bin/python models/SMEFT/generate_feynpy_rules.py --min-arity 3 --max-arity 6
 ```
 
 ## Choices and Questions
@@ -265,7 +265,7 @@ For bulk export, use:
   C(i, j) = -C(j, i)
   ```
 
-  We do not choose a concrete numeric gamma-matrix basis for `C` in the SMEFT2
+  We do not choose a concrete numeric gamma-matrix basis for `C` in the SMEFT
   comparison. The property needed for the Weinberg and `LEvCC*` packaging
   checks is the antisymmetry of `C`, plus the pinned charge-conjugation
   packaging rules described in `COMPARISON_METHOD.md`.
@@ -301,7 +301,7 @@ operators, but this block still needs local-lowering support for preserving
 the sigma-chain fermion pairing through generic covariant branches.
 
 `LF2DH2` centralizes the compact triplet Higgs-derivative convention in local
-helpers inside `SMEFT2.py`. The `alphaRHq3pp` / `alphaRHl3pp` terms still use
+helpers inside `SMEFT.py`. The `alphaRHq3pp` / `alphaRHl3pp` terms still use
 compact covariant derivatives, but the helpers force explicit weak labels on
 the differentiated Higgs fields. This avoids the former fragile source pattern
 where writing an unlabeled `DC(Phi, mu)` branch could reintroduce a spurious
@@ -312,7 +312,7 @@ two-fermion `B`-vertex head mismatch.
 The reproducible comparison entry point is:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison
+.venv/bin/python -m models.SMEFT.comparison
 ```
 
 It regenerates:
@@ -344,7 +344,7 @@ overlay. Raw head-count deltas remain visible diagnostics for expansion form.
 The default gate requires direct exact matches only:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison --check
+.venv/bin/python -m models.SMEFT.comparison --check
 ```
 
 The documented global Ec CC convention and pinned CC packaging rows can be
@@ -356,13 +356,13 @@ never pass `--check`.
 The thesis acceptance gate is the explicit charge-conjugation packaging gate:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+.venv/bin/python -m models.SMEFT.comparison --check --allow-cc-packaging
 ```
 
 Expected terminal summary:
 
 ```text
-SMEFT2 comparison: 184/184 reference vertices match at operator-content level (176 literal-signature head matches + 8 CC-packaging head matches); exact symbolic split=direct 161/184, modulo global Ec CC convention 15/184, modulo pinned CC 8/184, unresolved CC 0/184; raw-head-count matches=100/182; bosonic canonical tensor-map matches=32/32 supported bosonic vertices (93/93 sectors); Weinberg reconstructed sidecar=2/2 direct, 4/4 coefficient checks, wrong-sign matches=0; EC CC sidecar=12/12 coefficient sectors, wrong-combination matches=0; reference-only=2; feynpy-only=8.
+SMEFT comparison: 184/184 reference vertices match at operator-content level (176 literal-signature head matches + 8 CC-packaging head matches); exact symbolic split=direct 161/184, modulo global Ec CC convention 15/184, modulo pinned CC 8/184, unresolved CC 0/184; raw-head-count matches=100/182; bosonic canonical tensor-map matches=32/32 supported bosonic vertices (93/93 sectors); Weinberg reconstructed sidecar=2/2 direct, 4/4 coefficient checks, wrong-sign matches=0; EC CC sidecar=12/12 coefficient sectors, wrong-combination matches=0; reference-only=2; feynpy-only=8.
 ```
 
 This accepts only the documented global Ec CC convention plus the pinned
@@ -374,5 +374,5 @@ signature.
 ## Check
 
 ```bash
-.venv/bin/python -m pytest -q models/SMEFT2/tests/test_smeft2.py
+.venv/bin/python -m pytest -q models/SMEFT/tests/test_smeft.py
 ```

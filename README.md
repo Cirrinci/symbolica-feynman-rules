@@ -85,9 +85,9 @@ Model resources:
 - [`SM_FR_COMPARISON_REVIEW.md`](models/SM/docs/SM_FR_COMPARISON_REVIEW.md) —
   precise scope, method, evidence and limitations.
 
-## SMEFT2
+## SMEFT
 
-The SMEFT2 Green-basis implementation lives in [`models/SMEFT2`](models/SMEFT2/).
+The SMEFT Green-basis implementation lives in [`models/SMEFT`](models/SMEFT/).
 Its default `Ltot` matches the FeynRules convention: EFT-only, with the local
 SM-plus-EFT combination available separately as `Lfull`.
 
@@ -97,15 +97,15 @@ symbolic matches** plus **8/184 pinned charge-conjugation packaging matches**.
 There are **0 unresolved** packaging rows and **0 exact symbolic unequal/error**
 rows.
 
-Run the final SMEFT2 acceptance gate with:
+Run the final SMEFT acceptance gate with:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+.venv/bin/python -m models.SMEFT.comparison --check --allow-cc-packaging
 ```
 
 The generated report and JSON artifacts are kept under
-[`models/SMEFT2`](models/SMEFT2/) and
-[`models/SMEFT2/comparison/artifacts`](models/SMEFT2/comparison/artifacts/).
+[`models/SMEFT`](models/SMEFT/) and
+[`models/SMEFT/comparison/artifacts`](models/SMEFT/comparison/artifacts/).
 
 ## Supported capabilities
 
@@ -171,16 +171,16 @@ Run the complete suite with:
 .venv/bin/python -m pytest -q
 ```
 
-Run the final SMEFT2 acceptance gate with:
+Run the final SMEFT acceptance gate with:
 
 ```bash
-.venv/bin/python -m models.SMEFT2.comparison --check --allow-cc-packaging
+.venv/bin/python -m models.SMEFT.comparison --check --allow-cc-packaging
 ```
 
 The expected terminal summary starts with:
 
 ```text
-SMEFT2 comparison: 184/184 reference vertices match at operator-content level (176 direct + 8 via charge-conjugation packaging)
+SMEFT comparison: 184/184 reference vertices match at operator-content level (176 direct + 8 via charge-conjugation packaging)
 ```
 
 Run the Standard Model playground with:

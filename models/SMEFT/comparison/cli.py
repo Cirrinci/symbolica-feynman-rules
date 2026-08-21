@@ -1,4 +1,4 @@
-"""Command-line entry point for the SMEFT2 comparison package."""
+"""Command-line entry point for the SMEFT comparison package."""
 
 import sys
 
@@ -46,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    api = sys.modules.get("models.SMEFT2.comparison")
+    api = sys.modules.get("models.SMEFT.comparison")
     compare_fn = getattr(api, "compare", compare)
     compare_weinberg_fn = getattr(
         api,
@@ -112,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
         or ec_cc_summary["wrong_combination_matches"]
     )
     print(
-        "SMEFT2 comparison: "
+        "SMEFT comparison: "
         f"{summary['operator_content_matches_including_cc']}/"
         f"{summary['reference_vertex_count']} "
         "reference vertices match at operator-content level "

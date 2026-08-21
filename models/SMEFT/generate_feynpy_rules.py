@@ -1,7 +1,7 @@
-"""Generate the SMEFT2 FeynPy Feynman rules and report runtime.
+"""Generate the SMEFT FeynPy Feynman rules and report runtime.
 
 This script is intentionally separate from the comparison package. It imports the
-SMEFT2 model, computes FeynPy rules directly, writes the complete printout to a
+SMEFT model, computes FeynPy rules directly, writes the complete printout to a
 JSON file by default, and prints timing information.
 """
 
@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from models.SMEFT2 import build_smeft_green_bpreserving
+from models.SMEFT import build_smeft_green_bpreserving
 
 
 MODEL_DIR = Path(__file__).resolve().parent
@@ -56,7 +56,7 @@ def generate_rules(*, min_arity: int | None, max_arity: int | None) -> list[dict
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Generate SMEFT2 FeynPy Feynman rules and print runtime."
+        description="Generate SMEFT FeynPy Feynman rules and print runtime."
     )
     parser.add_argument(
         "--output",
@@ -88,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     elapsed = time.perf_counter() - start
 
     payload = {
-        "model": "SMEFT2",
+        "model": "SMEFT",
         "vertex_count": len(vertices),
         "elapsed_seconds": elapsed,
         "vertices": vertices,

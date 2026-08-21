@@ -1,4 +1,4 @@
-"""Exact symbolic row classification for SMEFT2 comparison reports."""
+"""Exact symbolic row classification for SMEFT comparison reports."""
 
 from .vertices import *
 
@@ -80,12 +80,12 @@ def _fermion_exact_symbolic_row(
             *(field_map[name] for name in reference.fields),
             simplify=True,
         )
-        reference_rule = parse_smeft2_matter_rule(
+        reference_rule = parse_smeft_matter_rule(
             reference.rule,
             fields=reference.fields,
         )
         ec_convention_log: set[str] = set()
-        comparisons = _compare_smeft2_canonical_coefficient_maps(
+        comparisons = _compare_smeft_canonical_coefficient_maps(
             local_rule,
             reference_rule,
             coefficients=coefficients,
@@ -101,7 +101,7 @@ def _fermion_exact_symbolic_row(
             if coefficient.startswith("alphaEc") and not comparison.matches
         ]
         if mismatched_ec:
-            reference_expression = parse_smeft2_matter_rule(
+            reference_expression = parse_smeft_matter_rule(
                 reference.rule,
                 fields=reference.fields,
             )
@@ -166,7 +166,7 @@ def _fermion_exact_symbolic_row(
                     "global FeynPy/FeynRules evanescent charge-conjugation "
                     "packaging convention: FeynRules resolves `CC[...]` into a "
                     "crossed spinor flow with no residual charge-conjugation "
-                    "matrix, while SMEFT2.py keeps two explicit `C` factors "
+                    "matrix, while SMEFT.py keeps two explicit `C` factors "
                     "pairing adjacent legs. The transform re-pairs the four "
                     "spinor arms in crossed order with a single overall sign "
                     f"({_EC_CC_CONVENTION_PHASE:+d}) from the antisymmetry of "
@@ -294,12 +294,12 @@ def _weinberg_cc_exact_symbolic_row(
         # antisymmetric, the same-chirality FeynRules rule corresponds to the
         # antisymmetrized packaged local rule.
         local_rule = (first_rule - second_rule).cancel().expand()
-        reference_rule = parse_smeft2_matter_rule(
+        reference_rule = parse_smeft_matter_rule(
             reference.rule,
             projector_as_dirac_c=True,
             fields=reference.fields,
         )
-        comparisons = _compare_smeft2_canonical_coefficient_maps(
+        comparisons = _compare_smeft_canonical_coefficient_maps(
             local_rule,
             reference_rule,
             coefficients=("alphaWeinberg",),

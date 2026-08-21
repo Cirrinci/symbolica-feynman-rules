@@ -1,8 +1,8 @@
 {
   "generated_on": "2026-08-11",
-  "reference": "models/SMEFT2/reference/Ltot_SMEFT_FeynRules.json",
-  "local_model": "models/SMEFT2/SMEFT2.py",
-  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no packaging assumption at all; `MATCH_MODULO_EC_CC_CONVENTION` means equality only after the single global evanescent charge-conjugation packaging convention that relates FeynRules' resolved `CC[...]` spinor flow to SMEFT2.py's explicit `C` factors (crossed arm re-pairing with one overall sign, fixed globally rather than per row); `MATCH_MODULO_CC_PACKAGING` means equality only after a further row-specific charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed. The separate canonical tensor-map diagnostic is the *bosonic-sector* per-coefficient map and covers bosonic coefficient sectors only; fermionic rows are proved through the exact-symbolic column above.",
+  "reference": "models/SMEFT/reference/Ltot_SMEFT_FeynRules.json",
+  "local_model": "models/SMEFT/SMEFT.py",
+  "comparison_level": "Signature coverage, coefficient-head content, and raw coefficient-head multiplicity diagnostics, plus exact symbolic comparison for all 184 FeynRules reference rows. Fermion exact comparison filters by indexed Wilson-coefficient head and keeps flavor order/conjugation in the canonical scalar coefficient, so it cannot pass vacuously for function-valued coefficients. Exact-symbolic rows are graded honestly: `EXACT_MATCH` means direct canonical-map equality with no packaging assumption at all; `MATCH_MODULO_EC_CC_CONVENTION` means equality only after the single global evanescent charge-conjugation packaging convention that relates FeynRules' resolved `CC[...]` spinor flow to SMEFT.py's explicit `C` factors (crossed arm re-pairing with one overall sign, fixed globally rather than per row); `MATCH_MODULO_CC_PACKAGING` means equality only after a further row-specific charge-conjugation packaging transform whose sign/symmetry is derived (pinned), e.g. the antisymmetrized Weinberg rows; and `UNRESOLVED_CC_PACKAGING` means no pinned packaging rule is known or the pinned transform failed. The separate canonical tensor-map diagnostic is the *bosonic-sector* per-coefficient map and covers bosonic coefficient sectors only; fermionic rows are proved through the exact-symbolic column above.",
   "summary": {
     "reference_vertex_count": 184,
     "feynpy_signature_count_3_to_6": 192,
@@ -16878,7 +16878,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEced, alphaEcedtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEced, alphaEcedtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -16963,7 +16963,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcld, alphaEcldthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcld, alphaEcldthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17072,7 +17072,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcqd, alphaEcqdp, alphaEcqdpthree, alphaEcqdthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcqd, alphaEcqdp, alphaEcqdpthree, alphaEcqdthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17181,7 +17181,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcud, alphaEcudp, alphaEcudptwo, alphaEcudtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcud, alphaEcudp, alphaEcudptwo, alphaEcudtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17266,7 +17266,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcdd, alphaEcddtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcdd, alphaEcddtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17657,7 +17657,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcle, alphaEclethree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcle, alphaEclethree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17742,7 +17742,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcqe, alphaEcqethree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcqe, alphaEcqethree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17827,7 +17827,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEceu, alphaEceutwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEceu, alphaEceutwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -17904,7 +17904,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s), but 2 of them (alphaEcee, alphaEceetwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 4 coefficient sector(s), but 2 of them (alphaEcee, alphaEceetwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18115,7 +18115,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcql, alphaEcqlp, alphaEcqlptwo, alphaEcqltwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcql, alphaEcqlp, alphaEcqlptwo, alphaEcqltwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18200,7 +18200,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEclu, alphaEcluthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEclu, alphaEcluthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18285,7 +18285,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcll, alphaEclltwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcll, alphaEclltwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18394,7 +18394,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcqu, alphaEcqup, alphaEcqupthree, alphaEcquthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcqu, alphaEcqup, alphaEcqupthree, alphaEcquthree) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18503,7 +18503,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcqq, alphaEcqqp, alphaEcqqptwo, alphaEcqqtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 12 coefficient sector(s), but 4 of them (alphaEcqq, alphaEcqqp, alphaEcqqptwo, alphaEcqqtwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [
@@ -18588,7 +18588,7 @@
       "canonical_map_error": "",
       "exact_symbolic_family": "FOUR_FERMION",
       "exact_symbolic_status": "MATCH_MODULO_EC_CC_CONVENTION",
-      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcuu, alphaEcuutwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT2.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
+      "exact_symbolic_detail": "Canonical tensor-monomial maps agree for all 6 coefficient sector(s), but 2 of them (alphaEcuu, alphaEcuutwo) required the global FeynPy/FeynRules evanescent charge-conjugation packaging convention: FeynRules resolves `CC[...]` into a crossed spinor flow with no residual charge-conjugation matrix, while SMEFT.py keeps two explicit `C` factors pairing adjacent legs. The transform re-pairs the four spinor arms in crossed order with a single overall sign (-1) from the antisymmetry of `C`. Mode and sign are global constants, not per-row fits. Raw head-count status before exact-proof classification was COUNT_MATCH.",
       "feynrules_extra_heads": [],
       "feynpy_extra_heads": [],
       "local_names": [

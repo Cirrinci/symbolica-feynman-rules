@@ -1,4 +1,4 @@
-"""Charge-conjugation packaging helpers and SMEFT2 matter parsers."""
+"""Charge-conjugation packaging helpers and SMEFT matter parsers."""
 
 from .canonical import *
 
@@ -46,7 +46,7 @@ _EC_CC_COEFFICIENTS = frozenset(
 # no residual charge-conjugation matrix: the spinor flow runs external leg 1 to
 # leg 4 and leg 2 to leg 3 through ordinary spinor-metric/gamma chains.
 #
-# SMEFT2.py instead keeps the charge-conjugation matrices explicit and pairs the
+# SMEFT.py instead keeps the charge-conjugation matrices explicit and pairs the
 # adjacent legs,
 #
 #     lLbar(sp1) * C(sp1,sp2) * lL(sp2) * lLbar(sp3) * C(sp3,sp4) * lL(sp4)
@@ -1005,7 +1005,7 @@ def _ec_partner_packaging_comparison(
 
 
 
-def _compare_smeft2_canonical_coefficient_maps(
+def _compare_smeft_canonical_coefficient_maps(
     feynpy_rule: Expression | str,
     feynrules_rule: Expression | str,
     *,
@@ -1014,7 +1014,7 @@ def _compare_smeft2_canonical_coefficient_maps(
     max_dummy_permutations: int = 50_000,
     convention_log: set[str] | None = None,
 ) -> dict[str, CanonicalCoefficientComparison]:
-    """Compare SMEFT2 rows by coefficient-head-filtered canonical maps.
+    """Compare SMEFT rows by coefficient-head-filtered canonical maps.
 
     ``convention_log``, when supplied, collects the coefficient heads whose
     FeynPy side actually required the global ``alphaEc`` charge-conjugation
@@ -1105,8 +1105,8 @@ def _replace_tensdot_chains_with_projector_labels(text: str) -> str:
         position = spin_close + 1
 
 
-def parse_smeft2_matter_rule_with_projector_labels(rule: str) -> Expression:
-    """Parse SMEFT2 matter syntax while retaining explicit PL/PR labels.
+def parse_smeft_matter_rule_with_projector_labels(rule: str) -> Expression:
+    """Parse SMEFT matter syntax while retaining explicit PL/PR labels.
 
     This parser is used only by the EC charge-conjugation sidecar.  The normal
     comparison parser intentionally remains unchanged.
@@ -1225,7 +1225,7 @@ def parse_smeft2_matter_rule_with_projector_labels(rule: str) -> Expression:
 
     if "[" in text or "]" in text:
         raise ValueError(
-            "Unsupported SMEFT2 FeynRules matter syntax remains after "
+            "Unsupported SMEFT FeynRules matter syntax remains after "
             f"projector-label parsing: {text}"
         )
 
@@ -1268,15 +1268,15 @@ def _replace_tensdot_chains(text: str) -> str:
         position = spin_close + 1
 
 
-def parse_smeft2_matter_rule(
+def parse_smeft_matter_rule(
     rule: str,
     *,
     projector_as_dirac_c: bool = False,
     fields: Iterable[str] | None = None,
 ) -> Expression:
-    """Parse SMEFT2 two-fermion FeynRules tensor syntax into native tensors.
+    """Parse SMEFT two-fermion FeynRules tensor syntax into native tensors.
 
-    The SMEFT2 model represents chirality in the field class itself, while the
+    The SMEFT model represents chirality in the field class itself, while the
     FeynRules export prints explicit ``ProjM``/``ProjP`` factors. This parser
     therefore removes those projectors from gamma chains and maps bare
     projector bilinears to the spinor metric.  The Weinberg charge-conjugation
@@ -1292,7 +1292,7 @@ def parse_smeft2_matter_rule(
     """
 
     if fields is not None:
-        validate_smeft2_projector_chirality(rule, fields)
+        validate_smeft_projector_chirality(rule, fields)
 
     text = _rewrite_feynrules_indices(rule)
     text = _rewrite_feynrules_indexed_parameters(text)
@@ -1400,7 +1400,7 @@ def parse_smeft2_matter_rule(
 
     if "[" in text or "]" in text:
         raise ValueError(
-            "Unsupported SMEFT2 FeynRules matter syntax remains after parsing: "
+            "Unsupported SMEFT FeynRules matter syntax remains after parsing: "
             f"{text}"
         )
 

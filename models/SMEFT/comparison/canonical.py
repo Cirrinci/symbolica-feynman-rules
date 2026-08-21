@@ -1,4 +1,4 @@
-"""Canonical tensor-map helpers for the SMEFT2 comparison."""
+"""Canonical tensor-map helpers for the SMEFT comparison."""
 
 from .base import *
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate the SMEFT2 per-row comparison appendix from the report artifact.
+"""Generate the SMEFT per-row comparison appendix from the report artifact.
 
 The appendix table is derived from
-``models/SMEFT2/comparison/artifacts/vertex_comparison_report.json`` rather than
+``models/SMEFT/comparison/artifacts/vertex_comparison_report.json`` rather than
 maintained by hand, so the thesis cannot drift out of step with the comparison.
 
 Usage (from the repository root):
@@ -20,12 +20,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT = (
     REPO_ROOT
     / "models"
-    / "SMEFT2"
+    / "SMEFT"
     / "comparison"
     / "artifacts"
     / "vertex_comparison_report.json"
 )
-OUTPUT = Path(__file__).resolve().parent / "appendices" / "appendix_smeft2_comparison.tex"
+OUTPUT = Path(__file__).resolve().parent / "appendices" / "appendix_smeft_comparison.tex"
 
 # Short labels keep the table readable; the long status names live in the
 # chapter text and in the generated Markdown report.
@@ -65,25 +65,25 @@ def build() -> str:
     add = lines.append
 
     add("% ============================================================")
-    add("%  appendix_smeft2_comparison.tex")
+    add("%  appendix_smeft_comparison.tex")
     add("%  GENERATED FILE -- do not edit by hand.")
     add("%  Regenerate with:")
     add("%    .venv/bin/python Thesis/MSC_Thesis/generate_comparison_appendix.py")
     add("% ============================================================")
     add("")
-    add("\\chapter{SMEFT2 Per-Row Comparison Results}")
-    add("\\label{app:smeft2-rows}")
+    add("\\chapter{SMEFT Per-Row Comparison Results}")
+    add("\\label{app:smeft-rows}")
     add("")
     add(
         "This appendix lists the exact-symbolic verdict for every FeynRules "
-        "reference vertex in the SMEFT2 comparison of "
-        "\\Cref{sec:validation-smeft2}. It is generated directly from "
-        "\\path{models/SMEFT2/comparison/artifacts/vertex_comparison_report.json}, "
+        "reference vertex in the SMEFT comparison of "
+        "\\Cref{sec:validation-smeft}. It is generated directly from "
+        "\\path{models/SMEFT/comparison/artifacts/vertex_comparison_report.json}, "
         "so it cannot drift out of step with the comparison itself."
     )
     add("")
     add("The verdict column uses the abbreviations of "
-        "\\Cref{tab:smeft2-final-comparison}: \\emph{direct} is canonical "
+        "\\Cref{tab:smeft-final-comparison}: \\emph{direct} is canonical "
         "tensor-map equality with no packaging assumption; \\emph{global Ec} "
         "additionally uses the single global evanescent charge-conjugation "
         "convention of \\Cref{sec:validation-ec}; and \\emph{pinned CC} "
@@ -136,7 +136,7 @@ def build() -> str:
     add("")
     add(
         "\\noindent Consistency check against "
-        "\\Cref{tab:smeft2-final-comparison}: "
+        "\\Cref{tab:smeft-final-comparison}: "
         f"{summary['exact_symbolic_direct_match_vertices']} direct, "
         f"{summary['ec_cc_convention_match_vertices']} global Ec, "
         f"{summary['cc_packaging_pinned_match_vertices']} pinned CC, "

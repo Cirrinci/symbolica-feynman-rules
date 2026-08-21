@@ -1,4 +1,4 @@
-"""Aggregate SMEFT2 comparison report generation and artifact writing."""
+"""Aggregate SMEFT comparison report generation and artifact writing."""
 
 from .sidecars import *
 
@@ -371,7 +371,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
     report = {
         "generated_on": date.today().isoformat(),
         "reference": str(reference_path.relative_to(ROOT)),
-        "local_model": str((MODEL_DIR / "SMEFT2.py").relative_to(ROOT)),
+        "local_model": str((MODEL_DIR / "SMEFT.py").relative_to(ROOT)),
         "comparison_level": (
             "Signature coverage, coefficient-head content, and raw "
             "coefficient-head multiplicity diagnostics, plus exact symbolic "
@@ -384,7 +384,7 @@ def compare(reference_path: Path = REFERENCE) -> tuple[dict[str, object], tuple[
             "all; `MATCH_MODULO_EC_CC_CONVENTION` means equality only after "
             "the single global evanescent charge-conjugation packaging "
             "convention that relates FeynRules' resolved `CC[...]` spinor flow "
-            "to SMEFT2.py's explicit `C` factors (crossed arm re-pairing with "
+            "to SMEFT.py's explicit `C` factors (crossed arm re-pairing with "
             "one overall sign, fixed globally rather than per row); "
             "`MATCH_MODULO_CC_PACKAGING` means equality only after a further "
             "row-specific charge-conjugation packaging transform whose "
@@ -586,9 +586,9 @@ def _markdown_report(report: dict[str, object]) -> str:
     family_counts = summary["exact_symbolic_family_counts"]
     omitted_sectors = ", ".join(basis["omitted_sectors"]) or "none"
     lines = [
-        "# SMEFT2 FeynRules/FeynPy Comparison",
+        "# SMEFT FeynRules/FeynPy Comparison",
         "",
-        f"Generated on `{report['generated_on']}` by `models.SMEFT2.comparison`.",
+        f"Generated on `{report['generated_on']}` by `models.SMEFT.comparison`.",
         "",
         "## Scope",
         "",
@@ -695,7 +695,7 @@ def _markdown_report(report: dict[str, object]) -> str:
             "`MATCH_MODULO_EC_CC_CONVENTION` is equality after the single "
             "global evanescent charge-conjugation packaging convention "
             "(crossed spinor-arm re-pairing with one overall sign) that "
-            "relates FeynRules' resolved `CC[...]` flow to SMEFT2.py's "
+            "relates FeynRules' resolved `CC[...]` flow to SMEFT.py's "
             "explicit `C` factors; `MATCH_MODULO_CC_PACKAGING` is equality "
             "after a further pinned, row-specific charge-conjugation packaging "
             "transform (Weinberg or Ec partner rows); "

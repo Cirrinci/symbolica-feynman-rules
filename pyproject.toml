@@ -29,8 +29,8 @@ packages = [
     "models",
     "models.SM",
     "models.UnbrokenSM_BFM",
-    "models.SMEFT2",
-    "models.SMEFT2.comparison",
+    "models.SMEFT",
+    "models.SMEFT.comparison",
 ]
 
 [tool.setuptools.package-dir]
@@ -42,8 +42,8 @@ feynrules = "src/feynrules"
 models = "models"
 "models.SM" = "models/SM"
 "models.UnbrokenSM_BFM" = "models/UnbrokenSM_BFM"
-"models.SMEFT2" = "models/SMEFT2"
-"models.SMEFT2.comparison" = "models/SMEFT2/comparison"
+"models.SMEFT" = "models/SMEFT"
+"models.SMEFT.comparison" = "models/SMEFT/comparison"
 
 [tool.setuptools.package-data]
 "models.SM" = [
@@ -57,12 +57,12 @@ models = "models"
     "reference/feynrules/*.fr",
     "reference/feynrules/*.nb",
 ]
-"models.SMEFT2" = [
+"models.SMEFT" = [
     "COMPARISON.md",
     "reference/*.json",
     "reference/feynrules/*.fr",
 ]
-"models.SMEFT2.comparison" = [
+"models.SMEFT.comparison" = [
     "artifacts/*.json",
 ]
 
@@ -71,5 +71,5 @@ testpaths = [
     "tests",
     "models/SM/tests",
     "models/UnbrokenSM_BFM/tests",
-    "models/SMEFT2/tests",
+    "models/SMEFT/tests",
 ]

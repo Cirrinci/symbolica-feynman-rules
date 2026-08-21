@@ -1,4 +1,4 @@
-"""Simple unbroken-gauge-basis SMEFT model bundled in ``models/SMEFT2``.
+"""Simple unbroken-gauge-basis SMEFT model bundled in ``models/SMEFT``.
 
 This follows the field names and operator sectors in
 ``reference/feynrules/SMEFT_Green_Bpreserving.fr`` while staying inside the
@@ -58,7 +58,7 @@ OMITTED_SECTORS = ()
 
 
 @dataclass(frozen=True)
-class SMEFT2Bundle:
+class SMEFTBundle:
     model: Model
     fields: dict[str, Field]
     parameters: dict[str, Parameter]
@@ -108,7 +108,7 @@ def _dual_covd_fs(group, mu, nu, derivative, rho, sigma, adjoint=None):
 def build_smeft_green_bpreserving(
     *,
     name: str = "SMEFT_Green_Bpreserving",
-) -> SMEFT2Bundle:
+) -> SMEFTBundle:
     """Return the supported unbroken-basis SMEFT model."""
 
     generation = flavor_index("Generation", 3, prefix="f")
@@ -3864,7 +3864,7 @@ def build_smeft_green_bpreserving(
         lagrangian_decl=lagrangians["Ltot"],
     )
 
-    return SMEFT2Bundle(
+    return SMEFTBundle(
         model=model,
         fields=fields,
         parameters=parameters,
@@ -3873,4 +3873,4 @@ def build_smeft_green_bpreserving(
     )
 
 
-__all__ = ("OMITTED_SECTORS", "SMEFT2Bundle", "build_smeft_green_bpreserving")
+__all__ = ("OMITTED_SECTORS", "SMEFTBundle", "build_smeft_green_bpreserving")
