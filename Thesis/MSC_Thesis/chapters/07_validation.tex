@@ -249,62 +249,97 @@ FeynRules decomposes \texttt{CC[...]} into its component fields, whereas FeynPy 
 \subsection{The discrepancy}
 % --------------------------------------------------------------
 
-FeynRules writes these operators through the \texttt{CC[...]} macro. Taking the four-lepton operator as the representative case,
+Let us take as an example the four-fermion coefficients whose names begin with \texttt{alphaEc}. This will allow us to see how the representations differ between FeynRules and FeynPy. The two implementations describe the same operators, but encode charge conjugation differently.
+
+In FeynRules the operators are written using the \texttt{CC[...]} macro. For example, the four-lepton operator is implemented as
 \begin{verbatim}
 alphaEcll[f1,f2,f3,f4] CC[LLbar[sp1,ii,f1]].LL[sp1,jj,f2]
-                       .LLbar[sp2,jj,f3].CC[LL[sp2,ii,f4]]
+.LLbar[sp2,jj,f3].CC[LL[sp2,ii,f4]]
 \end{verbatim}
-\texttt{ExpandIndices} resolves the conjugation, so the exported vertex carries \emph{no} residual charge-conjugation matrix. In this representative operator, the pairing is fixed already by the source-index pattern: \texttt{ii} links legs $1$ and $4$, while \texttt{jj} links legs $2$ and $3$. Labelling the four external legs $1,2,3,4$ in the order they appear, the spinor flow then runs $1\!\to\!4$ and $2\!\to\!3$ through ordinary spinor-metric and gamma chains.
+Here the weak-isospin indices already reveal the crossed partner structure of the operator: \texttt{ii} is shared by external legs $1$ and $4$, whereas \texttt{jj} is shared by legs $2$ and $3$.
 
-The corresponding FeynPy implementation keeps the charge-conjugation tensors explicit:
+When FeynRules constructs the vertex, however, the charge-conjugated fields are rewritten according to its fermion-flow convention. Consequently, the vertex used in the comparison no longer contains explicit charge-conjugation matrices. For this operator, its spinor tensor map is organised according to the crossed pairs
+\begin{equation}
+(1,4),\qquad (2,3).
+\end{equation}
+
+FeynPy represents the same operator differently. It keeps the charge-conjugation tensors explicit:
 \begin{verbatim}
 p["alphaEcll"](f1, f2, f3, f4)
-* ll(sp=sp1, w=w1, f=f1, bar=True)
+
+* ll(sp1, w1, f1, bar=True)
 * dirac_charge_conjugation(sp1, sp2)
-* ll(sp=sp2, w=w2, f=f2)
-* ll(sp=sp3, w=w2, f=f3, bar=True)
+* ll(sp2, w2, f2)
+* ll(sp3, w2, f3, bar=True)
 * dirac_charge_conjugation(sp3, sp4)
-* ll(sp=sp4, w=w1, f=f4)
+* ll(sp4, w1, f4)
 \end{verbatim}
-At the signature level this example is deliberately subtle: both tools contain the same four external fields. FeynRules presents them in the order \texttt{lLbar|lL|lL|lLbar}, while FeynPy presents them as \texttt{lLbar|lL|lLbar|lL}; after sorting, both reduce to the same comparison key, \texttt{lL|lL|lLbar|lLbar}. The direct comparison nevertheless fails because the spinor tensor networks are different: FeynRules contracts the crossed pairs $(1,4)$ and $(2,3)$, while FeynPy contracts adjacent pairs.
-
-Explicitly, FeynPy pairs \emph{adjacent} legs,
+Thus its spinor network contains the two adjacent contractions
 \begin{equation}
-    \bar{l}_L(1)\, C\, l_L(2)\;
-    \bar{l}_L(3)\, C\, l_L(4) ,
-    \label{eq:validation-ec-feynpy}
+\bar l_L(1),C,l_L(2);
+\bar l_L(3),C,l_L(4),
+\label{eq:validation-ec-feynpy}
 \end{equation}
-that is, flow $(1,2)$ and $(3,4)$ with two explicit $C$ factors, where the number in parentheses is the external-leg label.
+corresponding to the pairs $(1,2)$ and $(3,4)$.
+
+At the signature level this distinction is subtle, because it is invisible if one looks only at the external fields. FeynRules exports the field ordering \texttt{lLbar|lL|lL|lLbar}, whereas FeynPy uses \texttt{lLbar|lL|lLbar|lL}. After sorting, both therefore have the same comparison key, \texttt{lL|lL|lLbar|lLbar}.
+
+The direct comparison of the \texttt{alphaEcll} tensor map nevertheless fails. The reason is not a different field content, but a different representation of the charge-conjugated spinor contractions: FeynRules uses the crossed pairing $(1,4),(2,3)$, while FeynPy stores the explicit-$C$ representation with adjacent pairs $(1,2),(3,4)$.
 
 % --------------------------------------------------------------
-\subsection{The transform}
+\subsection{The global \texttt{Ec} translation}
 % --------------------------------------------------------------
 
-The two forms describe the same operator, and the fix is now visible by inspection: FeynPy's adjacent pairing $(1,2),(3,4)$ must be turned into the FeynRules pairing $(1,4),(2,3)$, which is exactly the \emph{crossed} re-pairing of the four legs. Re-pairing this way picks up a single net sign, combining the antisymmetry of the charge-conjugation matrix,
+The comparison therefore requires a translation between these two
+representations. For every four-fermion \texttt{alphaEc} coefficient, the
+FeynPy tensor network is converted from the adjacent pairing
 \begin{equation}
-    C^{T} = -C ,
-    \label{eq:validation-c-antisymmetry}
+(1,2),(3,4)
 \end{equation}
-with the anticommutation needed to reorder the fermion fields into the crossed pairing.
+to the crossed pairing
+\begin{equation}
+(1,4),(2,3),
+\end{equation}
+used by the FeynRules output.
 
-Both the pairing and the sign are global constants, fixed once for every \texttt{alphaEc} head rather than chosen per row: in code, \texttt{\_EC\_CC\_CONVENTION\_MODE = "crossed"} and \texttt{\_EC\_CC\_CONVENTION\_PHASE = -1}.
+This translation takes into account the fact that FeynRules has already incorporated the charge conjugation tensors into its representation of the fermion current, whilst FeynPy still includes them explicitly.
 
+
+The change of convention also carries a fixed overall phase. With
+\begin{equation}
+C^{T}=-C,
+\label{eq:validation-c-antisymmetry}
+\end{equation}
+and the corresponding reordering of anticommuting fermion fields, the
+required phase is $-1$. Thus the complete global translation is
+\begin{equation}
+\text{adjacent pairing}
+\longrightarrow
+-\text{crossed pairing}.
+\end{equation}
+
+Importantly, neither the pairing nor the phase is chosen separately for each vertex. They are fixed once for the complete \texttt{alphaEc} sector:
+\begin{verbatim}
+_EC_CC_CONVENTION_MODE  = "crossed"
+_EC_CC_CONVENTION_PHASE = -1
+\end{verbatim}
+\todo{here}
 % --------------------------------------------------------------
-\subsection{Why this is a derivation and not a fit}
+\subsection{Why the convention is not fitted row by row}
 \label{sec:validation-ec-overdetermination}
 % --------------------------------------------------------------
 
-Could a convention that rescues an entire sector just be a parameter tuned
-until the answer came out right? The data rule this out: there are only four
-possible (pairing, sign) combinations, and exactly one reproduces the
-reference, uniformly, as shown in
+There are only two possible pairing choices, direct or crossed, and two
+possible phases, $+1$ or $-1$. The global \texttt{Ec} convention therefore
+has only four possible choices. Applying each choice uniformly to the
+four-fermion \texttt{Ec} sector gives
 \Cref{tab:validation-ec-overdetermination}.
 
 \begin{table}[htbp]
 \centering
 \begin{tabular}{llr}
 \toprule
-Pairing mode & Phase & Rows reproduced (of 21) \\
+Pairing mode & Phase & Rows settled by the global transform (of 21) \\
 \midrule
 crossed & $-1$ & 15 \\
 crossed & $+1$ & 0 \\
@@ -312,53 +347,63 @@ direct  & $-1$ & 3 \\
 direct  & $+1$ & 2 \\
 \bottomrule
 \end{tabular}
-\caption{Only one of the four possible conventions reproduces the FeynRules
-reference. Under the accepted convention (crossed, phase $-1$) the transform
-alone settles $15$ of the $21$ four-fermion \texttt{Ec} rows; the other $6$
-additionally need the pinned partner transforms of
-\Cref{sec:validation-ec-pinned}. The small counts under the three rejected
-conventions are rows the transform does not apply to at all, not partial
-successes.}
+\caption{Testing the four possible global charge-conjugation conventions.
+The crossed pairing with phase $-1$ is singled out clearly: it settles
+$15$ of the $21$ four-fermion \texttt{Ec} rows by itself. The remaining
+six rows contain an additional representation difference discussed in
+\Cref{sec:validation-ec-pinned}. None of the alternative global conventions
+comes close to reproducing the same pattern.}
 \label{tab:validation-ec-overdetermination}
 \end{table}
 
-The three rejected conventions fail on essentially every row; the contrast
-is stark, not marginal. A per-row fit would have $4^{21}$ degrees of freedom,
-whereas what is used is one global choice out of four, three of which the
-data exclude. Removing the transform entirely fails all $21$ rows, which is
-what makes it load-bearing and worth stating explicitly rather than leaving
-it implicit.
+The important point is that the choice is made globally, not independently
+for each row. The accepted convention is one fixed choice out of four and
+is then applied unchanged throughout the sector. Without this translation,
+the direct canonical-map comparison rejects all $21$ four-fermion
+\texttt{Ec} rows.
+
+The fact that $15$ rows are resolved immediately by the same pairing and
+phase provides the main evidence that this is a systematic convention
+difference rather than a collection of unrelated mismatches. The remaining
+six rows require one further, separately documented translation.
 
 % --------------------------------------------------------------
 \subsection{Residual row-specific packaging}
 \label{sec:validation-ec-pinned}
 % --------------------------------------------------------------
 
-Eight rows need a row-specific transform beyond what is in
-\Cref{sec:validation-ec-overdetermination}, but they come from two unrelated
-sources and should not be merged.
+Eight rows in the full validation require a row-specific comparison rule, but
+they arise from two different sources and should be kept separate.
 
-Two are Weinberg-operator rows, unconnected to the global \texttt{Ec}
-convention: they carry the Weinberg coefficient, not an \texttt{alphaEc}
-head, so the crossed-pairing transform never applies to them at all.
-FeynRules packages them as same-chirality charge-conjugated lepton
-structures, while FeynPy stores the mixed $\bar{l}_L/l_L$ form with the
-charge-conjugation tensor explicit. The accepted transform compares the
-FeynRules row against the antisymmetrised local pair
-$\mathrm{FeynPy}(\bar{l}_L, l_L) - \mathrm{FeynPy}(l_L, \bar{l}_L)$, with the
-relative minus sign fixed by \Cref{eq:validation-c-antisymmetry}, not
-searched.
+The first two are Weinberg-operator rows. They do not carry an
+\texttt{alphaEc} coefficient and are therefore unrelated to the global
+\texttt{Ec} convention. FeynRules represents these vertices using
+same-chirality charge-conjugated lepton structures, whereas FeynPy keeps a
+mixed $\bar l_L/l_L$ representation with an explicit charge-conjugation
+tensor. Their comparison is therefore performed against the antisymmetrised
+combination
+\begin{equation}
+\mathrm{FeynPy}(\bar l_L,l_L)
+-
+\mathrm{FeynPy}(l_L,\bar l_L),
+\end{equation}
+where the relative minus sign follows from the adopted charge-conjugation
+convention.
 
-The remaining six rows \emph{are} additional to the global convention: they
-are the six of the $21$ four-fermion \texttt{Ec} rows that the crossed-pairing
-transform alone does not settle. They use a rule table of $12$
-entries (one per coefficient sector), where each entry fixes exactly one
-partner signature, one phase, one duplicate-leg symmetry mode, and a
-provenance string naming the source operator; nothing is searched at
-acceptance time. Dedicated sidecar checks confirm the Weinberg comparison at
-$2/2$ and the \texttt{Ec} partner checks at $12/12$, and both sidecars also
-verify that the \emph{wrong} sign or the wrong combination does \emph{not}
-match, so they are evidence rather than restatement.
+The other six rows belong to the four-fermion \texttt{Ec} sector. For these
+rows, the global crossed-pairing convention is necessary but not sufficient:
+after applying it, an additional difference remains in how equivalent
+external-leg configurations are packaged. These cases are handled by an
+explicit rule table. Each rule fixes in advance the partner signature, phase,
+duplicate-leg symmetry prescription, and the source operator from which the
+rule originates. No alternative is searched for when a row is accepted.
+
+Dedicated sidecar tests validate the two exceptional classes independently:
+the Weinberg comparison succeeds for $2/2$ rows, while the corresponding
+\texttt{Ec} partner checks succeed for all tabulated cases. The tests also
+verify that changing the prescribed sign or partner combination destroys the
+match. These checks therefore test the translation rules rather than merely
+restating them.
 
 % --------------------------------------------------------------
 \section{Chirality}
