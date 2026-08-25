@@ -182,9 +182,10 @@ per-operator hand-fitting, a residual disagreement is evidence of a
 \toprule
 FeynRules & FeynPy & Nature \\
 \midrule
-\texttt{2 Ta[...]} & \texttt{weak\_t} & named constant, 62 uses \\
-\texttt{sigmamunu} & \texttt{sigma\_term} & named helper, 38 uses \\
-\texttt{Dual[FS]} & \texttt{\_dual\_fs} & named helper \\
+\texttt{2 Ta[...]} & \texttt{weak\_t} & weak-generator normalisation \\
+\texttt{Phitilde}, \texttt{Phitildebar} & \texttt{phitilde}, \texttt{phitildebar} & weak-\(\epsilon\) expansion \\
+\texttt{sigmamunu} & \texttt{sigma\_term}, \texttt{sigma\_matrix} & spinor-chain helpers \\
+\texttt{Dual[FS]} & \texttt{\_dual\_fs}, \texttt{\_dual\_covd\_fs} & dual field-strength helpers \\
 \texttt{lag + HC[lag]} & explicit \texttt{.conj()} terms & expansion \\
 \texttt{CC[...]} & \texttt{dirac\_charge\_conjugation} & expansion \\
 \bottomrule
@@ -195,6 +196,8 @@ per-operator sign corrections appear in the model file.}
 \label{tab:validation-conventions}
 \end{table}
 
+Direct syntax translations such as \texttt{FS[...]}, \texttt{DC[...]}, colour generators and ordinary field calls are not listed separately in the table, because they do not change the algebraic convention being implemented.
+
 % --------------------------------------------------------------
 \section{SMEFT: comparison result}
 \label{sec:validation-smeft}
@@ -202,8 +205,7 @@ per-operator sign corrections appear in the model file.}
 
 All Green-basis and evanescent sectors used by the bundled reference are
 included in the compiled FeynPy \texttt{Ltot}. The final result is given in
-\Cref{tab:smeft-final-comparison}; per-row verdicts are tabulated in
-\Cref{app:smeft-rows}.
+\Cref{tab:smeft-final-comparison}.
 
 \begin{table}[htbp]
 \centering
@@ -260,12 +262,12 @@ After \texttt{CC[...]} is expanded, the exported FeynRules vertex contains no re
 The corresponding FeynPy term keeps the charge-conjugation tensors explicit:
 \begin{minted}{python}
 p["alphaEcll"](f1, f2, f3, f4)
-* ll(sp=sp1, w=w1, f=f1, bar=True)
+* ll(sp1, w1, f1, bar=True)
 * dirac_charge_conjugation(sp1, sp2)
-* ll(sp=sp2, w=w2, f=f2)
-* ll(sp=sp3, w=w2, f=f3, bar=True)
+* ll(sp2, w2, f2)
+* ll(sp3, w2, f3, bar=True)
 * dirac_charge_conjugation(sp3, sp4)
-* ll(sp=sp4, w=w1, f=f4)
+* ll(sp4, w1, f4)
 \end{minted}
 This is the same operator content, but the spinor network is packaged as adjacent explicit-$C$ contractions, $(1,2),(3,4)$.
 
@@ -284,7 +286,7 @@ The same translation is applied uniformly to the complete four-fermion \texttt{E
 \subsection{Exceptional charge-conjugation packaging}
 \label{sec:validation-ec-pinned}
 
-Eight rows in the complete SMEFT comparison require one additional translation. They arise from two distinct sources.
+We want to dive a little bit deeper in the vertices that needed more care. With the six we talked about in the last section there are two more we want to analyze. Therefore there are eight rows in the complete SMEFT comparison that require one additional translation. They arise from two distinct sources.
 
 Two rows belong to the Weinberg operator and are unrelated to the four-fermion \texttt{Ec} sector. FeynRules and FeynPy package the charge-conjugated lepton structure using different fermion orderings. Their comparison therefore uses the antisymmetrised FeynPy combination
 \begin{equation}
@@ -295,7 +297,7 @@ Two rows belong to the Weinberg operator and are unrelated to the four-fermion \
 
 The remaining six rows belong to the four-fermion \texttt{Ec} sector. For these vertices, the global translation of \Cref{eq:validation-ec-translation} is necessary but not sufficient because equivalent external-leg configurations are assigned to different field signatures by the two implementations. Their comparison therefore uses explicitly specified partner signatures, together with the corresponding relative signs and duplicate-leg symmetries.
 
-These exceptional translations are fixed in advance: the comparison does not search over alternative signatures or signs at acceptance time. Dedicated tests also verify that modifying the prescribed translation destroys the match. They therefore describe a finite set of representation differences rather than adjustable matching conditions.
+These exceptional translations are fixed in advance: the comparison does not search over alternative signatures or signs at acceptance time. Dedicated tests also verify that modifying the prescribed translation destroys the match. They therefore describe a finite set of representation differences rather than adjustable matching conditions, and the corresponding rows are reported separately from the direct canonical-map matches.
 
 
 % --------------------------------------------------------------
@@ -303,17 +305,21 @@ These exceptional translations are fixed in advance: the comparison does not sea
 \label{sec:validation-chirality}
 % --------------------------------------------------------------
 
-There is also another difference between FeynRules and Feynpy concerning how the projector is handled. FeynRules explicitly prints the chiral projectors \texttt{ProjM} and \texttt{ProjP}, whereas in FeynPy the chirality is already encoded in the field definition. For example, $l_L$ is left-handed by construction. The printed projector is therefore redundant in the final canonical tensor representation.
+There is also another difference between FeynRules and FeynPy concerning how projectors are handled. FeynRules explicitly prints the chiral projectors \texttt{ProjM} and \texttt{ProjP}, whereas FeynPy uses separate chiral fermion fields: \texttt{lL} and \texttt{qL} for left-handed doublets, and \texttt{eR}, \texttt{uR} and \texttt{dR} for right-handed singlets. The printed projector is therefore redundant in the final canonical tensor representation, because the same chirality information is already fixed by the external field.
 
 It is nevertheless checked before being removed. For each fermion chain, the projector printed by FeynRules must agree with the chirality implied by its external fields. The relevant relations are
 \begin{equation}
-    \overline{P_X\psi}=\bar\psi P_{\bar X},
+    \overline{P_L\psi}=\bar\psi P_R,
     \qquad
-    \gamma^\mu P_X=P_{\bar X}\gamma^\mu,
+    \overline{P_R\psi}=\bar\psi P_L,
+    \qquad
+    \gamma^\mu P_L=P_R\gamma^\mu,
+    \qquad
+    \gamma^\mu P_R=P_L\gamma^\mu,
 \end{equation}
 which determine the allowed projector once the chirality and structure of the chain are fixed. The same check is applied to chains involving charge conjugation.
 
-All $2998$ projectors in the FeynRules SMEFT reference satisfy this test: $2806$ belong to ordinary fermion chains and $192$ to charge-conjugation chains. A projector inconsistent with the corresponding fields, or a chain that must vanish for chirality reasons, is instead reported as a validation failure.
+All $2998$ explicit \texttt{ProjM}/\texttt{ProjP} factors appearing in the FeynRules JSON reference satisfy this test: $2806$ occur in ordinary fermion chains and $192$ in charge-conjugation chains. A projector inconsistent with the corresponding fields, or a chain that must vanish for chirality reasons, is instead reported as a validation failure.
 
 The projectors are therefore removed only after their information has been verified; no chirality information is lost during canonicalisation.
 
@@ -446,4 +452,3 @@ For the packaged Standard Model, all $163$ exported vertices are in agreement. F
 The SMEFT comparison covers $295$ of the $298$ active Wilson coefficients. The remaining three generate only two-point vertices and therefore do not fall within the scope of the available FeynRules reference.
 
 Finally, deliberate mutation tests confirm that the comparison remains sensitive to various changes. Within these limits, the validation provides a direct algebraic benchmark of the Feynman rules produced by FeynPy. We can therefore state that, within this validation scope, FeynPy correctly reproduces the SM, the unbroken background-field SM, and SMEFT Feynman rules. The timing results also show that, once the model is implemented, FeynPy can regenerate the SMEFT rules in seconds and complete the full validation comparison in about one minute.
-
