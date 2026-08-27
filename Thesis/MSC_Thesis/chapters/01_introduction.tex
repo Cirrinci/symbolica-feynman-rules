@@ -12,122 +12,62 @@
 \label{sec:intro-motivation}
 % --------------------------------------------------------------
 
-A particle physicist who proposes a new theory writes down a Lagrangian. An
-experimentalist who wants to test that theory needs a cross section. Between
-the two sits a long chain of steps, and the first link in that chain is
-always the same: the Lagrangian must be converted into Feynman rules, the
-elementary vertices from which every amplitude is assembled.
+In particle physics, we are always searching for new theories, and the key to describing a system is its Lagrangian. A theory only becomes meaningful when it is corroborated by an experiment, and the experimental physicist of this new theory needs the cross section, a physical quantity that can be measured in a particle accelerator. The bridge between the theory and the physical quantity are Feynman's rules, the elementary vertices from which each amplitude is assembled.
 
-That conversion is purely mechanical. \Cref{sec:feynrules-algorithm} states
-the recipe in full: take one term of the Lagrangian, attach a creation
-operator for each field, commute the operators through, replace each
-derivative by a momentum, and strip the external wavefunctions. There is no
-insight required at any point. What is required is bookkeeping, and a great
-deal of it. Every field carries Lorentz, spinor, colour, weak-isospin and
-flavour indices that must be contracted with the right partner; every
-covariant derivative expands into one term per gauge group under which the
-field transforms; every field strength of a non-abelian group splits into
-three pieces, so a product of $n$ of them splits into $3^n$; every exchange
-of two fermions costs a sign whose convention must be fixed once and then
-never violated.
+This conversion is purely mechanical and algebraic. \Cref{sec:feynrules-algorithm} describes the recipe in detail, but we can briefly summarize it as follows: take a term of the Lagrangian, add a creation operator for each field, commute the operators, replace each derivative with an impulse, and eliminate external wave functions. Precisely because these operations are always the same, it is so prone to being implemented algorithmically. Clearly, there are many ramifications and complications: each field carries Lorentz indices, spinors, color, weak isospin, and flavor that must be contracted with the correct partner; each covariant derivative expands into a term for each gauge group under which the field transforms; each field strength of a non-Abelian group splits into three parts, so a product of $n$ of them splits into $3^n$; each exchange of two fermions costs a sign, the convention of which must be established once and never violated again.
 
-For a Lagrangian with a handful of terms this is a long afternoon. For the
-Standard Model it is a well-known but genuinely error-prone exercise. For
-the Standard Model Effective Field Theory (SMEFT) it is not possible at all.
-The model used as the main benchmark of this thesis contains $32$ Lagrangian
-blocks and $298$ independent Wilson coefficients, and generates $184$
-distinct reference vertices with three to six external legs. Nobody derives
-that by hand, checks it by hand, or --- more to the point --- changes an
-operator and rederives it by hand.
+For a Lagrangian with few terms and few fields, performing these operations manually can already be quite tedious. For the Standard Model, it is a well-known exercise but indeed error-prone as the terms are numerous. Then we have more complex and long-lived theories like the Standard Model Effective Field Theory (SMEFT). This is the model used as the main benchmark for this thesis, which contains 32 Lagrangian blocks and 298 independent Wilson coefficients, and generates 184 distinct reference vertices with three to six external legs. No one derives it manually, verifies it manually, or, more precisely, modifies an operator and recalculates it manually.
 
-Automation is therefore not a convenience here; it is the only way the
-calculation happens at all. And once the derivation is automated, a second
-requirement appears immediately behind the first: the result has to be
-trusted. An automated tool that silently contracts the wrong pair of indices
-produces a plausible-looking vertex that is simply wrong, and no amount of
-downstream machinery will notice. This thesis therefore treats derivation
-and validation as one problem rather than two.
+With the creation of new theories that have become increasingly complex, it became necessary to automate this process. Thus, FeynRules was born, a model that uses Mathematica to calculate Feynman's rules given a theory and its Lagrangian. Years passed, and many physicists wanted to stop working with mathematics, and thus the idea for this thesis was born: to develop a toolkit capable of calculating Feynman's rules in Python.
 
 % --------------------------------------------------------------
 \section{The state of the art}
 \label{sec:intro-state-of-the-art}
 % --------------------------------------------------------------
 
+
+
 The reference implementation of this idea is
 \textsc{FeynRules}~\cite{Christensen:2008py,Alloul:2013bka}, a
-\textsc{Mathematica} package that has been the standard model-building entry
-point for collider phenomenology for well over a decade. Its workflow is the
-one this thesis deliberately imitates, so it is worth stating explicitly.
+\textsc{Mathematica} package that has been a standard entry point for building models
+for collider phenomenology for over a decade. Its workflow is the one
+this thesis deliberately imitates, so it is worth specifying explicitly. The \textsc{FeynRules} workflow is briefly summarized below.
 
-A \textsc{FeynRules} model file is declarative. The user fills in
-\texttt{M\$ClassesDescription} with the particle content, giving each field
-its spin, its self-conjugacy, its indices and its quantum numbers; fills in
-\texttt{M\$Parameters} with the couplings and mixing matrices; and declares
-the gauge groups in \texttt{M\$GaugeGroups}, each with its coupling, its
-gauge boson, its structure constants and its representations. The Lagrangian
-is then written as an ordinary \textsc{Mathematica} expression using a small
-vocabulary of symbols --- \texttt{DC[...]} for a covariant derivative,
-\texttt{FS[...]} for a field strength, \texttt{del[...]} for an ordinary
-derivative, \texttt{Ga[...]} for a Dirac matrix. A single call to
+First, a \textsc{FeynRules} model file is created, which has a declarative structure. The user fills
+\texttt{M\$ClassesDescription} with the particle content, specifying for each field
+its spin, self-conjugation, indices, and quantum numbers; they fill
+\texttt{M\$Parameters} with the parameters and mixing matrices; and declare
+the gauge groups in \texttt{M\$GaugeGroups}, each with its own coupling,
+gauge boson, structure constants, and representations. The Lagrangian
+is then written as a normal \textsc{Mathematica} expression, using a small
+vocabulary of symbols: \texttt{DC[...]} for a covariant derivative,
+\texttt{FS[...]} for the field-strength tensor, \texttt{del[...]} for an ordinary derivative, and \texttt{Ga[...]} for a Dirac matrix. A single call to
 \texttt{FeynmanRules[...]} returns the vertices, and a further call exports
-the model in the UFO format~\cite{Degrande:2011ua}, which is what event
-generators such as \textsc{MadGraph5\_aMC@NLO}~\cite{Alwall:2014hca} actually
-consume.
+the model in the UFO format, which is used by event generators such as \textsc{MadGraph5\_aMC@NLO}.
 
-\textsc{FeynRules} is one member of a larger ecosystem.
-\textsc{FeynArts}~\cite{Hahn:2000kx} and
-\textsc{FormCalc}~\cite{Hahn:1998yk} generate and evaluate diagrams from a
-model file; \textsc{CalcHEP}~\cite{Belyaev:2012qa} couples rule generation to
-a matrix-element generator; \textsc{SARAH}~\cite{Staub:2013tta} specialises
-in supersymmetric model building and mass-spectrum generation;
-\textsc{LanHEP}~\cite{Semenov:2014rea} solves the same Lagrangian-to-vertices
-problem in a standalone C implementation. The common structure is a
-declarative model description on one side, a symbolic engine in the middle,
-and an interchange format on the other side.
+There are two main reasons why many physicists may wish to move away from \textsc{FeynRules}. The first is that it is based entirely on \textsc{Mathematica}. This presents some inconveniences, the main one being that it does not integrate naturally with the Python-based machine-learning and analysis stack that the field now relies on for much of its other work. The second issue is computational cost. When the theory becomes complicated or the Lagrangian contains a large number of terms, the required computation time can become very high. As an example, this thesis aimed to implement the SMEFT model, which in \textsc{FeynRules} requires about half an hour of wall-clock time to export its reference vertices, as recorded in
+\Cref{tab:validation-performance}.
 
-Two practical observations motivated this project. The first is that almost
-every tool in this list is either built on \textsc{Mathematica}, and so
-inherits a commercial licence and a closed core, or is a standalone program
-with its own input language. Neither choice sits naturally next to the
-Python-based analysis and machine-learning stack that the field now uses for
-almost everything else. The second is cost. Loading the SMEFT model used in
-this thesis into \textsc{FeynRules} and exporting its reference vertices
-takes roughly half an hour of wall-clock time, as recorded in
-\Cref{tab:validation-performance}. That is tolerable once, and painful in a
-loop where an operator is edited and the vertices are regenerated.
-
-The gap this thesis addresses is therefore not that the problem is unsolved.
-It is that the solution has not, until recently, been available in the
-ecosystem where the rest of the work is done.
+The gap this thesis aims to fill, therefore, isn't that the problem is unsolved or that a suitable toolkit doesn't already exist—not at all.
+The point is that, until recently, there was no equivalent solution available in the Python ecosystem, where much of the remaining work is taking place.
 
 % --------------------------------------------------------------
 \section{Why Python, and why now}
 \label{sec:intro-why-now}
 % --------------------------------------------------------------
 
-Python was for a long time a poor host for this kind of calculation. Not
-because of the language, but because the symbolic expressions involved ---
-tensor networks with typed indices, expanded over thousands of terms ---
-were beyond what the available Python computer-algebra systems could handle
-at an acceptable speed.
+For a long time, Python was not an adequate environment for creating such a toolkit that could perform algebraic operations and, more importantly, understand the meaning of symbolic expressions such as tensor networks with typed indices, expanded over thousands of terms.
 
-That has changed. \textsc{Symbolica}~\cite{symbolica} is a computer-algebra
-system with a core written in Rust and a Python interface. It treats large
-symbolic expressions as ordinary in-process objects, rewrites them through
-wildcard pattern matching, normalises them through a fast multivariate
-polynomial engine, and --- decisively for this work --- can reduce a tensor
-expression with contracted dummy indices to a canonical form.
-\textsc{Spenso}~\cite{spenso} adds the missing type information: it makes an
-index not merely a name but a slot carrying a representation, so that the
-library itself knows that a colour fundamental index may contract with its
-dual and not with a Lorentz index. A companion layer, idenso, supplies the
-physics identities on top --- metric contraction, $\mathrm{SU}(N)$ colour
-algebra, and the Dirac algebra.
+This changed, however, with the birth of Symbolica, a computer algebra system with a core written in Rust and, more importantly, a Python interface. It provides efficient manipulation of large symbolic expressions through pattern-based rewriting and a fast multivariate polynomial engine, allowing expressions containing thousands of terms to be transformed and normalized efficiently. What Symbolica does not provide by itself is the type information needed to interpret tensor indices.
 
-Together these three libraries supply exactly the services that a
-\textsc{FeynRules}-class tool needs and that Python previously lacked.
-\Cref{ch:cas} describes them in detail. The present thesis is, in one
-sentence, an attempt to find out how far one can get by building on them.
+Building on Symbolica, a very promising and capable library, \textsc{Spenso}~\cite{spenso}, was developed by Lucien Huber. This library adds the missing type information: it makes an
+index not simply a name, but part of a slot that also carries a representation, so that the
+library itself knows that a fundamental color index can contract with its
+dual and not with a Lorentz index. A complementary layer, \textsc{idenso}, provides the
+additional physical identities: metric contraction, the $\mathrm{SU}(N)$ color algebra, and the Dirac algebra.
+
+Together, these three libraries provide exactly the services that a \textsc{FeynRules}-like tool needs and that Python previously lacked.
+\Cref{ch:cas} describes them in detail. This thesis is, in a nutshell, an attempt to see how far these libraries can go by further developing them.
 
 % --------------------------------------------------------------
 \section{Contributions}
@@ -143,40 +83,28 @@ contributions are the following.
     fields, parameters, gauge representations and gauge groups are ordinary
     Python objects, and a Lagrangian is written as an ordinary Python
     expression in a notation deliberately close to the
-    \textsc{FeynRules} one. Nothing is a string to be parsed, and every
-    intermediate object can be inspected in a debugger or a notebook
+    \textsc{FeynRules} one
     (\Cref{ch:feynpy}).
 
     \item \textbf{A generic gauge compiler.} Covariant derivatives, field
     strengths, gauge-fixing terms and Faddeev--Popov ghosts are expanded
-    from the model's own gauge metadata rather than from hard-coded
-    templates. Because the expansion is generic, operators such as $F^3$,
-    $F^4$, nested covariant derivatives and products mixing several gauge
-    groups work without any additional code
-    (\Cref{sec:internals-compiler}).
+    from the model's own gauge metadata.
 
     \item \textbf{A contraction engine with a controlled fermion-sign
     convention.} Vertices are produced by a pruned sum over permutations of
     the external legs, the direct realisation of the canonical-quantisation
-    recipe. Products of closed Dirac bilinears --- where the naive Grassmann
-    sign disagrees with the \textsc{FeynRules} convention --- are handled by
-    carrying the bilinear pairing recorded during lowering all the way into
-    the engine (\Cref{sec:internals-contraction-fermions}).
+    recipe.
 
     \item \textbf{A canonicalisation layer that makes cross-tool comparison
     possible.} Dummy relabelling, tensor symmetries, a deterministic
     generator-ordering rewrite and a restricted use of the Jacobi identity
     reduce two independently derived expressions to a common normal form
-    (\Cref{sec:internals-postprocessing,sec:validation-canonical}). This was
-    one of the hardest parts of the work and is what turns ``the two results
-    look similar'' into a decidable statement.
+    (\Cref{sec:internals-postprocessing,sec:validation-canonical}). 
 
-    \item \textbf{An operator calculus on compiled Lagrangians.} Beyond
-    vertex extraction, a compiled Lagrangian can be rewritten in place:
-    field transformations implement electroweak symmetry breaking and the
+    \item \textbf{An operator calculus on compiled Lagrangians.} We can apply operator to a compiled Lagrangian. Stuff like
+    field transformations to implement electroweak symmetry breaking and the
     background-field split, and graded operators implement infinitesimal
-    gauge variations and BRST transformations, so that gauge invariance and
-    nilpotency become executable checks
+    gauge variations and BRST transformations.
     (\Cref{sec:feynpy-transformations,sec:feynpy-brst}).
 
     \item \textbf{A model-agnostic comparison framework, and three validated
@@ -184,9 +112,7 @@ contributions are the following.
     \textsc{FeynRules} export at $163/163$ vertices; the unbroken
     background-field Standard Model at $67/67$; and the Green-basis SMEFT at
     $184/184$ reference lines, of which $161$ match directly and the rest
-    after documented charge-conjugation conventions. Deliberate mutation
-    tests confirm that the comparison rejects vertices whose physical
-    content has been altered (\Cref{ch:validation}).
+    after documented charge-conjugation conventions (\Cref{ch:validation}).
 \end{enumerate}
 
 % --------------------------------------------------------------
@@ -194,62 +120,30 @@ contributions are the following.
 \label{sec:intro-scope}
 % --------------------------------------------------------------
 
-It is worth being explicit about what this work does not do, so that the
-results of \Cref{ch:validation} are read correctly.
+Finally, I would like to clearly specify the scope of this work so that the results in \Cref{ch:validation} are interpreted correctly.
 
-\textsc{FeynPy} derives \emph{tree-level} Feynman rules. There is no
-loop-level or next-to-leading-order functionality, and no counterterm
-machinery. It produces \textsc{Symbolica} expressions, not model files:
-there is no UFO, \textsc{FeynArts} or \textsc{CalcHEP} export, so the output
-cannot yet be handed directly to an event generator. Restriction files, a
-\textsc{FeynRules} feature used to switch parts of a model off, are not
-ported. The integration-by-parts layer handles scalar fields only. General
-open multi-fermion tensor structures are supported less completely than
-closed Dirac bilinears.
+\textsc{FeynPy} derives Feynman rules exclusively at tree level. It does not support loop corrections, counterterms, restriction files, or export to formats such as UFO, \textsc{FeynArts}, or \textsc{CalcHEP}. Integration by parts is currently limited to scalar fields.
 
-The validation claim is correspondingly bounded. It compares interaction
-vertices, not parameter-card semantics or numerical model metadata, and the
-reference exports used here contain vertices with three to six external
-legs, so two-point functions fall outside the comparison. These limits are
-stated precisely in \Cref{sec:validation-coverage} and revisited in
-\Cref{ch:conclusion}.
+As a result, validation is limited to the interaction vertices and does not cover the full model metadata or numerical parameter definitions.
 
-Within those bounds, the claim is a strong one: for three complete and
-independently written models, the vertices produced by \textsc{FeynPy} agree
-with those produced by \textsc{FeynRules} as algebraic expressions.
+Within these limits, however, the result is significant: for three complete, independently written models, the vertices produced by \textsc{FeynPy} agree algebraically with those produced by \textsc{FeynRules}. The precise scope and coverage of this validation are detailed in \Cref{sec:validation-coverage}.
+
 
 % --------------------------------------------------------------
 \section{Outline}
 \label{sec:intro-outline}
 % --------------------------------------------------------------
 
-\Cref{ch:theory} collects the theory the rest of the thesis assumes: the
-role of symmetry, the Lie-algebraic machinery that gives fields their
-indices, the structure of gauge Lagrangians including gauge fixing, ghosts
-and spontaneous symmetry breaking, the logic of effective field theory and
-the SMEFT bases used later, and finally the canonical-quantisation algorithm
-that turns a Lagrangian term into a vertex.
+\Cref{ch:theory} aims to provide the theoretical foundation for understanding the canonical quantization, which is the functional basis of the algorithm implemented by feynpy. The chapter will address topics such as the role of symmetry, the Lie algebra mechanism that assigns fields to their indices, the structure of gauge Lagrangians, including gauge fixing, ghosts and spontaneous symmetry breaking, the logic of effective field theory and the SMEFT basis used later, and finally the canonical quantization algorithm that transforms a Lagrangian term into a vertex.
 
-\Cref{ch:feynpy} is a user manual. It builds a model from indices and fields
-up to a complete gauge-fixed QCD Lagrangian, extracts its vertices, and then
-covers the further operations available on a compiled Lagrangian: field
-transformations into a physical basis, gauge variations, BRST
-transformations, and the packaged Standard Model and SMEFT models.
+\Cref{ch:feynpy} serves as a user's manual. It builds a model from indices and fields to a complete QCD Lagrangian with gauge fixing, extracts its vertices. Additionally it describes the additional operations available on a compiled Lagrangian: field transformations
+in a physical basis, gauge variations, BRST transformations,
+and the included Standard Model and SMEFT implementations.
 
-\Cref{ch:cas} introduces \textsc{Symbolica}, \textsc{Spenso} and idenso, and
-explains the single small object that bridges them to the toolkit.
+\Cref{ch:cas} introduces \textsc{Symbolica}, \textsc{Spenso}, and \textsc{idenso} and explains the small interface object that connects them to the toolkit.
 
-\Cref{ch:internals} opens the machine. It follows one Lagrangian term
-through analysis, index resolution, gauge compilation, the intermediate
-representation where every branch of the code meets, the Wick-contraction
-engine, and canonicalisation, and closes with the problems that shaped the
-design.
+\Cref{ch:internals} explains how the code works internally. It begins by explaining how to move from declarative classes to Wick's contraction engine and canonization, and then output the expression in Symbolica.
 
-\Cref{ch:validation} is the evidence. It defines what ``equal'' means for
-two independently derived tensor expressions, reports the three benchmark
-comparisons, examines the charge-conjugation and chirality conventions that
-required care, and demonstrates through mutation testing that the comparison
-is not vacuous.
+\Cref{ch:validation} provides validation between the models implemented in FeynRules and their counterparts in FeynPY. It then reports the three benchmark comparisons, examines the charge conjugation and chirality conventions that required attention, and demonstrates, through mutation tests, that the comparison is nontrivial.
 
-\Cref{ch:conclusion} summarises what was achieved, what proved difficult,
-and where the work goes next.
+\Cref{ch:conclusion} summarizes what has been accomplished, what proved challenging, and the next steps for the work.

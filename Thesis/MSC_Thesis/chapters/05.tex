@@ -6,9 +6,11 @@
 \chapter{Computer-Algebra Foundations: Symbolica and Spenso}
 \label{ch:cas}
 % ==============================================================
-Why has it become feasible to attempt an implementation of FeynRules within the Python ecosystem at this particular moment? In the past, Python was not a natural choice for the automatic computation of Feynman rules because it lacked a symbolic algebra engine capable of efficiently handling the large tensor expressions involved. This is where \textsc{Symbolica} comes into play: it enables high-performance symbolic manipulation while retaining the flexibility of the Python ecosystem.
+Why is it now possible to implement Feynman rules in Python? Previously, Python did not have a symbolic algebra engine, so it could not automatically compute Feynman rules. More importantly, it could not efficiently handle the large tensor expressions needed for quantum theory. Now, Symbolica makes this possible by providing high-performance symbolic manipulation while keeping the flexibility of Python.
 
-Before describing how the toolkit transforms a declared model into Feynman rules in Chapter~\ref{ch:internals}, it is therefore useful to introduce the libraries on which the entire project is based. Every symbolic object manipulated by the toolkit---such as a coupling, a momentum, a $\gamma$ matrix, or an entire vertex---is represented using \textsc{Symbolica}. As should be clear from the previous chapter, indices also play an essential role, and their meaning is provided by the \textsc{Spenso} library. Thus, \textsc{Symbolica} manipulates the expressions, while \textsc{Spenso} describes the meaning of their indices, and a small complementary layer, \textsc{idenso}, implements the physical identities associated with these typed indices. This chapter introduces each library, its role in the project, and the reasons for its selection.
+Before explaining how the toolkit turns a declared model into Feynman rules in Chapter ~\ref{ch:internals}, it helps to introduce the main libraries used in the project. The toolkit represents every symbolic object, like couplings, momenta, gamma matrices, or entire vertices, with Symbolica. As mentioned in the previous chapter, indices are also important, and the Spenso library gives them meaning. Symbolica handles the expressions, Spenso explains the indices, and a small extra layer called idenso adds the physical identities for these typed indices. This chapter introduces each library, explains its role in the project, and discusses why it was chosen.
+
+
 
 
 % --------------------------------------------------------------
@@ -40,7 +42,7 @@ e = f((1 + x)**2).replace(f(x_**n_), f(x_)**n_)
 print(e)   # ->  f(1 + x)**2
 \end{minted}
 
-The toolkit leans on this pervasively. As we will see in Chapter~\ref{ch:internals}, the central step of the contraction engine --- attaching an external leg's index label to an open index of a coupling --- is literally one call to
+The toolkit leans on this pervasively. As we will see in Chapter~\ref{ch:internals}, the central step of the contraction engine ( attaching an external leg's index label to an open index of a coupling) is literally one call to
 \py{coupling.replace(...)}, and the user-facing helper \py{pattern_coefficient} (Section~\ref{sec:feynpy-expr-manip}) is a thin wrapper around the same wildcard machinery. Standard CAS operations are available on the same objects: \py{.expand()}, \py{.collect()}, \py{.derivative()} (with the chain and product rules applied automatically), \py{.factor()}, \py{.coefficient()}, series expansion, and even \py{solve_linear_system}.
 
 \subsection*{Polynomial algebra: the source of the speed}
@@ -51,16 +53,16 @@ This is important for the toolkit developed in this thesis, because the contract
 
 \subsection*{Tensor and graph canonicalisation}
 
+Symbolica is not limited to scalar algebra. For this project, one of its most useful features is the possibility to bring tensor expressions into a canonical form. Given a product of tensors with contracted indices, \py{Expression.canonize_tensors} renames dummy indices in a deterministic way and orders the tensor factors according to their symmetry properties. Internally, this is based on a graph-canonicalisation algorithm for tensor networks~\cite{ruijl_symbolica_talk}. In this way, expressions that differ only by dummy-index names, tensor symmetries, or the ordering of commuting factors are reduced to the same form.
 
-Symbolica is not limited to scalar algebra, but what makes it particularly well-suited to this project is the fact that it is capable of converting \emph{tensor} expressions into a canonical form. Given a product of tensors with contracted (dummy) indices, \py{Expression.canonize_tensors} relabels the dummies deterministically and orders the factors, using symmetry metadata attached to each tensor head through the \py{is_symmetric}/\py{is_antisymmetric} flags on its symbol. Internally this rests on a graph-canonicalisation algorithm for (cyclic-)symmetric tensor networks~\cite{ruijl_symbolica_talk}. Two expressions that differ only by a renaming of dummy indices, by the allowed symmetry of a tensor head, or by a reordering of commuting factors are therefore reduced to the same normal form.
+In FeynPy this cannot be applied directly, because tensors are kept as typed Spenso objects during the calculation, while Symbolica expects its symmetry information on ordinary Symbolica heads. For this reason we introduced the wrapper \py{canonize_spenso_tensors}. It temporarily replaces the Spenso tensor heads by Symbolica ones, attaches the needed symmetry information, performs the canonicalisation, and then restores the original objects.
 
-Despite Symbolica's capabilities, it was not possible to apply canonicalisation directly, but an additional step was taken. What happens internally is that during the calculation the toolkit keeps tensors as typed Spenso objects. The symmetry information needed by \py{canonize_tensors}, however, is not attached to those live heads in the form Symbolica expects. This required a wrapper, called \py{canonize_spenso_tensors}, that temporarily swaps each Spenso tensor head into a plain Symbolica head, with symmetry flags attached where applicable, calls \py{canonize_tensors}, and then swaps the heads back.
-
-This wrapper also keeps Lorentz, spinor, colour, and weak dummy indices in separate groups, so that indices of different kinds are never identified by mistake. When explicit index pools are not supplied, it can infer them from typed Spenso slots and from field metadata; explicit declarations remain authoritative. On top of this we have a function that adds all the tensor identities that we need in this physical contenxt. The helper \py{canonize_full} adds the project-specific reductions needed by the physics pipeline: metric contraction, canonical ordering of nested flat \(\partial_\mu\partial_\nu\) chains, local Jacobi reductions for products of two structure constants and the antisymmetry of \(f^{abc}\).
+The wrapper also keeps Lorentz, spinor, colour and weak dummy indices separated. On top of this, \py{canonize_full} applies the additional identities needed in the physics pipeline. These include metric contractions, the ordering of nested flat derivatives, the antisymmetry of \(f^{abc}\), and local Jacobi reductions involving products of structure constants.
 
 \begin{tcolorbox}[infobox, title={Why a fast CAS matters here}]
-The toolkit does not perform a single, closed-form derivation; it \emph{expands} covariant derivatives and field strengths into many elementary monomials and then sums over all Wick contractions of each. Both steps multiply the number of terms. A CAS that treats large symbolic expressions as ordinary in-process objects, rewrites them by pattern matching, and normalises them through a fast polynomial core is therefore not a convenience but a prerequisite.
+The toolkit expands covariant derivatives and field strengths into many smaller terms, and afterwards evaluates the possible Wick contractions. The number of terms can therefore grow quite fast. Having a CAS that can manipulate and canonicalise large symbolic expressions efficiently is not only convenient here, but really necessary.
 \end{tcolorbox}
+
 
 % --------------------------------------------------------------
 \section{Spenso: typed tensor indices and tensor networks}
@@ -194,7 +196,7 @@ The toolkit composes the three into one pass, \py{simplify_invariants}. This run
 \label{sec:cas-indextype}
 % --------------------------------------------------------------
 
-The toolkit ties the three libraries together with one small object, \py{IndexType}, discussed from the user's point of view in Section~\ref{sec:feynpy-indices}. Each \py{IndexType} pairs a single Spenso \py{Representation} with a plain string \emph{kind} (\py{"lorentz"}, \py{"spinor"}, \py{"color_fund"}, \dots) and a default label prefix. The \py{Representation} is what Spenso needs to decide contractibility; the \py{kind} string is a cheap key that the toolkit's own compiler uses to group and match indices without repeatedly inspecting the representation object. Every index that appears anywhere in the pipeline, like on a field, on a derivative, on a coupling, is tagged with an \py{IndexType}, and it is this tag that lets the layers of Chapter~\ref{ch:internals} reason about indices uniformly, from the declarative front end all the way down to the contraction engine.
+The toolkit ties the three libraries together with one small object, \py{IndexType}, discussed from the user's point of view in Section~\ref{sec:feynpy-indices}. Each \py{IndexType} pairs a single Spenso \py{Representation} with a plain string \emph{kind} (\py{"lorentz"}, \py{"spinor"}, \py{"color_fund"}, \dots) and a default label prefix. The \py{Representation} is what Spenso needs to decide contractibility; the \py{kind} string is a cheap key that the toolkit's own compiler uses to group and match indices without repeatedly inspecting the representation object.                                                                   
 
 In summary, the division of responsibility is sharp and deliberate:
 \begin{center}

@@ -46,28 +46,20 @@ Nella prossima sezione ci addentreremo nella matematica che permette di descrive
 \section{Group Theory}
 \label{sec:theory-group}
 
-The previous section argued that symmetry is what makes a description of the
-universe tractable. This section makes that statement precise, and it does so
-with a very concrete goal in mind. Every field in the models of this thesis
-carries indices, and the toolkit of \Cref{ch:feynpy} asks the user to declare
-each of them by type. Those types are not arbitrary labels: a colour index, a
-weak-isospin index and an adjoint index are all representation indices of an
-underlying Lie algebra, and it is the representation that decides which
-indices may be contracted with which. The path from here to there runs
-through Lie groups, Lie algebras, generators and structure constants, and
-finally representations.
+The previous section introduced symmetry as the invariance of a physical system under a transformation. We now need a mathematical language to describe such transformations and to understand how they affect the fields of a theory. This language is provided by group theory.
 
-Symmetries are ubiquitous in physics, and since physics describes nature
-through mathematics, symmetries too are described mathematically, through the
-concept of a group. They may be discrete, such as the lattice symmetries of
-condensed matter, or --- more interesting for our purposes --- continuous. In
-the latter case they are known as Lie groups. Lie groups play a double role in
-quantum field theory: they appear as global spacetime and flavour symmetries,
-and they appear as local gauge symmetries in Yang--Mills theory, which is the
-case that will occupy us for the rest of the thesis.
+For the purposes of this thesis, the important point is that fields are not defined solely by their spin and particle content. They can also have indices, such as Lorentz, spinor, color, or weak isospin indices. These indices identify the components of the spaces into which the fields transform. In a gauge theory,
+for example, a quark has a color index because it transforms into the
+fundamental representation of \(SU(3)_C\), while a gluon has an additional color index because it transforms into the adjunct representation. More generally, the representation of a symmetry group determines how a field transforms and thus how its indices can appear and be contracted.
+
+This is also the perspective adopted by model-building tools. In FeynRules, for example, fields are declared along with the indices they carry and the representations on which the corresponding gauge group generators act.
+
+FeynPy follows the same physical logic, albeit with its own internal representation of these objects.
+
+The goal of the following sections is therefore to provide a foundation for understanding group theory and the meaning of indices. We will introduce Lie groups and Lie algebras, their generators and structure constants, and finally their representations. These elements will allow us to precisely understand what the indices carried by quantum fields represent and how symmetry constrains the shape of the Lagrangian.
 
 \subsection{Lie Groups and Lie algebras}
- we start by defining Lie groups, Lie algebras and their relationship.
+ We start by defining Lie groups, Lie algebras and their relationship.
 
  \begin{definition}[Lie group]
 A Lie group $G$ is a group that is also a smooth manifold, such that
@@ -210,7 +202,7 @@ such that the Lie bracket is reproduced as an operator commutator,
 Writing $T_a^R := R(T_a)$ for the representation matrices of the
 generators, the representation property of $R$ takes the explicit form
 \begin{equation}
-[T_a^R, T_b^R] = i f_{ab}{}^{c}, T_c^R .
+[T_a^R, T_b^R] = i f_{ab}{}^{c} T_c^R .
 \end{equation}
 A field $\phi$ transforming in the representation $R$ carries an
 index $i = 1, \dots, \dim R$ labelling a basis of the representation
@@ -321,7 +313,7 @@ This completeness is expressed by the relation
 \end{equation}
 and it is this identity that allows a sum over the adjoint index $a$
 to be traded for an expression written purely in terms of Kronecker
-deltas on the colour indices $i,j,k,l$ --- a manipulation used
+deltas on the colour indices $i,j,k,l$. Thius is a manipulation used
 throughout when working with $SU(N)$ gauge theories.
 
 
@@ -330,59 +322,58 @@ throughout when working with $SU(N)$ gauge theories.
 \label{sec:theory-gauge}
 % ==============================================================
 
-We now have the algebraic vocabulary we need. This section assembles it into
-the object the rest of the thesis manipulates: the Lagrangian of a gauge
-theory. The presentation is deliberately structural rather than
-pedagogical --- the aim is to fix which pieces exist, what indices they
-carry, and how they are built, because those are exactly the pieces that
-\Cref{ch:feynpy} asks the user to declare and \Cref{ch:internals} teaches the
-compiler to expand. Standard textbook treatments are
-in~\cite{Peskin:1995ev,Weinberg:1996kr}.
+Now that we understand the mathematics needed to describe symmetries and transformations, we can investigate the fundamental object that allows us to describe a system and all its characteristics: the Lagrangian of a gauge theory.
 
 \subsection{Fields and the indices they carry}
 \label{sec:theory-fields}
 
-A field is characterised by how it transforms, and every transformation law
-it obeys leaves behind an index. There are three families.
+Fields can carry different kinds of indices, depending on how they transform.
+For our purposes, it is useful to distinguish three main families: spacetime,
+gauge and flavour indices.
 
-\emph{Spacetime} transformations fix the spin. A scalar $\phi$ carries no
-spacetime index; a Dirac fermion $\psi_\alpha$ carries a four-component
-spinor index $\alpha$; a vector field $A_\mu$ carries a Lorentz index $\mu$.
-The Dirac matrices $\gamma^\mu_{\alpha\beta}$ carry one of each and are
-therefore the object that ties spinor lines to Lorentz lines.
+\emph{Spacetime} transformations determine the Lorentz structure of a field.
+A scalar $\phi$ carries no spacetime index, a Dirac fermion
+$\psi_\alpha$ carries a spinor index $\alpha$, and a vector field
+$A_\mu$ carries a Lorentz index $\mu$. Objects such as the Dirac matrices
+$\gamma^\mu_{\alpha\beta}$ connect these structures, carrying one Lorentz
+index and two spinor indices.
 
-\emph{Internal gauge} transformations fix the representation, in exactly the
-sense of \Cref{sec:theory-group}. A quark $q^i$ carries a colour index in the
-fundamental of $\mathrm{SU}(3)_c$; a gluon $G^a_\mu$ carries an adjoint index;
-a left-handed lepton doublet $\ell_L^j$ carries a weak-isospin index in the
-fundamental of $\mathrm{SU}(2)_L$. An abelian group such as
-$\mathrm{U}(1)_Y$ leaves no index at all, only a number: the charge.
+\emph{Internal gauge} transformations determine the representation of a
+field under a gauge group, as discussed in \Cref{sec:theory-group}. A quark
+$q^i$ carries a colour index in the fundamental representation of
+$\mathrm{SU}(3)_C$, while a gluon $G^a_\mu$ carries an adjoint colour index.
+Similarly, a left-handed lepton doublet $\ell_L^j$ carries an
+$\mathrm{SU}(2)_L$ index. For an abelian group such as $\mathrm{U}(1)_Y$,
+there is no additional representation index: the transformation is specified
+by a charge.
 
-\emph{Flavour} indices label copies of an otherwise identical field. The
-three generations of quarks and leptons are the standard example, and the
-index they carry is contracted by coupling matrices such as the Yukawa
-matrices $Y_u, Y_d, Y_e$ rather than by a gauge generator.
+\emph{Flavour} indices distinguish different copies of fields with the same
+gauge quantum numbers. The three generations of quarks and leptons are the
+standard example. These indices appear, for instance, in coupling matrices
+such as the Yukawa matrices $Y_u$, $Y_d$ and $Y_e$.
 
-A single field can carry one index of each family at once. The left-handed
-quark doublet has a spinor index, a colour index, a weak index and a flavour
-index simultaneously, and it is precisely this multiplicity that makes
-hand-derivation of Feynman rules so unpleasant. The toolkit's
-\texttt{IndexType}, introduced in \Cref{sec:feynpy-indices}, is nothing more
-than the machine-readable version of the classification just given.
+A field may carry several of these indices at the same time. The
+left-handed quark doublet, for example, carries a spinor index, a colour
+index, a weak-isospin index and a flavour index. Keeping track of all these
+indices quickly becomes cumbersome in explicit calculations. The
+\texttt{IndexType} introduced in \Cref{sec:feynpy-indices} provides the
+machine-readable counterpart of this classification.
 
-Chirality deserves a separate remark because it recurs throughout the
-validation of \Cref{sec:validation-chirality}. The projectors
+Chirality is closely related and will appear repeatedly throughout the
+thesis. The projectors
 \begin{equation}
-    P_L = \frac{1-\gamma^5}{2}, \qquad P_R = \frac{1+\gamma^5}{2},
-    \label{eq:theory-projectors}
+P_L = \frac{1-\gamma^5}{2}, \qquad
+P_R = \frac{1+\gamma^5}{2},
+\label{eq:theory-projectors}
 \end{equation}
-split a Dirac field into left- and right-handed parts. In the Standard Model
-the two chiralities transform differently under $\mathrm{SU}(2)_L$, so the
-natural fields of the unbroken theory are chiral from the start: the doublets
-$Q_L$ and $\ell_L$ and the singlets $u_R$, $d_R$, $e_R$. A theory written in
-terms of such fields carries its chirality information in the field names,
-and an explicitly written projector then becomes redundant --- a fact the
-comparison of \Cref{ch:validation} both exploits and verifies.
+select the left- and right-handed components of a Dirac field. In the
+Standard Model these components transform differently under
+$\mathrm{SU}(2)_L$. It is therefore natural to work directly with chiral
+fields such as the doublets $Q_L$ and $\ell_L$ and the singlets
+$u_R$, $d_R$ and $e_R$. When chirality is already part of the field
+definition, writing an additional projector may be redundant. This point
+will become relevant again in the validation of \Cref{ch:validation}.
+
 
 \subsection{Local symmetry and the covariant derivative}
 \label{sec:theory-covd}
@@ -392,42 +383,65 @@ under a global transformation
 \begin{equation}
     \phi \longrightarrow e^{i \alpha^a T_a^R}\, \phi ,
 \end{equation}
-with constant parameters $\alpha^a$. A Lagrangian built from $\phi$ and
-$\partial_\mu \phi$ is invariant because the derivative passes through the
-constant matrix untouched.
-
-Promoting the symmetry to a \emph{local} one, $\alpha^a \to \alpha^a(x)$,
-breaks that argument: the derivative now also hits the parameter, and
-$\partial_\mu \phi$ no longer transforms in the representation $R$. The
-repair is to introduce a gauge field $A^a_\mu$, one component per generator,
-and replace the ordinary derivative by the covariant derivative
+where the parameters $\alpha^a$ are constant. Since the transformation does
+not depend on spacetime, the derivative transforms in the same way as the
+field,
 \begin{equation}
-    D_\mu \phi = \partial_\mu \phi - i g\, A^a_\mu\, T_a^R\, \phi ,
-    \label{eq:theory-covd}
+    \partial_\mu\phi
+    \longrightarrow
+    e^{i\alpha^a T_a^R}\partial_\mu\phi .
 \end{equation}
-where $g$ is the coupling constant of the group. If the gauge field is
-declared to transform inhomogeneously, its variation cancels the unwanted
-term and $D_\mu \phi$ transforms exactly like $\phi$ itself. For an abelian
-group there is a single generator and \Cref{eq:theory-covd} reduces to
-$D_\mu\phi = \partial_\mu\phi - i g Q A_\mu \phi$ with $Q$ the charge of the
-field.
+This makes it possible to construct Lagrangian terms that are invariant under
+the global symmetry.
 
-Two features of \Cref{eq:theory-covd} matter for the implementation. First,
-the sign convention is a choice, and it must be made once and enforced
-everywhere; the convention used throughout this thesis is the one written
-above. Second, a field charged under several groups picks up one term per
-group, each with its own coupling, its own gauge field, and its own generator
-acting on its own index. The left-handed quark doublet gives
+The situation changes when the transformation is made \emph{local}, so that
+$\alpha^a\to\alpha^a(x)$. The derivative now also acts on the transformation
+itself, and therefore $\partial_\mu\phi$ no longer transforms like $\phi$.
+In ordere to have the lagrangian gauge invariant we need to restore the symmetry, and this can be done by acting with a covariant derivative. To restore the symmetry, we introduce a gauge field $A_\mu^a$ and so that we can replace the ordinary derivative with
 \begin{equation}
-    D_\mu Q_L
-    = \partial_\mu Q_L
-    - i g_s\, G^a_\mu\, t^a_{(3)}\, Q_L
-    - i g\, W^I_\mu\, t^I_{(2)}\, Q_L
-    - i g'\, Y_Q\, B_\mu\, Q_L ,
-    \label{eq:theory-covd-sm}
+D_\mu\phi = \partial_\mu\phi -igA_\mu^aT_a^R\phi ,
+\label{eq}
 \end{equation}
-a single symbol standing for four separate terms. Expanding that symbol
-correctly, for any field and any set of groups, is the job of
+
+where $g$ is the gauge coupling. The gauge field transforms in such a way
+that the additional terms cancel, leaving
+
+\begin{equation}
+    D_\mu\phi
+    \longrightarrow
+    e^{i\alpha^a(x)T_a^R}D_\mu\phi
+\end{equation}
+
+The covariant derivative therefore transforms in exactly the same way as the
+field itself.
+
+For an abelian group, such as $\mathrm{U}(1)$, the generator is simply the
+charge $Q$, and the covariant derivative becomes
+\begin{equation}
+D_\mu\phi
+=
+\partial_\mu\phi
+-igQA_\mu\phi .
+\end{equation}
+
+A field may transform under several gauge groups at the same time. In that
+case, the covariant derivative contains one contribution from each group,
+with its own coupling, gauge field and generator. For example, the
+left-handed quark doublet transforms under
+$\mathrm{SU}(3)_C\times\mathrm{SU}(2)_L\times\mathrm{U}(1)_Y$, and therefore
+\begin{equation}
+    D\mu Q_L = \partial\mu Q_L
+    -ig_sG_\mu^a t^a_{(3)}Q_L
+    -igW_\mu^I t^I_{(2)}Q_L
+    -ig'Y_QB_\mu Q_L .
+\label{eq_cov}
+\end{equation}
+
+The sign in the definition of $D_\mu$ is a convention and must be used
+consistently throughout the theory. The convention adopted in this thesis is
+the one in \Cref{eq_cov}. In the implementation, expanding the
+covariant derivative into the appropriate contribution from each gauge group
+is handled automatically, as described in
 \Cref{sec:internals-covd}.
 
 \subsection{The field strength and the Yang--Mills Lagrangian}
@@ -449,7 +463,7 @@ whose components read
 The last term is present only for a non-abelian group, and it is the origin
 of the gauge boson self-interactions: the Yang--Mills Lagrangian
 \begin{equation}
-    \mathcal{L}_{\mathrm{YM}} = -\frac14 F^a_{\mu\nu} F^{a\,\mu\nu}
+    \mathcal{L}_{\mathrm{YM}} = -\frac14 F^{a\,\mu\nu} F^a_{\mu\nu} 
     \label{eq:theory-ym}
 \end{equation}
 is quadratic in $F$, and therefore contains a two-gluon kinetic piece, a
@@ -466,83 +480,104 @@ anything is collected again.
 \subsection{Matter, Yukawa couplings and flavour}
 \label{sec:theory-matter}
 
-With covariant derivatives available, matter Lagrangians are short. A Dirac
-fermion contributes
+Once the covariant derivative has been introduced, the coupling of matter to
+gauge fields follows naturally. For a Dirac fermion,
 \begin{equation}
-    \mathcal{L}_\psi = i\,\bar\psi\,\gamma^\mu D_\mu \psi ,
+    \mathcal{L}_\psi=
+    i\bar\psi\gamma^\mu D_\mu\psi,
     \qquad
-    \bar\psi = \psi^\dagger \gamma^0 ,
+    \bar\psi=\psi^\dagger\gamma^0,
 \end{equation}
-and a complex scalar contributes $(D_\mu\Phi)^\dagger (D^\mu\Phi)$. Expanding
-$D_\mu$ in either expression produces the kinetic term plus one gauge current
-per group; the interaction between matter and gauge fields is entirely
-contained in that expansion and is never written separately.
-
-Fermion masses cannot be written directly in a chiral gauge theory, because
-$\bar\psi_L \psi_R$ is not gauge invariant when the two chiralities sit in
-different representations. They arise instead from Yukawa couplings to a
-scalar,
+while for a complex scalar the kinetic term is
 \begin{equation}
-    \mathcal{L}_Y = - (Y_u)_{fg}\, \bar Q_L^f\, \tilde\Phi\, u_R^g
-                    - (Y_d)_{fg}\, \bar Q_L^f\, \Phi\, d_R^g
-                    - (Y_e)_{fg}\, \bar \ell_L^f\, \Phi\, e_R^g
-                    + \text{h.c.} ,
-    \label{eq:theory-yukawa}
+    \mathcal{L}_\Phi
+    =
+    (D_\mu\Phi)^\dagger D^\mu\Phi .
 \end{equation}
-where $\tilde\Phi_i = \varepsilon_{ij}\Phi^{*}_j$ is the conjugate doublet
-and $f,g$ are flavour indices. The matrices $Y$ are the reason flavour
-indices need first-class support: they are generic $3\times 3$ complex
-matrices, not multiples of the identity, and diagonalising them is what
-introduces quark mixing.
+Expanding the covariant derivative separates the ordinary kinetic term from
+the interactions between matter and the corresponding gauge fields. In this
+way, the gauge structure introduced in the previous sections directly fixes
+the form of these interactions.
 
-Fermions are Grassmann-valued, so reordering two of them costs a sign. This
-is a trivial statement on paper and a persistent source of difficulty in an
-implementation, because the symbolic engine underneath multiplies
-commutatively. The convention adopted, and the one case where it must be
-overridden, are discussed in \Cref{sec:internals-contraction-fermions}.
+In the Standard Model, left- and right-handed fermions transform differently
+under the electroweak gauge group. A direct Dirac mass term such as
+$\bar\psi_L\psi_R$ is therefore not gauge invariant before electroweak
+symmetry breaking. Fermion masses instead originate from Yukawa interactions
+with the Higgs doublet,
+\begin{equation}
+    \mathcal{L}_Y =
+    -(Y_u)_{fg}\bar Q_L^f\tilde\Phi u_R^g
+    -(Y_d)_{fg}\bar Q_L^f\Phi d_R^g
+    -(Y_e)_{fg}\bar\ell_L^f\Phi e_R^g
+    +\text{h.c.},
+\label{eq:theory-yukawa}
+\end{equation}
+where
+\begin{equation}
+\tilde\Phi_i=\varepsilon_{ij}\Phi_j^*
+\end{equation}
+is the conjugate Higgs doublet and $f,g$ denote flavour indices.
+
+The Yukawa couplings are matrices in flavour space. After the Higgs field
+acquires a vacuum expectation value, these matrices become the fermion mass
+matrices and can be diagonalised by suitable field rotations. In the quark
+sector, the rotations required for the up- and down-type quarks are in
+general different. Their mismatch gives rise to the CKM matrix and therefore
+to flavour mixing in the weak interactions.
+
+
+Finally, fermionic fields are Grassmann-valued. Exchanging two fermionic
+fields therefore introduces a minus sign,
+\begin{equation}
+\psi_1\psi_2=-\psi_2\psi_1 .
+\end{equation}
+This simple property becomes important when manipulating fermionic
+expressions symbolically, where the ordering of the fields must be preserved.
+The treatment adopted in the implementation is discussed in
+\Cref{sec:internals-contraction-fermions}.
 
 \subsection{Gauge fixing and Faddeev--Popov ghosts}
 \label{sec:theory-gaugefixing}
 
-Gauge invariance, having been imposed, immediately causes a problem: the
-gauge field's kinetic operator is not invertible, because field
-configurations related by a gauge transformation are physically identical and
-the path integral counts each of them infinitely many times. There is no
-propagator until one representative per gauge orbit is selected.
+Gauge invariance introduces a redundancy: field configurations related by a gauge transformation describe the same physical state. As a consequence, the quadratic operator of the gauge field contains redundant directions and cannot be inverted directly to obtain a propagator. To quantise the theory, this redundancy must first be removed by choosing a gauge.
 
-The Faddeev--Popov procedure~\cite{Faddeev:1967fc} performs that selection by
-inserting a gauge-fixing condition, at the price of a Jacobian. In a linear
-covariant gauge the condition is $\partial^\mu A^a_\mu = 0$, imposed softly
-through
+The Faddeev--Popov procedure implements this choice in the path integral. In a linear covariant gauge, one introduces the gauge-fixing term
 \begin{equation}
     \mathcal{L}_{\mathrm{gf}}
-    = -\frac{1}{2\xi} \left(\partial^\mu A^a_\mu\right)
-                      \left(\partial^\nu A^a_\nu\right) ,
-    \label{eq:theory-gf}
+    =
+    -\frac{1}{2\xi}
+    \left(\partial^\mu A^a_\mu\right)^2 ,
+\label{eq:theory-gf}
 \end{equation}
-where the gauge parameter $\xi$ interpolates between the Landau gauge
-($\xi\to0$) and the Feynman gauge ($\xi=1$). Physical results do not depend
-on $\xi$, which makes it a useful internal consistency check.
+where $\xi$ is the gauge parameter. The choices $\xi\to0$ and $\xi=1$ correspond to Landau and Feynman gauge, respectively. Intermediate expressions may depend on $\xi$, but physical observables must not, providing a useful consistency check.
 
-The Jacobian is represented by the ghost Lagrangian
+Gauge fixing also introduces a Jacobian in the path integral. For a non-abelian gauge theory this Jacobian is represented by the Faddeev--Popov ghost fields, with Lagrangian
 \begin{equation}
-    \mathcal{L}_{\mathrm{gh}} = -\bar c^{\,a}\, \partial^\mu (D_\mu c)^a ,
+    \mathcal{L}_{\mathrm{gh}}
+    =
+    -\bar c^{a}\partial^\mu(D_\mu c)^a ,
     \qquad
-    (D_\mu c)^a = \partial_\mu c^a + g f^{abc} A^b_\mu c^c ,
-    \label{eq:theory-ghost}
+    (D_\mu c)^a =
+    \partial_\mu c^a
+    + g f^{abc}A_\mu^b c^c .
+\label{eq:theory-ghost}
 \end{equation}
-whose fields $c^a, \bar c^{\,a}$ are scalars carrying an adjoint index but
-obeying Fermi statistics. They are not physical particles; they exist to
-cancel the unphysical polarisations of the gauge boson in loops. For an
-abelian group the ghost decouples, because $f^{abc}=0$ removes the
-interaction term entirely.
+The ghost fields $c^a$ and $\bar c^{a}$ are Lorentz scalars carrying an
+adjoint gauge index, but they are Grassmann-valued and therefore obey
+fermionic statistics. They do not correspond to physical particles instead,
+they compensate for the unphysical degrees of freedom introduced by the
+gauge-fixing procedure.
+
+For an abelian theory in a linear covariant gauge, the structure constants
+vanish and the ghosts do not interact with the gauge field. 
+
 
 \subsection{BRST symmetry}
 \label{sec:theory-brst}
 
 Fixing the gauge destroys gauge invariance, but not all of it. What survives
 is a global, Grassmann-odd symmetry of the gauge-fixed
-action~\cite{Becchi:1975nq}, generated by the BRST operator $s$:
+action, generated by the BRST operator $s$:
 \begin{align}
     s A^a_\mu &= (D_\mu c)^a , &
     s c^a     &= -\tfrac{g}{2} f^{abc} c^b c^c , \\
@@ -576,10 +611,7 @@ The resolution is that the Higgs doublet $\Phi$ has a potential
 \begin{equation}
     V(\Phi) = \mu^2 \Phi^\dagger\Phi + \lambda (\Phi^\dagger\Phi)^2
 \end{equation}
-whose minimum for $\mu^2<0$ lies away from the origin. Choosing a vacuum
-breaks the symmetry down to the electromagnetic $\mathrm{U}(1)_{\mathrm{em}}$
-and, in the parametrisation used here, the doublet is expanded around that
-vacuum as
+whose minimum for $\mu^2<0$ lies away from the origin. the doublet is expanded around that vacuum as
 \begin{equation}
     \Phi = \begin{pmatrix} G^+ \\
       \tfrac{1}{\sqrt2}\left(v + H + i G^0\right) \end{pmatrix} ,
@@ -598,11 +630,8 @@ eigenstates,
     \label{eq:theory-mixing}
 \end{equation}
 where $s_W, c_W$ are the sine and cosine of the weak mixing angle and satisfy
-$s_W^2 + c_W^2 = 1$ --- an identity that reappears in
-\Cref{sec:validation-sm}, because two implementations may distribute it
-differently across the same vertex. Diagonalising the Yukawa matrices of
-\Cref{eq:theory-yukawa} finally rotates the quark flavour basis and leaves
-the CKM matrix in the charged current.
+$s_W^2 + c_W^2 = 1$ , an identity that reappears in
+\Cref{sec:validation-sm}.
 
 For this thesis the important observation is structural. Every step above is
 a \emph{substitution}: replace $B_\mu$ by a combination of $Z_\mu$ and
@@ -615,21 +644,7 @@ is the design adopted in \Cref{sec:feynpy-transformations}.
 \subsection{The background field method}
 \label{sec:theory-bfm}
 
-One further rewriting deserves mention because it is used by one of the
-validation benchmarks. In the background field
-method~\cite{Abbott:1980hw,Denner:1994xt}, each gauge field is split into a
-classical background piece and a quantum fluctuation,
-\begin{equation}
-    A^a_\mu \longrightarrow \hat A^a_\mu + A^a_\mu ,
-\end{equation}
-and the gauge is fixed only for the quantum part, using a condition that is
-covariant with respect to the background field. The resulting effective
-action retains explicit gauge invariance in the background field, which
-simplifies renormalisation considerably.
 
-Structurally this is again a substitution, of exactly the same kind as
-\Cref{eq:theory-mixing}, and the model \path{models/UnbrokenSM_BFM/}
-implements it that way.
 
 % ==============================================================
 \section{Effective Field Theory and the SMEFT}
@@ -639,7 +654,7 @@ implements it that way.
 The most demanding benchmark of this thesis is not the Standard Model but an
 effective field theory built on top of it. This section fixes the ideas and
 the vocabulary that \Cref{ch:validation} later uses without further
-explanation. A comprehensive review is~\cite{Brivio:2017vri}.
+explanation.
 
 \subsection{The effective expansion}
 
@@ -662,7 +677,7 @@ short-distance physics. Higher-dimension operators are suppressed by more
 powers of $\Lambda$, so the series can be truncated.
 
 At dimension five there is only one gauge-invariant structure, the Weinberg
-operator~\cite{Weinberg:1979sa}, which violates lepton number and generates
+operator, which violates lepton number and generates
 neutrino masses; it appears in the validation of
 \Cref{sec:validation-ec-pinned}. At dimension six the count explodes, and
 this is where the automation argument of \Cref{sec:intro-motivation} becomes
@@ -679,19 +694,19 @@ an operator proportional to the equations of motion can be removed by a field
 redefinition and therefore does not affect $S$-matrix elements.
 
 Applying all three yields a minimal, non-redundant set. The standard such set
-at dimension six is the \emph{Warsaw basis}~\cite{Grzadkowski:2010es}, which
+at dimension six is the \emph{Warsaw basis}, which
 contains $59$ independent operators for one fermion generation, and $2499$
 once flavour indices are counted. It is the basis in which most
 phenomenological analyses are expressed. An earlier, redundant enumeration
-was given in~\cite{Buchmuller:1985jz}.
+was given in.
 
 For some purposes, however, one deliberately does \emph{not} reduce. A
 \emph{Green basis}, also called an off-shell basis, retains the operators
 that the equations of motion would have
-removed~\cite{Gherardi:2020det,Chala:2021cgt}. This is redundant by
+removed. This is redundant by
 construction, and that is the point: off-shell quantities such as Green
 functions, and the intermediate steps of matching and renormalisation
-calculations~\cite{Jenkins:2013zja}, are not invariant under the field
+calculations, are not invariant under the field
 redefinitions used to reach the Warsaw basis. Working in a Green basis first,
 and reducing to a physical basis afterwards, keeps those intermediate steps
 meaningful.
@@ -710,7 +725,7 @@ that hold in exactly four dimensions --- such as the relations that allow a
 product of two currents to be Fierz-reordered --- do not hold for general
 $d$. Operator structures whose difference vanishes as $d\to4$, but not
 before, are called \emph{evanescent}
-operators~\cite{Buras:1998raa,Dugan:1990df}.
+operators.
 
 They cannot simply be discarded. Their matrix elements are of order
 $\epsilon$, which combines with the $1/\epsilon$ poles of loop integrals to

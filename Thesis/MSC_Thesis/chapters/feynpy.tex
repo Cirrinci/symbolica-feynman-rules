@@ -472,7 +472,7 @@ FS(SU3C, mu, nu, S("a"))
 
 \begin{tcolorbox}[warnbox, title={Strict rules for \texttt{FS}}]
 A non-abelian \py{FS} requires an explicit adjoint index; an abelian one must
-not carry one.  All adjoint indices must be contracted --- open colour
+not carry one.  All adjoint indices must be contracted, open colour
 indices raise a \py{ValueError} at compile time.
 \end{tcolorbox}
 
@@ -775,7 +775,7 @@ with all momenta incoming, written out term by term.
 \noindent This rule shows the gauge parameter explicitly. Setting $\xi=1$
 collapses the inverse propagator to the Feynman-gauge form. The label
 \py{mu1_int} is an automatically generated dummy Lorentz
-index --- the contraction $q_1\!\cdot\!q_2$ --- and its name carries no
+index, the contraction $q_1\!\cdot\!q_2$, and its name carries no
 meaning, which is exactly the point of the canonicalisation discussed in
 \Cref{sec:internals-postprocessing}.
 
@@ -808,7 +808,7 @@ sigs = L.vertex_signatures(flavor_expand=True)
 \begin{tcolorbox}[warnbox, title={Off-diagonal zeroes}]
 If a parameter is declared with \py{components={(i,j): 0}} for
 $i \neq j$, off-diagonal member combinations are automatically absent
-from the expanded rules --- no manual filtering is needed.
+from the expanded rules, no manual filtering is needed.
 \end{tcolorbox}
 
 % --------------------------------------------------------------
@@ -965,10 +965,10 @@ expanded = L_fl.to_symbolica(flavor_expand=True)  # per member (e, mu, ta, ...)
 \label{sec:feynpy-apply-operator}
 % --------------------------------------------------------------
 
-The manipulation that we can do on our \py{Model} goes further. We are interested in apply linear and non-linear operator to every term of our Lagrangian. Operator such as a replace operator, or a derivative or an infinitesimal Gauge Transformation. We will see that we can even apply a non-linear operator such as the infinitesial BRST transformation.
+The manipulation we can do on our \py{Model} goes further. We are interested in applying linear and non-linear operators to every term of our Lagrangian. Operators such as a replace operator, a derivative, or an infinitesimal Gauge Transformation. We will see that we can even apply a non-linear operator like the infinitesimal BRST transformation.
 
-The operator layer acts on a compiled \py{Lagrangian} term-by-term,
-following a graded Leibniz rule.  It performs field redefinitions,
+The operator layer acts on a compiled \py{Lagrangian} term by term,
+following a graded Leibniz rule. It performs field redefinitions,
 substitutions, gauge variations, and BRST transformations.
 
 \subsection*{Required imports}
@@ -1053,16 +1053,16 @@ rule. No manual handling is required.
 \label{sec:feynpy-ibp}
 % --------------------------------------------------------------
 
-Two Lagrangians that differ by a total derivative describe the same physics.
+Two Lagrangians which differ by a total derivative give rise to the same physics.
 Deciding whether that is the case is exactly the question that arises when
 reducing a redundant operator basis to a minimal one
 (\Cref{sec:theory-green-basis}), and \py{ibp_normal_form()} answers a
 restricted version of it: it rewrites a compiled Lagrangian into a canonical
 representative modulo total derivatives, so that two Lagrangians with the
-same normal form are equivalent up to boundary terms.
+Normal forms that are equivalent differ only by boundary terms.
 
 \begin{minted}{python}
-# Check that  phi^2 Box phi  ~  -2 phi (d_mu phi)^2  modulo total derivatives
+# Check that  phi^2 partial partial phi  ~  -2 phi (d_mu phi)^2  modulo total derivatives
 e1 = c * phi * phi * PartialD(PartialD(phi, mu), mu)
 e2 = -2 * c * phi * PartialD(phi, mu) * PartialD(phi, mu)
 
@@ -1075,11 +1075,7 @@ assert delta.terms == ()
 \end{minted}
 
 \begin{tcolorbox}[warnbox, title={Scope of the current implementation}]
-This first version of the integration-by-parts layer handles unlabelled
-scalar species only: it symmetrises identical scalar slots and moves
-derivatives into a left-normal form. Terms containing Dirac bilinears or
-gauge indices are outside its scope, so it cannot yet be used to reduce a
-Green basis to the Warsaw basis. \Cref{sec:conclusion-future} returns to
+This first version of the integration-by-parts layer handles unlabelled scalar species only: it symmetrises identical scalar slots and moves derivatives into a left-normal form. Terms containing Dirac bilinears or gauge indices are outside its scope, so it cannot yet be used to reduce a Green basis to the Warsaw basis. \Cref{sec:conclusion-future} returns to
 this.
 \end{tcolorbox}
 
@@ -1125,8 +1121,7 @@ assert canon.to_canonical_string() == "0"   # => gauge invariant
 \label{sec:feynpy-brst}
 % --------------------------------------------------------------
 
-The natural next step after the infinitesimal gauge transformation is to
-consider the BRST transformation. The constructor
+The natural next step after the infinitesimal gauge transformation is to consider the BRST transformation. The constructor
 
 \begin{minted}{python}
 brst_transformation(group, ghost, antighost=None, auxiliary=...)
@@ -1137,12 +1132,9 @@ transformation for one selected gauge group. The ghost must be declared with
 \py{kind="ghost"} and associated with the chosen gauge boson through
 \py{ghost_of=<gauge_boson>}.
 
-\noindent We keep exactly the same sign convention as in \py{gauge_variation(...)}:
-$$
-D_\mu = \partial_\mu - i g A_\mu.
-$$
 
-\noindent With this convention, the gauge and ghost sector is
+
+\noindent The Brst transforamtion are 
 \begin{align*}
     s A_\mu^a &= D_\mu c^a = \partial_\mu c^a + g f^{abc} A_\mu^b c^c,\\
     s c^a &= -\frac{g}{2} f^{abc} c^b c^c,\\
@@ -1166,7 +1158,7 @@ $$
 If a field carries charges under several groups, we apply one BRST operator per group and sum the resulting contributions.
 
 Because the operator is Grassmann-odd, it acts on products through the graded Leibniz rule.
-Keep in mind that the exported Symbolica expression is still commutative, therefore there will be a possible sign error.
+Keep in mind that the exported Symbolica expression is still commutative, therefore there will be a possible sign error in how the symbolica expression is printed out.
 \begin{minted}{python}
 from lagrangian.operator_action import brst_transformation
 
@@ -1292,11 +1284,7 @@ index-independent patterns from exported tensor expressions.
 \label{sec:feynpy-models}
 % --------------------------------------------------------------
 
-Everything described so far is generic machinery. Three complete models are
-shipped with the toolkit, built entirely from that machinery, and they are
-the subjects of the validation in \Cref{ch:validation}. Each lives in its own
-directory under \path{models/}, together with its \textsc{FeynRules}
-reference data, its comparison adapter and its tests.
+Up to this point, only general-purpose tools have been described. The toolkit also comes with three complete models, which are built entirely from these tools. These models are used as examples in the validation section (see \Cref{ch:validation}). Each model has its own directory under \path{models/}, along with its \textsc{FeynRules} reference data, comparison adapter, and tests.
 
 \subsection*{The Standard Model}
 
@@ -1310,15 +1298,8 @@ wwa = L.feynman_rule(sm.fields.W.bar, sm.fields.W, sm.fields.A)
 hww = L.feynman_rule(sm.fields.H,     sm.fields.W.bar, sm.fields.W)
 \end{minted}
 
-\noindent The builder follows the pipeline of this chapter exactly: declare
-the gauge-basis fields ($Q_L$, $L_L$, $\Phi$, $B$, $W^I$, $G$ and the
-singlets), assemble the gauge, fermion, Higgs, Yukawa and ghost sectors,
-compile the covariant derivatives and field strengths, expand the weak
-indices into components, and finally apply the eighteen field
-transformations of \Cref{sec:feynpy-transformations} in a single simultaneous
-pass. It returns a \py{StandardModel} record exposing the source model, the
-transformation list, the compiled physical-basis Lagrangian and the field and
-parameter namespaces.
+\noindent The builder follows the pipeline of this chapter: declare the gauge-basis fields ($Q_L$, $L_L$, $\Phi$, $B$, $W^I$, $G$ and the singlets), assemble the gauge, fermion, Higgs, Yukawa and ghost sectors, compile the covariant derivatives and field strengths, expand the weak indices into components, and finally apply the field transformations of \Cref{sec:feynpy-transformations} in a single simultaneous pass. It returns a \py{StandardModel} record exposing the source model, the transformation list, the compiled physical-basis Lagrangian and the field and parameter namespaces.
+
 
 \subsection*{The unbroken background-field Standard Model}
 
@@ -1348,21 +1329,7 @@ Lfull = smeft.lagrangians["Lfull"]   # Standard Model plus EFT
 L = smeft.model.lagrangian()         # compiles Ltot
 \end{minted}
 
-\noindent This is the largest model, and the one that motivated most of the
-engine's generality. It declares $298$ Wilson coefficients as indexed
-\py{Parameter}s and $32$ Lagrangian blocks in the baryon-number-preserving
-Green basis of \Cref{sec:theory-green-basis}, including dual field strengths,
-$\sigma^{\mu\nu}$ structures, weak $\varepsilon$ tensors and the explicit
-charge-conjugation matrices of the evanescent sector. The Standard Model core
-is taken from the unbroken background-field model above, minus its
-background-field ghost and gauge-fixing sectors.
-
-Two conventions are worth noting because \Cref{ch:validation} depends on
-them. \texttt{Ltot} contains the EFT contribution alone, matching the
-\textsc{FeynRules} convention for the reference export, with the combined
-theory available separately as \texttt{Lfull}. And the model is written in terms
-of chiral fields --- \py{lL}, \py{qL}, \py{eR}, \py{uR}, \py{dR} --- so
-chirality is carried by the field names rather than by explicit projectors.
+\noindent This is the largest model, and the one that motivated most of the engine's generality. It declares $298$ Wilson coefficients as indexed \py{Parameter}s and $32$ Lagrangian blocks in the baryon-number-preserving Green basis of \Cref{sec:theory-green-basis}, including dual field strengths, $\sigma^{\mu\nu}$ structures, weak $\varepsilon$ tensors and the explicit charge-conjugation matrices of the evanescent sector. The Standard Model core is taken from the unbroken background-field model above, minus its background-field ghost and gauge-fixing sectors. Two conventions are worth noting because \Cref{ch:validation} depends on them. \texttt{Ltot} contains the EFT contribution alone, matching the \textsc{FeynRules} convention for the reference export, with the combined theory available separately as \texttt{Lfull}. And the model is written in terms of chiral fields (\py{lL}, \py{qL}, \py{eR}, \py{uR}, \py{dR}) so chirality is carried by the field names rather than by explicit projectors.
 
 % --------------------------------------------------------------
 \section{Quick Reference}
