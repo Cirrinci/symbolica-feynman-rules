@@ -23,3 +23,17 @@ docs/notes/*
 !docs/notes/
 !docs/notes/RESEARCH_LOG.md
 !docs/notes/FINAL_REPRODUCIBILITY.md
+
+# Local LaTeX toolchain (tectonic binary + pygmentize shim)
+.tools/
+
+# LaTeX build artifacts
+Thesis/MSC_Thesis/main.pdf
+Thesis/MSC_Thesis/_minted-main/
+Thesis/MSC_Thesis/*.aux
+Thesis/MSC_Thesis/*.bbl
+Thesis/MSC_Thesis/*.blg
+Thesis/MSC_Thesis/*.log
+Thesis/MSC_Thesis/*.out
+Thesis/MSC_Thesis/*.toc
+Thesis/MSC_Thesis/*.xdv

@@ -1,5 +1,5 @@
 % ============================================================
-%  05.tex — Computer-algebra foundations: Symbolica and Spenso
+%  05.tex --- Computer-algebra foundations: Symbolica and Spenso
 % ============================================================
 
 % ==============================================================
@@ -8,7 +8,7 @@
 % ==============================================================
 Why has it become feasible to attempt an implementation of FeynRules within the Python ecosystem at this particular moment? In the past, Python was not a natural choice for the automatic computation of Feynman rules because it lacked a symbolic algebra engine capable of efficiently handling the large tensor expressions involved. This is where \textsc{Symbolica} comes into play: it enables high-performance symbolic manipulation while retaining the flexibility of the Python ecosystem.
 
-Before describing how the toolkit transforms a declared model into Feynman rules in Chapter~\ref{ch:internals}, it is therefore useful to introduce the libraries on which the entire project is based. Every symbolic object manipulated by the toolkit—such as a coupling, a momentum, a $\gamma$ matrix, or an entire vertex—is represented using \textsc{Symbolica}. As should be clear from the previous chapter, indices also play an essential role, and their meaning is provided by the \textsc{Spenso} library. Thus, \textsc{Symbolica} manipulates the expressions, while \textsc{Spenso} describes the meaning of their indices, and a small complementary layer, \textsc{idenso}, implements the physical identities associated with these typed indices. This chapter introduces each library, its role in the project, and the reasons for its selection.
+Before describing how the toolkit transforms a declared model into Feynman rules in Chapter~\ref{ch:internals}, it is therefore useful to introduce the libraries on which the entire project is based. Every symbolic object manipulated by the toolkit---such as a coupling, a momentum, a $\gamma$ matrix, or an entire vertex---is represented using \textsc{Symbolica}. As should be clear from the previous chapter, indices also play an essential role, and their meaning is provided by the \textsc{Spenso} library. Thus, \textsc{Symbolica} manipulates the expressions, while \textsc{Spenso} describes the meaning of their indices, and a small complementary layer, \textsc{idenso}, implements the physical identities associated with these typed indices. This chapter introduces each library, its role in the project, and the reasons for its selection.
 
 
 % --------------------------------------------------------------
@@ -40,7 +40,8 @@ e = f((1 + x)**2).replace(f(x_**n_), f(x_)**n_)
 print(e)   # ->  f(1 + x)**2
 \end{minted}
 
-The toolkit leans on this pervasively. As we will see in Chapter~\ref{ch:internals}, the central step of the contraction engine --- attaching an external leg's index label to an open index of a coupling --- is literally one \py{coupling.replace(open_label, target_label)} call, and the user-facing helper \py{pattern_coefficient} (Section~\ref{sec:feynpy-expr-manip}) is a thin wrapper around the same wildcard machinery. Standard CAS operations are available on the same objects: \py{.expand()}, \py{.collect()}, \py{.derivative()} (with the chain and product rules applied automatically), \py{.factor()}, \py{.coefficient()}, series expansion, and even \py{solve_linear_system}.
+The toolkit leans on this pervasively. As we will see in Chapter~\ref{ch:internals}, the central step of the contraction engine --- attaching an external leg's index label to an open index of a coupling --- is literally one call to
+\py{coupling.replace(...)}, and the user-facing helper \py{pattern_coefficient} (Section~\ref{sec:feynpy-expr-manip}) is a thin wrapper around the same wildcard machinery. Standard CAS operations are available on the same objects: \py{.expand()}, \py{.collect()}, \py{.derivative()} (with the chain and product rules applied automatically), \py{.factor()}, \py{.coefficient()}, series expansion, and even \py{solve_linear_system}.
 
 \subsection*{Polynomial algebra: the source of the speed}
 
@@ -53,7 +54,7 @@ This is important for the toolkit developed in this thesis, because the contract
 
 Symbolica is not limited to scalar algebra, but what makes it particularly well-suited to this project is the fact that it is capable of converting \emph{tensor} expressions into a canonical form. Given a product of tensors with contracted (dummy) indices, \py{Expression.canonize_tensors} relabels the dummies deterministically and orders the factors, using symmetry metadata attached to each tensor head through the \py{is_symmetric}/\py{is_antisymmetric} flags on its symbol. Internally this rests on a graph-canonicalisation algorithm for (cyclic-)symmetric tensor networks~\cite{ruijl_symbolica_talk}. Two expressions that differ only by a renaming of dummy indices, by the allowed symmetry of a tensor head, or by a reordering of commuting factors are therefore reduced to the same normal form.
 
-Despite Symbolica’s capabilities, it was not possible to apply canonicalisation directly, but an additional step was taken. What happens internally is that during the calculation the toolkit keeps tensors as typed Spenso objects. The symmetry information needed by \py{canonize_tensors}, however, is not attached to those live heads in the form Symbolica expects. This required a wrapper, called \py{canonize_spenso_tensors}, that temporarily swaps each Spenso tensor head into a plain Symbolica head, with symmetry flags attached where applicable, calls \py{canonize_tensors}, and then swaps the heads back.
+Despite Symbolica's capabilities, it was not possible to apply canonicalisation directly, but an additional step was taken. What happens internally is that during the calculation the toolkit keeps tensors as typed Spenso objects. The symmetry information needed by \py{canonize_tensors}, however, is not attached to those live heads in the form Symbolica expects. This required a wrapper, called \py{canonize_spenso_tensors}, that temporarily swaps each Spenso tensor head into a plain Symbolica head, with symmetry flags attached where applicable, calls \py{canonize_tensors}, and then swaps the heads back.
 
 This wrapper also keeps Lorentz, spinor, colour, and weak dummy indices in separate groups, so that indices of different kinds are never identified by mistake. When explicit index pools are not supplied, it can infer them from typed Spenso slots and from field metadata; explicit declarations remain authoritative. On top of this we have a function that adds all the tensor identities that we need in this physical contenxt. The helper \py{canonize_full} adds the project-specific reductions needed by the physics pipeline: metric contraction, canonical ordering of nested flat \(\partial_\mu\partial_\nu\) chains, local Jacobi reductions for products of two structure constants and the antisymmetry of \(f^{abc}\).
 
@@ -65,7 +66,7 @@ The toolkit does not perform a single, closed-form derivation; it \emph{expands}
 \section{Spenso: typed tensor indices and tensor networks}
 \label{sec:cas-spenso}
 % --------------------------------------------------------------
- 
+
 We now turn to the role of \textsc{Spenso}. From Symbolica's point of view, an expression such as \py{G(mu, a)} is simply a function applied to two arguments. In fact it doesn't know that the index \py{mu} is a Lorentz index or that \py{a} is an adjoint colour index. Her is where \textsc{Spenso}~\cite{spenso} comes into play providng additional structure to the whole. It represents each tensor index as a typed slot, consisting of an abstract label together with a representation, and it can then match and contract compatible indices automatically.
 
 \subsection*{Slots and representations}
@@ -158,7 +159,7 @@ def weak_eps2(i, j):
 
 This makes \(\varepsilon_{ij}\) a typed Spenso tensor just like the built-in gamma matrices or structure constants: its arguments know that they live in \(\mathrm{SU}(2)_L\) fundamental representation slots. The constructor does not by itself teach Symbolica that the tensor is antisymmetric. That information is added later by the canonicalisation layer, where \(\varepsilon_{ij}\) is temporarily replaced by a head marked \py{is_antisymmetric=True}. This is what allows expressions such as \(\varepsilon_{ij}\) and \(-\varepsilon_{ji}\) to be recognised as the same tensor structure.
 
-This distinction is important. Typed Spenso tensors such as \(\gamma^\mu\), \(t^a\), \(f^{abc}\), metrics, and \(\varepsilon_{ij}\) carry representation information inside their arguments. 
+This distinction is important. Typed Spenso tensors such as \(\gamma^\mu\), \(t^a\), \(f^{abc}\), metrics, and \(\varepsilon_{ij}\) carry representation information inside their arguments.
 
 On the other hand in our code we have ordinary field \py{G(mu,a)} that carry indices. These are still plain Symbolica function applications. Their index meaning is stored separately in the toolkit through the field's \py{IndexType} metadata. The compiler and canonicalisation layers combine both sources of information: Spenso handles the typed tensor factors, while the toolkit metadata tells the pipeline how the indices on fields should be interpreted.
 

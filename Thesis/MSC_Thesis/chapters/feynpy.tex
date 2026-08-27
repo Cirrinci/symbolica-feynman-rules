@@ -1,59 +1,7 @@
 % ============================================================
-%  chapter_feynpy.tex  —  User Manual for the Feynman-rule library
+%  chapter_feynpy.tex  ---  User Manual for the Feynman-rule library
 
 % ============================================================
-
-% ── REMINDER: nMinted style i can play around, (choose oneRemo) ──────────────
-% friendly | tango | monokai | vs | pastie | autumn | native
-\usemintedstyle{friendly}
-
-% ── Global minted settings ─────────────────────────────────────
-\setminted{
-  fontsize=\small,
-  baselinestretch=1.15,
-  linenos=false,
-  frame=single,
-  framesep=6pt,
-  rulecolor=\color{gray!40},
-  bgcolor=gray!6,
-  breaklines=true,
-  breakanywhere=false,
-}
-
-% ── Callout box styles ─────────────────────────────────────────
-\tcbset{
-  feynbox/.style={
-    enhanced, breakable,
-    fonttitle=\bfseries\small,
-    coltitle=black,
-    boxrule=0.5pt,
-    arc=3pt,
-    left=8pt, right=8pt, top=6pt, bottom=6pt,
-    parbox=false,
-  },
-  notebox/.style={
-    feynbox,
-    colframe=black!35,
-    colback=black!4,
-  },
-  infobox/.style={
-    feynbox,
-    colframe=blue!45,
-    colback=blue!4,
-  },
-  warnbox/.style={
-    feynbox,
-    colframe=orange!65,
-    colback=orange!5,
-  },
-}
-
-% ── Convenience: inline code ──────────────────────────────────
-% Use \py{...} for short inline Python identifiers
-\newcommand{\py}[1]{\mintinline{python}{#1}}
-
-% ── Parameter table column ────────────────────────────────────
-\newcolumntype{P}[1]{>{\ttfamily\small}p{#1}}
 
 % ==============================================================
 \chapter{FeynPy: User Manual}
@@ -78,6 +26,19 @@ Finally, the Lagrangian contains the gauge-fixing and ghost terms. These
 expansions are determined by the symmetry group associated with the
 Lagrangian. Our aim will therefore be to define the basic ingredients of the model: indices, fields, gauge representations and gauge groups, and then assemble them into a complete \texttt{Model} object. Once the model is defined, the toolkit can be used to manipulate the Lagrangian, extract Feynman rules and perform further symbolic operations.
 
+The chapter is organised in three movements.
+\Cref{sec:feynpy-imports,sec:feynpy-indices,sec:feynpy-fields,sec:feynpy-gauge,sec:feynpy-flavor,sec:feynpy-parameters,sec:feynpy-model,sec:feynpy-operators}
+build a model from its smallest pieces up to a complete \texttt{Model}.
+\Cref{sec:feynpy-feynman,sec:feynpy-discovery,sec:feynpy-qcd-example,sec:feynpy-flavor-expand}
+extract vertices from it, ending with the QCD Lagrangian above carried
+through to its printed rules. The remaining sections
+(\Cref{sec:feynpy-transformations} onwards) cover what can be done to a
+compiled Lagrangian besides reading vertices off it: rewriting it into a
+physical basis, exporting it to \textsc{Symbolica}, and acting on it with
+operators such as an infinitesimal gauge variation or the BRST differential.
+\Cref{sec:feynpy-models} closes with the three complete models that ship with
+the toolkit.
+
 
 
 
@@ -93,18 +54,21 @@ from symbolic.spenso_structures import (
     gauge_generator, structure_constant,
     weak_gauge_generator, weak_structure_constant,
 )
-from model import (
-    Field, GaugeGroup, GaugeRepresentation, IndexType, Model,
-    Lagrangian, CovD, PartialD, Gamma, Gamma5, FieldStrength,
-    GaugeFixing, GhostLagrangian, GhostField,
+from feynpy import (
+    Field, GhostField, GaugeGroup, GaugeRepresentation, IndexType,
+    Model, Parameter, FieldTransformation,
+    # declarative Lagrangian factors
+    DC, FS, PartialD, Gamma, Gamma5, Metric, T, StructureConstant,
+    GaugeFixing, GhostLagrangian, ProjM, ProjP, rotation,
     # pre-built index constants
     SPINOR_INDEX, LORENTZ_INDEX,
     COLOR_FUND_INDEX, COLOR_ADJ_INDEX,
     WEAK_FUND_INDEX, WEAK_ADJ_INDEX,
-    # flavor
-    flavor_index, Parameter,
+    # flavour
+    flavor_index,
 )
 \end{minted}
+
 
 \noindent Let's start our journey with a quick overview of a minimal complete example, the scalar $\phi^4$ theory:
 
@@ -113,8 +77,12 @@ Phi   = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
 lam   = S("lam")
 model = Model(lam * Phi * Phi * Phi * Phi)
 L     = model.lagrangian()
-V     = L.feynman_rule(Phi, Phi, Phi, Phi)
+V     = L.feynman_rule(Phi, Phi, Phi, Phi)   # -> 24i*lam
 \end{minted}
+
+\noindent Four lines: declare a field, write a Lagrangian, compile it, ask for
+a vertex. Everything that follows in this chapter is an elaboration of those
+four lines.
 
 % --------------------------------------------------------------
 \section{Index Types}
@@ -127,7 +95,7 @@ Many fields carry indices that define how they transform under a symmetry. For e
     \item a colour fundamental index $c$,
     \item a flavour index $f$.
 \end{enumerate}
-In the toolkit, indices are represented by objects of type \texttt{IndexType}. 
+In the toolkit, indices are represented by objects of type \texttt{IndexType}.
 Internally, each \texttt{IndexType} stores the index name, pairs a \textsc{Spenso} \py{Representation} with a string \emph{kind} that is used to match indices through the compilation pipeline, and the prefix used when dummy indices are generated automatically. Six pre-built constants cover the standard cases and should be used directly whenever possible.
 
 
@@ -148,18 +116,18 @@ Internally, each \texttt{IndexType} stores the index name, pairs a \textsc{Spens
 \end{tabular}
 \end{center}
 
-\noindent All six can be imported directly from \texttt{model}. The colour adjoint index type is defined as:
+\noindent All six can be imported directly from \texttt{feynpy}. The colour adjoint index type, for instance, is defined as:
 \begin{minted}{python}
 COLOR_ADJ_INDEX = IndexType(
     "ColorAdj", Representation.coad(8), "color_adj", prefix="a"
 )
 \end{minted}
-\noindent Custom index types follow the same pattern.
-\noindent To define a custom index type:
+\noindent Custom index types follow the same pattern, so a new gauge group
+with a representation Spenso already knows requires no engine changes:
 
 \begin{minted}{python}
 from symbolica.community.spenso import Representation
-from model import IndexType
+from feynpy import IndexType
 
 # IndexType(name, representation, kind, prefix=...)
 MY_FUND = IndexType("MyFund", Representation.cof(3), "my_fund", prefix="m")
@@ -180,7 +148,7 @@ Generation = flavor_index("Generation", 3, prefix="f")
 
 Once the relevant indices have been defined, we can move on to defining the fields of the model. The structure of the fields are insipired by the particle-class declarations used in FeynRules but expressed by a Python object. A particle field will be characterised by the following properties: name, spin, statistics, index structure, quantum numbers, and, when needed, its mass and conjugation properties.
 
-In \textsc{FeynPy} \todo{NAME toolkit} fields are represented by the \texttt{Field} class, whose properties are listed in the following Table 
+In \textsc{FeynPy} fields are represented by the \texttt{Field} class, whose properties are listed in the following table.
 
 \begin{center}
 \begin{tabular}{@{}P{3.8cm}p{8.5cm}@{}}
@@ -193,7 +161,7 @@ In \textsc{FeynPy} \todo{NAME toolkit} fields are represented by the \texttt{Fie
 \texttt{symbol}            & Symbolica atom for this field. \\
 \texttt{conjugate\_symbol} & Required when \py{self_conjugate=False}. \\
 \texttt{indices}           & Tuple of \py{IndexType} objects carried by the field. \\
-\texttt{quantum\_numbers}  & Dict of charge labels, e.g.\ \py|{"Q": S("e")}|. Required for abelian gauge coupling. \\
+\texttt{quantum\_numbers}  & Dict of charge labels, e.g.\ \mintinline{python}|{"Q": S("e")}|. Required for abelian gauge coupling. \\
 \texttt{kind}              & Set to \py{"ghost"} for ghost fields. \\
 \texttt{flavor\_index}     & The \py{IndexType} to use for flavor expansion. \\
 \texttt{class\_members}    & Tuple of member-name strings, one per generation. \\
@@ -203,49 +171,35 @@ In \textsc{FeynPy} \todo{NAME toolkit} fields are represented by the \texttt{Fie
 
 
 \noindent
-Not all the category are required in every case. To have a clearer idea the example below exposes definitions of a scalar field $\phi$, a fermion $\psi$, a quark $q$, a photon field $A_\mu$ and a gluon $G_\mu^a$.
+Note that not every entry is required in every case: a real scalar needs almost nothing, while a quark needs a spinor index, a colour index and a conjugate symbol. The example below declares the four fields of the QCD Lagrangian used as the running example of this chapter, plus one charged scalar to show how an abelian charge is attached.
 
 \begin{minted}{python}
 from fractions import Fraction
 
-# Real scalar
-Phi    = Field("Phi", spin=0, self_conjugate=True, symbol=S("phi"))
-
-# Complex scalar with U(1) charge
-PhiC   = Field("PhiC", spin=0, self_conjugate=False,
-               symbol=S("phiC"), conjugate_symbol=S("phiCdag"),
-               quantum_numbers={"Q": S("Qphi")})
-
-# Dirac fermion — carries spinor index and U(1) charge
-Psi    = Field("Psi", spin=Fraction(1,2), self_conjugate=False,
-               symbol=S("psi"), conjugate_symbol=S("psibar"),
-               indices=(SPINOR_INDEX,),
-               quantum_numbers={"Q": S("Qpsi")})
-
-# Quark — spinor + fundamental colour index
+# Quark - spinor and fundamental colour index
 Quark  = Field("q", spin=Fraction(1,2), self_conjugate=False,
                symbol=S("q"), conjugate_symbol=S("qbar"),
                indices=(SPINOR_INDEX, COLOR_FUND_INDEX))
 
-# Photon (abelian gauge boson)
-Photon = Field("A", spin=1, self_conjugate=True,
-               symbol=S("A"), indices=(LORENTZ_INDEX,))
-
-# Gluon (non-abelian gauge boson)
+# Gluon - non-abelian gauge boson, Lorentz and adjoint index
 Gluon  = Field("G", spin=1, self_conjugate=True,
                symbol=S("G"), indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX))
 
-# Ghost field
+# Faddeev-Popov ghost of the gluon
 GhostG = GhostField("ghG", ghost_of=Gluon, self_conjugate=False,
                     symbol=S("ghG"), conjugate_symbol=S("ghGbar"),
                     indices=(COLOR_ADJ_INDEX,))
+
+# Complex scalar carrying a U(1) charge, for comparison
+PhiC   = Field("PhiC", spin=0, self_conjugate=False,
+               symbol=S("phiC"), conjugate_symbol=S("phiCdag"),
+               quantum_numbers={"Q": S("Qphi")})
 \end{minted}
-\supervisor{do we want so many fields?}
+
+\noindent Two points are worth stressing. A gauge boson is an ordinary \py{Field}; it becomes a gauge boson only by being named as such in a \py{GaugeGroup}. And an abelian coupling is read from \py{quantum_numbers}, so a field with no entry for the relevant charge key simply does not couple to that group.
 
 \begin{tcolorbox}[notebox, title=Note]
-The conjugated version of any non-self-conjugate field is written with
-\texttt{.bar}, for example \py{Psi.bar}, \py{Higgs.bar}.  Use this form
-both in Lagrangian expressions and in \py{feynman_rule(...)} calls.
+The conjugated version of any non-self-conjugate field is written with \texttt{.bar}, for example \py{Psi.bar}, \py{Higgs.bar}.  Use this form both in Lagrangian expressions and in \py{feynman_rule(...)} calls. 
 \end{tcolorbox}
 
 % --------------------------------------------------------------
@@ -286,7 +240,7 @@ To define a gauge representation, three elements are required: the index, the ge
 \texttt{charge}             & For abelian groups: the quantum-number key to read from matter fields (e.g.\ \py{"Q"}). \\
 \texttt{structure\_constant}& For non-abelian groups: the structure-constant builder (e.g.\ \py{structure_constant}). \\
 \texttt{representations}    & Tuple of \py{GaugeRepresentation} objects for matter fields. \\
-\texttt{ghost\_field}       & The ghost \py{Field} — required for \py{GhostLagrangian(...)}. \\
+\texttt{ghost\_field}       & The ghost \py{Field} --- required for \py{GhostLagrangian(...)}. \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -309,10 +263,10 @@ SU3C  = GaugeGroup(name="SU3C",  abelian=False, coupling=S("gs"),
                    structure_constant=structure_constant,
                    representations=(COLOR_FUND_REP,))
 
-# SU(2) weak — doublet representation
-WEAK_DOUBLET_REP = GaugeRepresentation(index=WEAK_FUND_INDEX, 
+# SU(2) weak -- doublet representation
+WEAK_DOUBLET_REP = GaugeRepresentation(index=WEAK_FUND_INDEX,
     generator_builder=weak_gauge_generator, name="doublet")
-    
+
 SU2L = GaugeGroup(name="SU2L", abelian=False, coupling=S("g2"),
                   gauge_boson=W, ghost_field=GhostW,
                   structure_constant=weak_structure_constant,
@@ -320,45 +274,87 @@ SU2L = GaugeGroup(name="SU2L", abelian=False, coupling=S("g2"),
 \end{minted}
 
 % --------------------------------------------------------------
-\section{Flavor Indices and Parameters}
+\section{Flavor Indices}
 \label{sec:feynpy-flavor}
 % --------------------------------------------------------------
 
-Flavor indices allow compact multi-generation expressions that can later be
-expanded into per-member Feynman rules.
+Let's move on to falvours. The three generations of quarks and leptons are copies of the same field, and writing them out separately would triple the length of every Lagrangian.
+Flavor indices allow compact multi-generation expressions that can later be expanded into per-member Feynman rules. A field declares which of its indices is the flavour one, and optionally the names of its class members.
 
 \begin{minted}{python}
-# 1.  Create a flavor index
+# 1.  Create a flavour index of dimension 3
 Generation = flavor_index("Generation", 3, prefix="f")
 
-# 2.  Field with flavor index and explicit class members
+# 2.  Field with a flavour index and explicit class members
 lepton = Field("l", spin=Fraction(1,2), self_conjugate=False,
                indices=(Generation, SPINOR_INDEX),
                symbol=S("l"), conjugate_symbol=S("lbar"),
                flavor_index=Generation,
                class_members=("e", "mu", "ta"))
 e, mu, ta = lepton.class_members
-
-# 3.  Flavor-aware coupling matrix
-#     components= maps (i,j)->value; setting 0 removes that entry
-Yu    = Parameter("Yu",    indices=(Generation, Generation))
-Ydiag = Parameter("Ydiag", indices=(Generation, Generation),
-                  components={(i,j): 0
-                              for i in range(1,4)
-                              for j in range(1,4) if i != j})
 \end{minted}
+
+\noindent The pattern mirrors the \texttt{ClassMembers} entry of a \textsc{FeynRules} particle class. 
+
+% --------------------------------------------------------------
+\section{Parameters}
+\label{sec:feynpy-parameters}
+% --------------------------------------------------------------
+
+Couplings, masses and mixing matrices are declared as \py{Parameter} objects. A \py{Parameter} behaves like its \textsc{Symbolica} symbol in algebraic expressions, so a bare symbol from \py{S("lam")} works just as well for a plain constant; the class earns its place when the parameter carries indices or has known components.
+
+\begin{center}
+\begin{tabular}{@{}P{3.4cm}p{9cm}@{}}
+\toprule
+\normalfont\textbf{Parameter} & \textbf{Description} \\
+\midrule
+\texttt{name}             & Name of the parameter. \\
+\texttt{symbol}           & Symbolica symbol; defaults to \py{S(name)}. \\
+\texttt{indices}          & Tuple of \py{IndexType} objects it carries, e.g.\ two flavour indices for a Yukawa matrix. \\
+\texttt{complex\_param}   & \py{True} if the parameter is complex; controls conjugation. \\
+\texttt{components}       & Dict mapping index tuples to fixed values; a value of \py{0} removes that component entirely. \\
+\texttt{unitary\_partner} & The conjugate matrix, for unitary pairs such as CKM and CKM$^\dagger$. \\
+\texttt{value}            & Optional numeric or symbolic value, stored as metadata. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{minted}{python}
+# Plain coupling constant
+lam = Parameter("lam")
+
+# Complex Yukawa matrix on two flavour indices
+Yu  = Parameter("Yu", indices=(Generation, Generation), complex_param=True)
+
+# Diagonal matrix: every off-diagonal component is forced to zero
+Ydiag = Parameter("Ydiag", indices=(Generation, Generation),
+                  components={(i, j): 0
+                              for i in range(1, 4)
+                              for j in range(1, 4) if i != j})
+
+# Unitary pair, used by rotation(...) in field transformations
+CKM    = Parameter("CKM", indices=(Generation, Generation),
+                   complex_param=True)
+CKMDag = Parameter("CKMDag", indices=(Generation, Generation),
+                   complex_param=True, unitary_partner=CKM)
+\end{minted}
+
+\noindent An indexed parameter is used by calling it: \py{Yu(f, g)} inside a
+Lagrangian term contracts its two flavour indices against the fields that
+carry the labels \py{f} and \py{g}. The \py{components} mechanism is what
+makes \py{Ydiag} produce no off-diagonal vertices at all.
 
 
 % --------------------------------------------------------------
 \section{Declaring a Model}
 \label{sec:feynpy-model}
 % --------------------------------------------------------------
-Our journey goes to the focal point, we can put everything together to start then calculation and manipulation. After declaring indices, fields, parameters, representations and gauge groups, the full model can be constructed. It is represented as a Python class containing the following information: the name, the gauge groups, the parameters and the Lagrangian. 
+Our journey goes to the focal point, we can put everything together to start then calculation and manipulation. After declaring indices, fields, parameters, representations and gauge groups, the full model can be constructed. It is represented as a Python class containing the following information: the name, the gauge groups, the parameters and the Lagrangian.
 
 For simpler models, it is sufficient to write the Lagrangian. For example, a quartic scalar interaction can be defined as
 \begin{equation}
 \mathcal{L}_{\phi^4} = \lambda \phi^4 .
-\end{equation} 
+\end{equation}
 
 If the Lagrangian contains covariant derivatives or field-strength tensor, it will be necessary to specify the gauge group so that the toolkit will know the generator, couplings, gauge bosons and structure constant. For example, the QED fermion Lagrangian is
 
@@ -382,30 +378,32 @@ These models are implemented as follows:
 
 
 \begin{minted}{python}
-# Local model — no gauge_groups needed
+# Local model - no gauge_groups needed
 m = Model(S("lam") * Phi * Phi * Phi * Phi)
 
 # Gauge-aware model
 mu = S("mu")
 m  = Model(
-    I * Psi.bar * Gamma(mu) * CovD(Psi, mu),
+    I * Psi.bar * Gamma(mu) * DC(Psi, mu),
     gauge_groups=(U1QED,),
 )
 
 # Multi-term model (full gauge-fixed QCD)
-m = Model(
-    I * Quark.bar * Gamma(mu) * CovD(Quark, mu)
+mu, nu, a, xi = S("mu"), S("nu"), S("a"), S("xi")
+qcd = Model(
+    I * Quark.bar * Gamma(mu) * DC(Quark, mu)
     - (Expression.num(1)/Expression.num(4))
-      * FieldStrength(SU3C, mu, S("nu"), S("a"))
-      * FieldStrength(SU3C, mu, S("nu"), S("a"))
-    + GaugeFixing(SU3C, xi=S("xi"))
+      * FS(SU3C, mu, nu, a) * FS(SU3C, mu, nu, a)
+    + GaugeFixing(SU3C, xi=xi)
     + GhostLagrangian(SU3C),
     gauge_groups=(SU3C,),
 )
 
 # Compile
-L = m.lagrangian()
+L = qcd.lagrangian()
 \end{minted}
+
+\noindent The four summands of the last model correspond one-to-one to the four terms of the QCD Lagrangian written at the start of this chapter. \Cref{sec:feynpy-qcd-example} carries this example through to its vertices.
 
 \subsection*{Model validation}
 
@@ -432,7 +430,7 @@ Psi.bar * Gamma(mu) * Psi * Photon           # vector current
 Psi.bar * Gamma(mu) * Gamma5() * Psi * V    # axial current
 \end{minted}
 
-\subsection*{Derivative operators — \texttt{PartialD}}
+\subsection*{Derivative operators --- \texttt{PartialD}}
 
 \begin{minted}{python}
 PartialD(Phi, mu)                            # partial_mu Phi
@@ -440,39 +438,57 @@ PartialD(PartialD(Phi, mu), nu)              # nested derivative
 Psi.bar * Gamma(mu) * PartialD(Psi, nu) * Phi
 \end{minted}
 
-\subsection*{Gauge covariant derivative — \texttt{CovD}}
+\subsection*{Gauge covariant derivative --- \texttt{DC}}
 
-Convention: $D_\mu = \partial_\mu - igA_\mu$.
+Convention: $D_\mu = \partial_\mu - igA_\mu$, as fixed in
+\Cref{tab:theory-conventions}.
 
 \begin{minted}{python}
 mu = S("mu")
 # Fermion kinetic term
-I * Psi.bar * Gamma(mu) * CovD(Psi, mu)
+I * Psi.bar * Gamma(mu) * DC(Psi, mu)
 
 # Complex scalar kinetic term
-CovD(PhiC.bar, mu) * CovD(PhiC, mu)
+DC(PhiC.bar, mu) * DC(PhiC, mu)
+
+# Restrict the expansion to one group of a multi-charged field
+DC(QL, mu, SU3C)
 \end{minted}
 
-\subsection*{Field strength — \texttt{FieldStrength}}
-\supervisor{once you asked me to change the name, shall we?}
+\subsection*{Field strength --- \texttt{FS}}
+
 \begin{minted}{python}
 # Abelian (no adjoint index)
-FieldStrength(U1QED, mu, nu)
+FS(U1QED, mu, nu)
 
 # Non-abelian (adjoint index required)
-FieldStrength(SU3C, mu, nu, S("a"))
+FS(SU3C, mu, nu, S("a"))
 
 # Yang-Mills kinetic term
 -(Expression.num(1)/Expression.num(4)) \
-    * FieldStrength(SU3C, mu, nu, S("a")) \
-    * FieldStrength(SU3C, mu, nu, S("a"))
+    * FS(SU3C, mu, nu, S("a")) \
+    * FS(SU3C, mu, nu, S("a"))
 \end{minted}
 
-\begin{tcolorbox}[warnbox, title=Strict rules for FieldStrength]
-A non-abelian \py{FieldStrength} requires an explicit adjoint index;
-an abelian one must not carry one.  All adjoint indices must be contracted
---- open colour indices raise a \py{ValueError} at compile time.
+\begin{tcolorbox}[warnbox, title={Strict rules for \texttt{FS}}]
+A non-abelian \py{FS} requires an explicit adjoint index; an abelian one must
+not carry one.  All adjoint indices must be contracted --- open colour
+indices raise a \py{ValueError} at compile time.
 \end{tcolorbox}
+
+\noindent Higher powers and mixed-group:
+
+\begin{minted}{python}
+from symbolic.spenso_structures import lorentz_levi_civita
+
+# CP-odd operator built from the dual field strength
+theta * lorentz_levi_civita(mu, nu, rho, sig) \
+      * FS(U1QED, mu, nu) * FS(U1QED, rho, sig)
+
+# Cubic field-strength operator
+c3 * StructureConstant(SU3C, a, b, c) \
+   * FS(SU3C, mu, nu, a) * FS(SU3C, nu, rho, b) * FS(SU3C, rho, mu, c)
+\end{minted}
 
 \subsection*{Gauge fixing and ghosts helper}
 
@@ -547,7 +563,7 @@ vertex as a dictionary.  Use the lighter-weight inspection methods to
 browse without computing all expressions first.
 
 \begin{minted}{python}
-# Enumerate all vertices — returns dict keyed by name tuples
+# Enumerate all vertices -- returns dict keyed by name tuples
 all_rules = L.feynman_rule(simplify=False)
 for sig, expr in all_rules.items():
     print(sig, "->", expr)
@@ -574,7 +590,7 @@ ghost_sigs   = L.vertex_signatures(contains_fields=(GhostG.bar, GhostG))
 \end{minted}
 
 \begin{minted}{python}
-# vertex_report — filtered signatures with count summary
+# vertex_report -- filtered signatures with count summary
 report = L.vertex_report(arity=3)
 print(report.matched_signatures, "of", report.total_signatures)
 for sig in report.signatures:
@@ -586,6 +602,182 @@ For large models, use \py{vertex_signatures} or \py{vertex_report} to
 inspect available vertices before calling \py{feynman_rule}, which
 actually computes the symbolic expressions.
 \end{tcolorbox}
+
+% --------------------------------------------------------------
+\section{A Complete Example: Gauge-Fixed QCD}
+\label{sec:feynpy-qcd-example}
+% --------------------------------------------------------------
+
+We opened this chapter with the gauge-fixed QCD Lagrangian and promised to
+derive its rules. All the ingredients are now available, so here is the
+complete script, from imports to a compiled Lagrangian.
+
+\noindent To keep the example compact, we import the public \textsc{FeynPy}
+surface with \py{from feynpy import *}. The non-\textsc{FeynPy} objects
+(\py{S}, \py{Expression}, \py{I} and the \textsc{Spenso} tensor builders) are
+still imported explicitly.
+
+\begin{minted}{python}
+from fractions import Fraction
+
+from symbolica import S, Expression
+from symbolic.vertex_engine import I
+from symbolic.spenso_structures import gauge_generator, structure_constant
+from feynpy import *
+
+mu, nu = S("mu"), S("nu")
+a, xi, gs = S("a"), S("xi"), S("gs")
+quarter = Expression.num(1) / Expression.num(4)
+
+# Fields
+Quark = Field(
+    "q",
+    spin=Fraction(1, 2),
+    self_conjugate=False,
+    symbol=S("q"),
+    conjugate_symbol=S("qbar"),
+    indices=(SPINOR_INDEX, COLOR_FUND_INDEX),
+)
+Gluon = Field(
+    "G",
+    spin=1,
+    self_conjugate=True,
+    symbol=S("G"),
+    indices=(LORENTZ_INDEX, COLOR_ADJ_INDEX),
+)
+GhostG = GhostField(
+    "ghG",
+    ghost_of=Gluon,
+    self_conjugate=False,
+    symbol=S("ghG"),
+    conjugate_symbol=S("ghGbar"),
+    indices=(COLOR_ADJ_INDEX,),
+)
+
+# Gauge group
+FUND = GaugeRepresentation(
+    index=COLOR_FUND_INDEX,
+    generator_builder=gauge_generator,
+    name="fundamental",
+)
+SU3C = GaugeGroup(
+    name="SU3C",
+    abelian=False,
+    coupling=gs,
+    gauge_boson=Gluon,
+    ghost_field=GhostG,
+    structure_constant=structure_constant,
+    representations=(FUND,),
+)
+
+# Gauge-fixed QCD Lagrangian
+qcd = Model(
+    (
+        I * Quark.bar * Gamma(mu) * DC(Quark, mu)
+        - quarter * FS(SU3C, mu, nu, a) * FS(SU3C, mu, nu, a)
+        + GaugeFixing(SU3C, xi=xi)
+        + GhostLagrangian(SU3C)
+    ),
+    gauge_groups=(SU3C,),
+)
+L = qcd.lagrangian()
+\end{minted}
+
+\noindent Before printing large expressions, inspect what the compiler
+generated:
+
+\begin{minted}{python}
+print("compiled terms:", len(L.terms))
+
+for sig in L.vertex_signatures():
+    names = str(sig.names)
+    print(f"{names:<25} arity={sig.arity}  terms={sig.term_count}")
+\end{minted}
+
+\noindent The output is:
+
+\begin{minted}{text}
+compiled terms: 14
+
+('G', 'G')                arity=2  terms=5
+('ghG.bar', 'ghG')        arity=2  terms=1
+('q.bar', 'q')            arity=2  terms=1
+('G', 'G', 'G')           arity=3  terms=4
+('ghG.bar', 'G', 'ghG')   arity=3  terms=1
+('q.bar', 'q', 'G')       arity=3  terms=1
+('G', 'G', 'G', 'G')      arity=4  terms=1
+\end{minted}
+
+\noindent This listing already tells a small story. A single \py{FS} factor
+squared has produced two-, three- and four-gluon signatures at once; the
+\py{GaugeFixing} declaration has added four further terms to the two-gluon
+signature; and the \py{GhostLagrangian} has contributed both a ghost kinetic
+term and a ghost--gluon vertex.
+
+\noindent Now ask for the individual rules. Since simplification is the
+default, it does not need to be passed explicitly:
+
+\begin{minted}{python}
+V_qqg = L.feynman_rule(Quark.bar, Quark, Gluon)
+V_cg  = L.feynman_rule(GhostG.bar, GhostG, Gluon)
+V_ggg = L.feynman_rule(Gluon, Gluon, Gluon)
+V_gg  = L.feynman_rule(Gluon, Gluon)
+\end{minted}
+
+\subsection*{Selected output}
+
+\noindent\textbf{Quark--gluon.}
+\begin{minted}{text}
+I*gs*gamma(bis(4,i1),bis(4,i2),mink(4,mu3))
+   *t(coad(8,a3),cof(3,c1),cof(3,c2))
+\end{minted}
+\noindent This is $i g_s \gamma^{\mu_3}t^{a_3}$, with the colour indices in
+the fundamental slots of the two quark legs.
+
+\noindent\textbf{Ghost--gluon.}
+\begin{minted}{text}
+gs*f(coad(8,a1),coad(8,a3),coad(8,a2))*pcomp(q1,mu3)
+\end{minted}
+\noindent This is $g_s f^{a_1a_3a_2}q_1^{\mu_3}$, carrying the momentum of the
+antighost leg as expected from $\mathcal{L}_{\mathrm{gh}}$.
+
+\noindent\textbf{Three-gluon.}
+\begin{minted}{text}
+-gs*g(mink(4,mu3),mink(4,mu1))*f(coad(8,a1),coad(8,a2),coad(8,a3))
+    *pcomp(q1,mu2)
++gs*g(mink(4,mu3),mink(4,mu1))*f(coad(8,a1),coad(8,a2),coad(8,a3))
+    *pcomp(q3,mu2)
++gs*g(mink(4,mu3),mink(4,mu2))*f(coad(8,a1),coad(8,a2),coad(8,a3))
+    *pcomp(q2,mu1)
+-gs*g(mink(4,mu3),mink(4,mu2))*f(coad(8,a1),coad(8,a2),coad(8,a3))
+    *pcomp(q3,mu1)
++gs*g(mink(4,mu1),mink(4,mu2))*f(coad(8,a1),coad(8,a2),coad(8,a3))
+    *pcomp(q1,mu3)
+-gs*g(mink(4,mu1),mink(4,mu2))*f(coad(8,a1),coad(8,a2),coad(8,a3))
+    *pcomp(q2,mu3)
+\end{minted}
+\noindent This is the textbook expression
+\begin{equation}
+    g_s f^{a_1a_2a_3}\Big[
+      g^{\mu_1\mu_2}(q_1-q_2)^{\mu_3}
+    + g^{\mu_2\mu_3}(q_2-q_3)^{\mu_1}
+    + g^{\mu_3\mu_1}(q_3-q_1)^{\mu_2}\Big],
+\end{equation}
+with all momenta incoming, written out term by term.
+
+\noindent\textbf{Gluon two-point.}
+\begin{minted}{text}
+ I*g(coad(8,a1),coad(8,a2))*pcomp(q1,mu1)*pcomp(q2,mu2)/xi
++I*g(mink(4,mu1),mink(4,mu2))*g(coad(8,a1),coad(8,a2))
+    *pcomp(q1,mu1_int)*pcomp(q2,mu1_int)
+-I*g(coad(8,a1),coad(8,a2))*pcomp(q1,mu2)*pcomp(q2,mu1)
+\end{minted}
+\noindent This rule shows the gauge parameter explicitly. Setting $\xi=1$
+collapses the inverse propagator to the Feynman-gauge form. The label
+\py{mu1_int} is an automatically generated dummy Lorentz
+index --- the contraction $q_1\!\cdot\!q_2$ --- and its name carries no
+meaning, which is exactly the point of the canonicalisation discussed in
+\Cref{sec:internals-postprocessing}.
 
 % --------------------------------------------------------------
 \section{Flavor Expansion}
@@ -600,7 +792,7 @@ single \py{IndexType} or a tuple to expand only selected indices.
 # Compact (generation-generic) rules
 rules_compact  = L.feynman_rule()
 
-# Fully expanded — one rule per member combination
+# Fully expanded -- one rule per member combination
 rules_expanded = L.feynman_rule(flavor_expand=True)
 
 # Expand only one specific index
@@ -616,19 +808,132 @@ sigs = L.vertex_signatures(flavor_expand=True)
 \begin{tcolorbox}[warnbox, title={Off-diagonal zeroes}]
 If a parameter is declared with \py{components={(i,j): 0}} for
 $i \neq j$, off-diagonal member combinations are automatically absent
-from the expanded rules — no manual filtering is needed.
+from the expanded rules --- no manual filtering is needed.
 \end{tcolorbox}
+
+% --------------------------------------------------------------
+\section{Field Transformations: From the Gauge Basis to the Physical Basis}
+\label{sec:feynpy-transformations}
+% --------------------------------------------------------------
+
+Let's see how to apply field transformations. Let's refresh the field transformation for the standard model. The Lagrangian is written in terms of $B_\mu$, $W^I_\mu$ and the doublet $\Phi$, but the vertices we want involve the photon, the $Z$, the $W^\pm$, the Higgs and the Goldstone bosons.
+
+
+The bridge is a set of substitutions, and \textsc{FeynPy} implements it with \py{FieldTransformation}.
+
+\subsection*{The basic pattern}
+
+\begin{minted}{python}
+from feynpy import FieldTransformation
+
+# B_mu  ->  -sw * Z_mu + cw * A_mu
+neutral_mixing = FieldTransformation(B, -sw * Z + cw * A)
+
+L_physical = model.transform_fields(neutral_mixing, repeat=False)
+\end{minted}
+
+\noindent Applied to a scalar current $ (D_\mu H)^\dagger (D^\mu H)$, this
+moves the hypercharge current onto the physical fields. Before the
+transformation the only nonzero rule is
+\[
+    \Gamma(H^\dagger, H, B) =
+      -\tfrac{i}{2} g_1 (q_1 - q_2)^{\mu_3},
+\]
+and afterwards it has been replaced by
+\[
+    \Gamma(H^\dagger, H, A) = -\tfrac{i}{2} c_W g_1 (q_1 - q_2)^{\mu_3},
+    \qquad
+    \Gamma(H^\dagger, H, Z) = +\tfrac{i}{2} s_W g_1 (q_1 - q_2)^{\mu_3},
+\]
+while $\Gamma(H^\dagger, H, B)$ no longer exists, because $B$ is no longer a
+field of the model.
+
+\begin{tcolorbox}[infobox, title={Compile first, transform second}]
+Transformations act on an \emph{already compiled} Lagrangian. Covariant
+derivatives and field strengths are expanded in the original gauge basis,
+where the gauge group data is meaningful, and only then are the fields
+substituted. Writing \py{model.transform_fields(...)} performs both steps in
+that order. This is the same ordering that \textsc{FeynRules} uses, and it is
+the reason \py{DC} is never itself transformed.
+\end{tcolorbox}
+
+\subsection*{Component rules}
+
+Component rules are the important extra ingredient for the Standard Model.
+The dictionary \py{components={slot: value}} says that the rule only applies
+to one fixed component of an indexed field. For example, the weak gauge field
+has slots \py{(Lorentz, WeakAdj)}, so \py{components={1: 3}} selects
+$W^3_\mu$.
+
+\begin{minted}{python}
+from models.SM import standard_model_weak_tensor_components
+
+component_lagrangian = model.lagrangian().expand_index_components(
+    WEAK_FUND_INDEX,
+    WEAK_ADJ_INDEX,
+    tensor_components=standard_model_weak_tensor_components(),
+)
+
+transformations = (
+    # neutral gauge-boson mixing
+    FieldTransformation(B, -sw * Z + cw * A),
+    FieldTransformation(Wi, INV_SQRT2 * W.bar + INV_SQRT2 * W,
+                        components={1: 1}),
+    FieldTransformation(Wi, INV_SQRT2 / I * W.bar - INV_SQRT2 / I * W,
+                        components={1: 2}),
+    FieldTransformation(Wi, cw * Z + sw * A,
+                        components={1: 3}),
+
+    # Higgs doublet components
+    FieldTransformation(Phi, -I * GP, components={0: 1}),
+    FieldTransformation(Phi, vev * INV_SQRT2 + INV_SQRT2 * H
+                             + I * INV_SQRT2 * G0,
+                        components={0: 2}),
+)
+
+L_physical = component_lagrangian.transform_fields(
+    *transformations,
+    repeat=False,
+)
+\end{minted}
+
+\noindent The keyword \py{repeat=False} makes the rules act as one
+simultaneous \textsc{FeynRules}-style definitions block: a field created by
+one rule is not transformed again by another rule in the same pass. This is
+what the electroweak rotation needs.
+
+\subsection*{Projectors and flavour rotations}
+
+The implementation chiral projectors and flavour rotations follows the same idea. These matrix factors are attached to the appropriate spinor and flavour indices automatically:
+
+\begin{minted}{python}
+from feynpy import ProjM, ProjP, rotation
+
+ckm = rotation(CKM, CKMDag)
+
+fermion_transformations = (
+    FieldTransformation(LL, ProjM * vl,       components={1: 1}),
+    FieldTransformation(LL, ProjM * l,        components={1: 2}),
+    FieldTransformation(lR, ProjP * l),
+    FieldTransformation(QL, ProjM * uq,       components={1: 1}),
+    FieldTransformation(QL, ckm * ProjM * dq, components={1: 2}),
+    FieldTransformation(uR, ProjP * uq),
+    FieldTransformation(dR, ProjP * dq),
+)
+\end{minted}
+
+\noindent The complete Standard Model implementation, including the corresponding ghost mixings and the exact
+ordering used in validation, can be seen in 
+\path{models/SM/SM.py} by the interested user. 
 
 % --------------------------------------------------------------
 \section{Symbolica Export}
 \label{sec:feynpy-symbolica-export}
 % --------------------------------------------------------------
 
-Now that we learned how to extract Feynman rules, with and without a flavor expansion, we are interested in procceding to the manipulation of the actual lagrangian. FeynPy is build on this Model API to handle all the information needed to expand the covariant derivative, field strength and so on that depends on the symmetry group. To manipulate a constructed Lagrangian it would be smart to have the expression of Symbolica so that we can call all the built-in function of this amazing library. 
+Now that we learned how to extract Feynman rules, with and without a flavor expansion, we are interested in procceding to the manipulation of the actual lagrangian. FeynPy is build on this Model API to handle all the information needed to expand the covariant derivative, field strength and so on that depends on the symmetry group. To manipulate a constructed Lagrangian it would be smart to have the expression of Symbolica so that we can call all the built-in function of this amazing library.
 
-Call \py{to_symbolica()} on a compiled \py{Lagrangian} to obtain a flat
-\py{Expression} that can be differentiated, collected, or passed to any
-Symbolica routine.
+Call \py{to_symbolica()} on a compiled \py{Lagrangian} to obtain an \py{Expression} that can be differentiated, collected, or passed to any Symbolica routine.
 
 \begin{minted}{python}
 expr = L.to_symbolica()
@@ -684,16 +989,16 @@ from lagrangian.operator_action import (
 op    = replacement_operator("Phi_to_Chi", {Phi: Chi()})
 L_new = L.apply_operator(op)
 
-# Works on Model too — apply before compiling
+# Works on Model too -- apply before compiling
 L_new = model.apply_operator(op)
 \end{minted}
 
-\subsection*{FieldOperator — slot-wise action}
+\subsection*{FieldOperator --- slot-wise action}
 
 Acts once per matched field slot, expanding via the graded Leibniz rule. As an example it's exposed the operator $O[\phi] = a*\chi + b*\Omega$
 
 \begin{minted}{python}
-# Phi → a*Chi + b*Omega  (one summand per slot)
+# Phi -> a*Chi + b*Omega  (one summand per slot)
 op = FieldOperator(
     "phi_to_combo",
     on_field=lambda occ: (
@@ -709,7 +1014,7 @@ op = FieldOperator(
 s = FieldOperator("s", parity=1, on_field=lambda occ: ...)
 \end{minted}
 
-\subsection*{TermOperator — whole-term action}
+\subsection*{TermOperator --- whole-term action}
 We can apply an operator to an entire lagrangian term.
 \begin{minted}{python}
 # Acts on each InteractionTerm as a whole (no Leibniz expansion)
@@ -720,7 +1025,7 @@ scale2 = TermOperator(
 )
 \end{minted}
 
-\subsection*{Spacetime derivative operator \texorpdfstring{— \texttt{partial(mu)}}{}}
+\subsection*{Spacetime derivative operator \texorpdfstring{--- \texttt{partial(mu)}}{}}
 As a linear operator one of the most interesting is the derivative operator.
 \begin{minted}{python}
 L_partial = L.apply_operator(partial(mu))          # partial_mu on every slot
@@ -744,36 +1049,39 @@ rule. No manual handling is required.
 \end{tcolorbox}
 
 % --------------------------------------------------------------
-\section{IBP Normal Form --- limited}
+\section{Integration by Parts}
 \label{sec:feynpy-ibp}
 % --------------------------------------------------------------
-\begin{comment}
-    
-Two Lagrangians that differ by a total derivative are physically
-equivalent.  \py{ibp_normal_form()} reduces a compiled \py{Lagrangian}
-to a canonical representative modulo total derivatives using integration
-by parts (IBP).  Two Lagrangians with identical normal forms are
-equivalent up to boundary terms.
+
+Two Lagrangians that differ by a total derivative describe the same physics.
+Deciding whether that is the case is exactly the question that arises when
+reducing a redundant operator basis to a minimal one
+(\Cref{sec:theory-green-basis}), and \py{ibp_normal_form()} answers a
+restricted version of it: it rewrites a compiled Lagrangian into a canonical
+representative modulo total derivatives, so that two Lagrangians with the
+same normal form are equivalent up to boundary terms.
 
 \begin{minted}{python}
-# Verify the identity: phi^2 Box phi ~ -2 phi (d_mu phi)^2  mod total deriv.
-L1 = Model(c * phi*phi * PartialD(PartialD(phi, mu), mu)).lagrangian()
-L2 = Model(-2*c * phi * PartialD(phi, mu) * PartialD(phi, mu)).lagrangian()
+# Check that  phi^2 Box phi  ~  -2 phi (d_mu phi)^2  modulo total derivatives
+e1 = c * phi * phi * PartialD(PartialD(phi, mu), mu)
+e2 = -2 * c * phi * PartialD(phi, mu) * PartialD(phi, mu)
 
-NF1 = L1.ibp_normal_form()
-NF2 = L2.ibp_normal_form()
+assert Model(e1).lagrangian().ibp_normal_form().terms \
+    == Model(e2).lagrangian().ibp_normal_form().terms
 
-# Their difference vanishes in normal form
-Delta = Model(L1_expr + L2_expr).lagrangian().ibp_normal_form()
-assert Delta.terms == ()   # empty => equivalent up to boundary terms
+# Equivalently, the normal form of the difference is empty
+delta = Model(e1 - e2).lagrangian().ibp_normal_form()
+assert delta.terms == ()
 \end{minted}
 
-\begin{tcolorbox}[notebox, title=Tip]
-Use \py{ibp_normal_form()} to verify that two operator-acted Lagrangians
-are equivalent, or to eliminate higher-derivative redundancies before
-extracting Feynman rules.
+\begin{tcolorbox}[warnbox, title={Scope of the current implementation}]
+This first version of the integration-by-parts layer handles unlabelled
+scalar species only: it symmetrises identical scalar slots and moves
+derivatives into a left-normal form. Terms containing Dirac bilinears or
+gauge indices are outside its scope, so it cannot yet be used to reduce a
+Green basis to the Warsaw basis. \Cref{sec:conclusion-future} returns to
+this.
 \end{tcolorbox}
-\end{comment}
 
 
 % --------------------------------------------------------------
@@ -781,9 +1089,9 @@ extracting Feynman rules.
 \label{sec:feynpy-gauge-variation}
 % --------------------------------------------------------------
 
-We can apply an infinitesimal gauge transformation to check the gauge invariance of a given Lagrangian. 
-\py{gauge_variation(group=..., parameter=...)} returns a \py{FieldOperator}
-implementing the infinitesimal gauge variation for a givern group. Different possible transformation are exposed in the following table.
+We are now interested in gauge transformations. We can apply an infinitesimal gauge transformation to check the gauge invariance of a given Lagrangian. \py{gauge_variation(group=..., parameter=...)} returns a \py{FieldOperator} implementing the infinitesimal gauge variation for a givern group. Different possible transformation are exposed in the following table.
+
+
 \subsection*{Transformation rules}
 
 \begin{center}
@@ -817,10 +1125,16 @@ assert canon.to_canonical_string() == "0"   # => gauge invariant
 \label{sec:feynpy-brst}
 % --------------------------------------------------------------
 
-The natural next step after the infinitesimal gauge transformation is to consider the BRST transformation.
-\py{brst_transformation(group, ghost, antighost=None, auxiliary=...)}
-returns an \emph{odd} \py{FieldOperator} implementing the BRST transformation for one selected gauge group.
-The ghost must be declared with \py{kind="ghost"} and associated with the chosen gauge boson through
+The natural next step after the infinitesimal gauge transformation is to
+consider the BRST transformation. The constructor
+
+\begin{minted}{python}
+brst_transformation(group, ghost, antighost=None, auxiliary=...)
+\end{minted}
+
+\noindent returns an \emph{odd} \py{FieldOperator} implementing the BRST
+transformation for one selected gauge group. The ghost must be declared with
+\py{kind="ghost"} and associated with the chosen gauge boson through
 \py{ghost_of=<gauge_boson>}.
 
 \noindent We keep exactly the same sign convention as in \py{gauge_variation(...)}:
@@ -974,6 +1288,83 @@ index-independent patterns from exported tensor expressions.
 \end{tcolorbox}
 
 % --------------------------------------------------------------
+\section{Packaged Models}
+\label{sec:feynpy-models}
+% --------------------------------------------------------------
+
+Everything described so far is generic machinery. Three complete models are
+shipped with the toolkit, built entirely from that machinery, and they are
+the subjects of the validation in \Cref{ch:validation}. Each lives in its own
+directory under \path{models/}, together with its \textsc{FeynRules}
+reference data, its comparison adapter and its tests.
+
+\subsection*{The Standard Model}
+
+\begin{minted}{python}
+from models.SM import build_standard_model
+
+sm = build_standard_model()
+L  = sm.lagrangian
+
+wwa = L.feynman_rule(sm.fields.W.bar, sm.fields.W, sm.fields.A)
+hww = L.feynman_rule(sm.fields.H,     sm.fields.W.bar, sm.fields.W)
+\end{minted}
+
+\noindent The builder follows the pipeline of this chapter exactly: declare
+the gauge-basis fields ($Q_L$, $L_L$, $\Phi$, $B$, $W^I$, $G$ and the
+singlets), assemble the gauge, fermion, Higgs, Yukawa and ghost sectors,
+compile the covariant derivatives and field strengths, expand the weak
+indices into components, and finally apply the eighteen field
+transformations of \Cref{sec:feynpy-transformations} in a single simultaneous
+pass. It returns a \py{StandardModel} record exposing the source model, the
+transformation list, the compiled physical-basis Lagrangian and the field and
+parameter namespaces.
+
+\subsection*{The unbroken background-field Standard Model}
+
+\begin{minted}{python}
+from models.UnbrokenSM_BFM import build_unbroken_sm_bfm
+
+bfm = build_unbroken_sm_bfm()
+\end{minted}
+
+\noindent This model stays in the unbroken gauge basis and instead performs
+the background/quantum split of \Cref{sec:theory-bfm}, again as a
+\py{FieldTransformation}. Because the gauge is fixed only for the quantum
+fields, and covariantly with respect to the background ones, its gauge-fixing
+term is written out explicitly rather than through the generic
+\py{GaugeFixing} helper.
+
+\subsection*{Green-basis SMEFT}
+
+\begin{minted}{python}
+from models.SMEFT import build_smeft_green_bpreserving
+
+smeft = build_smeft_green_bpreserving()
+
+Ltot  = smeft.lagrangians["Ltot"]    # EFT contribution only (the model default)
+Lfull = smeft.lagrangians["Lfull"]   # Standard Model plus EFT
+
+L = smeft.model.lagrangian()         # compiles Ltot
+\end{minted}
+
+\noindent This is the largest model, and the one that motivated most of the
+engine's generality. It declares $298$ Wilson coefficients as indexed
+\py{Parameter}s and $32$ Lagrangian blocks in the baryon-number-preserving
+Green basis of \Cref{sec:theory-green-basis}, including dual field strengths,
+$\sigma^{\mu\nu}$ structures, weak $\varepsilon$ tensors and the explicit
+charge-conjugation matrices of the evanescent sector. The Standard Model core
+is taken from the unbroken background-field model above, minus its
+background-field ghost and gauge-fixing sectors.
+
+Two conventions are worth noting because \Cref{ch:validation} depends on
+them. \texttt{Ltot} contains the EFT contribution alone, matching the
+\textsc{FeynRules} convention for the reference export, with the combined
+theory available separately as \texttt{Lfull}. And the model is written in terms
+of chiral fields --- \py{lL}, \py{qL}, \py{eR}, \py{uR}, \py{dR} --- so
+chirality is carried by the field names rather than by explicit projectors.
+
+% --------------------------------------------------------------
 \section{Quick Reference}
 \label{sec:feynpy-quickref}
 % --------------------------------------------------------------
@@ -1023,8 +1414,8 @@ Here \texttt{L} denotes a compiled \py{CompiledLagrangian}, typically from
 \midrule
 \texttt{Gamma(mu)} & Declarative Dirac $\gamma^\mu$ placeholder. \\
 \texttt{PartialD(field, mu)} & Ordinary $\partial_\mu\,\text{field}$. \\
-\texttt{CovD(field, mu)} & Covariant derivative with convention $D_\mu=\partial_\mu-igA_\mu$. \\
-\texttt{FieldStrength(group, mu, nu[,a])} & $F_{\mu\nu}$; adjoint index required for non-abelian groups. \\
+\texttt{DC(field, mu)} & Covariant derivative with convention $D_\mu=\partial_\mu-igA_\mu$ (alias \texttt{CovD}). \\
+\texttt{FS(group, mu, nu[,a])} & $F_{\mu\nu}$; adjoint index required for non-abelian groups (alias \texttt{FieldStrength}). \\
 \texttt{GaugeFixing(group, xi=...)} & Linear covariant gauge-fixing declaration. \\
 \texttt{GhostLagrangian(group)} & Ordinary non-abelian Faddeev--Popov ghost declaration. \\
 \bottomrule
@@ -1054,10 +1445,12 @@ Here \texttt{L} denotes a compiled \py{CompiledLagrangian}, typically from
 \normalfont\textbf{Call} & \textbf{Purpose} \\
 \midrule
 \texttt{L.to\_symbolica(...)} & Export / display as a Symbolica \py{Expression}. \\
+\texttt{L.transform\_fields(*rules)} & Substitute fields, e.g.\ gauge basis $\to$ physical basis. \\
+\texttt{L.expand\_index\_components(...)} & Expand finite gauge indices into explicit components. \\
 \texttt{L.apply\_operator(op)} & Apply a \py{FieldOperator} or \py{TermOperator}. \\
 \texttt{L.apply\_operators(...)} & Compose operators left-to-right. \\
 \texttt{L.operator\_bracket(A, B)} & Graded commutator $[A,B]$. \\
-\texttt{L.ibp\_normal\_form()} & Scalar-only v1 IBP normal form. \\
+\texttt{L.ibp\_normal\_form()} & Scalar-only IBP normal form. \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1075,6 +1468,22 @@ Here \texttt{L} denotes a compiled \py{CompiledLagrangian}, typically from
 \texttt{partial(mu)} & Runtime spacetime-derivative operator. \\
 \texttt{gauge\_variation(group, parameter=...)} & Infinitesimal gauge variation $\delta_\alpha$. \\
 \texttt{brst\_transformation(group, ghost, ...)} & Odd BRST differential. \\
+\texttt{FieldTransformation(source, expr, ...)} & Declarative field redefinition. \\
+\texttt{rotation(V, Vdag)} & Flavour-rotation matrix factor for a replacement. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Packaged models}
+
+\begin{center}
+\begin{tabular}{@{}P{5.4cm}p{7cm}@{}}
+\toprule
+\normalfont\textbf{Call} & \textbf{Purpose} \\
+\midrule
+\texttt{build\_standard\_model()} & Standard Model in the physical basis. \\
+\texttt{build\_unbroken\_sm\_bfm()} & Unbroken Standard Model with the background-field split. \\
+\texttt{build\_smeft\_green\_bpreserving()} & Green-basis SMEFT, EFT-only by default. \\
 \bottomrule
 \end{tabular}
 \end{center}

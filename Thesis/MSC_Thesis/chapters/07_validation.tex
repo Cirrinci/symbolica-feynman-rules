@@ -9,7 +9,47 @@ Chapter~\ref{ch:internals} explained how FeynPy calculates Feynman rules from a 
 
 The two results are not expected to be \emph{identical}: different expansions and tensor identities imply that they need not match term by term. Instead, we verify whether they are the same expression from an algebraic point of view, differing only in the renaming of indices, the canonical order of tensor factors, and the explicitly listed set of tensor and algebraic identities. Section~\ref{sec:validation-canonical} clarifies this concept and illustrates, with examples, how the resulting equality test works. Bringing both sides into a common canonical form to establish equality was itself one of the most complex parts of this work.
 
-The results obtained within the limited timeframe of this thesis are as follows. The packaged Standard Model matches its FeynRules export exactly; the unbroken background Standard Model matches its own export exactly; and the Green-basis SMEFT model matches all $184$ exported lines of FeynRules' \texttt{Ltot} for the EFT sector at the operator-content level. Of these $184$ SMEFT vertices, $161$ match directly, $15$ match after one globally fixed charge-conjugation convention, and $8$ match after an additional transformation that is explicitly tabulated per line.
+The results obtained within the limited timeframe of this thesis are as follows. The packaged Standard Model matches its FeynRules export exactly; the unbroken background Standard Model matches its own export exactly; and the Green-basis SMEFT model matches all $184$ exported lines of FeynRules' \texttt{Ltot} for the EFT sector at the operator-content level. Of these $184$ SMEFT vertices, $161$ match directly, $15$ match after one globally fixed charge-conjugation convention, and $8$ match after an additional transformation that is explicitly tabulated per line in \Cref{app:smeft-rows}.
+
+% --------------------------------------------------------------
+\section{The benchmark models}
+\label{sec:validation-models}
+% --------------------------------------------------------------
+
+Three models are used as benchmarks. They were chosen so that each stresses a
+different part of the machinery, and together they exercise all of it. Each
+was written independently against its FeynRules counterpart, using only the
+generic facilities described in \Cref{ch:feynpy}; \Cref{sec:feynpy-models}
+gives the builder for each.
+
+\begin{description}
+    \item[The Standard Model.] Declared in the gauge basis and transformed
+    into the physical basis by the eighteen field transformations of
+    \Cref{sec:feynpy-transformations}. It tests electroweak symmetry
+    breaking, the $W/Z/\gamma$ mixing, the Goldstone sector, chiral
+    projectors, the CKM matrix and the ghost sector at once. Its reference
+    export contains $163$ vertices.
+
+    \item[The unbroken background-field Standard Model.] Stays in the gauge
+    basis and instead splits each gauge field into a background and a quantum
+    part (\Cref{sec:theory-bfm}). Because nothing is rotated, it isolates the
+    gauge compiler: covariant derivatives, non-abelian field strengths, and a
+    gauge-fixing term that is background-covariant and therefore written out
+    by hand rather than through \py{GaugeFixing}. Its reference export
+    contains $67$ vertices.
+
+    \item[Green-basis SMEFT.] A baryon-number-preserving Green basis with
+    $298$ Wilson coefficients over $32$ Lagrangian blocks
+    (\Cref{sec:theory-green-basis}). It is by far the most demanding of the
+    three: it contains dual field strengths, $\sigma^{\mu\nu}$ structures,
+    higher powers of the field strength, weak epsilon tensors, four-fermion
+    operators with explicit charge-conjugation matrices, and vertices with up
+    to six legs. Its reference export contains $184$ lines.
+\end{description}
+
+The first two are compared vertex by vertex; the SMEFT comparison is
+organised per exported line and per Wilson coefficient, for the reasons
+explained in \Cref{sec:validation-canonical}.
 
 % --------------------------------------------------------------
 \section{Validation strategy}
@@ -166,7 +206,7 @@ Ever since I started my thesis, we have been discussing a very ambitious goal: d
 SM plus EFT combination is available separately as \texttt{Lfull}.
 
 
-Before comparing any vertices, the model’s transcription itself was checked to verify that FeynPy had all the capabilities required to implement the operators. All $32$ EFT Lagrangian blocks in \texttt{SMEFT\_Green\_Bpreserving.fr} have been implemented, and \texttt{Ltot} consists exactly of those $32$ blocks in the same order. All $298$ active Wilson coefficients in the FeynRules source code are declared in the FeynPy model and used in at least one operator. Two further coefficients, \texttt{alphaEcdlq} and \texttt{alphaEcqeu}, appear in the FeynRules file but not in FeynPy, and both are commented out in FeynRules and are not used in any FeynRules operator, so their omission is correct rather than a gap. (This is an observation regarding the transcription, not the coverage of the comparison: of the $298$ declared coefficients, the comparison of vertices in \Cref{sec:validation-smeft} covers $295$, for the structural reason indicated in \Cref{sec:validation-coverage}.) The core of the Standard Model is taken from \texttt{UnbrokenSM\_BFM.fr}, minus its background-field ghost and gauge-fixing sectors, which have been deliberately excluded since the subject of the comparison is the \texttt{Ltot} based exclusively on EFT.
+Before comparing any vertices, the model's transcription itself was checked to verify that FeynPy had all the capabilities required to implement the operators. All $32$ EFT Lagrangian blocks in \texttt{SMEFT\_Green\_Bpreserving.fr} have been implemented, and \texttt{Ltot} consists exactly of those $32$ blocks in the same order. All $298$ active Wilson coefficients in the FeynRules source code are declared in the FeynPy model and used in at least one operator. Two further coefficients, \texttt{alphaEcdlq} and \texttt{alphaEcqeu}, appear in the FeynRules file but not in FeynPy, and both are commented out in FeynRules and are not used in any FeynRules operator, so their omission is correct rather than a gap. (This is an observation regarding the transcription, not the coverage of the comparison: of the $298$ declared coefficients, the comparison of vertices in \Cref{sec:validation-smeft} covers $295$, for the structural reason indicated in \Cref{sec:validation-coverage}.) The core of the Standard Model is taken from \texttt{UnbrokenSM\_BFM.fr}, minus its background-field ghost and gauge-fixing sectors, which have been deliberately excluded since the subject of the comparison is the \texttt{Ltot} based exclusively on EFT.
 
 
 The structural differences between the two sources are systematic
