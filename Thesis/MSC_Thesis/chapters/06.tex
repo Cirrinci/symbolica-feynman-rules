@@ -253,7 +253,7 @@ For the usual \(\mathrm{SU}(N)\) basis one may simply read \(c^{a}{}_{bc}\) as t
 
 The compiler essentially performs two operations. Firstly, it expands each structured gauge operator to yield simple local monomials. Secondly, only after carrying out the complete expansion does it feed these monomials back into the normal lowering process, generating a \py{InteractionTerm} (Section~\ref{sec:internals-lowering}).
 
-This is a deliberate design choice: it prioritises generality and a single, uniform compilation pipeline over efficiency. For example dedicated routines could be written for $F^2$, $F^3$, $F^4$ and for each covariant structure separately, which would make it faster and more importantly closer to the canonical form we already know from textbooks. Here, however, there is no separate, hard-coded compiler for $F^2$, $F^3$, $F^4$ or for every possible power of a covariant derivative. The combinations are generated automatically via the standard distribution followed by a well-established lowering phase.
+This is a deliberate design choice: it prioritises generality and a single, uniform compilation pipeline over efficiency. For example dedicated routines could be written for $F^2$, $F^3$, $F^4$\supervisor{Here do you mean $F^2 = F_{\mu\nu}F^{\mu\nu}$ and similarly for $F^3$,$F^4$?} and for each covariant structure separately, which would make it faster and more importantly closer to the canonical form we already know from textbooks. Here, however, there is no separate, hard-coded compiler for $F^2$, $F^3$, $F^4$ or for every possible power of a covariant derivative. The combinations are generated automatically via the standard distribution followed by a well-established lowering phase.
 
 The cost is that the intermediate output is much more verbose than textbook notation. A non-abelian $F^2$ expands into nine local monomials before canonicalisation combines equivalent terms again (Section~\ref{sec:internals-postprocessing}). For higher operators this growth is rapid; for pure non-abelian $F^n$ it gives $3^n$ branches. Much of the effort has therefore gone into the canonicalisation process.
 
@@ -581,7 +581,7 @@ The default rule is simple: use the flat Grassmann sign of the fermion permutati
 \begin{equation}
     (\bar\psi\,\gamma^\mu\psi)\,(\bar\psi\,\gamma_\mu\psi).
 \end{equation}
-This operator has two Wick contractions: a \emph{direct} one, where each current stays intact, and a \emph{crossed} one, where the two currents exchange a fermion. The flat Grassmann rule predicts a relative sign of $\text{direct} - \text{crossed}$ between the two, but the correct sign, following the FeynRules convention, is $\text{direct} + \text{crossed}$.
+This operator has two Wick contractions: a \emph{direct} one, where each current stays intact, and a \emph{crossed} one, where the two currents exchange a fermion. The flat Grassmann rule predicts a relative sign of $\text{direct} - \text{crossed}$ between the two, but the correct sign\supervisor{what do you mean here by `correct'? I think that this is a case where Feynrules is just wrong.}, following the FeynRules convention, is $\text{direct} + \text{crossed}$.
 
 
 The fix uses the fermion-pairing information recorded during lowering (Section~\ref{sec:internals-lowering}). If that information shows that every Dirac fermion slot belongs to exactly one closed bilinear, the engine drops the flat permutation sign and treats every pairing with a plus. In every other case (for example a generic open multi-fermion tensor) the flat Grassmann sign still applies.
