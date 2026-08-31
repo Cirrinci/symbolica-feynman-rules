@@ -94,7 +94,7 @@ Applies the overall factor of $i$, optionally extracts the momentum-conserving $
 \label{tab:internals-layers}
 \end{table}
 
-The remaining sections walk the layers from the outside in: declaration (Section~\ref{sec:internals-declaration}), analysis and index resolution (Section~\ref{sec:internals-lowering}), gauge compilation (Section~\ref{sec:internals-compiler}), the \py{InteractionTerm} intermediate representation that ties everything together (Section~\ref{sec:internals-ir}), the Wick-contraction engine (Section~\ref{sec:internals-contraction}), and canonicalisation (Section~\ref{sec:internals-postprocessing}). Section~\ref{sec:internals-difficulty} then collects the hardest problems encountered while building the pipeline --- the places where the design had to be most deliberate.
+The remaining sections walk the layers from the outside in: declaration (Section~\ref{sec:internals-declaration}), analysis and index resolution (Section~\ref{sec:internals-lowering}), gauge compilation (Section~\ref{sec:internals-compiler}), the \py{InteractionTerm} intermediate representation that ties everything together (Section~\ref{sec:internals-ir}), the Wick-contraction engine (Section~\ref{sec:internals-contraction}), and canonicalisation (Section~\ref{sec:internals-postprocessing}). Section~\ref{sec:internals-difficulty} then collects the hardest problems encountered while building the pipeline, the places where the design had to be most deliberate.
 
 \footnote{Each TikZ figure in this chapter has a plain-text counterpart kept as a Mermaid source diagram under \texttt{viz/mermaid/}}
 
@@ -496,16 +496,15 @@ class InteractionTerm:
     sector: str = ""
 \end{minted}
 
-The \py{coupling} is a Symbolica expression holding the numerical and tensor prefactor (couplings, generators, structure constants, metrics); \py{fields} is an ordered tuple of \py{FieldOccurrence} objects, each a field with its slot-resolved index labels and conjugation flag; \py{derivatives} records, as a \py{DerivativeAction}, which field each derivative hits and along which Lorentz index; and \py{closed_dirac_bilinears} carries the fermion-pairing provenance of Section~\ref{sec:internals-lowering}. A \py{CompiledLagrangian} is simply a tuple of such terms. An \py{InteractionTerm} is a purely static, index-labelled description of one monomial of the Lagrangian --- the direct code counterpart of the right-hand side
+The \py{coupling} is a Symbolica expression holding the numerical and tensor prefactor (couplings, generators, structure constants, metrics); \py{fields} is an ordered tuple of \py{FieldOccurrence} objects, each a field with its slot-resolved index labels and conjugation flag; \py{derivatives} records, as a \py{DerivativeAction}, which field each derivative hits and along which Lorentz index; and \py{closed_dirac_bilinears} carries the fermion-pairing provenance of Section~\ref{sec:internals-lowering}. A \py{CompiledLagrangian} is simply a tuple of such terms. An \py{InteractionTerm} is a purely static, index-labelled description of one monomial of the Lagrangian. This is the direct code counterpart of the right-hand side
 \[
     g_{\alpha_1\cdots\alpha_n}\,
     \partial\cdots\partial\,
     \phi^{\alpha_1}\cdots\phi^{\alpha_n}
-\]
-of Eq.~\eqref{eq:general-term}.
+\]..
 
 As we know the ordering of \py{fields} is relevant and since Symbolica multiplication is commutative, we use the ordered tuple which keeps record of fermion order.
-The method \py{to_vertex_kwargs(external_legs)} performs the last model-aware step: it strips away all model-layer vocabulary and reduces one term plus a chosen set of external legs to flat, parallel lists --- species keys, momenta, field and leg roles, index labels and types, derivative indices and targets, and the bilinear metadata --- after which only Symbolica and Spenso objects remain.
+The method \py{to_vertex_kwargs(external_legs)} performs the last model-aware step: it strips away all model-layer vocabulary and reduces one term plus a chosen set of external legs to flat, parallel lists. After which only Symbolica and Spenso objects remain.
 
 \subsection*{Flavour expansion}
 
@@ -514,30 +513,11 @@ When the field carries a flavour index (Section~\ref{sec:feynpy-flavor}) by defa
 \subsection*{Field transformations}
 \label{sec:internals-transformations}
 
-There is a second rewriting that lives at this layer, and it is the one that
-produces the physical basis of the Standard Model. A
-\py{FieldTransformation} (Section~\ref{sec:feynpy-transformations}) is applied
-not to the declared source terms but to the compiled ones: each
-\py{InteractionTerm} is visited, every \py{FieldOccurrence} matching a rule is
-replaced by the corresponding expression, and the term is rebuilt.
+There is a second rewriting that lives at this layer. A \py{FieldTransformation} (Section~\ref{sec:feynpy-transformations}) is applied not to the declared source terms but to the compiled ones: each \py{InteractionTerm} is visited, every \py{FieldOccurrence} matching a rule is replaced by the corresponding expression, and the term is rebuilt.
 
-Placing the stage here, rather than earlier, is a deliberate choice with two
-consequences. First, \py{DC} and \py{FS} have already been expanded using the
-gauge-group metadata of the original basis, which is the only basis in which
-that metadata is meaningful --- $B_\mu$ has a hypercharge, the photon does
-not. Second, because the transformation operates on an \py{InteractionTerm},
-it inherits the structure that the term carries: derivatives recorded in
-\py{derivatives} are distributed over a replacement product by the Leibniz
-rule automatically, conjugated occurrences receive the conjugated
-replacement, and the ordering that fixes fermion signs is preserved. A rule
-that maps one field to a sum simply multiplies the number of terms, and
-canonicalisation collects them again afterwards.
+Placing the stage here, rather than earlier, is a deliberate choice with two consequences. First, \py{DC} and \py{FS} have already been expanded using the gauge-group metadata of the original basis, which is the only basis in which that metadata is meaningful, in fact $B_\mu$ has a hypercharge, the photon does not. Second, because the transformation operates on an \py{InteractionTerm}, it inherits the structure that the term carries: derivatives recorded in \py{derivatives} are distributed over a replacement product by the Leibniz rule automatically, conjugated occurrences receive the conjugated replacement, and the ordering that fixes fermion signs is preserved. A rule that maps one field to a sum simply multiplies the number of terms, and canonicalisation collects them again afterwards.
 
-In the Standard Model build, the transformation stage is run once with
-\py{repeat=False}, with all rules acting simultaneously, so that a field
-introduced by one rule is not consumed by another in the same pass. The result
-is an ordinary \py{CompiledLagrangian}, indistinguishable in type from the one
-that entered, and vertex extraction proceeds from it unchanged.
+In the Standard Model build, the transformation stage is run with all rules acting simultaneously, so that a field introduced by one rule is not consumed by another in the same pass. The result is an ordinary \py{CompiledLagrangian}, indistinguishable in type from the one that entered, and vertex extraction proceeds from it unchanged.
 
 % -----------------------------------------------------
 \section{The inner core: Wick contraction in the vertex engine}
@@ -612,13 +592,13 @@ Together these passes turn the over-expanded compiler output into a compact, com
 
 Building the pipeline was less about one clever algorithm than about a few recurring hard problems. These are the places where most of the design effort went, and they shaped the architecture.
 
-\paragraph{Index bookkeeping.} The hardest bugs came from indices, not from algebra. Early code keyed labels only by index kind, which fails as soon as a field carries two slots of the same kind --- two Lorentz indices, or two colour indices. The fix is now layered: labels are packed by slot, each label name is bound to one index type across the whole monomial, ambiguous assignments are rejected rather than guessed, and gauge representations expose an explicit \py{slot_policy}. The guiding rule is to fail early: an ambiguous index assignment is an error at declaration time, never a silent wrong contraction.
+\paragraph{Index bookkeeping.} The hardest bugs came from indices, not from algebra. Early code keyed labels only by index kind, which fails as soon as a field carries two slots of the same kind, For example two Lorentz indices, or two colour indices. The fix is now layered: labels are packed by slot, each label name is bound to one index type across the whole monomial, ambiguous assignments are rejected rather than guessed, and gauge representations expose an explicit \py{slot_policy}. The guiding rule is to fail early: an ambiguous index assignment is an error at declaration time, never a silent wrong contraction.
 
-\paragraph{Fermion signs.} Matching the FeynRules convention for products of closed Dirac bilinears, without breaking generic multi-fermion terms, required carrying the bilinear pairing from lowering all the way into the contraction engine (Section~\ref{sec:internals-contraction-fermions}). Getting that boundary right --- all pluses only when every fermion sits in a closed pair --- took careful checks on benchmark operators and is now a fixed convention.
+\paragraph{Fermion signs.} Matching the FeynRules convention for products of closed Dirac bilinears, without breaking generic multi-fermion terms, required carrying the bilinear pairing from lowering all the way into the contraction engine (Section~\ref{sec:internals-contraction-fermions}). Getting that boundary right took careful checks on benchmark operators and is now a fixed convention.
 
 
 
-\paragraph{Making expansion generic.} Replacing a special-case $F^2$ handler with a generic \py{FS} expansion --- and likewise for covariant derivatives --- unlocked $F^3$, $F^4$ and mixed-group operators for free. The cost was many more raw local monomials, and a performance problem in the contraction engine: the old compatibility check compared only broad field roles and therefore tried many impossible pairings. The species-aware pruning of Section~\ref{sec:internals-contraction} fixed that without changing any resulting formula.
+\paragraph{Making expansion generic.} Replacing a special-case $F^2$ handler with a generic \py{FS} expansion, and likewise for covariant derivatives, unlocked $F^3$, $F^4$ and mixed-group operators. The cost was many more raw local monomials, and a performance problem in the contraction engine: the old compatibility check compared only broad field roles and therefore tried many impossible pairings. The species-aware pruning of Section~\ref{sec:internals-contraction} fixed that without changing any resulting formula.
 
 \paragraph{Keeping the layers honest.} Finally, much of the work went into not letting the layers leak into each other: declarative syntax must never reach the contraction engine, the engine must never know what a covariant derivative is, and comparison against external references must live outside the engine. One job per layer, and one intermediate representation at the waist, is what made it possible to validate the packaged Standard Model against the reference export vertex by vertex.
 
@@ -627,4 +607,4 @@ Building the pipeline was less about one clever algorithm than about a few recur
 \label{sec:internals-summary}
 % --------------------------------------------------------------
 
-The pipeline is a chain of small, inspectable rewrites. A \py{Model} holds the source Lagrangian and the inert data of the theory. Lowering classifies each term, checks its indices, and turns local terms into \py{InteractionTerm}s. The compiler expands gauge structure --- covariant derivatives, field strengths, gauge fixing and ghosts --- into ordinary local monomials and lowers them through the same path. Every branch therefore meets at the same intermediate representation. The symbolic engine then contracts it by a pruned permutation sum, applies momenta, external factors, fermion signs and the overall $+i$, and canonicalisation makes the answer unique. The hard parts --- indices, fermion signs, conventions, generic expansion and layer boundaries --- are exactly where the design had to be most careful, and they are what the validation in the next chapter rests on.
+The pipeline is a chain of small, inspectable rewrites. A \py{Model} holds the source Lagrangian and the inert data of the theory. Lowering classifies each term, checks its indices, and turns local terms into \py{InteractionTerm}s. The compiler expands gauge structure, covariant derivatives, field strengths, gauge fixing and ghosts, into ordinary local monomials and lowers them through the same path. Every branch therefore meets at the same intermediate representation. The symbolic engine then contracts it by a pruned permutation sum, applies momenta, external factors, fermion signs and the overall $+i$, and canonicalisation makes the answer unique. The hard parts, like indices, fermion signs, conventions, generic expansion and layer boundaries, are exactly where the design had to be most careful, and they are what the validation in the next chapter rests on.

@@ -6,118 +6,37 @@
 \label{sec:conclusion-achievements}
 % --------------------------------------------------------------
 
-This thesis set out to build the layers needed to run a \textsc{FeynRules}-class
-derivation of Feynman rules inside the Python ecosystem, and to validate the
-tensor expressions it produces reliably. Both aims have been achieved.
+This thesis aimed to implement a toolkit within the Python ecosystem that could manipulate Lagrangians and compute their Feynman rules. The toolkit was intended as an alternative to \textsc{FeynRules}, allowing one to move away from Mathematica while taking advantage of new symbolic-computation capabilities. Within the scope of tree-level vertex derivation and validation, these goals were achieved.
 
-\textsc{FeynPy} allows a model to be defined from Python objects describing
-indices, fields, gauge groups and parameters, together with a Lagrangian
-written in a notation close to the one used on paper. From this information it
-derives tree-level Feynman rules as \textsc{Symbolica} tensor expressions. The
-implementation is generic rather than tied to a particular model: covariant
-derivatives, field strengths, gauge fixing and ghost sectors are constructed
-from the model declarations themselves. In the QCD example, four written
-Lagrangian terms generate the expected two-point terms together with the
-quark--gluon, ghost--gluon, three-gluon and four-gluon interactions.
+\textsc{FeynPy} allows a model to be defined using Python objects that describe all the necessary physical quantities, such as indices, fields, gauge groups, and parameters, along with a Lagrangian written in a notation similar to that used by \textsc{FeynRules}. From this information, it derives tree-level Feynman rules as \textsc{Symbolica} tensor expressions. The implementation is generic, not constrained to a specific model: covariant derivatives, field strengths, gauge fixing, and ghost sectors are constructed from the model declarations themselves.
 
-A compiled Lagrangian can also be manipulated after construction. Field
-transformations are used, for example, to move from gauge to physical bases,
-while gauge and BRST variations can be evaluated directly. These operations
-use the same underlying representation rather than separate model-specific
-implementations.
+A compiled Lagrangian can also be manipulated after its construction. Field transformations are used, for example, to move from gauge to physical bases, while gauge variations and BRST transformations can be evaluated directly.
 
-The main result of the thesis is the validation of the generated vertices.
-Comparing two independently derived tensor expressions requires more than
-comparing their literal form: dummy indices may be renamed, factors reordered,
-and equivalent tensor structures written differently. The canonicalisation
-procedure of \Cref{sec:validation-canonical} provides a common representation
-in which these expressions can be compared, so equality is tested as a tensor
-identity rather than as a string match.
+The main result of the thesis is the implementation of three existing models and the validation of their generated vertices against \textsc{FeynRules}. Comparing two independently derived tensor expressions requires more than simply comparing their literal form. The canonicalisation procedure of \Cref{sec:validation-canonical} provides a common representation in which these expressions can be compared, so that equality is tested as a tensor identity.
 
-With this procedure, the packaged Standard Model agrees with its
-\textsc{FeynRules} reference at $163/163$ vertices, the unbroken
-background-field Standard Model at $67/67$, and the Green-basis SMEFT at
-$184/184$ reference lines. Of the latter, $161$ agree directly, $15$ require
-the global \texttt{Ec} charge-conjugation convention, and $8$ require
-documented row-specific packaging translations. Mutation tests further show
-that the comparison detects deliberate changes in signs, coefficients and
-index structures (\Cref{sec:validation-sensitivity}).
+With this procedure, the packaged Standard Model agrees with its \textsc{FeynRules} reference at $163/163$ vertices, the unbroken background-field Standard Model at $67/67$, and the Green-basis SMEFT at $184/184$ reference lines. Of the latter, $161$ agree directly, $15$ require the global \texttt{Ec} charge-conjugation convention, and $8$ require documented row-specific packaging translations. Mutation tests also show that the comparison detects deliberate changes in signs, coefficients, and index structures (\Cref{sec:validation-sensitivity}).
 
-In this sense, the validation framework is itself part of the result. It gives
-a reproducible way to decide whether independently generated tensor-valued
-Feynman rules represent the same interaction.
+In this sense, the validation framework is itself part of the result. It gives a reproducible way to decide whether independently generated tensor-valued Feynman rules represent the same interaction.
 
 % --------------------------------------------------------------
-\section{Lessons from the implementation}
-\label{sec:conclusion-hard}
-% --------------------------------------------------------------
-
-The main difficulty was not the algebra itself, but the handling of indices.
-When a field carries several indices of the same type, an incorrect assignment
-can still produce a well-formed expression while contracting the wrong
-objects. For this reason, \textsc{FeynPy} avoids guessing ambiguous
-assignments and requires them to be resolved explicitly.
-
-Fermionic expressions introduced a second difficulty. Since the underlying
-symbolic multiplication is commutative, the information needed to recover
-fermion signs must be preserved explicitly throughout the derivation.
-Charge-conjugated structures add another layer: two tools can represent the
-same physical interaction in different ways even when both are correct. The
-validation therefore separates genuine disagreements from differences in
-representation rather than forcing every expression into agreement through
-ad hoc transformations.
-
-% --------------------------------------------------------------
-\section{Limitations and future work}
+\section{Limitations and outlook}
 \label{sec:conclusion-limitations}
 \label{sec:conclusion-future}
-% --------------------------------------------------------------
 
-The present implementation is limited to tree-level Feynman rules. It does
-not include loop calculations, counterterms or renormalisation.
+The current implementation is limited to tree-level Feynman rules. It does not include loop calculations, counterterms, or renormalization. Furthermore, it produces symbolic vertices rather than external model files, so \textsc{FeynPy} is not yet a direct replacement for \textsc{FeynRules} in a complete phenomenological workflow.
 
-It also produces symbolic vertices rather than external model files. A UFO
-interface is therefore the most direct practical extension. Much of the
-necessary information is already available in structured form; the remaining
-step is to translate particles, parameters and tensor structures into the UFO
-representation. This would allow \textsc{FeynPy} models to be used directly
-with tools such as \textsc{MadGraph5\_aMC@NLO}~\cite{Alwall:2014hca}.
 
-A second important extension concerns effective field theory. The current
-integration-by-parts implementation is restricted to unlabelled scalar
-species. Extending it to general fields and adding equation-of-motion
-relations would make it possible to reduce redundant operator sets, for
-example from a Green basis to the Warsaw basis.
+The most immediate practical extension would therefore be a UFO interface. Much of the required information is already available in structured form, and the next step is to translate particles, parameters, and tensor structures into the UFO representation. This would allow \textsc{FeynPy} models to be used directly with tools such as \textsc{MadGraph5\_aMC@NLO} and the wider UFO ecosystem.
 
-Other limitations are more practical: restriction files are not yet supported,
-general open multi-fermion tensor structures are less complete than closed
-Dirac bilinears, and the validation compares interaction vertices rather than
-parameter-card semantics or numerical metadata.
-
-Gauge fixing could also be extended to the full broken $R_\xi$ gauge, where
-gauge bosons and Goldstone fields mix in the gauge-fixing functions.
-
-Finally, the validation can be expanded beyond the three models considered
-here. Models with extended gauge sectors, supersymmetry or higher-dimensional
-SMEFT operators would provide useful tests of different parts of the
-implementation.
+Finally, more models could be implemented and validated. Models with extended gauge sectors, supersymmetry, or higher-dimensional SMEFT operators would test different parts of the implementation and provide a broader assessment of its generality.
 
 % --------------------------------------------------------------
 \section{Closing remark}
 \label{sec:conclusion-closing}
 % --------------------------------------------------------------
 
-Deriving Feynman rules is, in principle, a mechanical procedure. For a theory
-as large as SMEFT, however, performing and checking that procedure by hand is
-no longer realistic. The goal of this work was therefore not to invent a new
-derivation algorithm, but to build the structure around the standard one
-carefully enough that it can be applied to realistic theories and its output
-can be trusted.
+Deriving the Feynman rules of a Lagrangian is an important step in testing a new theory and studying its implications and limits. We were particularly interested in SMEFT, where the number and variety of possible interactions is much larger than in the Standard Model. Performing and checking this procedure by hand is therefore no longer realistic. The goal of this work was to achieve a simpler and faster workflow for calculating these fundamental rules.
 
-\textsc{FeynPy} combines a compact Python model description, generic gauge
-and tensor manipulation, and a canonical validation procedure in a single
-framework. Its agreement with the \textsc{FeynRules} reference vertices
-across three complete models provides evidence that this approach works. The
-result is not yet a replacement for the full \textsc{FeynRules} ecosystem,
-but it shows that reliable Feynman-rule derivation and validation can be
-carried out natively within Python.
+A large part of the work was in finding a good way to exploit the capabilities of \textsc{Symbolica} while keeping a DSL that is intuitive and sufficiently close to \textsc{FeynRules}. The main challenge was to make the transition from declared Python objects to \textsc{Symbolica} tensor expressions as safe and transparent as possible, while keeping the DSL general and flexible rather than model-specific.
+
+\textsc{FeynPy} combines a Python model description, generic gauge and tensor manipulation, and a canonical validation procedure in a single framework. Its agreement with the \textsc{FeynRules} reference vertices across three complete models provides evidence that this approach works. The result is not yet a replacement for the full \textsc{FeynRules} ecosystem, but it shows that reliable Feynman-rule derivation and validation can be carried out natively within Python.
