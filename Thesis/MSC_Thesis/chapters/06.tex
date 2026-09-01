@@ -35,7 +35,7 @@ is a good stress test because it exercises every branch of the compiler at once:
 % --------------------------------------------------------------
 
 Let's start to look at the internals with a general overview, which is illustrated in
-Figure~\ref{fig:pipeline-overview}. This shows the stages that lead from a declared \py{Model} to a Feynman-rule \py{Expression}. We can summarise it in four layers, see (Table~\ref{tab:internals-layers}).
+Figure~\ref{fig:pipeline-overview}.\footnote{Each TikZ figure in this chapter has a plain-text counterpart kept as a Mermaid source diagram under \texttt{viz/mermaid/}.} This shows the stages that lead from a declared \py{Model} to a Feynman-rule \py{Expression}. We can summarise it in four layers, see (Table~\ref{tab:internals-layers}).
 
 \begin{figure}[htbp]
 \centering
@@ -95,8 +95,6 @@ Applies the overall factor of $i$, optionally extracts the momentum-conserving $
 \end{table}
 
 The remaining sections walk the layers from the outside in: declaration (Section~\ref{sec:internals-declaration}), analysis and index resolution (Section~\ref{sec:internals-lowering}), gauge compilation (Section~\ref{sec:internals-compiler}), the \py{InteractionTerm} intermediate representation that ties everything together (Section~\ref{sec:internals-ir}), the Wick-contraction engine (Section~\ref{sec:internals-contraction}), and canonicalisation (Section~\ref{sec:internals-postprocessing}). Section~\ref{sec:internals-difficulty} then collects the hardest problems encountered while building the pipeline, the places where the design had to be most deliberate.
-
-\footnote{Each TikZ figure in this chapter has a plain-text counterpart kept as a Mermaid source diagram under \texttt{viz/mermaid/}}
 
 % --------------------------------------------------------------
 \section{The outer layer: declaring a model}

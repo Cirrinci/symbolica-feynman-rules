@@ -313,7 +313,7 @@ This completeness is expressed by the relation
 \end{equation}
 and it is this identity that allows a sum over the adjoint index $a$
 to be traded for an expression written purely in terms of Kronecker
-deltas on the colour indices $i,j,k,l$. Thius is a manipulation used
+deltas on the colour indices $i,j,k,l$. This is a manipulation used
 throughout when working with $SU(N)$ gauge theories.
 
 
@@ -397,10 +397,12 @@ the global symmetry.
 The situation changes when the transformation is made \emph{local}, so that
 $\alpha^a\to\alpha^a(x)$. The derivative now also acts on the transformation
 itself, and therefore $\partial_\mu\phi$ no longer transforms like $\phi$.
-In ordere to have the lagrangian gauge invariant we need to restore the symmetry, and this can be done by acting with a covariant derivative. To restore the symmetry, we introduce a gauge field $A_\mu^a$ and so that we can replace the ordinary derivative with
+To restore the symmetry, we introduce a gauge field $A_\mu^a$, one component
+per generator, and replace the ordinary derivative by the covariant
+derivative
 \begin{equation}
 D_\mu\phi = \partial_\mu\phi -igA_\mu^aT_a^R\phi ,
-\label{eq}
+\label{eq:theory-covd}
 \end{equation}
 
 where $g$ is the gauge coupling. The gauge field transforms in such a way
@@ -430,16 +432,16 @@ with its own coupling, gauge field and generator. For example, the
 left-handed quark doublet transforms under
 $\mathrm{SU}(3)_C\times\mathrm{SU}(2)_L\times\mathrm{U}(1)_Y$, and therefore
 \begin{equation}
-    D\mu Q_L = \partial\mu Q_L
+    D_\mu Q_L = \partial_\mu Q_L
     -ig_sG_\mu^a t^a_{(3)}Q_L
     -igW_\mu^I t^I_{(2)}Q_L
     -ig'Y_QB_\mu Q_L .
-\label{eq_cov}
+\label{eq:theory-covd-sm}
 \end{equation}
 
 The sign in the definition of $D_\mu$ is a convention and must be used
 consistently throughout the theory. The convention adopted in this thesis is
-the one in \Cref{eq_cov}. In the implementation, expanding the
+the one in \Cref{eq:theory-covd}. In the implementation, expanding the
 covariant derivative into the appropriate contribution from each gauge group
 is handled automatically, as described in
 \Cref{sec:internals-covd}.

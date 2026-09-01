@@ -28,6 +28,8 @@ The current implementation is limited to tree-level Feynman rules. It does not i
 
 The most immediate practical extension would therefore be a UFO interface. Much of the required information is already available in structured form, and the next step is to translate particles, parameters, and tensor structures into the UFO representation. This would allow \textsc{FeynPy} models to be used directly with tools such as \textsc{MadGraph5\_aMC@NLO} and the wider UFO ecosystem.
 
+A second extension concerns the integration-by-parts layer. In its present form it handles unlabelled scalar species only (\Cref{sec:feynpy-ibp}): it symmetrises identical scalar slots and moves derivatives into a left-normal form. This is enough to decide equivalence modulo total derivatives for scalar operators, but not for terms carrying Dirac bilinears or gauge indices. Extending it to those structures would make a qualitatively new operation available, namely the reduction of a redundant operator basis to a minimal one. The SMEFT model validated here is written in the Green basis precisely because it retains the operators that the equations of motion would remove (\Cref{sec:theory-green-basis}). An integration-by-parts layer covering fermions and gauge indices, used together with the equations of motion, would allow the same toolkit to carry that model to the Warsaw basis, rather than only deriving vertices in whichever basis it was given.
+
 Finally, more models could be implemented and validated. Models with extended gauge sectors, supersymmetry, or higher-dimensional SMEFT operators would test different parts of the implementation and provide a broader assessment of its generality.
 
 % --------------------------------------------------------------
