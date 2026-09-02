@@ -22,14 +22,14 @@ bash setup_env.sh
 source .venv/bin/activate
 ```
 
-This creates `.venv` and installs the engine, model packages and test
-dependencies in editable mode. No manual `PYTHONPATH` configuration is
+This creates `.venv` and installs the engine, model packages, test dependencies
+and notebook execution dependencies in editable mode. No manual `PYTHONPATH` configuration is
 required. The equivalent manual installation is:
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[test]"
+python -m pip install -e ".[test,notebook]"
 ```
 
 ## Minimal example
@@ -148,7 +148,7 @@ tests/            generic regression suite
 
 The generic notebooks are:
 
-- [`notebooks/getting_started.ipynb`](notebooks/getting_started.ipynb) — declare a model and extract vertices
+- [`notebooks/getting_started.ipynb`](notebooks/getting_started.ipynb) — declare, validate, report and extract vertices
 - [`notebooks/indices.ipynb`](notebooks/indices.ipynb) — `IndexType`, labels, custom index families
 - [`notebooks/flavor.ipynb`](notebooks/flavor.ipynb) — flavor classes and `flavor_expand`
 - [`notebooks/field_strengths.ipynb`](notebooks/field_strengths.ipynb) — `FS`, $F^3$, $F^4$
@@ -180,6 +180,13 @@ Run the complete suite with:
 
 ```bash
 .venv/bin/python -m pytest -q
+```
+
+Run the generic notebook smoke check with:
+
+```bash
+mkdir -p /tmp/feynpy-notebooks
+.venv/bin/python -m jupyter nbconvert --to notebook --execute --output-dir /tmp/feynpy-notebooks --ExecutePreprocessor.timeout=600 notebooks/*.ipynb
 ```
 
 Run the final SMEFT acceptance gate with:
