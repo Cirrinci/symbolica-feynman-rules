@@ -92,10 +92,10 @@ Its default `Ltot` matches the FeynRules convention: EFT-only, with the local
 SM-plus-EFT combination available separately as `Lfull`.
 
 The accepted comparison against the bundled FeynRules EFT-only `Ltot` export is
-**184/184 operator-content matches**, split into **176/184 direct exact
-symbolic matches** plus **8/184 pinned charge-conjugation packaging matches**.
-There are **0 unresolved** packaging rows and **0 exact symbolic unequal/error**
-rows.
+**184/184 operator-content matches**. The exact-symbolic split is **161/184
+direct matches**, **15/184 matches modulo the global `Ec` charge-conjugation
+convention**, and **8/184 pinned charge-conjugation packaging matches**. There
+are **0 unresolved** packaging rows and **0 exact symbolic unequal/error** rows.
 
 Run the final SMEFT acceptance gate with:
 
@@ -180,7 +180,7 @@ Run the final SMEFT acceptance gate with:
 The expected terminal summary starts with:
 
 ```text
-SMEFT comparison: 184/184 reference vertices match at operator-content level (176 direct + 8 via charge-conjugation packaging)
+SMEFT comparison: 184/184 reference vertices match at operator-content level (176 literal-signature head matches + 8 CC-packaging head matches); exact symbolic split=direct 161/184, modulo global Ec CC convention 15/184, modulo pinned CC 8/184, unresolved CC 0/184
 ```
 
 Run the Standard Model playground with:

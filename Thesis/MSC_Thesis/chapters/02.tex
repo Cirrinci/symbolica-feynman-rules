@@ -646,6 +646,36 @@ is the design adopted in \Cref{sec:feynpy-transformations}.
 \subsection{The background field method}
 \label{sec:theory-bfm}
 
+The background field method quantises a gauge theory while preserving a
+manifest gauge symmetry for the background fields. Each gauge field is split
+into a background part and a quantum fluctuation,
+\begin{equation}
+A_\mu^a \longrightarrow \widehat A_\mu^a + Q_\mu^a ,
+\label{eq:theory-bfm-split}
+\end{equation}
+where only \(Q_\mu^a\) is integrated over, while \(\widehat A_\mu^a\) is kept
+as an external field. The resulting effective action therefore retains a
+background gauge invariance and the corresponding Ward identities.
+
+The main difference from ordinary gauge fixing is that the gauge condition is
+chosen to be covariant with respect to the background field. For a
+non-Abelian theory,
+\begin{equation}
+\mathcal F^a = \widehat D^\mu Q_\mu^a,
+\qquad
+\mathcal L_{\mathrm{gf}}
+= - \frac{1}{2\xi}, \mathcal F^a \mathcal F^a ,
+\label{eq:theory-bfm-gf}
+\end{equation}
+where \(\widehat D_\mu\) contains the background gauge field. Consequently,
+both the gauge-fixing and ghost sectors generate interactions involving
+background and quantum fields.
+
+This makes the method a useful benchmark for \textsc{FeynPy}. The unbroken
+background-field Standard Model used in \Cref{ch:validation} tests whether the
+framework can keep background and quantum fields distinct and reproduce the
+corresponding \textsc{FeynRules} vertices.
+
 
 
 % ==============================================================
