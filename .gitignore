@@ -28,7 +28,8 @@ docs/notes/*
 .tools/
 
 # LaTeX build artifacts
-Thesis/MSC_Thesis/main.pdf
+Thesis/MSC_Thesis.zip
+Thesis/MSC_Thesis/*.pdf
 Thesis/MSC_Thesis/_minted-main/
 Thesis/MSC_Thesis/*.aux
 Thesis/MSC_Thesis/*.bbl

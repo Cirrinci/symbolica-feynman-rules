@@ -49,11 +49,8 @@ As of 2026-06-30:
   - `src/lagrangian/operators.py`
   - `src/lagrangian/lowering.py`
 - gauge/covariant compiler logic now lives in `src/compiler/gauge.py`
-- runnable validation/examples now live in:
-  - `examples/examples_flavor_expansion.py`
-  - `examples/examples_su2.py`
-  - `examples/examples_electroweak_unbroken.py`
-  - `models/SM/examples/example_standard_model.py`
+- runnable validation coverage now lives in the pytest suites, while
+  user-facing examples are kept in the notebooks
 - generic regression coverage lives in `tests/`; Standard Model coverage lives
   beside the model in `models/SM/tests/`
 - the Standard Model notebooks are:
@@ -108,12 +105,13 @@ As of 2026-06-30:
   local multi-fermion support, broader model validation, package/API hardening,
   loop functionality, restrictions, and downstream exports still need work
 - current test status from the latest review:
-  - the complete suite passes with 430 tests
+  - the complete suite passes with 503 tests
   - the former order-dependent `weak_eps2` canonicalization failure is resolved
 - the long-term goal remains a Python analogue of FeynRules using Symbolica for
   symbolic rewriting and Spenso for tensor/index structures
 - historical entries below use the source-tree names that were live at the
-  time they were written
+  time they were written; some historical paths were later archived or removed
+  from the public tree
 
 ### 2026-03-11: repository setup
 

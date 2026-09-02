@@ -38,7 +38,8 @@ gate:
 Latest checked result:
 
 - `184/184` operator-content matches
-- `176/184` direct exact symbolic matches
+- `161/184` direct exact symbolic matches
+- `15/184` exact matches modulo the global `Ec` charge-conjugation convention
 - `8/184` exact matches modulo pinned charge-conjugation packaging
 - `0/184` unresolved charge-conjugation packaging rows
 - `0` exact symbolic unequal rows
@@ -47,7 +48,7 @@ Latest checked result:
 Expected terminal summary:
 
 ```text
-SMEFT comparison: 184/184 reference vertices match at operator-content level (176 direct + 8 via charge-conjugation packaging); exact symbolic split=direct 176/184, modulo pinned CC 8/184, unresolved CC 0/184; raw-head-count matches=100/182; canonical tensor-map matches=32/32 supported vertices (93/93 sectors); Weinberg reconstructed sidecar=2/2 direct, 4/4 coefficient checks, wrong-sign matches=0; EC CC sidecar=12/12 coefficient sectors, wrong-combination matches=0; reference-only=2; feynpy-only=8.
+SMEFT comparison: 184/184 reference vertices match at operator-content level (176 literal-signature head matches + 8 CC-packaging head matches); exact symbolic split=direct 161/184, modulo global Ec CC convention 15/184, modulo pinned CC 8/184, unresolved CC 0/184; raw-head-count matches=100/182; bosonic canonical tensor-map matches=32/32 supported bosonic vertices (93/93 sectors); Weinberg reconstructed sidecar=2/2 direct, 4/4 coefficient checks, wrong-sign matches=0; EC CC sidecar=12/12 coefficient sectors, wrong-combination matches=0; reference-only=2; feynpy-only=8.
 ```
 
 The direct-only audit command is:
@@ -57,8 +58,8 @@ The direct-only audit command is:
 ```
 
 It is intentionally stricter than the thesis acceptance gate and currently
-fails because the eight documented charge-conjugation rows are not direct
-same-signature matches.
+fails because the documented global `Ec` convention rows and pinned
+charge-conjugation packaging rows are not direct exact matches.
 
 ## Regenerating SMEFT Artifacts
 

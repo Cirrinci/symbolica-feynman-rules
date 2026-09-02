@@ -60,7 +60,7 @@ remain available as compatibility aliases. FeynRules' `del` is spelled
 
 The complete Standard Model application lives in [`models/SM`](models/SM/).
 It contains the implementation, notebooks, tracked FeynRules reference data,
-comparison adapter, tests, documentation and example.
+comparison adapter, tests, documentation and playground.
 
 ```python
 from models.SM import build_standard_model
@@ -141,10 +141,21 @@ src/symbolic/     contraction, tensor and canonicalization machinery
 src/lagrangian/   operator lowering and Symbolica export
 src/feynrules/    generic FeynRules JSON parser and symbolic comparator
 models/SM/        complete Standard Model vertical slice
-notebooks/        generic API walkthroughs
-examples/         generic runnable examples
+notebooks/        focused API walkthroughs
+docs/             maintained notes and reproducibility checklist
 tests/            generic regression suite
 ```
+
+The generic notebooks are:
+
+- [`notebooks/getting_started.ipynb`](notebooks/getting_started.ipynb) — declare a model and extract vertices
+- [`notebooks/indices.ipynb`](notebooks/indices.ipynb) — `IndexType`, labels, custom index families
+- [`notebooks/flavor.ipynb`](notebooks/flavor.ipynb) — flavor classes and `flavor_expand`
+- [`notebooks/field_strengths.ipynb`](notebooks/field_strengths.ipynb) — `FS`, $F^3$, $F^4$
+- [`notebooks/nested_derivatives.ipynb`](notebooks/nested_derivatives.ipynb) — nested `DC`, `PartialD`, `FS`
+- [`notebooks/field_transformations.ipynb`](notebooks/field_transformations.ipynb) — EWSB, mixing, projectors
+- [`notebooks/compiled_operators.ipynb`](notebooks/compiled_operators.ipynb) — operators, IBP, Symbolica export
+- [`notebooks/gauge_and_brst.ipynb`](notebooks/gauge_and_brst.ipynb) — gauge variation and BRST
 
 Model-specific code and evidence stay together under `models/<model>/`; generic
 engine functionality stays under `src/`.
