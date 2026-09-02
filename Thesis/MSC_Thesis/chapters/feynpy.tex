@@ -1469,3 +1469,27 @@ Here \texttt{L} denotes a compiled \py{CompiledLagrangian}, typically from
 \bottomrule
 \end{tabular}
 \end{center}
+
+\subsection*{Companion notebooks}
+
+For readers who want to inspect the toolkit interactively, the repository also
+contains a set of executable notebooks under \path{notebooks/}. These notebooks
+serve as a companion to this chapter and expose the main capabilities of
+\textsc{FeynPy} in a form that can be run, modified, and extended.
+
+The recommended starting point is \path{notebooks/getting_started.ipynb}, which
+walks through model declaration, validation, vertex reports, output controls and
+basic Feynman-rule extraction. The remaining notebooks each focus on one part
+of the interface: \path{notebooks/indices.ipynb} covers index types and custom
+index families; \path{notebooks/flavor.ipynb} covers flavour classes and
+flavour-expanded rules; \path{notebooks/field_strengths.ipynb} covers abelian
+and non-Abelian field strengths; \path{notebooks/nested_derivatives.ipynb}
+covers nested partial and covariant derivatives;
+\path{notebooks/field_transformations.ipynb} covers basis changes, component
+rules and rotations; \path{notebooks/compiled_operators.ipynb} covers
+Symbolica export, operator actions and integration by parts; and
+\path{notebooks/gauge_and_brst.ipynb} covers infinitesimal gauge variation and
+BRST transformations.
+
+Together these notebooks are the practical entry point for exploring the
+capabilities discussed in this chapter beyond the printed examples.
