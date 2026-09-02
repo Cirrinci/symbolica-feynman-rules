@@ -17,7 +17,7 @@
 \usepackage{stmaryrd}
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
-
+\usepackage{makecell}
 
 %TO DO
 \usepackage[colorinlistoftodos]{todonotes}
@@ -141,34 +141,15 @@
 
 \begin{abstract}
 \noindent
-Extracting Feynman rules from a Lagrangian is a mechanical but unforgiving
-task, and for a theory such as the Standard Model Effective Field Theory,
-with several hundred independent Wilson coefficients, it can no longer be
-carried out by hand. The established solution is \textsc{FeynRules}, a
-\textsc{Mathematica} package that derives vertices from a declarative model
-file. This thesis asks whether the same service can be provided inside the
-Python ecosystem, and answers it by building \textsc{FeynPy}: a toolkit in
-which a user declares indices, fields, gauge groups and parameters as
-ordinary Python objects, writes a Lagrangian in a notation close to the one
-used on paper, and obtains tree-level Feynman rules as symbolic expressions.
+Extracting Feynman rules from a Lagrangian is a mechanical but unforgiving task, and for a theory such as the Standard Model Effective Field Theory, with several hundred independent Wilson coefficients, it can no longer be realistically carried out by hand. The established solution is \textsc{FeynRules}, a \textsc{Mathematica} package that derives vertices from a declarative model file. This thesis asks whether the same functionality can be provided inside the Python ecosystem, and answers this by developing \textsc{FeynPy}: a toolkit in which indices, fields, gauge groups and parameters are declared as ordinary Python objects, the Lagrangian is written in a notation close to the one used on paper, and tree-level Feynman rules are
+returned as symbolic expressions.
 
-The toolkit is built on \textsc{Symbolica} for symbolic algebra and on
-\textsc{Spenso} for typed tensor indices. A declared Lagrangian is validated,
-its implicit indices are resolved, and its gauge structure --- covariant
-derivatives, field strengths, gauge fixing and ghosts --- is expanded into
-local monomials that all meet at a single intermediate representation. A
-contraction engine then realises the canonical-quantisation derivation of a
-vertex as a pruned sum over permutations of the external legs, and a
-canonicalisation layer reduces the result to a comparable normal form.
+\textsc{FeynPy} is built on \textsc{Symbolica} for symbolic algebra and \textsc{Spenso} for typed tensor indices. It resolves implicit indices, expands covariant derivatives and field strengths, handles gauge fixing and ghosts, and derives vertices through a common canonical-quantisation pipeline.
+The resulting expressions are canonicalised into a normal form suitable for comparison. The same representation also keeps the compiled Lagrangian programmable: fields can be transformed between bases and expanded into components while preserving derivatives, conjugation and fermion ordering, and the final vertices remain fully manipulable symbolic expressions.
 
-Correctness is established by direct algebraic comparison against
-\textsc{FeynRules} exports. The packaged Standard Model matches at
-$163/163$ vertices, the unbroken background-field Standard Model at $67/67$,
-and the Green-basis SMEFT at $184/184$ reference lines, of which $161$ match
-directly and the remainder after explicitly documented charge-conjugation
-conventions. Deliberate mutation tests confirm that the comparison stays
-sensitive to genuine changes in physical content.
+The implementation is benchmarked by direct algebraic comparison with \textsc{FeynRules} exports. The packaged Standard Model agrees at $163/163$ vertices, the unbroken background-field Standard Model at $67/67$, and the Green-basis SMEFT at $184/184$ reference lines, with convention differences tracked explicitly. The performance gain is substantial: in the SMEFT benchmark, producing the \textsc{FeynRules} reference takes about half an hour, whereas \textsc{FeynPy} regenerates all $3$--$6$-point SMEFT vertices in $8.20\,\mathrm{s}$ and completes the full algebraic comparison in $56.91\,\mathrm{s}$.
 \end{abstract}
+
 
 \tableofcontents
 

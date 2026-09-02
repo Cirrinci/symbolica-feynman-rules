@@ -574,6 +574,7 @@ all_rules = L.feynman_rule(simplify=False, key_format="fields")
 
 \subsection*{Lightweight inspection with \texttt{vertex\_signatures}}
 \supervisor{What is 'arity'? it appears in the code below.}
+Here the \emph{arity} of a vertex means the number of external fields, or equivalently external legs, attached to it. Thus a two-point term has arity $2$, a three-point interaction has arity $3$ and so on. 
 \begin{minted}{python}
 # All signatures
 for sig in L.vertex_signatures():

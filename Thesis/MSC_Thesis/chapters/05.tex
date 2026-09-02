@@ -171,7 +171,8 @@ One of the most important features of Spenso is \py{TensorNetwork}. A product of
 
 \begin{tcolorbox}[notebox, title={Custom invariants}]
 Spenso provides a built-in HEP tensor library, accessed through
-\py{TensorLibrary.hep_lib()}, which contains the standard tensors such as
+
+\noindent \py{TensorLibrary.hep_lib()}, which contains the standard tensors such as
 \(\gamma\) matrices, \(\sigma\) matrices, group generators, structure constants,
 and metrics. The project adds its own tensor heads for invariants that are not part of this default library, such as the weak doublet \(\varepsilon_{ij}\), the colour Levi-Civita tensor, the symmetric \(d^{abc}\), and the charge-conjugation matrix. Only the invariants that are needed for explicit tensor-network evaluation are given numeric components in the extended library; their symmetry properties are handled separately by the canonicalisation layer.
 \end{tcolorbox}

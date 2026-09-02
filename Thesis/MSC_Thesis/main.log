@@ -777,14 +777,32 @@ Package: array 2021/10/04 v2.5f Tabular extension package (FMi)
 \extratabsurround=\skip62
 \backup@length=\skip63
 \ar@cellbox=\box92
+) (longtable.sty
+Package: longtable 2021-09-01 v4.17 Multi-page Table package (DPC)
+\LTleft=\skip64
+\LTright=\skip65
+\LTpre=\skip66
+\LTpost=\skip67
+\LTchunksize=\count363
+\LTcapwidth=\dimen316
+\LT@head=\box93
+\LT@firsthead=\box94
+\LT@foot=\box95
+\LT@lastfoot=\box96
+\LT@gbox=\box97
+\LT@cols=\count364
+\LT@rows=\count365
+\c@LT@tables=\count366
+\c@LT@chunks=\count367
+\LT@p@ftn=\toks52
 ) (enumitem.sty
 Package: enumitem 2019/06/20 v3.9 Customized lists
-\labelindent=\skip64
-\enit@outerparindent=\dimen316
-\enit@toks=\toks52
-\enit@inbox=\box93
-\enit@count@id=\count363
-\enitdp@description=\count364
+\labelindent=\skip68
+\enit@outerparindent=\dimen317
+\enit@toks=\toks53
+\enit@inbox=\box98
+\enit@count@id=\count368
+\enitdp@description=\count369
 )
 
 ! Package minted Error: You must have `pygmentize' installed to use this packag
@@ -794,6 +812,6 @@ See the minted package documentation for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.94 \begin{document}
-                     
+l.138 \begin{document}
+                      
 No pages of output.

@@ -721,22 +721,27 @@ basis precisely because it is redundant.
 \subsection{Evanescent operators}
 \label{sec:theory-evanescent}
 
-One last complication is specific to the regularisation scheme. Calculations
-are performed in $d = 4 - 2\epsilon$ dimensions, and Dirac algebra identities
-that hold in exactly four dimensions --- such as the relations that allow a
-product of two currents to be Fierz-reordered --- do not hold for general
-$d$. Operator structures whose difference vanishes as $d\to4$, but not
-before, are called \emph{evanescent}
-operators.\supervisor{There are two different definitions of evanescent operators. The commonly used one is that an operator is evanescent if it vanishes as $d\to 4$. The alternative is that evanescent is an operator that can be reduced to one of the physical ones at $d\to 4$. We use the second definition.}
+One last complication comes from dimensional regularisation. Calculations are
+performed in $d = 4 - 2\epsilon$ dimensions, where some identities of the
+four-dimensional Dirac algebra --- for example those used to Fierz-reorder
+products of fermion currents --- no longer hold.
 
-They cannot simply be discarded. Their matrix elements are of order
-$\epsilon$, which combines with the $1/\epsilon$ poles of loop integrals to
-leave a finite contribution, so a consistent scheme must carry them
-explicitly. In the reference model they appear as a family of four-fermion
+There are different conventions for what is called an \emph{evanescent
+operator}. Here we use the convention of the reference model: an operator is
+called evanescent if, although independent for general $d$, it can be reduced
+to one of the physical operators in the limit $d\to4$. The difference between
+the $d$-dimensional structure and its four-dimensional reduction therefore
+vanishes in this limit.\supervisor{[DONE]There are two different definitions of evanescent operators. The commonly used one is that an operator is evanescent if it vanishes as $d\to 4$. The alternative is that evanescent is an operator that can be reduced to one of the physical ones at $d\to 4$. We use the second definition.}
+
+These structures cannot in general be discarded in loop calculations. Their
+$\mathcal{O}(\epsilon)$ difference from the corresponding physical operators
+can combine with the $1/\epsilon$ poles of loop integrals and leave finite
+contributions. In the reference model they appear as a family of four-fermion
 operators whose Wilson coefficients are named with the prefix
-\texttt{alphaEc}, and they turn out to be exactly the operators where the two
-implementations package charge conjugation differently. That is the subject
-of \Cref{sec:validation-ec}.
+\texttt{alphaEc}. These are also exactly the operators for which the two
+implementations package charge conjugation differently, as discussed in
+\Cref{sec:validation-ec}.
+
 
 % ==============================================================
 \section{From the Lagrangian to Feynman Rules}

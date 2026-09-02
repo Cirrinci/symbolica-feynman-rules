@@ -70,29 +70,43 @@ Figure~\ref{fig:pipeline-overview}.\footnote{Each TikZ figure in this chapter ha
 \label{fig:pipeline-overview}
 \end{figure}
 
+
 \begin{table}[htbp]
 \centering
-\begin{tabular}{@{}p{2.6cm}p{3.6cm}p{6.8cm}@{}}
+\begin{tabular}{@{}p{2.2cm}p{4.2cm}p{6.4cm}@{}}
 \toprule
 \textbf{Layer} & \textbf{Package(s)} & \textbf{Responsibility} \\
 \midrule
+
 Declaration &
-\texttt{feynpy} (\texttt{metadata}, \texttt{declared}, \texttt{core}) &
+\makecell[l]{\texttt{feynpy} (\texttt{metadata},\\
+\texttt{declared}, \texttt{core})} &
 Represents the physics as the user wrote it: declared fields, gauge groups, and source Lagrangian terms, still in a mostly syntactic form. \\
+
 Lowering \& compilation &
-\texttt{feynpy.lowering}, \texttt{lagrangian}, \texttt{compiler} &
+\makecell[l]{\texttt{feynpy.lowering},\\
+\texttt{lagrangian}, \texttt{compiler}} &
 Classifies and validates each source term, expands gauge structures such as covariant derivatives, field strengths, gauge-fixing terms and ghosts into local monomials, and collects the result into \texttt{InteractionTerm}s. \\
+
 Contraction engine &
-\texttt{symbolic.vertex\_engine} &
+\makecell[l]{\texttt{symbolic.}\\
+\texttt{vertex\_engine}} &
 Builds external legs and vertex arguments, then sums over Wick contractions to assemble the full expression. \\
+
 Post-processing &
-\texttt{symbolic.vertex\_postprocessing}, \texttt{symbolic.tensor\_canonicalization} &
+\makecell[l]{\texttt{symbolic.}\\
+\texttt{vertex\_postprocessing}\\
+\texttt{symbolic.}\\
+\texttt{tensor\_canonicalization}} &
 Applies the overall factor of $i$, optionally extracts the momentum-conserving $\delta$, strips external-leg factors, and simplifies and canonicalises the resulting tensor expression. \\
+
 \bottomrule
 \end{tabular}
 \caption{The four layers of the pipeline, coloured as in Figure~\ref{fig:pipeline-overview}: declaration (blue), lowering/compilation (orange), contraction (green), and post-processing (purple).}
 \label{tab:internals-layers}
 \end{table}
+
+
 
 The remaining sections walk the layers from the outside in: declaration (Section~\ref{sec:internals-declaration}), analysis and index resolution (Section~\ref{sec:internals-lowering}), gauge compilation (Section~\ref{sec:internals-compiler}), the \py{InteractionTerm} intermediate representation that ties everything together (Section~\ref{sec:internals-ir}), the Wick-contraction engine (Section~\ref{sec:internals-contraction}), and canonicalisation (Section~\ref{sec:internals-postprocessing}). Section~\ref{sec:internals-difficulty} then collects the hardest problems encountered while building the pipeline, the places where the design had to be most deliberate.
 
@@ -162,15 +176,34 @@ In order to know what needs to be expanded, and how, by the compiler we want to 
 \toprule
 \textbf{Category} & \textbf{Meaning} & \textbf{Example} \\
 \midrule
-\texttt{interaction} & a local \py{InteractionTerm}; no compilation & \py{lam * phi**4} \\
-\texttt{covariant\_core} & canonical kinetic $\bar\psi\, i\gamma^\mu D_\mu \psi$ or $(D_\mu\Phi)^\dagger(D^\mu\Phi)$ & quark kinetic term \\
-\texttt{generic\_covariant\_monomial} & any other monomial that still contains \py{DC} or another covariant operator needing expansion & current$\,\times\,$current \\
-\texttt{gauge\_fixing} & a gauge-fixing declaration & \py{GaugeFixing(SU3, xi)} \\
-\texttt{ghost} & a ghost declaration & \py{GhostLagrangian(SU3)} \\
-\texttt{field\_strength\_monomial} & a monomial built from \py{FS(...)} factors & $-\tfrac14 F^a F^a$ \\
+
+\makecell[l]{\texttt{interaction}} &
+a local \py{InteractionTerm}; no compilation &
+\py{lam * phi**4} \\
+
+\makecell[l]{\texttt{covariant\_}\\\texttt{core}} &
+canonical kinetic $\bar\psi\, i\gamma^\mu D_\mu \psi$ or $(D_\mu\Phi)^\dagger(D^\mu\Phi)$ &
+quark kinetic term \\
+
+\makecell[l]{\texttt{generic\_covariant\_}\\\texttt{monomial}} &
+any other monomial that still contains \py{DC} or another covariant operator needing expansion &
+current$\,\times\,$current \\
+
+\makecell[l]{\texttt{gauge\_fixing}} &
+a gauge-fixing declaration &
+\py{GaugeFixing(SU3, xi)} \\
+
+\makecell[l]{\texttt{ghost}} &
+a ghost declaration &
+\py{GhostLagrangian(SU3)} \\
+
+\makecell[l]{\texttt{field\_strength\_}\\\texttt{monomial}} &
+a monomial built from \py{FS(...)} factors &
+$-\tfrac14 F^a F^a$ \\
+
 \bottomrule
 \end{tabular}
-\caption{The classification produced by \texttt{\_analyze\_declared\_source\_term}}
+\caption{The classification produced by \texttt{\_analyze\_declared\_source\_term}.}
 \label{tab:analyzed-categories}
 \end{table}
 
@@ -223,37 +256,46 @@ For the usual \(\mathrm{SU}(N)\) basis one may simply read \(c^{a}{}_{bc}\) as t
                 inner sep=4pt, minimum height=7mm},
     comp/.style={box, fill=orange!12, text width=3.9cm},
     hand/.style={box, fill=orange!6, text width=4.6cm},
-    ir/.style={box, fill=green!12, text width=2.6cm},
+    ir/.style={box, fill=green!12, text width=2.8cm},
     arr/.style={-{Latex[length=2mm]}, thick}
 ]
-\node[comp] (c1) {covariant\_core};
-\node[comp, below=of c1] (c2) {generic\_covariant\_monomial};
-\node[comp, below=of c2] (c3) {field\_strength\_monomial};
-\node[comp, below=of c3] (c4) {gauge\_fixing};
-\node[comp, below=of c4] (c5) {ghost};
 
-\node[hand, right=of c1] (h1) {\texttt{\_compile\_declared\_covariant\_core}};
-\node[hand, right=of c2] (h2) {\texttt{\_compile\_generic\_declared\_covariant\_monomial}};
-\node[hand, right=of c3] (h3) {\texttt{compile\_field\_strength\_monomial}};
-\node[hand, right=of c4] (h4) {\texttt{compile\_gauge\_fixing\_term}};
-\node[hand, right=of c5] (h5) {\texttt{compile\_ghost\_term}};
+\node[comp] (c1) {\makecell[c]{\texttt{covariant\_}\\\texttt{core}}};
+\node[comp, below=of c1] (c2) {\makecell[c]{\texttt{generic\_covariant\_}\\\texttt{monomial}}};
+\node[comp, below=of c2] (c3) {\makecell[c]{\texttt{field\_strength\_}\\\texttt{monomial}}};
+\node[comp, below=of c3] (c4) {\makecell[c]{\texttt{gauge\_}\\\texttt{fixing}}};
+\node[comp, below=of c4] (c5) {\makecell[c]{\texttt{ghost}}};
 
-\node[ir, right=of h3] (ir) {\texttt{InteractionTerm} tuple};
+\node[hand, right=of c1] (h1) {\makecell[c]{\texttt{\_compile\_declared\_}\\\texttt{covariant\_core}}};
+\node[hand, right=of c2] (h2) {\makecell[c]{\texttt{\_compile\_generic\_declared\_}\\\texttt{covariant\_monomial}}};
+\node[hand, right=of c3] (h3) {\makecell[c]{\texttt{compile\_field\_strength\_}\\\texttt{monomial}}};
+\node[hand, right=of c4] (h4) {\makecell[c]{\texttt{compile\_gauge\_fixing\_}\\\texttt{term}}};
+\node[hand, right=of c5] (h5) {\makecell[c]{\texttt{compile\_ghost\_}\\\texttt{term}}};
+
+\node[ir, right=of h3] (ir) {\makecell[c]{\texttt{InteractionTerm}\\tuple}};
 
 \foreach \c/\h in {c1/h1, c2/h2, c3/h3, c4/h4, c5/h5} \draw[arr] (\c) -- (\h);
 \foreach \h in {h1, h2, h3, h4, h5} \draw[arr] (\h) -- (ir);
+
 \end{tikzpicture}
 \caption{Compiler dispatch. Each analysed category is handled by one routine, and every routine returns ordinary \texttt{InteractionTerm} objects. Structured operators are first expanded into local monomials and then lowered through the same path as hand-written interactions.}
 \label{fig:compiler-dispatch}
 \end{figure}
 
-\subsection{Expansion and Interaction Term building}
+\subsection{Expansion and interaction-term building}
 
-The compiler essentially performs two operations. Firstly, it expands each structured gauge operator to yield simple local monomials. Secondly, only after carrying out the complete expansion does it feed these monomials back into the normal lowering process, generating a \py{InteractionTerm} (Section~\ref{sec:internals-lowering}).
+The compiler essentially performs two operations. First, it expands each structured gauge operator into simple local monomials. Only after the complete expansion are these monomials fed back into the normal lowering process, generating a \py{InteractionTerm} (Section~\ref{sec:internals-lowering}).
 
-This is a deliberate design choice: it prioritises generality and a single, uniform compilation pipeline over efficiency. For example dedicated routines could be written for $F^2$, $F^3$, $F^4$\supervisor{Here do you mean $F^2 = F_{\mu\nu}F^{\mu\nu}$ and similarly for $F^3$,$F^4$?} and for each covariant structure separately, which would make it faster and more importantly closer to the canonical form we already know from textbooks. Here, however, there is no separate, hard-coded compiler for $F^2$, $F^3$, $F^4$ or for every possible power of a covariant derivative. The combinations are generated automatically via the standard distribution followed by a well-established lowering phase.
+This is a deliberate design choice: it prioritises generality and a single, uniform compilation pipeline over efficiency. For example, dedicated routines could be written for structures such as
+$F^a_{\mu\nu}F^{a,\mu\nu}$,
+$f^{abc}F^a_{\mu}{}^{\nu}F^b_{\nu}{}^{\rho}F^c_{\rho}{}^{\mu}$,
+or contractions involving four field-strength tensors
+\supervisor{[DONE]Here do you mean $F^2 = F_{\mu\nu}F^{\mu\nu}$ and similarly for $F^3$,$F^4$?}.
+Similar dedicated routines could also be introduced for each covariant structure separately. This would make the expansion faster and, more importantly, closer to the canonical forms already familiar from textbooks. Here, however, there is no separate hard-coded compiler for these particular contractions, or for every possible power of a covariant derivative. Instead, all combinations are generated automatically through standard distribution and then passed to the same lowering phase.
 
-The cost is that the intermediate output is much more verbose than textbook notation. A non-abelian $F^2$ expands into nine local monomials before canonicalisation combines equivalent terms again (Section~\ref{sec:internals-postprocessing}). For higher operators this growth is rapid; for pure non-abelian $F^n$ it gives $3^n$ branches. Much of the effort has therefore gone into the canonicalisation process.
+The cost is that the intermediate output is much more verbose than textbook notation. For example, the non-abelian contraction
+$F^a_{\mu\nu}F^{a,\mu\nu}$ expands into nine local monomials before canonicalisation combines equivalent terms again (Section~\ref{sec:internals-postprocessing}). More generally, since each non-abelian field strength contains three terms, a product of $n$ field-strength tensors initially generates $3^n$ branches. Much of the effort has therefore gone into the canonicalisation process.
+
 
 \subsection{Covariant derivatives}
 \label{sec:internals-covd}
@@ -550,19 +592,25 @@ for perm in permutations(range(n)):
 
 Note that nothing here depends on a particular index kind. An index is only a \py{(kind, label)} pair.
 
-\subsection{Fermion signs and the closed-bilinear exception}
+\subsection{Fermion signs and the closed-bilinear compatibility exception}
 \label{sec:internals-contraction-fermions}
 
-Getting fermion signs right was one of the trickier parts of the engine. The pipeline records the order of the fields from the very start, so that even this final layer still knows which sign to apply.
+FeynPy uses the standard ordered-Grassmann convention. A Lagrangian monomial is treated as an ordered product of elementary fields, and fermion fields are Grassmann odd. Exchanging two fermionic contractions therefore gives a minus sign. The pipeline records the field order from the beginning, so the vertex engine can still apply this sign at the final Wick-contraction stage.
 
-The default rule is simple: use the flat Grassmann sign of the fermion permutation. This works in general, but it fails for a product of closed Dirac bilinears. A concrete example is the identical-fermion current--current operator
+In code this means that each contraction receives the flat Grassmann sign of the permutation restricted to the fermionic slots. This sign is the FeynPy convention. For example, consider the identical-fermion current--current operator
 \begin{equation}
-    (\bar\psi\,\gamma^\mu\psi)\,(\bar\psi\,\gamma_\mu\psi).
+(\bar\psi\,\gamma^\mu\psi)(\bar\psi\,\gamma_\mu\psi).
 \end{equation}
-This operator has two Wick contractions: a \emph{direct} one, where each current stays intact, and a \emph{crossed} one, where the two currents exchange a fermion. The flat Grassmann rule predicts a relative sign of $\text{direct} - \text{crossed}$ between the two, but the correct sign\supervisor{what do you mean here by `correct'? I think that this is a case where Feynrules is just wrong.}, following the FeynRules convention, is $\text{direct} + \text{crossed}$.
+It has a \emph{direct} contraction, where each current stays intact, and a \emph{crossed} contraction, where the two currents exchange one identical fermion line. In the ordered-Grassmann convention, the one used by FeynPy, the exchange is odd, so the result is
+\[
+\text{direct}-\text{crossed}.
+\]
+FeynRules gives a different answer for this special structure:
+\[
+\text{direct}+\text{crossed}.
+\]
+ FeynRules effectively treats the two closed bilinears as bosonic composite factors before resolving the identical-fermion Wick contractions. Doing so loses the minus sign from exchanging the elementary fermion fields.\supervisor{[DONE]what do you mean here by correct'? I think that this is a case where Feynrules is just wrong.}
 
-
-The fix uses the fermion-pairing information recorded during lowering (Section~\ref{sec:internals-lowering}). If that information shows that every Dirac fermion slot belongs to exactly one closed bilinear, the engine drops the flat permutation sign and treats every pairing with a plus. In every other case (for example a generic open multi-fermion tensor) the flat Grassmann sign still applies.
 
 \subsection{Output policy and universal factors}
 
@@ -600,6 +648,13 @@ Building the pipeline was less about one clever algorithm than about a few recur
 
 \paragraph{Keeping the layers honest.} Finally, much of the work went into not letting the layers leak into each other: declarative syntax must never reach the contraction engine, the engine must never know what a covariant derivative is, and comparison against external references must live outside the engine. One job per layer, and one intermediate representation at the waist, is what made it possible to validate the packaged Standard Model against the reference export vertex by vertex.
 
+
+
+\section{Development support}
+\label{sec:internals-development-support}
+
+OpenAI Codex was used during the development of \textsc{FeynPy} as a programming assistant, mainly to support code navigation, refactoring, debugging, test writing, and the exploration of alternative implementations.
+The physics conventions, algorithmic choices, validation strategy, and interpretation of the results remained the responsibility of the author, and the resulting code was reviewed as part of the development process.
 % --------------------------------------------------------------
 \section{Summary}
 \label{sec:internals-summary}
