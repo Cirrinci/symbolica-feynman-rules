@@ -130,14 +130,67 @@
 % Fixed-width parameter-table column
 \newcolumntype{P}[1]{>{\ttfamily\small}p{#1}}
 
+% ETH CADMO-style title-page metadata.
+\newcommand{\thesistypevalue}{}
+\newcommand{\thesisadvisors}{}
+\newcommand{\thesisdepartment}{}
+\newcommand{\thesistype}[1]{\gdef\thesistypevalue{#1}}
+\newcommand{\advisors}[1]{\gdef\thesisadvisors{#1}}
+\newcommand{\department}[1]{\gdef\thesisdepartment{#1}}
+\newcommand{\ethzurichlogo}{\includegraphics[width=2in]{assets/ETHlogo.pdf}}
+\newcommand{\dphyslogo}{%
+  \includegraphics[
+    width=1.7in,
+    trim=165bp 166bp 166bp 164bp,
+    clip
+  ]{assets/eth_dphys_logo_pos.png}%
+}
+
+\makeatletter
+\newcommand{\makeethcadmotitle}{%
+  \begin{titlepage}
+    \thispagestyle{empty}
+    \noindent
+    \begin{minipage}[t]{0.45\textwidth}
+      \raggedright
+      \ethzurichlogo
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[t]{0.45\textwidth}
+      \raggedleft
+      \dphyslogo
+    \end{minipage}
+    \par\vspace*{3.0cm}
+    \centering
+    {\LARGE\sffamily\bfseries \@title\par}
+    \vspace{1.35cm}
+    {\large\sffamily \thesistypevalue\par}
+    \vspace{1.25cm}
+    {\large\sffamily \@author\par}
+    \vspace{0.95cm}
+    {\large\sffamily \@date\par}
+    \vfill
+    \begin{flushright}
+      \large\sffamily
+      \thesisadvisors\par
+      \vspace{0.75cm}
+      \thesisdepartment\par
+    \end{flushright}
+    \vspace*{2.2cm}
+  \end{titlepage}
+}
+\makeatother
 
 \title{Automatic Derivation of Feynman Rules from Symbolic Model Declarations}
 \author{Remo}
+\thesistype{Master Thesis}
+\advisors{Advisors: Achilleas}
+\department{Department of Physics, ETH Zurich}
 \date{\today}
 
 \begin{document}
 
-\maketitle
+\makeethcadmotitle
 
 \begin{abstract}
 \noindent
