@@ -1,246 +1,362 @@
-\documentclass[11pt,a4paper]{report}
+%==============================================================================
+% ETHIDSC -- (ethidsc.sty) Style file
+% A LaTeX package providing new style definitions and commands.
+% The ethidsc-package defines a title page and an info page for term papers
+% and master theses written at the Measurement and Control Laboratory
+% of the Swiss Federal Institute of Technology (ETH) Zurich.
+% Author: Eric A. Mueller
+%         Measurement and Control Laboratory
+%         Swiss Federal Institute of Technology (ETH) Zurich
+%         Zurich, Switzerland
+%
+% Copyright (c) 2004 Eric A. Mueller
+% All rights reserved.
+%
+% ethidsc.sty,v.1.0 2009/29/05
+%
+% Revisions: 	2011/03/22  (Soren Ebbesen)
+%               2013/03/08  (Soren Ebbesen)
+%
+%==============================================================================
+\def\Presentation@Version{1.1}
+\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+\ProvidesPackage{ethidsc}[2009/29/05, v. \Presentation@Version]
+\typeout{providing new style definitions and commands ---}
+\typeout{Eric Müller, ETHZ, Switzerland, 2004/04/02}
+\typeout{Maintained by Soren Ebbesen, 2009 ---}
 
-% =========================
-% Packages
-% =========================
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{mathtools}
-\usepackage{amsthm}
-\usepackage{physics}
-\usepackage{graphicx}
-\usepackage{xcolor}
-\usepackage{hyperref}
-\usepackage{cleveref}
-\setlength{\marginparwidth}{2cm}
-\usepackage{comment}
-\usepackage{stmaryrd}
-\theoremstyle{definition}
-\newtheorem{definition}{Definition}[section]
-\usepackage{makecell}
+\newif\ifingerman
+\DeclareOption{german}{\global\ingermantrue}
+\DeclareOption{english}{\global\ingermanfalse}
 
-%TO DO
-\usepackage[colorinlistoftodos]{todonotes}
+\DeclareOption{mt}{\gdef\@type{\ifingerman Masterarbeit\else Master's Thesis\fi}}
+\DeclareOption{bt}{\gdef\@type{\ifingerman Bachelorarbeit\else Bachelor Thesis\fi}}
+\DeclareOption{st}{\gdef\@type{\ifingerman Semesterarbeit\else Semester Thesis\fi}}
 
-\newcommand{\decide}[1]{%
-  \todo[color=yellow!40]{DECIDE: #1}}
+\ExecuteOptions{german,st}
+\ProcessOptions
 
-\newcommand{\supervisor}[1]{%
-  \todo[color=blue!25]{Achilleas: #1}}
+\RequirePackage[T1]{fontenc}
 
-\newcommand{\cleanup}[1]{%
-  \todo[color=green!25]{CLEAN UP: #1}}
+\RequirePackage{amsmath,amssymb,amsthm}
+\RequirePackage{graphicx}
+\RequirePackage[dvips]{epsfig} 
+\RequirePackage{float}
+\RequirePackage{fancyhdr}
+\RequirePackage{subcaption}
+%\RequirePackage{hyperref}
+\RequirePackage{pstricks,pst-plot,psfrag}
+\RequirePackage{multirow}
+\RequirePackage{rotating}
+\RequirePackage{siunitx}
+%\RequirePackage{booktabs}
+\RequirePackage[dvipdfm]{geometry}
+\RequirePackage{url}
+%\RequirePackage{natbib}
+\RequirePackage{comment}
+\RequirePackage{placeins}
+%\RequirePackage{bibref}
+\RequirePackage{gensymb}
+\RequirePackage{wrapfig}
+\RequirePackage{floatflt}
+\RequirePackage{outlines}
+%\RequirePackage{chemformula}
+\RequirePackage[version=4]{mhchem}
+\RequirePackage{acronym}
+%\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+%\usepackage[marginparwidth=2.5cm]{geometry}
+%\RequirePackage[markup=underlined]{changes}
+
+\RequirePackage{mhchem}
+\RequirePackage[allow-number-unit-breaks]{siunitx}
+\RequirePackage{graphicx}
+%\RequirePackage{tabularray}
+\RequirePackage{booktabs}
+\RequirePackage{longtable}
+\RequirePackage{tabularx}
+\RequirePackage{lscape}
+%\RequirePackage{xltabular}
+\RequirePackage{tabto}
+\RequirePackage{ltablex}
+\RequirePackage[hidelinks]{hyperref}
+\RequirePackage[labelfont=bf,textfont=md]{caption}
+
+\newenvironment{mytab}{\par\tiny\tabularx}{\endtabularx}
+\newcommand{\citeay}[1]{\citeauthor{#1} (\citeyear{#1})}
+\newcommand{\citeaywp}[1]{\citeauthor{#1}, \citeyear{#1}}
+\DeclareSIUnit\year{yr}
+\DeclareSIUnit\TIC{ TIC}
+\DeclareSIUnit\TC{ TC}
+\DeclareSIUnit\C{ C}
+\DeclareSIUnit\atmosphere{atm}
+\sisetup{per-mode=reciprocal}
+
+%\newcolumntype{b}{>{\hsize=2.3\hsize}X}
+%\newcolumntype{s}{>{\hsize=.45\hsize}X}
+%\newcolumntype{m}{>{\hsize=.9\hsize}X}
+
+\newcolumntype{b}{>{\raggedright\arraybackslash\hsize=1.8\hsize}X}
+\newcolumntype{s}{>{\raggedright\arraybackslash\hsize=.5\hsize}X}
+\newcolumntype{m}{>{\raggedright\arraybackslash\hsize=.9\hsize}X}
+
+%\newcommand{\hashtag}[1]{#1}
+
+%\DeclareSIUnit\hashtag{#}
+
+\ifingerman
+\RequirePackage{german,ae}
+\fi
+
+\newcommand{\@supervision}{}
+\newcommand{\supervision}[1]{\gdef\@supervision{#1}}
+
+\newcommand{\@studentA}{}
+\newcommand{\studentA}[1]{\gdef\@studentA{#1}}
+
+\newif\ifstudentB
+\newcommand{\@studentB}{}
+\newcommand{\studentB}[1]{\gdef\@studentB{#1}\studentBtrue}
+
+\newcommand{\@ethidA}{}
+\newcommand{\ethidA}[1]{\gdef\@ethidA{#1}}
+
+\newcommand{\@ethidB}{}
+\newcommand{\ethidB}[1]{\gdef\@ethidB{#1}}
+
+\newcommand{\@semesterA}{}
+\newcommand{\semesterA}[1]{\gdef\@semesterA{#1}}
+
+\newcommand{\@semesterB}{}
+\newcommand{\semesterB}[1]{\gdef\@semesterB{#1}}
+
+\newcommand{\@emailA}{}
+\newcommand{\emailA}[1]{\gdef\@emailA{#1}}
+
+\newcommand{\@emailB}{}
+\newcommand{\emailB}[1]{\gdef\@emailB{#1}}
+
+\newcommand{\@identification}{}
+\newcommand{\identification}[1]{\gdef\@identification{#1}}
+
+\newcommand{\@declaration}{}
+\newcommand{\declaration}{\gdef\@declaration{
+\ifingerman
+{\bf Erkl\"{a}rung betreffend Plagiaten: \\[1ex]}
+\ifstudentB
+Wir erkl\"{a}ren hiermit mit unserer Unterschrift, das Merkblatt Eigenst\"{a}ndigkeitserkl\"{a}rung zur Kenntnis genommen, die vorliegende Arbeit selbst\"{a}ndig verfasst und die im betroffenen Fachgebiet \"{u}blichen Zitiervorschriften eingehalten zu haben.\\[3ex]
+\else
+Ich erkl\"{a}re mit meiner Unterschrift, das Merkblatt Eigenst\"{a}ndigkeitserkl\"{a}rung zur Kenntnis genommen, die vorliegende Arbeit selbst\"{a}ndig verfasst und die im betroffenen Fachgebiet
+\"{u}blichen Zitiervorschriften eingehalten zu haben.\\[3ex]
+\fi
+Merkblatt Eigenst\"{a}ndigkeitserkl\"{a}rung:\\[1.5ex]
+\url{http://www.ethz.ch/faculty/exams/plagiarism/confirmation_de.pdf} 
+\\[6ex] 
+Z\"{u}rich, \the\day. \the\month. \the\year: \hrulefill
+
+\else
+
+{\bf Statement regarding plagiarism: \\[1ex]}
+\ifstudentB
+By signing this statement, we affirm that we have read and signed the Declaration of Originality, independently produced this paper, and adhered to the general practice of source citation in this subject-area.\\[3ex]
+\else
+By signing this statement, I affirm that I have read and signed the Declaration of Originality,
+independently produced this paper, and adhered to the general practice of source
+citation in this subject-area.\\[3ex]
+\fi
+Declaration of Originality:\\[1.5ex]
+\url{http://www.ethz.ch/faculty/exams/plagiarism/confirmation_en.pdf} 
+\\[6ex] 
+Zurich, \the\day. \the\month. \the\year: %\hrulefill
+\begin{minipage}[c]{0.4\textwidth}
+ \begin{flushleft}
+ \hspace*{1cm}
+ \includegraphics[height=0.75cm]{img/signature.png} % ADAPT THIS FOR THE NAME OF YOUR SIGNATURE PICTURE
+ \end{flushleft}
+\end{minipage}
+\fi}}
 
 
-\usepackage{listings}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
 
-% =========================
-% Code style
-% =========================
-\lstset{
-  basicstyle=\ttfamily\footnotesize,
-  breaklines=true,
-  frame=single,
-  numbers=left,
-  numberstyle=\tiny,
-  showstringspaces=false,
-  keywordstyle=\bfseries,
-  commentstyle=\itshape,
-  captionpos=b
+% Definition of title page______________________________________________________
+\renewcommand{\maketitle}{
+
+\pagestyle{empty}
+
+\begin{center}
+\hspace{0.02\textwidth}
+\parbox[c][\textheight][t]{0.97\textwidth}{
+\begin{center}
+
+\vspace*{-2cm}
+\begin{minipage}[c]{0.4\textwidth}
+ \begin{flushleft}
+ \hspace*{-1.5cm}
+ \includegraphics[height=1.5cm]{img/ethlogo.eps}
+ \end{flushleft}
+\end{minipage}
+\hfill
+\begin{minipage}[c]{0.4\textwidth}
+ \begin{flushright}
+ \hspace*{0.4cm}
+ \includegraphics[height=1.1cm]{img/insel_logo.png}
+ \end{flushright}
+\end{minipage}
+
+\vspace*{3.0cm}
+
+{\large \@studentA\if\@studentB\else \ \& \@studentB\fi \\
+     \@ethidA}
+\vspace{1.5cm}
+
+{\Huge \bf \@title \par}
+\vspace{2.5cm} 
+
+{\large \bf \@type}\\[3ex]
+
+
+\ifingerman
+ Institut f\"{u}r Dynamische Systeme und Regelungstechnik\\
+ Eidgen\"{o}ssische Technische Hochschule (ETH) Z\"{u}rich\\
+\else
+
+% ADAPT THIS FOR YOUR INSTITUTE
+Master's Degree Programme in Physics\\
+ Swiss Federal Institute of Technology (ETH) Zurich\\
+\fi
+\vspace{2.0cm}
+
+\ifingerman
+ {\bf Betreuung} \\[1.5ex]
+\else
+ {\bf Supervision} \\[1.5ex]
+\fi
+\@supervision
+
+\vfill
+\@date
+
+% Report identification number
+\begin{flushleft}
+\hspace*{-1.5cm}
+\vspace{-1.5cm}
+\texttt{\@identification}
+\end{flushleft}
+
+\end{center}
+}
+\end{center}
+\cleardoublepage
 }
 
-\usepackage{minted}
-\setminted{
-  fontsize=\footnotesize,
-  baselinestretch=1.15,
-  linenos=false,
-  frame=single,
-  framesep=6pt,
-  rulecolor=\color{gray!40},
-  bgcolor=gray!6,
-  breaklines=true,
-  breakanywhere=false,
+
+
+% Definition of info page (last page)___________________________________________
+\newcommand{\infopage}{
+\AtEndDocument{
+
+\pagestyle{empty}
+\cleardoublepage
+\setlength{\oddsidemargin}{3cm}
+\setlength{\parindent}{0em}
+
+\vspace*{-2cm}
+\hspace{-0.354cm}
+\includegraphics[height=2cm]{img/ethlogo.eps}\\
+
+%\vspace{3cm}
+
+\ifingerman
+{\bf Titel der Arbeit: \\[1ex]}
+{\LARGE \@title \\[1ex] \par}
+\else
+{\bf Title of work: \\[1ex]}
+{\LARGE \@title \\[1ex] \par}
+\fi
+
+\ifingerman
+{\bf Art der Arbeit und Datum: \\[1ex]}
+\@type, \@date\\[2.5ex]
+%\ifst
+%Semesterarbeit, \@date\\[2.5ex]
+%\else
+%Masterarbeit, \@date\\[2.5ex]
+%\fi
+{\bf Betreuung: \\[1ex]}
+\@supervision
+\else
+{\bf Thesis type and date: \\[1ex]}
+\@type, \@date\\[2.5ex]
+%\ifst
+%Semester thesis, \@date\\[2.5ex]
+%\else
+%Master thesis, \@date\\[2.5ex]
+%\fi
+{\bf Supervision: \\[1ex]}
+\@supervision
+\fi
+\vspace{1cm}
+
+\ifingerman
+{\bf \ifstudentB Studenten:\else Student: \fi}
+\else
+{\bf \ifstudentB Students:\else Student: \fi}
+\fi
+\begin{tabbing}
+\hspace*{3cm}  \= \kill
+Name: \> \@studentA \\
+E-mail: \> \@emailA \\
+Legi-Nr.: \> \@ethidA
+%Semester: \> \@semesterA
+\end{tabbing}
+
+\if\@studentB \else
+\begin{tabbing}
+\hspace*{3cm}  \= \kill
+Name: \> \@studentB \\
+E-mail: \> \@emailB \\
+Legi-Nr.: \> \@ethidB \\
+Semester: \> \@semesterB
+\end{tabbing}
+\fi
+\vspace{1cm}
+
+\if\@declaration \else \@declaration \fi
+
+\normalsize 
 }
-% Raw toolkit output (the `text' lexer) consists of long unbroken tensor
-% monomials with no spaces to break at, so it needs mid-token breaking.
-\setminted[text]{
-  fontsize=\footnotesize,
-  breakanywhere=true,
-}
-
-
-
-% --- Encoding & fonts ---
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}   % if not already set by your class
-
-% --- Code highlighting (needs --shell-escape at compile time) ---
-
-% --- Callout / info boxes ---
-\usepackage{tcolorbox}
-\tcbuselibrary{skins, breakable}
-
-% --- Better tables ---
-\usepackage{booktabs}
-\usepackage{array}
-\usepackage{longtable}
-
-% --- Compact lists ---
-\usepackage{enumitem}
-
-% =========================
-% Minted style and callout boxes (used from Chapter 1 onwards)
-% =========================
-\usemintedstyle{friendly}
-
-\tcbset{
-  feynbox/.style={
-    enhanced, breakable,
-    fonttitle=\bfseries\small,
-    coltitle=black,
-    boxrule=0.5pt,
-    arc=3pt,
-    left=8pt, right=8pt, top=6pt, bottom=6pt,
-    parbox=false,
-  },
-  notebox/.style={
-    feynbox,
-    colframe=black!35,
-    colback=black!4,
-  },
-  infobox/.style={
-    feynbox,
-    colframe=blue!45,
-    colback=blue!4,
-  },
-  warnbox/.style={
-    feynbox,
-    colframe=orange!65,
-    colback=orange!5,
-  },
-}
-
-% Inline Python identifiers
-\newcommand{\py}[1]{\mintinline{python}{#1}}
-
-% Fixed-width parameter-table column
-\newcolumntype{P}[1]{>{\ttfamily\small}p{#1}}
-
-% ETH CADMO-style title-page metadata.
-\newcommand{\thesistypevalue}{}
-\newcommand{\thesisadvisors}{}
-\newcommand{\thesisdepartment}{}
-\newcommand{\thesistype}[1]{\gdef\thesistypevalue{#1}}
-\newcommand{\advisors}[1]{\gdef\thesisadvisors{#1}}
-\newcommand{\department}[1]{\gdef\thesisdepartment{#1}}
-\newcommand{\ethzurichlogo}{\includegraphics[width=2in]{assets/ETHlogo.pdf}}
-\newcommand{\dphyslogo}{%
-  \includegraphics[
-    width=1.7in,
-    trim=165bp 166bp 166bp 164bp,
-    clip
-  ]{assets/eth_dphys_logo_pos.png}%
 }
 
-\makeatletter
-\newcommand{\makeethcadmotitle}{%
-  \begin{titlepage}
-    \thispagestyle{empty}
-    \noindent
-    \begin{minipage}[t]{0.45\textwidth}
-      \raggedright
-      \ethzurichlogo
-    \end{minipage}%
-    \hfill
-    \begin{minipage}[t]{0.45\textwidth}
-      \raggedleft
-      \dphyslogo
-    \end{minipage}
-    \par\vspace*{3.0cm}
-    \centering
-    {\LARGE\sffamily\bfseries \@title\par}
-    \vspace{1.35cm}
-    {\large\sffamily \thesistypevalue\par}
-    \vspace{1.25cm}
-    {\large\sffamily \@author\par}
-    \vspace{0.95cm}
-    {\large\sffamily \@date\par}
-    \vfill
-    \begin{flushright}
-      \large\sffamily
-      \thesisadvisors\par
-      \vspace{0.75cm}
-      \thesisdepartment\par
-    \end{flushright}
-    \vspace*{2.2cm}
-  \end{titlepage}
-}
-\makeatother
+% =======================================
+%	\usepackage[dvipdfm]{geometry}
+	\setlength\paperheight {297mm}%
+	\setlength\paperwidth  {210mm}%
 
-\title{Automatic Derivation of Feynman Rules from Symbolic Model Declarations}
-\author{Remo}
-\thesistype{Master Thesis}
-\advisors{Advisors: Achilleas}
-\department{Department of Physics, ETH Zurich}
-\date{\today}
+	%PAGE LAYOUT 2cm margin on all four sides
+	\setlength{\voffset}{-1in}
+	\setlength{\hoffset}{-1in}
 
-\begin{document}
+	\setlength{\oddsidemargin}{3cm}
+	\setlength{\evensidemargin}{3cm}
 
-\makeethcadmotitle
+	\setlength{\topmargin}{2.3cm} % -1in subtract latex default margin (1 inch) from topmargin
 
-\begin{abstract}
-\noindent
-Extracting Feynman rules from a Lagrangian is a mechanical but unforgiving task, and for a theory such as the Standard Model Effective Field Theory, with several hundred independent Wilson coefficients, it can no longer be realistically carried out by hand. The established solution is \textsc{FeynRules}, a \textsc{Mathematica} package that derives vertices from a declarative model file. This thesis asks whether the same functionality can be provided inside the Python ecosystem, and answers this by developing \textsc{FeynPy}: a toolkit in which indices, fields, gauge groups and parameters are declared as ordinary Python objects, the Lagrangian is written in a notation close to the one used on paper, and tree-level Feynman rules are
-returned as symbolic expressions.
+%	\setlength{\headheight}{14.mm} %platz für kopfzeile
+%	\setlength{\headsep}{+11.mm} %freiraum nach kopfzeile
+%	\addtolength{\topmargin}{0.0mm} %rest, damit die geforderten 2.5 cm erfüllt werden
 
-\textsc{FeynPy} is built on \textsc{Symbolica} for symbolic algebra and \textsc{Spenso} for typed tensor indices. It resolves implicit indices, expands covariant derivatives and field strengths, handles gauge fixing and ghosts, and derives vertices through a common canonical-quantisation pipeline.
-The resulting expressions are canonicalised into a normal form suitable for comparison. The same representation also keeps the compiled Lagrangian programmable: fields can be transformed between bases and expanded into components while preserving derivatives, conjugation and fermion ordering, and the final vertices remain fully manipulable symbolic expressions.
+	\setlength{\textheight}{231mm} %247mm 29.7cm-5cm = 24.7cm
 
-The implementation is benchmarked by direct algebraic comparison with \textsc{FeynRules} exports. The packaged Standard Model agrees at $163/163$ vertices, the unbroken background-field Standard Model at $67/67$, and the Green-basis SMEFT at $184/184$ reference lines, with convention differences tracked explicitly. The performance gain is substantial: in the SMEFT benchmark, producing the \textsc{FeynRules} reference takes about half an hour, whereas \textsc{FeynPy} regenerates all $3$--$6$-point SMEFT vertices in $8.20\,\mathrm{s}$ and completes the full algebraic comparison in $56.91\,\mathrm{s}$.
-\end{abstract}
+%	\setlength{\footskip}{+20mm}
+
+	\setlength{\textwidth}{150mm} %!!! %21cm - 5cm = 16cm
 
 
-\tableofcontents
+%	\addtolength{\oddsidemargin}{-1in} %subtract latex default margin (1 inch) from oddsidemargin
+	
 
-% =========================
-% Chapters
-% =========================
-\input{chapters/01_introduction}
-\input{chapters/02}
-\input{chapters/feynpy}
-\input{chapters/05}
-\input{chapters/06}
-\input{chapters/07_validation}
-\input{chapters/08_conclusion}
+%	\addtolength{\evensidemargin}{-1in}  %subtract latex default margin (1 inch) from evensidemargin
+%	\setlength{\marginparwidth}{10cm}
+	\setlength{\parindent}{0pt}
 
-
-% =========================
-% Bibliography
-% =========================
-\bibliographystyle{unsrt}
-\bibliography{references}
-
-% =========================
-% Appendices
-% =========================
-\appendix
-\input{appendices/appendix_examples}
-\IfFileExists{appendices/appendix_smeft_comparison.tex}{%
-  \input{appendices/appendix_smeft_comparison}%
-}{%
-  \chapter{SMEFT Per-Row Comparison Results}
-  % Keep this indirect so the structural checker does not count both this
-  % fallback and the generated appendix label in the normal full checkout.
-  \csname label\endcsname{app:smeft-rows}
-  The generated appendix file is not present in this compilation environment.
-  Regenerate it with \path{generate_comparison_appendix.py}, or include
-  \path{appendices/appendix_smeft_comparison.tex}, to show the full per-row
-  SMEFT table.
-}
-
-
-\end{document}
+% Revision history___________________________________________________________ 
+% 2009/29/05 Adapted from ethimrt.sty,v 1.1 2004/04/02
