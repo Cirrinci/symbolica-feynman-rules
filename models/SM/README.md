@@ -42,4 +42,4 @@ L2 = sm_model(
 )
 ```
 
-The ready-to-edit playground file is [playground.py](/Users/rems/Documents/MScThesis/models/SM/playground.py).
+The ready-to-edit playground file is [playground.py](playground.py).

@@ -142,7 +142,7 @@ src/lagrangian/   operator lowering and Symbolica export
 src/feynrules/    generic FeynRules JSON parser and symbolic comparator
 models/SM/        complete Standard Model vertical slice
 notebooks/        focused API walkthroughs
-docs/             maintained notes and reproducibility checklist
+docs/             maintained documentation, diagrams and reproducibility checklist
 tests/            generic regression suite
 ```
 
@@ -160,8 +160,8 @@ The generic notebooks are:
 Model-specific code and evidence stay together under `models/<model>/`; generic
 engine functionality stays under `src/`.
 
-For Mermaid architecture diagrams suitable for thesis figures, see
-[`viz/mermaid/README.md`](viz/mermaid/README.md).
+High-level Mermaid architecture diagrams are kept in
+[`docs/diagrams/README.md`](docs/diagrams/README.md).
 
 ## Current scope
 
@@ -207,7 +207,5 @@ Run the Standard Model playground with:
 .venv/bin/python models/SM/playground.py
 ```
 
-The chronological development record is
-[`docs/notes/RESEARCH_LOG.md`](docs/notes/RESEARCH_LOG.md).
 The final validation and reproducibility checklist is
 [`docs/notes/FINAL_REPRODUCIBILITY.md`](docs/notes/FINAL_REPRODUCIBILITY.md).

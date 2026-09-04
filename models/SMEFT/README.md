@@ -3,9 +3,9 @@
 This folder contains the simple FeynPy translation of
 `reference/feynrules/SMEFT_Green_Bpreserving.fr`.
 
-The implementation lives in [SMEFT.py](/Users/rems/Documents/MScThesis/models/SMEFT/SMEFT.py).
+The implementation lives in [SMEFT.py](SMEFT.py).
 The bundled FR sources live in
-[reference/feynrules](/Users/rems/Documents/MScThesis/models/SMEFT/reference/feynrules).
+[reference/feynrules](reference/feynrules).
 The goal is to stay close to the FR file:
 
 - same field names
